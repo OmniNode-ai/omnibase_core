@@ -206,7 +206,7 @@ class ModelNodeInformation(BaseModel):
             node_version=str(self.core_info.node_version),
             status=EnumStatus.ACTIVE,  # Convert from metadata status
             health=EnumNodeHealthStatus.HEALTHY,  # Default value
-            is_active=(self.core_info.status == self.core_info.status.ACTIVE),
+            is_active=(self.core_info.status == EnumMetadataNodeStatus.ACTIVE),
             is_healthy=True,  # Default value
             has_description=self.core_info.has_description(),
             has_author=self.core_info.has_author(),

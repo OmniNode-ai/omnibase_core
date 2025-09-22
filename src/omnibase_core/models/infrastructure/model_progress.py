@@ -328,9 +328,9 @@ class ModelProgress(BaseModel):
         self.percentage = 0.0
         self.current_step = 0
         self.phase_percentage = 0.0
-        self.current_phase = None
-        self.status_message = None
-        self.detailed_info = None
+        self.current_phase = EnumExecutionPhase.INITIALIZATION
+        self.status_message = EnumStatusMessage.PENDING
+        self.detailed_info = ""
         self.start_time = datetime.now(UTC)
         self.last_update_time = self.start_time
         self.estimated_completion_time = None
@@ -396,7 +396,7 @@ class ModelProgress(BaseModel):
     @classmethod
     def create_simple(cls, total_steps: int | None = None) -> ModelProgress:
         """Create simple progress tracker."""
-        return cls(total_steps=total_steps)
+        return cls(total_steps=total_steps or 0)
 
     @classmethod
     def create_with_milestones(
@@ -406,7 +406,7 @@ class ModelProgress(BaseModel):
     ) -> ModelProgress:
         """Create progress tracker with predefined milestones."""
         return cls(
-            total_steps=total_steps,
+            total_steps=total_steps or 0,
             milestones=milestones,
         )
 
@@ -425,7 +425,7 @@ class ModelProgress(BaseModel):
             milestones[f"phase_{phase.value}"] = milestone_percentage
 
         return cls(
-            total_steps=total_steps,
+            total_steps=total_steps or 0,
             milestones=milestones,
         )
 

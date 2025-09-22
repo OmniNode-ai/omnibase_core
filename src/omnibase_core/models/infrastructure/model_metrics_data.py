@@ -84,7 +84,8 @@ class ModelMetricsData(BaseModel):
 
     def get_metrics_by_type(self, metric_type: EnumMetricDataType) -> list[ModelMetric]:
         """Get all metrics of a specific type."""
-        return [metric for metric in self.metrics if metric.metric_type == metric_type]
+        # Convert metric_type to string for comparison with value.value_type
+        return [metric for metric in self.metrics if str(metric.value.value_type).lower() == str(metric_type).lower()]
 
     @property
     def collection_name(self) -> str | None:

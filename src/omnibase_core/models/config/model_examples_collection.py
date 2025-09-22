@@ -56,13 +56,13 @@ class ModelExamples(BaseModel):
         """Add a new example with full type safety."""
         example = ModelExample(
             name=name or f"Example_{len(self.examples) + 1}",
-            description=description,
+            description=description or "",
             input_data=input_data,
             output_data=output_data,
             context=context,
             tags=tags or [],
             is_valid=True,
-            validation_notes=None,
+            validation_notes="",
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
@@ -163,13 +163,13 @@ class ModelExamples(BaseModel):
         """Create collection with a single example."""
         example = ModelExample(
             name=name or "Single Example",
-            description=None,
+            description="",
             input_data=input_data,
             output_data=output_data,
             context=None,
             tags=[],
             is_valid=True,
-            validation_notes=None,
+            validation_notes="",
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )

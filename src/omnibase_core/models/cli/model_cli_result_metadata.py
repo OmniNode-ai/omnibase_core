@@ -195,7 +195,7 @@ class ModelCliResultMetadata(BaseModel):
         """Get a custom metadata field. CLI metadata is strings."""
         cli_value = self.custom_metadata.get(key)
         if cli_value is not None:
-            return cli_value.to_python_value()
+            return str(cli_value.to_python_value())
         return default
 
     def is_compliant(self) -> bool:

@@ -40,14 +40,14 @@ class ModelPropertyCollection(BaseModel):
     ) -> None:
         """Add a new property using structured value."""
         metadata = ModelPropertyMetadata(
-            description=description,
-            source=value.source,
+            description=description or "",
+            source=value.source or "",
             property_type=value.value_type,
             required=required,
-            validation_pattern=None,
+            validation_pattern="",
             min_value=None,
             max_value=None,
-            allowed_values=None,
+            allowed_values=[],
         )
 
         typed_property = ModelTypedProperty(key=key, value=value, metadata=metadata)

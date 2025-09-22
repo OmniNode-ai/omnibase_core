@@ -168,7 +168,7 @@ class UnionUsageChecker(ast.NodeVisitor):
             if len(union_types) >= 2:  # Only process if we have multiple types
                 # Modern T | None syntax is correct and should NOT be counted as violation
                 # Only count complex unions (3+ types) or problematic patterns
-                is_simple_optional = (len(union_types) == 2 and "None" in union_types)
+                is_simple_optional = len(union_types) == 2 and "None" in union_types
 
                 if not is_simple_optional:
                     self.union_count += 1
@@ -251,7 +251,7 @@ def analyze_repeated_patterns(all_patterns: List[UnionPattern]) -> List[str]:
 
     for pattern in all_patterns:
         # Skip simple optional patterns (T | None) - these are correct modern syntax
-        is_simple_optional = (pattern.type_count == 2 and "None" in pattern.types)
+        is_simple_optional = pattern.type_count == 2 and "None" in pattern.types
         if is_simple_optional:
             continue
 

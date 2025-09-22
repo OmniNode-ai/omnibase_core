@@ -100,9 +100,9 @@ class PydanticPatternChecker(ast.NodeVisitor):
     def _is_str_annotation(self, annotation: ast.AST) -> bool:
         """Check if annotation is str type."""
         if isinstance(annotation, ast.Name):
-            return annotation.id == "str"
+            return bool(annotation.id == "str")
         if isinstance(annotation, ast.Constant):
-            return annotation.value == "str"
+            return bool(annotation.value == "str")
         return False
 
 

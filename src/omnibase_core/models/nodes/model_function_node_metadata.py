@@ -8,14 +8,14 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TypedDict, TypeVar
+from typing import TypedDict
 
-# Bounded TypeVar for relationship summary values
-RelationshipValue = TypeVar("RelationshipValue", int, bool, str)
+# Removed type alias - using ModelMetadataValue for proper type safety
 
 from pydantic import BaseModel, Field
 
 from ..core.model_custom_properties import ModelCustomProperties
+from ..metadata.model_metadata_value import ModelMetadataValue
 from .model_function_deprecation_info import (
     ModelFunctionDeprecationInfo,
     TypedDictDeprecationSummary,
@@ -34,7 +34,7 @@ class TypedDictFunctionMetadataSummary(TypedDict):
     deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
     relationships: dict[
         str,
-        RelationshipValue,
+        ModelMetadataValue,
     ]  # *_count (int), has_* (bool), primary_category (str, "None" for missing)
     documentation_quality_score: float
     is_fully_documented: bool
@@ -251,10 +251,22 @@ class ModelFunctionNodeMetadata(BaseModel):
         dep_summary = self.deprecation.get_deprecation_summary()
         rel_summary = self.relationships.get_relationships_summary()
 
+        # Convert documentation summary to expected format (bool | int only)
+        doc_filtered = {
+            key: value for key, value in doc_summary.items()
+            if isinstance(value, (bool, int))
+        }
+
+        # Convert relationships summary to ModelMetadataValue format
+        rel_converted = {
+            key: ModelMetadataValue.from_any(value)
+            for key, value in rel_summary.items()
+        }
+
         return {
-            "documentation": doc_summary,
+            "documentation": doc_filtered,
             "deprecation": dep_summary,
-            "relationships": rel_summary,
+            "relationships": rel_converted,
             "documentation_quality_score": self.get_documentation_quality_score(),
             "is_fully_documented": self.is_recently_updated(),  # Map to boolean field
             "deprecation_status": (

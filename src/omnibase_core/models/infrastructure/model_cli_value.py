@@ -9,15 +9,17 @@ from __future__ import annotations
 
 from typing import Any
 
-# Note: Previously had type alias (CliDictValueType)
-# Removed to comply with ONEX strong typing standards.
-# Using explicit type: dict[str, Any]
-
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from ...enums.enum_cli_value_type import EnumCliValueType
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
+
+# Note: Previously had type alias (CliDictValueType)
+# Removed to comply with ONEX strong typing standards.
+# Using explicit type: dict[str, Any]
+
+
 
 # CLI raw values use discriminated union pattern with runtime validation
 

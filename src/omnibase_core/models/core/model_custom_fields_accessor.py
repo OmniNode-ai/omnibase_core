@@ -28,7 +28,8 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
         # Initialize custom_fields if it doesn't exist
         if not self.has_field("custom_fields"):
             # Use setattr directly for dict initialization
-            self.custom_fields = {}
+            custom_fields: dict[str, ModelSchemaValue] = {}
+            self.custom_fields = custom_fields
         return self.set_field(f"custom_fields.{key}", value)
 
     def has_custom_field(self, key: str) -> bool:

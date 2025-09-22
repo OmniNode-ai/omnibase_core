@@ -33,7 +33,7 @@ class ModelNodeMetadataInfo(BaseModel):
     # Composed sub-models (3 primary components)
     core: ModelNodeCoreMetadata = Field(
         default_factory=lambda: ModelNodeCoreMetadata(
-            node_display_name=None,
+            node_display_name="",
             node_type=EnumMetadataNodeType.FUNCTION,
         ),
         description="Core node metadata",
@@ -210,11 +210,15 @@ class ModelNodeMetadataInfo(BaseModel):
             for key, val in self.organization.custom_properties.custom_strings.items():
                 result[key] = ModelMetadataValue.from_string(val, "custom_strings")
         if self.organization.custom_properties.custom_numbers:
-            for key, val in self.organization.custom_properties.custom_numbers.items():
-                result[key] = ModelMetadataValue.from_any(val, "custom_numbers")
+            for item in self.organization.custom_properties.custom_numbers.items():
+                num_key: str = item[0]
+                num_val: float = item[1]
+                result[num_key] = ModelMetadataValue.from_any(num_val, "custom_numbers")
         if self.organization.custom_properties.custom_flags:
-            for key, val in self.organization.custom_properties.custom_flags.items():
-                result[key] = ModelMetadataValue.from_bool(val, "custom_flags")
+            for item in self.organization.custom_properties.custom_flags.items():
+                flag_key: str = item[0]
+                flag_val: bool = item[1]
+                result[flag_key] = ModelMetadataValue.from_bool(flag_val, "custom_flags")
         return result
 
     @custom_metadata.setter
@@ -306,8 +310,8 @@ class ModelNodeMetadataInfo(BaseModel):
             "is_active": self.is_active(),
             "is_healthy": self.is_healthy(),
             "has_errors": self.has_errors(),
-            "capabilities_count": org_summary["capabilities_count"],
-            "tags_count": org_summary["tags_count"],
+            "capabilities_count": int(org_summary["capabilities_count"]),
+            "tags_count": int(org_summary["tags_count"]),
             "is_high_usage": performance_summary["is_high_usage"],
         }
 

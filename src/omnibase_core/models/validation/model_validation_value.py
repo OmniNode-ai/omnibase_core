@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_validation_value_type import EnumValidationValueType
@@ -31,9 +31,9 @@ class ModelValidationValue(BaseModel):
 
     @field_validator("raw_value")
     @classmethod
-    def validate_raw_value(cls, v: Any, info: Any) -> Any:
+    def validate_raw_value(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate raw value matches declared type."""
-        if "value_type" not in info.data:
+        if not hasattr(info, "data") or "value_type" not in info.data:
             return v
 
         value_type = info.data["value_type"]

@@ -66,7 +66,7 @@ class ModelTypedProperty(BaseModel):
             if expected_type == bool:
                 return cast(T, self.value.as_bool())
             if isinstance(self.value.value, expected_type):
-                return self.value.value  # type: ignore[return-value]
+                return self.value.value
         except Exception:
             pass
         return default

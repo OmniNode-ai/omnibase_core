@@ -7,11 +7,12 @@ replacing dict[str, Any] return types with structured models.
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -62,19 +63,169 @@ class ModelSchemaExample(BaseModel):
         return not self.example_data.is_empty()
 
     def get_value(self, key: str, default: T) -> T:
-        """Get typed value with proper default handling."""
-        value = self.example_data.get_custom_value(key)
-        if value is not None and isinstance(value, type(default)):
-            return value
+        """
+        Get typed value with proper default handling.
+
+        Args:
+            key: The key to look up
+            default: Default value to return if key not found or type mismatch
+
+        Returns:
+            Value of the requested type or default
+        """
+        schema_value = self.example_data.get_custom_value(key)
+        if schema_value is None:
+            return default
+
+        # Extract raw value from ModelSchemaValue
+        raw_value = schema_value.to_value()
+
+        # Type check against default type
+        if isinstance(raw_value, type(default)):
+            return raw_value
+
         return default
 
     def set_value(self, key: str, value: T) -> None:
-        """Set typed value in example data."""
-        self.example_data.set_custom_value(key, value)
+        """
+        Set typed value in example data.
+
+        Args:
+            key: The key to set
+            value: The value to store (will be wrapped in ModelSchemaValue)
+        """
+        # Convert primitive value to ModelSchemaValue
+        schema_value = ModelSchemaValue.from_value(value)
+        self.example_data.set_custom_value(key, schema_value)
 
     def get_all_keys(self) -> list[str]:
         """Get all keys from example data."""
         return list(self.example_data.get_all_custom_fields().keys())
+
+    def get_raw_value(self, key: str) -> Any:
+        """
+        Get raw value without type checking.
+
+        Args:
+            key: The key to look up
+
+        Returns:
+            Raw Python value or None if not found
+        """
+        schema_value = self.example_data.get_custom_value(key)
+        if schema_value is None:
+            return None
+        return schema_value.to_value()
+
+    def set_raw_value(self, key: str, value: Any) -> None:
+        """
+        Set raw value (any type) in example data.
+
+        Args:
+            key: The key to set
+            value: The value to store (any type, will be wrapped in ModelSchemaValue)
+        """
+        schema_value = ModelSchemaValue.from_value(value)
+        self.example_data.set_custom_value(key, schema_value)
+
+    def update_from_dict(self, data: dict[str, Any]) -> None:
+        """
+        Update example data from a dictionary.
+
+        Args:
+            data: Dictionary of key-value pairs to add to example data
+        """
+        for key, value in data.items():
+            self.set_raw_value(key, value)
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Convert example data to a plain dictionary.
+
+        Returns:
+            Dictionary with all example data as raw Python values
+        """
+        result = {}
+        for key in self.get_all_keys():
+            result[key] = self.get_raw_value(key)
+        return result
+
+    @classmethod
+    def create_from_dict(
+        cls,
+        data: dict[str, Any],
+        example_index: int,
+        schema_path: str,
+        data_format: EnumDataType = EnumDataType.YAML,
+        schema_version: ModelSemVer | None = None,
+    ) -> ModelSchemaExample:
+        """
+        Create ModelSchemaExample from a dictionary.
+
+        Args:
+            data: Dictionary data to store as example
+            example_index: Index of this example
+            schema_path: Path to the schema file
+            data_format: Format of the example data
+            schema_version: Schema version if available
+
+        Returns:
+            New ModelSchemaExample instance
+        """
+        # Create custom properties from data
+        custom_props = ModelCustomProperties()
+        for key, value in data.items():
+            schema_value = ModelSchemaValue.from_value(value)
+            custom_props.set_custom_value(key, schema_value)
+
+        return cls(
+            example_data=custom_props,
+            example_index=example_index,
+            schema_path=schema_path,
+            data_format=data_format,
+            schema_version=schema_version,
+        )
+
+    @classmethod
+    def create_empty(
+        cls,
+        example_index: int,
+        schema_path: str,
+        data_format: EnumDataType = EnumDataType.YAML,
+    ) -> ModelSchemaExample:
+        """
+        Create an empty ModelSchemaExample.
+
+        Args:
+            example_index: Index of this example
+            schema_path: Path to the schema file
+            data_format: Format of the example data
+
+        Returns:
+            New empty ModelSchemaExample instance
+        """
+        return cls(
+            example_data=ModelCustomProperties(),
+            example_index=example_index,
+            schema_path=schema_path,
+            data_format=data_format,
+            schema_version=None,
+        )
+
+    def validate_example(self) -> bool:
+        """
+        Validate the example data.
+
+        Returns:
+            True if validation passes, False otherwise
+        """
+        # Basic validation - ensure we have some data
+        if self.example_data.is_empty():
+            return False
+
+        # Mark as validated if checks pass
+        self.is_validated = True
+        return True
 
 
 # Export the model

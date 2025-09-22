@@ -11,14 +11,11 @@ from __future__ import annotations
 
 import random
 from datetime import datetime
-from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
-# Bounded TypeVar for retry summary values - includes None for optional fields
-RetrySummaryValueType = TypeVar("RetrySummaryValueType", str, int, float, bool, None)
-
 from ...enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
+from ..common.model_schema_value import ModelSchemaValue
 from .model_retry_advanced import ModelRetryAdvanced
 from .model_retry_conditions import ModelRetryConditions
 from .model_retry_config import ModelRetryConfig
@@ -192,21 +189,21 @@ class ModelRetryPolicy(BaseModel):
         """Reset retry policy to initial state."""
         self.execution.reset()
 
-    def get_summary(self) -> dict[str, RetrySummaryValueType]:
-        """Get retry policy execution summary."""
+    def get_summary(self) -> dict[str, ModelSchemaValue]:
+        """Get retry policy execution summary using proper ModelSchemaValue types."""
         return {
-            "max_retries": self.max_retries,
-            "current_attempt": self.current_attempt,
-            "retry_attempts_made": self.retry_attempts_made,
-            "has_retries_remaining": self.has_retries_remaining,
-            "is_exhausted": self.is_exhausted,
-            "success_rate": self.success_rate,
-            "successful_attempt": self.execution.successful_attempt,
-            "total_execution_time_seconds": self.execution.total_execution_time_seconds,
-            "last_error": self.execution.last_error,
-            "last_status_code": self.execution.last_status_code,
-            "backoff_strategy": self.backoff_strategy.value,
-            "next_delay_seconds": (
+            "max_retries": ModelSchemaValue.from_value(self.max_retries),
+            "current_attempt": ModelSchemaValue.from_value(self.current_attempt),
+            "retry_attempts_made": ModelSchemaValue.from_value(self.retry_attempts_made),
+            "has_retries_remaining": ModelSchemaValue.from_value(self.has_retries_remaining),
+            "is_exhausted": ModelSchemaValue.from_value(self.is_exhausted),
+            "success_rate": ModelSchemaValue.from_value(self.success_rate),
+            "successful_attempt": ModelSchemaValue.from_value(self.execution.successful_attempt),
+            "total_execution_time_seconds": ModelSchemaValue.from_value(self.execution.total_execution_time_seconds),
+            "last_error": ModelSchemaValue.from_value(str(self.execution.last_error) if self.execution.last_error else None),
+            "last_status_code": ModelSchemaValue.from_value(self.execution.last_status_code),
+            "backoff_strategy": ModelSchemaValue.from_value(self.backoff_strategy.value),
+            "next_delay_seconds": ModelSchemaValue.from_value(
                 self.calculate_next_delay() if self.has_retries_remaining else None
             ),
         }

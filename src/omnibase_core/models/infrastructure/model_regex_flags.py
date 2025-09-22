@@ -28,9 +28,7 @@ class ModelRegexFlags(BaseModel):
     )
 
     # Flag value storage
-    flag_value: int = Field(
-        description="The actual regex flag value"
-    )
+    flag_value: int = Field(description="The actual regex flag value")
 
     @model_validator(mode="after")
     def validate_flag_value(self) -> "ModelRegexFlags":

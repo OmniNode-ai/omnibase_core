@@ -81,15 +81,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Advanced parameters (typed model for safety)
     advanced_params: ModelCliAdvancedParams = Field(
-        default_factory=lambda: ModelCliAdvancedParams(
-            timeout_seconds=None,
-            max_retries=None,
-            retry_delay_ms=None,
-            memory_limit_mb=None,
-            cpu_limit_percent=None,
-            max_parallel_tasks=None,
-            cache_ttl_seconds=None,
-        ),
+        default_factory=ModelCliAdvancedParams,
         description="Advanced parameters specific to individual nodes",
     )
 

@@ -6,7 +6,7 @@ This model provides structured error information with validation,
 serialization, and schema generation capabilities across all ONEX components.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -57,7 +57,7 @@ class ModelOnexError(BaseModel):
         json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"},
     )
     timestamp: datetime | None = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the error occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )

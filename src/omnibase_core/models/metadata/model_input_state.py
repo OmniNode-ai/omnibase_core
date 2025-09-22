@@ -58,7 +58,6 @@ class ModelInputState(BaseModel):
         description="Additional fields in the input state",
     )
 
-
     def get_version_data(self) -> Any:
         """Get the version data for parsing."""
         return self.version

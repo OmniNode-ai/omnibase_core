@@ -1,47 +1,21 @@
 """
 Timeout Model.
 
-Timeout wrapper for ModelTimeout that delegates to ModelTimeBased.
+Clean timeout wrapper that delegates to ModelTimeBased with proper ONEX patterns.
 This provides a convenient timeout interface built on the unified time-based model.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, TypedDict
-
-
-class TimeoutMetadataType(TypedDict, total=False):
-    """Type-safe timeout metadata structure."""
-
-    source: str
-    priority: int | float
-    context: str
-    retry_count: int
-    max_retries: int
-    escalation_policy: str
-    tags: list[str]
-
-
-class TimeoutDumpType(TypedDict, total=False):
-    """Type-safe timeout dump structure."""
-
-    timeout_seconds: int
-    warning_threshold_seconds: int | None
-    is_strict: bool
-    allow_extension: bool
-    extension_limit_seconds: int | None
-    runtime_category: str | None
-    description: str | None
-    custom_metadata: dict[str, Any]  # Use Any for internal storage, validated by model
-
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_runtime_category import EnumRuntimeCategory
 from ...enums.enum_time_unit import EnumTimeUnit
+from ..common.model_schema_value import ModelSchemaValue
 from ..core.model_custom_properties import ModelCustomProperties
-from ..metadata.model_metadata_value import ModelMetadataValue
 from .model_time_based import ModelTimeBased
 from .model_timeout_data import ModelTimeoutData
 
@@ -64,6 +38,12 @@ class ModelTimeout(BaseModel):
         description="Internal time-based model",
     )
 
+    # Direct storage for custom metadata using proper ONEX pattern
+    custom_metadata: dict[str, ModelSchemaValue] = Field(
+        default_factory=dict,
+        description="Custom metadata using ModelSchemaValue",
+    )
+
     def __init__(self, **data: Any) -> None:
         """Initialize timeout model."""
         # Extract timeout-specific fields
@@ -76,14 +56,21 @@ class ModelTimeout(BaseModel):
         description = data.pop("description", None)
         custom_metadata = data.pop("custom_metadata", {})
 
-        super().__init__(**data)
+        # Convert custom_metadata to ModelSchemaValue format if needed
+        processed_metadata = {}
+        for key, value in custom_metadata.items():
+            if isinstance(value, ModelSchemaValue):
+                processed_metadata[key] = value
+            else:
+                processed_metadata[key] = ModelSchemaValue.from_value(value)
+
+        # Initialize parent with processed custom metadata
+        super().__init__(custom_metadata=processed_metadata, **data)
 
         # Create the underlying time-based model
         metadata = {"type": "timeout"}
         if description:
             metadata["description"] = description
-        for key, value in custom_metadata.items():
-            metadata[f"custom_{key}"] = str(value)
 
         self.time_based = ModelTimeBased.timeout(
             value=timeout_seconds,
@@ -148,28 +135,11 @@ class ModelTimeout(BaseModel):
     @property
     def custom_properties(self) -> ModelCustomProperties:
         """Custom timeout properties using typed model."""
-        metadata: TimeoutMetadataType = {}
-        for key, value in self.time_based.metadata.items():
-            if key.startswith("custom_"):
-                custom_key = key[7:]  # Remove "custom_" prefix
-                # Try to convert back to original type
-                try:
-                    if value.isdigit():
-                        metadata[custom_key] = int(value)
-                    elif value.replace(".", "").isdigit():
-                        metadata[custom_key] = float(value)
-                    elif value.lower() in ("true", "false"):
-                        metadata[custom_key] = value.lower() == "true"
-                    else:
-                        metadata[custom_key] = value
-                except (AttributeError, ValueError):
-                    metadata[custom_key] = value
+        # Convert ModelSchemaValue metadata to basic types for ModelCustomProperties
+        metadata: dict[str, Any] = {}
+        for key, schema_value in self.custom_metadata.items():
+            metadata[key] = schema_value.to_value()
         return ModelCustomProperties.from_metadata(metadata)
-
-    @property
-    def custom_metadata(self) -> dict[str, ModelMetadataValue]:
-        """Custom metadata accessor."""
-        return self.custom_properties.to_metadata()
 
     @property
     def timeout_timedelta(self) -> timedelta:
@@ -260,6 +230,17 @@ class ModelTimeout(BaseModel):
         """Extend timeout by additional seconds if allowed."""
         return self.time_based.extend_time(additional_seconds)
 
+    def set_custom_metadata(self, key: str, value: Any) -> None:
+        """Set custom metadata value."""
+        self.custom_metadata[key] = ModelSchemaValue.from_value(value)
+
+    def get_custom_metadata(self, key: str) -> Any:
+        """Get custom metadata value."""
+        schema_value = self.custom_metadata.get(key)
+        if schema_value is None:
+            return None
+        return schema_value.to_value()
+
     @classmethod
     def from_seconds(
         cls,
@@ -325,40 +306,21 @@ class ModelTimeout(BaseModel):
         """Serialize model with proper strong typing."""
         return ModelTimeoutData(
             timeout_seconds=self.timeout_seconds,
-            warning_threshold_seconds=self.warning_threshold_seconds,
+            warning_threshold_seconds=self.warning_threshold_seconds or 0,
             is_strict=self.is_strict,
             allow_extension=self.allow_extension,
-            extension_limit_seconds=self.extension_limit_seconds,
-            runtime_category=self.runtime_category,
-            description=self.description,
+            extension_limit_seconds=self.extension_limit_seconds or 0,
+            runtime_category=self.runtime_category or EnumRuntimeCategory.FAST,
+            description=self.description or "",
             custom_properties=self.custom_properties,
         )
-
-    def model_dump(self, **kwargs: Any) -> TimeoutDumpType:
-        """Override Pydantic model_dump to use typed serialization."""
-        # Get typed data first
-        typed_data = self.to_typed_data()
-        # Convert to dict using Pydantic serialization
-        result = typed_data.model_dump(**kwargs)
-        # Convert custom_properties to custom_metadata
-        if "custom_properties" in result:
-            custom_props = result.pop("custom_properties")
-            # Extract the metadata format
-            if isinstance(custom_props, dict):
-                result["custom_metadata"] = {
-                    **custom_props.get("custom_strings", {}),
-                    **custom_props.get("custom_numbers", {}),
-                    **custom_props.get("custom_flags", {}),
-                }
-            else:
-                result["custom_metadata"] = {}
-        return result
 
     @classmethod
     def model_validate_typed(cls, data: ModelTimeoutData) -> ModelTimeout:
         """Create ModelTimeout from typed data using Pydantic validation."""
         # Convert ModelTimeoutData to dict for initialization
         init_data = data.model_dump()
+
         # Convert custom_properties to custom_metadata format
         custom_props = init_data.pop("custom_properties", {})
         if custom_props:
@@ -369,6 +331,15 @@ class ModelTimeout(BaseModel):
                 **custom_props.get("custom_flags", {}),
             }
             init_data["custom_metadata"] = metadata
+
+        # Handle optional fields that shouldn't be zero
+        if init_data.get("warning_threshold_seconds") == 0:
+            init_data["warning_threshold_seconds"] = None
+        if init_data.get("extension_limit_seconds") == 0:
+            init_data["extension_limit_seconds"] = None
+        if init_data.get("description") == "":
+            init_data["description"] = None
+
         return cls(**init_data)
 
 

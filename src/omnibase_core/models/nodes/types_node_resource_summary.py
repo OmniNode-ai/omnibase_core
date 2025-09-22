@@ -17,8 +17,8 @@ class NodeResourceSummaryType(TypedDict):
     with proper type structure.
     """
 
-    max_memory_mb: int | None
-    max_cpu_percent: float | None
+    max_memory_mb: int
+    max_cpu_percent: float
     has_memory_limit: bool
     has_cpu_limit: bool
     has_any_limits: bool

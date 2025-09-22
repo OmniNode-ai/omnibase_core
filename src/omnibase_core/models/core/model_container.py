@@ -160,11 +160,15 @@ class ModelContainer(BaseModel, Generic[T]):
             raise OnexError(
                 code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
-                details=ModelErrorContext.with_context({
-                    "container_type": ModelSchemaValue.from_value(self.container_type),
-                    "original_value": ModelSchemaValue.from_value(str(self.value)),
-                    "error": ModelSchemaValue.from_value(str(e)),
-                }),
+                details=ModelErrorContext.with_context(
+                    {
+                        "container_type": ModelSchemaValue.from_value(
+                            self.container_type
+                        ),
+                        "original_value": ModelSchemaValue.from_value(str(self.value)),
+                        "error": ModelSchemaValue.from_value(str(e)),
+                    }
+                ),
             )
 
     def validate_with(
@@ -196,10 +200,14 @@ class ModelContainer(BaseModel, Generic[T]):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=error_message,
-                details=ModelErrorContext.with_context({
-                    "container_type": ModelSchemaValue.from_value(self.container_type),
-                    "value": ModelSchemaValue.from_value(str(self.value)),
-                }),
+                details=ModelErrorContext.with_context(
+                    {
+                        "container_type": ModelSchemaValue.from_value(
+                            self.container_type
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    }
+                ),
             )
         except Exception as e:
             if isinstance(e, OnexError):
@@ -207,11 +215,15 @@ class ModelContainer(BaseModel, Generic[T]):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation error: {e!s}",
-                details=ModelErrorContext.with_context({
-                    "container_type": ModelSchemaValue.from_value(self.container_type),
-                    "value": ModelSchemaValue.from_value(str(self.value)),
-                    "error": ModelSchemaValue.from_value(str(e)),
-                }),
+                details=ModelErrorContext.with_context(
+                    {
+                        "container_type": ModelSchemaValue.from_value(
+                            self.container_type
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                        "error": ModelSchemaValue.from_value(str(e)),
+                    }
+                ),
             )
 
     def compare_value(self, other: T | ModelContainer[T]) -> bool:
@@ -231,8 +243,8 @@ class ModelContainer(BaseModel, Generic[T]):
     def __eq__(self, other: object) -> bool:
         """Equality comparison based on contained value."""
         if isinstance(other, ModelContainer):
-            return self.value == other.value
-        return self.value == other
+            return bool(self.value == other.value)
+        return bool(self.value == other)
 
     def __str__(self) -> str:
         """String representation."""

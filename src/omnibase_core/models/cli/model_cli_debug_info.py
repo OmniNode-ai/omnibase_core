@@ -110,7 +110,7 @@ class ModelCliDebugInfo(BaseModel):
         """Get a custom debug field. CLI debug fields are strings."""
         cli_value = self.custom_debug_fields.get(key)
         if cli_value is not None:
-            return cli_value.to_python_value()
+            return str(cli_value.to_python_value())
         return default
 
 

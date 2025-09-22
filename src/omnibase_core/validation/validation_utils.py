@@ -364,3 +364,20 @@ def extract_protocols_from_directory(directory: Path) -> list[ProtocolInfo]:
         f"Successfully extracted {len(protocols)} protocols from {validated_directory}",
     )
     return protocols
+
+
+# Export all public functions, classes, and types
+__all__ = [
+    "ValidationMetadataType",
+    "ValidationResult", 
+    "DuplicationInfo",
+    "ProtocolInfo",
+    "extract_protocol_signature",
+    "determine_repository_name",
+    "suggest_spi_location",
+    "is_protocol_file",
+    "find_protocol_files",
+    "validate_directory_path",
+    "validate_file_path",
+    "extract_protocols_from_directory",
+]

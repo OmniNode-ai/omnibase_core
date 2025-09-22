@@ -16,7 +16,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Callable, TypedDict, cast
 
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
@@ -25,11 +25,19 @@ from .types import validate_union_usage_directory
 from .validation_utils import ValidationResult
 
 
+class ValidatorInfo(TypedDict):
+    """Type definition for validator information."""
+    
+    func: Callable[..., ValidationResult]
+    description: str
+    args: list[str]
+
+
 class ValidationSuite:
     """Unified validation suite for ONEX compliance."""
 
     def __init__(self) -> None:
-        self.validators = {
+        self.validators: dict[str, ValidatorInfo] = {
             "architecture": {
                 "func": validate_architecture_directory,
                 "description": "Validate ONEX one-model-per-file architecture",
@@ -65,13 +73,12 @@ class ValidationSuite:
         validator_info = self.validators[validation_type]
         validator_func = validator_info["func"]
 
-        # Filter kwargs to only include relevant parameters
-        relevant_args = validator_info["args"]
+        # Filter kwargs to only include relevant parameters  
+        relevant_args: list[str] = validator_info["args"]
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in relevant_args}
 
-        # Cast to proper type since we know all validators return ValidationResult
-        validator_callable = cast(Callable[..., ValidationResult], validator_func)
-        return validator_callable(directory, **filtered_kwargs)
+        # Direct call since validator_func is properly typed through ValidatorInfo
+        return validator_func(directory, **filtered_kwargs)
 
     def run_all_validations(
         self,

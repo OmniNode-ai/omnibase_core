@@ -52,7 +52,6 @@ from .model_configuration_base import ModelConfigurationBase
 # Generic container pattern
 from .model_container import (
     ModelContainer,
-
 )
 from .model_custom_fields_accessor import ModelCustomFieldsAccessor
 
@@ -119,8 +118,6 @@ __all__ = [
     "ModelGenericCollectionSummary",
     # Generic container pattern
     "ModelContainer",
-
-
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",

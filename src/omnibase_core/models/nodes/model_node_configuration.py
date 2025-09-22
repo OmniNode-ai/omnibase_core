@@ -61,7 +61,7 @@ class ModelNodeConfiguration(BaseModel):
 
     # Delegation properties
     @property
-    def max_retries(self) -> int | None:
+    def max_retries(self) -> int:
         """Maximum retry attempts (delegated to execution)."""
         return self.execution.max_retries
 
@@ -71,7 +71,7 @@ class ModelNodeConfiguration(BaseModel):
         self.execution.max_retries = value if value is not None else 3
 
     @property
-    def timeout_seconds(self) -> int | None:
+    def timeout_seconds(self) -> int:
         """Execution timeout (delegated to execution)."""
         return self.execution.timeout_seconds
 
@@ -81,7 +81,7 @@ class ModelNodeConfiguration(BaseModel):
         self.execution.timeout_seconds = value if value is not None else 30
 
     @property
-    def batch_size(self) -> int | None:
+    def batch_size(self) -> int:
         """Batch processing size (delegated to execution)."""
         return self.execution.batch_size
 
@@ -101,7 +101,7 @@ class ModelNodeConfiguration(BaseModel):
         self.execution.parallel_execution = value
 
     @property
-    def max_memory_mb(self) -> int | None:
+    def max_memory_mb(self) -> int:
         """Maximum memory usage (delegated to resources)."""
         return self.resources.max_memory_mb
 
@@ -111,7 +111,7 @@ class ModelNodeConfiguration(BaseModel):
         self.resources.max_memory_mb = value if value is not None else 1024
 
     @property
-    def max_cpu_percent(self) -> float | None:
+    def max_cpu_percent(self) -> float:
         """Maximum CPU usage (delegated to resources)."""
         return self.resources.max_cpu_percent
 

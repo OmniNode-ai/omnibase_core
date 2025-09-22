@@ -8,19 +8,12 @@ outcome of CLI command execution with proper typing.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TypeVar
-
-# Type variable for generic metadata access
-T = TypeVar("T")
-# Type variable for metadata value types
-MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
-
-# For methods that need to return a specific type from union, we'll use Any with runtime checking
-from typing import cast
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_config_category import EnumConfigCategory
+from ..common.model_schema_value import ModelSchemaValue
 from ..infrastructure.model_duration import ModelDuration
 from ..validation.model_validation_error import ModelValidationError
 from .model_cli_debug_info import ModelCliDebugInfo
@@ -57,10 +50,10 @@ class ModelCliResult(BaseModel):
 
     output_data: ModelCliOutputData = Field(
         default_factory=lambda: ModelCliOutputData(
-            stdout=None,
-            stderr=None,
-            execution_time_ms=None,
-            memory_usage_mb=None,
+            stdout="",
+            stderr="",
+            execution_time_ms=0.0,
+            memory_usage_mb=0.0,
         ),
         description="Structured output data from execution",
     )
@@ -178,37 +171,37 @@ class ModelCliResult(BaseModel):
     def add_performance_metric(
         self,
         name: str,
-        value: T,
+        value: Any,
         unit: str = "",
         category: EnumConfigCategory = EnumConfigCategory.GENERAL,
     ) -> None:
         """Add a performance metric with proper typing."""
         # Performance metrics are now strongly typed - use proper model
         if self.performance_metrics is None:
-            from .model_performance_metrics import ModelPerformanceMetrics
-
             self.performance_metrics = ModelPerformanceMetrics(
                 execution_time_ms=0.0,
-                memory_usage_mb=None,
-                cpu_usage_percent=None,
-                io_operations=None,
-                network_calls=None,
+                memory_usage_mb=0.0,  # Use default value instead of None
+                cpu_usage_percent=0.0,  # Use default value instead of None
+                io_operations=0,  # Use default value instead of None
+                network_calls=0,  # Use default value instead of None
             )
         # Add through the performance metrics model's typed interface
         if hasattr(self.performance_metrics, "add_metric"):
             self.performance_metrics.add_metric(name, value, unit, category)
 
-    def add_debug_info(self, key: str, value: MetadataValueType) -> None:
+    def add_debug_info(self, key: str, value: Any) -> None:
         """Add debug information with proper typing."""
         if self.execution.config.is_debug_enabled:
             if self.debug_info is None:
                 self.debug_info = ModelCliDebugInfo()
-            self.debug_info.set_custom_field(key, value)
+            # Convert value to ModelSchemaValue for proper typing
+            schema_value = ModelSchemaValue.from_value(value)
+            self.debug_info.set_custom_field(key, schema_value.to_value())
 
     def add_trace_data(
         self,
         key: str,
-        value: MetadataValueType,
+        value: Any,
         operation: str = "",
     ) -> None:
         """Add trace data with proper typing."""
@@ -229,7 +222,7 @@ class ModelCliResult(BaseModel):
         if hasattr(self.trace_data, "add_trace_info"):
             self.trace_data.add_trace_info(key, value, operation)
 
-    def add_metadata(self, key: str, value: MetadataValueType) -> None:
+    def add_metadata(self, key: str, value: Any) -> None:
         """Add result metadata with proper typing."""
         if self.result_metadata is None:
             self.result_metadata = ModelCliResultMetadata(
@@ -243,16 +236,34 @@ class ModelCliResult(BaseModel):
                 retention_policy=None,
                 processing_time_ms=None,
             )
-        self.result_metadata.set_custom_field(key, value)
+        # Convert value to ModelSchemaValue for proper typing
+        schema_value = ModelSchemaValue.from_value(value)
+        self.result_metadata.set_custom_field(key, schema_value.to_value())
 
-    def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
+    def get_metadata(self, key: str, default: Any = None) -> Any:
         """Get result metadata with proper typing."""
         if self.result_metadata is None:
             return default
-        value = self.result_metadata.get_custom_field(key, default)
-        return value if value is not None else default
+        value = self.result_metadata.get_custom_field(key, str(default) if default is not None else "")
+        if value is not None and value != "":
+            # Convert string value to match the type of default
+            if isinstance(default, bool):
+                return value.lower() in ('true', '1', 'yes', 'on')
+            elif isinstance(default, int):
+                try:
+                    return int(value)
+                except ValueError:
+                    return default
+            elif isinstance(default, float):
+                try:
+                    return float(value)
+                except ValueError:
+                    return default
+            else:  # str
+                return value
+        return default
 
-    def get_typed_metadata(self, key: str, field_type: type[T], default: T) -> T:
+    def get_typed_metadata(self, key: str, field_type: type[Any], default: Any) -> Any:
         """Get result metadata with specific type checking."""
         if self.result_metadata is None:
             return default
@@ -264,15 +275,33 @@ class ModelCliResult(BaseModel):
     def get_output_value(
         self,
         key: str,
-        default: MetadataValueType,
-    ) -> MetadataValueType:
+        default: Any = None,
+    ) -> Any:
         """Get a specific output value with proper typing."""
-        value = self.output_data.get_field_value(key, default)
-        return value if value is not None else default
+        value = self.output_data.get_field_value(key, str(default) if default is not None else "")
+        if value is not None and value != "":
+            # Convert string value to match the type of default
+            if isinstance(default, bool):
+                return value.lower() in ('true', '1', 'yes', 'on')
+            elif isinstance(default, int):
+                try:
+                    return int(value)
+                except ValueError:
+                    return default
+            elif isinstance(default, float):
+                try:
+                    return float(value)
+                except ValueError:
+                    return default
+            else:  # str
+                return value
+        return default
 
-    def set_output_value(self, key: str, value: MetadataValueType) -> None:
+    def set_output_value(self, key: str, value: Any) -> None:
         """Set a specific output value with proper typing."""
-        self.output_data.set_field_value(key, value)
+        # Convert value to ModelSchemaValue for proper typing
+        schema_value = ModelSchemaValue.from_value(value)
+        self.output_data.set_field_value(key, schema_value.to_value())
 
     def get_formatted_output(self) -> str:
         """Get formatted output for display."""
@@ -324,10 +353,10 @@ class ModelCliResult(BaseModel):
 
         # Use provided output data or create empty one
         output_data_obj = output_data or ModelCliOutputData(
-            stdout=None,
-            stderr=None,
-            execution_time_ms=None,
-            memory_usage_mb=None,
+            stdout="",
+            stderr="",
+            execution_time_ms=0.0,
+            memory_usage_mb=0.0,
         )
 
         return cls(
@@ -337,9 +366,9 @@ class ModelCliResult(BaseModel):
             output_data=output_data_obj,
             performance_metrics=None,
             trace_data=None,
-            output_text=output_text,
+            output_text=output_text or "",
             error_message=None,
-            error_details=None,
+            error_details="",
             debug_info=None,
             result_metadata=None,
             execution_time=execution_time,
@@ -367,9 +396,9 @@ class ModelCliResult(BaseModel):
             success=False,
             exit_code=exit_code,
             error_message=error_message,
-            error_details=error_details,
+            error_details=error_details or "",
             validation_errors=validation_errors or [],
-            output_text=None,
+            output_text="",
             debug_info=None,
             result_metadata=None,
             execution_time=execution_time,
@@ -400,9 +429,9 @@ class ModelCliResult(BaseModel):
             success=False,
             exit_code=2,  # Exit code 2 for validation errors
             error_message=primary_error,
-            error_details=None,
+            error_details="",
             validation_errors=validation_errors,
-            output_text=None,
+            output_text="",
             debug_info=None,
             result_metadata=None,
             execution_time=execution_time,

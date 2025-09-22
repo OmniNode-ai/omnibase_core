@@ -10,16 +10,18 @@ from __future__ import annotations
 from typing import Any, Literal
 from uuid import UUID
 
-# Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
-# These were removed to comply with ONEX strong typing standards.
-# Using explicit types: dict[str, Any], list[Any], Any
-
 from pydantic import BaseModel, Field, model_validator
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
+
+# Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
+# These were removed to comply with ONEX strong typing standards.
+# Using explicit types: dict[str, Any], list[Any], Any
+
+
 
 
 class ModelFlexibleValue(BaseModel):
@@ -31,7 +33,14 @@ class ModelFlexibleValue(BaseModel):
     """
 
     value_type: Literal[
-        "string", "integer", "float", "boolean", "dict", "list", "uuid", "none",
+        "string",
+        "integer",
+        "float",
+        "boolean",
+        "dict",
+        "list",
+        "uuid",
+        "none",
     ] = Field(description="Type discriminator for value")
 
     # Value storage (only one should be populated)
@@ -45,7 +54,9 @@ class ModelFlexibleValue(BaseModel):
 
     # Metadata
     source: str | None = Field(None, description="Source of the value")
-    is_validated: bool = Field(default=False, description="Whether value has been validated")
+    is_validated: bool = Field(
+        default=False, description="Whether value has been validated"
+    )
 
     @model_validator(mode="after")
     def validate_single_value(self) -> ModelFlexibleValue:
@@ -70,10 +81,14 @@ class ModelFlexibleValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="No values should be set when value_type is 'none'",
-                    details=ModelErrorContext.with_context({
-                        "value_type": ModelSchemaValue.from_value(self.value_type),
-                        "non_none_count": ModelSchemaValue.from_value(str(non_none_count)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "value_type": ModelSchemaValue.from_value(self.value_type),
+                            "non_none_count": ModelSchemaValue.from_value(
+                                str(non_none_count)
+                            ),
+                        }
+                    ),
                 )
         else:
             # For other types, exactly one value should be set
@@ -81,11 +96,17 @@ class ModelFlexibleValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Exactly one value must be set for value_type '{self.value_type}'",
-                    details=ModelErrorContext.with_context({
-                        "value_type": ModelSchemaValue.from_value(self.value_type),
-                        "non_none_count": ModelSchemaValue.from_value(str(non_none_count)),
-                        "expected_value": ModelSchemaValue.from_value(self.value_type),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "value_type": ModelSchemaValue.from_value(self.value_type),
+                            "non_none_count": ModelSchemaValue.from_value(
+                                str(non_none_count)
+                            ),
+                            "expected_value": ModelSchemaValue.from_value(
+                                self.value_type
+                            ),
+                        }
+                    ),
                 )
 
             # Validate that the correct value is set for the type
@@ -94,10 +115,14 @@ class ModelFlexibleValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Required value for type '{self.value_type}' is None",
-                    details=ModelErrorContext.with_context({
-                        "value_type": ModelSchemaValue.from_value(self.value_type),
-                        "required_field": ModelSchemaValue.from_value(f"{self.value_type}_value"),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "value_type": ModelSchemaValue.from_value(self.value_type),
+                            "required_field": ModelSchemaValue.from_value(
+                                f"{self.value_type}_value"
+                            ),
+                        }
+                    ),
                 )
 
         return self
@@ -143,7 +168,9 @@ class ModelFlexibleValue(BaseModel):
         )
 
     @classmethod
-    def from_dict_value(cls, value: dict[str, Any], source: str | None = None) -> ModelFlexibleValue:
+    def from_dict_value(
+        cls, value: dict[str, Any], source: str | None = None
+    ) -> ModelFlexibleValue:
         """Create flexible value wrapping a dictionary value (not deserializing model fields)."""
         return cls(
             value_type="dict",
@@ -153,7 +180,9 @@ class ModelFlexibleValue(BaseModel):
         )
 
     @classmethod
-    def from_list(cls, value: list[Any], source: str | None = None) -> ModelFlexibleValue:
+    def from_list(
+        cls, value: list[Any], source: str | None = None
+    ) -> ModelFlexibleValue:
         """Create flexible value from list."""
         return cls(
             value_type="list",
@@ -224,12 +253,14 @@ class ModelFlexibleValue(BaseModel):
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown value_type: {self.value_type}",
-            details=ModelErrorContext.with_context({
-                "value_type": ModelSchemaValue.from_value(self.value_type),
-                "supported_types": ModelSchemaValue.from_value(
-                    "string, integer, float, boolean, dict, list, uuid, none",
-                ),
-            }),
+            details=ModelErrorContext.with_context(
+                {
+                    "value_type": ModelSchemaValue.from_value(self.value_type),
+                    "supported_types": ModelSchemaValue.from_value(
+                        "string, integer, float, boolean, dict, list, uuid, none",
+                    ),
+                }
+            ),
         )
 
     def get_python_type(self) -> type:
@@ -270,13 +301,13 @@ class ModelFlexibleValue(BaseModel):
                 self.value_type == other.value_type
                 and self.get_value() == other.get_value()
             )
-        return self.get_value() == other
+        return bool(self.get_value() == other)
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison."""
         if isinstance(other, ModelFlexibleValue):
             return self.compare_value(other)
-        return self.get_value() == other
+        return bool(self.get_value() == other)
 
     def __str__(self) -> str:
         """String representation."""

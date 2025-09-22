@@ -191,7 +191,8 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
 
     def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add metadata entry."""
-        self.metadata.set_custom_value(key, value)
+        from ..common.model_schema_value import ModelSchemaValue
+        self.metadata.set_custom_value(key, ModelSchemaValue.from_value(value))
 
     def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get metadata entry with optional default."""

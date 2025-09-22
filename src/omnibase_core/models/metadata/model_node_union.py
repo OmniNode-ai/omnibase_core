@@ -65,15 +65,19 @@ class ModelNodeUnion(BaseModel):
         return cls(node_type="function_node", function_node=node)
 
     @classmethod
-    def from_function_node_data(cls, node_data: ModelFunctionNodeData) -> "ModelNodeUnion":
+    def from_function_node_data(
+        cls, node_data: ModelFunctionNodeData
+    ) -> "ModelNodeUnion":
         """Create union from function node data."""
         return cls(node_type="function_node_data", function_node_data=node_data)
 
     def get_node(self) -> ModelFunctionNode | ModelFunctionNodeData:
         """Get the actual node value."""
         if self.node_type == "function_node":
+            assert self.function_node is not None  # Guaranteed by validator
             return self.function_node
         else:
+            assert self.function_node_data is not None  # Guaranteed by validator
             return self.function_node_data
 
 

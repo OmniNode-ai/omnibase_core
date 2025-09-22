@@ -166,7 +166,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Get a custom parameter. CLI parameters are strings."""
         cli_value = self.custom_parameters.get(key)
         if cli_value is not None:
-            return cli_value.to_python_value()
+            return str(cli_value.to_python_value())
         return default
 
     def enable_debug_mode(self) -> None:

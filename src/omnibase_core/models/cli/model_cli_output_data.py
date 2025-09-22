@@ -94,9 +94,9 @@ class ModelCliOutputData(BaseModel):
     def get_field_value(self, key: str, default: str = "") -> str:
         """Get a field value from results or metadata. CLI fields are strings."""
         if key in self.results:
-            return self.results[key].to_python_value()
+            return str(self.results[key].to_python_value())
         if key in self.metadata:
-            return self.metadata[key].to_python_value()
+            return str(self.metadata[key].to_python_value())
         return default
 
     def set_field_value(self, key: str, value: str) -> None:
