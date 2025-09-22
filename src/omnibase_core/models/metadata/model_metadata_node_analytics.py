@@ -18,6 +18,7 @@ from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...utils.uuid_utilities import uuid_from_string
 from ..infrastructure.model_metrics_data import ModelMetricsData
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
+from ..infrastructure.model_cli_value import ModelCliValue
 
 # Removed Any import - replaced with specific types
 
@@ -180,14 +181,18 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def add_custom_metric(self, name: str, value: str | int | float | bool) -> None:
         """Add a custom metric."""
-        self.custom_metrics.add_metric(name, value)
+        # Convert to ModelCliValue for type-safe storage
+        cli_value = ModelCliValue.from_any(value)
+        self.custom_metrics.add_metric(name, cli_value.to_python_value())
 
     def get_custom_metric(
-        self, name: str, default: str | int | float | bool | None = None
-    ) -> str | int | float | bool | None:
+        self, name: str, default: ModelCliValue | None = None
+    ) -> ModelCliValue | None:
         """Get a custom metric value."""
         value = self.custom_metrics.get_metric_by_key(name)
-        return value if value is not None else default
+        if value is not None:
+            return ModelCliValue.from_any(value)
+        return default
 
     def update_timestamp(self) -> None:
         """Update the last modified timestamp."""

@@ -9,6 +9,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, model_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
+
 
 class ModelConnectionPool(BaseModel):
     """
@@ -46,7 +49,10 @@ class ModelConnectionPool(BaseModel):
         """Validate pool configuration consistency."""
         if self.pool_size and self.max_overflow:
             if self.max_overflow > self.pool_size:
-                raise ValueError("max_overflow cannot exceed pool_size")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="max_overflow cannot exceed pool_size",
+                )
         return self
 
     def is_pooling_enabled(self) -> bool:

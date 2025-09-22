@@ -19,6 +19,7 @@ from .enum_config_type import EnumConfigType
 from .enum_connection_state import EnumConnectionState
 from .enum_connection_type import EnumConnectionType
 from .enum_context_type import EnumContextType
+from .enum_core_error_code import EnumCoreErrorCode
 from .enum_data_format import EnumDataFormat
 from .enum_data_type import EnumDataType
 from .enum_debug_level import EnumDebugLevel
@@ -45,6 +46,7 @@ from .enum_metrics_category import EnumMetricsCategory
 from .enum_node_capability import EnumNodeCapability
 from .enum_node_health_status import EnumNodeHealthStatus
 from .enum_node_type import EnumNodeType
+from .enum_onex_status import EnumOnexStatus
 from .enum_output_format import EnumOutputFormat
 from .enum_output_type import EnumOutputType
 from .enum_parameter_type import EnumParameterType
@@ -84,6 +86,7 @@ __all__ = [
     "EnumComplexity",
     "EnumComplexityLevel",
     "EnumConfigCategory",
+    "EnumCoreErrorCode",
     "EnumConnectionState",
     "EnumConnectionType",
     "EnumContextType",
@@ -112,6 +115,7 @@ __all__ = [
     "EnumNodeCapability",
     "EnumNodeHealthStatus",
     "EnumNodeType",
+    "EnumOnexStatus",
     "EnumOutputFormat",
     "EnumOutputType",
     "EnumParameterType",

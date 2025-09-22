@@ -11,6 +11,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
+
 
 class ModelConnectionSecurity(BaseModel):
     """
@@ -37,14 +40,19 @@ class ModelConnectionSecurity(BaseModel):
         """Validate SSL certificate paths exist when SSL is enabled."""
         if self.use_ssl:
             if self.ssl_cert_path and not self.ssl_cert_path.exists():
-                raise ValueError(
-                    f"SSL certificate path does not exist: {self.ssl_cert_path}"
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"SSL certificate path does not exist: {self.ssl_cert_path}",
                 )
             if self.ssl_key_path and not self.ssl_key_path.exists():
-                raise ValueError(f"SSL key path does not exist: {self.ssl_key_path}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"SSL key path does not exist: {self.ssl_key_path}",
+                )
             if self.ssl_ca_path and not self.ssl_ca_path.exists():
-                raise ValueError(
-                    f"SSL CA bundle path does not exist: {self.ssl_ca_path}"
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"SSL CA bundle path does not exist: {self.ssl_ca_path}",
                 )
         return self
 

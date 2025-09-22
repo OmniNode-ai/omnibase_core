@@ -8,6 +8,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
+
 
 class ModelDataHandlingDeclaration(BaseModel):
     """Data handling and classification declaration."""
@@ -35,17 +38,19 @@ class ModelDataHandlingDeclaration(BaseModel):
         # If processing sensitive data, should have classification or residency requirements
         if self.processes_sensitive_data:
             if not self.data_classification and not self.data_residency_required:
-                raise ValueError(
-                    "When processing sensitive data, either data_classification or "
-                    "data_residency_required must be specified"
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="When processing sensitive data, either data_classification or "
+                    "data_residency_required must be specified",
                 )
 
             # Certain classifications require residency requirements
             if self.data_classification in ["CONFIDENTIAL", "RESTRICTED"]:
                 if not self.data_residency_required:
-                    raise ValueError(
-                        f"Data classification '{self.data_classification}' requires "
-                        "data_residency_required to be specified"
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=f"Data classification '{self.data_classification}' requires "
+                        "data_residency_required to be specified",
                     )
 
         return self

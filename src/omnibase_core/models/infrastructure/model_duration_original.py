@@ -11,6 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
+
 
 class ModelDuration(BaseModel):
     """
@@ -42,7 +45,7 @@ class ModelDuration(BaseModel):
         """Ensure duration is non-negative."""
         if v < 0:
             msg = "Duration must be non-negative"
-            raise ValueError(msg)
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def total_milliseconds(self) -> int:

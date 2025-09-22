@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_debug_level import EnumDebugLevel
 from ...enums.enum_security_level import EnumSecurityLevel
+from ...exceptions.onex_error import OnexError
 from .model_output_format_options import ModelOutputFormatOptions
 
 
@@ -100,19 +102,28 @@ class ModelCliAdvancedParams(BaseModel):
     def set_timeout(self, seconds: float) -> None:
         """Set timeout with validation."""
         if seconds <= 0:
-            raise ValueError("Timeout must be positive")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Timeout must be positive",
+            )
         self.timeout_seconds = seconds
 
     def set_memory_limit(self, mb: int) -> None:
         """Set memory limit with validation."""
         if mb <= 0:
-            raise ValueError("Memory limit must be positive")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Memory limit must be positive",
+            )
         self.memory_limit_mb = mb
 
     def set_cpu_limit(self, percent: float) -> None:
         """Set CPU limit with validation."""
         if not 0.0 <= percent <= 100.0:
-            raise ValueError("CPU limit must be between 0.0 and 100.0")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="CPU limit must be between 0.0 and 100.0",
+            )
         self.cpu_limit_percent = percent
 
     def add_environment_variable(self, key: str, value: str) -> None:

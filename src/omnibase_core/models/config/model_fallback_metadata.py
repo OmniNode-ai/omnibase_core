@@ -28,16 +28,16 @@ class ModelFallbackMetadata(BaseModel):
     )
 
     feature_flags: dict[str, bool] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Boolean feature flags for fallback behavior",
     )
 
     custom_properties: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="String-based custom configuration properties",
     )
 
     numeric_settings: dict[str, float] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Numeric configuration values",
     )

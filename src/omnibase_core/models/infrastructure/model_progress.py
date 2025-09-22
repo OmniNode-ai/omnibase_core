@@ -12,8 +12,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_status_message import EnumStatusMessage
+from ...exceptions.onex_error import OnexError
 from .model_metrics_data import ModelMetricsData
 from .model_time_based import ModelTimeBased
 
@@ -123,7 +125,7 @@ class ModelProgress(BaseModel):
             total = info.data["total_steps"]
             if v > total:
                 msg = "Current step cannot exceed total steps"
-                raise ValueError(msg)
+                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     @field_validator("milestones")
@@ -133,7 +135,7 @@ class ModelProgress(BaseModel):
         for name, percentage in v.items():
             if not 0.0 <= percentage <= 100.0:
                 msg = f"Milestone '{name}' percentage must be between 0.0 and 100.0"
-                raise ValueError(msg)
+                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def model_post_init(self, __context: Any) -> None:
@@ -274,7 +276,7 @@ class ModelProgress(BaseModel):
         """Add a progress milestone."""
         if not 0.0 <= percentage <= 100.0:
             msg = "Milestone percentage must be between 0.0 and 100.0"
-            raise ValueError(msg)
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         self.milestones[name] = percentage
         self._check_milestones()
 

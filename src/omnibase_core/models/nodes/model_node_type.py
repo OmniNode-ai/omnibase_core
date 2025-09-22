@@ -13,8 +13,10 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from ...enums.enum_config_category import EnumConfigCategory
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_return_type import EnumReturnType
 from ...enums.enum_type_name import EnumTypeName
+from ...exceptions.onex_error import OnexError
 
 
 class ModelNodeType(BaseModel):
@@ -464,8 +466,9 @@ class ModelNodeType(BaseModel):
             )
         except ValueError:
             # If name is not in enum, we can't create it - this maintains type safety
-            raise ValueError(
-                f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}"
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}",
             )
 
     @property

@@ -13,6 +13,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from .model_validation_error import ModelValidationError
+from .model_validation_value import ModelValidationValue
 
 
 class ModelValidationContainer(BaseModel):
@@ -38,7 +39,7 @@ class ModelValidationContainer(BaseModel):
         message: str,
         field: Optional[str] = None,
         error_code: Optional[str] = None,
-        details: Optional[dict[str, str | int | bool]] = None,
+        details: Optional[dict[str, ModelValidationValue]] = None,
     ) -> None:
         """Add a standard validation error."""
         error = ModelValidationError.create_error(
@@ -50,12 +51,34 @@ class ModelValidationContainer(BaseModel):
             error.details = details
         self.errors.append(error)
 
+    def add_error_with_raw_details(
+        self,
+        message: str,
+        field: Optional[str] = None,
+        error_code: Optional[str] = None,
+        raw_details: Optional[dict[str, str | int | bool]] = None,
+    ) -> None:
+        """Add a standard validation error with automatic conversion of raw details."""
+        converted_details = None
+        if raw_details:
+            converted_details = {
+                key: ModelValidationValue.from_any(value)
+                for key, value in raw_details.items()
+            }
+
+        self.add_error(
+            message=message,
+            field=field,
+            error_code=error_code,
+            details=converted_details,
+        )
+
     def add_critical_error(
         self,
         message: str,
         field: Optional[str] = None,
         error_code: Optional[str] = None,
-        details: Optional[dict[str, str | int | bool]] = None,
+        details: Optional[dict[str, ModelValidationValue]] = None,
     ) -> None:
         """Add a critical validation error."""
         error = ModelValidationError.create_critical(
@@ -66,6 +89,28 @@ class ModelValidationContainer(BaseModel):
         if details:
             error.details = details
         self.errors.append(error)
+
+    def add_critical_error_with_raw_details(
+        self,
+        message: str,
+        field: Optional[str] = None,
+        error_code: Optional[str] = None,
+        raw_details: Optional[dict[str, str | int | bool]] = None,
+    ) -> None:
+        """Add a critical validation error with automatic conversion of raw details."""
+        converted_details = None
+        if raw_details:
+            converted_details = {
+                key: ModelValidationValue.from_any(value)
+                for key, value in raw_details.items()
+            }
+
+        self.add_critical_error(
+            message=message,
+            field=field,
+            error_code=error_code,
+            details=converted_details,
+        )
 
     def add_warning(self, message: str) -> None:
         """Add a warning message (deduplicated)."""

@@ -15,6 +15,7 @@ from ...enums.enum_field_type import EnumFieldType
 from ...utils.uuid_utilities import uuid_from_string
 from .model_field_identity import ModelFieldIdentity
 from .model_field_validation_rules import ModelFieldValidationRules
+from ..infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelMetadataFieldInfo(BaseModel):
@@ -52,9 +53,9 @@ class ModelMetadataFieldInfo(BaseModel):
         description="Python type of the field",
     )
 
-    default_value: str | int | float | bool | None = Field(
+    default_value: ModelCliValue | None = Field(
         default=None,
-        description="Default value for optional fields (restricted to basic types)",
+        description="Default value for optional fields with strongly-typed values",
     )
 
     # Validation rules (grouped)
@@ -80,7 +81,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value="0.1.0",
+            default_value=ModelCliValue.from_string("0.1.0"),
         )
 
     @classmethod
@@ -99,7 +100,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value="0.1.0",
+            default_value=ModelCliValue.from_string("0.1.0"),
         )
 
     @classmethod
@@ -136,7 +137,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value="1.0.0",
+            default_value=ModelCliValue.from_string("1.0.0"),
         )
 
     @classmethod

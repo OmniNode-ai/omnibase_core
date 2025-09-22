@@ -12,10 +12,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_data_classification import EnumDataClassification
 from ...enums.enum_result_category import EnumResultCategory
 from ...enums.enum_result_type import EnumResultType
 from ...enums.enum_retention_policy import EnumRetentionPolicy
+from ...exceptions.onex_error import OnexError
 from ...utils.uuid_utilities import uuid_from_string
 from ..metadata.model_semver import ModelSemVer
 
@@ -140,14 +142,20 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            raise ValueError("Quality score must be between 0.0 and 1.0")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Quality score must be between 0.0 and 1.0",
+            )
 
     def set_confidence_level(self, confidence: float) -> None:
         """Set the confidence level."""
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            raise ValueError("Confidence level must be between 0.0 and 1.0")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Confidence level must be between 0.0 and 1.0",
+            )
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
         """Add resource usage information."""

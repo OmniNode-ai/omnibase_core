@@ -19,6 +19,7 @@ from ...utils.uuid_utilities import uuid_from_string
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_semver import ModelSemVer
 from .model_typed_metrics import ModelTypedMetrics
+from ..infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelFunctionNodeData(BaseModel):
@@ -80,17 +81,11 @@ class ModelFunctionNodeData(BaseModel):
         )
 
     def add_numeric_property(
-        self, name: str, value: int | float, **kwargs: Any
+        self, name: str, value: float, **kwargs: Any
     ) -> None:
         """Add a numeric property."""
-        if isinstance(value, int):
-            # Convert integer to float for consistent type handling
-            metric: ModelTypedMetrics[float] = ModelTypedMetrics.float_metric(
-                name=name, value=float(value), **kwargs
-            )
-        else:
-            # Use float_metric for float values
-            metric = ModelTypedMetrics.float_metric(name=name, value=value, **kwargs)
+        # Use float_metric for numeric values (int converted to float automatically)
+        metric = ModelTypedMetrics.float_metric(name=name, value=value, **kwargs)
         self.numeric_properties.append(metric)
 
     def add_boolean_property(self, name: str, value: bool, **kwargs: Any) -> None:
@@ -104,7 +99,7 @@ class ModelFunctionNodeData(BaseModel):
         config_id: UUID,
         config_display_name: str,
         config_type: EnumConfigType,
-        settings: dict[str, str | int | bool | float],
+        settings: dict[str, ModelCliValue],
     ) -> None:
         """Add a configuration object."""
         self.configurations.append(

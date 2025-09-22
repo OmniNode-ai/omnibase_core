@@ -12,7 +12,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_property_type import EnumPropertyType
+from ...exceptions.onex_error import OnexError
+from ...models.common.model_error_context import ModelErrorContext
+from ...models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelPropertyValue(BaseModel):
@@ -52,25 +56,73 @@ class ModelPropertyValue(BaseModel):
 
             # Type validation based on declared type
             if value_type == EnumPropertyType.STRING and not isinstance(v, str):
-                raise ValueError(f"Value must be string, got {type(v)}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be string, got {type(v)}",
+                    details=ModelErrorContext.with_context({
+                        "expected_type": ModelSchemaValue.from_value("string"),
+                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                        "value": ModelSchemaValue.from_value(str(v)),
+                    }),
+                )
             elif value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
-                raise ValueError(f"Value must be integer, got {type(v)}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be integer, got {type(v)}",
+                    details=ModelErrorContext.with_context({
+                        "expected_type": ModelSchemaValue.from_value("integer"),
+                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                        "value": ModelSchemaValue.from_value(str(v)),
+                    }),
+                )
             elif value_type == EnumPropertyType.FLOAT and not isinstance(
                 v, (int, float)
             ):
-                raise ValueError(f"Value must be float, got {type(v)}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be float, got {type(v)}",
+                    details=ModelErrorContext.with_context({
+                        "expected_type": ModelSchemaValue.from_value("float"),
+                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                        "value": ModelSchemaValue.from_value(str(v)),
+                    }),
+                )
             elif value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
-                raise ValueError(f"Value must be boolean, got {type(v)}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be boolean, got {type(v)}",
+                    details=ModelErrorContext.with_context({
+                        "expected_type": ModelSchemaValue.from_value("boolean"),
+                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                        "value": ModelSchemaValue.from_value(str(v)),
+                    }),
+                )
             elif value_type in (
                 EnumPropertyType.STRING_LIST,
                 EnumPropertyType.INTEGER_LIST,
                 EnumPropertyType.FLOAT_LIST,
             ) and not isinstance(v, list):
-                raise ValueError(f"Value must be list, got {type(v)}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be list, got {type(v)}",
+                    details=ModelErrorContext.with_context({
+                        "expected_type": ModelSchemaValue.from_value("list"),
+                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                        "value": ModelSchemaValue.from_value(str(v)),
+                    }),
+                )
             elif value_type == EnumPropertyType.DATETIME and not isinstance(
                 v, datetime
             ):
-                raise ValueError(f"Value must be datetime, got {type(v)}")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be datetime, got {type(v)}",
+                    details=ModelErrorContext.with_context({
+                        "expected_type": ModelSchemaValue.from_value("datetime"),
+                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                        "value": ModelSchemaValue.from_value(str(v)),
+                    }),
+                )
 
         return v
 
@@ -152,7 +204,15 @@ class ModelPropertyValue(BaseModel):
             return int(self.value)
         if isinstance(self.value, str):
             return int(self.value)
-        raise ValueError(f"Cannot convert {self.value_type} to int")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot convert {self.value_type} to int",
+            details=ModelErrorContext.with_context({
+                "source_type": ModelSchemaValue.from_value(str(self.value_type)),
+                "target_type": ModelSchemaValue.from_value("int"),
+                "value": ModelSchemaValue.from_value(str(self.value)),
+            }),
+        )
 
     def as_float(self) -> float:
         """Get value as float."""
@@ -160,7 +220,15 @@ class ModelPropertyValue(BaseModel):
             return float(self.value)
         if isinstance(self.value, str):
             return float(self.value)
-        raise ValueError(f"Cannot convert {self.value_type} to float")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot convert {self.value_type} to float",
+            details=ModelErrorContext.with_context({
+                "source_type": ModelSchemaValue.from_value(str(self.value_type)),
+                "target_type": ModelSchemaValue.from_value("float"),
+                "value": ModelSchemaValue.from_value(str(self.value)),
+            }),
+        )
 
     def as_bool(self) -> bool:
         """Get value as boolean."""

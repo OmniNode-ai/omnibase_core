@@ -7,6 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+# Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -25,7 +26,7 @@ class ModelMetricsData(BaseModel):
     With proper structured data using a single generic metric type.
     """
 
-    # Single list of universal metrics
+    # Single list of universal metrics using discriminated union pattern
     metrics: list[ModelMetric] = Field(
         default_factory=list, description="Collection of typed metrics"
     )
@@ -51,20 +52,12 @@ class ModelMetricsData(BaseModel):
         description: str | None = None,
         unit: str | None = None,
     ) -> None:
-        """Add a metric with automatic type detection."""
-        if isinstance(value, bool):  # Check bool first since bool is subclass of int
-            metric_type = EnumMetricDataType.BOOLEAN
-        elif isinstance(value, str):
-            metric_type = EnumMetricDataType.STRING
-        else:  # Must be int or float based on type annotation
-            metric_type = EnumMetricDataType.NUMERIC
-
-        metric = ModelMetric(
+        """Add a metric with automatic type detection using factory methods."""
+        metric = ModelMetric.from_any_value(
             key=key,
             value=value,
-            metric_type=metric_type,
             unit=unit,
-            description=description,
+            description=description
         )
         self.metrics.append(metric)
 
@@ -83,7 +76,9 @@ class ModelMetricsData(BaseModel):
         """Clear all metrics."""
         self.metrics.clear()
 
-    def get_metrics_by_type(self, metric_type: EnumMetricDataType) -> list[ModelMetric]:
+    def get_metrics_by_type(
+        self, metric_type: EnumMetricDataType
+    ) -> list[ModelMetric]:
         """Get all metrics of a specific type."""
         return [metric for metric in self.metrics if metric.metric_type == metric_type]
 

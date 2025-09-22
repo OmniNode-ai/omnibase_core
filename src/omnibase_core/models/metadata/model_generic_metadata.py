@@ -11,6 +11,7 @@ from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 from pydantic import BaseModel, Field
 
 from .model_semver import ModelSemVer
+from ..infrastructure.model_cli_value import ModelCliValue
 
 # Simple TypeVar constraint for metadata types
 T = TypeVar("T", str, int, bool, float)
@@ -39,16 +40,19 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         default_factory=list,
         description="Metadata tags",
     )
-    custom_fields: dict[str, str | int | float | bool] | None = Field(
+    custom_fields: dict[str, ModelCliValue] | None = Field(
         default=None,
-        description="Custom metadata fields",
+        description="Custom metadata fields with strongly-typed values",
     )
 
     def get_field(self, key: str, default: T) -> T:
         """Get a custom field value with type safety."""
         if self.custom_fields is None:
             return default
-        return cast(T, self.custom_fields.get(key, default))
+        cli_value = self.custom_fields.get(key)
+        if cli_value is None:
+            return default
+        return cast(T, cli_value.to_python_value())
 
     def set_field(self, key: str, value: T) -> None:
         """Set a custom field value with type validation."""
@@ -58,15 +62,18 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             )
         if self.custom_fields is None:
             self.custom_fields = {}
-        self.custom_fields[key] = value
+        self.custom_fields[key] = ModelCliValue.from_any(value)
 
     def get_typed_field(self, key: str, field_type: type[T], default: T) -> T:
         """Get a custom field value with specific type checking."""
         if self.custom_fields is None:
             return default
-        value = self.custom_fields.get(key)
-        if value is not None and isinstance(value, field_type):
-            return value
+        cli_value = self.custom_fields.get(key)
+        if cli_value is None:
+            return default
+        python_value = cli_value.to_python_value()
+        if isinstance(python_value, field_type):
+            return python_value
         return default
 
     def set_typed_field(self, key: str, value: T) -> None:
@@ -76,17 +83,16 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             if self.custom_fields is None:
                 self.custom_fields = {}
 
-            # Convert to a supported primitive type
+            # Convert to ModelCliValue for strongly-typed storage
             if hasattr(value, "__dict__"):
                 # For complex objects, store as string representation
-                self.custom_fields[key] = str(value)
+                self.custom_fields[key] = ModelCliValue.from_string(str(value))
             else:
-                # For primitive types, store directly if they match MetadataValue
+                # For primitive types, use ModelCliValue.from_any() for type-safe storage
                 if isinstance(value, (str, int, float, bool)):
-                    # Safe assignment since value is guaranteed to be one of the union types
-                    self.custom_fields[key] = value
+                    self.custom_fields[key] = ModelCliValue.from_any(value)
                 else:
-                    self.custom_fields[key] = str(value)
+                    self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
             raise TypeError(
                 f"Value type {type(value)} not supported for metadata storage"

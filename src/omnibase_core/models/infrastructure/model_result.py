@@ -11,6 +11,9 @@ from typing import Any, Callable, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+
 from .model_result_dict import ModelResultData, ModelResultDict
 
 # Type variables for Result pattern
@@ -42,13 +45,22 @@ class Result(BaseModel, Generic[T, E]):
 
         # Validate that exactly one of value or error is set
         if success and value is None:
-            raise ValueError("Success result must have a value")
+            raise OnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR, "Success result must have a value"
+            )
         if not success and error is None:
-            raise ValueError("Error result must have an error")
+            raise OnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR, "Error result must have an error"
+            )
         if success and error is not None:
-            raise ValueError("Success result cannot have an error")
+            raise OnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                "Success result cannot have an error",
+            )
         if not success and value is not None:
-            raise ValueError("Error result cannot have a value")
+            raise OnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR, "Error result cannot have a value"
+            )
 
     @classmethod
     def ok(cls, value: T) -> Result[T, E]:
@@ -76,16 +88,24 @@ class Result(BaseModel, Generic[T, E]):
             ValueError: If result is an error
         """
         if not self.success:
-            raise ValueError(f"Called unwrap() on error result: {self.error}")
+            raise OnexError(
+                EnumCoreErrorCode.OPERATION_FAILED,
+                f"Called unwrap() on error result: {self.error}",
+            )
         if self.value is None:
-            raise ValueError("Success result has None value")
+            raise OnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR, "Success result has None value"
+            )
         return self.value
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
         if self.success:
             if self.value is None:
-                raise ValueError("Success result has None value")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Success result has None value",
+                )
             return self.value
         return default
 
@@ -93,10 +113,16 @@ class Result(BaseModel, Generic[T, E]):
         """Unwrap the value or compute from error using function."""
         if self.success:
             if self.value is None:
-                raise ValueError("Success result has None value")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Success result has None value",
+                )
             return self.value
         if self.error is None:
-            raise ValueError("Error result has None error")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Error result has None error",
+            )
         return f(self.error)
 
     def expect(self, msg: str) -> T:
@@ -110,9 +136,14 @@ class Result(BaseModel, Generic[T, E]):
             ValueError: If result is an error, with custom message
         """
         if not self.success:
-            raise ValueError(f"{msg}: {self.error}")
+            raise OnexError(
+                code=EnumCoreErrorCode.OPERATION_FAILED, message=f"{msg}: {self.error}"
+            )
         if self.value is None:
-            raise ValueError("Success result has None value")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Success result has None value",
+            )
         return self.value
 
     def map(self, f: Callable[[T], U]) -> Result[U, E | Exception]:
@@ -125,14 +156,20 @@ class Result(BaseModel, Generic[T, E]):
         if self.success:
             try:
                 if self.value is None:
-                    raise ValueError("Success result has None value")
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message="Success result has None value",
+                    )
                 new_value = f(self.value)
                 return Result.ok(new_value)
             except Exception as e:
                 # Convert exceptions to error results
                 return Result.err(e)
         if self.error is None:
-            raise ValueError("Error result has None error")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Error result has None error",
+            )
         return Result.err(self.error)
 
     def map_err(self, f: Callable[[E], F]) -> Result[T, F | Exception]:
@@ -144,11 +181,17 @@ class Result(BaseModel, Generic[T, E]):
         """
         if self.success:
             if self.value is None:
-                raise ValueError("Success result has None value")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Success result has None value",
+                )
             return Result.ok(self.value)
         try:
             if self.error is None:
-                raise ValueError("Error result has None error")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Error result has None error",
+                )
             new_error = f(self.error)
             return Result.err(new_error)
         except Exception as e:
@@ -164,14 +207,20 @@ class Result(BaseModel, Generic[T, E]):
         if self.success:
             try:
                 if self.value is None:
-                    raise ValueError("Success result has None value")
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message="Success result has None value",
+                    )
                 result = f(self.value)
                 # Cast the result to the expected type since we know it's compatible
                 return cast(Result[U, E | Exception], result)
             except Exception as e:
                 return Result.err(e)
         if self.error is None:
-            raise ValueError("Error result has None error")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Error result has None error",
+            )
         return Result.err(self.error)
 
     def or_else(self, f: Callable[[E], "Result[T, F]"]) -> Result[T, F | Exception]:
@@ -183,11 +232,17 @@ class Result(BaseModel, Generic[T, E]):
         """
         if self.success:
             if self.value is None:
-                raise ValueError("Success result has None value")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Success result has None value",
+                )
             return Result.ok(self.value)
         try:
             if self.error is None:
-                raise ValueError("Error result has None error")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Error result has None error",
+                )
             result = f(self.error)
             return cast(Result[T, F | Exception], result)
         except Exception as e:
@@ -258,7 +313,10 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
             values.append(result.unwrap())
         else:
             if result.error is None:
-                raise ValueError("Error result has None error")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Error result has None error",
+                )
             errors.append(result.error)
 
     if errors:

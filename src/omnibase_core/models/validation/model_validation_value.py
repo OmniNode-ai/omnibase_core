@@ -1,0 +1,118 @@
+"""
+Validation value object model.
+
+Strongly-typed value object for validation details, replacing union types
+with discriminated union patterns following ONEX strong typing standards.
+"""
+
+from __future__ import annotations
+
+from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
+
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
+
+
+class EnumValidationValueType(str, Enum):
+    """Validation value type enumeration."""
+
+    STRING = "string"
+    INTEGER = "integer"
+    BOOLEAN = "boolean"
+    NULL = "null"
+
+
+class ModelValidationValue(BaseModel):
+    """
+    Validation value object with discriminated union pattern.
+
+    Replaces Union[str, int, bool] in validation details with
+    a strongly-typed discriminated union following ONEX patterns.
+    """
+
+    value_type: EnumValidationValueType = Field(description="Type of the validation value")
+    raw_value: Any = Field(description="Raw value data")
+
+    @field_validator("raw_value")
+    @classmethod
+    def validate_raw_value(cls, v: Any, info: Any) -> Any:
+        """Validate raw value matches declared type."""
+        if "value_type" not in info.data:
+            return v
+
+        value_type = info.data["value_type"]
+
+        if value_type == EnumValidationValueType.STRING and not isinstance(v, str):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="String validation value must contain str data"
+            )
+        elif value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Integer validation value must contain int data"
+            )
+        elif value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Boolean validation value must contain bool data"
+            )
+        elif value_type == EnumValidationValueType.NULL and v is not None:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Null validation value must contain None"
+            )
+
+        return v
+
+    @classmethod
+    def from_string(cls, value: str) -> ModelValidationValue:
+        """Create validation value from string."""
+        return cls(value_type=EnumValidationValueType.STRING, raw_value=value)
+
+    @classmethod
+    def from_integer(cls, value: int) -> ModelValidationValue:
+        """Create validation value from integer."""
+        return cls(value_type=EnumValidationValueType.INTEGER, raw_value=value)
+
+    @classmethod
+    def from_boolean(cls, value: bool) -> ModelValidationValue:
+        """Create validation value from boolean."""
+        return cls(value_type=EnumValidationValueType.BOOLEAN, raw_value=value)
+
+    @classmethod
+    def from_null(cls) -> ModelValidationValue:
+        """Create validation value for null/None."""
+        return cls(value_type=EnumValidationValueType.NULL, raw_value=None)
+
+    @classmethod
+    def from_any(cls, value: Any) -> ModelValidationValue:
+        """Create validation value from any Python value with automatic type detection."""
+        if value is None:
+            return cls.from_null()
+        elif isinstance(value, str):
+            return cls.from_string(value)
+        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
+            return cls.from_boolean(value)
+        elif isinstance(value, int):
+            return cls.from_integer(value)
+        else:
+            # Convert unknown types to string representation
+            return cls.from_string(str(value))
+
+    def to_python_value(self) -> Any:
+        """Convert back to Python native value."""
+        return self.raw_value
+
+    def __str__(self) -> str:
+        """String representation of the validation value."""
+        if self.value_type == EnumValidationValueType.NULL:
+            return "null"
+        return str(self.raw_value)
+
+
+# Export for use
+__all__ = ["ModelValidationValue", "EnumValidationValueType"]

@@ -13,8 +13,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
 from ..core.model_custom_properties import ModelCustomProperties
 from .model_cli_result_data import ModelCliResultData
+from .model_cli_value import ModelCliValue
 from .model_execution_duration import ModelExecutionDuration
 from .model_execution_summary import ModelExecutionSummary
 from .model_result import Result
@@ -64,9 +67,15 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         """Initialize execution result with proper timing setup."""
         if "success" in data and "value" not in data and "error" not in data:
             if data["success"]:
-                raise ValueError("Success result must have a value")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Success result must have a value",
+                )
             else:
-                raise ValueError("Error result must have an error")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Error result must have an error",
+                )
 
         super().__init__(**data)
 
@@ -236,27 +245,15 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         """
         Convert to CLI result data format.
         """
-        # Type cast for CLI result data compatibility
-        output_data: (
-            str
-            | int
-            | float
-            | bool
-            | dict[str, str | int | float | bool]
-            | list[str | int | float | bool]
-            | None
-        ) = None
+        # Convert value to CLI value object for type safety
+        cli_value: ModelCliValue | None = None
         if self.success and self.value is not None:
-            # Convert value to supported CLI output data type
-            if isinstance(self.value, (str, int, float, bool, dict, list)):
-                output_data = self.value
-            else:
-                output_data = str(self.value)
+            cli_value = ModelCliValue.from_any(self.value)
 
         return ModelCliResultData(
             success=self.success,
             execution_id=self.execution_id,
-            output_data=output_data,
+            output_data=cli_value,
             error_message=(
                 str(self.error) if not self.success and self.error is not None else None
             ),

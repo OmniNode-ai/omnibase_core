@@ -58,3 +58,11 @@ class ModelExamplesCollectionSummary(BaseModel):
             self.completion_rate = (self.valid_example_count / self.example_count) * 100
         else:
             self.completion_rate = 0.0
+
+
+# Export the models
+__all__ = [
+    "ModelExamplesCollectionSummary",
+    "ModelExampleMetadataSummary", 
+    "ModelExampleSummary"
+]

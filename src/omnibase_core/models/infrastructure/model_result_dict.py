@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .model_cli_value import ModelCliValue
+
 
 class ModelResultDict(BaseModel):
     """
@@ -19,15 +21,9 @@ class ModelResultDict(BaseModel):
     """
 
     success: bool = Field(..., description="Whether the operation succeeded")
-    value: (
-        str
-        | int
-        | float
-        | bool
-        | dict[str, str | int | float | bool]
-        | list[str | int | float | bool]
-        | None
-    ) = Field(None, description="Success value (if success=True)")
+    value: ModelCliValue | None = Field(
+        None, description="Success value (if success=True)"
+    )
     error: str | Exception | None = Field(
         None, description="Error value (if success=False)"
     )
@@ -36,7 +32,7 @@ class ModelResultDict(BaseModel):
 
 
 # Type alias for dictionary-based data structures
-ModelResultData = dict[str, str | int | bool]  # Restrictive dict for common data
+ModelResultData = dict[str, ModelCliValue]  # Strongly-typed dict for common data
 
 
 # Export for use

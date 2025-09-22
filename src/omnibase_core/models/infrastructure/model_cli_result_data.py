@@ -12,6 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..core.model_custom_properties import ModelCustomProperties
+from .model_cli_value import ModelCliValue
 
 
 class ModelCliResultData(BaseModel):
@@ -19,15 +20,9 @@ class ModelCliResultData(BaseModel):
 
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
-    output_data: (
-        str
-        | int
-        | float
-        | bool
-        | dict[str, str | int | float | bool]
-        | list[str | int | float | bool]
-        | None
-    ) = Field(description="Output data if successful")
+    output_data: ModelCliValue | None = Field(
+        None, description="Output data if successful"
+    )
     error_message: str | None = Field(description="Error message if failed")
     # Entity reference with UUID
     tool_id: UUID | None = Field(description="Unique identifier of the tool")

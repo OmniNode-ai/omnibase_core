@@ -55,7 +55,9 @@
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_hub_contract_config.py --no-error-summary)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_metadata_node_collection.py --no-error-summary)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_examples_collection.py --no-error-summary)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/exceptions/onex_error.py --no-error-summary)",
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_generic_factory.py --no-error-summary)"
     ],
     "deny": [],
     "ask": []

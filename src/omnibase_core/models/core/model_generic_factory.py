@@ -13,7 +13,11 @@ from typing import Any, Callable, Generic, Type, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_severity_level import EnumSeverityLevel
+from ...exceptions.onex_error import OnexError
+from ..common.model_error_context import ModelErrorContext
+from ..common.model_schema_value import ModelSchemaValue
 
 
 # Structured TypedDicts to reduce string field violations
@@ -125,10 +129,19 @@ class ModelGenericFactory(Generic[T]):
             New instance of T
 
         Raises:
-            ValueError: If factory name is not registered
+            OnexError: If factory name is not registered
         """
         if name not in self._factories:
-            raise ValueError(f"Unknown factory: {name} for {self.model_class.__name__}")
+            raise OnexError(
+                code=EnumCoreErrorCode.NOT_FOUND,
+                message=f"Unknown factory: {name} for {self.model_class.__name__}",
+                details=ModelErrorContext.with_context({
+                    "factory_name": ModelSchemaValue.from_value(name),
+                    "model_class": ModelSchemaValue.from_value(
+                        self.model_class.__name__
+                    ),
+                }),
+            )
         return self._factories[name]()
 
     def build(self, builder_name: str, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
@@ -146,8 +159,15 @@ class ModelGenericFactory(Generic[T]):
             ValueError: If builder name is not registered
         """
         if builder_name not in self._builders:
-            raise ValueError(
-                f"Unknown builder: {builder_name} for {self.model_class.__name__}"
+            raise OnexError(
+                code=EnumCoreErrorCode.NOT_FOUND,
+                message=f"Unknown builder: {builder_name} for {self.model_class.__name__}",
+                details=ModelErrorContext.with_context({
+                    "builder_name": ModelSchemaValue.from_value(builder_name),
+                    "model_class": ModelSchemaValue.from_value(
+                        self.model_class.__name__
+                    ),
+                }),
             )
         return self._builders[builder_name](**kwargs)
 

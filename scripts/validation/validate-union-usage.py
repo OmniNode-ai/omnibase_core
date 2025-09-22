@@ -157,33 +157,74 @@ class UnionUsageChecker(ast.NodeVisitor):
     def visit_Subscript(self, node):
         """Visit subscript nodes (e.g., Union[str, int])."""
         if isinstance(node.value, ast.Name) and node.value.id == "Union":
-            self.union_count += 1
-
-            # Extract union types
-            union_types = []
-            if isinstance(node.slice, ast.Tuple):
-                for elt in node.slice.elts:
-                    type_name = self._extract_type_name(elt)
-                    union_types.append(type_name)
-            else:
-                # Single element in Union (shouldn't happen, but handle it)
-                type_name = self._extract_type_name(node.slice)
-                union_types.append(type_name)
-
-            # Create union pattern for analysis
-            union_pattern = UnionPattern(union_types, node.lineno, self.file_path)
-            self.union_patterns.append(union_pattern)
-
-            # Analyze the pattern
-            self._analyze_union_pattern(union_pattern)
-
-            # Existing check for Union with None
-            if len(union_types) == 2 and "None" in union_types:
-                self.issues.append(
-                    f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
-                )
-
+            self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
+
+    def visit_BinOp(self, node):
+        """Visit binary operation nodes (e.g., str | int | float)."""
+        if isinstance(node.op, ast.BitOr):
+            # Modern union syntax: str | int | float
+            union_types = self._extract_union_from_binop(node)
+            if len(union_types) >= 2:  # Only process if we have multiple types
+                self.union_count += 1
+
+                # Create union pattern for analysis
+                union_pattern = UnionPattern(union_types, node.lineno, self.file_path)
+                self.union_patterns.append(union_pattern)
+
+                # Analyze the pattern
+                self._analyze_union_pattern(union_pattern)
+
+                # Check for None patterns
+                if len(union_types) == 2 and "None" in union_types:
+                    self.issues.append(
+                        f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
+                    )
+        self.generic_visit(node)
+
+    def _extract_union_from_binop(self, node: ast.BinOp) -> List[str]:
+        """Extract union types from modern union syntax (A | B | C)."""
+        types = []
+
+        def collect_types(n):
+            if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
+                collect_types(n.left)
+                collect_types(n.right)
+            else:
+                type_name = self._extract_type_name(n)
+                if type_name not in types:  # Avoid duplicates
+                    types.append(type_name)
+
+        collect_types(node)
+        return types
+
+    def _process_union_types(self, node, slice_node, line_no):
+        """Process union types from Union[...] syntax."""
+        # Extract union types
+        union_types = []
+        if isinstance(slice_node, ast.Tuple):
+            for elt in slice_node.elts:
+                type_name = self._extract_type_name(elt)
+                union_types.append(type_name)
+        else:
+            # Single element in Union (shouldn't happen, but handle it)
+            type_name = self._extract_type_name(slice_node)
+            union_types.append(type_name)
+
+        self.union_count += 1
+
+        # Create union pattern for analysis
+        union_pattern = UnionPattern(union_types, line_no, self.file_path)
+        self.union_patterns.append(union_pattern)
+
+        # Analyze the pattern
+        self._analyze_union_pattern(union_pattern)
+
+        # Existing check for Union with None
+        if len(union_types) == 2 and "None" in union_types:
+            self.issues.append(
+                f"Line {line_no}: Use Optional[T] or T | None instead of Union[T, None]"
+            )
 
 
 def validate_python_file(file_path: Path) -> Tuple[int, List[str], List[UnionPattern]]:
@@ -350,7 +391,10 @@ Examples of problematic patterns:
     args = parser.parse_args()
 
     base_path = Path(args.path)
-    python_files = list(base_path.rglob("*.py"))
+    if base_path.is_file() and base_path.suffix == ".py":
+        python_files = [base_path]
+    else:
+        python_files = list(base_path.rglob("*.py"))
 
     # Filter out archived files and __pycache__
     python_files = [

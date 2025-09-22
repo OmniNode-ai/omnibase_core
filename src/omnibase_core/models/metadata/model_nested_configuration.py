@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_config_type import EnumConfigType
 from ...utils.uuid_utilities import uuid_from_string
+from ..infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelNestedConfiguration(BaseModel):
@@ -27,8 +28,8 @@ class ModelNestedConfiguration(BaseModel):
         ...,
         description="Configuration type",
     )
-    settings: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Configuration settings with basic types only"
+    settings: dict[str, ModelCliValue] = Field(
+        default_factory=dict, description="Configuration settings with strongly-typed values"
     )
 
 

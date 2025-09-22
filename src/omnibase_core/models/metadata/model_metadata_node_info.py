@@ -21,6 +21,7 @@ from ..metadata.model_metadata_usage_metrics import (
 )
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_semver import ModelSemVer
+from ..infrastructure.model_cli_value import ModelCliValue
 
 # Removed Any import - replaced with specific types
 
@@ -111,9 +112,9 @@ class ModelMetadataNodeInfo(BaseModel):
     )
 
     # Custom metadata for extensibility
-    custom_metadata: dict[str, str | int | bool | float] = Field(
+    custom_metadata: dict[str, ModelCliValue] = Field(
         default_factory=dict,
-        description="Custom metadata fields",
+        description="Custom metadata fields with strongly-typed values",
     )
 
     def is_active(self) -> bool:
@@ -231,12 +232,12 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def add_custom_metadata(self, key: str, value: str | int | float | bool) -> None:
         """Add custom metadata."""
-        self.custom_metadata[key] = value
+        self.custom_metadata[key] = ModelCliValue.from_any(value)
         self.update_timestamp()
 
     def get_custom_metadata(
-        self, key: str, default: str | int | float | bool | None = None
-    ) -> str | int | float | bool | None:
+        self, key: str, default: ModelCliValue | None = None
+    ) -> ModelCliValue | None:
         """Get custom metadata value."""
         return self.custom_metadata.get(key, default)
 

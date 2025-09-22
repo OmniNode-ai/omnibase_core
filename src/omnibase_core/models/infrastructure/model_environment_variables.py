@@ -11,6 +11,9 @@ from typing import Any, Iterator
 
 from pydantic import BaseModel, Field, field_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...exceptions.onex_error import OnexError
+
 
 class ModelEnvironmentVariables(BaseModel):
     """
@@ -40,10 +43,10 @@ class ModelEnvironmentVariables(BaseModel):
         for name in v.keys():
             if not name.isidentifier() and not name.replace("_", "").isalnum():
                 msg = f"Invalid environment variable name: {name}"
-                raise ValueError(msg)
+                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
             if name.startswith("__"):
                 msg = f"Environment variable name cannot start with double underscore: {name}"
-                raise ValueError(msg)
+                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def add_variable(self, name: str, value: str, secure: bool = False) -> None:

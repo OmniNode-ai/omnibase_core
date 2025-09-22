@@ -10,6 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ...enums.enum_validation_severity import EnumValidationSeverity
+from .model_validation_value import ModelValidationValue
 
 
 class ModelValidationError(BaseModel):
@@ -40,7 +41,7 @@ class ModelValidationError(BaseModel):
         max_length=50,
         pattern=r"^[A-Z][A-Z0-9_]*$",
     )
-    details: dict[str, str | int | bool] | None = Field(
+    details: dict[str, ModelValidationValue] | None = Field(
         default=None,
         description="Additional error details",
     )

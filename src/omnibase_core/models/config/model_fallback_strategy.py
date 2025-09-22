@@ -44,7 +44,7 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     degraded_features: dict[str, bool] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Feature flags for degraded mode operation",
     )
 

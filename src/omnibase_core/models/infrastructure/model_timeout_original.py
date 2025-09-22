@@ -11,7 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_runtime_category import EnumRuntimeCategory
+from ...exceptions.onex_error import OnexError
 
 
 class ModelTimeout(BaseModel):
@@ -76,7 +78,7 @@ class ModelTimeout(BaseModel):
             timeout = info.data["timeout_seconds"]
             if v >= timeout:
                 msg = "Warning threshold must be less than timeout"
-                raise ValueError(msg)
+                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     @field_validator("extension_limit_seconds")
@@ -85,7 +87,7 @@ class ModelTimeout(BaseModel):
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
-            raise ValueError(msg)
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def model_post_init(self, __context: Any) -> None:
