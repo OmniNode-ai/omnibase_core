@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .model_numeric_value import ModelNumericValue, NumericInput
+
 
 class ModelFieldValidationRules(BaseModel):
     """Validation rules for metadata fields."""
@@ -28,12 +30,12 @@ class ModelFieldValidationRules(BaseModel):
         description="Maximum length for string fields",
     )
 
-    min_value: int | float | None = Field(
+    min_value: ModelNumericValue | None = Field(
         default=None,
         description="Minimum value for numeric fields",
     )
 
-    max_value: int | float | None = Field(
+    max_value: ModelNumericValue | None = Field(
         default=None,
         description="Maximum value for numeric fields",
     )
@@ -76,15 +78,57 @@ class ModelFieldValidationRules(BaseModel):
 
         return True
 
-    def is_valid_numeric(self, value: int | float) -> bool:
+    def is_valid_numeric(self, value: NumericInput) -> bool:
         """Validate a numeric value against the rules."""
-        if self.min_value is not None and value < self.min_value:
+        # Convert to comparable value
+        if isinstance(value, ModelNumericValue):
+            comparison_value = value.to_python_value()
+        else:
+            comparison_value = value
+
+        if (
+            self.min_value is not None
+            and comparison_value < self.min_value.to_python_value()
+        ):
             return False
 
-        if self.max_value is not None and value > self.max_value:
+        if (
+            self.max_value is not None
+            and comparison_value > self.max_value.to_python_value()
+        ):
             return False
 
         return True
+
+    def set_min_value(self, value: NumericInput) -> None:
+        """Set minimum value validation rule."""
+        if isinstance(value, ModelNumericValue):
+            self.min_value = value
+        else:
+            self.min_value = ModelNumericValue.from_numeric(value)
+
+    def set_max_value(self, value: NumericInput) -> None:
+        """Set maximum value validation rule."""
+        if isinstance(value, ModelNumericValue):
+            self.max_value = value
+        else:
+            self.max_value = ModelNumericValue.from_numeric(value)
+
+    def get_min_value(self) -> ModelNumericValue | None:
+        """Get minimum value as ModelNumericValue."""
+        return self.min_value
+
+    def get_max_value(self) -> ModelNumericValue | None:
+        """Get maximum value as ModelNumericValue."""
+        return self.max_value
+
+    def get_min_value_as_python(self) -> float | None:
+        """Get minimum value as Python float for backward compatibility."""
+        return self.min_value.to_python_value() if self.min_value else None
+
+    def get_max_value_as_python(self) -> float | None:
+        """Get maximum value as Python float for backward compatibility."""
+        return self.max_value.to_python_value() if self.max_value else None
 
 
 # Export the model

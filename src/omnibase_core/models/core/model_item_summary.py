@@ -30,11 +30,11 @@ class ModelItemSummary(BaseModel):
         default_factory=lambda: uuid_from_string("default", "item"),
         description="Unique identifier for the item",
     )
-    item_display_name: str | None = Field(None, description="Human-readable item name")
+    item_display_name: str = Field(default="", description="Human-readable item name")
     item_type: EnumItemType = Field(
         default=EnumItemType.UNKNOWN, description="Type of item"
     )
-    description: str | None = Field(None, description="Item description")
+    description: str = Field(default="", description="Item description")
 
     # Status and metadata
     is_enabled: bool = Field(default=True, description="Whether item is enabled")

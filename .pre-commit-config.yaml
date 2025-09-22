@@ -204,6 +204,16 @@ repos:
         exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
         stages: [pre-commit]
 
+      - id: validate-typing-syntax
+        name: ONEX Typing Syntax Validation (Optional/Union → Modern Syntax)
+        entry: poetry run python scripts/validation/validate-typing-syntax.py
+        args: ['--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards

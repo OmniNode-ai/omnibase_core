@@ -8,10 +8,11 @@ eliminating field duplication and providing consistent configuration interfaces.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field, model_validator
 
+from ..common.model_schema_value import ModelSchemaValue
 from ..metadata.model_semver import ModelSemVer
 
 T = TypeVar("T")
@@ -29,11 +30,11 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     """
 
     # Core metadata
-    name: Optional[str] = Field(default=None, description="Configuration name")
-    description: Optional[str] = Field(
+    name: str | None = Field(default=None, description="Configuration name")
+    description: str | None = Field(
         default=None, description="Configuration description"
     )
-    version: Optional[ModelSemVer] = Field(
+    version: ModelSemVer | None = Field(
         default=None, description="Configuration version"
     )
 
@@ -43,21 +44,21 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Generic configuration data
-    config_data: Optional[T] = Field(
-        default=None, description="Typed configuration data"
-    )
+    config_data: T | None = Field(default=None, description="Typed configuration data")
 
     def update_timestamp(self) -> None:
         """Update the modification timestamp."""
         self.updated_at = datetime.now(UTC)
 
     def get_config_value(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
+        self, key: str, default: ModelSchemaValue | None = None
+    ) -> ModelSchemaValue | None:
         """Get configuration value by key from config_data."""
         if self.config_data and hasattr(self.config_data, key):
             value = getattr(self.config_data, key)
-            return value if isinstance(value, (str, int, bool, float)) else default
+            if isinstance(value, (str, int, bool, float)):
+                return ModelSchemaValue.from_value(value)
+            return default
         return default
 
     def is_enabled(self) -> bool:

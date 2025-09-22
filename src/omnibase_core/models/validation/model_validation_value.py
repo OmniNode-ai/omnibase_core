@@ -20,7 +20,7 @@ class ModelValidationValue(BaseModel):
     """
     Validation value object with discriminated union pattern.
 
-    Replaces Union[str, int, bool] in validation details with
+    Replaces str | int | bool unions in validation details with
     a strongly-typed discriminated union following ONEX patterns.
     """
 

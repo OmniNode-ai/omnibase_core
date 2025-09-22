@@ -3,6 +3,9 @@ Examples showing how to migrate from dict-like interfaces to ModelFieldAccessor 
 
 This demonstrates the replacement of custom field access methods across CLI, Config,
 and Data domains with the unified ModelFieldAccessor pattern.
+
+Enhanced to show proper discriminated union usage with ModelPropertyValue
+instead of generic Union[str, int, bool, float] patterns.
 """
 
 from datetime import datetime
@@ -10,8 +13,11 @@ from typing import Any
 
 from pydantic import Field
 
+# Import discriminated union models for proper type safety
+from omnibase_core.models.config.model_property_value import ModelPropertyValue
+
 # Import the new field accessor patterns
-from src.omnibase_core.models.core import (
+from omnibase_core.models.core import (
     ModelCustomFieldsAccessor,
     ModelEnvironmentAccessor,
     ModelFieldAccessor,
@@ -19,10 +25,11 @@ from src.omnibase_core.models.core import (
 )
 
 
-# ========== BEFORE: Original ModelCliOutputData ==========
+# ========== BEFORE: Original ModelCliOutputData (with generic unions) ==========
 class OriginalModelCliOutputData:
-    """Original implementation with custom field access methods."""
+    """Original implementation with custom field access methods using generic unions."""
 
+    # PROBLEM: Generic union types lose type information and validation
     results: dict[str, str | int | bool | float] = Field(default_factory=dict)
     metadata: dict[str, str | int | bool] = Field(default_factory=dict)
 
@@ -41,12 +48,13 @@ class OriginalModelCliOutputData:
         self.results[key] = value
 
 
-# ========== AFTER: Migrated with ModelResultAccessor ==========
+# ========== AFTER: Migrated with ModelResultAccessor + Discriminated Unions ==========
 class MigratedModelCliOutputData(ModelResultAccessor):
-    """Migrated implementation using ModelResultAccessor pattern."""
+    """Migrated implementation using ModelResultAccessor pattern with proper discriminated unions."""
 
-    results: dict[str, str | int | bool | float] = Field(default_factory=dict)
-    metadata: dict[str, str | int | bool] = Field(default_factory=dict)
+    # SOLUTION: Use ModelPropertyValue for type-safe, validated property storage
+    results: dict[str, ModelPropertyValue] = Field(default_factory=dict)
+    metadata: dict[str, ModelPropertyValue] = Field(default_factory=dict)
 
     # The get_field_value and set_field_value methods are now inherited
     # from ModelResultAccessor as get_result_value and set_result_value
@@ -58,10 +66,11 @@ class MigratedModelCliOutputData(ModelResultAccessor):
     # - remove_field("results.some_key")
 
 
-# ========== BEFORE: Original ModelGenericMetadata ==========
+# ========== BEFORE: Original ModelGenericMetadata (with generic unions) ==========
 class OriginalModelGenericMetadata:
-    """Original implementation with custom field access."""
+    """Original implementation with custom field access using generic unions."""
 
+    # PROBLEM: Generic union types lose type information and validation
     custom_fields: dict[str, str | int | bool | float] | None = Field(default=None)
 
     def get_field(self, key: str, default: Any = None) -> Any:
@@ -92,11 +101,12 @@ class OriginalModelGenericMetadata:
         return False
 
 
-# ========== AFTER: Migrated with ModelCustomFieldsAccessor ==========
+# ========== AFTER: Migrated with ModelCustomFieldsAccessor + Discriminated Unions ==========
 class MigratedModelGenericMetadata(ModelCustomFieldsAccessor):
-    """Migrated implementation using ModelCustomFieldsAccessor pattern."""
+    """Migrated implementation using ModelCustomFieldsAccessor pattern with proper discriminated unions."""
 
-    custom_fields: dict[str, str | int | bool | float] | None = Field(default=None)
+    # SOLUTION: Use ModelPropertyValue for type-safe, validated custom field storage
+    custom_fields: dict[str, ModelPropertyValue] | None = Field(default=None)
 
     # The get_field, set_field, has_field, remove_field methods are now inherited
     # from ModelCustomFieldsAccessor as:
@@ -161,23 +171,73 @@ class MigratedModelEnvironmentProperties(ModelEnvironmentAccessor):
     # - get_string("properties.database.host", "localhost")
 
 
+# ========== DISCRIMINATED UNION DEMONSTRATION ==========
+def demonstrate_discriminated_unions():
+    """Demonstrate the benefits of using discriminated unions over generic unions."""
+
+    print("=== Discriminated Union Benefits ===")
+
+    # Problem with generic unions: No type validation or information retention
+    generic_data = {"count": 42, "rate": 3.14, "enabled": True, "name": "test"}
+
+    print("❌ Generic Union Problems:")
+    print(f"Raw data: {generic_data}")
+    print("- No type validation at runtime")
+    print("- Type information lost after storage")
+    print("- No conversion validation")
+    print("- No source tracking")
+
+    # Solution with discriminated unions: Type-safe storage with validation
+    discriminated_data = {
+        "count": ModelPropertyValue.from_int(42, source="user_input"),
+        "rate": ModelPropertyValue.from_float(3.14, source="calculation"),
+        "enabled": ModelPropertyValue.from_bool(True, source="config"),
+        "name": ModelPropertyValue.from_string("test", source="default"),
+    }
+
+    print("\n✅ Discriminated Union Benefits:")
+    for key, prop_value in discriminated_data.items():
+        print(
+            f"- {key}: {prop_value.value} (type: {prop_value.value_type}, source: {prop_value.source})"
+        )
+
+    print("\n🔧 Type-Safe Operations:")
+    # Type-safe conversions with validation
+    count_as_string = discriminated_data["count"].as_string()
+    rate_as_int = discriminated_data["rate"].as_int()  # Safe conversion
+    print(f"Count as string: '{count_as_string}' (validated conversion)")
+    print(f"Rate as int: {rate_as_int} (validated conversion)")
+
+    # Validation prevents errors
+    try:
+        # This would work with discriminated unions but fail safely
+        invalid_bool = ModelPropertyValue.from_bool(
+            "not_a_bool"
+        )  # This would raise OnexError
+    except Exception as e:
+        print(f"✅ Validation caught invalid data: {type(e).__name__}")
+
+
 # ========== USAGE EXAMPLES ==========
 def demonstrate_migration():
     """Demonstrate the before and after usage patterns."""
 
     print("=== CLI Output Data Migration ===")
 
-    # Before: Original usage
+    # Before: Original usage with generic unions
     original_cli = OriginalModelCliOutputData()
     original_cli.set_field_value("exit_code", 0)
     original_cli.set_field_value("duration_ms", 150.5)
     exit_code = original_cli.get_field_value("exit_code", -1)
 
-    # After: Migrated usage (backward compatible + new features)
+    # After: Migrated usage with discriminated unions
     migrated_cli = MigratedModelCliOutputData()
-    migrated_cli.set_result_value("exit_code", 0)  # Same functionality
-    migrated_cli.set_field("results.duration_ms", 150.5)  # Dot notation
-    migrated_cli.set_field("metadata.timestamp", "2024-01-01T12:00:00")
+    # Now using ModelPropertyValue for type safety
+    migrated_cli.results["exit_code"] = ModelPropertyValue.from_int(0)
+    migrated_cli.results["duration_ms"] = ModelPropertyValue.from_float(150.5)
+    migrated_cli.metadata["timestamp"] = ModelPropertyValue.from_string(
+        "2024-01-01T12:00:00"
+    )
 
     # New capabilities with dot notation
     exit_code = migrated_cli.get_result_value("exit_code", -1)
@@ -241,4 +301,10 @@ def demonstrate_migration():
 
 
 if __name__ == "__main__":
+    # Demonstrate discriminated union benefits first
+    demonstrate_discriminated_unions()
+
+    print("\n" + "=" * 60 + "\n")
+
+    # Then demonstrate migration patterns
     demonstrate_migration()

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .types_node_capabilities_summary import NodeCapabilitiesSummaryType
+
 
 class ModelNodeCapabilitiesInfo(BaseModel):
     """
@@ -89,7 +91,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
 
     def get_capabilities_summary(
         self,
-    ) -> dict[str, int | bool | list[str] | str | None]:
+    ) -> NodeCapabilitiesSummaryType:
         """Get capabilities information summary."""
         return {
             "capabilities_count": len(self.capabilities),

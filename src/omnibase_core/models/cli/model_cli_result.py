@@ -62,14 +62,14 @@ class ModelCliResult(BaseModel):
         description="Structured output data from execution",
     )
 
-    output_text: str | None = Field(None, description="Human-readable output text")
+    output_text: str = Field(default="", description="Human-readable output text")
 
     error_message: str | None = Field(
         None,
         description="Primary error message if execution failed",
     )
 
-    error_details: str | None = Field(None, description="Detailed error information")
+    error_details: str = Field(default="", description="Detailed error information")
 
     validation_errors: list[ModelValidationError] = Field(
         default_factory=list,

@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 from typing import (
     Callable,
     Generic,
-    Optional,
     TypedDict,
     TypeVar,
     cast,
@@ -21,6 +20,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from ...protocols_local.collection_item_protocol import CollectionItem
+from ..common.model_schema_value import ModelSchemaValue
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 # More constrained TypeVar for collection items
@@ -121,7 +121,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             return True
         return False
 
-    def get_item(self, item_id: UUID) -> Optional[T]:
+    def get_item(self, item_id: UUID) -> T | None:
         """
         Get an item by ID if it has an 'id' attribute.
 
@@ -136,7 +136,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
                 return item
         return None
 
-    def get_item_by_name(self, name: str) -> Optional[T]:
+    def get_item_by_name(self, name: str) -> T | None:
         """
         Get an item by name if it has a 'name' attribute.
 
@@ -151,7 +151,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
                 return item
         return None
 
-    def get_item_by_index(self, index: int) -> Optional[T]:
+    def get_item_by_index(self, index: int) -> T | None:
         """
         Get an item by index with bounds checking.
 
@@ -337,7 +337,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         self.items.extend(items)
         self.updated_at = datetime.now(UTC)
 
-    def find_items(self, **kwargs: str | int | bool | float) -> list[T]:
+    def find_items(self, **kwargs: ModelSchemaValue) -> list[T]:
         """
         Find items by attribute values.
 
@@ -355,13 +355,14 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             for attr_name, expected_value in kwargs.items():
                 if not hasattr(item, attr_name):
                     return False
-                if getattr(item, attr_name) != expected_value:
+                raw_expected = expected_value.to_value()
+                if getattr(item, attr_name) != raw_expected:
                     return False
             return True
 
         return self.filter_items(matches_all)
 
-    def update_item(self, item_id: UUID, **updates: str | int | bool | float) -> bool:
+    def update_item(self, item_id: UUID, **updates: ModelSchemaValue) -> bool:
         """
         Update an item's attributes by ID.
 
@@ -378,7 +379,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
 
         for attr_name, value in updates.items():
             if hasattr(item, attr_name):
-                setattr(item, attr_name, value)
+                raw_value = value.to_value()
+                setattr(item, attr_name, raw_value)
 
         self.updated_at = datetime.now(UTC)
         return True
@@ -394,7 +396,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
 
         Args:
             collection_display_name: Human-readable display name for the collection
-            collection_id: Optional UUID for the collection (auto-generated if None)
+            collection_id: UUID | None for the collection (auto-generated if None)
 
         Returns:
             Empty collection instance
@@ -419,7 +421,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Args:
             items: Initial items for the collection
             collection_display_name: Human-readable display name for the collection
-            collection_id: Optional UUID for the collection (auto-generated if None)
+            collection_id: UUID | None for the collection (auto-generated if None)
 
         Returns:
             Collection instance with the specified items

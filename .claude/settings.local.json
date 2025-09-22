@@ -57,7 +57,13 @@
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_examples_collection.py --no-error-summary)",
       "Bash(python:*)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/exceptions/onex_error.py --no-error-summary)",
-      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_generic_factory.py --no-error-summary)"
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_generic_factory.py --no-error-summary)",
+      "Bash(echo:*)",
+      "Bash(PYTHONPATH=src python examples/field_accessor_migration.py)",
+      "Bash(python3:*)",
+      "Bash(for file in src/omnibase_core/enums/enum_numeric_type.py src/omnibase_core/models/metadata/model_numeric_value.py src/omnibase_core/models/metadata/model_input_state.py)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

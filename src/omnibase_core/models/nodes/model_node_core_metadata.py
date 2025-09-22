@@ -32,7 +32,7 @@ class ModelNodeCoreMetadata(BaseModel):
     node_id: UUID = Field(
         default_factory=uuid4, description="Unique identifier for the node entity"
     )
-    node_display_name: str | None = Field(None, description="Human-readable node name")
+    node_display_name: str = Field(default="", description="Human-readable node name")
     node_type: EnumMetadataNodeType = Field(..., description="Node type")
 
     # Status information (2 fields)

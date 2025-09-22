@@ -20,6 +20,7 @@ from ..infrastructure.model_cli_value import ModelCliValue
 from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_semver import ModelSemVer
 
@@ -230,9 +231,10 @@ class ModelMetadataNodeInfo(BaseModel):
             self.has_documentation = True
             self.update_timestamp()
 
-    def add_custom_metadata(self, key: str, value: str | int | float | bool) -> None:
-        """Add custom metadata."""
-        self.custom_metadata[key] = ModelCliValue.from_any(value)
+    def add_custom_metadata(self, key: str, value: ModelMetadataValue) -> None:
+        """Add custom metadata using strongly-typed value."""
+        # Use the already typed metadata value directly
+        self.custom_metadata[key] = ModelCliValue.from_any(value.to_python_value())
         self.update_timestamp()
 
     def get_custom_metadata(

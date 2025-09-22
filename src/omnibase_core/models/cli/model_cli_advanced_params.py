@@ -13,6 +13,7 @@ from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_debug_level import EnumDebugLevel
 from ...enums.enum_security_level import EnumSecurityLevel
 from ...exceptions.onex_error import OnexError
+from ..infrastructure.model_cli_value import ModelCliValue
 from .model_output_format_options import ModelOutputFormatOptions
 
 
@@ -24,34 +25,34 @@ class ModelCliAdvancedParams(BaseModel):
     """
 
     # Timeout and performance parameters
-    timeout_seconds: float | None = Field(
-        None, description="Custom timeout in seconds", gt=0
+    timeout_seconds: float = Field(
+        default=30.0, description="Custom timeout in seconds", gt=0
     )
-    max_retries: int | None = Field(
-        None, description="Maximum number of retries", ge=0, le=10
+    max_retries: int = Field(
+        default=3, description="Maximum number of retries", ge=0, le=10
     )
-    retry_delay_ms: int | None = Field(
-        None, description="Delay between retries in milliseconds", ge=0
+    retry_delay_ms: int = Field(
+        default=1000, description="Delay between retries in milliseconds", ge=0
     )
 
     # Memory and resource limits
-    memory_limit_mb: int | None = Field(None, description="Memory limit in MB", gt=0)
-    cpu_limit_percent: float | None = Field(
-        None, description="CPU usage limit as percentage", ge=0.0, le=100.0
+    memory_limit_mb: int = Field(default=512, description="Memory limit in MB", gt=0)
+    cpu_limit_percent: float = Field(
+        default=100.0, description="CPU usage limit as percentage", ge=0.0, le=100.0
     )
 
     # Execution parameters
     parallel_execution: bool = Field(
         default=False, description="Enable parallel execution"
     )
-    max_parallel_tasks: int | None = Field(
-        None, description="Maximum parallel tasks", ge=1, le=100
+    max_parallel_tasks: int = Field(
+        default=4, description="Maximum parallel tasks", ge=1, le=100
     )
 
     # Cache parameters
     enable_cache: bool = Field(default=True, description="Enable result caching")
-    cache_ttl_seconds: int | None = Field(
-        None, description="Cache TTL in seconds", ge=0
+    cache_ttl_seconds: int = Field(
+        default=300, description="Cache TTL in seconds", ge=0
     )
 
     # Debug and logging parameters
@@ -90,12 +91,12 @@ class ModelCliAdvancedParams(BaseModel):
     )
 
     # Node-specific configuration
-    node_config_overrides: dict[str, str | int | bool] = Field(
+    node_config_overrides: dict[str, ModelCliValue] = Field(
         default_factory=dict, description="Node-specific configuration overrides"
     )
 
     # Extensibility for specific node types
-    custom_parameters: dict[str, str | int | bool | float] = Field(
+    custom_parameters: dict[str, ModelCliValue] = Field(
         default_factory=dict, description="Custom parameters for specific node types"
     )
 
@@ -130,19 +131,20 @@ class ModelCliAdvancedParams(BaseModel):
         """Add an environment variable."""
         self.environment_variables[key] = value
 
-    def add_config_override(self, key: str, value: str | int | bool) -> None:
-        """Add a configuration override."""
-        self.node_config_overrides[key] = value
+    def add_config_override(self, key: str, value: str) -> None:
+        """Add a configuration override. CLI configs are typically strings."""
+        self.node_config_overrides[key] = ModelCliValue.from_string(value)
 
-    def set_custom_parameter(self, key: str, value: str | int | bool | float) -> None:
-        """Set a custom parameter."""
-        self.custom_parameters[key] = value
+    def set_custom_parameter(self, key: str, value: str) -> None:
+        """Set a custom parameter. CLI parameters are typically strings."""
+        self.custom_parameters[key] = ModelCliValue.from_string(value)
 
-    def get_custom_parameter(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
-        """Get a custom parameter."""
-        return self.custom_parameters.get(key, default)
+    def get_custom_parameter(self, key: str, default: str = "") -> str:
+        """Get a custom parameter. CLI parameters are strings."""
+        cli_value = self.custom_parameters.get(key)
+        if cli_value is not None:
+            return cli_value.to_python_value()
+        return default
 
     def enable_debug_mode(self) -> None:
         """Enable full debug mode."""

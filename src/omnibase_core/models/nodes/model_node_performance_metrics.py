@@ -8,8 +8,19 @@ Part of the ModelNodeMetadataInfo restructuring.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TypedDict
 
 from pydantic import BaseModel, Field
+
+
+class PerformanceSummary(TypedDict):
+    """Type-safe performance summary structure."""
+
+    usage_count: int
+    error_count: int
+    success_rate: float
+    has_errors: bool
+    is_high_usage: bool
 
 
 class ModelNodePerformanceMetrics(BaseModel):
@@ -72,15 +83,15 @@ class ModelNodePerformanceMetrics(BaseModel):
         """Update last accessed timestamp."""
         self.last_accessed = datetime.now(UTC)
 
-    def get_performance_summary(self) -> dict[str, int | float]:
+    def get_performance_summary(self) -> PerformanceSummary:
         """Get performance metrics summary."""
-        return {
-            "usage_count": self.usage_count,
-            "error_count": self.error_count,
-            "success_rate": self.success_rate,
-            "has_errors": self.has_errors(),
-            "is_high_usage": self.is_high_usage(),
-        }
+        return PerformanceSummary(
+            usage_count=self.usage_count,
+            error_count=self.error_count,
+            success_rate=self.success_rate,
+            has_errors=self.has_errors(),
+            is_high_usage=self.is_high_usage(),
+        )
 
     @classmethod
     def create_new(cls) -> ModelNodePerformanceMetrics:

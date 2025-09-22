@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
+from .model_input_state import ModelInputState
 
 
 class ModelSemVer(BaseModel):
@@ -140,13 +141,13 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
 
 
 def parse_input_state_version(
-    input_state: dict[str, str | int | ModelSemVer | dict[str, int]],
+    input_state: ModelInputState | dict[str, Any],
 ) -> ModelSemVer:
     """
     Parse a version from an input state dict, requiring structured dictionary format.
 
     Args:
-        input_state: The input state dictionary (must have a 'version' key)
+        input_state: The input state (ModelInputState or dict with 'version' key)
 
     Returns:
         ModelSemVer instance
@@ -154,7 +155,12 @@ def parse_input_state_version(
     Raises:
         ValueError: If version is missing, is a string, or has invalid format
     """
-    v = input_state.get("version")
+    # Convert to structured input state for better type safety
+    if isinstance(input_state, ModelInputState):
+        structured_state = input_state
+    else:
+        structured_state = ModelInputState.from_dict(input_state)
+    v = structured_state.get_version_data()
 
     if v is None:
         msg = "Version field is required in input state"

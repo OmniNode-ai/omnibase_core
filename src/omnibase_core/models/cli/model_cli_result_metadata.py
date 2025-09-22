@@ -19,6 +19,7 @@ from ...enums.enum_result_type import EnumResultType
 from ...enums.enum_retention_policy import EnumRetentionPolicy
 from ...exceptions.onex_error import OnexError
 from ...utils.uuid_utilities import uuid_from_string
+from ..infrastructure.model_cli_value import ModelCliValue
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -97,7 +98,7 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Custom metadata fields for extensibility
-    custom_metadata: dict[str, str | int | bool | float] = Field(
+    custom_metadata: dict[str, ModelCliValue] = Field(
         default_factory=dict, description="Custom metadata fields"
     )
 
@@ -170,15 +171,16 @@ class ModelCliResultMetadata(BaseModel):
         timestamp = datetime.now(UTC).isoformat()
         self.audit_trail.append(f"{timestamp}: {entry}")
 
-    def set_custom_field(self, key: str, value: str | int | bool | float) -> None:
-        """Set a custom metadata field."""
-        self.custom_metadata[key] = value
+    def set_custom_field(self, key: str, value: str) -> None:
+        """Set a custom metadata field. CLI metadata is typically strings."""
+        self.custom_metadata[key] = ModelCliValue.from_string(value)
 
-    def get_custom_field(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
-        """Get a custom metadata field."""
-        return self.custom_metadata.get(key, default)
+    def get_custom_field(self, key: str, default: str = "") -> str:
+        """Get a custom metadata field. CLI metadata is strings."""
+        cli_value = self.custom_metadata.get(key)
+        if cli_value is not None:
+            return cli_value.to_python_value()
+        return default
 
     def is_compliant(self) -> bool:
         """Check if all compliance flags are True."""

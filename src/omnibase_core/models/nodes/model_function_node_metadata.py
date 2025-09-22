@@ -8,12 +8,18 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TypedDict
+from typing import TypedDict, TypeVar
+
+# Bounded TypeVar for relationship summary values
+RelationshipValue = TypeVar("RelationshipValue", int, bool, str)
 
 from pydantic import BaseModel, Field
 
 from ..core.model_custom_properties import ModelCustomProperties
-from .model_function_deprecation_info import ModelFunctionDeprecationInfo
+from .model_function_deprecation_info import (
+    ModelFunctionDeprecationInfo,
+    TypedDictDeprecationSummary,
+)
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
 
@@ -21,9 +27,13 @@ from .model_function_relationships import ModelFunctionRelationships
 class TypedDictFunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
 
-    documentation: dict[str, bool | int | float]
-    deprecation: dict[str, str | bool | None]
-    relationships: dict[str, int | list[str] | bool | str | None]
+    documentation: dict[
+        str, bool | int
+    ]  # has_* (bool) and *_count (int) and quality_score moved out
+    deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
+    relationships: dict[
+        str, RelationshipValue
+    ]  # *_count (int), has_* (bool), primary_category (str, "None" for missing)
     documentation_quality_score: float
     is_fully_documented: bool
     deprecation_status: str

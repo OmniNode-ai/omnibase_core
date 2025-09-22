@@ -76,7 +76,7 @@ class ModelCliExecutionConfig(BaseModel):
         """Add environment variable."""
         self.environment_vars[key] = value
 
-    def get_environment_var(self, key: str, default: str | None = None) -> str | None:
+    def get_environment_var(self, key: str, default: str = "") -> str:
         """Get environment variable."""
         return self.environment_vars.get(key, default)
 

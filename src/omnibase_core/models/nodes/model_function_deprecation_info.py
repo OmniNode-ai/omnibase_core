@@ -7,9 +7,21 @@ Part of the ModelFunctionNodeMetadata restructuring.
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 from pydantic import BaseModel, Field
 
 from ..metadata.model_semver import ModelSemVer
+
+
+class TypedDictDeprecationSummary(TypedDict):
+    """Type-safe dictionary for deprecation summary."""
+
+    is_deprecated: bool
+    has_replacement: bool
+    deprecated_since: str | None
+    replacement: str | None
+    status: str
 
 
 class ModelFunctionDeprecationInfo(BaseModel):
@@ -49,7 +61,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
         return f"deprecated since {self.deprecated_since}"
 
-    def get_deprecation_summary(self) -> dict[str, bool | str | None]:
+    def get_deprecation_summary(self) -> TypedDictDeprecationSummary:
         """Get deprecation information summary."""
         return {
             "is_deprecated": self.is_deprecated(),
@@ -80,4 +92,4 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFunctionDeprecationInfo"]
+__all__ = ["ModelFunctionDeprecationInfo", "TypedDictDeprecationSummary"]

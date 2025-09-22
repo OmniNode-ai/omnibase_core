@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from ...enums.enum_cli_value_type import EnumCliValueType
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
+
+# CLI raw values use discriminated union pattern with runtime validation
 
 
 class ModelCliValue(BaseModel):
@@ -29,7 +31,7 @@ class ModelCliValue(BaseModel):
 
     @field_validator("raw_value")
     @classmethod
-    def validate_raw_value(cls, v: Any, info: Any) -> Any:
+    def validate_raw_value(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate raw value matches declared type."""
         if "value_type" not in info.data:
             return v
@@ -100,6 +102,11 @@ class ModelCliValue(BaseModel):
         return cls(value_type=EnumCliValueType.LIST, raw_value=value)
 
     @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> ModelCliValue:
+        """Create CLI value from dictionary."""
+        return cls(value_type=EnumCliValueType.DICT, raw_value=value)
+
+    @classmethod
     def from_null(cls) -> ModelCliValue:
         """Create CLI value for null/None."""
         return cls(value_type=EnumCliValueType.NULL, raw_value=None)
@@ -118,7 +125,7 @@ class ModelCliValue(BaseModel):
         elif isinstance(value, float):
             return cls.from_float(value)
         elif isinstance(value, dict):
-            return cls(value_type=EnumCliValueType.DICT, raw_value=value)
+            return cls.from_dict(value)
         elif isinstance(value, list):
             return cls.from_list(value)
         else:

@@ -11,6 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_metadata_value import ModelMetadataValue
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -25,8 +26,8 @@ class ModelExampleMetadataSummary(BaseModel):
         None, description="Human-readable author name"
     )
     tags: list[str] = Field(default_factory=list, description="Associated tags")
-    custom_fields: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Custom metadata fields with basic types only"
+    custom_fields: dict[str, ModelMetadataValue] = Field(
+        default_factory=dict, description="Custom metadata fields with type-safe values"
     )
 
 

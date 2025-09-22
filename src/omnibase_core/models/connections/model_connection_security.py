@@ -8,11 +8,21 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TypedDict
 
 from pydantic import BaseModel, Field, model_validator
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
+
+
+class SSLContextOptions(TypedDict, total=False):
+    """SSL context options for connection libraries."""
+
+    verify: bool | None
+    cert: Path | None
+    key: Path | None
+    ca_certs: Path | None
 
 
 class ModelConnectionSecurity(BaseModel):
@@ -68,7 +78,7 @@ class ModelConnectionSecurity(BaseModel):
         """Check if CA bundle is configured."""
         return bool(self.ssl_ca_path)
 
-    def get_ssl_context_options(self) -> dict[str, str | bool | Path | None]:
+    def get_ssl_context_options(self) -> SSLContextOptions:
         """Get SSL context options for connection libraries."""
         return {
             "verify": self.ssl_verify,

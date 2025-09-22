@@ -10,6 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from ...enums.enum_protocol_type import EnumProtocolType
+from .types_node_connection_summary import NodeConnectionSummaryType
 
 
 class ModelNodeConnectionSettings(BaseModel):
@@ -67,7 +68,7 @@ class ModelNodeConnectionSettings(BaseModel):
         protocol_prefix = self.protocol.value.lower()  # type: ignore
         return f"{protocol_prefix}://{self.endpoint}:{self.port}"
 
-    def get_connection_summary(self) -> dict[str, str | int | bool | None]:
+    def get_connection_summary(self) -> NodeConnectionSummaryType:
         """Get connection settings summary."""
         return {
             "endpoint": self.endpoint,

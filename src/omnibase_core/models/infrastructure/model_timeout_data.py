@@ -21,8 +21,8 @@ class ModelTimeoutData(BaseModel):
     """
 
     timeout_seconds: int = Field(..., description="Timeout duration in seconds")
-    warning_threshold_seconds: int | None = Field(
-        default=None, description="Warning threshold in seconds"
+    warning_threshold_seconds: int = Field(
+        default=0, description="Warning threshold in seconds"
     )
     is_strict: bool = Field(
         default=True, description="Whether timeout is strictly enforced"
@@ -30,15 +30,16 @@ class ModelTimeoutData(BaseModel):
     allow_extension: bool = Field(
         default=False, description="Whether timeout can be extended"
     )
-    extension_limit_seconds: int | None = Field(
-        default=None, description="Maximum extension time in seconds"
+    extension_limit_seconds: int = Field(
+        default=0, description="Maximum extension time in seconds"
     )
-    runtime_category: EnumRuntimeCategory | None = Field(
-        default=None, description="Runtime category for this timeout"
+    runtime_category: EnumRuntimeCategory = Field(
+        default=EnumRuntimeCategory.SHORT,
+        description="Runtime category for this timeout",
     )
-    description: str | None = Field(default=None, description="Timeout description")
+    description: str = Field(default="", description="Timeout description")
     custom_properties: ModelCustomProperties = Field(
-        default_factory=lambda: ModelCustomProperties(),
+        default_factory=ModelCustomProperties,
         description="Typed custom properties instead of dict",
     )
 

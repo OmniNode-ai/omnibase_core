@@ -19,6 +19,7 @@ from ...utils.uuid_utilities import uuid_from_string
 from ..infrastructure.model_cli_value import ModelCliValue
 from ..infrastructure.model_metrics_data import ModelMetricsData
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
+from .model_metadata_value import ModelMetadataValue
 
 # Removed Any import - replaced with specific types
 
@@ -179,10 +180,10 @@ class ModelMetadataNodeAnalytics(BaseModel):
             return 0.0
         return (self.error_count / self.total_invocations) * 100.0
 
-    def add_custom_metric(self, name: str, value: str | int | float | bool) -> None:
-        """Add a custom metric."""
-        # Convert to ModelCliValue for type-safe storage
-        cli_value = ModelCliValue.from_any(value)
+    def add_custom_metric(self, name: str, value: ModelMetadataValue) -> None:
+        """Add a custom metric using strongly-typed value."""
+        # Use the already typed metadata value directly
+        cli_value = ModelCliValue.from_any(value.to_python_value())
         self.custom_metrics.add_metric(name, cli_value.to_python_value())
 
     def get_custom_metric(

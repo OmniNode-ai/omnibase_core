@@ -27,7 +27,7 @@ class TypedDictExecutionParams(TypedDict, total=False):
     success: bool
     exit_code: int
     error_message: str | None
-    data: str | int | float | bool | None
+    data: ModelSchemaValue | None
 
 
 class TypedDictMetadataParams(TypedDict, total=False):
@@ -195,7 +195,7 @@ class ModelGenericFactory(Generic[T]):
     def create_success_result(
         cls,
         model_class: Type[T],
-        result_data: str | int | float | bool | None,
+        result_data: ModelSchemaValue | None,
         **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """

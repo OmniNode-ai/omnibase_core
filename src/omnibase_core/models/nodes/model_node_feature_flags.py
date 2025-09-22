@@ -46,17 +46,17 @@ class ModelNodeFeatureFlags(BaseModel):
             features.append("tracing")
         return features
 
-    def get_feature_summary(self) -> dict[str, bool | list[str] | int]:
-        """Get feature flags summary."""
+    def get_feature_summary(self) -> dict[str, str]:
+        """Get feature flags summary as string values for type safety."""
         enabled = self.get_enabled_features()
         return {
-            "enable_caching": self.enable_caching,
-            "enable_monitoring": self.enable_monitoring,
-            "enable_tracing": self.enable_tracing,
-            "enabled_features": enabled,
-            "enabled_count": len(enabled),
-            "is_monitoring_enabled": self.enable_monitoring,
-            "is_debug_mode": self.enable_tracing,
+            "enable_caching": str(self.enable_caching),
+            "enable_monitoring": str(self.enable_monitoring),
+            "enable_tracing": str(self.enable_tracing),
+            "enabled_features": ",".join(enabled) if enabled else "none",
+            "enabled_count": str(len(enabled)),
+            "is_monitoring_enabled": str(self.enable_monitoring),
+            "is_debug_mode": str(self.enable_tracing),
         }
 
     def is_production_ready(self) -> bool:

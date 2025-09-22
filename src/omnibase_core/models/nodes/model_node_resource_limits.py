@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .types_node_resource_summary import NodeResourceSummaryType
+
 
 class ModelNodeResourceLimits(BaseModel):
     """
@@ -20,13 +22,13 @@ class ModelNodeResourceLimits(BaseModel):
     """
 
     # Resource limits (2 fields)
-    max_memory_mb: int | None = Field(
-        default=None,
+    max_memory_mb: int = Field(
+        default=1024,
         description="Maximum memory usage in MB",
         ge=0,
     )
-    max_cpu_percent: float | None = Field(
-        default=None,
+    max_cpu_percent: float = Field(
+        default=100.0,
         description="Maximum CPU usage percentage",
         ge=0.0,
         le=100.0,
@@ -34,17 +36,17 @@ class ModelNodeResourceLimits(BaseModel):
 
     def has_memory_limit(self) -> bool:
         """Check if memory limit is set."""
-        return self.max_memory_mb is not None
+        return self.max_memory_mb > 0
 
     def has_cpu_limit(self) -> bool:
         """Check if CPU limit is set."""
-        return self.max_cpu_percent is not None
+        return self.max_cpu_percent < 100.0
 
     def has_any_limits(self) -> bool:
         """Check if any resource limits are configured."""
         return self.has_memory_limit() or self.has_cpu_limit()
 
-    def get_resource_summary(self) -> dict[str, int | float | bool | None]:
+    def get_resource_summary(self) -> NodeResourceSummaryType:
         """Get resource limits summary."""
         return {
             "max_memory_mb": self.max_memory_mb,
@@ -56,14 +58,11 @@ class ModelNodeResourceLimits(BaseModel):
 
     def is_memory_constrained(self, threshold_mb: int = 1024) -> bool:
         """Check if memory is constrained below threshold."""
-        return self.max_memory_mb is not None and self.max_memory_mb < threshold_mb
+        return self.max_memory_mb < threshold_mb
 
     def is_cpu_constrained(self, threshold_percent: float = 50.0) -> bool:
         """Check if CPU is constrained below threshold."""
-        return (
-            self.max_cpu_percent is not None
-            and self.max_cpu_percent < threshold_percent
-        )
+        return self.max_cpu_percent < threshold_percent
 
     @classmethod
     def create_unlimited(cls) -> ModelNodeResourceLimits:

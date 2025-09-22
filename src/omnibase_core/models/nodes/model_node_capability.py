@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_performance_impact import EnumPerformanceImpact
 from ...utils.uuid_utilities import uuid_from_string
 from ..metadata.model_semver import ModelSemVer
+from .model_node_configuration_value import ModelNodeConfigurationValue
 
 
 class ModelNodeCapability(BaseModel):
@@ -76,7 +77,7 @@ class ModelNodeCapability(BaseModel):
         description="Replacement capability if deprecated",
     )
 
-    example_config: dict[str, str | int | bool] | None = Field(
+    example_config: dict[str, ModelNodeConfigurationValue] | None = Field(
         default=None,
         description="Example configuration for this capability",
     )
@@ -118,7 +119,10 @@ class ModelNodeCapability(BaseModel):
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=True,
             performance_impact=EnumPerformanceImpact.MEDIUM,
-            example_config={"batch_size": 100, "parallel_workers": 4},
+            example_config={
+                "batch_size": ModelNodeConfigurationValue.from_int(100),
+                "parallel_workers": ModelNodeConfigurationValue.from_int(4),
+            },
         )
 
     @classmethod
@@ -146,7 +150,11 @@ class ModelNodeCapability(BaseModel):
             version_introduced=ModelSemVer(major=1, minor=1, patch=0),
             configuration_required=True,
             performance_impact=EnumPerformanceImpact.LOW,
-            example_config={"telemetry_endpoint": "http://telemetry.example.com"},
+            example_config={
+                "telemetry_endpoint": ModelNodeConfigurationValue.from_string(
+                    "http://telemetry.example.com"
+                ),
+            },
         )
 
     @classmethod
@@ -174,7 +182,10 @@ class ModelNodeCapability(BaseModel):
             configuration_required=True,
             performance_impact=EnumPerformanceImpact.MEDIUM,
             dependencies=["SUPPORTS_CORRELATION_ID"],
-            example_config={"event_bus_type": "kafka", "topic": "node-events"},
+            example_config={
+                "event_bus_type": ModelNodeConfigurationValue.from_string("kafka"),
+                "topic": ModelNodeConfigurationValue.from_string("node-events"),
+            },
         )
 
     @classmethod
@@ -201,7 +212,12 @@ class ModelNodeCapability(BaseModel):
             version_introduced=ModelSemVer(major=1, minor=1, patch=0),
             configuration_required=True,
             performance_impact=EnumPerformanceImpact.MEDIUM,
-            example_config={"max_retries": 3, "backoff_strategy": "exponential"},
+            example_config={
+                "max_retries": ModelNodeConfigurationValue.from_int(3),
+                "backoff_strategy": ModelNodeConfigurationValue.from_string(
+                    "exponential"
+                ),
+            },
         )
 
     @classmethod

@@ -89,24 +89,24 @@ class UnionUsageChecker(ast.NodeVisitor):
                     if problem_type == "primitive_overload":
                         self.issues.append(
                             f"Line {union_pattern.line}: Union with 4+ primitive types "
-                            f"{union_pattern.get_signature()} should use a proper model or Enum"
+                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model"
                         )
                     elif problem_type == "mixed_primitive_complex":
                         self.issues.append(
                             f"Line {union_pattern.line}: Mixed primitive/complex Union "
-                            f"{union_pattern.get_signature()} should use a discriminated model"
+                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model"
                         )
                     elif problem_type == "everything_union":
                         self.issues.append(
                             f"Line {union_pattern.line}: Overly broad Union "
-                            f"{union_pattern.get_signature()} should use 'Any' or proper model"
+                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model"
                         )
 
             # Check for union with many different types (5+ suggests too broad)
             if union_pattern.type_count >= 5:
                 self.issues.append(
                     f"Line {union_pattern.line}: Overly broad Union "
-                    f"{union_pattern.get_signature()} should use 'Any' or proper model"
+                    f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model"
                 )
 
         # Check for primitive-heavy unions
@@ -118,7 +118,7 @@ class UnionUsageChecker(ast.NodeVisitor):
             if union_pattern.type_count == primitive_count:
                 self.issues.append(
                     f"Line {union_pattern.line}: All-primitive Union "
-                    f"{union_pattern.get_signature()} should use a Value Object model"
+                    f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model"
                 )
 
         # Check for generic unions that suggest missing abstraction
@@ -175,11 +175,8 @@ class UnionUsageChecker(ast.NodeVisitor):
                 # Analyze the pattern
                 self._analyze_union_pattern(union_pattern)
 
-                # Check for None patterns
-                if len(union_types) == 2 and "None" in union_types:
-                    self.issues.append(
-                        f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
-                    )
+                # Note: Modern T | None syntax is correct and should not be flagged as violation
+                # Only Union[T, None] (handled in visit_Subscript) should be flagged
         self.generic_visit(node)
 
     def _extract_union_from_binop(self, node: ast.BinOp) -> List[str]:
@@ -301,12 +298,12 @@ def generate_model_suggestions(patterns: List[UnionPattern]) -> List[str]:
                 suggestion += (
                     "\n    - data_type: Literal['primitive', 'collection', 'mapping']"
                 )
-                suggestion += "\n    - value: Any  # Use specific models for each type"
+                suggestion += "\n    - value: str | int | bool | float  # Use specific types instead of Any"
 
             # Configuration value pattern (common in CLI models)
             elif len(types_set) >= 5:
                 suggestion += "\n  • class ModelConfigurationValue(BaseModel):"
-                suggestion += "\n    - raw_value: Any"
+                suggestion += "\n    - raw_value: str | int | bool | float"
                 suggestion += (
                     "\n    - parsed_value: str | int | bool | float | Path | UUID"
                 )
@@ -358,12 +355,12 @@ This tool detects complex Union types that should be replaced with proper models
 • Unions with 3+ types that could be models
 • Repeated union patterns across files
 • Mixed primitive/complex type unions
-• Overly broad unions that should use 'Any' or specific models
+• Overly broad unions that should use specific types, generics, or strongly-typed models
 
 Examples of problematic patterns:
-• Union[str, int, bool, float] → Value Object model
-• Union[str, int, dict] → Discriminated union model
-• Union[dict, list, str] → Specific data structure model
+• Union[str, int, bool, float] → Use specific type (str), generic TypeVar, or domain-specific model
+• Union[str, int, dict] → Use specific type or generic TypeVar
+• Union[dict, list, str] → Use specific collection type or generic
         """,
     )
     parser.add_argument(
@@ -396,12 +393,16 @@ Examples of problematic patterns:
     else:
         python_files = list(base_path.rglob("*.py"))
 
-    # Filter out archived files and __pycache__
+    # Filter out archived files, examples, and __pycache__
     python_files = [
         f
         for f in python_files
         if "/archived/" not in str(f)
         and "archived" not in f.parts
+        and "/archive/" not in str(f)
+        and "archive" not in f.parts
+        and "/examples/" not in str(f)
+        and "examples" not in f.parts
         and "__pycache__" not in str(f)
     ]
 

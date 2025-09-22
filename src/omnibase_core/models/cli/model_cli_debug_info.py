@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field
 
 from ...enums.enum_debug_level import EnumDebugLevel
+from ..infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelCliDebugInfo(BaseModel):
@@ -64,7 +65,7 @@ class ModelCliDebugInfo(BaseModel):
     trace_mode: bool = Field(default=False, description="Trace mode enabled")
 
     # Custom debug fields for extensibility
-    custom_debug_fields: dict[str, str | int | bool | float] = Field(
+    custom_debug_fields: dict[str, ModelCliValue] = Field(
         default_factory=dict, description="Custom debug fields"
     )
 
@@ -92,15 +93,16 @@ class ModelCliDebugInfo(BaseModel):
         """Add a stack trace."""
         self.stack_traces.append(trace)
 
-    def set_custom_field(self, key: str, value: str | int | bool | float) -> None:
-        """Set a custom debug field."""
-        self.custom_debug_fields[key] = value
+    def set_custom_field(self, key: str, value: str) -> None:
+        """Set a custom debug field. CLI debug fields are typically strings."""
+        self.custom_debug_fields[key] = ModelCliValue.from_string(value)
 
-    def get_custom_field(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
-        """Get a custom debug field."""
-        return self.custom_debug_fields.get(key, default)
+    def get_custom_field(self, key: str, default: str = "") -> str:
+        """Get a custom debug field. CLI debug fields are strings."""
+        cli_value = self.custom_debug_fields.get(key)
+        if cli_value is not None:
+            return cli_value.to_python_value()
+        return default
 
 
 # Export the model

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .types_function_relationships_summary import FunctionRelationshipsSummaryType
+
 
 class ModelFunctionRelationships(BaseModel):
     """
@@ -79,7 +81,7 @@ class ModelFunctionRelationships(BaseModel):
 
     def get_relationships_summary(
         self,
-    ) -> dict[str, int | list[str] | bool | str | None]:
+    ) -> FunctionRelationshipsSummaryType:
         """Get relationships summary."""
         return {
             "dependencies_count": len(self.dependencies),
@@ -90,7 +92,7 @@ class ModelFunctionRelationships(BaseModel):
             "has_related_functions": self.has_related_functions(),
             "has_tags": self.has_tags(),
             "has_categories": self.has_categories(),
-            "primary_category": self.categories[0] if self.categories else None,
+            "primary_category": self.categories[0] if self.categories else "None",
         }
 
     @classmethod

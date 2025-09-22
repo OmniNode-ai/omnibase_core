@@ -11,6 +11,8 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel
 
+from ..common.model_schema_value import ModelSchemaValue
+
 
 # TypedDict for field values to replace loose Any typing
 class TypedDictFieldValue(TypedDict, total=False):
@@ -27,8 +29,8 @@ class ModelFieldAccessor(BaseModel):
     """Generic field accessor with dot notation support and type safety."""
 
     def get_field(
-        self, path: str, default: str | int | float | bool | list[str] | None = None
-    ) -> str | int | float | bool | list[str] | None:
+        self, path: str, default: ModelSchemaValue | None = None
+    ) -> ModelSchemaValue | None:
         """Get field using dot notation: 'metadata.custom_fields.key'"""
         try:
             obj: Any = self
@@ -43,14 +45,14 @@ class ModelFieldAccessor(BaseModel):
                     obj = obj[part]
                 else:
                     return default
-            # Type checking for return value
+            # Type checking for return value - convert to ModelSchemaValue
             if isinstance(obj, (str, int, float, bool, list)):
-                return obj
+                return ModelSchemaValue.from_value(obj)
             return default
         except (AttributeError, KeyError, TypeError):
             return default
 
-    def set_field(self, path: str, value: str | int | float | bool | list[str]) -> bool:
+    def set_field(self, path: str, value: ModelSchemaValue) -> bool:
         """Set field using dot notation."""
         try:
             parts = path.split(".")
@@ -75,19 +77,20 @@ class ModelFieldAccessor(BaseModel):
                 else:
                     return False
 
-            # Set the final value
+            # Set the final value - convert ModelSchemaValue to raw value
             final_key = parts[-1]
+            raw_value = value.to_value() if value else None
             # First try setting as attribute if the object has the field (even if None)
             # This handles Pydantic model fields that are initially None
             if hasattr(obj, final_key) or hasattr(obj, "__dict__"):
                 try:
-                    setattr(obj, final_key, value)
+                    setattr(obj, final_key, raw_value)
                     return True
                 except (AttributeError, TypeError):
                     pass
             # Fall back to dict-like access
             if hasattr(obj, "__setitem__"):
-                obj[final_key] = value
+                obj[final_key] = raw_value
                 return True
 
             return False

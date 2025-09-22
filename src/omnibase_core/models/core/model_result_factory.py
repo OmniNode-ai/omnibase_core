@@ -10,6 +10,7 @@ from typing import Type, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
+from ..common.model_schema_value import ModelSchemaValue
 from .model_generic_factory import ModelGenericFactory
 
 
@@ -20,7 +21,7 @@ class TypedDictResultFactoryKwargs(TypedDict, total=False):
     success: bool
     exit_code: int
     error_message: str | None
-    data: str | int | float | bool | None
+    data: ModelSchemaValue | None
     output_text: str | None
     warnings: list[str]
 

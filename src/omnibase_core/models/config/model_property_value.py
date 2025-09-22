@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -23,17 +24,17 @@ class ModelPropertyValue(BaseModel):
     """
     Type-safe property value container.
 
-    Replaces Union[str, int, float, bool, list[str], datetime] with
-    structured value storage that maintains type information.
+    Uses discriminated union pattern with runtime validation to ensure
+    type safety while avoiding overly broad Union types.
     """
 
-    # Value storage with type tracking
+    # Value storage with runtime validation - Any type with discriminated validation
     value: Any = Field(
-        description="The actual property value",
+        description="The actual property value - validated against value_type",
     )
 
     value_type: EnumPropertyType = Field(
-        description="Type of the stored value",
+        description="Type discriminator for the stored value",
     )
 
     # Metadata
@@ -49,7 +50,7 @@ class ModelPropertyValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: Any) -> Any:
+    def validate_value_type(cls, v: Any, info) -> Any:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
             value_type = info.data["value_type"]
@@ -135,6 +136,18 @@ class ModelPropertyValue(BaseModel):
                         }
                     ),
                 )
+            elif value_type == EnumPropertyType.UUID and not isinstance(v, (UUID, str)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Value must be UUID or string, got {type(v)}",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("uuid"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
+                )
 
         return v
 
@@ -179,13 +192,37 @@ class ModelPropertyValue(BaseModel):
         )
 
     @classmethod
-    def from_list(
+    def from_string_list(
         cls, value: list[str], source: str | None = None
     ) -> ModelPropertyValue:
         """Create property value from string list."""
         return cls(
             value=value,
             value_type=EnumPropertyType.STRING_LIST,
+            source=source,
+            is_validated=True,
+        )
+
+    @classmethod
+    def from_int_list(
+        cls, value: list[int], source: str | None = None
+    ) -> ModelPropertyValue:
+        """Create property value from integer list."""
+        return cls(
+            value=value,
+            value_type=EnumPropertyType.INTEGER_LIST,
+            source=source,
+            is_validated=True,
+        )
+
+    @classmethod
+    def from_float_list(
+        cls, value: list[float], source: str | None = None
+    ) -> ModelPropertyValue:
+        """Create property value from float list."""
+        return cls(
+            value=value,
+            value_type=EnumPropertyType.FLOAT_LIST,
             source=source,
             is_validated=True,
         )
@@ -201,6 +238,25 @@ class ModelPropertyValue(BaseModel):
             source=source,
             is_validated=True,
         )
+
+    @classmethod
+    def from_uuid(
+        cls, value: UUID | str, source: str | None = None
+    ) -> ModelPropertyValue:
+        """Create property value from UUID."""
+        return cls(
+            value=value,
+            value_type=EnumPropertyType.UUID,
+            source=source,
+            is_validated=True,
+        )
+
+    @classmethod
+    def from_list(
+        cls, value: list[str], source: str | None = None
+    ) -> ModelPropertyValue:
+        """Create property value from string list (backward compatibility alias)."""
+        return cls.from_string_list(value, source)
 
     def as_string(self) -> str:
         """Get value as string."""
@@ -253,6 +309,44 @@ class ModelPropertyValue(BaseModel):
         if isinstance(self.value, str):
             return self.value.lower() in ("true", "1", "yes", "on")
         return bool(self.value)
+
+    def as_list(self) -> list[Any]:
+        """Get value as list."""
+        if self.value_type in (
+            EnumPropertyType.STRING_LIST,
+            EnumPropertyType.INTEGER_LIST,
+            EnumPropertyType.FLOAT_LIST,
+        ):
+            return list(self.value)
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot convert {self.value_type} to list",
+            details=ModelErrorContext.with_context(
+                {
+                    "source_type": ModelSchemaValue.from_value(str(self.value_type)),
+                    "target_type": ModelSchemaValue.from_value("list"),
+                    "value": ModelSchemaValue.from_value(str(self.value)),
+                }
+            ),
+        )
+
+    def as_uuid(self) -> UUID:
+        """Get value as UUID."""
+        if self.value_type == EnumPropertyType.UUID:
+            if isinstance(self.value, UUID):
+                return self.value
+            return UUID(self.value)
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot convert {self.value_type} to UUID",
+            details=ModelErrorContext.with_context(
+                {
+                    "source_type": ModelSchemaValue.from_value(str(self.value_type)),
+                    "target_type": ModelSchemaValue.from_value("UUID"),
+                    "value": ModelSchemaValue.from_value(str(self.value)),
+                }
+            ),
+        )
 
 
 # Export the model

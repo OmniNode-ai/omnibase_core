@@ -2,20 +2,23 @@
 Practical example showing migration of ModelCliOutputData to use ModelResultAccessor.
 
 This demonstrates a real migration from the existing pattern to the new
-field accessor pattern.
+field accessor pattern with discriminated unions for proper type safety.
 """
 
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+# Import discriminated union models for proper type safety
+from omnibase_core.models.config.model_property_value import ModelPropertyValue
+
 # Import the new field accessor
-from src.omnibase_core.models.core import ModelResultAccessor
+from omnibase_core.models.core import ModelResultAccessor
 
 
-# ========== BEFORE: Current Implementation ==========
+# ========== BEFORE: Current Implementation (with generic unions) ==========
 class CurrentModelCliOutputData(BaseModel):
-    """Current implementation with custom field access methods."""
+    """Current implementation with custom field access methods using generic unions."""
 
     # Core output fields
     output_type: str = Field(default="execution", description="Type of output data")
@@ -25,12 +28,12 @@ class CurrentModelCliOutputData(BaseModel):
     stdout: str | None = Field(None, description="Standard output content")
     stderr: str | None = Field(None, description="Standard error content")
 
-    # Structured results
+    # PROBLEM: Generic union types lose type information and validation
     results: dict[str, str | int | bool | float] = Field(
         default_factory=dict, description="Execution results with basic types"
     )
 
-    # Metadata
+    # PROBLEM: Generic union types lose type information and validation
     metadata: dict[str, str | int | bool] = Field(
         default_factory=dict, description="Output metadata with basic types"
     )
@@ -76,9 +79,9 @@ class CurrentModelCliOutputData(BaseModel):
         self.metadata[key] = value
 
 
-# ========== AFTER: Migrated Implementation ==========
+# ========== AFTER: Migrated Implementation with Discriminated Unions ==========
 class MigratedModelCliOutputData(ModelResultAccessor):
-    """Migrated implementation using ModelResultAccessor pattern."""
+    """Migrated implementation using ModelResultAccessor pattern with proper discriminated unions."""
 
     # Core output fields (unchanged)
     output_type: str = Field(default="execution", description="Type of output data")
@@ -88,14 +91,16 @@ class MigratedModelCliOutputData(ModelResultAccessor):
     stdout: str | None = Field(None, description="Standard output content")
     stderr: str | None = Field(None, description="Standard error content")
 
-    # Structured results (unchanged)
-    results: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Execution results with basic types"
+    # SOLUTION: Use ModelPropertyValue for type-safe, validated storage
+    results: dict[str, ModelPropertyValue] = Field(
+        default_factory=dict,
+        description="Execution results with discriminated union types",
     )
 
-    # Metadata (unchanged)
-    metadata: dict[str, str | int | bool] = Field(
-        default_factory=dict, description="Output metadata with basic types"
+    # SOLUTION: Use ModelPropertyValue for type-safe, validated storage
+    metadata: dict[str, ModelPropertyValue] = Field(
+        default_factory=dict,
+        description="Output metadata with discriminated union types",
     )
 
     # Status and validation (unchanged)
@@ -135,14 +140,26 @@ class MigratedModelCliOutputData(ModelResultAccessor):
         """
         self.set_result_value(key, value)
 
-    # ========== ENHANCED METHODS (using inherited capabilities) ==========
+    # ========== ENHANCED METHODS (using discriminated unions) ==========
     def add_result(self, key: str, value: str | int | bool | float) -> None:
-        """Add a result value (enhanced with dot notation support)."""
-        self.set_result_value(key, value)
+        """Add a result value with type safety using discriminated unions."""
+        if isinstance(value, str):
+            self.results[key] = ModelPropertyValue.from_string(value)
+        elif isinstance(value, int):
+            self.results[key] = ModelPropertyValue.from_int(value)
+        elif isinstance(value, float):
+            self.results[key] = ModelPropertyValue.from_float(value)
+        elif isinstance(value, bool):
+            self.results[key] = ModelPropertyValue.from_bool(value)
 
     def add_metadata(self, key: str, value: str | int | bool) -> None:
-        """Add metadata value (enhanced with dot notation support)."""
-        self.set_metadata_value(key, value)
+        """Add metadata value with type safety using discriminated unions."""
+        if isinstance(value, str):
+            self.metadata[key] = ModelPropertyValue.from_string(value)
+        elif isinstance(value, int):
+            self.metadata[key] = ModelPropertyValue.from_int(value)
+        elif isinstance(value, bool):
+            self.metadata[key] = ModelPropertyValue.from_bool(value)
 
     def add_file_created(self, file_path: str) -> None:
         """Add a created file to the list."""
@@ -238,21 +255,30 @@ def demonstrate_migration():
     print(f"Files processed: {current.get_field_value('files_processed')}")
     print(f"User: {current.get_field_value('user')}")
 
-    print("\n=== Migrated Implementation ===")
+    print("\n=== Migrated Implementation with Discriminated Unions ===")
     migrated = MigratedModelCliOutputData()
 
-    # Same API usage
-    migrated.set_field_value("exit_code", 0)  # Works exactly the same
-    migrated.set_field_value("duration", 150.5)
+    # Enhanced API usage with type safety
+    migrated.add_result("exit_code", 0)  # Type-safe using ModelPropertyValue
+    migrated.add_result("duration", 150.5)
     migrated.add_result("files_processed", 42)
     migrated.add_metadata("user", "admin")
 
-    print(f"Exit code: {migrated.get_field_value('exit_code')}")
-    print(f"Duration: {migrated.get_field_value('duration')}")
-    print(f"Files processed: {migrated.get_field_value('files_processed')}")
-    print(f"User: {migrated.get_field_value('user')}")
+    # Demonstrate type safety and validation
+    print(
+        f"Exit code: {migrated.results['exit_code'].value} (type: {migrated.results['exit_code'].value_type})"
+    )
+    print(
+        f"Duration: {migrated.results['duration'].value} (type: {migrated.results['duration'].value_type})"
+    )
+    print(
+        f"Files processed: {migrated.results['files_processed'].value} (type: {migrated.results['files_processed'].value_type})"
+    )
+    print(
+        f"User: {migrated.metadata['user'].value} (type: {migrated.metadata['user'].value_type})"
+    )
 
-    print("\n=== New Enhanced Capabilities ===")
+    print("\n=== New Enhanced Capabilities with Type Safety ===")
 
     # New dot notation capabilities
     migrated.set_field("results.execution.phase", "compilation")

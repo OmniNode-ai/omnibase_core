@@ -20,6 +20,7 @@ from .model_fallback_strategy import ModelFallbackStrategy
 from .model_namespace_config import ModelNamespaceConfig
 from .model_property_collection import ModelPropertyCollection
 from .model_property_metadata import ModelPropertyMetadata
+from .model_property_value import ModelPropertyValue
 from .model_typed_property import ModelTypedProperty
 from .model_uri import ModelOnexUri
 
@@ -41,6 +42,7 @@ __all__ = [
     "ModelNamespaceConfig",
     "ModelPropertyCollection",
     "ModelPropertyMetadata",
+    "ModelPropertyValue",
     "ModelTypedProperty",
     "ModelOnexUri",
 ]

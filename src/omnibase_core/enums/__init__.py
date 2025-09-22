@@ -10,7 +10,11 @@ from .enum_auth_type import EnumAuthType
 from .enum_category import EnumCategory
 from .enum_category_filter import EnumCategoryFilter
 from .enum_cli_action import EnumCliAction
+from .enum_cli_context_value_type import EnumCliContextValueType
+from .enum_cli_input_value_type import EnumCliInputValueType
+from .enum_cli_option_value_type import EnumCliOptionValueType
 from .enum_cli_status import EnumCliStatus
+from .enum_cli_value_type import EnumCliValueType
 from .enum_color_scheme import EnumColorScheme
 from .enum_complexity import EnumComplexity
 from .enum_complexity_level import EnumComplexityLevel
@@ -46,6 +50,7 @@ from .enum_metrics_category import EnumMetricsCategory
 from .enum_node_capability import EnumNodeCapability
 from .enum_node_health_status import EnumNodeHealthStatus
 from .enum_node_type import EnumNodeType
+from .enum_numeric_type import EnumNumericType
 from .enum_onex_status import EnumOnexStatus
 from .enum_output_format import EnumOutputFormat
 from .enum_output_type import EnumOutputType
@@ -81,7 +86,11 @@ __all__ = [
     "EnumCategoryFilter",
     "EnumCategory",
     "EnumCliAction",
+    "EnumCliContextValueType",
+    "EnumCliInputValueType",
+    "EnumCliOptionValueType",
     "EnumCliStatus",
+    "EnumCliValueType",
     "EnumColorScheme",
     "EnumComplexity",
     "EnumComplexityLevel",
@@ -115,6 +124,7 @@ __all__ = [
     "EnumNodeCapability",
     "EnumNodeHealthStatus",
     "EnumNodeType",
+    "EnumNumericType",
     "EnumOnexStatus",
     "EnumOutputFormat",
     "EnumOutputType",

@@ -11,8 +11,12 @@ from __future__ import annotations
 
 import random
 from datetime import datetime
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
+
+# Bounded TypeVar for retry summary values - includes None for optional fields
+RetrySummaryValueType = TypeVar("RetrySummaryValueType", str, int, float, bool, None)
 
 from ...enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from .model_retry_advanced import ModelRetryAdvanced
@@ -181,7 +185,7 @@ class ModelRetryPolicy(BaseModel):
         """Reset retry policy to initial state."""
         self.execution.reset()
 
-    def get_summary(self) -> dict[str, str | int | bool | float | None]:
+    def get_summary(self) -> dict[str, RetrySummaryValueType]:
         """Get retry policy execution summary."""
         return {
             "max_retries": self.max_retries,

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_data_type import EnumDataType
 from ...enums.enum_io_type import EnumIOType
+from ..metadata.model_metadata_value import ModelMetadataValue
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -28,14 +29,15 @@ class ModelExampleInputData(BaseModel):
     )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
-    # Input parameters
-    parameters: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Input parameters with basic types"
+    # Input parameters using strongly-typed metadata values
+    parameters: dict[str, ModelMetadataValue] = Field(
+        default_factory=dict, description="Input parameters with type-safe values"
     )
 
-    # Configuration settings
-    configuration: dict[str, str | int | bool] = Field(
-        default_factory=dict, description="Configuration settings for the input"
+    # Configuration settings using string values for simplicity
+    configuration: dict[str, str] = Field(
+        default_factory=dict,
+        description="Configuration settings for the input (string values)",
     )
 
     # Validation info

@@ -7,7 +7,7 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -16,6 +16,7 @@ from ...protocols_local.supported_property_value_protocol import (
     ProtocolSupportedPropertyValue,
 )
 from .model_property_metadata import ModelPropertyMetadata
+from .model_property_value import ModelPropertyValue
 from .model_typed_property import ModelTypedProperty
 
 # Type variable for generic property handling
@@ -32,16 +33,15 @@ class ModelPropertyCollection(BaseModel):
     def add_property(
         self,
         key: str,
-        value: Any,
-        property_type: EnumPropertyType,
+        value: ModelPropertyValue,
         description: str | None = None,
         required: bool = False,
     ) -> None:
-        """Add a new property with validation."""
+        """Add a new property using structured value."""
         metadata = ModelPropertyMetadata(
             description=description,
-            source=None,
-            property_type=property_type,
+            source=value.source,
+            property_type=value.value_type,
             required=required,
             validation_pattern=None,
             min_value=None,
@@ -51,6 +51,66 @@ class ModelPropertyCollection(BaseModel):
 
         typed_property = ModelTypedProperty(key=key, value=value, metadata=metadata)
         self.properties[key] = typed_property
+
+    def add_string_property(
+        self,
+        key: str,
+        value: str,
+        description: str | None = None,
+        required: bool = False,
+        source: str | None = None,
+    ) -> None:
+        """Add a string property with convenience method."""
+        property_value = ModelPropertyValue.from_string(value, source)
+        self.add_property(key, property_value, description, required)
+
+    def add_int_property(
+        self,
+        key: str,
+        value: int,
+        description: str | None = None,
+        required: bool = False,
+        source: str | None = None,
+    ) -> None:
+        """Add an integer property with convenience method."""
+        property_value = ModelPropertyValue.from_int(value, source)
+        self.add_property(key, property_value, description, required)
+
+    def add_float_property(
+        self,
+        key: str,
+        value: float,
+        description: str | None = None,
+        required: bool = False,
+        source: str | None = None,
+    ) -> None:
+        """Add a float property with convenience method."""
+        property_value = ModelPropertyValue.from_float(value, source)
+        self.add_property(key, property_value, description, required)
+
+    def add_bool_property(
+        self,
+        key: str,
+        value: bool,
+        description: str | None = None,
+        required: bool = False,
+        source: str | None = None,
+    ) -> None:
+        """Add a boolean property with convenience method."""
+        property_value = ModelPropertyValue.from_bool(value, source)
+        self.add_property(key, property_value, description, required)
+
+    def add_list_property(
+        self,
+        key: str,
+        value: list[str],
+        description: str | None = None,
+        required: bool = False,
+        source: str | None = None,
+    ) -> None:
+        """Add a string list property with convenience method."""
+        property_value = ModelPropertyValue.from_list(value, source)
+        self.add_property(key, property_value, description, required)
 
     def get_property(self, key: str) -> ModelTypedProperty | None:
         """Get a property by key."""
@@ -65,38 +125,57 @@ class ModelPropertyCollection(BaseModel):
         return prop.get_typed_value(expected_type, default)
 
     def get_string(self, key: str, default: str = "") -> str:
-        """Get string property value."""
-        return self.get_typed_value(key, str, default)
-
-    def get_int(self, key: str, default: int = 0) -> int:
-        """Get integer property value."""
-        return self.get_typed_value(key, int, default)
-
-    def get_float(self, key: str, default: float = 0.0) -> float:
-        """Get float property value."""
-        # Try float first, then int (which can be converted to float)
+        """Get string property value using type-safe accessor."""
         prop = self.get_property(key)
         if prop is None:
             return default
+        try:
+            return prop.value.as_string()
+        except Exception:
+            return default
 
-        # Check if value is already a float
-        if isinstance(prop.value, float):
-            return prop.value
-        # Convert int to float if needed
-        elif isinstance(prop.value, int):
-            return float(prop.value)
+    def get_int(self, key: str, default: int = 0) -> int:
+        """Get integer property value using type-safe accessor."""
+        prop = self.get_property(key)
+        if prop is None:
+            return default
+        try:
+            return prop.value.as_int()
+        except Exception:
+            return default
 
-        return default
+    def get_float(self, key: str, default: float = 0.0) -> float:
+        """Get float property value using type-safe accessor."""
+        prop = self.get_property(key)
+        if prop is None:
+            return default
+        try:
+            return prop.value.as_float()
+        except Exception:
+            return default
 
     def get_bool(self, key: str, default: bool = False) -> bool:
-        """Get boolean property value."""
-        return self.get_typed_value(key, bool, default)
+        """Get boolean property value using type-safe accessor."""
+        prop = self.get_property(key)
+        if prop is None:
+            return default
+        try:
+            return prop.value.as_bool()
+        except Exception:
+            return default
 
     def get_string_list(self, key: str, default: list[str] | None = None) -> list[str]:
         """Get string list property value."""
         if default is None:
             default = []
-        return self.get_typed_value(key, list, default)
+        prop = self.get_property(key)
+        if prop is None:
+            return default
+
+        # For list values, return the raw value if it's a list
+        if isinstance(prop.value.value, list):
+            return prop.value.value
+        return default
 
     def get_required_properties(self) -> list[str]:
         """Get list of required property keys."""
@@ -112,5 +191,5 @@ class ModelPropertyCollection(BaseModel):
         return [
             key
             for key, prop in self.properties.items()
-            if prop.metadata.property_type == property_type
+            if prop.value.value_type == property_type
         ]

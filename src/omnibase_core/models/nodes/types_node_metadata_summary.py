@@ -1,0 +1,40 @@
+"""
+TypedDict for node metadata summary.
+
+Replaces dict[str, Any] return type with structured typing.
+"""
+
+from __future__ import annotations
+
+from typing import TypedDict
+
+
+class NodeMetadataSummaryType(TypedDict):
+    """
+    Typed dictionary for node metadata info summary.
+
+    Replaces dict[str, Any] return type from get_summary()
+    with proper type structure.
+    """
+
+    node_id: str
+    node_name: str
+    node_type: str
+    status: str
+    health: str
+    version: str | None
+    usage_count: int
+    error_count: int
+    success_rate: float
+    capabilities: list[str]
+    tags: list[str]
+    is_active: bool
+    is_healthy: bool
+    has_errors: bool
+    capabilities_count: int
+    tags_count: int
+    is_high_usage: bool
+
+
+# Export for use
+__all__ = ["NodeMetadataSummaryType"]

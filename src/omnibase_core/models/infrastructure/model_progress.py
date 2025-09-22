@@ -8,9 +8,15 @@ Updated to use ModelTimeBased for all timing aspects instead of raw datetime cal
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
+
+# Bounded TypeVar for metric values - reusing infrastructure pattern
+MetricValueType = TypeVar("MetricValueType", str, int, float, bool)
+
+# Bounded TypeVar for progress summary values - includes None for optional fields
+ProgressValueType = TypeVar("ProgressValueType", str, int, float, bool, None)
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_execution_phase import EnumExecutionPhase
@@ -42,15 +48,15 @@ class ModelProgress(BaseModel):
         description="Current step number",
         ge=0,
     )
-    total_steps: int | None = Field(
-        default=None,
+    total_steps: int = Field(
+        default=1,
         description="Total number of steps",
         ge=1,
     )
 
     # Phase tracking
-    current_phase: EnumExecutionPhase | None = Field(
-        default=None,
+    current_phase: EnumExecutionPhase = Field(
+        default=EnumExecutionPhase.INITIALIZATION,
         description="Current execution phase",
     )
     phase_percentage: float = Field(
@@ -61,12 +67,12 @@ class ModelProgress(BaseModel):
     )
 
     # Status and description
-    status_message: EnumStatusMessage | None = Field(
-        default=None,
+    status_message: EnumStatusMessage = Field(
+        default=EnumStatusMessage.PENDING,
         description="Current progress status",
     )
-    detailed_info: str | None = Field(
-        default=None,
+    detailed_info: str = Field(
+        default="",
         description="Detailed progress information",
         max_length=2000,
     )
@@ -263,12 +269,10 @@ class ModelProgress(BaseModel):
         self.phase_percentage = max(0.0, min(100.0, percentage))
         self.last_update_time = datetime.now(UTC)
 
-    def set_status(
-        self, status: EnumStatusMessage, detailed_info: str | None = None
-    ) -> None:
-        """Set status and optional detailed info."""
+    def set_status(self, status: EnumStatusMessage, detailed_info: str = "") -> None:
+        """Set status and detailed info."""
         self.status_message = status
-        if detailed_info is not None:
+        if detailed_info:
             self.detailed_info = detailed_info
         self.last_update_time = datetime.now(UTC)
 
@@ -301,7 +305,7 @@ class ModelProgress(BaseModel):
         next_name = min(uncompleted, key=lambda name: uncompleted[name])
         return (next_name, uncompleted[next_name])
 
-    def add_custom_metric(self, key: str, value: str | int | float | bool) -> None:
+    def add_custom_metric(self, key: str, value: MetricValueType) -> None:
         """Add custom progress metric with proper typing."""
         self.custom_metrics.add_metric(key, value)
         self.last_update_time = datetime.now(UTC)
@@ -353,7 +357,7 @@ class ModelProgress(BaseModel):
             return "Unknown"
         return str(self.estimated_total_duration)
 
-    def get_summary(self) -> dict[str, str | int | bool | float | None]:
+    def get_summary(self) -> dict[str, ProgressValueType]:
         """Get progress summary."""
         return {
             "percentage": self.percentage,

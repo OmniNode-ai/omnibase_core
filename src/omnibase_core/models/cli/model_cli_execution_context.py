@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_context_source import EnumContextSource
 from ...enums.enum_context_type import EnumContextType
@@ -30,7 +30,7 @@ class ModelCliExecutionContext(BaseModel):
     key: str = Field(..., description="Context key identifier")
     value: Any = Field(
         ...,
-        description="Context value - supports str, int, bool, float, datetime, Path, UUID, list[str]",
+        description="Context value - validated against context_type discriminator",
     )
 
     # Context metadata
@@ -51,6 +51,53 @@ class ModelCliExecutionContext(BaseModel):
     source: EnumContextSource = Field(
         default=EnumContextSource.USER, description="Context data source"
     )
+
+    @field_validator("value")
+    @classmethod
+    def validate_value_type(cls, v: Any, info) -> Any:
+        """Validate that value matches its declared context type."""
+        if hasattr(info, "data") and "context_type" in info.data:
+            context_type = info.data["context_type"]
+
+            # Basic type validation based on context type
+            if context_type == EnumContextType.STRING and not isinstance(v, str):
+                raise ValueError(
+                    f"String context type must contain str data, got {type(v)}"
+                )
+            elif context_type == EnumContextType.NUMERIC and not isinstance(
+                v, (int, float)
+            ):
+                raise ValueError(
+                    f"Numeric context type must contain int/float data, got {type(v)}"
+                )
+            elif context_type == EnumContextType.BOOLEAN and not isinstance(v, bool):
+                raise ValueError(
+                    f"Boolean context type must contain bool data, got {type(v)}"
+                )
+            elif context_type == EnumContextType.DATETIME and not isinstance(
+                v, datetime
+            ):
+                raise ValueError(
+                    f"DateTime context type must contain datetime data, got {type(v)}"
+                )
+            elif context_type == EnumContextType.PATH and not isinstance(
+                v, (Path, str)
+            ):
+                raise ValueError(
+                    f"Path context type must contain Path/str data, got {type(v)}"
+                )
+            elif context_type == EnumContextType.UUID and not isinstance(
+                v, (UUID, str)
+            ):
+                raise ValueError(
+                    f"UUID context type must contain UUID/str data, got {type(v)}"
+                )
+            elif context_type == EnumContextType.LIST and not isinstance(v, list):
+                raise ValueError(
+                    f"List context type must contain list data, got {type(v)}"
+                )
+
+        return v
 
     def get_string_value(self) -> str:
         """Get value as string representation."""

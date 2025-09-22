@@ -87,18 +87,18 @@ class ModelNodeOrganizationMetadata(BaseModel):
         if dependent not in self.dependents:
             self.dependents.append(dependent)
 
-    def get_organization_summary(self) -> dict[str, list[str] | int | str | None]:
-        """Get organization metadata summary."""
+    def get_organization_summary(self) -> dict[str, str]:
+        """Get organization metadata summary as string values for type safety."""
         return {
-            "capabilities_count": len(self.capabilities),
-            "categories_count": len(self.categories),
-            "tags_count": len(self.tags),
-            "dependencies_count": len(self.dependencies),
-            "dependents_count": len(self.dependents),
-            "has_description": bool(self.description),
-            "has_author": bool(self.author),
-            "primary_category": self.categories[0] if self.categories else None,
-            "primary_capability": self.capabilities[0] if self.capabilities else None,
+            "capabilities_count": str(len(self.capabilities)),
+            "categories_count": str(len(self.categories)),
+            "tags_count": str(len(self.tags)),
+            "dependencies_count": str(len(self.dependencies)),
+            "dependents_count": str(len(self.dependents)),
+            "has_description": str(bool(self.description)),
+            "has_author": str(bool(self.author)),
+            "primary_category": self.categories[0] if self.categories else "none",
+            "primary_capability": self.capabilities[0] if self.capabilities else "none",
         }
 
     @classmethod

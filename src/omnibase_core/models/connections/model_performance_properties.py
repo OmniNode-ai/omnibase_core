@@ -13,17 +13,17 @@ class ModelPerformanceProperties(BaseModel):
     """Performance tuning connection properties."""
 
     # All performance settings are numeric, not string
-    max_connections: int | None = Field(default=None, description="Maximum connections")
-    connection_limit: int | None = Field(default=None, description="Connection limit")
-    command_timeout: int | None = Field(default=None, description="Command timeout")
+    max_connections: int = Field(default=100, description="Maximum connections")
+    connection_limit: int = Field(default=50, description="Connection limit")
+    command_timeout: int = Field(default=30, description="Command timeout")
 
     # Compression and optimization settings
-    enable_compression: bool | None = Field(
-        default=None,
+    enable_compression: bool = Field(
+        default=False,
         description="Enable compression",
     )
-    compression_level: int | None = Field(default=None, description="Compression level")
-    enable_caching: bool | None = Field(default=None, description="Enable caching")
+    compression_level: int = Field(default=6, description="Compression level")
+    enable_caching: bool = Field(default=True, description="Enable caching")
 
 
 # Export the model

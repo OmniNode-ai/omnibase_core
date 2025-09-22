@@ -14,7 +14,7 @@ class ModelPerformanceMetrics(BaseModel):
     """Restrictive model for performance metrics."""
 
     execution_time_ms: float = Field(description="Execution time in milliseconds")
-    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
-    cpu_usage_percent: float | None = Field(None, description="CPU usage percentage")
-    io_operations: int | None = Field(None, description="Number of I/O operations")
-    network_calls: int | None = Field(None, description="Number of network calls")
+    memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
+    cpu_usage_percent: float = Field(default=0.0, description="CPU usage percentage")
+    io_operations: int = Field(default=0, description="Number of I/O operations")
+    network_calls: int = Field(default=0, description="Number of network calls")

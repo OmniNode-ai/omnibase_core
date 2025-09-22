@@ -15,10 +15,12 @@ from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...enums.enum_node_health_status import EnumNodeHealthStatus
 from ...protocols_local.node_info_like_protocol import NodeInfoLike
+from ..metadata.model_metadata_value import ModelMetadataValue
 from ..metadata.model_semver import ModelSemVer
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_performance_metrics import ModelNodePerformanceMetrics
+from .types_node_metadata_summary import NodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -200,30 +202,34 @@ class ModelNodeMetadataInfo(BaseModel):
         self.performance.last_accessed = value
 
     @property
-    def custom_metadata(self) -> dict[str, str | int | bool | float]:
+    def custom_metadata(self) -> dict[str, ModelMetadataValue]:
         """Custom metadata."""
-        # Convert from typed custom properties to dictionary format
-        result: dict[str, str | int | bool | float] = {}
+        # Convert from typed custom properties to ModelMetadataValue format
+        result: dict[str, ModelMetadataValue] = {}
         if self.organization.custom_properties.custom_strings:
-            result.update(self.organization.custom_properties.custom_strings)
+            for key, val in self.organization.custom_properties.custom_strings.items():
+                result[key] = ModelMetadataValue.from_string(val, "custom_strings")
         if self.organization.custom_properties.custom_numbers:
-            result.update(self.organization.custom_properties.custom_numbers)
+            for key, val in self.organization.custom_properties.custom_numbers.items():
+                result[key] = ModelMetadataValue.from_any(val, "custom_numbers")
         if self.organization.custom_properties.custom_flags:
-            result.update(self.organization.custom_properties.custom_flags)
+            for key, val in self.organization.custom_properties.custom_flags.items():
+                result[key] = ModelMetadataValue.from_bool(val, "custom_flags")
         return result
 
     @custom_metadata.setter
-    def custom_metadata(self, value: dict[str, str | int | bool | float]) -> None:
-        """Set custom metadata (convert to typed properties)."""
-        for key, val in value.items():
-            if isinstance(val, str):
-                self.organization.custom_properties.custom_strings[key] = val
+    def custom_metadata(self, value: dict[str, ModelMetadataValue]) -> None:
+        """Set custom metadata (convert from ModelMetadataValue to typed properties)."""
+        for key, metadata_val in value.items():
+            python_val = metadata_val.to_python_value()
+            if isinstance(python_val, str):
+                self.organization.custom_properties.custom_strings[key] = python_val
             elif isinstance(
-                val, bool
+                python_val, bool
             ):  # Check bool before int since bool is a subclass of int
-                self.organization.custom_properties.custom_flags[key] = val
-            elif isinstance(val, (int, float)):
-                self.organization.custom_properties.custom_numbers[key] = val
+                self.organization.custom_properties.custom_flags[key] = python_val
+            elif isinstance(python_val, (int, float)):
+                self.organization.custom_properties.custom_numbers[key] = python_val
 
     def is_active(self) -> bool:
         """Check if node is active."""
@@ -277,7 +283,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Update last accessed timestamp."""
         self.performance.update_accessed_time()
 
-    def get_summary(self) -> dict[str, str | int | bool | float | list[str] | None]:
+    def get_summary(self) -> NodeMetadataSummaryType:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
         core_summary = self.core.get_status_summary()

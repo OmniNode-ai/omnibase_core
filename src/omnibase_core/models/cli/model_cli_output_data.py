@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_cli_status import EnumCliStatus
 from ...enums.enum_output_format import EnumOutputFormat
 from ...enums.enum_output_type import EnumOutputType
+from ..infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelCliOutputData(BaseModel):
@@ -30,17 +31,17 @@ class ModelCliOutputData(BaseModel):
     )
 
     # Standard output content
-    stdout: str | None = Field(None, description="Standard output content")
-    stderr: str | None = Field(None, description="Standard error content")
+    stdout: str = Field(default="", description="Standard output content")
+    stderr: str = Field(default="", description="Standard error content")
 
     # Structured results
-    results: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Execution results with basic types"
+    results: dict[str, ModelCliValue] = Field(
+        default_factory=dict, description="Execution results with typed values"
     )
 
     # Metadata
-    metadata: dict[str, str | int | bool] = Field(
-        default_factory=dict, description="Output metadata with basic types"
+    metadata: dict[str, ModelCliValue] = Field(
+        default_factory=dict, description="Output metadata with typed values"
     )
 
     # Status and validation
@@ -50,10 +51,10 @@ class ModelCliOutputData(BaseModel):
     is_valid: bool = Field(default=True, description="Whether output is valid")
 
     # Performance metrics
-    execution_time_ms: float | None = Field(
-        None, description="Execution time in milliseconds"
+    execution_time_ms: float = Field(
+        default=0.0, description="Execution time in milliseconds"
     )
-    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
+    memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
 
     # File output information
     files_created: list[str] = Field(
@@ -64,13 +65,13 @@ class ModelCliOutputData(BaseModel):
         default_factory=list, description="List of files modified during execution"
     )
 
-    def add_result(self, key: str, value: str | int | bool | float) -> None:
-        """Add a result value with type safety."""
-        self.results[key] = value
+    def add_result(self, key: str, value: str) -> None:
+        """Add a result value. CLI results are typically strings."""
+        self.results[key] = ModelCliValue.from_string(value)
 
-    def add_metadata(self, key: str, value: str | int | bool) -> None:
-        """Add metadata with type safety."""
-        self.metadata[key] = value
+    def add_metadata(self, key: str, value: str) -> None:
+        """Add metadata. CLI metadata is typically strings."""
+        self.metadata[key] = ModelCliValue.from_string(value)
 
     def add_file_created(self, file_path: str) -> None:
         """Add a created file to the list."""
@@ -82,25 +83,23 @@ class ModelCliOutputData(BaseModel):
         if file_path not in self.files_modified:
             self.files_modified.append(file_path)
 
-    def get_field_value(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
-        """Get a field value from results or metadata."""
+    def get_field_value(self, key: str, default: str = "") -> str:
+        """Get a field value from results or metadata. CLI fields are strings."""
         if key in self.results:
-            return self.results[key]
+            return self.results[key].to_python_value()
         if key in self.metadata:
-            return self.metadata[key]
+            return self.metadata[key].to_python_value()
         return default
 
-    def set_field_value(self, key: str, value: str | int | bool | float) -> None:
-        """Set a field value in results."""
-        self.results[key] = value
+    def set_field_value(self, key: str, value: str) -> None:
+        """Set a field value in results. CLI field values are strings."""
+        self.results[key] = ModelCliValue.from_string(value)
 
     @classmethod
     def create_simple(
         cls,
-        stdout: str | None = None,
-        stderr: str | None = None,
+        stdout: str = "",
+        stderr: str = "",
         status: EnumCliStatus = EnumCliStatus.SUCCESS,
     ) -> ModelCliOutputData:
         """Create simple output data with just stdout/stderr."""
@@ -108,24 +107,19 @@ class ModelCliOutputData(BaseModel):
             stdout=stdout,
             stderr=stderr,
             status=status,
-            execution_time_ms=None,
-            memory_usage_mb=None,
         )
 
     @classmethod
     def create_with_results(
         cls,
-        results: dict[str, str | int | bool | float],
+        results: dict[str, str],
         status: EnumCliStatus = EnumCliStatus.SUCCESS,
     ) -> ModelCliOutputData:
-        """Create output data with structured results."""
+        """Create output data with structured results. CLI results are strings."""
+        typed_results = {k: ModelCliValue.from_string(v) for k, v in results.items()}
         return cls(
-            results=results,
+            results=typed_results,
             status=status,
-            stdout=None,
-            stderr=None,
-            execution_time_ms=None,
-            memory_usage_mb=None,
         )
 
 

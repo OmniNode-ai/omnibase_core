@@ -9,21 +9,31 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_metadata_value import ModelMetadataValue
+from ..metadata.model_numeric_value import ModelNumericValue
+
 
 class ModelNodeConfigurationSummary(BaseModel):
-    """Node configuration summary with specific types."""
+    """Node configuration summary with strongly-typed values."""
 
-    execution: dict[str, str | int | float | bool | None] = Field(
-        description="Execution configuration summary"
+    # Execution config using typed metadata values
+    execution: dict[str, ModelMetadataValue | None] = Field(
+        description="Execution configuration summary with type-safe values"
     )
-    resources: dict[str, str | int | float | bool | None] = Field(
-        description="Resource configuration summary"
+
+    # Resources using numeric values for consistency
+    resources: dict[str, ModelNumericValue | None] = Field(
+        description="Resource configuration summary with numeric values"
     )
-    features: dict[str, str | int | float | bool | None] = Field(
-        description="Feature configuration summary"
+
+    # Features simplified - use string list for feature flags
+    features: dict[str, list[str]] = Field(
+        default_factory=dict, description="Feature configuration as string lists"
     )
-    connection: dict[str, str | int | float | bool | None] = Field(
-        description="Connection configuration summary"
+
+    # Connection config using string values (most common for connection strings, hosts, etc.)
+    connection: dict[str, str | None] = Field(
+        description="Connection configuration summary (string values)"
     )
     is_production_ready: bool = Field(
         description="Whether configuration is production ready"

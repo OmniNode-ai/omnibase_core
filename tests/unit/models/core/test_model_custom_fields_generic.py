@@ -294,15 +294,17 @@ class TestModelCustomFieldsGenericEdgeCases:
 
         assert generic_fields.get_field("test") == base_fields.get_field("test")
 
-    def test_generic_multiple_type_parameters(self):
-        """Test behavior when using complex generic type parameters."""
-        # Test with union types
-        union_fields = ModelCustomFields[str | int]()
-        union_fields.set_field("mixed", "string_value")
-        union_fields.set_field("number", 42)
+    def test_generic_separate_type_parameters(self):
+        """Test behavior when using separate type parameters instead of union types."""
+        # Test with string type
+        string_fields = ModelCustomFields[str]()
+        string_fields.set_field("text", "string_value")
+        assert string_fields.get_field("text") == "string_value"
 
-        assert union_fields.get_field("mixed") == "string_value"
-        assert union_fields.get_field("number") == 42
+        # Test with int type separately
+        int_fields = ModelCustomFields[int]()
+        int_fields.set_field("number", 42)
+        assert int_fields.get_field("number") == 42
 
 
 if __name__ == "__main__":

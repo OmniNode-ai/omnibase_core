@@ -24,15 +24,15 @@ class ModelFallbackStrategy(BaseModel):
         description="The type of fallback strategy to use",
     )
 
-    timeout_seconds: int | None = Field(
-        30,
+    timeout_seconds: int = Field(
+        default=30,
         description="Timeout for fallback operations in seconds",
         ge=1,
         le=300,
     )
 
-    retry_attempts: int | None = Field(
-        3,
+    retry_attempts: int = Field(
+        default=3,
         description="Number of retry attempts before giving up",
         ge=0,
         le=10,
@@ -43,13 +43,13 @@ class ModelFallbackStrategy(BaseModel):
         description="Alternative endpoint to use during fallback",
     )
 
-    degraded_features: dict[str, bool] | None = Field(
-        default_factory=lambda: {},
+    degraded_features: dict[str, bool] = Field(
+        default_factory=dict,
         description="Feature flags for degraded mode operation",
     )
 
-    metadata: ModelFallbackMetadata | None = Field(
-        default_factory=lambda: ModelFallbackMetadata(),
+    metadata: ModelFallbackMetadata = Field(
+        default_factory=ModelFallbackMetadata,
         description="Strongly-typed strategy-specific configuration",
     )
 
@@ -62,8 +62,8 @@ class ModelFallbackStrategy(BaseModel):
 
     def get_effective_timeout(self) -> int:
         """Get the effective timeout value."""
-        return self.timeout_seconds or 30
+        return self.timeout_seconds
 
     def should_retry(self) -> bool:
         """Check if retries are enabled for this strategy."""
-        return (self.retry_attempts or 0) > 0
+        return self.retry_attempts > 0

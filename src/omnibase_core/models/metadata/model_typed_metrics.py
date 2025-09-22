@@ -19,20 +19,20 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     """Generic metrics model replacing type-specific variants."""
 
     metric_id: UUID = Field(..., description="UUID for metric identifier")
-    metric_display_name: str | None = Field(
-        None, description="Human-readable metric name"
+    metric_display_name: str = Field(
+        default="", description="Human-readable metric name"
     )
     value: T = Field(..., description="Typed metric value")
-    unit: str | None = Field(None, description="Unit of measurement")
-    description: str | None = Field(None, description="Metric description")
+    unit: str = Field(default="", description="Unit of measurement")
+    description: str = Field(default="", description="Metric description")
 
     @classmethod
     def string_metric(
         cls,
         name: str,
         value: str,
-        unit: str | None = None,
-        description: str | None = None,
+        unit: str = "",
+        description: str = "",
         **kwargs: Any,
     ) -> ModelTypedMetrics[str]:
         """Create a string metric."""
@@ -57,8 +57,8 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         cls,
         name: str,
         value: int,
-        unit: str | None = None,
-        description: str | None = None,
+        unit: str = "",
+        description: str = "",
         **kwargs: Any,
     ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
@@ -83,8 +83,8 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         cls,
         name: str,
         value: float,
-        unit: str | None = None,
-        description: str | None = None,
+        unit: str = "",
+        description: str = "",
         **kwargs: Any,
     ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
@@ -109,8 +109,8 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         cls,
         name: str,
         value: bool,
-        unit: str | None = None,
-        description: str | None = None,
+        unit: str = "",
+        description: str = "",
         **kwargs: Any,
     ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""

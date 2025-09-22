@@ -7,9 +7,15 @@ Specialized model for tracking and managing progress with validation and utiliti
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
+
+# Bounded TypeVar for metric values - reusing infrastructure pattern
+MetricValueType = TypeVar("MetricValueType", str, int, float, bool)
+
+# Bounded TypeVar for progress summary values - includes None for optional fields
+ProgressValueType = TypeVar("ProgressValueType", str, int, float, bool, None)
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_execution_phase import EnumExecutionPhase
@@ -277,7 +283,7 @@ class ModelProgress(BaseModel):
         next_name = min(uncompleted, key=lambda name: uncompleted[name])
         return (next_name, uncompleted[next_name])
 
-    def add_custom_metric(self, key: str, value: str | int | float | bool) -> None:
+    def add_custom_metric(self, key: str, value: MetricValueType) -> None:
         """Add custom progress metric with proper typing."""
         self.custom_metrics.add_metric(key, value)
         self.last_update_time = datetime.now(UTC)
@@ -315,7 +321,7 @@ class ModelProgress(BaseModel):
         self.completed_milestones.clear()
         self.custom_metrics.clear_all_metrics()
 
-    def get_summary(self) -> dict[str, str | int | bool | float | None]:
+    def get_summary(self) -> dict[str, ProgressValueType]:
         """Get progress summary."""
         return {
             "percentage": self.percentage,

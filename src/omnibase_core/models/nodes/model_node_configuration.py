@@ -5,7 +5,7 @@ Restructured to use focused sub-models for better organization.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -19,10 +19,10 @@ from .model_node_resource_limits import ModelNodeResourceLimits
 class TypedDictNodeConfigurationSummary(TypedDict):
     """Type-safe dictionary for node configuration summary."""
 
-    execution: dict[str, int | bool | None]
-    resources: dict[str, int | float | bool | None]
-    features: dict[str, bool | list[str] | int]
-    connection: dict[str, str | int | bool | None]
+    execution: dict[str, Any]
+    resources: dict[str, Any]
+    features: dict[str, Any]
+    connection: dict[str, Any]
     is_production_ready: bool
     is_performance_optimized: bool
     has_custom_settings: bool

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..common.model_schema_value import ModelSchemaValue
 from .model_field_accessor import ModelFieldAccessor
 
 
@@ -15,16 +16,14 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
     """Specialized accessor for custom fields with initialization."""
 
     def get_custom_field(
-        self, key: str, default: str | int | float | bool | list[str] | None = None
-    ) -> str | int | float | bool | list[str] | None:
+        self, key: str, default: ModelSchemaValue | None = None
+    ) -> ModelSchemaValue | None:
         """Get a custom field value, initializing custom_fields if needed."""
         if not self.has_field("custom_fields"):
             return default
         return self.get_field(f"custom_fields.{key}", default)
 
-    def set_custom_field(
-        self, key: str, value: str | int | float | bool | list[str]
-    ) -> bool:
+    def set_custom_field(self, key: str, value: ModelSchemaValue) -> bool:
         """Set a custom field value, initializing custom_fields if needed."""
         # Initialize custom_fields if it doesn't exist
         if not self.has_field("custom_fields"):

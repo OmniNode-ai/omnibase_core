@@ -11,6 +11,8 @@ from datetime import UTC, datetime, timedelta
 
 from pydantic import BaseModel, Field
 
+from .model_retry_failure_info import ModelRetryFailureInfo
+
 
 class ModelRetryExecution(BaseModel):
     """
@@ -113,13 +115,13 @@ class ModelRetryExecution(BaseModel):
         """Check if execution was successful."""
         return self.successful_attempt is not None
 
-    def get_failure_info(self) -> dict[str, str | int | None]:
+    def get_failure_info(self) -> ModelRetryFailureInfo:
         """Get failure information."""
-        return {
-            "last_error": self.last_error,
-            "last_status_code": self.last_status_code,
-            "attempts_made": self.current_attempt,
-        }
+        return ModelRetryFailureInfo.from_retry_execution(
+            last_error=self.last_error,
+            last_status_code=self.last_status_code,
+            attempts_made=self.current_attempt,
+        )
 
     def has_recent_attempt(self, seconds: int = 60) -> bool:
         """Check if there was a recent attempt."""

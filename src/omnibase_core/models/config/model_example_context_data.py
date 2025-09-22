@@ -27,32 +27,32 @@ class ModelExampleContextData(BaseModel):
     context_type: EnumContextType = Field(
         default=EnumContextType.USER, description="Type of context"
     )
-    environment: str | None = Field(None, description="Environment context")
+    environment: str = Field(default="development", description="Environment context")
 
     # Execution context
     execution_mode: EnumExecutionMode = Field(
         default=EnumExecutionMode.AUTO, description="Execution mode"
     )
-    timeout_seconds: float | None = Field(None, description="Timeout in seconds")
+    timeout_seconds: float = Field(default=30.0, description="Timeout in seconds")
 
     # Environment variables and settings
     environment_variables: dict[str, str] = Field(
         default_factory=dict, description="Environment variables"
     )
 
-    # Configuration context
-    configuration_overrides: dict[str, str | int | bool] = Field(
-        default_factory=dict, description="Configuration overrides"
+    # Configuration context - using str values for simplicity and type safety
+    configuration_overrides: dict[str, str] = Field(
+        default_factory=dict, description="Configuration overrides (string values)"
     )
 
     # User and session context
     user_id: UUID | None = Field(None, description="UUID of the user")
-    user_display_name: str | None = Field(None, description="Human-readable user name")
+    user_display_name: str = Field(default="", description="Human-readable user name")
     session_id: UUID | None = Field(None, description="Session identifier")
 
     # Additional metadata
     tags: list[str] = Field(default_factory=list, description="Context tags")
-    notes: str | None = Field(None, description="Additional context notes")
+    notes: str = Field(default="", description="Additional context notes")
 
     # Version info
     schema_version: ModelSemVer | None = Field(

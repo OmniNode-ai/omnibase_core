@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_runtime_category import EnumRuntimeCategory
 from ...enums.enum_time_unit import EnumTimeUnit
 from ..core.model_custom_properties import ModelCustomProperties
+from ..metadata.model_metadata_value import ModelMetadataValue
 from .model_time_based import ModelTimeBased
 from .model_timeout_data import ModelTimeoutData
 
@@ -117,7 +118,7 @@ class ModelTimeout(BaseModel):
     @property
     def custom_properties(self) -> ModelCustomProperties:
         """Custom timeout properties using typed model."""
-        metadata: dict[str, str | int | bool | float] = {}
+        metadata: dict[str, Any] = {}
         for key, value in self.time_based.metadata.items():
             if key.startswith("custom_"):
                 custom_key = key[7:]  # Remove "custom_" prefix
@@ -136,7 +137,7 @@ class ModelTimeout(BaseModel):
         return ModelCustomProperties.from_metadata(metadata)
 
     @property
-    def custom_metadata(self) -> dict[str, str | int | bool | float]:
+    def custom_metadata(self) -> dict[str, ModelMetadataValue]:
         """Custom metadata accessor."""
         return self.custom_properties.to_metadata()
 
@@ -293,7 +294,7 @@ class ModelTimeout(BaseModel):
             custom_properties=self.custom_properties,
         )
 
-    def model_dump(self, **kwargs: Any) -> dict[str, str | int | bool | float | None]:
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """Override Pydantic model_dump to use typed serialization."""
         # Get typed data first
         typed_data = self.to_typed_data()

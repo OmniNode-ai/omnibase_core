@@ -95,36 +95,16 @@ class ModelCustomConnectionProperties(BaseModel):
     def create_service_connection(
         cls,
         service_name: str | None = None,
-        instance_type: str | EnumInstanceType | None = None,
+        instance_type: EnumInstanceType | None = None,
         region: str | None = None,
         availability_zone: str | None = None,
         **kwargs: Any,
     ) -> ModelCustomConnectionProperties:
         """Create service connection properties."""
-        # Handle instance type conversion
-        enum_instance_type = None
-        if instance_type is not None:
-            if isinstance(instance_type, EnumInstanceType):
-                enum_instance_type = instance_type
-            elif isinstance(instance_type, str):
-                try:
-                    enum_instance_type = EnumInstanceType(instance_type)
-                except ValueError:
-                    # If the string doesn't match any enum value, use a generic mapping
-                    size_mapping = {
-                        "small": EnumInstanceType.SMALL,
-                        "medium": EnumInstanceType.MEDIUM,
-                        "large": EnumInstanceType.LARGE,
-                        "xlarge": EnumInstanceType.XLARGE,
-                        "xxlarge": EnumInstanceType.XXLARGE,
-                    }
-                    enum_instance_type = size_mapping.get(
-                        instance_type.lower(), EnumInstanceType.MEDIUM
-                    )
 
         cloud_props = ModelCloudServiceProperties(
             service_display_name=service_name,
-            instance_type=enum_instance_type,
+            instance_type=instance_type,
             region=region,
             availability_zone=availability_zone,
         )

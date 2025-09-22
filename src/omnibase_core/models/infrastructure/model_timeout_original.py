@@ -33,10 +33,10 @@ class ModelTimeout(BaseModel):
     )
 
     # Optional timeout configurations
-    warning_threshold_seconds: int | None = Field(
-        default=None,
+    warning_threshold_seconds: int = Field(
+        default=0,
         description="Warning threshold in seconds (triggers before timeout)",
-        ge=1,
+        ge=0,
     )
 
     # Timeout behavior
@@ -48,33 +48,33 @@ class ModelTimeout(BaseModel):
         default=False,
         description="Whether timeout can be extended during execution",
     )
-    extension_limit_seconds: int | None = Field(
-        default=None,
+    extension_limit_seconds: int = Field(
+        default=0,
         description="Maximum extension time in seconds",
-        ge=1,
+        ge=0,
     )
 
     # Runtime categorization
-    runtime_category: EnumRuntimeCategory | None = Field(
-        default=None,
+    runtime_category: EnumRuntimeCategory = Field(
+        default=EnumRuntimeCategory.SHORT,
         description="Runtime category for this timeout",
     )
 
     # Metadata
-    description: str | None = Field(
-        default=None,
+    description: str = Field(
+        default="",
         description="Human-readable timeout description",
     )
-    custom_metadata: dict[str, str | int | bool | float] = Field(
+    custom_metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Custom timeout metadata",
     )
 
     @field_validator("warning_threshold_seconds")
     @classmethod
-    def validate_warning_threshold(cls, v: int | None, info: Any) -> int | None:
+    def validate_warning_threshold(cls, v: int, info: Any) -> int:
         """Validate warning threshold is less than timeout."""
-        if v is not None and "timeout_seconds" in info.data:
+        if v > 0 and "timeout_seconds" in info.data:
             timeout = info.data["timeout_seconds"]
             if v >= timeout:
                 msg = "Warning threshold must be less than timeout"
@@ -83,16 +83,16 @@ class ModelTimeout(BaseModel):
 
     @field_validator("extension_limit_seconds")
     @classmethod
-    def validate_extension_limit(cls, v: int | None, info: Any) -> int | None:
+    def validate_extension_limit(cls, v: int, info: Any) -> int:
         """Validate extension limit when extension is allowed."""
-        if v is not None and info.data.get("allow_extension", False) is False:
+        if v > 0 and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
             raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization to set runtime category if not provided."""
-        if self.runtime_category is None:
+        if self.runtime_category == EnumRuntimeCategory.SHORT:
             self.runtime_category = EnumRuntimeCategory.from_seconds(
                 self.timeout_seconds
             )
@@ -113,24 +113,20 @@ class ModelTimeout(BaseModel):
         return self.timeout_seconds / 3600.0
 
     @property
-    def warning_threshold_timedelta(self) -> timedelta | None:
+    def warning_threshold_timedelta(self) -> timedelta:
         """Get warning threshold as timedelta object."""
-        if self.warning_threshold_seconds is None:
-            return None
         return timedelta(seconds=self.warning_threshold_seconds)
 
     @property
-    def extension_limit_timedelta(self) -> timedelta | None:
+    def extension_limit_timedelta(self) -> timedelta:
         """Get extension limit as timedelta object."""
-        if self.extension_limit_seconds is None:
-            return None
         return timedelta(seconds=self.extension_limit_seconds)
 
     @property
     def max_total_seconds(self) -> int:
         """Get maximum total seconds including extensions."""
         base = self.timeout_seconds
-        if self.allow_extension and self.extension_limit_seconds is not None:
+        if self.allow_extension and self.extension_limit_seconds > 0:
             return base + self.extension_limit_seconds
         return base
 
@@ -140,10 +136,8 @@ class ModelTimeout(BaseModel):
             start_time = datetime.now(UTC)
         return start_time + self.timeout_timedelta
 
-    def get_warning_time(self, start_time: datetime | None = None) -> datetime | None:
+    def get_warning_time(self, start_time: datetime | None = None) -> datetime:
         """Get warning datetime for this timeout."""
-        if self.warning_threshold_seconds is None:
-            return None
         if start_time is None:
             start_time = datetime.now(UTC)
         return start_time + timedelta(seconds=self.warning_threshold_seconds)
@@ -161,11 +155,11 @@ class ModelTimeout(BaseModel):
         self, start_time: datetime, current_time: datetime | None = None
     ) -> bool:
         """Check if warning threshold has been reached."""
-        warning_time = self.get_warning_time(start_time)
-        if warning_time is None:
+        if self.warning_threshold_seconds == 0:
             return False
         if current_time is None:
             current_time = datetime.now(UTC)
+        warning_time = self.get_warning_time(start_time)
         return current_time >= warning_time
 
     def get_remaining_seconds(
@@ -199,7 +193,7 @@ class ModelTimeout(BaseModel):
         if not self.allow_extension:
             return False
 
-        if self.extension_limit_seconds is not None:
+        if self.extension_limit_seconds > 0:
             max_extension = self.extension_limit_seconds
             if additional_seconds > max_extension:
                 return False
@@ -213,7 +207,7 @@ class ModelTimeout(BaseModel):
     def from_seconds(
         cls,
         seconds: int,
-        description: str | None = None,
+        description: str = "",
         is_strict: bool = True,
     ) -> ModelTimeout:
         """Create timeout from seconds."""
@@ -227,7 +221,7 @@ class ModelTimeout(BaseModel):
     def from_minutes(
         cls,
         minutes: float,
-        description: str | None = None,
+        description: str = "",
         is_strict: bool = True,
     ) -> ModelTimeout:
         """Create timeout from minutes."""
@@ -238,7 +232,7 @@ class ModelTimeout(BaseModel):
     def from_hours(
         cls,
         hours: float,
-        description: str | None = None,
+        description: str = "",
         is_strict: bool = True,
     ) -> ModelTimeout:
         """Create timeout from hours."""
@@ -249,7 +243,7 @@ class ModelTimeout(BaseModel):
     def from_runtime_category(
         cls,
         category: EnumRuntimeCategory,
-        description: str | None = None,
+        description: str = "",
         use_max_estimate: bool = True,
     ) -> ModelTimeout:
         """Create timeout from runtime category."""

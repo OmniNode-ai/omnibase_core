@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from ..common.model_schema_value import ModelSchemaValue
+
 
 class ModelCustomProperties(BaseModel):
     """
@@ -50,15 +52,15 @@ class ModelCustomProperties(BaseModel):
         """Set a custom boolean value."""
         self.custom_flags[key] = value
 
-    def get_custom_value(self, key: str) -> str | float | bool | None:
+    def get_custom_value(self, key: str) -> ModelSchemaValue | None:
         """Get custom value from any category."""
         # Check each category with explicit typing
         if key in self.custom_strings:
-            return self.custom_strings[key]
+            return ModelSchemaValue.from_value(self.custom_strings[key])
         if key in self.custom_numbers:
-            return self.custom_numbers[key]
+            return ModelSchemaValue.from_value(self.custom_numbers[key])
         if key in self.custom_flags:
-            return self.custom_flags[key]
+            return ModelSchemaValue.from_value(self.custom_flags[key])
         return None
 
     def has_custom_field(self, key: str) -> bool:
@@ -83,32 +85,37 @@ class ModelCustomProperties(BaseModel):
             removed = True
         return removed
 
-    def get_all_custom_fields(self) -> dict[str, str | float | bool]:
+    def get_all_custom_fields(self) -> dict[str, ModelSchemaValue]:
         """Get all custom fields as a unified dictionary."""
-        result: dict[str, str | float | bool] = {}
-        result.update(self.custom_strings)
-        result.update(self.custom_numbers)
-        result.update(self.custom_flags)
+        result: dict[str, ModelSchemaValue] = {}
+        for k, v in self.custom_strings.items():
+            result[k] = ModelSchemaValue.from_value(v)
+        for k, v in self.custom_numbers.items():
+            result[k] = ModelSchemaValue.from_value(v)
+        for k, v in self.custom_flags.items():
+            result[k] = ModelSchemaValue.from_value(v)
         return result
 
-    def set_custom_value(self, key: str, value: str | float | bool) -> None:
+    def set_custom_value(self, key: str, value: ModelSchemaValue) -> None:
         """Set custom value with automatic type detection."""
-        if isinstance(value, str):
-            self.set_custom_string(key, value)
-        elif isinstance(value, bool):
-            self.set_custom_flag(key, value)
-        else:  # isinstance(value, (int, float))
-            self.set_custom_number(key, float(value))
+        raw_value = value.to_value()
+        if isinstance(raw_value, str):
+            self.set_custom_string(key, raw_value)
+        elif isinstance(raw_value, bool):
+            self.set_custom_flag(key, raw_value)
+        else:  # isinstance(raw_value, (int, float))
+            self.set_custom_number(key, float(raw_value))
 
-    def update_properties(self, **kwargs: str | int | bool | float) -> None:
+    def update_properties(self, **kwargs: ModelSchemaValue) -> None:
         """Update custom properties using kwargs."""
         for key, value in kwargs.items():
-            if isinstance(value, str):
-                self.set_custom_string(key, value)
-            elif isinstance(value, bool):
-                self.set_custom_flag(key, value)
-            elif isinstance(value, (int, float)):
-                self.set_custom_number(key, float(value))
+            raw_value = value.to_value()
+            if isinstance(raw_value, str):
+                self.set_custom_string(key, raw_value)
+            elif isinstance(raw_value, bool):
+                self.set_custom_flag(key, raw_value)
+            elif isinstance(raw_value, (int, float)):
+                self.set_custom_number(key, float(raw_value))
 
     def clear_all(self) -> None:
         """Clear all custom properties."""
@@ -128,7 +135,7 @@ class ModelCustomProperties(BaseModel):
 
     @classmethod
     def create_with_properties(
-        cls, **kwargs: str | int | bool | float
+        cls, **kwargs: ModelSchemaValue
     ) -> ModelCustomProperties:
         """Create ModelCustomProperties with initial properties."""
         instance = cls()
@@ -137,18 +144,25 @@ class ModelCustomProperties(BaseModel):
 
     @classmethod
     def from_metadata(
-        cls, metadata: dict[str, str | int | bool | float]
+        cls, metadata: dict[str, ModelSchemaValue]
     ) -> ModelCustomProperties:
         """
         Create ModelCustomProperties from custom_metadata field.
         Uses .model_validate() for proper Pydantic deserialization.
         """
         # Convert to proper format for Pydantic validation
-        custom_strings = {k: v for k, v in metadata.items() if isinstance(v, str)}
-        custom_numbers = {
-            k: float(v) for k, v in metadata.items() if isinstance(v, (int, float))
-        }
-        custom_flags = {k: v for k, v in metadata.items() if isinstance(v, bool)}
+        custom_strings = {}
+        custom_numbers = {}
+        custom_flags = {}
+
+        for k, v in metadata.items():
+            raw_value = v.to_value()
+            if isinstance(raw_value, str):
+                custom_strings[k] = raw_value
+            elif isinstance(raw_value, (int, float)):
+                custom_numbers[k] = float(raw_value)
+            elif isinstance(raw_value, bool):
+                custom_flags[k] = raw_value
 
         return cls.model_validate(
             {
@@ -158,16 +172,21 @@ class ModelCustomProperties(BaseModel):
             }
         )
 
-    def to_metadata(self) -> dict[str, str | int | bool | float]:
+    def to_metadata(self) -> dict[str, ModelSchemaValue]:
         """
         Convert to custom_metadata format using Pydantic serialization.
         Uses .model_dump() for proper Pydantic serialization.
         """
         dumped = self.model_dump()
-        result: dict[str, str | int | bool | float] = {}
-        result.update(dumped["custom_strings"])
-        result.update(dumped["custom_numbers"])
-        result.update(dumped["custom_flags"])
+        result: dict[str, ModelSchemaValue] = {}
+
+        for k, v in dumped["custom_strings"].items():
+            result[k] = ModelSchemaValue.from_value(v)
+        for k, v in dumped["custom_numbers"].items():
+            result[k] = ModelSchemaValue.from_value(v)
+        for k, v in dumped["custom_flags"].items():
+            result[k] = ModelSchemaValue.from_value(v)
+
         return result
 
 

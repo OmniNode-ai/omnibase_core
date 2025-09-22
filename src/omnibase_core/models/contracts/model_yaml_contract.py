@@ -7,7 +7,7 @@ Replaces manual YAML validation with proper type-safe validation.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ class ModelYamlContract(BaseModel):
     node_type: EnumNodeType = Field(description="ONEX node type classification")
 
     # Optional fields that may appear in contract files
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Optional contract description"
     )
 
@@ -39,9 +39,7 @@ class ModelYamlContract(BaseModel):
     @classmethod
     def validate_yaml_content(
         cls,
-        yaml_data: dict[
-            str, str | int | float | bool | None | list[str] | dict[str, str]
-        ],
+        yaml_data: dict[str, Any],
     ) -> ModelYamlContract:
         """
         Validate YAML content using Pydantic model validation.

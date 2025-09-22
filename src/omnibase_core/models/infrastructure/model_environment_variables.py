@@ -78,7 +78,7 @@ class ModelEnvironmentVariables(BaseModel):
             return True
         return False
 
-    def get_variable(self, name: str, default: str | None = None) -> str | None:
+    def get_variable(self, name: str, default: str = "") -> str:
         """
         Get environment variable value.
 

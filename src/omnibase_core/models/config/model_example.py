@@ -35,8 +35,8 @@ class ModelExample(BaseModel):
         min_length=1,
     )
 
-    description: str | None = Field(
-        None,
+    description: str = Field(
+        default="",
         description="Detailed description of what this example demonstrates",
     )
 
@@ -68,18 +68,18 @@ class ModelExample(BaseModel):
         description="Whether this example passes validation",
     )
 
-    validation_notes: str | None = Field(
-        None,
+    validation_notes: str = Field(
+        default="",
         description="Notes about validation status or issues",
     )
 
     # Timestamps
-    created_at: datetime | None = Field(
-        None,
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
         description="When this example was created",
     )
 
-    updated_at: datetime | None = Field(
-        None,
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
         description="When this example was last updated",
     )

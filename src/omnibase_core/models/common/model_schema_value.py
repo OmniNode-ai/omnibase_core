@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_numeric_value import ModelNumericValue
+
 
 class ModelSchemaValue(BaseModel):
     """
@@ -21,7 +23,7 @@ class ModelSchemaValue(BaseModel):
 
     # Value types (one of these will be set)
     string_value: str | None = Field(None, description="String value")
-    number_value: int | float | None = Field(None, description="Numeric value")
+    number_value: ModelNumericValue | None = Field(None, description="Numeric value")
     boolean_value: bool | None = Field(None, description="Boolean value")
     null_value: bool | None = Field(None, description="True if value is null")
     array_value: list["ModelSchemaValue"] | None = Field(
@@ -51,25 +53,75 @@ class ModelSchemaValue(BaseModel):
             ModelSchemaValue instance
         """
         if value is None:
-            return cls(value_type="null", null_value=True)
+            return cls(
+                value_type="null",
+                string_value=None,
+                number_value=None,
+                boolean_value=None,
+                null_value=True,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, bool):
-            return cls(value_type="boolean", boolean_value=value)
+            return cls(
+                value_type="boolean",
+                string_value=None,
+                number_value=None,
+                boolean_value=value,
+                null_value=None,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, str):
-            return cls(value_type="string", string_value=value)
-        if isinstance(value, int | float):
-            return cls(value_type="number", number_value=value)
+            return cls(
+                value_type="string",
+                string_value=value,
+                number_value=None,
+                boolean_value=None,
+                null_value=None,
+                array_value=None,
+                object_value=None,
+            )
+        if isinstance(value, (int, float)):
+            return cls(
+                value_type="number",
+                string_value=None,
+                number_value=ModelNumericValue.from_numeric(value),
+                boolean_value=None,
+                null_value=None,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, list):
             return cls(
                 value_type="array",
+                string_value=None,
+                number_value=None,
+                boolean_value=None,
+                null_value=None,
                 array_value=[cls.from_value(item) for item in value],
+                object_value=None,
             )
         if isinstance(value, dict):
             return cls(
                 value_type="object",
+                string_value=None,
+                number_value=None,
+                boolean_value=None,
+                null_value=None,
+                array_value=None,
                 object_value={k: cls.from_value(v) for k, v in value.items()},
             )
         # Convert to string representation for unknown types
-        return cls(value_type="string", string_value=str(value))
+        return cls(
+            value_type="string",
+            string_value=str(value),
+            number_value=None,
+            boolean_value=None,
+            null_value=None,
+            array_value=None,
+            object_value=None,
+        )
 
     def to_value(self) -> Any:
         """
@@ -85,7 +137,7 @@ class ModelSchemaValue(BaseModel):
         if self.value_type == "string":
             return self.string_value
         if self.value_type == "number":
-            return self.number_value
+            return self.number_value.to_python_value() if self.number_value else None
         if self.value_type == "array":
             return [item.to_value() for item in (self.array_value or [])]
         if self.value_type == "object":

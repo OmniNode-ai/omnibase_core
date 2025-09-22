@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .types_node_execution_summary import NodeExecutionSummaryType
+
 
 class ModelNodeExecutionSettings(BaseModel):
     """
@@ -21,9 +23,9 @@ class ModelNodeExecutionSettings(BaseModel):
     """
 
     # Execution control (3 fields)
-    max_retries: int | None = Field(default=None, description="Maximum retry attempts")
-    timeout_seconds: int | None = Field(default=None, description="Execution timeout")
-    batch_size: int | None = Field(default=None, description="Batch processing size")
+    max_retries: int = Field(default=3, description="Maximum retry attempts")
+    timeout_seconds: int = Field(default=30, description="Execution timeout")
+    batch_size: int = Field(default=1, description="Batch processing size")
 
     # Execution mode (1 field)
     parallel_execution: bool = Field(
@@ -31,25 +33,21 @@ class ModelNodeExecutionSettings(BaseModel):
         description="Enable parallel execution",
     )
 
-    def get_execution_summary(self) -> dict[str, int | bool | None]:
+    def get_execution_summary(self) -> NodeExecutionSummaryType:
         """Get execution settings summary."""
         return {
             "max_retries": self.max_retries,
             "timeout_seconds": self.timeout_seconds,
             "batch_size": self.batch_size,
             "parallel_execution": self.parallel_execution,
-            "has_retry_limit": self.max_retries is not None,
-            "has_timeout": self.timeout_seconds is not None,
-            "supports_batching": self.batch_size is not None,
+            "has_retry_limit": self.max_retries > 0,
+            "has_timeout": self.timeout_seconds > 0,
+            "supports_batching": self.batch_size > 1,
         }
 
     def is_configured_for_performance(self) -> bool:
         """Check if configured for performance."""
-        return (
-            self.parallel_execution
-            and self.batch_size is not None
-            and self.batch_size > 1
-        )
+        return self.parallel_execution and self.batch_size > 1
 
     @classmethod
     def create_default(cls) -> ModelNodeExecutionSettings:

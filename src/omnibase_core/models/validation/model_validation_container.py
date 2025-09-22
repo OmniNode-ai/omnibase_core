@@ -8,12 +8,17 @@ the codebase.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
+
+# Semantic type alias for values that can be automatically converted to ModelValidationValue
+# Since ModelValidationValue.from_any() handles any type safely via type detection,
+# we use Any to represent the semantic concept of "validation-convertible data"
+ValidationConvertibleValue = Any
 
 
 class ModelValidationContainer(BaseModel):
@@ -37,9 +42,9 @@ class ModelValidationContainer(BaseModel):
     def add_error(
         self,
         message: str,
-        field: Optional[str] = None,
-        error_code: Optional[str] = None,
-        details: Optional[dict[str, ModelValidationValue]] = None,
+        field: str | None = None,
+        error_code: str | None = None,
+        details: dict[str, ModelValidationValue] | None = None,
     ) -> None:
         """Add a standard validation error."""
         error = ModelValidationError.create_error(
@@ -54,9 +59,9 @@ class ModelValidationContainer(BaseModel):
     def add_error_with_raw_details(
         self,
         message: str,
-        field: Optional[str] = None,
-        error_code: Optional[str] = None,
-        raw_details: Optional[dict[str, str | int | bool]] = None,
+        field: str | None = None,
+        error_code: str | None = None,
+        raw_details: dict[str, ValidationConvertibleValue] | None = None,
     ) -> None:
         """Add a standard validation error with automatic conversion of raw details."""
         converted_details = None
@@ -76,9 +81,9 @@ class ModelValidationContainer(BaseModel):
     def add_critical_error(
         self,
         message: str,
-        field: Optional[str] = None,
-        error_code: Optional[str] = None,
-        details: Optional[dict[str, ModelValidationValue]] = None,
+        field: str | None = None,
+        error_code: str | None = None,
+        details: dict[str, ModelValidationValue] | None = None,
     ) -> None:
         """Add a critical validation error."""
         error = ModelValidationError.create_critical(
@@ -93,9 +98,9 @@ class ModelValidationContainer(BaseModel):
     def add_critical_error_with_raw_details(
         self,
         message: str,
-        field: Optional[str] = None,
-        error_code: Optional[str] = None,
-        raw_details: Optional[dict[str, str | int | bool]] = None,
+        field: str | None = None,
+        error_code: str | None = None,
+        raw_details: dict[str, ValidationConvertibleValue] | None = None,
     ) -> None:
         """Add a critical validation error with automatic conversion of raw details."""
         converted_details = None

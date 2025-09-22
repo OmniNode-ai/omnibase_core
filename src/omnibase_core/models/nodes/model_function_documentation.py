@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .types_function_documentation_summary import FunctionDocumentationSummaryType
+
 
 class ModelFunctionDocumentation(BaseModel):
     """
@@ -64,7 +66,7 @@ class ModelFunctionDocumentation(BaseModel):
 
         return min(score, 1.0)
 
-    def get_documentation_summary(self) -> dict[str, bool | int | float]:
+    def get_documentation_summary(self) -> FunctionDocumentationSummaryType:
         """Get documentation summary."""
         return {
             "has_documentation": self.has_documentation(),

@@ -7,8 +7,6 @@ methods that can be inherited by any model requiring validation.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from .model_validation_container import ModelValidationContainer
@@ -42,8 +40,8 @@ class ModelValidationBase(BaseModel):
     def add_validation_error(
         self,
         message: str,
-        field: Optional[str] = None,
-        error_code: Optional[str] = None,
+        field: str | None = None,
+        error_code: str | None = None,
         critical: bool = False,
     ) -> None:
         """Add a validation error to this model."""

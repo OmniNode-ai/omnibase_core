@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_cli_status import EnumCliStatus
 from ...enums.enum_data_type import EnumDataType
 from ...enums.enum_io_type import EnumIOType
+from ..metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelExampleOutputData(BaseModel):
@@ -28,9 +29,9 @@ class ModelExampleOutputData(BaseModel):
     )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
-    # Output results
-    results: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Output results with basic types"
+    # Output results using strongly-typed values
+    results: dict[str, ModelMetadataValue] = Field(
+        default_factory=dict, description="Output results with type-safe values"
     )
 
     # Status information

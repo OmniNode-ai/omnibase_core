@@ -11,6 +11,8 @@ from typing import Any, Callable, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
+from ..infrastructure.model_cli_value import ModelCliValue
+
 # Decorator to allow dict[str, Any] usage with justification
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -106,7 +108,7 @@ class ModelOutputFormatOptions(BaseModel):
     )
 
     # Custom format options (extensibility)
-    custom_options: dict[str, str | int | bool] = Field(
+    custom_options: dict[str, ModelCliValue] = Field(
         default_factory=dict, description="Custom format options for specific use cases"
     )
 
@@ -189,7 +191,7 @@ class ModelOutputFormatOptions(BaseModel):
 
         # Transform string data structure to proper typed fields
         kwargs: dict[str, Any] = {}
-        custom_options: dict[str, str | int | bool] = {}
+        custom_options: dict[str, ModelCliValue] = {}
 
         # Convert known fields with proper type handling
         field_mappings = {

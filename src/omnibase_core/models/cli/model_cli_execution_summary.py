@@ -8,7 +8,6 @@ Replaces dict[str, Any] for execution summary with structured typing.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -32,16 +31,16 @@ class ModelCliExecutionSummary(BaseModel):
     command_display_name: str | None = Field(
         None, description="Human-readable command name"
     )
-    target_node_id: Optional[UUID] = Field(
+    target_node_id: UUID | None = Field(
         default=None, description="Target node UUID for precise identification"
     )
-    target_node_display_name: Optional[str] = Field(
+    target_node_display_name: str | None = Field(
         default=None, description="Target node display name if applicable"
     )
 
     # Execution state
     status: EnumExecutionStatus = Field(..., description="Execution status")
-    current_phase: Optional[EnumExecutionPhase] = Field(
+    current_phase: EnumExecutionPhase | None = Field(
         default=None, description="Current execution phase"
     )
     progress_percentage: float = Field(
@@ -50,7 +49,7 @@ class ModelCliExecutionSummary(BaseModel):
 
     # Timing information
     start_time: datetime = Field(..., description="Execution start time")
-    end_time: Optional[datetime] = Field(default=None, description="Execution end time")
+    end_time: datetime | None = Field(default=None, description="Execution end time")
     elapsed_ms: int = Field(..., description="Elapsed time in milliseconds", ge=0)
 
     # Execution metadata
@@ -85,7 +84,7 @@ class ModelCliExecutionSummary(BaseModel):
         """Get start time as ISO string."""
         return self.start_time.isoformat()
 
-    def get_end_time_iso(self) -> Optional[str]:
+    def get_end_time_iso(self) -> str | None:
         """Get end time as ISO string, None if not completed."""
         return self.end_time.isoformat() if self.end_time else None
 

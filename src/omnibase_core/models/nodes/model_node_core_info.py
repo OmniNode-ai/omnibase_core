@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -17,6 +18,21 @@ from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...enums.enum_registry_status import EnumRegistryStatus
 from ..metadata.model_semver import ModelSemVer
+
+
+class TypedDictCoreSummary(TypedDict):
+    """Type-safe dictionary for node core summary."""
+
+    node_id: str
+    node_name: str
+    node_type: str
+    node_version: str
+    status: str
+    health: str
+    is_active: bool
+    is_healthy: bool
+    has_description: bool
+    has_author: bool
 
 
 class ModelNodeCoreInfo(BaseModel):
@@ -76,7 +92,7 @@ class ModelNodeCoreInfo(BaseModel):
         """Check if node has an author."""
         return bool(self.author)
 
-    def get_core_summary(self) -> dict[str, str | bool | None]:
+    def get_core_summary(self) -> TypedDictCoreSummary:
         """Get core node information summary."""
         return {
             "node_id": str(self.node_id),
@@ -123,4 +139,4 @@ class ModelNodeCoreInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeCoreInfo"]
+__all__ = ["ModelNodeCoreInfo", "TypedDictCoreSummary"]
