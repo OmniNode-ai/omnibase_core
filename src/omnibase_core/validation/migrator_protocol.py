@@ -5,10 +5,16 @@ Protocol migrator for safe migration of protocols to omnibase_spi.
 from __future__ import annotations
 
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import cast
 
+from .migration_types import (
+    TypedDictMigrationDuplicateConflictDict,
+    TypedDictMigrationNameConflictDict,
+    TypedDictMigrationStepDict,
+)
+from .model_migration_plan import ModelMigrationPlan
+from .model_migration_result import ModelMigrationResult
 from .validation_utils import (
     ProtocolInfo,
     ValidationResult,
@@ -16,83 +22,6 @@ from .validation_utils import (
     extract_protocols_from_directory,
     suggest_spi_location,
 )
-
-
-class TypedDictMigrationConflictBaseDict(TypedDict):
-    """Base type definition for migration conflict information."""
-
-    type: str
-    protocol_name: str
-    source_file: str
-    spi_file: str
-    recommendation: str
-
-
-class TypedDictMigrationNameConflictDict(TypedDictMigrationConflictBaseDict):
-    """Type definition for name conflict information."""
-
-    source_signature: str
-    spi_signature: str
-
-
-class TypedDictMigrationDuplicateConflictDict(TypedDictMigrationConflictBaseDict):
-    """Type definition for exact duplicate conflict information."""
-
-    signature_hash: str
-
-
-class TypedDictMigrationStepDict(TypedDict, total=False):
-    """Type definition for migration step information."""
-
-    phase: str  # "preparation", "migration", "finalization"
-    action: str
-    description: str
-    estimated_minutes: int
-    # Optional fields for migration phase
-    protocol: str
-    source_file: str
-    target_category: str
-    target_path: str
-
-
-@dataclass
-class ModelMigrationPlan:
-    """Plan for migrating protocols to omnibase_spi."""
-
-    success: bool
-    source_repository: str
-    target_repository: str
-    protocols_to_migrate: list[ProtocolInfo]
-    conflicts_detected: list[
-        TypedDictMigrationNameConflictDict | TypedDictMigrationDuplicateConflictDict
-    ]
-    migration_steps: list[TypedDictMigrationStepDict]
-    estimated_time_minutes: int
-    recommendations: list[str]
-
-    def has_conflicts(self) -> bool:
-        """Check if migration plan has conflicts."""
-        return len(self.conflicts_detected) > 0
-
-    def can_proceed(self) -> bool:
-        """Check if migration can proceed safely."""
-        return self.success and not self.has_conflicts()
-
-
-@dataclass
-class ModelMigrationResult:
-    """Result of protocol migration operation."""
-
-    success: bool
-    source_repository: str
-    target_repository: str
-    protocols_migrated: int
-    files_created: list[str]
-    files_deleted: list[str]
-    imports_updated: list[str]
-    conflicts_resolved: list[str]
-    execution_time_minutes: int
-    rollback_available: bool
 
 
 class ProtocolMigrator:

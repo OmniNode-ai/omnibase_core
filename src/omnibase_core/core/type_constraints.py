@@ -6,87 +6,16 @@ and type constraints to replace overly broad generic usage patterns.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Protocol, TypeVar, runtime_checkable
+from typing import Any, TypeVar
 
+from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
+from omnibase_spi.protocols.types import ProtocolExecutable as Executable
+from omnibase_spi.protocols.types import ProtocolIdentifiable as Identifiable
+from omnibase_spi.protocols.types import ProtocolMetadataProvider as MetadataProvider
+from omnibase_spi.protocols.types import ProtocolNameable as Nameable
+from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
+from omnibase_spi.protocols.types import ProtocolValidatable as Validatable
 from pydantic import BaseModel
-
-# Protocol definitions for common interfaces
-
-
-@runtime_checkable
-class Serializable(Protocol):
-    """Protocol for objects that can be serialized to dict."""
-
-    def model_dump(
-        self,
-    ) -> dict[
-        str,
-        str
-        | int
-        | float
-        | bool
-        | list[str | int | float | bool]
-        | dict[str, str | int | float | bool],
-    ]:
-        """Serialize to dictionary."""
-        ...
-
-
-@runtime_checkable
-class Identifiable(Protocol):
-    """Protocol for objects that have an ID."""
-
-    @property
-    def id(self) -> str:
-        """Get the object ID."""
-        ...
-
-
-@runtime_checkable
-class Nameable(Protocol):
-    """Protocol for objects that have a name."""
-
-    @property
-    def name(self) -> str:
-        """Get the object name."""
-        ...
-
-
-@runtime_checkable
-class Validatable(Protocol):
-    """Protocol for objects that can be validated."""
-
-    def is_valid(self) -> bool:
-        """Check if the object is valid."""
-        ...
-
-
-@runtime_checkable
-class Configurable(Protocol):
-    """Protocol for objects that can be configured."""
-
-    def configure(self, **kwargs: Any) -> None:
-        """Configure the object with parameters."""
-        ...
-
-
-@runtime_checkable
-class Executable(Protocol):
-    """Protocol for objects that can be executed."""
-
-    def execute(self) -> object:
-        """Execute the object."""
-        ...
-
-
-@runtime_checkable
-class MetadataProvider(Protocol):
-    """Protocol for objects that provide metadata."""
-
-    def get_metadata(self) -> dict[str, str | int | bool | float]:
-        """Get metadata dictionary."""
-        ...
-
 
 # Bounded type variables with proper constraints
 
