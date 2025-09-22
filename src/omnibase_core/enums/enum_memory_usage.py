@@ -48,19 +48,19 @@ class EnumMemoryUsage(Enum):
     @property
     def estimated_mb(self) -> tuple[float, float | None]:
         """Get estimated memory range in megabytes."""
-        ranges = {
-            self.MINIMAL: (0, 10),
-            self.TINY: (10, 50),
-            self.SMALL: (50, 100),
-            self.LOW: (100, 250),
-            self.MODERATE: (250, 500),
-            self.MEDIUM: (500, 1024),
-            self.HIGH: (1024, 2048),
-            self.LARGE: (2048, 4096),
-            self.VERY_HIGH: (4096, 8192),
-            self.EXTREME: (8192, 16384),
-            self.MASSIVE: (16384, None),
-            self.UNLIMITED: (0, None),
+        ranges: dict[EnumMemoryUsage, tuple[float, float | None]] = {
+            EnumMemoryUsage.MINIMAL: (0, 10),
+            EnumMemoryUsage.TINY: (10, 50),
+            EnumMemoryUsage.SMALL: (50, 100),
+            EnumMemoryUsage.LOW: (100, 250),
+            EnumMemoryUsage.MODERATE: (250, 500),
+            EnumMemoryUsage.MEDIUM: (500, 1024),
+            EnumMemoryUsage.HIGH: (1024, 2048),
+            EnumMemoryUsage.LARGE: (2048, 4096),
+            EnumMemoryUsage.VERY_HIGH: (4096, 8192),
+            EnumMemoryUsage.EXTREME: (8192, 16384),
+            EnumMemoryUsage.MASSIVE: (16384, None),
+            EnumMemoryUsage.UNLIMITED: (0, None),
         }
         return ranges.get(self, (0, None))
 

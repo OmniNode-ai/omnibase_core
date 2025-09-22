@@ -4,18 +4,16 @@ Generic metadata model for flexible data storage.
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, cast
 from uuid import UUID
 
+from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 from pydantic import BaseModel, Field
 
 from .model_semver import ModelSemVer
-from .protocols.protocol_supported_metadata_type import ProtocolSupportedMetadataType
 
 # Simple TypeVar constraint for metadata types
 T = TypeVar("T", str, int, bool, float)
-# Union type for metadata value types
-MetadataValueType = str | int | float | bool
 
 
 class ModelGenericMetadata(BaseModel, Generic[T]):
@@ -41,18 +39,18 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         default_factory=list,
         description="Metadata tags",
     )
-    custom_fields: dict[str, MetadataValueType] | None = Field(
+    custom_fields: dict[str, str | int | float | bool] | None = Field(
         default=None,
         description="Custom metadata fields",
     )
 
-    def get_field(self, key: str, default: MetadataValueType) -> MetadataValueType:
+    def get_field(self, key: str, default: T) -> T:
         """Get a custom field value with type safety."""
         if self.custom_fields is None:
             return default
-        return self.custom_fields.get(key, default)
+        return cast(T, self.custom_fields.get(key, default))
 
-    def set_field(self, key: str, value: MetadataValueType) -> None:
+    def set_field(self, key: str, value: T) -> None:
         """Set a custom field value with type validation."""
         if not isinstance(value, (str, int, bool, float)):
             raise TypeError(
@@ -83,7 +81,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
                 # For complex objects, store as string representation
                 self.custom_fields[key] = str(value)
             else:
-                # For primitive types, store directly if they match MetadataValueType
+                # For primitive types, store directly if they match MetadataValue
                 if isinstance(value, (str, int, float, bool)):
                     # Safe assignment since value is guaranteed to be one of the union types
                     self.custom_fields[key] = value

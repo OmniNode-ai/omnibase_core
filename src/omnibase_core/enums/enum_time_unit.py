@@ -25,23 +25,23 @@ class EnumTimeUnit(Enum):
     @property
     def display_name(self) -> str:
         """Get human-readable display name."""
-        names = {
-            self.MILLISECONDS: "Milliseconds",
-            self.SECONDS: "Seconds",
-            self.MINUTES: "Minutes",
-            self.HOURS: "Hours",
-            self.DAYS: "Days",
+        names: dict[EnumTimeUnit, str] = {
+            EnumTimeUnit.MILLISECONDS: "Milliseconds",
+            EnumTimeUnit.SECONDS: "Seconds",
+            EnumTimeUnit.MINUTES: "Minutes",
+            EnumTimeUnit.HOURS: "Hours",
+            EnumTimeUnit.DAYS: "Days",
         }
         return names[self]
 
     def to_milliseconds_multiplier(self) -> int:
         """Get multiplier to convert this unit to milliseconds."""
-        multipliers = {
-            self.MILLISECONDS: 1,
-            self.SECONDS: 1000,
-            self.MINUTES: 60 * 1000,
-            self.HOURS: 60 * 60 * 1000,
-            self.DAYS: 24 * 60 * 60 * 1000,
+        multipliers: dict[EnumTimeUnit, int] = {
+            EnumTimeUnit.MILLISECONDS: 1,
+            EnumTimeUnit.SECONDS: 1000,
+            EnumTimeUnit.MINUTES: 60 * 1000,
+            EnumTimeUnit.HOURS: 60 * 60 * 1000,
+            EnumTimeUnit.DAYS: 24 * 60 * 60 * 1000,
         }
         return multipliers[self]
 

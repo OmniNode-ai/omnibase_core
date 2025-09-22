@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...protocols.protocol_collection_item import CollectionItem
+from ...protocols_local.collection_item_protocol import CollectionItem
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 # More constrained TypeVar for collection items

@@ -12,7 +12,7 @@ from typing import Any, TypeVar, cast
 from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_property_type import EnumPropertyType
-from ...protocols.protocol_supported_property_value import (
+from ...protocols_local.supported_property_value_protocol import (
     ProtocolSupportedPropertyValue,
 )
 from .model_property_metadata import ModelPropertyMetadata

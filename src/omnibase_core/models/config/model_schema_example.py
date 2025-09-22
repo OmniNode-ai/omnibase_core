@@ -15,7 +15,7 @@ from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
-T = TypeVar("T")
+T = TypeVar("T", str, float, bool)
 
 
 class ModelSchemaExample(BaseModel):
@@ -64,7 +64,9 @@ class ModelSchemaExample(BaseModel):
     def get_value(self, key: str, default: T) -> T:
         """Get typed value with proper default handling."""
         value = self.example_data.get_custom_value(key)
-        return value if value is not None else default
+        if value is not None and isinstance(value, type(default)):
+            return value
+        return default
 
     def set_value(self, key: str, value: T) -> None:
         """Set typed value in example data."""

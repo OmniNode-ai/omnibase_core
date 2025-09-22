@@ -98,16 +98,16 @@ class EnumFieldType(str, Enum):
             return self
 
         # Map optional types to base types
-        base_mapping = {
-            self.OPTIONAL_STRING: self.STRING,
-            self.OPTIONAL_INTEGER: self.INTEGER,
-            self.OPTIONAL_FLOAT: self.FLOAT,
-            self.OPTIONAL_BOOLEAN: self.BOOLEAN,
-            self.OPTIONAL_DATETIME: self.DATETIME,
-            self.OPTIONAL_UUID: self.UUID,
+        base_mapping: dict[EnumFieldType, EnumFieldType] = {
+            EnumFieldType.OPTIONAL_STRING: EnumFieldType.STRING,
+            EnumFieldType.OPTIONAL_INTEGER: EnumFieldType.INTEGER,
+            EnumFieldType.OPTIONAL_FLOAT: EnumFieldType.FLOAT,
+            EnumFieldType.OPTIONAL_BOOLEAN: EnumFieldType.BOOLEAN,
+            EnumFieldType.OPTIONAL_DATETIME: EnumFieldType.DATETIME,
+            EnumFieldType.OPTIONAL_UUID: EnumFieldType.UUID,
         }
 
-        return base_mapping.get(self, self.STRING)
+        return base_mapping.get(self, EnumFieldType.STRING)
 
 
 # Export for use

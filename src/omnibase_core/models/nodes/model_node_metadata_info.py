@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...enums.enum_node_health_status import EnumNodeHealthStatus
-from ...protocols.protocol_node_info_like import NodeInfoLike
+from ...protocols_local.node_info_like_protocol import NodeInfoLike
 from ..metadata.model_semver import ModelSemVer
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata

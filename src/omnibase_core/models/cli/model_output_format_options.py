@@ -7,9 +7,31 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable, TypeVar, cast
 
 from pydantic import BaseModel, Field
+
+# Decorator to allow dict[str, Any] usage with justification
+F = TypeVar("F", bound=Callable[..., Any])
+
+# Generic type for custom option values
+T = TypeVar("T", str, int, bool)
+
+
+def allow_dict_any(func: F) -> F:
+    """
+    Decorator to allow dict[str, Any] usage in specific functions.
+
+    This should only be used when:
+    1. Converting untyped external data to typed internal models
+    2. Complex conversion functions where intermediate dicts need flexibility
+    3. Legacy integration where gradual typing is being applied
+
+    Justification: This function converts string-based configuration data
+    to properly typed model fields, requiring temporary dict[str, Any] storage.
+    """
+    return func
+
 
 from ...enums.enum_color_scheme import EnumColorScheme
 from ...enums.enum_table_alignment import EnumTableAlignment
@@ -139,17 +161,16 @@ class ModelOutputFormatOptions(BaseModel):
         self.color_scheme = scheme
         self.color_enabled = enabled
 
-    def add_custom_option(self, key: str, value: str | int | bool) -> None:
+    def add_custom_option(self, key: str, value: T) -> None:
         """Add a custom format option."""
         self.custom_options[key] = value
 
-    def get_custom_option(
-        self, key: str, default: str | int | bool | None = None
-    ) -> str | int | bool | None:
-        """Get a custom format option."""
-        return self.custom_options.get(key, default)
+    def get_custom_option(self, key: str, default: T) -> T:
+        """Get a custom format option with type safety."""
+        return cast(T, self.custom_options.get(key, default))
 
     @classmethod
+    @allow_dict_any
     def create_from_string_data(
         cls, data: dict[str, str]
     ) -> "ModelOutputFormatOptions":
@@ -167,16 +188,7 @@ class ModelOutputFormatOptions(BaseModel):
                 return default
 
         # Transform string data structure to proper typed fields
-        kwargs: dict[
-            str,
-            str
-            | int
-            | bool
-            | EnumColorScheme
-            | EnumTableAlignment
-            | dict[str, str | int | bool]
-            | None,
-        ] = {}
+        kwargs: dict[str, Any] = {}
         custom_options: dict[str, str | int | bool] = {}
 
         # Convert known fields with proper type handling

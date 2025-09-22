@@ -1,6 +1,8 @@
 """Core models for OmniBase - Re-exports from domain-specific directories."""
 
 # CLI models
+from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
+
 from ..cli.model_cli_execution import ModelCliExecution
 from ..cli.model_cli_execution_result import ModelCliExecutionResult
 
@@ -39,9 +41,6 @@ from ..metadata.model_metadata_node_info import (
 )
 from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics as ModelMetadataUsageMetricsStandalone,
-)
-from ..metadata.protocols.protocol_supported_metadata_type import (
-    ProtocolSupportedMetadataType,
 )
 
 # Node models - removed ModelFunctionNode to avoid circular import with ModelCustomProperties

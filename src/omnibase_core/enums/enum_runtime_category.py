@@ -53,20 +53,20 @@ class EnumRuntimeCategory(Enum):
     @property
     def estimated_seconds(self) -> tuple[float, float | None]:
         """Get estimated duration range in seconds."""
-        ranges = {
-            self.INSTANT: (0, 0.1),
-            self.VERY_FAST: (0.1, 1),
-            self.FAST: (1, 5),
-            self.QUICK: (5, 15),
-            self.MODERATE: (15, 60),
-            self.STANDARD: (60, 300),
-            self.LONG: (300, 900),
-            self.EXTENDED: (900, 1800),
-            self.VERY_LONG: (1800, 3600),
-            self.BATCH: (3600, 10800),
-            self.MARATHON: (10800, None),
-            self.OVERNIGHT: (28800, None),
-            self.UNKNOWN: (0, None),
+        ranges: dict[EnumRuntimeCategory, tuple[float, float | None]] = {
+            EnumRuntimeCategory.INSTANT: (0, 0.1),
+            EnumRuntimeCategory.VERY_FAST: (0.1, 1),
+            EnumRuntimeCategory.FAST: (1, 5),
+            EnumRuntimeCategory.QUICK: (5, 15),
+            EnumRuntimeCategory.MODERATE: (15, 60),
+            EnumRuntimeCategory.STANDARD: (60, 300),
+            EnumRuntimeCategory.LONG: (300, 900),
+            EnumRuntimeCategory.EXTENDED: (900, 1800),
+            EnumRuntimeCategory.VERY_LONG: (1800, 3600),
+            EnumRuntimeCategory.BATCH: (3600, 10800),
+            EnumRuntimeCategory.MARATHON: (10800, None),
+            EnumRuntimeCategory.OVERNIGHT: (28800, None),
+            EnumRuntimeCategory.UNKNOWN: (0, None),
         }
         return ranges.get(self, (0, None))
 
