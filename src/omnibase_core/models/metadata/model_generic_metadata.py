@@ -10,8 +10,8 @@ from uuid import UUID
 from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 from pydantic import BaseModel, Field
 
-from .model_semver import ModelSemVer
 from ..infrastructure.model_cli_value import ModelCliValue
+from .model_semver import ModelSemVer
 
 # Simple TypeVar constraint for metadata types
 T = TypeVar("T", str, int, bool, float)

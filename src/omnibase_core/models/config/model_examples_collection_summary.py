@@ -63,6 +63,6 @@ class ModelExamplesCollectionSummary(BaseModel):
 # Export the models
 __all__ = [
     "ModelExamplesCollectionSummary",
-    "ModelExampleMetadataSummary", 
-    "ModelExampleSummary"
+    "ModelExampleMetadataSummary",
+    "ModelExampleSummary",
 ]

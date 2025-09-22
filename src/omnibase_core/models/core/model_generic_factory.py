@@ -135,12 +135,14 @@ class ModelGenericFactory(Generic[T]):
             raise OnexError(
                 code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown factory: {name} for {self.model_class.__name__}",
-                details=ModelErrorContext.with_context({
-                    "factory_name": ModelSchemaValue.from_value(name),
-                    "model_class": ModelSchemaValue.from_value(
-                        self.model_class.__name__
-                    ),
-                }),
+                details=ModelErrorContext.with_context(
+                    {
+                        "factory_name": ModelSchemaValue.from_value(name),
+                        "model_class": ModelSchemaValue.from_value(
+                            self.model_class.__name__
+                        ),
+                    }
+                ),
             )
         return self._factories[name]()
 
@@ -162,12 +164,14 @@ class ModelGenericFactory(Generic[T]):
             raise OnexError(
                 code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown builder: {builder_name} for {self.model_class.__name__}",
-                details=ModelErrorContext.with_context({
-                    "builder_name": ModelSchemaValue.from_value(builder_name),
-                    "model_class": ModelSchemaValue.from_value(
-                        self.model_class.__name__
-                    ),
-                }),
+                details=ModelErrorContext.with_context(
+                    {
+                        "builder_name": ModelSchemaValue.from_value(builder_name),
+                        "model_class": ModelSchemaValue.from_value(
+                            self.model_class.__name__
+                        ),
+                    }
+                ),
             )
         return self._builders[builder_name](**kwargs)
 

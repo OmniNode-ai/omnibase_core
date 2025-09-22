@@ -59,21 +59,25 @@ class ModelPropertyValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be string, got {type(v)}",
-                    details=ModelErrorContext.with_context({
-                        "expected_type": ModelSchemaValue.from_value("string"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("string"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
                 )
             elif value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be integer, got {type(v)}",
-                    details=ModelErrorContext.with_context({
-                        "expected_type": ModelSchemaValue.from_value("integer"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("integer"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
                 )
             elif value_type == EnumPropertyType.FLOAT and not isinstance(
                 v, (int, float)
@@ -81,21 +85,25 @@ class ModelPropertyValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be float, got {type(v)}",
-                    details=ModelErrorContext.with_context({
-                        "expected_type": ModelSchemaValue.from_value("float"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("float"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
                 )
             elif value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be boolean, got {type(v)}",
-                    details=ModelErrorContext.with_context({
-                        "expected_type": ModelSchemaValue.from_value("boolean"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("boolean"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
                 )
             elif value_type in (
                 EnumPropertyType.STRING_LIST,
@@ -105,11 +113,13 @@ class ModelPropertyValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be list, got {type(v)}",
-                    details=ModelErrorContext.with_context({
-                        "expected_type": ModelSchemaValue.from_value("list"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("list"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
                 )
             elif value_type == EnumPropertyType.DATETIME and not isinstance(
                 v, datetime
@@ -117,11 +127,13 @@ class ModelPropertyValue(BaseModel):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be datetime, got {type(v)}",
-                    details=ModelErrorContext.with_context({
-                        "expected_type": ModelSchemaValue.from_value("datetime"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    }),
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_type": ModelSchemaValue.from_value("datetime"),
+                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
+                            "value": ModelSchemaValue.from_value(str(v)),
+                        }
+                    ),
                 )
 
         return v
@@ -207,11 +219,13 @@ class ModelPropertyValue(BaseModel):
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to int",
-            details=ModelErrorContext.with_context({
-                "source_type": ModelSchemaValue.from_value(str(self.value_type)),
-                "target_type": ModelSchemaValue.from_value("int"),
-                "value": ModelSchemaValue.from_value(str(self.value)),
-            }),
+            details=ModelErrorContext.with_context(
+                {
+                    "source_type": ModelSchemaValue.from_value(str(self.value_type)),
+                    "target_type": ModelSchemaValue.from_value("int"),
+                    "value": ModelSchemaValue.from_value(str(self.value)),
+                }
+            ),
         )
 
     def as_float(self) -> float:
@@ -223,11 +237,13 @@ class ModelPropertyValue(BaseModel):
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to float",
-            details=ModelErrorContext.with_context({
-                "source_type": ModelSchemaValue.from_value(str(self.value_type)),
-                "target_type": ModelSchemaValue.from_value("float"),
-                "value": ModelSchemaValue.from_value(str(self.value)),
-            }),
+            details=ModelErrorContext.with_context(
+                {
+                    "source_type": ModelSchemaValue.from_value(str(self.value_type)),
+                    "target_type": ModelSchemaValue.from_value("float"),
+                    "value": ModelSchemaValue.from_value(str(self.value)),
+                }
+            ),
         )
 
     def as_bool(self) -> bool:

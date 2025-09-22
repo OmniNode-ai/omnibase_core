@@ -16,10 +16,10 @@ from ...enums.enum_config_type import EnumConfigType
 from ...enums.enum_function_status import EnumFunctionStatus
 from ...enums.enum_node_type import EnumNodeType
 from ...utils.uuid_utilities import uuid_from_string
+from ..infrastructure.model_cli_value import ModelCliValue
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_semver import ModelSemVer
 from .model_typed_metrics import ModelTypedMetrics
-from ..infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelFunctionNodeData(BaseModel):
@@ -80,9 +80,7 @@ class ModelFunctionNodeData(BaseModel):
             ModelTypedMetrics.string_metric(name=name, value=value, **kwargs)
         )
 
-    def add_numeric_property(
-        self, name: str, value: float, **kwargs: Any
-    ) -> None:
+    def add_numeric_property(self, name: str, value: float, **kwargs: Any) -> None:
         """Add a numeric property."""
         # Use float_metric for numeric values (int converted to float automatically)
         metric = ModelTypedMetrics.float_metric(name=name, value=value, **kwargs)

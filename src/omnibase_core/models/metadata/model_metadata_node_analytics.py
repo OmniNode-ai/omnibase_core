@@ -16,9 +16,9 @@ from ...enums.enum_collection_purpose import EnumCollectionPurpose
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...utils.uuid_utilities import uuid_from_string
+from ..infrastructure.model_cli_value import ModelCliValue
 from ..infrastructure.model_metrics_data import ModelMetricsData
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
-from ..infrastructure.model_cli_value import ModelCliValue
 
 # Removed Any import - replaced with specific types
 

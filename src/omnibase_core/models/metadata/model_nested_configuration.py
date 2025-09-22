@@ -29,7 +29,8 @@ class ModelNestedConfiguration(BaseModel):
         description="Configuration type",
     )
     settings: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Configuration settings with strongly-typed values"
+        default_factory=dict,
+        description="Configuration settings with strongly-typed values",
     )
 
 

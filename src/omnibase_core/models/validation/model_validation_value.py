@@ -7,22 +7,13 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
+from ...enums.enum_validation_value_type import EnumValidationValueType
 from ...exceptions.onex_error import OnexError
-
-
-class EnumValidationValueType(str, Enum):
-    """Validation value type enumeration."""
-
-    STRING = "string"
-    INTEGER = "integer"
-    BOOLEAN = "boolean"
-    NULL = "null"
 
 
 class ModelValidationValue(BaseModel):
@@ -33,7 +24,9 @@ class ModelValidationValue(BaseModel):
     a strongly-typed discriminated union following ONEX patterns.
     """
 
-    value_type: EnumValidationValueType = Field(description="Type of the validation value")
+    value_type: EnumValidationValueType = Field(
+        description="Type of the validation value"
+    )
     raw_value: Any = Field(description="Raw value data")
 
     @field_validator("raw_value")
@@ -48,22 +41,22 @@ class ModelValidationValue(BaseModel):
         if value_type == EnumValidationValueType.STRING and not isinstance(v, str):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="String validation value must contain str data"
+                message="String validation value must contain str data",
             )
         elif value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Integer validation value must contain int data"
+                message="Integer validation value must contain int data",
             )
         elif value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Boolean validation value must contain bool data"
+                message="Boolean validation value must contain bool data",
             )
         elif value_type == EnumValidationValueType.NULL and v is not None:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Null validation value must contain None"
+                message="Null validation value must contain None",
             )
 
         return v
@@ -115,4 +108,4 @@ class ModelValidationValue(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelValidationValue", "EnumValidationValueType"]
+__all__ = ["ModelValidationValue"]

@@ -16,12 +16,12 @@ from ...enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...enums.enum_validation_level import EnumValidationLevel
+from ..infrastructure.model_cli_value import ModelCliValue
 from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_semver import ModelSemVer
-from ..infrastructure.model_cli_value import ModelCliValue
 
 # Removed Any import - replaced with specific types
 

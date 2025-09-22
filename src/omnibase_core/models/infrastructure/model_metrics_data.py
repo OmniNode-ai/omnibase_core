@@ -54,10 +54,7 @@ class ModelMetricsData(BaseModel):
     ) -> None:
         """Add a metric with automatic type detection using factory methods."""
         metric = ModelMetric.from_any_value(
-            key=key,
-            value=value,
-            unit=unit,
-            description=description
+            key=key, value=value, unit=unit, description=description
         )
         self.metrics.append(metric)
 
@@ -76,9 +73,7 @@ class ModelMetricsData(BaseModel):
         """Clear all metrics."""
         self.metrics.clear()
 
-    def get_metrics_by_type(
-        self, metric_type: EnumMetricDataType
-    ) -> list[ModelMetric]:
+    def get_metrics_by_type(self, metric_type: EnumMetricDataType) -> list[ModelMetric]:
         """Get all metrics of a specific type."""
         return [metric for metric in self.metrics if metric.metric_type == metric_type]
 

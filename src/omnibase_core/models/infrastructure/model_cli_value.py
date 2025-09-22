@@ -7,25 +7,13 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from ...enums.enum_cli_value_type import EnumCliValueType
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
-
-
-class EnumCliValueType(str, Enum):
-    """CLI value type enumeration."""
-
-    STRING = "string"
-    INTEGER = "integer"
-    FLOAT = "float"
-    BOOLEAN = "boolean"
-    DICT = "dict"
-    LIST = "list"
-    NULL = "null"
 
 
 class ModelCliValue(BaseModel):
@@ -163,4 +151,4 @@ class ModelCliValue(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelCliValue", "EnumCliValueType"]
+__all__ = ["ModelCliValue"]

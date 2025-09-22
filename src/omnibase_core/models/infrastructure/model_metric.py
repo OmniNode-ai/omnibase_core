@@ -19,7 +19,7 @@ from ...exceptions.onex_error import OnexError
 class ModelMetric(BaseModel):
     """
     Universal metric model with strongly-typed discriminated union pattern.
-    
+
     Replaces Union[str, int, float, bool] generic with discriminated union
     following ONEX strong typing standards.
     """
@@ -46,17 +46,19 @@ class ModelMetric(BaseModel):
         if metric_type == EnumMetricDataType.STRING and not isinstance(v, str):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="String metric type must contain str value"
+                message="String metric type must contain str value",
             )
         elif metric_type == EnumMetricDataType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Boolean metric type must contain bool value"
+                message="Boolean metric type must contain bool value",
             )
-        elif metric_type == EnumMetricDataType.NUMERIC and not isinstance(v, (int, float)):
+        elif metric_type == EnumMetricDataType.NUMERIC and not isinstance(
+            v, (int, float)
+        ):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Numeric metric type must contain int or float value"
+                message="Numeric metric type must contain int or float value",
             )
 
         return v
@@ -73,10 +75,7 @@ class ModelMetric(BaseModel):
 
     @classmethod
     def create_string_metric(
-        cls, 
-        key: str, 
-        value: str, 
-        description: str | None = None
+        cls, key: str, value: str, description: str | None = None
     ) -> ModelMetric:
         """Create a string metric."""
         return cls(
@@ -84,16 +83,16 @@ class ModelMetric(BaseModel):
             raw_value=value,
             metric_type=EnumMetricDataType.STRING,
             unit=None,
-            description=description
+            description=description,
         )
 
     @classmethod
     def create_numeric_metric(
-        cls, 
-        key: str, 
-        value: int | float, 
+        cls,
+        key: str,
+        value: int | float,
         unit: str | None = None,
-        description: str | None = None
+        description: str | None = None,
     ) -> ModelMetric:
         """Create a numeric metric."""
         return cls(
@@ -101,15 +100,12 @@ class ModelMetric(BaseModel):
             raw_value=value,
             metric_type=EnumMetricDataType.NUMERIC,
             unit=unit,
-            description=description
+            description=description,
         )
 
     @classmethod
     def create_boolean_metric(
-        cls, 
-        key: str, 
-        value: bool, 
-        description: str | None = None
+        cls, key: str, value: bool, description: str | None = None
     ) -> ModelMetric:
         """Create a boolean metric."""
         return cls(
@@ -117,16 +113,16 @@ class ModelMetric(BaseModel):
             raw_value=value,
             metric_type=EnumMetricDataType.BOOLEAN,
             unit=None,
-            description=description
+            description=description,
         )
 
     @classmethod
     def from_any_value(
-        cls, 
-        key: str, 
+        cls,
+        key: str,
         value: str | int | float | bool,
         unit: str | None = None,
-        description: str | None = None
+        description: str | None = None,
     ) -> ModelMetric:
         """Create metric from any supported value with automatic type detection."""
         if isinstance(value, bool):  # Check bool first since bool is subclass of int
@@ -138,7 +134,7 @@ class ModelMetric(BaseModel):
         else:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unsupported metric value type: {type(value)}"
+                message=f"Unsupported metric value type: {type(value)}",
             )
 
 
