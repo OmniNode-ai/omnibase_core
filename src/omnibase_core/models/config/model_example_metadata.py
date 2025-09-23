@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_difficulty_level import EnumDifficultyLevel
 from omnibase_core.enums.enum_example_category import EnumExampleCategory
 
 
@@ -32,10 +33,9 @@ class ModelExampleMetadata(BaseModel):
         description="Tags for the entire collection",
     )
 
-    difficulty: str = Field(
-        default="beginner",
-        description="Difficulty level (beginner, intermediate, advanced)",
-        pattern="^(beginner|intermediate|advanced)$",
+    difficulty: EnumDifficultyLevel = Field(
+        default=EnumDifficultyLevel.BEGINNER,
+        description="Difficulty level for the examples collection",
     )
 
     category: EnumExampleCategory | None = Field(

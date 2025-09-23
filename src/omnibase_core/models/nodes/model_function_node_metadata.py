@@ -14,6 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
@@ -173,7 +174,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         return self.relationships.tags
 
     @property
-    def categories(self) -> list[str]:
+    def categories(self) -> list[EnumCategory]:
         """Function categories (delegated to relationships)."""
         return self.relationships.categories
 
@@ -203,7 +204,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         """Remove a tag if present."""
         self.relationships.remove_tag(tag)
 
-    def add_category(self, category: str) -> None:
+    def add_category(self, category: EnumCategory) -> None:
         """Add a category if not already present."""
         self.relationships.add_category(category)
 
@@ -316,7 +317,7 @@ class ModelFunctionNodeMetadata(BaseModel):
     def create_tagged(
         cls,
         tags: list[str],
-        categories: list[str] | None = None,
+        categories: list[EnumCategory] | None = None,
     ) -> ModelFunctionNodeMetadata:
         """Create metadata with tags and categories."""
         rel = ModelFunctionRelationships.create_tagged(tags, categories)

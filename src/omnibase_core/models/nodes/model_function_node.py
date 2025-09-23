@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_category import EnumCategory
+from omnibase_core.enums.enum_complexity import EnumComplexity
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_return_type import EnumReturnType
 
@@ -57,7 +59,7 @@ class ModelFunctionNode(BaseModel):
         return self.core.description
 
     @property
-    def status(self) -> str:
+    def status(self) -> EnumFunctionStatus:
         """Get status from core."""
         return self.core.status
 
@@ -67,7 +69,7 @@ class ModelFunctionNode(BaseModel):
         return self.core.parameters
 
     @property
-    def complexity(self) -> str:
+    def complexity(self) -> EnumComplexity:
         """Get complexity from performance."""
         return self.performance.complexity
 
@@ -113,7 +115,7 @@ class ModelFunctionNode(BaseModel):
         """Remove a tag if present."""
         self.metadata.remove_tag(tag)
 
-    def add_category(self, category: str) -> None:
+    def add_category(self, category: EnumCategory) -> None:
         """Add a category if not already present."""
         self.metadata.add_category(category)
 
@@ -168,7 +170,7 @@ class ModelFunctionNode(BaseModel):
             has_type_annotations=self.has_type_annotations(),
             has_tests=self.has_tests(),
             tags=self.tags,
-            categories=self.metadata.categories,
+            categories=[cat.value for cat in self.metadata.categories],
             dependencies=[str(dep) for dep in self.metadata.relationships.dependencies],
             created_at=self.metadata.created_at,
             updated_at=self.metadata.updated_at,

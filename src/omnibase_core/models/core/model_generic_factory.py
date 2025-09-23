@@ -26,7 +26,6 @@ from omnibase_core.models.core.model_typed_dict_factory_kwargs import (
     TypedDictMetadataParams,
 )
 
-
 T = TypeVar("T", bound=BaseModel)
 
 

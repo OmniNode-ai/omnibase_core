@@ -24,10 +24,13 @@ from .enum_connection_state import EnumConnectionState
 from .enum_connection_type import EnumConnectionType
 from .enum_context_type import EnumContextType
 from .enum_core_error_code import EnumCoreErrorCode
+from .enum_data_classification import EnumDataClassification
 from .enum_data_format import EnumDataFormat
 from .enum_data_type import EnumDataType
 from .enum_debug_level import EnumDebugLevel
+from .enum_difficulty_level import EnumDifficultyLevel
 from .enum_entity_type import EnumEntityType
+from .enum_environment import EnumEnvironment
 from .enum_example_category import EnumExampleCategory
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_phase import EnumExecutionPhase
@@ -47,6 +50,7 @@ from .enum_metadata_node_type import EnumMetadataNodeType
 from .enum_metric_data_type import EnumMetricDataType
 from .enum_metric_type import EnumMetricType
 from .enum_metrics_category import EnumMetricsCategory
+from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_capability import EnumNodeCapability
 from .enum_node_health_status import EnumNodeHealthStatus
 from .enum_node_type import EnumNodeType
@@ -74,6 +78,7 @@ from .enum_time_period import EnumTimePeriod
 from .enum_time_unit import EnumTimeUnit
 from .enum_trend_type import EnumTrendType
 from .enum_type_name import EnumTypeName
+from .enum_uri_type import EnumUriType
 from .enum_validation_level import EnumValidationLevel
 from .enum_validation_severity import EnumValidationSeverity
 
@@ -98,10 +103,13 @@ __all__ = [
     "EnumConnectionType",
     "EnumContextType",
     "EnumCoreErrorCode",
+    "EnumDataClassification",
     "EnumDataFormat",
     "EnumDataType",
     "EnumDebugLevel",
+    "EnumDifficultyLevel",
     "EnumEntityType",
+    "EnumEnvironment",
     "EnumExampleCategory",
     "EnumExecutionMode",
     "EnumExecutionPhase",
@@ -121,6 +129,7 @@ __all__ = [
     "EnumMetricDataType",
     "EnumMetricType",
     "EnumMetricsCategory",
+    "EnumNamespaceStrategy",
     "EnumNodeCapability",
     "EnumNodeHealthStatus",
     "EnumNodeType",
@@ -148,6 +157,7 @@ __all__ = [
     "EnumTimeUnit",
     "EnumTrendType",
     "EnumTypeName",
+    "EnumUriType",
     "EnumValidationLevel",
     "EnumValidationSeverity",
 ]

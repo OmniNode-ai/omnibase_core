@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
@@ -143,7 +144,7 @@ class ModelNodeMetadataInfo(BaseModel):
         return self.organization.tags
 
     @property
-    def categories(self) -> list[str]:
+    def categories(self) -> list[EnumCategory]:
         """Node categories (delegated to organization)."""
         return self.organization.categories
 
@@ -275,7 +276,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Check if node has a specific capability."""
         return self.organization.has_capability(capability)
 
-    def add_category(self, category: str) -> None:
+    def add_category(self, category: EnumCategory) -> None:
         """Add a category if not already present."""
         self.organization.add_category(category)
 

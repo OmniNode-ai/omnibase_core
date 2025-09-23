@@ -6,7 +6,9 @@ Provides type-safe field access with generic type support.
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar, cast
+from typing import Generic, TypeVar
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -26,7 +28,9 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
     def set_typed_field(self, path: str, value: T, expected_type: type[T]) -> bool:
         """Set field with type validation."""
         if isinstance(value, expected_type):
-            return self.set_field(path, cast(Any, value))
+            # Convert typed value to ModelSchemaValue for field storage
+            schema_value = ModelSchemaValue.from_value(value)
+            return self.set_field(path, schema_value)
         return False
 
 

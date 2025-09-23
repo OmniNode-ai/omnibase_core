@@ -38,7 +38,11 @@ def allow_dict_any(func: F) -> F:
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
+from omnibase_core.models.cli.typed_dict_output_format_options_kwargs import (
+    TypedDictOutputFormatOptionsKwargs,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 
 
 class ModelOutputFormatOptions(BaseModel):
@@ -216,7 +220,7 @@ class ModelOutputFormatOptions(BaseModel):
                 return default
 
         # Transform string data structure to proper typed fields
-        kwargs: dict[str, Any] = {}
+        kwargs_dict: dict[str, Any] = {}
         custom_options: dict[str, ModelCliValue] = {}
 
         # Convert known fields with proper type handling
@@ -261,7 +265,7 @@ class ModelOutputFormatOptions(BaseModel):
         for key, value in data.items():
             if key in field_mappings:
                 field_name, converter = field_mappings[key]
-                kwargs[field_name] = converter(value)
+                kwargs_dict[field_name] = converter(value)
             elif key.startswith("custom_"):
                 custom_key = key[7:]  # Remove "custom_" prefix
                 # Try to infer type from value
@@ -275,8 +279,10 @@ class ModelOutputFormatOptions(BaseModel):
                     custom_options[custom_key] = ModelCliValue.from_string(value)
 
         if custom_options:
-            kwargs["custom_options"] = custom_options
+            kwargs_dict["custom_options"] = custom_options
 
+        # Cast to TypedDict for type safety while maintaining runtime flexibility
+        kwargs = cast(TypedDictOutputFormatOptionsKwargs, kwargs_dict)
         return cls(**kwargs)
 
 

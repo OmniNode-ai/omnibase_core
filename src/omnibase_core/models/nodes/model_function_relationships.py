@@ -11,6 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_category import EnumCategory
+
 from .model_types_function_relationships_summary import FunctionRelationshipsSummaryType
 
 
@@ -35,7 +37,7 @@ class ModelFunctionRelationships(BaseModel):
 
     # Categorization (2 fields)
     tags: list[str] = Field(default_factory=list, description="Function tags")
-    categories: list[str] = Field(
+    categories: list[EnumCategory] = Field(
         default_factory=list,
         description="Function categories",
     )
@@ -60,7 +62,7 @@ class ModelFunctionRelationships(BaseModel):
         if tag in self.tags:
             self.tags.remove(tag)
 
-    def add_category(self, category: str) -> None:
+    def add_category(self, category: EnumCategory) -> None:
         """Add a category if not already present."""
         if category not in self.categories:
             self.categories.append(category)
@@ -101,7 +103,7 @@ class ModelFunctionRelationships(BaseModel):
     def create_tagged(
         cls,
         tags: list[str],
-        categories: list[str] | None = None,
+        categories: list[EnumCategory] | None = None,
     ) -> ModelFunctionRelationships:
         """Create relationships with tags and categories."""
         return cls(

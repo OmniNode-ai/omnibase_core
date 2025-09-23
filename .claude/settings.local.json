@@ -66,7 +66,8 @@
       "Bash(done)",
       "Bash(/dev/null)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/ --no-error-summary)",
-      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/cli/model_output_format_options.py --no-error-summary)"
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/cli/model_output_format_options.py --no-error-summary)",
+      "mcp__serena__think_about_task_adherence"
     ],
     "deny": [],
     "ask": []

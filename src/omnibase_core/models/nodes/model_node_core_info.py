@@ -25,10 +25,10 @@ class TypedDictCoreSummary(TypedDict):
 
     node_id: UUID
     node_name: str
-    node_type: str
+    node_type: str  # EnumMetadataNodeType.value
     node_version: ModelSemVer
-    status: str
-    health: str
+    status: str  # EnumMetadataNodeStatus.value
+    health: str  # EnumRegistryStatus.value
     is_active: bool
     is_healthy: bool
     has_description: bool

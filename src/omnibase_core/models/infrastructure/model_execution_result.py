@@ -22,7 +22,7 @@ from .model_cli_result_data import ModelCliResultData
 from .model_cli_value import ModelCliValue
 from .model_execution_duration import ModelExecutionDuration
 from .model_execution_summary import ModelExecutionSummary
-from .model_result import Result
+from .model_result import ModelResult
 
 # Type variables for execution result pattern
 T = TypeVar("T")  # Success type
@@ -31,7 +31,7 @@ E = TypeVar("E")  # Error type
 MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
 
 
-class ModelExecutionResult(Result[T, E], Generic[T, E]):
+class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
     """
     Enhanced result for execution operations with timing and metadata.
 

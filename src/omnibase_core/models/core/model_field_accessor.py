@@ -7,12 +7,12 @@ dot notation support and type safety.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import Result
+from omnibase_core.models.infrastructure.model_result import ModelResult
 
 
 # TypedDict for field values to replace loose Any typing
@@ -33,10 +33,10 @@ class ModelFieldAccessor(BaseModel):
         self,
         path: str,
         default: ModelSchemaValue | None = None,
-    ) -> Result[ModelSchemaValue, str]:
+    ) -> ModelResult[ModelSchemaValue, str]:
         """Get field using dot notation: 'metadata.custom_fields.key'"""
         try:
-            obj: Any = self
+            obj: object = self
             for part in path.split("."):
                 if hasattr(obj, part):
                     obj = getattr(obj, part)
@@ -48,26 +48,28 @@ class ModelFieldAccessor(BaseModel):
                     obj = obj[part]
                 else:
                     if default is not None:
-                        return Result.ok(default)
-                    return Result.err(
+                        return ModelResult.ok(default)
+                    return ModelResult.err(
                         f"Field path '{path}' not found, stopped at part '{part}'"
                     )
             # Type checking for return value - convert to ModelSchemaValue
             if isinstance(obj, (str, int, float, bool, list)):
-                return Result.ok(ModelSchemaValue.from_value(obj))
+                return ModelResult.ok(ModelSchemaValue.from_value(obj))
             if default is not None:
-                return Result.ok(default)
-            return Result.err(f"Field at '{path}' has unsupported type: {type(obj)}")
+                return ModelResult.ok(default)
+            return ModelResult.err(
+                f"Field at '{path}' has unsupported type: {type(obj)}"
+            )
         except (AttributeError, KeyError, TypeError) as e:
             if default is not None:
-                return Result.ok(default)
-            return Result.err(f"Error accessing field '{path}': {str(e)}")
+                return ModelResult.ok(default)
+            return ModelResult.err(f"Error accessing field '{path}': {str(e)}")
 
     def set_field(self, path: str, value: ModelSchemaValue) -> bool:
         """Set field using dot notation."""
         try:
             parts = path.split(".")
-            obj: Any = self
+            obj: object = self
 
             # Navigate to parent object
             for part in parts[:-1]:
@@ -111,7 +113,7 @@ class ModelFieldAccessor(BaseModel):
     def has_field(self, path: str) -> bool:
         """Check if field exists using dot notation."""
         try:
-            obj: Any = self
+            obj: object = self
             for part in path.split("."):
                 if hasattr(obj, part):
                     obj = getattr(obj, part)
@@ -131,7 +133,7 @@ class ModelFieldAccessor(BaseModel):
         """Remove field using dot notation."""
         try:
             parts = path.split(".")
-            obj: Any = self
+            obj: object = self
 
             # Navigate to parent object
             for part in parts[:-1]:

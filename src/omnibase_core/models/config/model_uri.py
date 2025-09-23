@@ -23,10 +23,11 @@
 
 from __future__ import annotations
 
-from typing import Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_uri_type import EnumUriType
 
 
 class ModelOnexUri(BaseModel):
@@ -35,11 +36,9 @@ class ModelOnexUri(BaseModel):
     See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for spec.
     """
 
-    type: Literal["tool", "validator", "agent", "model", "plugin", "schema", "node"] = (
-        Field(
-            ...,
-            description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
-        )
+    type: EnumUriType = Field(
+        ...,
+        description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
     )
 
     # Entity reference - UUID-based with display name

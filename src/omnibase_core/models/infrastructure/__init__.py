@@ -18,7 +18,7 @@ from .model_execution_summary import ModelExecutionSummary
 from .model_metric import ModelMetric
 from .model_metrics_data import ModelMetricsData
 from .model_progress import ModelProgress
-from .model_result import Result, collect_results, err, ok, try_result
+from .model_result import ModelResult, collect_results, err, ok, try_result
 from .model_result_dict import ModelResultData, ModelResultDict
 from .model_retry_policy import ModelRetryPolicy
 from .model_test_result import ModelTestResult
@@ -45,7 +45,7 @@ __all__ = [
     "ModelTimeBased",
     "ModelTimeout",
     "ModelTimeoutData",
-    "Result",
+    "ModelResult",
     "collect_results",
     "err",
     "execution_err",

@@ -11,6 +11,7 @@ from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -21,7 +22,7 @@ class TypedDictDeprecationSummary(TypedDict):
     has_replacement: bool
     deprecated_since: str | None
     replacement: str | None
-    status: str
+    status: str  # EnumDeprecationStatus.value
 
 
 class ModelFunctionDeprecationInfo(BaseModel):
@@ -51,8 +52,18 @@ class ModelFunctionDeprecationInfo(BaseModel):
         """Check if function has a replacement."""
         return self.replacement is not None
 
-    def get_deprecation_status(self) -> str:
-        """Get deprecation status description."""
+    def get_deprecation_status(self) -> EnumDeprecationStatus:
+        """Get deprecation status as enum."""
+        if not self.is_deprecated():
+            return EnumDeprecationStatus.ACTIVE
+
+        if self.has_replacement():
+            return EnumDeprecationStatus.DEPRECATED_WITH_REPLACEMENT
+
+        return EnumDeprecationStatus.DEPRECATED
+
+    def get_deprecation_status_description(self) -> str:
+        """Get deprecation status description as human-readable string."""
         if not self.is_deprecated():
             return "active"
 
@@ -70,7 +81,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
                 str(self.deprecated_since) if self.deprecated_since else None
             ),
             "replacement": self.replacement,
-            "status": self.get_deprecation_status(),
+            "status": self.get_deprecation_status().value,
         }
 
     @classmethod

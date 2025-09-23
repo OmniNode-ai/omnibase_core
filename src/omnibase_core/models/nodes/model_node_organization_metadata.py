@@ -11,6 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
@@ -30,7 +31,9 @@ class ModelNodeOrganizationMetadata(BaseModel):
         default_factory=list,
         description="Node capabilities",
     )
-    categories: list[str] = Field(default_factory=list, description="Node categories")
+    categories: list[EnumCategory] = Field(
+        default_factory=list, description="Node categories"
+    )
 
     # Tags and classification (1 field)
     tags: list[str] = Field(default_factory=list, description="Node tags")
@@ -74,7 +77,7 @@ class ModelNodeOrganizationMetadata(BaseModel):
         """Check if node has a specific capability."""
         return capability in self.capabilities
 
-    def add_category(self, category: str) -> None:
+    def add_category(self, category: EnumCategory) -> None:
         """Add a category if not already present."""
         if category not in self.categories:
             self.categories.append(category)
@@ -107,7 +110,7 @@ class ModelNodeOrganizationMetadata(BaseModel):
     def create_tagged(
         cls,
         tags: list[str],
-        categories: list[str] | None = None,
+        categories: list[EnumCategory] | None = None,
         capabilities: list[str] | None = None,
     ) -> ModelNodeOrganizationMetadata:
         """Create organization metadata with tags and categories."""

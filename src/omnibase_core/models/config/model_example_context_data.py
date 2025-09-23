@@ -12,6 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_context_type import EnumContextType
+from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -28,7 +29,9 @@ class ModelExampleContextData(BaseModel):
         default=EnumContextType.USER,
         description="Type of context",
     )
-    environment: str = Field(default="development", description="Environment context")
+    environment: EnumEnvironment = Field(
+        default=EnumEnvironment.DEVELOPMENT, description="Environment context"
+    )
 
     # Execution context
     execution_mode: EnumExecutionMode = Field(

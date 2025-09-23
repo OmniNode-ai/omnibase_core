@@ -4,11 +4,10 @@ Data handling declaration model.
 
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.exceptions.onex_error import OnexError
 
 
@@ -26,9 +25,7 @@ class ModelDataHandlingDeclaration(BaseModel):
         max_length=50,
         pattern=r"^[A-Z][A-Z0-9_-]*$",
     )
-    data_classification: (
-        Literal["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"] | None
-    ) = Field(
+    data_classification: EnumDataClassification | None = Field(
         None,
         description="Data classification level following security standards",
     )
@@ -46,7 +43,10 @@ class ModelDataHandlingDeclaration(BaseModel):
                 )
 
             # Certain classifications require residency requirements
-            if self.data_classification in ["CONFIDENTIAL", "RESTRICTED"]:
+            if self.data_classification in [
+                EnumDataClassification.CONFIDENTIAL,
+                EnumDataClassification.RESTRICTED,
+            ]:
                 if not self.data_residency_required:
                     raise OnexError(
                         code=EnumCoreErrorCode.VALIDATION_ERROR,

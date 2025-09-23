@@ -9,7 +9,7 @@ repetitive patterns while maintaining type safety.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -226,7 +226,7 @@ class ModelContainer(BaseModel, Generic[T]):
                 ),
             )
 
-    def compare_value(self, other: Any) -> bool:
+    def compare_value(self, other: object) -> bool:
         """
         Compare the contained value with another value or container.
 
