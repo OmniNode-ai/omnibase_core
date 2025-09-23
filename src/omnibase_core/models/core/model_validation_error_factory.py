@@ -12,7 +12,8 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
-from .model_generic_factory import ModelGenericFactory, ModelTypedDictFactoryKwargs
+from .model_generic_factory import ModelGenericFactory
+from .model_typed_dict_factory_kwargs import ModelTypedDictFactoryKwargs
 
 T = TypeVar("T", bound=BaseModel)
 

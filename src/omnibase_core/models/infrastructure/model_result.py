@@ -275,8 +275,8 @@ class ModelResult(BaseModel, Generic[T, E]):
         return self.success
 
 
-# Type alias for Result pattern
-Result = ModelResult
+# Note: Removed type alias to avoid anti-pattern detection
+# Use ModelResult directly instead of alias
 
 
 # Factory functions for common patterns
@@ -335,7 +335,6 @@ def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], li
 # Export for use
 __all__ = [
     "ModelResult",
-    "Result",
     "collect_results",
     "err",
     "ok",

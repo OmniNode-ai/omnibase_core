@@ -19,47 +19,12 @@ from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-
-# Structured TypedDicts to reduce string field violations
-class TypedDictExecutionParams(TypedDict, total=False):
-    """Execution-related factory parameters."""
-
-    success: bool
-    exit_code: int
-    error_message: str
-    data: ModelSchemaValue
-
-
-class TypedDictMetadataParams(TypedDict, total=False):
-    """Metadata-related factory parameters."""
-
-    name: str
-    value: str
-    description: str
-    deprecated: bool
-    experimental: bool
-
-
-class TypedDictMessageParams(TypedDict, total=False):
-    """Message-related factory parameters."""
-
-    message: str
-    severity: EnumSeverityLevel
-
-
-# Main factory kwargs that combines sub-groups
-class ModelTypedDictFactoryKwargs(
+from omnibase_core.models.core.model_typed_dict_factory_kwargs import (
+    ModelTypedDictFactoryKwargs,
     TypedDictExecutionParams,
-    TypedDictMetadataParams,
     TypedDictMessageParams,
-    total=False,
-):
-    """
-    Typed dictionary for factory method parameters.
-
-    Restructured using composition to reduce string field count.
-    """
+    TypedDictMetadataParams,
+)
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -243,11 +208,7 @@ class ModelGenericFactory(Generic[T]):
         return model_class(success=False, error_message=error, **kwargs)
 
 
-# Export core factory class and types
+# Export core factory class
 __all__ = [
     "ModelGenericFactory",
-    "TypedDictExecutionParams",
-    "ModelTypedDictFactoryKwargs",
-    "TypedDictMessageParams",
-    "TypedDictMetadataParams",
 ]
