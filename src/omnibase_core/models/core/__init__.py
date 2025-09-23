@@ -71,7 +71,7 @@ from .model_typed_configuration import ModelTypedConfiguration
 
 # Generic factory pattern
 try:
-    from .model_capability_factory import CapabilityFactory
+    from .model_capability_factory import ModelCapabilityFactory
     from .model_generic_factory import ModelGenericFactory
     from .model_result_factory import ResultFactory
     from .model_validation_error_factory import ValidationErrorFactory
@@ -129,7 +129,7 @@ __all__ = [
 if _FACTORY_AVAILABLE:
     __all__.extend(
         [
-            "CapabilityFactory",
+            "ModelCapabilityFactory",
             "ModelGenericFactory",
             "ResultFactory",
             "ValidationErrorFactory",

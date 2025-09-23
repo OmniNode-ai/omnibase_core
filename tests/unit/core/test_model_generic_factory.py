@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from src.omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from src.omnibase_core.models.core import (
-    CapabilityFactory,
+    ModelCapabilityFactory,
     ModelGenericFactory,
     ResultFactory,
     ValidationErrorFactory,
@@ -176,12 +176,12 @@ class TestResultFactory:
         assert result.error_message == "validation failed"
 
 
-class TestCapabilityFactory:
+class TestModelCapabilityFactory:
     """Test the specialized capability factory."""
 
     def test_init(self):
         """Test capability factory initialization."""
-        factory = CapabilityFactory(TestCapabilityModel)
+        factory = ModelCapabilityFactory(TestCapabilityModel)
         assert factory.model_class == TestCapabilityModel
         assert factory.has_builder("standard")
         assert factory.has_builder("deprecated")
@@ -189,7 +189,7 @@ class TestCapabilityFactory:
 
     def test_build_standard_capability(self):
         """Test building standard capability."""
-        factory = CapabilityFactory(TestCapabilityModel)
+        factory = ModelCapabilityFactory(TestCapabilityModel)
         result = factory.build(
             "standard", name="TEST_CAPABILITY", description="Test capability"
         )
@@ -202,7 +202,7 @@ class TestCapabilityFactory:
 
     def test_build_deprecated_capability(self):
         """Test building deprecated capability."""
-        factory = CapabilityFactory(TestCapabilityModel)
+        factory = ModelCapabilityFactory(TestCapabilityModel)
         result = factory.build(
             "deprecated", name="OLD_CAPABILITY", description="Old capability"
         )
@@ -212,7 +212,7 @@ class TestCapabilityFactory:
 
     def test_build_experimental_capability(self):
         """Test building experimental capability."""
-        factory = CapabilityFactory(TestCapabilityModel)
+        factory = ModelCapabilityFactory(TestCapabilityModel)
         result = factory.build(
             "experimental", name="NEW_CAPABILITY", description="New capability"
         )

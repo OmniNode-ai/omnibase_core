@@ -135,6 +135,16 @@ repos:
         files: ^src/.*\.py$
         stages: [pre-commit]
 
+      - id: validate-generic-type-methods
+        name: ONEX Generic Type Methods Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-generic-type-methods.py
+        args: ['src/', '--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
       - id: validate-dict-any-usage
         name: ONEX Dict[str, Any] Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-dict-any-usage.py
@@ -212,6 +222,15 @@ repos:
         pass_filenames: false
         files: ^src/.*\.py$
         exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
+      - id: validate-enum-case-consistency
+        name: ONEX Enum Case Consistency Validation
+        entry: poetry run python scripts/validation/validate-enum-case-consistency.py
+        args: ['src/', '--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*enum.*\.py$
         stages: [pre-commit]
 
       - id: protect-claude-workflow

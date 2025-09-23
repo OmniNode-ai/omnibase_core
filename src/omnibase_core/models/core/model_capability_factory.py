@@ -13,9 +13,9 @@ from pydantic import BaseModel
 from .model_generic_factory import ModelGenericFactory
 
 
-# TypedDict for capability factory specific kwargs
-class TypedDictCapabilityFactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for capability factory parameters."""
+# TypedDict for model capability factory specific kwargs
+class TypedDictModelCapabilityFactoryKwargs(TypedDict, total=False):
+    """Typed dictionary for model capability factory parameters."""
 
     name: str
     value: str
@@ -28,7 +28,7 @@ class TypedDictCapabilityFactoryKwargs(TypedDict, total=False):
 T = TypeVar("T", bound=BaseModel)
 
 
-class CapabilityFactory(ModelGenericFactory[T]):
+class ModelCapabilityFactory(ModelGenericFactory[T]):
     """
     Specialized factory for capability-type models.
 
@@ -47,7 +47,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
 
     def _build_standard_capability(
         self,
-        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
+        **kwargs: Unpack[TypedDictModelCapabilityFactoryKwargs],
     ) -> T:
         """Build a standard capability with consistent naming."""
         name = kwargs.get("name", "UNKNOWN")
@@ -67,7 +67,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
 
     def _build_deprecated_capability(
         self,
-        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
+        **kwargs: Unpack[TypedDictModelCapabilityFactoryKwargs],
     ) -> T:
         """Build a deprecated capability with warning metadata."""
         # Ensure deprecated flag is set
@@ -76,7 +76,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
 
     def _build_experimental_capability(
         self,
-        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
+        **kwargs: Unpack[TypedDictModelCapabilityFactoryKwargs],
     ) -> T:
         """Build an experimental capability with appropriate metadata."""
         # Set experimental flag if the model supports it
@@ -85,8 +85,8 @@ class CapabilityFactory(ModelGenericFactory[T]):
         return self._build_standard_capability(**kwargs)
 
 
-# Export capability factory class and types
+# Export model capability factory class and types
 __all__ = [
-    "CapabilityFactory",
-    "TypedDictCapabilityFactoryKwargs",
+    "ModelCapabilityFactory",
+    "TypedDictModelCapabilityFactoryKwargs",
 ]
