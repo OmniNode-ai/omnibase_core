@@ -215,10 +215,11 @@ repos:
         stages: [pre-commit]
 
       - id: protect-claude-workflow
-        name: Protect Claude Code Review Workflow File
-        entry: bash -c 'echo "❌ BLOCKED - .github/workflows/claude-code-review.yml cannot be modified in PRs (GitHub security requirement)" && exit 1'
+        name: ONEX Claude Workflow File Protection
+        entry: poetry run python scripts/validation/validate-claude-workflow-protection.py
         language: system
-        files: ^\.github/workflows/claude-code-review\.yml$
+        always_run: true
+        pass_filenames: false
         stages: [pre-commit]
 
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues

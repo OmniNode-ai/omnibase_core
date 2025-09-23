@@ -10,6 +10,11 @@ authors = ["OmniNode Team <team@omninode.ai>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "omnibase_core", from = "src"}]
+include = [
+    "scripts/validation/*.py",
+    "scripts/validation/*.json",
+    "scripts/validation/*.md"
+]
 
 [tool.poetry.scripts]
 omni-agent = "omnibase_core.cli.commands:cli"
