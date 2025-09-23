@@ -60,6 +60,64 @@ except ImportError as e:
     print(f"Warning: Pydantic models not available: {e}")
     PYDANTIC_AVAILABLE = False
 
+    # Fallback implementations when Pydantic models are not available
+    class AnalysisType:
+        ENHANCED_CODE_CHANGES_WITH_CORRELATION = (
+            "enhanced_code_changes_with_correlation"
+        )
+
+    class RiskLevel:
+        LOW = "low"
+        MEDIUM = "medium"
+        HIGH = "high"
+        CRITICAL = "critical"
+
+    class SecurityStatus:
+        CLEAN = "clean"
+        SUSPICIOUS = "suspicious"
+        FLAGGED = "flagged"
+
+    class _FallbackModel:
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+        def dict(self):
+            return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
+        @classmethod
+        def create_intelligence_document(cls, **kwargs):
+            return cls(**kwargs)
+
+        @classmethod
+        def from_intelligence_document(cls, doc):
+            if isinstance(doc, dict):
+                return cls(**doc)
+            return cls(**doc.dict()) if hasattr(doc, "dict") else cls()
+
+    # Create fallback classes
+    ChangeSummary = _FallbackModel
+    CrossRepositoryCorrelation = _FallbackModel
+    ImpactAssessment = _FallbackModel
+    IntelligenceDocumentContent = _FallbackModel
+    IntelligenceHookConfig = _FallbackModel
+    IntelligenceMetadata = _FallbackModel
+    IntelligenceServiceRequest = _FallbackModel
+    MCPCreateDocumentRequest = _FallbackModel
+    MCPResponse = _FallbackModel
+    SecurityAndPrivacy = _FallbackModel
+    TechnicalAnalysis = _FallbackModel
+
+    def create_change_summary(**kwargs):
+        return ChangeSummary(**kwargs)
+
+    def create_intelligence_metadata(**kwargs):
+        return IntelligenceMetadata(**kwargs)
+
+    def validate_intelligence_document(doc):
+        return True  # Always valid in fallback mode
+
+
 # Import centralized configuration
 try:
     from server.config.archon_config import get_archon_config, get_intelligence_endpoint
@@ -68,6 +126,22 @@ try:
 except ImportError as e:
     print(f"Warning: Centralized configuration not available: {e}")
     CONFIG_AVAILABLE = False
+
+    # Fallback configuration functions
+    class _FallbackConfig:
+        def __init__(self):
+            self.intelligence_service = _FallbackService()
+
+    class _FallbackService:
+        def __init__(self):
+            self.port = 8053
+
+    def get_archon_config():
+        return _FallbackConfig()
+
+    def get_intelligence_endpoint():
+        return "http://localhost:8053/extract/document"
+
 
 # Try to import httpx first (available in most ONEX repositories)
 # Fall back to requests as a backup

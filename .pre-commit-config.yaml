@@ -120,7 +120,7 @@ repos:
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--strict', '--show-statistics']
+        args: ['src/omnibase_core/', '--strict', '--show-statistics']
         language: system
         pass_filenames: false
         files: ^src/.*\.py$

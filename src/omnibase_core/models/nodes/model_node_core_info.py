@@ -23,10 +23,10 @@ from ..metadata.model_semver import ModelSemVer
 class TypedDictCoreSummary(TypedDict):
     """Type-safe dictionary for node core summary."""
 
-    node_id: str
+    node_id: UUID
     node_name: str
     node_type: str
-    node_version: str
+    node_version: ModelSemVer
     status: str
     health: str
     is_active: bool
@@ -96,10 +96,10 @@ class ModelNodeCoreInfo(BaseModel):
     def get_core_summary(self) -> TypedDictCoreSummary:
         """Get core node information summary."""
         return {
-            "node_id": str(self.node_id),
+            "node_id": self.node_id,
             "node_name": self.node_name,
             "node_type": self.node_type.value,
-            "node_version": str(self.node_version),
+            "node_version": self.node_version,
             "status": self.status.value,
             "health": self.health.value,
             "is_active": self.is_active(),

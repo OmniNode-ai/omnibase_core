@@ -7,6 +7,9 @@ Replaces dict[str, Any] return type with structured typing.
 from __future__ import annotations
 
 from typing import TypedDict
+from uuid import UUID
+
+from ..metadata.model_semver import ModelSemVer
 
 
 class NodeMetadataSummaryType(TypedDict):
@@ -17,12 +20,12 @@ class NodeMetadataSummaryType(TypedDict):
     with proper type structure.
     """
 
-    node_id: str
+    node_id: UUID
     node_name: str
     node_type: str
     status: str
     health: str
-    version: str | None
+    version: ModelSemVer | None
     usage_count: int
     error_count: int
     success_rate: float

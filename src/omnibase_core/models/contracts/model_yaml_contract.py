@@ -9,21 +9,20 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
-
-class YamlContentType(TypedDict, total=False):
-    """Type-safe YAML contract content structure."""
-
-    contract_version: str
-    node_type: str
-    description: str
-    # Allow any additional string keys with various value types for YAML flexibility
-    # This preserves YAML flexibility while providing basic type safety
-
-
 from pydantic import BaseModel, Field
 
 from ...enums.enum_node_type import EnumNodeType
 from ..metadata.model_semver import ModelSemVer
+
+
+class YamlContentType(TypedDict, total=False):
+    """Type-safe YAML contract content structure."""
+
+    contract_version: ModelSemVer
+    node_type: str
+    description: str
+    # Allow any additional string keys with various value types for YAML flexibility
+    # This preserves YAML flexibility while providing basic type safety
 
 
 class ModelYamlContract(BaseModel):

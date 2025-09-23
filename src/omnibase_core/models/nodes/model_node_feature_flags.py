@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from .types_node_feature_summary import NodeFeatureSummaryType
+from .model_types_node_feature_summary import NodeFeatureSummaryType
 
 
 class ModelNodeFeatureFlags(BaseModel):

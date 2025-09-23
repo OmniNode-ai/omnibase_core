@@ -16,7 +16,7 @@ from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
 
 
-class SSLContextOptions(TypedDict, total=False):
+class TypedDictSSLContextOptions(TypedDict, total=False):
     """SSL context options for connection libraries."""
 
     verify: bool | None
@@ -78,7 +78,7 @@ class ModelConnectionSecurity(BaseModel):
         """Check if CA bundle is configured."""
         return bool(self.ssl_ca_path)
 
-    def get_ssl_context_options(self) -> SSLContextOptions:
+    def get_ssl_context_options(self) -> TypedDictSSLContextOptions:
         """Get SSL context options for connection libraries."""
         return {
             "verify": self.ssl_verify,

@@ -10,7 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from ...enums.enum_protocol_type import EnumProtocolType
-from .types_node_connection_summary import NodeConnectionSummaryType
+from .model_types_node_connection_summary import NodeConnectionSummaryType
 
 
 class ModelNodeConnectionSettings(BaseModel):

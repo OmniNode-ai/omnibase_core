@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from .types_function_relationships_summary import FunctionRelationshipsSummaryType
+from .model_types_function_relationships_summary import FunctionRelationshipsSummaryType
 
 
 class ModelFunctionRelationships(BaseModel):

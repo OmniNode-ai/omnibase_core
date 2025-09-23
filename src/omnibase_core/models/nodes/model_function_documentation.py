@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from .types_function_documentation_summary import FunctionDocumentationSummaryType
+from .model_types_function_documentation_summary import FunctionDocumentationSummaryType
 
 
 class ModelFunctionDocumentation(BaseModel):

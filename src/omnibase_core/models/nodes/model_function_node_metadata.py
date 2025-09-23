@@ -20,7 +20,7 @@ from .model_function_deprecation_info import (
 )
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
-from .types_function_documentation_summary import FunctionDocumentationSummaryType
+from .model_types_function_documentation_summary import FunctionDocumentationSummaryType
 
 # Removed type alias - using ModelMetadataValue for proper type safety
 

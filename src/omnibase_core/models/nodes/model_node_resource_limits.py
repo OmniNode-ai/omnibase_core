@@ -11,10 +11,10 @@ from typing import TypedDict, cast
 
 from pydantic import BaseModel, Field
 
-from .types_node_resource_summary import NodeResourceSummaryType
+from .model_types_node_resource_summary import NodeResourceSummaryType
 
 
-class NodeResourceConstraintKwargs(TypedDict, total=False):
+class TypedDictNodeResourceConstraintKwargs(TypedDict, total=False):
     """TypedDict for create_constrained method kwargs."""
 
     max_memory_mb: int
@@ -85,7 +85,7 @@ class ModelNodeResourceLimits(BaseModel):
         cpu_percent: float | None = None,
     ) -> ModelNodeResourceLimits:
         """Create constrained resource configuration."""
-        kwargs: NodeResourceConstraintKwargs = {}
+        kwargs: TypedDictNodeResourceConstraintKwargs = {}
         if memory_mb is not None:
             kwargs["max_memory_mb"] = memory_mb
         if cpu_percent is not None:
@@ -94,4 +94,4 @@ class ModelNodeResourceLimits(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeResourceLimits", "NodeResourceConstraintKwargs"]
+__all__ = ["ModelNodeResourceLimits", "TypedDictNodeResourceConstraintKwargs"]

@@ -20,7 +20,7 @@ from ..metadata.model_semver import ModelSemVer
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_performance_metrics import ModelNodePerformanceMetrics
-from .types_node_metadata_summary import NodeMetadataSummaryType
+from .model_types_node_metadata_summary import NodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -298,12 +298,12 @@ class ModelNodeMetadataInfo(BaseModel):
         org_summary = self.organization.get_organization_summary()
 
         return {
-            "node_id": str(self.node_id),
+            "node_id": self.node_id,
             "node_name": self.node_name,
             "node_type": self.node_type.value,
             "status": self.status.value,
             "health": self.health,
-            "version": core_summary["version"],
+            "version": self.core.version,
             "usage_count": self.usage_count,
             "error_count": self.error_count,
             "success_rate": self.success_rate,

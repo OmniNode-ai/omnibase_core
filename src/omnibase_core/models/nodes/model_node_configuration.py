@@ -14,10 +14,10 @@ from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
-from .types_node_connection_summary import NodeConnectionSummaryType
-from .types_node_execution_summary import NodeExecutionSummaryType
-from .types_node_feature_summary import NodeFeatureSummaryType
-from .types_node_resource_summary import NodeResourceSummaryType
+from .model_types_node_connection_summary import NodeConnectionSummaryType
+from .model_types_node_execution_summary import NodeExecutionSummaryType
+from .model_types_node_feature_summary import NodeFeatureSummaryType
+from .model_types_node_resource_summary import NodeResourceSummaryType
 
 
 class TypedDictNodeConfigurationSummary(TypedDict):

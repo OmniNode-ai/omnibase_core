@@ -42,8 +42,6 @@ from .validation import (
     validate_union_usage,
 )
 
-__version__ = "1.0.0"
-
 __all__ = [
     # Validation tools (main exports for other repositories)
     "validate_architecture",
