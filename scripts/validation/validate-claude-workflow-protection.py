@@ -32,7 +32,9 @@ def check_claude_workflow_protection(repo_root: Path) -> bool:
     Returns:
         True if validation passes (no modifications to block), False if blocked
     """
-    claude_workflow_path = repo_root / ".github" / "workflows" / "claude-code-review.yml"
+    claude_workflow_path = (
+        repo_root / ".github" / "workflows" / "claude-code-review.yml"
+    )
 
     # If the file doesn't exist, no protection needed
     if not claude_workflow_path.exists():
@@ -53,7 +55,7 @@ def check_claude_workflow_protection(repo_root: Path) -> bool:
             cwd=repo_root,
             capture_output=True,
             text=True,
-            check=False
+            check=False,
         )
 
         # If git status shows any changes to the file, block them
@@ -66,11 +68,13 @@ def check_claude_workflow_protection(repo_root: Path) -> bool:
             cwd=repo_root,
             capture_output=True,
             text=True,
-            check=False
+            check=False,
         )
 
         # Check if claude-code-review.yml is in the staged changes
-        staged_files = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        staged_files = (
+            result.stdout.strip().split("\n") if result.stdout.strip() else []
+        )
         claude_workflow_relative = ".github/workflows/claude-code-review.yml"
 
         if claude_workflow_relative in staged_files:
@@ -88,18 +92,16 @@ def main():
     parser = argparse.ArgumentParser(
         description="Validate Claude workflow file protection",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__
+        epilog=__doc__,
     )
     parser.add_argument(
         "path",
         nargs="?",
         default=".",
-        help="Path to repository root (default: current directory)"
+        help="Path to repository root (default: current directory)",
     )
     parser.add_argument(
-        "--quiet",
-        action="store_true",
-        help="Suppress output except for errors"
+        "--quiet", action="store_true", help="Suppress output except for errors"
     )
 
     args = parser.parse_args()
@@ -119,10 +121,14 @@ def main():
             print("✅ Claude workflow protection: PASSED")
         sys.exit(0)
     else:
-        print("❌ BLOCKED - .github/workflows/claude-code-review.yml cannot be modified in PRs")
+        print(
+            "❌ BLOCKED - .github/workflows/claude-code-review.yml cannot be modified in PRs"
+        )
         print("🔒 This file is protected for GitHub security requirements")
         print("📧 Please contact repository administrators for any necessary changes")
-        print("💡 To bypass this check (not recommended): use --no-verify with git commit")
+        print(
+            "💡 To bypass this check (not recommended): use --no-verify with git commit"
+        )
         sys.exit(1)
 
 
