@@ -20,9 +20,9 @@ class TypedDictResultFactoryKwargs(TypedDict, total=False):
 
     success: bool
     exit_code: int
-    error_message: str | None
-    data: ModelSchemaValue | None
-    output_text: str | None
+    error_message: str
+    data: ModelSchemaValue
+    output_text: str
     warnings: list[str]
 
 

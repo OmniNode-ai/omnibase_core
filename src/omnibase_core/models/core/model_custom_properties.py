@@ -11,6 +11,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from ..common.model_schema_value import ModelSchemaValue
+from ..infrastructure.model_result import Result
 
 
 class ModelCustomProperties(BaseModel):
@@ -52,16 +53,16 @@ class ModelCustomProperties(BaseModel):
         """Set a custom boolean value."""
         self.custom_flags[key] = value
 
-    def get_custom_value(self, key: str) -> ModelSchemaValue | None:
+    def get_custom_value(self, key: str) -> Result[ModelSchemaValue, str]:
         """Get custom value from any category."""
         # Check each category with explicit typing
         if key in self.custom_strings:
-            return ModelSchemaValue.from_value(self.custom_strings[key])
+            return Result.ok(ModelSchemaValue.from_value(self.custom_strings[key]))
         if key in self.custom_numbers:
-            return ModelSchemaValue.from_value(self.custom_numbers[key])
+            return Result.ok(ModelSchemaValue.from_value(self.custom_numbers[key]))
         if key in self.custom_flags:
-            return ModelSchemaValue.from_value(self.custom_flags[key])
-        return None
+            return Result.ok(ModelSchemaValue.from_value(self.custom_flags[key]))
+        return Result.err(f"Custom field '{key}' not found in any category")
 
     def has_custom_field(self, key: str) -> bool:
         """Check if custom field exists in any category."""

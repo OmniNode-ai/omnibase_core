@@ -14,11 +14,11 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from ...enums.enum_cli_value_type import EnumCliValueType
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
+from ..common.model_schema_value import ModelSchemaValue
 
 # Note: Previously had type alias (CliDictValueType)
 # Removed to comply with ONEX strong typing standards.
-# Using explicit type: dict[str, Any]
-
+# Now uses dict[str, ModelSchemaValue] for strong typing.
 
 
 # CLI raw values use discriminated union pattern with runtime validation
@@ -108,8 +108,8 @@ class ModelCliValue(BaseModel):
         return cls(value_type=EnumCliValueType.LIST, raw_value=value)
 
     @classmethod
-    def from_dict_value(cls, value: dict[str, Any]) -> ModelCliValue:
-        """Create CLI value wrapping a dictionary value (not deserializing model fields)."""
+    def from_dict_value(cls, value: dict[str, ModelSchemaValue]) -> ModelCliValue:
+        """Create CLI value wrapping a dictionary value with proper ONEX typing."""
         return cls(value_type=EnumCliValueType.DICT, raw_value=value)
 
     @classmethod
@@ -131,7 +131,10 @@ class ModelCliValue(BaseModel):
         if isinstance(value, float):
             return cls.from_float(value)
         if isinstance(value, dict):
-            return cls.from_dict_value(value)
+            converted_value = {
+                key: ModelSchemaValue.from_value(val) for key, val in value.items()
+            }
+            return cls.from_dict_value(converted_value)
         if isinstance(value, list):
             return cls.from_list(value)
         # Convert unknown types to string representation

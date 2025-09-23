@@ -12,6 +12,7 @@ from typing import Any, TypedDict
 from pydantic import BaseModel
 
 from ..common.model_schema_value import ModelSchemaValue
+from ..infrastructure.model_result import Result
 
 
 # TypedDict for field values to replace loose Any typing
@@ -31,8 +32,8 @@ class ModelFieldAccessor(BaseModel):
     def get_field(
         self,
         path: str,
-        default: ModelSchemaValue | None = None,
-    ) -> ModelSchemaValue | None:
+        default: ModelSchemaValue = None,
+    ) -> Result[ModelSchemaValue, str]:
         """Get field using dot notation: 'metadata.custom_fields.key'"""
         try:
             obj: Any = self
@@ -46,13 +47,21 @@ class ModelFieldAccessor(BaseModel):
                 ):
                     obj = obj[part]
                 else:
-                    return default
+                    if default is not None:
+                        return Result.ok(default)
+                    return Result.err(
+                        f"Field path '{path}' not found, stopped at part '{part}'"
+                    )
             # Type checking for return value - convert to ModelSchemaValue
             if isinstance(obj, (str, int, float, bool, list)):
-                return ModelSchemaValue.from_value(obj)
-            return default
-        except (AttributeError, KeyError, TypeError):
-            return default
+                return Result.ok(ModelSchemaValue.from_value(obj))
+            if default is not None:
+                return Result.ok(default)
+            return Result.err(f"Field at '{path}' has unsupported type: {type(obj)}")
+        except (AttributeError, KeyError, TypeError) as e:
+            if default is not None:
+                return Result.ok(default)
+            return Result.err(f"Error accessing field '{path}': {str(e)}")
 
     def set_field(self, path: str, value: ModelSchemaValue) -> bool:
         """Set field using dot notation."""

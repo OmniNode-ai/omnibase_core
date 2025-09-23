@@ -218,7 +218,9 @@ class ModelNodeMetadataInfo(BaseModel):
             for item in self.organization.custom_properties.custom_flags.items():
                 flag_key: str = item[0]
                 flag_val: bool = item[1]
-                result[flag_key] = ModelMetadataValue.from_bool(flag_val, "custom_flags")
+                result[flag_key] = ModelMetadataValue.from_bool(
+                    flag_val, "custom_flags"
+                )
         return result
 
     @custom_metadata.setter

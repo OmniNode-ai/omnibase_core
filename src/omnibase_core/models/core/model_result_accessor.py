@@ -7,6 +7,7 @@ Specialized accessor for handling CLI execution results and metadata.
 from __future__ import annotations
 
 from ..common.model_schema_value import ModelSchemaValue
+from ..infrastructure.model_result import Result
 from .model_field_accessor import ModelFieldAccessor
 
 
@@ -16,20 +17,23 @@ class ModelResultAccessor(ModelFieldAccessor):
     def get_result_value(
         self,
         key: str,
-        default: ModelSchemaValue | None = None,
-    ) -> ModelSchemaValue | None:
+        default: ModelSchemaValue = None,
+    ) -> Result[ModelSchemaValue, str]:
         """Get result value from results or metadata fields."""
         # Try results first
-        value = self.get_field(f"results.{key}")
-        if value is not None:
-            return value
+        results_value = self.get_field(f"results.{key}")
+        if results_value.is_ok():
+            return results_value
 
         # Try metadata second
-        value = self.get_field(f"metadata.{key}")
-        if value is not None:
-            return value
+        metadata_value = self.get_field(f"metadata.{key}")
+        if metadata_value.is_ok():
+            return metadata_value
 
-        return default
+        # If both failed, return default if provided, otherwise error
+        if default is not None:
+            return Result.ok(default)
+        return Result.err(f"Result value '{key}' not found in results or metadata")
 
     def set_result_value(self, key: str, value: ModelSchemaValue) -> bool:
         """Set result value in results field."""

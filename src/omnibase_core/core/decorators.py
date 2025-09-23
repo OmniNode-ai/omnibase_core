@@ -6,9 +6,11 @@ requirements for CLI and tool interoperability.
 """
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import TypeVar
 
-ModelType = TypeVar("ModelType", bound=type[Any])
+from pydantic import BaseModel
+
+ModelType = TypeVar("ModelType", bound=type[BaseModel])
 
 
 def allow_any_type(reason: str) -> Callable[[ModelType], ModelType]:
@@ -25,8 +27,8 @@ def allow_any_type(reason: str) -> Callable[[ModelType], ModelType]:
     def decorator(cls: ModelType) -> ModelType:
         # Add metadata to the class for documentation
         if not hasattr(cls, "_allow_any_reasons"):
-            cls._allow_any_reasons = []
-        cls._allow_any_reasons.append(reason)
+            setattr(cls, "_allow_any_reasons", [])
+        getattr(cls, "_allow_any_reasons").append(reason)
         return cls
 
     return decorator
@@ -46,8 +48,8 @@ def allow_dict_str_any(reason: str) -> Callable[[ModelType], ModelType]:
     def decorator(cls: ModelType) -> ModelType:
         # Add metadata to the class for documentation
         if not hasattr(cls, "_allow_dict_str_any_reasons"):
-            cls._allow_dict_str_any_reasons = []
-        cls._allow_dict_str_any_reasons.append(reason)
+            setattr(cls, "_allow_dict_str_any_reasons", [])
+        getattr(cls, "_allow_dict_str_any_reasons").append(reason)
         return cls
 
     return decorator

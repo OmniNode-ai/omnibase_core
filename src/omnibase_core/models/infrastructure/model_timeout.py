@@ -136,10 +136,15 @@ class ModelTimeout(BaseModel):
     def custom_properties(self) -> ModelCustomProperties:
         """Custom timeout properties using typed model."""
         # Convert ModelSchemaValue metadata to basic types for ModelCustomProperties
-        metadata: dict[str, Any] = {}
+        metadata: dict[str, ModelSchemaValue] = {}
         for key, schema_value in self.custom_metadata.items():
-            metadata[key] = schema_value.to_value()
-        return ModelCustomProperties.from_metadata(metadata)
+            # Convert to Python value then back to ModelSchemaValue for type consistency
+            python_value = schema_value.to_value()
+            metadata[key] = ModelSchemaValue.from_value(python_value)
+
+        # Create ModelCustomProperties from the Python values
+        converted_metadata = {key: val.to_value() for key, val in metadata.items()}
+        return ModelCustomProperties.from_metadata(converted_metadata)
 
     @property
     def timeout_timedelta(self) -> timedelta:

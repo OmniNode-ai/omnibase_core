@@ -252,12 +252,40 @@ class ModelPropertyValue(BaseModel):
     @classmethod
     def from_uuid(
         cls,
-        value: UUID | str,
+        value: UUID,
         source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from UUID."""
         return cls(
             value=value,
+            value_type=EnumPropertyType.UUID,
+            source=source,
+            is_validated=True,
+        )
+
+    @classmethod
+    def from_uuid_string(
+        cls,
+        value: str,
+        source: str | None = None,
+    ) -> ModelPropertyValue:
+        """Create property value from UUID string representation."""
+        try:
+            uuid_value = UUID(value)
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid UUID string format: {value}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "input_value": ModelSchemaValue.from_value(value),
+                        "error": ModelSchemaValue.from_value(str(e)),
+                    }
+                ),
+            ) from e
+
+        return cls(
+            value=uuid_value,
             value_type=EnumPropertyType.UUID,
             source=source,
             is_validated=True,

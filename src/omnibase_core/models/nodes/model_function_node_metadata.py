@@ -8,9 +8,7 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TypedDict
-
-# Removed type alias - using ModelMetadataValue for proper type safety
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +20,8 @@ from .model_function_deprecation_info import (
 )
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
+
+# Removed type alias - using ModelMetadataValue for proper type safety
 
 
 class TypedDictFunctionMetadataSummary(TypedDict):
@@ -253,7 +253,8 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         # Convert documentation summary to expected format (bool | int only)
         doc_filtered = {
-            key: value for key, value in doc_summary.items()
+            key: value
+            for key, value in doc_summary.items()
             if isinstance(value, (bool, int))
         }
 

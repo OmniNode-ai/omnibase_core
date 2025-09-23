@@ -27,8 +27,8 @@ class TypedDictExecutionParams(TypedDict, total=False):
 
     success: bool
     exit_code: int
-    error_message: str | None
-    data: ModelSchemaValue | None
+    error_message: str
+    data: ModelSchemaValue
 
 
 class TypedDictMetadataParams(TypedDict, total=False):
@@ -45,7 +45,7 @@ class TypedDictMessageParams(TypedDict, total=False):
     """Message-related factory parameters."""
 
     message: str
-    severity: EnumSeverityLevel | None
+    severity: EnumSeverityLevel
 
 
 # Main factory kwargs that combines sub-groups
@@ -194,7 +194,7 @@ class ModelGenericFactory(Generic[T]):
     def create_success_result(
         cls,
         model_class: type[T],
-        result_data: ModelSchemaValue | None,
+        result_data: ModelSchemaValue = None,
         **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """

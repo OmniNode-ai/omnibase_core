@@ -194,15 +194,29 @@ class ModelRetryPolicy(BaseModel):
         return {
             "max_retries": ModelSchemaValue.from_value(self.max_retries),
             "current_attempt": ModelSchemaValue.from_value(self.current_attempt),
-            "retry_attempts_made": ModelSchemaValue.from_value(self.retry_attempts_made),
-            "has_retries_remaining": ModelSchemaValue.from_value(self.has_retries_remaining),
+            "retry_attempts_made": ModelSchemaValue.from_value(
+                self.retry_attempts_made
+            ),
+            "has_retries_remaining": ModelSchemaValue.from_value(
+                self.has_retries_remaining
+            ),
             "is_exhausted": ModelSchemaValue.from_value(self.is_exhausted),
             "success_rate": ModelSchemaValue.from_value(self.success_rate),
-            "successful_attempt": ModelSchemaValue.from_value(self.execution.successful_attempt),
-            "total_execution_time_seconds": ModelSchemaValue.from_value(self.execution.total_execution_time_seconds),
-            "last_error": ModelSchemaValue.from_value(str(self.execution.last_error) if self.execution.last_error else None),
-            "last_status_code": ModelSchemaValue.from_value(self.execution.last_status_code),
-            "backoff_strategy": ModelSchemaValue.from_value(self.backoff_strategy.value),
+            "successful_attempt": ModelSchemaValue.from_value(
+                self.execution.successful_attempt
+            ),
+            "total_execution_time_seconds": ModelSchemaValue.from_value(
+                self.execution.total_execution_time_seconds
+            ),
+            "last_error": ModelSchemaValue.from_value(
+                str(self.execution.last_error) if self.execution.last_error else None
+            ),
+            "last_status_code": ModelSchemaValue.from_value(
+                self.execution.last_status_code
+            ),
+            "backoff_strategy": ModelSchemaValue.from_value(
+                self.backoff_strategy.value
+            ),
             "next_delay_seconds": ModelSchemaValue.from_value(
                 self.calculate_next_delay() if self.has_retries_remaining else None
             ),

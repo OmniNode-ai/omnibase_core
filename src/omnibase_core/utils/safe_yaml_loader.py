@@ -13,10 +13,14 @@ from typing import Any, TypeVar, cast
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from ..models.common.model_schema_value import ModelSchemaValue
 from ..models.config.model_schema_example import ModelSchemaExample
 from ..models.core.model_custom_properties import ModelCustomProperties
+from ..models.utils import ModelYamlOption, ModelYamlValue, YamlDumpOptions
 
 # ModelYamlWithExamples import removed - using direct YAML parsing
+
+# Type-safe YAML-serializable data structures using discriminated union
 
 
 class YamlLoadingError(Exception):
@@ -123,8 +127,19 @@ def _dump_yaml_content(
     All other code should use this function through proper Pydantic model serialization.
     """
     try:
+        # Convert ModelYamlValue to serializable data
+        serializable_data = (
+            data.to_serializable() if isinstance(data, ModelYamlValue) else data
+        )
+
+        # Convert ModelYamlOption values to Python values
+        yaml_kwargs = {
+            k: v.to_value() if isinstance(v, ModelYamlOption) else v
+            for k, v in kwargs.items()
+        }
+
         yaml_str = yaml.dump(
-            data,
+            serializable_data,
             sort_keys=sort_keys,
             default_flow_style=default_flow_style,
             allow_unicode=allow_unicode,
@@ -132,7 +147,7 @@ def _dump_yaml_content(
             explicit_end=explicit_end,
             indent=indent,
             width=width,
-            **kwargs,
+            **yaml_kwargs,
         )
         # Normalize line endings and Unicode characters
         yaml_str = yaml_str.replace("\xa0", " ")
@@ -177,7 +192,9 @@ def serialize_pydantic_model_to_yaml(
         else:
             data = model.model_dump(mode="json")
 
-        yaml_str = _dump_yaml_content(data, **yaml_options)
+        # Convert to ModelYamlValue for type-safe dumping
+        yaml_data = ModelYamlValue.from_schema_value(ModelSchemaValue.from_value(data))
+        yaml_str = _dump_yaml_content(yaml_data, **yaml_options)
 
         if comment_prefix:
             yaml_str = "\n".join(

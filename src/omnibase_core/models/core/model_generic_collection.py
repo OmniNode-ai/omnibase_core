@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from ..common.model_schema_value import ModelSchemaValue
+from ..infrastructure.model_result import Result
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 # More constrained TypeVar for collection items
@@ -123,7 +124,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             return True
         return False
 
-    def get_item(self, item_id: UUID) -> T | None:
+    def get_item(self, item_id: UUID) -> Result[T, str]:
         """
         Get an item by ID if it has an 'id' attribute.
 
@@ -131,14 +132,14 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             item_id: UUID of the item to retrieve
 
         Returns:
-            The item if found, None otherwise
+            Result containing the item if found, or error message if not found
         """
         for item in self.items:
             if hasattr(item, "id") and item.id == item_id:
-                return item
-        return None
+                return Result.ok(item)
+        return Result.err(f"Item with ID {item_id} not found in collection")
 
-    def get_item_by_name(self, name: str) -> T | None:
+    def get_item_by_name(self, name: str) -> Result[T, str]:
         """
         Get an item by name if it has a 'name' attribute.
 
@@ -146,14 +147,14 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             name: Name of the item to retrieve
 
         Returns:
-            The item if found, None otherwise
+            Result containing the item if found, or error message if not found
         """
         for item in self.items:
             if hasattr(item, "name") and item.name == name:
-                return item
-        return None
+                return Result.ok(item)
+        return Result.err(f"Item with name '{name}' not found in collection")
 
-    def get_item_by_index(self, index: int) -> T | None:
+    def get_item_by_index(self, index: int) -> Result[T, str]:
         """
         Get an item by index with bounds checking.
 
@@ -161,11 +162,13 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             index: Index of the item to retrieve
 
         Returns:
-            The item if found, None if index is out of bounds
+            Result containing the item if found, or error message if index is out of bounds
         """
         if 0 <= index < len(self.items):
-            return self.items[index]
-        return None
+            return Result.ok(self.items[index])
+        return Result.err(
+            f"Index {index} out of bounds for collection of size {len(self.items)}"
+        )
 
     def filter_items(self, predicate: Callable[[T], bool]) -> list[T]:
         """
@@ -298,7 +301,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if an item with that name exists
         """
-        return self.get_item_by_name(name) is not None
+        return self.get_item_by_name(name).is_ok()
 
     def has_item_with_id(self, item_id: UUID) -> bool:
         """
@@ -310,7 +313,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if an item with that ID exists
         """
-        return self.get_item(item_id) is not None
+        return self.get_item(item_id).is_ok()
 
     def get_summary(self) -> ModelGenericCollectionSummary:
         """
@@ -376,10 +379,11 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if item was found and updated, False otherwise
         """
-        item = self.get_item(item_id)
-        if item is None:
+        item_result = self.get_item(item_id)
+        if item_result.is_err():
             return False
 
+        item = item_result.unwrap()
         for attr_name, value in updates.items():
             if hasattr(item, attr_name):
                 raw_value = value.to_value()

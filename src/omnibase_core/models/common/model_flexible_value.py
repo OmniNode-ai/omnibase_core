@@ -19,9 +19,7 @@ from .model_schema_value import ModelSchemaValue
 
 # Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
 # These were removed to comply with ONEX strong typing standards.
-# Using explicit types: dict[str, Any], list[Any], Any
-
-
+# Now uses dict[str, ModelSchemaValue] for strong typing.
 
 
 class ModelFlexibleValue(BaseModel):
@@ -48,7 +46,7 @@ class ModelFlexibleValue(BaseModel):
     integer_value: int | None = None
     float_value: float | None = None
     boolean_value: bool | None = None
-    dict_value: dict[str, Any] | None = None
+    dict_value: dict[str, ModelSchemaValue] | None = None
     list_value: list[Any] | None = None
     uuid_value: UUID | None = None
 
@@ -169,15 +167,25 @@ class ModelFlexibleValue(BaseModel):
 
     @classmethod
     def from_dict_value(
-        cls, value: dict[str, Any], source: str | None = None
+        cls, value: dict[str, ModelSchemaValue], source: str | None = None
     ) -> ModelFlexibleValue:
-        """Create flexible value wrapping a dictionary value (not deserializing model fields)."""
+        """Create flexible value from dictionary of ModelSchemaValue."""
         return cls(
             value_type="dict",
             dict_value=value,
             source=source,
             is_validated=True,
         )
+
+    @classmethod
+    def from_raw_dict(
+        cls, value: dict[str, object], source: str | None = None
+    ) -> ModelFlexibleValue:
+        """Create flexible value from raw dictionary, converting to ModelSchemaValue format."""
+        converted_value = {
+            key: ModelSchemaValue.from_value(val) for key, val in value.items()
+        }
+        return cls.from_dict_value(converted_value, source)
 
     @classmethod
     def from_list(
@@ -224,7 +232,7 @@ class ModelFlexibleValue(BaseModel):
         if isinstance(value, float):
             return cls.from_float(value, source)
         if isinstance(value, dict):
-            return cls.from_dict_value(value, source)
+            return cls.from_raw_dict(value, source)
         if isinstance(value, list):
             return cls.from_list(value, source)
         if isinstance(value, UUID):
@@ -294,7 +302,7 @@ class ModelFlexibleValue(BaseModel):
         value = self.get_value()
         return ModelSchemaValue.from_value(value)
 
-    def compare_value(self, other: ModelFlexibleValue | Any) -> bool:
+    def compare_value(self, other: Any) -> bool:
         """Compare with another flexible value or raw value."""
         if isinstance(other, ModelFlexibleValue):
             return (

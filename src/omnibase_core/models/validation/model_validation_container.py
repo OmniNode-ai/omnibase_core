@@ -17,7 +17,7 @@ from .model_validation_value import ModelValidationValue
 
 # Note: Previously had type alias (ValidationConvertibleValue = Any)
 # Removed to comply with ONEX strong typing standards.
-# Using explicit type: Any
+# Now uses dict[str, object] for raw input validation.
 
 
 class ModelValidationContainer(BaseModel):
@@ -60,7 +60,7 @@ class ModelValidationContainer(BaseModel):
         message: str,
         field: str | None = None,
         error_code: str | None = None,
-        raw_details: dict[str, Any] | None = None,
+        raw_details: dict[str, object] | None = None,
     ) -> None:
         """Add a standard validation error with automatic conversion of raw details."""
         converted_details = None
@@ -99,7 +99,7 @@ class ModelValidationContainer(BaseModel):
         message: str,
         field: str | None = None,
         error_code: str | None = None,
-        raw_details: dict[str, Any] | None = None,
+        raw_details: dict[str, object] | None = None,
     ) -> None:
         """Add a critical validation error with automatic conversion of raw details."""
         converted_details = None

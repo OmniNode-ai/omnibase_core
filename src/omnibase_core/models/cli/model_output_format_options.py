@@ -38,6 +38,7 @@ def allow_dict_any(func: F) -> F:
 
 from ...enums.enum_color_scheme import EnumColorScheme
 from ...enums.enum_table_alignment import EnumTableAlignment
+from ..common.model_schema_value import ModelSchemaValue
 
 
 class ModelOutputFormatOptions(BaseModel):
@@ -265,7 +266,9 @@ class ModelOutputFormatOptions(BaseModel):
                 custom_key = key[7:]  # Remove "custom_" prefix
                 # Try to infer type from value
                 if value.lower() in ("true", "false"):
-                    custom_options[custom_key] = ModelCliValue.from_boolean(str_to_bool(value))
+                    custom_options[custom_key] = ModelCliValue.from_boolean(
+                        str_to_bool(value)
+                    )
                 elif value.isdigit():
                     custom_options[custom_key] = ModelCliValue.from_integer(int(value))
                 else:

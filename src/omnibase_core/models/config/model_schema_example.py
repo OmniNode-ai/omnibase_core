@@ -16,7 +16,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
-T = TypeVar("T", str, float, bool)
+# Note: Using ModelSchemaValue instead of complex union types for type safety
 
 
 class ModelSchemaExample(BaseModel):
@@ -62,7 +62,7 @@ class ModelSchemaExample(BaseModel):
         """Check if example contains any data."""
         return not self.example_data.is_empty()
 
-    def get_value(self, key: str, default: T) -> T:
+    def get_value(self, key: str, default: Any) -> Any:
         """
         Get typed value with proper default handling.
 
@@ -86,7 +86,7 @@ class ModelSchemaExample(BaseModel):
 
         return default
 
-    def set_value(self, key: str, value: T) -> None:
+    def set_value(self, key: str, value: Any) -> None:
         """
         Set typed value in example data.
 
@@ -128,32 +128,37 @@ class ModelSchemaExample(BaseModel):
         schema_value = ModelSchemaValue.from_value(value)
         self.example_data.set_custom_value(key, schema_value)
 
-    def update_from_dict(self, data: dict[str, Any]) -> None:
+    def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:
         """
         Update example data from a dictionary.
 
         Args:
-            data: Dictionary of key-value pairs to add to example data
+            data: Dictionary of ModelSchemaValue objects to add to example data
         """
         for key, value in data.items():
-            self.set_raw_value(key, value)
+            self.example_data.set_custom_value(key, value)
 
-    def to_dict(self) -> dict[str, Any]:
+    def get_example_data_as_dict(self) -> dict[str, ModelSchemaValue]:
         """
-        Convert example data to a plain dictionary.
+        Get example data as a dictionary of ModelSchemaValue objects.
+
+        Note: This method returns ModelSchemaValue objects directly.
+        For raw Python values, use .get_raw_value() on individual keys.
 
         Returns:
-            Dictionary with all example data as raw Python values
+            Dictionary with all example data as ModelSchemaValue objects
         """
         result = {}
         for key in self.get_all_keys():
-            result[key] = self.get_raw_value(key)
+            schema_value = self.example_data.get_custom_value(key)
+            if schema_value is not None:
+                result[key] = schema_value
         return result
 
     @classmethod
     def create_from_dict(
         cls,
-        data: dict[str, Any],
+        data: dict[str, ModelSchemaValue],
         example_index: int,
         schema_path: str,
         data_format: EnumDataType = EnumDataType.YAML,
@@ -172,11 +177,11 @@ class ModelSchemaExample(BaseModel):
         Returns:
             New ModelSchemaExample instance
         """
-        # Create custom properties from data
+        # Create custom properties from ModelSchemaValue data
         custom_props = ModelCustomProperties()
         for key, value in data.items():
-            schema_value = ModelSchemaValue.from_value(value)
-            custom_props.set_custom_value(key, schema_value)
+            # Value is already a ModelSchemaValue object
+            custom_props.set_custom_value(key, value)
 
         return cls(
             example_data=custom_props,

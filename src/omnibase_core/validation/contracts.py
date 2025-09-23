@@ -68,30 +68,40 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
-        # Parse YAML
+        # Use Pydantic model validation instead of manual YAML parsing
         try:
-            data = yaml.safe_load(content)
-        except yaml.YAMLError as e:
-            errors.append(f"Invalid YAML syntax: {e}")
+            from ..models.contracts.model_yaml_contract import ModelYamlContract
+
+            # Parse and validate in one step using safe_yaml_loader
+            from ..utils.safe_yaml_loader import load_yaml_content
+
+            # Load YAML safely and validate with Pydantic model
+            yaml_data = load_yaml_content(content)
+            contract = ModelYamlContract.validate_yaml_content(yaml_data)
+
+            # Validation successful if we reach here
+
+        except Exception as e:
+            errors.append(f"Contract validation failed: {e}")
             return errors
 
-        # Basic structure validation
-        if data is None:
-            errors.append("Empty YAML file")
-            return errors
+        # All validation is now handled by Pydantic model
+        # Legacy manual validation removed for ONEX compliance
 
-        # Validate required fields for ONEX contracts
-        if isinstance(data, dict):
-            # Check for common contract fields
+        # Legacy check for compatibility - this can be removed once all contracts are migrated
+        if isinstance(yaml_data, dict):
+            # Check for common contract fields (legacy support)
             required_fields = ["metadata", "specification"]
-            missing_fields = [field for field in required_fields if field not in data]
+            missing_fields = [
+                field for field in required_fields if field not in yaml_data
+            ]
 
             if missing_fields:
                 errors.append(f"Missing required fields: {', '.join(missing_fields)}")
 
             # Validate metadata section
-            if "metadata" in data:
-                metadata = data["metadata"]
+            if "metadata" in yaml_data:
+                metadata = yaml_data["metadata"]
                 if not isinstance(metadata, dict):
                     errors.append("metadata field must be an object")
                 else:
@@ -106,8 +116,8 @@ def validate_yaml_file(file_path: Path) -> list[str]:
                         )
 
             # Validate specification section
-            if "specification" in data:
-                spec = data["specification"]
+            if "specification" in yaml_data:
+                spec = yaml_data["specification"]
                 if not isinstance(spec, dict):
                     errors.append("specification field must be an object")
 

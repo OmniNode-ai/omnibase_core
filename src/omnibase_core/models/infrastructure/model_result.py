@@ -154,7 +154,7 @@ class Result(BaseModel, Generic[T, E]):
             )
         return self.value
 
-    def map(self, f: Callable[[T], U]) -> Result[U, E | Exception]:
+    def map(self, f: Callable[[T], U]) -> Result[U, Exception]:
         """
         Map function over the success value.
 

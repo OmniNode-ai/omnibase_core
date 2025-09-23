@@ -244,11 +244,13 @@ class ModelCliResult(BaseModel):
         """Get result metadata with proper typing."""
         if self.result_metadata is None:
             return default
-        value = self.result_metadata.get_custom_field(key, str(default) if default is not None else "")
+        value = self.result_metadata.get_custom_field(
+            key, str(default) if default is not None else ""
+        )
         if value is not None and value != "":
             # Convert string value to match the type of default
             if isinstance(default, bool):
-                return value.lower() in ('true', '1', 'yes', 'on')
+                return value.lower() in ("true", "1", "yes", "on")
             elif isinstance(default, int):
                 try:
                     return int(value)
@@ -278,11 +280,13 @@ class ModelCliResult(BaseModel):
         default: Any = None,
     ) -> Any:
         """Get a specific output value with proper typing."""
-        value = self.output_data.get_field_value(key, str(default) if default is not None else "")
+        value = self.output_data.get_field_value(
+            key, str(default) if default is not None else ""
+        )
         if value is not None and value != "":
             # Convert string value to match the type of default
             if isinstance(default, bool):
-                return value.lower() in ('true', '1', 'yes', 'on')
+                return value.lower() in ("true", "1", "yes", "on")
             elif isinstance(default, int):
                 try:
                     return int(value)

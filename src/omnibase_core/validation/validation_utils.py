@@ -369,7 +369,7 @@ def extract_protocols_from_directory(directory: Path) -> list[ProtocolInfo]:
 # Export all public functions, classes, and types
 __all__ = [
     "ValidationMetadataType",
-    "ValidationResult", 
+    "ValidationResult",
     "DuplicationInfo",
     "ProtocolInfo",
     "extract_protocol_signature",

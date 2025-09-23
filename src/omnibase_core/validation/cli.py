@@ -27,7 +27,7 @@ from .validation_utils import ValidationResult
 
 class ValidatorInfo(TypedDict):
     """Type definition for validator information."""
-    
+
     func: Callable[..., ValidationResult]
     description: str
     args: list[str]
@@ -73,7 +73,7 @@ class ValidationSuite:
         validator_info = self.validators[validation_type]
         validator_func = validator_info["func"]
 
-        # Filter kwargs to only include relevant parameters  
+        # Filter kwargs to only include relevant parameters
         relevant_args: list[str] = validator_info["args"]
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in relevant_args}
 

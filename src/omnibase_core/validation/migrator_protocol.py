@@ -8,11 +8,8 @@ import shutil
 from pathlib import Path
 from typing import cast
 
-from .migration_types import (
-    TypedDictMigrationDuplicateConflictDict,
-    TypedDictMigrationNameConflictDict,
-    TypedDictMigrationStepDict,
-)
+from .migration_types import TypedDictMigrationStepDict
+from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_migration_plan import ModelMigrationPlan
 from .model_migration_result import ModelMigrationResult
 from .validation_utils import (
@@ -179,13 +176,9 @@ class ProtocolMigrator:
         self,
         source_protocols: list[ProtocolInfo],
         spi_protocols: list[ProtocolInfo],
-    ) -> list[
-        TypedDictMigrationNameConflictDict | TypedDictMigrationDuplicateConflictDict
-    ]:
+    ) -> list[ModelMigrationConflictUnion]:
         """Detect conflicts between source protocols and existing SPI protocols."""
-        conflicts: list[
-            TypedDictMigrationNameConflictDict | TypedDictMigrationDuplicateConflictDict
-        ] = []
+        conflicts: list[ModelMigrationConflictUnion] = []
 
         # Create lookup tables
         spi_by_name = {p.name: p for p in spi_protocols}

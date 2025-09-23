@@ -7,11 +7,18 @@ Part of the ModelNodeConfiguration restructuring.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TypedDict, cast
 
 from pydantic import BaseModel, Field
 
 from .types_node_resource_summary import NodeResourceSummaryType
+
+
+class NodeResourceConstraintKwargs(TypedDict, total=False):
+    """TypedDict for create_constrained method kwargs."""
+
+    max_memory_mb: int
+    max_cpu_percent: float
 
 
 class ModelNodeResourceLimits(BaseModel):
@@ -78,7 +85,7 @@ class ModelNodeResourceLimits(BaseModel):
         cpu_percent: float | None = None,
     ) -> ModelNodeResourceLimits:
         """Create constrained resource configuration."""
-        kwargs: dict[str, Any] = {}
+        kwargs: NodeResourceConstraintKwargs = {}
         if memory_mb is not None:
             kwargs["max_memory_mb"] = memory_mb
         if cpu_percent is not None:
@@ -87,4 +94,4 @@ class ModelNodeResourceLimits(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeResourceLimits"]
+__all__ = ["ModelNodeResourceLimits", "NodeResourceConstraintKwargs"]

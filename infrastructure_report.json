@@ -1,17 +1,20 @@
 {
   "metadata": {
-    "generated_at": "2025-09-23T06:50:14.666346",
+    "generated_at": "2025-09-23T06:51:44.605322",
     "total_files_scanned": 29,
     "total_unions_found": 6,
     "min_complexity_threshold": 3,
-    "total_issues": 0
+    "total_issues": 2
   },
   "summary": {
     "complex_unions": 0,
     "primitive_heavy": 0,
     "repeated_patterns": 16
   },
-  "issues": [],
+  "issues": [
+    "Repeated pattern 'Union[E, Exception]' found 3 times across 1 files - consider creating a reusable model",
+    "Repeated pattern 'Union[Exception, F]' found 3 times across 1 files - consider creating a reusable model"
+  ],
   "patterns": [
     {
       "signature": "Union[None, str]",

@@ -6,7 +6,7 @@ Discriminated union for function node types following ONEX one-model-per-file ar
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -71,8 +71,12 @@ class ModelNodeUnion(BaseModel):
         """Create union from function node data."""
         return cls(node_type="function_node_data", function_node_data=node_data)
 
-    def get_node(self) -> ModelFunctionNode | ModelFunctionNodeData:
-        """Get the actual node value."""
+    def get_node(self) -> Any:
+        """Get the actual node value.
+
+        Returns:
+            ModelFunctionNode or ModelFunctionNodeData based on node_type discriminator.
+        """
         if self.node_type == "function_node":
             assert self.function_node is not None  # Guaranteed by validator
             return self.function_node

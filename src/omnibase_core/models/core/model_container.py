@@ -9,7 +9,7 @@ repetitive patterns while maintaining type safety.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -40,8 +40,8 @@ class ModelContainer(BaseModel, Generic[T]):
         description="Type identifier for the container",
     )
 
-    source: str | None = Field(
-        None,
+    source: str = Field(
+        default=None,
         description="Source of the contained value",
     )
 
@@ -50,8 +50,8 @@ class ModelContainer(BaseModel, Generic[T]):
         description="Whether value has been validated",
     )
 
-    validation_notes: str | None = Field(
-        None,
+    validation_notes: str = Field(
+        default=None,
         description="Notes about validation status",
     )
 
@@ -60,9 +60,9 @@ class ModelContainer(BaseModel, Generic[T]):
         cls,
         value: T,
         container_type: str,
-        source: str | None = None,
+        source: str = None,
         is_validated: bool = False,
-        validation_notes: str | None = None,
+        validation_notes: str = None,
     ) -> ModelContainer[T]:
         """
         Create a new container with the specified value and metadata.
@@ -90,8 +90,8 @@ class ModelContainer(BaseModel, Generic[T]):
         cls,
         value: T,
         container_type: str,
-        source: str | None = None,
-        validation_notes: str | None = None,
+        source: str = None,
+        validation_notes: str = None,
     ) -> ModelContainer[T]:
         """
         Create a validated container.
@@ -226,7 +226,7 @@ class ModelContainer(BaseModel, Generic[T]):
                 ),
             )
 
-    def compare_value(self, other: T | ModelContainer[T]) -> bool:
+    def compare_value(self, other: Any) -> bool:
         """
         Compare the contained value with another value or container.
 

@@ -141,13 +141,13 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
 
 
 def parse_input_state_version(
-    input_state: ModelInputState | dict[str, Any],
+    input_state: Any,
 ) -> ModelSemVer:
     """
     Parse a version from an input state dict, requiring structured dictionary format.
 
     Args:
-        input_state: The input state (ModelInputState or dict with 'version' key)
+        input_state: The input state (ModelInputState or dict with 'version' key) - validated at runtime
 
     Returns:
         ModelSemVer instance

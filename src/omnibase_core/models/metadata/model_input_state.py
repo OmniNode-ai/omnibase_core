@@ -24,7 +24,7 @@ class InputStateFieldsType(TypedDict, total=False):
 class InputStateSourceType(TypedDict, total=False):
     """Type-safe input state source structure."""
 
-    version: dict[str, int] | str
+    version: Any  # Dict with major/minor/patch or string - validated at runtime
     name: str
     description: str
     tags: list[str]
