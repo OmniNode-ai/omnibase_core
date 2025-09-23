@@ -65,11 +65,11 @@ class ModelNodeInfoSummary(BaseModel):
     # Categories and organization
     tags: list[str] = Field(default_factory=list, description="Node tags")
     categories: list[str] = Field(default_factory=list, description="Node categories")
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
         description="Node dependencies",
     )
-    related_nodes: list[str] = Field(default_factory=list, description="Related nodes")
+    related_nodes: list[UUID] = Field(default_factory=list, description="Related nodes")
 
     # Quality indicators
     has_documentation: bool = Field(default=False, description="Has documentation")

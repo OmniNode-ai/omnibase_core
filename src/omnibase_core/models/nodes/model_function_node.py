@@ -169,7 +169,7 @@ class ModelFunctionNode(BaseModel):
             has_tests=self.has_tests(),
             tags=self.tags,
             categories=self.metadata.categories,
-            dependencies=self.metadata.dependencies,
+            dependencies=[str(dep) for dep in self.metadata.relationships.dependencies],
             created_at=self.metadata.created_at,
             updated_at=self.metadata.updated_at,
             last_validated=self.metadata.last_validated,

@@ -7,6 +7,8 @@ Part of the ModelNodeInformation restructuring.
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from .model_types_node_capabilities_summary import NodeCapabilitiesSummaryType
@@ -33,7 +35,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
     )
 
     # Dependencies (1 field)
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
         description="Node dependencies",
     )
@@ -72,7 +74,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         if operation not in self.supported_operations:
             self.supported_operations.append(operation)
 
-    def add_dependency(self, dependency: str) -> None:
+    def add_dependency(self, dependency: UUID) -> None:
         """Add a dependency if not already present."""
         if dependency not in self.dependencies:
             self.dependencies.append(dependency)
@@ -123,7 +125,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
     @classmethod
     def create_with_dependencies(
         cls,
-        dependencies: list[str],
+        dependencies: list[UUID],
     ) -> ModelNodeCapabilitiesInfo:
         """Create capabilities info with dependencies."""
         return cls(

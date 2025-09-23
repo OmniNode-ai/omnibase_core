@@ -148,12 +148,12 @@ class ModelNodeMetadataInfo(BaseModel):
         return self.organization.categories
 
     @property
-    def dependencies(self) -> list[str]:
+    def dependencies(self) -> list[UUID]:
         """Node dependencies (delegated to organization)."""
         return self.organization.dependencies
 
     @property
-    def dependents(self) -> list[str]:
+    def dependents(self) -> list[UUID]:
         """Node dependents (delegated to organization)."""
         return self.organization.dependents
 

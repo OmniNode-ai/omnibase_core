@@ -21,7 +21,7 @@ from omnibase_core.models.infrastructure.model_environment_variables import (
 )
 from omnibase_core.models.infrastructure.model_progress import ModelProgress
 from omnibase_core.models.infrastructure.model_result import (
-    Result,
+    ModelResult,
     collect_results,
     err,
     ok,
@@ -77,8 +77,8 @@ from .model_typed_configuration import ModelTypedConfiguration
 try:
     from .model_capability_factory import ModelCapabilityFactory
     from .model_generic_factory import ModelGenericFactory
-    from .model_result_factory import ResultFactory
-    from .model_validation_error_factory import ValidationErrorFactory
+    from .model_result_factory import ModelResultFactory
+    from .model_validation_error_factory import ModelValidationErrorFactory
 
     _FACTORY_AVAILABLE = True
 except ImportError:
@@ -106,7 +106,7 @@ __all__ = [
     "ModelTimeBased",
     "ModelTimeout",
     "ProtocolSupportedMetadataType",
-    "Result",
+    "ModelResult",
     "ok",
     "err",
     "try_result",
@@ -135,7 +135,7 @@ if _FACTORY_AVAILABLE:
         [
             "ModelCapabilityFactory",
             "ModelGenericFactory",
-            "ResultFactory",
-            "ValidationErrorFactory",
+            "ModelResultFactory",
+            "ModelValidationErrorFactory",
         ],
     )

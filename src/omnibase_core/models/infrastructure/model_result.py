@@ -22,7 +22,7 @@ U = TypeVar("U")  # Mapped type for transformations
 F = TypeVar("F")  # Mapped error type for transformations
 
 
-class Result(BaseModel, Generic[T, E]):
+class ModelResult(BaseModel, Generic[T, E]):
     """
     Generic Result[T, E] pattern for type-safe error handling.
 
@@ -69,12 +69,12 @@ class Result(BaseModel, Generic[T, E]):
             )
 
     @classmethod
-    def ok(cls, value: T) -> Result[T, E]:
+    def ok(cls, value: T) -> ModelResult[T, E]:
         """Create a successful result."""
         return cls(success=True, value=value, error=None)
 
     @classmethod
-    def err(cls, error: E) -> Result[T, E]:
+    def err(cls, error: E) -> ModelResult[T, E]:
         """Create an error result."""
         return cls(success=False, value=None, error=error)
 
@@ -154,7 +154,7 @@ class Result(BaseModel, Generic[T, E]):
             )
         return self.value
 
-    def map(self, f: Callable[[T], U]) -> Result[U, Exception]:
+    def map(self, f: Callable[[T], U]) -> ModelResult[U, Exception]:
         """
         Map function over the success value.
 
@@ -169,18 +169,18 @@ class Result(BaseModel, Generic[T, E]):
                         message="Success result has None value",
                     )
                 new_value = f(self.value)
-                return Result.ok(new_value)
+                return ModelResult.ok(new_value)
             except Exception as e:
                 # Convert exceptions to error results
-                return Result.err(e)
+                return ModelResult.err(e)
         if self.error is None:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return cast(Result[U, Exception], Result.err(self.error))
+        return cast(ModelResult[U, Exception], ModelResult.err(self.error))
 
-    def map_err(self, f: Callable[[E], F]) -> Result[T, F]:
+    def map_err(self, f: Callable[[E], F]) -> ModelResult[T, F]:
         """
         Map function over the error value.
 
@@ -193,7 +193,7 @@ class Result(BaseModel, Generic[T, E]):
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return Result.ok(self.value)
+            return ModelResult.ok(self.value)
         try:
             if self.error is None:
                 raise OnexError(
@@ -201,11 +201,13 @@ class Result(BaseModel, Generic[T, E]):
                     message="Error result has None error",
                 )
             new_error = f(self.error)
-            return Result.err(new_error)
+            return ModelResult.err(new_error)
         except Exception as e:
-            return cast(Result[T, F], Result.err(e))
+            return cast(ModelResult[T, F], ModelResult.err(e))
 
-    def and_then(self, f: Callable[[T], Result[U, E]]) -> Result[U, Exception]:
+    def and_then(
+        self, f: Callable[[T], ModelResult[U, E]]
+    ) -> ModelResult[U, Exception]:
         """
         Flat map (bind) operation for chaining Results.
 
@@ -221,17 +223,17 @@ class Result(BaseModel, Generic[T, E]):
                     )
                 result = f(self.value)
                 # Cast the result to the expected type since we know it's compatible
-                return cast(Result[U, Exception], result)
+                return cast(ModelResult[U, Exception], result)
             except Exception as e:
-                return Result.err(e)
+                return ModelResult.err(e)
         if self.error is None:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return cast(Result[U, Exception], Result.err(self.error))
+        return cast(ModelResult[U, Exception], ModelResult.err(self.error))
 
-    def or_else(self, f: Callable[[E], Result[T, F]]) -> Result[T, Exception]:
+    def or_else(self, f: Callable[[E], ModelResult[T, F]]) -> ModelResult[T, Exception]:
         """
         Alternative operation for error recovery.
 
@@ -244,7 +246,7 @@ class Result(BaseModel, Generic[T, E]):
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return Result.ok(self.value)
+            return ModelResult.ok(self.value)
         try:
             if self.error is None:
                 raise OnexError(
@@ -252,15 +254,15 @@ class Result(BaseModel, Generic[T, E]):
                     message="Error result has None error",
                 )
             result = f(self.error)
-            return cast(Result[T, Exception], result)
+            return cast(ModelResult[T, Exception], result)
         except Exception as e:
-            return Result.err(e)
+            return ModelResult.err(e)
 
     def __repr__(self) -> str:
         """String representation."""
         if self.success:
-            return f"Result.ok({self.value!r})"
-        return f"Result.err({self.error!r})"
+            return f"ModelResult.ok({self.value!r})"
+        return f"ModelResult.err({self.error!r})"
 
     def __str__(self) -> str:
         """Human-readable string."""
@@ -273,22 +275,22 @@ class Result(BaseModel, Generic[T, E]):
         return self.success
 
 
-# Type aliases have been removed to follow ONEX conventions.
-# Use explicit generic types: Result[str, str], Result[bool, str], etc.
+# Type alias for Result pattern
+Result = ModelResult
 
 
 # Factory functions for common patterns
-def ok(value: T) -> Result[T, str]:
+def ok(value: T) -> ModelResult[T, str]:
     """Create successful result with string error type."""
-    return Result.ok(value)
+    return ModelResult.ok(value)
 
 
-def err(error: E) -> Result[str, E]:
+def err(error: E) -> ModelResult[str, E]:
     """Create error result with string success type."""
-    return Result.err(error)
+    return ModelResult.err(error)
 
 
-def try_result(f: Callable[[], T]) -> Result[T, Exception]:
+def try_result(f: Callable[[], T]) -> ModelResult[T, Exception]:
     """
     Execute function and wrap result/exception in Result.
 
@@ -299,12 +301,12 @@ def try_result(f: Callable[[], T]) -> Result[T, Exception]:
         Result containing either the return value or the exception
     """
     try:
-        return Result.ok(f())
+        return ModelResult.ok(f())
     except Exception as e:
-        return Result.err(e)
+        return ModelResult.err(e)
 
 
-def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
+def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], list[E]]:
     """
     Collect a list of Results into a Result of lists.
 
@@ -326,12 +328,13 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
             errors.append(result.error)
 
     if errors:
-        return Result.err(errors)
-    return Result.ok(values)
+        return ModelResult.err(errors)
+    return ModelResult.ok(values)
 
 
 # Export for use
 __all__ = [
+    "ModelResult",
     "Result",
     "collect_results",
     "err",

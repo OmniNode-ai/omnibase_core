@@ -49,7 +49,7 @@ class TypedDictMessageParams(TypedDict, total=False):
 
 
 # Main factory kwargs that combines sub-groups
-class TypedDictFactoryKwargs(
+class ModelTypedDictFactoryKwargs(
     TypedDictExecutionParams,
     TypedDictMetadataParams,
     TypedDictMessageParams,
@@ -145,7 +145,9 @@ class ModelGenericFactory(Generic[T]):
             )
         return self._factories[name]()
 
-    def build(self, builder_name: str, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
+    def build(
+        self, builder_name: str, **kwargs: Unpack[ModelTypedDictFactoryKwargs]
+    ) -> T:
         """
         Build instance using registered builder method.
 
@@ -195,7 +197,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         result_data: ModelSchemaValue | None = None,
-        **kwargs: Unpack[TypedDictFactoryKwargs],
+        **kwargs: Unpack[ModelTypedDictFactoryKwargs],
     ) -> T:
         """
         Generic success result factory.
@@ -218,7 +220,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         error: str,
-        **kwargs: Unpack[TypedDictFactoryKwargs],
+        **kwargs: Unpack[ModelTypedDictFactoryKwargs],
     ) -> T:
         """
         Generic error result factory.
@@ -245,7 +247,7 @@ class ModelGenericFactory(Generic[T]):
 __all__ = [
     "ModelGenericFactory",
     "TypedDictExecutionParams",
-    "TypedDictFactoryKwargs",
+    "ModelTypedDictFactoryKwargs",
     "TypedDictMessageParams",
     "TypedDictMetadataParams",
 ]

@@ -155,7 +155,7 @@ class ModelNodeInformation(BaseModel):
         return self.capabilities.supported_operations
 
     @property
-    def dependencies(self) -> list[str]:
+    def dependencies(self) -> list[UUID]:
         """Node dependencies (delegated to capabilities)."""
         return self.capabilities.dependencies
 
@@ -189,7 +189,7 @@ class ModelNodeInformation(BaseModel):
         """Add a supported operation."""
         self.capabilities.add_operation(operation)
 
-    def add_dependency(self, dependency: str) -> None:
+    def add_dependency(self, dependency: UUID) -> None:
         """Add a dependency."""
         self.capabilities.add_dependency(dependency)
 

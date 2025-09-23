@@ -7,6 +7,8 @@ Part of the ModelFunctionNodeMetadata restructuring.
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from .model_types_function_relationships_summary import FunctionRelationshipsSummaryType
@@ -22,13 +24,13 @@ class ModelFunctionRelationships(BaseModel):
     """
 
     # Dependencies and relationships (2 fields)
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
-        description="Function dependencies",
+        description="Function dependencies (UUIDs of dependent functions)",
     )
-    related_functions: list[str] = Field(
+    related_functions: list[UUID] = Field(
         default_factory=list,
-        description="Related functions",
+        description="Related functions (UUIDs of related functions)",
     )
 
     # Categorization (2 fields)
@@ -38,15 +40,15 @@ class ModelFunctionRelationships(BaseModel):
         description="Function categories",
     )
 
-    def add_dependency(self, dependency: str) -> None:
+    def add_dependency(self, dependency: UUID) -> None:
         """Add a dependency."""
         if dependency not in self.dependencies:
             self.dependencies.append(dependency)
 
-    def add_related_function(self, function_name: str) -> None:
+    def add_related_function(self, function_id: UUID) -> None:
         """Add a related function."""
-        if function_name not in self.related_functions:
-            self.related_functions.append(function_name)
+        if function_id not in self.related_functions:
+            self.related_functions.append(function_id)
 
     def add_tag(self, tag: str) -> None:
         """Add a tag if not already present."""
@@ -110,8 +112,8 @@ class ModelFunctionRelationships(BaseModel):
     @classmethod
     def create_with_dependencies(
         cls,
-        dependencies: list[str],
-        related_functions: list[str] | None = None,
+        dependencies: list[UUID],
+        related_functions: list[UUID] | None = None,
     ) -> ModelFunctionRelationships:
         """Create relationships with dependencies."""
         return cls(

@@ -18,14 +18,14 @@ from .model_node_resource_limits import ModelNodeResourceLimits
 from .model_types_node_connection_summary import NodeConnectionSummaryType
 from .model_types_node_execution_summary import NodeExecutionSummaryType
 from .model_types_node_feature_summary import NodeFeatureSummaryType
-from .model_types_node_resource_summary import NodeResourceSummaryType
+from .model_types_node_resource_summary import TypedDictNodeResourceSummaryType
 
 
 class TypedDictNodeConfigurationSummary(TypedDict):
     """Type-safe dictionary for node configuration summary."""
 
     execution: NodeExecutionSummaryType
-    resources: NodeResourceSummaryType
+    resources: TypedDictNodeResourceSummaryType
     features: NodeFeatureSummaryType
     connection: NodeConnectionSummaryType
     is_production_ready: bool

@@ -52,9 +52,9 @@ class ModelNodeCapability(BaseModel):
         description="ONEX version when this capability was introduced",
     )
 
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
-        description="Other capabilities this one depends on",
+        description="Other capabilities this one depends on (UUIDs of capability entities)",
     )
 
     configuration_required: bool = Field(
@@ -137,7 +137,7 @@ class ModelNodeCapability(BaseModel):
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=True,
             performance_impact=EnumPerformanceImpact.LOW,
-            dependencies=["SUPPORTS_SCHEMA_VALIDATION"],
+            dependencies=[uuid_from_string("SUPPORTS_SCHEMA_VALIDATION", "capability")],
         )
 
     @classmethod
@@ -182,7 +182,7 @@ class ModelNodeCapability(BaseModel):
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=True,
             performance_impact=EnumPerformanceImpact.MEDIUM,
-            dependencies=["SUPPORTS_CORRELATION_ID"],
+            dependencies=[uuid_from_string("SUPPORTS_CORRELATION_ID", "capability")],
             example_config={
                 "event_bus_type": ModelNodeConfigurationValue.from_string("kafka"),
                 "topic": ModelNodeConfigurationValue.from_string("node-events"),
@@ -232,7 +232,10 @@ class ModelNodeCapability(BaseModel):
             version_introduced=ModelSemVer(major=1, minor=2, patch=0),
             configuration_required=False,
             performance_impact=EnumPerformanceImpact.LOW,
-            dependencies=["SUPPORTS_EVENT_BUS", "SUPPORTS_SCHEMA_VALIDATION"],
+            dependencies=[
+                uuid_from_string("SUPPORTS_EVENT_BUS", "capability"),
+                uuid_from_string("SUPPORTS_SCHEMA_VALIDATION", "capability"),
+            ],
         )
 
     @classmethod

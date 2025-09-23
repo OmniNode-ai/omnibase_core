@@ -7,6 +7,8 @@ with structured validation and proper type handling for retry execution failures
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +21,7 @@ class ModelRetryFailureInfo(BaseModel):
     """
 
     # Failure details
-    last_error: str | None = Field(
+    error_message: str | None = Field(
         None,
         description="Last error message encountered",
     )
@@ -43,14 +45,14 @@ class ModelRetryFailureInfo(BaseModel):
     ) -> ModelRetryFailureInfo:
         """Create failure info from retry execution data."""
         return cls(
-            last_error=last_error,
+            error_message=last_error,
             last_status_code=last_status_code,
             attempts_made=attempts_made,
         )
 
     def has_error(self) -> bool:
         """Check if failure info contains error details."""
-        return self.last_error is not None or self.last_status_code is not None
+        return self.error_message is not None or self.last_status_code is not None
 
     def get_error_summary(self) -> str:
         """Get a summary of the error for logging."""
@@ -58,8 +60,8 @@ class ModelRetryFailureInfo(BaseModel):
             return "No errors recorded"
 
         parts = []
-        if self.last_error:
-            parts.append(f"Error: {self.last_error}")
+        if self.error_message:
+            parts.append(f"Error: {self.error_message}")
         if self.last_status_code:
             parts.append(f"Status: {self.last_status_code}")
         parts.append(f"Attempts: {self.attempts_made}")

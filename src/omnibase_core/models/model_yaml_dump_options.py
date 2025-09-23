@@ -7,7 +7,7 @@ Author: ONEX Framework Team
 from pydantic import BaseModel
 
 
-class YamlDumpOptions(BaseModel):
+class ModelYamlDumpOptions(BaseModel):
     """Type-safe YAML dump options."""
 
     sort_keys: bool = False
@@ -20,4 +20,4 @@ class YamlDumpOptions(BaseModel):
 
 
 # Export the model
-__all__ = ["YamlDumpOptions"]
+__all__ = ["ModelYamlDumpOptions"]

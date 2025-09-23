@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class NodeResourceSummaryType(TypedDict):
+class TypedDictNodeResourceSummaryType(TypedDict):
     """
     Typed dictionary for node resource limits summary.
 
@@ -25,4 +25,4 @@ class NodeResourceSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["NodeResourceSummaryType"]
+__all__ = ["TypedDictNodeResourceSummaryType"]

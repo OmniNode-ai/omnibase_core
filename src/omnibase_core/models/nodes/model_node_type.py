@@ -44,9 +44,9 @@ class ModelNodeType(BaseModel):
     )
 
     # Optional metadata
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
-        description="Other nodes this node depends on",
+        description="Other node UUIDs this node depends on",
     )
 
     version_compatibility: str = Field(
@@ -159,7 +159,7 @@ class ModelNodeType(BaseModel):
             description="Generates files from templates",
             category=EnumConfigCategory.TEMPLATE,
             is_generator=True,
-            dependencies=["TEMPLATE_ENGINE"],
+            dependencies=[],  # Dependencies should be set at runtime with actual UUIDs
             output_type=EnumReturnType.FILES,
         )
 
@@ -340,7 +340,7 @@ class ModelNodeType(BaseModel):
             description="Converts schemas to Pydantic models",
             category=EnumConfigCategory.SCHEMA,
             is_generator=True,
-            dependencies=["SCHEMA_DISCOVERY"],
+            dependencies=[],  # Dependencies should be set at runtime with actual UUIDs
             output_type=EnumReturnType.MODELS,
         )
 

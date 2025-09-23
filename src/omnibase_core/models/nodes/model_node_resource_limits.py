@@ -11,7 +11,7 @@ from typing import TypedDict, cast
 
 from pydantic import BaseModel, Field
 
-from .model_types_node_resource_summary import NodeResourceSummaryType
+from .model_types_node_resource_summary import TypedDictNodeResourceSummaryType
 
 
 class TypedDictNodeResourceConstraintKwargs(TypedDict, total=False):
@@ -55,7 +55,7 @@ class ModelNodeResourceLimits(BaseModel):
         """Check if any resource limits are configured."""
         return self.has_memory_limit() or self.has_cpu_limit()
 
-    def get_resource_summary(self) -> NodeResourceSummaryType:
+    def get_resource_summary(self) -> TypedDictNodeResourceSummaryType:
         """Get resource limits summary."""
         return {
             "max_memory_mb": self.max_memory_mb,

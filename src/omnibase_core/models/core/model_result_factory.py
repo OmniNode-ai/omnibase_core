@@ -30,7 +30,7 @@ class TypedDictResultFactoryKwargs(TypedDict, total=False):
 T = TypeVar("T", bound=BaseModel)
 
 
-class ResultFactory(ModelGenericFactory[T]):
+class ModelResultFactory(ModelGenericFactory[T]):
     """
     Specialized factory for result-type models.
 
@@ -99,6 +99,6 @@ class ResultFactory(ModelGenericFactory[T]):
 
 # Export result factory class and types
 __all__ = [
-    "ResultFactory",
+    "ModelResultFactory",
     "TypedDictResultFactoryKwargs",
 ]

@@ -98,11 +98,11 @@ class ModelMetadataNodeInfo(BaseModel):
     )
 
     # Dependencies and relationships
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
         description="Node dependencies",
     )
-    related_nodes: list[str] = Field(
+    related_nodes: list[UUID] = Field(
         default_factory=list,
         description="Related nodes",
     )
@@ -178,15 +178,15 @@ class ModelMetadataNodeInfo(BaseModel):
         if category not in self.categories:
             self.categories.append(category)
 
-    def add_dependency(self, dependency: str) -> None:
+    def add_dependency(self, dependency: UUID) -> None:
         """Add a dependency if not already present."""
         if dependency not in self.dependencies:
             self.dependencies.append(dependency)
 
-    def add_related_node(self, node_name: str) -> None:
+    def add_related_node(self, node_id: UUID) -> None:
         """Add a related node if not already present."""
-        if node_name not in self.related_nodes:
-            self.related_nodes.append(node_name)
+        if node_id not in self.related_nodes:
+            self.related_nodes.append(node_id)
 
     def mark_active(self) -> None:
         """Mark node as active."""

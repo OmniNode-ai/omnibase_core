@@ -7,6 +7,8 @@ Part of the ModelNodeMetadataInfo restructuring.
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
@@ -34,11 +36,11 @@ class ModelNodeOrganizationMetadata(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Node tags")
 
     # Relationships (2 fields)
-    dependencies: list[str] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list,
         description="Node dependencies",
     )
-    dependents: list[str] = Field(
+    dependents: list[UUID] = Field(
         default_factory=list,
         description="Nodes that depend on this",
     )
@@ -77,12 +79,12 @@ class ModelNodeOrganizationMetadata(BaseModel):
         if category not in self.categories:
             self.categories.append(category)
 
-    def add_dependency(self, dependency: str) -> None:
+    def add_dependency(self, dependency: UUID) -> None:
         """Add a dependency if not already present."""
         if dependency not in self.dependencies:
             self.dependencies.append(dependency)
 
-    def add_dependent(self, dependent: str) -> None:
+    def add_dependent(self, dependent: UUID) -> None:
         """Add a dependent if not already present."""
         if dependent not in self.dependents:
             self.dependents.append(dependent)

@@ -234,6 +234,26 @@ repos:
         files: ^src/.*enum.*\.py$
         stages: [pre-commit]
 
+      - id: validate-timestamp-fields
+        name: ONEX Timestamp Fields Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-timestamp-fields.py
+        args: ['src/', '--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
+      - id: validate-typed-references
+        name: ONEX Typed References Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-typed-references.py
+        args: ['src/', '--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
       - id: protect-claude-workflow
         name: ONEX Claude Workflow File Protection
         entry: poetry run python scripts/validation/validate-claude-workflow-protection.py

@@ -46,15 +46,15 @@ class ModelMetadataNodeAnalytics(BaseModel):
         default=EnumCollectionPurpose.GENERAL,
         description="Collection purpose",
     )
-    collection_created: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat(),
+    collection_created: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
         description="Collection creation timestamp",
     )
 
     # Core metrics
     total_nodes: int = Field(default=0, description="Total number of nodes", ge=0)
-    last_modified: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat(),
+    last_modified: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
         description="Last modification timestamp",
     )
 
@@ -203,7 +203,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def update_timestamp(self) -> None:
         """Update the last modified timestamp."""
-        self.last_modified = datetime.now(UTC).isoformat()
+        self.last_modified = datetime.now(UTC)
 
     def calculate_health_score(self) -> float:
         """Calculate and update health score based on metrics."""
@@ -245,11 +245,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
             disabled_nodes=self.get_disabled_node_count(),
             error_count=self.error_count,
             warning_count=self.warning_count,
-            last_modified=(
-                datetime.fromisoformat(self.last_modified)
-                if self.last_modified
-                else None
-            ),
+            last_modified=self.last_modified,
             last_validated=self.last_validated,
             average_execution_time_ms=self.average_execution_time_ms,
             peak_memory_usage_mb=self.peak_memory_usage_mb,

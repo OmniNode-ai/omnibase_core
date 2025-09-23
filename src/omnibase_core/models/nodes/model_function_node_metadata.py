@@ -8,7 +8,9 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from hashlib import md5
 from typing import Any, TypedDict
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -176,12 +178,12 @@ class ModelFunctionNodeMetadata(BaseModel):
         return self.relationships.categories
 
     @property
-    def dependencies(self) -> list[str]:
+    def dependencies(self) -> list[UUID]:
         """Function dependencies (delegated to relationships)."""
         return self.relationships.dependencies
 
     @property
-    def related_functions(self) -> list[str]:
+    def related_functions(self) -> list[UUID]:
         """Related functions (delegated to relationships)."""
         return self.relationships.related_functions
 
@@ -215,11 +217,25 @@ class ModelFunctionNodeMetadata(BaseModel):
 
     def add_dependency(self, dependency: str) -> None:
         """Add a dependency."""
-        self.relationships.add_dependency(dependency)
+        # Convert string to UUID - assume it's a UUID string or generate one from hash
+        try:
+            dependency_uuid = UUID(dependency)
+        except ValueError:
+            # If not a valid UUID string, generate one from the hash of the string
+            hash_hex = md5(dependency.encode()).hexdigest()
+            dependency_uuid = UUID(hash_hex)
+        self.relationships.add_dependency(dependency_uuid)
 
     def add_related_function(self, function_name: str) -> None:
         """Add a related function."""
-        self.relationships.add_related_function(function_name)
+        # Convert string to UUID - assume it's a UUID string or generate one from hash
+        try:
+            function_uuid = UUID(function_name)
+        except ValueError:
+            # If not a valid UUID string, generate one from the hash of the string
+            hash_hex = md5(function_name.encode()).hexdigest()
+            function_uuid = UUID(hash_hex)
+        self.relationships.add_related_function(function_uuid)
 
     def update_timestamp(self) -> None:
         """Update the last modified timestamp."""

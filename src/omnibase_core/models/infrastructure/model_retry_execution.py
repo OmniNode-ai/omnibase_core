@@ -32,7 +32,7 @@ class ModelRetryExecution(BaseModel):
         default=None,
         description="Timestamp of last retry attempt",
     )
-    last_error: str | None = Field(
+    error_message: str | None = Field(
         default=None,
         description="Last error message encountered",
     )
@@ -85,7 +85,7 @@ class ModelRetryExecution(BaseModel):
         self.total_execution_time_seconds += execution_time_seconds
 
         if error is not None:
-            self.last_error = str(error)
+            self.error_message = str(error)
         if status_code is not None:
             self.last_status_code = status_code
 
@@ -118,7 +118,7 @@ class ModelRetryExecution(BaseModel):
     def get_failure_info(self) -> ModelRetryFailureInfo:
         """Get failure information."""
         return ModelRetryFailureInfo.from_retry_execution(
-            last_error=self.last_error,
+            last_error=self.error_message,
             last_status_code=self.last_status_code,
             attempts_made=self.current_attempt,
         )
