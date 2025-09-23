@@ -11,8 +11,8 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_node_type import EnumNodeType
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class YamlContentType(TypedDict, total=False):

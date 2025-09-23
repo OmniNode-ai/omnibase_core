@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_fallback_strategy_type import EnumFallbackStrategyType
+from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
+
 from .model_fallback_metadata import ModelFallbackMetadata
 
 

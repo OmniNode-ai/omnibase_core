@@ -14,9 +14,10 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...exceptions.onex_error import OnexError
-from ..core.model_custom_properties import ModelCustomProperties
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+
 from .model_cli_result_data import ModelCliResultData
 from .model_cli_value import ModelCliValue
 from .model_execution_duration import ModelExecutionDuration
@@ -191,7 +192,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
 
     def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add metadata entry."""
-        from ..common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         self.metadata.set_custom_value(key, ModelSchemaValue.from_value(value))
 

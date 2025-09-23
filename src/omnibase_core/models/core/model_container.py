@@ -13,10 +13,10 @@ from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...exceptions.onex_error import OnexError
-from ..common.model_error_context import ModelErrorContext
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Type variable for contained value
 T = TypeVar("T")

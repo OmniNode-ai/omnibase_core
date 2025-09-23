@@ -12,12 +12,12 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_action_category import EnumActionCategory
-from ...enums.enum_complexity_level import EnumComplexityLevel
-from ...enums.enum_function_status import EnumFunctionStatus
-from ...enums.enum_return_type import EnumReturnType
-from ...utils.uuid_utilities import uuid_from_string
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_action_category import EnumActionCategory
+from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
+from omnibase_core.enums.enum_function_status import EnumFunctionStatus
+from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelFunctionNodeSummary(BaseModel):
@@ -162,7 +162,7 @@ class ModelFunctionNodeSummary(BaseModel):
             performance_score += 0.2
 
         # Convert string complexity to enum
-        from ...enums.enum_complexity_level import EnumComplexityLevel
+        from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
 
         complexity_enum = (
             EnumComplexityLevel(complexity)

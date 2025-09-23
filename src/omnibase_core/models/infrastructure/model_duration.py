@@ -11,7 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+
 from .model_time_based import ModelTimeBased
 
 

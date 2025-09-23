@@ -10,9 +10,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...exceptions.onex_error import OnexError
-from ..nodes.model_function_node import ModelFunctionNode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
+
 from .model_function_node_data import ModelFunctionNodeData
 
 

@@ -11,9 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_validation_value_type import EnumValidationValueType
-from ...exceptions.onex_error import OnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
+from omnibase_core.exceptions.onex_error import OnexError
 
 
 class ModelValidationValue(BaseModel):

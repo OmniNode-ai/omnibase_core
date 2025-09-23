@@ -7,8 +7,12 @@ Type-safe custom environment properties with access methods.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TypeVar, cast
 
 from pydantic import BaseModel, Field
+
+# Type variable for generic property handling
+T = TypeVar("T")
 
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
@@ -35,62 +39,42 @@ class ModelEnvironmentProperties(BaseModel):
         description="Metadata about each property (description, source, etc.)",
     )
 
-    def get_string(self, key: str, default: str = "") -> str:
-        """Get string property value."""
+    def get_typed_value(self, key: str, expected_type: type[T], default: T) -> T:
+        """Get property value with specific type checking using generic type inference."""
         prop_value = self.properties.get(key)
         if prop_value is None:
-            return default
-        try:
-            return prop_value.as_string()
-        except (ValueError, AttributeError):
             return default
 
-    def get_int(self, key: str, default: int = 0) -> int:
-        """Get integer property value."""
-        prop_value = self.properties.get(key)
-        if prop_value is None:
-            return default
         try:
-            return prop_value.as_int()
+            # Use ModelPropertyValue's type-safe accessors based on expected type
+            if expected_type == str:
+                return cast(T, prop_value.as_string())
+            elif expected_type == int:
+                return cast(T, prop_value.as_int())
+            elif expected_type == float:
+                return cast(T, prop_value.as_float())
+            elif expected_type == bool:
+                return cast(T, prop_value.as_bool())
+            elif expected_type == list or (
+                hasattr(expected_type, "__origin__")
+                and expected_type.__origin__ is list
+            ):
+                # Handle list types
+                if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
+                    return cast(T, [str(item) for item in prop_value.value])
+                # Try string conversion for comma-separated values
+                str_val = prop_value.as_string()
+                return cast(
+                    T, [item.strip() for item in str_val.split(",") if item.strip()]
+                )
+            elif hasattr(prop_value, "value") and isinstance(
+                prop_value.value, expected_type
+            ):
+                return prop_value.value
         except (ValueError, AttributeError):
-            return default
+            pass
 
-    def get_float(self, key: str, default: float = 0.0) -> float:
-        """Get float property value."""
-        prop_value = self.properties.get(key)
-        if prop_value is None:
-            return default
-        try:
-            return prop_value.as_float()
-        except (ValueError, AttributeError):
-            return default
-
-    def get_bool(self, key: str, default: bool = False) -> bool:
-        """Get boolean property value."""
-        prop_value = self.properties.get(key)
-        if prop_value is None:
-            return default
-        try:
-            return prop_value.as_bool()
-        except (ValueError, AttributeError):
-            return default
-
-    def get_list(self, key: str, default: list[str] | None = None) -> list[str]:
-        """Get list property value."""
-        if default is None:
-            default = []
-        prop_value = self.properties.get(key)
-        if prop_value is None:
-            return default
-        try:
-            # ModelPropertyValue doesn't have as_list, use the value directly
-            if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
-                return [str(item) for item in prop_value.value]
-            # Try string conversion for comma-separated values
-            str_val = prop_value.as_string()
-            return [item.strip() for item in str_val.split(",") if item.strip()]
-        except (ValueError, AttributeError):
-            return default
+        return default
 
     def get_datetime(
         self,

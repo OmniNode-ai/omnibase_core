@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_example_category import EnumExampleCategory
+from omnibase_core.enums.enum_example_category import EnumExampleCategory
 
 
 class ModelExampleMetadata(BaseModel):

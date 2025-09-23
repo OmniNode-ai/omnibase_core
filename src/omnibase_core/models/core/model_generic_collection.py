@@ -18,8 +18,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ..common.model_schema_value import ModelSchemaValue
-from ..infrastructure.model_result import Result
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.infrastructure.model_result import Result
+
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 # More constrained TypeVar for collection items

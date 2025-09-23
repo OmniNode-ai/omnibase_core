@@ -11,11 +11,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from ...enums.enum_cli_value_type import EnumCliValueType
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...exceptions.onex_error import OnexError
-from ...models.common.model_error_context import ModelErrorContext
-from ...models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Use Any for internal storage with field validator ensuring proper types
 # This avoids primitive union violations while maintaining type safety through validation

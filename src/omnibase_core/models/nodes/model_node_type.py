@@ -11,11 +11,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_config_category import EnumConfigCategory
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_return_type import EnumReturnType
-from ...enums.enum_type_name import EnumTypeName
-from ...exceptions.onex_error import OnexError
+from omnibase_core.enums.enum_config_category import EnumConfigCategory
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.enums.enum_type_name import EnumTypeName
+from omnibase_core.exceptions.onex_error import OnexError
 
 
 class ModelNodeType(BaseModel):

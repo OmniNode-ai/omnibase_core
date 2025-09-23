@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_connection_type import EnumConnectionType
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_connection_type import EnumConnectionType
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelConnectionEndpoint(BaseModel):

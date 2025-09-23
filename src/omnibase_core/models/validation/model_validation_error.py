@@ -8,7 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+
 from .model_validation_value import ModelValidationValue
 
 

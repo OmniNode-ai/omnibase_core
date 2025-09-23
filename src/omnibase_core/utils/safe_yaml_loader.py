@@ -13,10 +13,10 @@ from typing import Any, TypeVar, cast
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from ..models.common.model_schema_value import ModelSchemaValue
-from ..models.config.model_schema_example import ModelSchemaExample
-from ..models.core.model_custom_properties import ModelCustomProperties
-from ..models.utils import ModelYamlOption, ModelYamlValue, YamlDumpOptions
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.config.model_schema_example import ModelSchemaExample
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue, YamlDumpOptions
 
 # ModelYamlWithExamples import removed - using direct YAML parsing
 

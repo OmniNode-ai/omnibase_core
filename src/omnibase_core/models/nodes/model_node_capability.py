@@ -11,9 +11,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_performance_impact import EnumPerformanceImpact
-from ...utils.uuid_utilities import uuid_from_string
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.utils.uuid_utilities import uuid_from_string
+
 from .model_node_configuration_value import ModelNodeConfigurationValue
 
 

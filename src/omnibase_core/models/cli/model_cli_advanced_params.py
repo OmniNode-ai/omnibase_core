@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_debug_level import EnumDebugLevel
-from ...enums.enum_security_level import EnumSecurityLevel
-from ...exceptions.onex_error import OnexError
-from ..infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from omnibase_core.enums.enum_security_level import EnumSecurityLevel
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+
 from .model_output_format_options import ModelOutputFormatOptions
 
 

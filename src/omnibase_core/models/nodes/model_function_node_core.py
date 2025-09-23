@@ -12,11 +12,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_function_status import EnumFunctionStatus
-from ...enums.enum_function_type import EnumFunctionType
-from ...enums.enum_parameter_type import EnumParameterType
-from ...enums.enum_return_type import EnumReturnType
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_function_status import EnumFunctionStatus
+from omnibase_core.enums.enum_function_type import EnumFunctionType
+from omnibase_core.enums.enum_parameter_type import EnumParameterType
+from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelFunctionNodeCore(BaseModel):

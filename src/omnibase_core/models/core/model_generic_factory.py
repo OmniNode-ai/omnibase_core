@@ -14,11 +14,11 @@ from typing import Generic, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_severity_level import EnumSeverityLevel
-from ...exceptions.onex_error import OnexError
-from ..common.model_error_context import ModelErrorContext
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 # Structured TypedDicts to reduce string field violations

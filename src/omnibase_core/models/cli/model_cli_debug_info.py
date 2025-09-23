@@ -11,8 +11,8 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_debug_level import EnumDebugLevel
-from ..infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelCliDebugInfo(BaseModel):

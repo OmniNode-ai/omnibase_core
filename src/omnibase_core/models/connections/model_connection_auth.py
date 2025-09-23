@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, field_serializer
 
-from ...enums.enum_auth_type import EnumAuthType
+from omnibase_core.enums.enum_auth_type import EnumAuthType
 
 
 class ModelConnectionAuth(BaseModel):

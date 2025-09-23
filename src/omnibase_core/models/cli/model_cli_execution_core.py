@@ -14,8 +14,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_execution_phase import EnumExecutionPhase
-from ...enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+
 from .model_cli_command_option import ModelCliCommandOption
 
 

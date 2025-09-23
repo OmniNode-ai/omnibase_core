@@ -239,8 +239,8 @@ class NamingConventionValidator:
 
         # If class doesn't match pattern but seems like it should
         elif not re.match(pattern, class_name) and (
-            self._should_match_pattern(class_name, category) or
-            self._is_in_category_directory(file_path, expected_dir)
+            self._should_match_pattern(class_name, category)
+            or self._is_in_category_directory(file_path, expected_dir)
         ):
             self.violations.append(
                 NamingViolation(
@@ -257,7 +257,9 @@ class NamingConventionValidator:
         """Check if class name matches exception patterns."""
         return any(re.match(pattern, class_name) for pattern in self.EXCEPTION_PATTERNS)
 
-    def _is_in_category_directory(self, file_path: Path, expected_dir: str | None) -> bool:
+    def _is_in_category_directory(
+        self, file_path: Path, expected_dir: str | None
+    ) -> bool:
         """Check if file is in the expected category directory."""
         if expected_dir is None:
             return False

@@ -11,7 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ..core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+
 from .model_cli_value import ModelCliValue
 
 

@@ -18,13 +18,19 @@ from pydantic import (
     field_serializer,
 )
 
-from ...enums.enum_connection_state import EnumConnectionState
-from ..connections.model_connection_auth import ModelConnectionAuth
-from ..connections.model_connection_endpoint import ModelConnectionEndpoint
-from ..connections.model_connection_metrics import ModelConnectionMetrics
-from ..connections.model_connection_pool import ModelConnectionPool
-from ..connections.model_connection_security import ModelConnectionSecurity
-from ..connections.model_custom_connection_properties import (
+from omnibase_core.enums.enum_connection_state import EnumConnectionState
+from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth
+from omnibase_core.models.connections.model_connection_endpoint import (
+    ModelConnectionEndpoint,
+)
+from omnibase_core.models.connections.model_connection_metrics import (
+    ModelConnectionMetrics,
+)
+from omnibase_core.models.connections.model_connection_pool import ModelConnectionPool
+from omnibase_core.models.connections.model_connection_security import (
+    ModelConnectionSecurity,
+)
+from omnibase_core.models.connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
 

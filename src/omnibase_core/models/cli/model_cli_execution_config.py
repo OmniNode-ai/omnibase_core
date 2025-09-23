@@ -11,7 +11,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_output_format import EnumOutputFormat
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
+
 from .model_cli_execution_input_data import ModelCliExecutionInputData
 
 

@@ -13,10 +13,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from ...enums.enum_cli_input_value_type import EnumCliInputValueType
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_data_type import EnumDataType
-from ...exceptions.onex_error import OnexError
+from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.exceptions.onex_error import OnexError
 
 # Input data values use discriminated union pattern with runtime validation
 

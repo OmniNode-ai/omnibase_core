@@ -14,10 +14,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from ...enums.enum_metadata_node_type import EnumMetadataNodeType
-from ...enums.enum_registry_status import EnumRegistryStatus
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class TypedDictCoreSummary(TypedDict):

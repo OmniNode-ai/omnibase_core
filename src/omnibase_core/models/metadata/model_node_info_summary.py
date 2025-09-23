@@ -12,11 +12,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_complexity_level import EnumComplexityLevel
-from ...enums.enum_documentation_quality import EnumDocumentationQuality
-from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from ...enums.enum_node_type import EnumNodeType
-from ...utils.uuid_utilities import uuid_from_string
+from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
+from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.utils.uuid_utilities import uuid_from_string
+
 from .model_semver import ModelSemVer
 
 

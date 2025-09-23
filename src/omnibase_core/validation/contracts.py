@@ -70,10 +70,12 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
         # Use Pydantic model validation instead of manual YAML parsing
         try:
-            from ..models.contracts.model_yaml_contract import ModelYamlContract
+            from omnibase_core.models.contracts.model_yaml_contract import (
+                ModelYamlContract,
+            )
 
             # Parse and validate in one step using safe_yaml_loader
-            from ..utils.safe_yaml_loader import load_yaml_content
+            from omnibase_core.utils.safe_yaml_loader import load_yaml_content
 
             # Load YAML safely and validate with Pydantic model
             yaml_data = load_yaml_content(content)

@@ -11,10 +11,11 @@ from typing import TypeVar, cast
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from ...enums.enum_property_type import EnumPropertyType
-from ...protocols_local.supported_property_value_protocol import (
+from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.protocols_local.supported_property_value_protocol import (
     ProtocolSupportedPropertyValue,
 )
+
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
 

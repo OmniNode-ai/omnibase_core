@@ -9,7 +9,8 @@ from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
-from ..core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+
 from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
@@ -181,7 +182,7 @@ class ModelNodeConfiguration(BaseModel):
         if value is None:
             self.connection.protocol = None
         else:
-            from ...enums.enum_protocol_type import EnumProtocolType
+            from omnibase_core.enums.enum_protocol_type import EnumProtocolType
 
             try:
                 self.connection.protocol = EnumProtocolType(value)

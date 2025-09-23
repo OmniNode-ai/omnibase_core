@@ -12,14 +12,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
-from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from ...enums.enum_metadata_node_type import EnumMetadataNodeType
-from ...enums.enum_validation_level import EnumValidationLevel
-from ..infrastructure.model_cli_value import ModelCliValue
-from ..metadata.model_metadata_usage_metrics import (
+from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_validation_level import EnumValidationLevel
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_semver import ModelSemVer
@@ -248,9 +249,11 @@ class ModelMetadataNodeInfo(BaseModel):
     def to_summary(self) -> ModelNodeInfoSummary:
         """Get node summary with clean typing."""
         # Convert enum types to match ModelNodeInfoSummary expectations
-        from ...enums.enum_complexity_level import EnumComplexityLevel
-        from ...enums.enum_documentation_quality import EnumDocumentationQuality
-        from ...enums.enum_node_type import EnumNodeType
+        from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
+        from omnibase_core.enums.enum_documentation_quality import (
+            EnumDocumentationQuality,
+        )
+        from omnibase_core.enums.enum_node_type import EnumNodeType
 
         # Map node type (use string value)
         node_type = (

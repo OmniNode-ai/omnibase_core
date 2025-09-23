@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_field_type import EnumFieldType
-from ...utils.uuid_utilities import uuid_from_string
-from ..infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.enums.enum_field_type import EnumFieldType
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.utils.uuid_utilities import uuid_from_string
+
 from .model_field_identity import ModelFieldIdentity
 from .model_field_validation_rules import ModelFieldValidationRules
 

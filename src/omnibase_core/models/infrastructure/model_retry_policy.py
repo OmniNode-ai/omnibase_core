@@ -14,8 +14,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 from .model_retry_advanced import ModelRetryAdvanced
 from .model_retry_conditions import ModelRetryConditions
 from .model_retry_config import ModelRetryConfig

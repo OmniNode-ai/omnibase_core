@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_property_type import EnumPropertyType
+from omnibase_core.enums.enum_property_type import EnumPropertyType
 
 
 class ModelPropertyMetadata(BaseModel):

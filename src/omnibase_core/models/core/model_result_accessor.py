@@ -6,8 +6,9 @@ Specialized accessor for handling CLI execution results and metadata.
 
 from __future__ import annotations
 
-from ..common.model_schema_value import ModelSchemaValue
-from ..infrastructure.model_result import Result
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.infrastructure.model_result import Result
+
 from .model_field_accessor import ModelFieldAccessor
 
 

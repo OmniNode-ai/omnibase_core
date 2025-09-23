@@ -11,11 +11,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_numeric_type import EnumNumericType
-from ...exceptions.onex_error import OnexError
-from ...models.common.model_error_context import ModelErrorContext
-from ...models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_numeric_type import EnumNumericType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Forward reference for type alias - will be properly defined after the class
 

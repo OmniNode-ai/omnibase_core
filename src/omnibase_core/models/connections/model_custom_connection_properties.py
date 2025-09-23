@@ -11,8 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_instance_type import EnumInstanceType
-from ..core.model_custom_properties import ModelCustomProperties
+from omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+
 from .model_cloud_service_properties import ModelCloudServiceProperties
 from .model_database_properties import ModelDatabaseProperties
 from .model_message_queue_properties import ModelMessageQueueProperties

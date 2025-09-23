@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelMetadataAnalyticsSummary(BaseModel):

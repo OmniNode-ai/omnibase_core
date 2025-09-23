@@ -11,9 +11,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_context_type import EnumContextType
-from ...enums.enum_execution_mode import EnumExecutionMode
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_context_type import EnumContextType
+from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelExampleContextData(BaseModel):

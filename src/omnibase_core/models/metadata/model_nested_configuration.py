@@ -11,8 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_config_type import EnumConfigType
-from ..infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.enums.enum_config_type import EnumConfigType
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelNestedConfiguration(BaseModel):

@@ -12,15 +12,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_data_classification import EnumDataClassification
-from ...enums.enum_result_category import EnumResultCategory
-from ...enums.enum_result_type import EnumResultType
-from ...enums.enum_retention_policy import EnumRetentionPolicy
-from ...exceptions.onex_error import OnexError
-from ...utils.uuid_utilities import uuid_from_string
-from ..infrastructure.model_cli_value import ModelCliValue
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_data_classification import EnumDataClassification
+from omnibase_core.enums.enum_result_category import EnumResultCategory
+from omnibase_core.enums.enum_result_type import EnumResultType
+from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelCliResultMetadata(BaseModel):

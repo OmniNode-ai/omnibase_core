@@ -12,8 +12,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Import metadata value for type-safe metric handling
-from ..metadata.model_metadata_value import ModelMetadataValue
-from ..metadata.model_numeric_value import ModelNumericValue
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.models.metadata.model_numeric_value import ModelNumericValue
 
 
 class ModelMetric(BaseModel):

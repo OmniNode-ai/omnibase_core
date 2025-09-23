@@ -11,7 +11,7 @@ from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class TypedDictDeprecationSummary(TypedDict):

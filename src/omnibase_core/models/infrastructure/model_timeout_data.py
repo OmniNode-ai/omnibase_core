@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_runtime_category import EnumRuntimeCategory
-from ..core.model_custom_properties import ModelCustomProperties
+from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
 class ModelTimeoutData(BaseModel):

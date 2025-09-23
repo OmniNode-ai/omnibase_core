@@ -12,10 +12,10 @@ from enum import Enum
 class EnumExampleCategory(str, Enum):
     """Strongly typed example category values."""
 
-    PRIMARY = "PRIMARY"
-    SECONDARY = "SECONDARY"
-    VALIDATION = "VALIDATION"
-    REFERENCE = "REFERENCE"
+    PRIMARY = "primary"
+    SECONDARY = "secondary"
+    VALIDATION = "validation"
+    REFERENCE = "reference"
 
 
 # Export for use

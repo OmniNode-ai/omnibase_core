@@ -12,10 +12,10 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_runtime_category import EnumRuntimeCategory
-from ...enums.enum_time_unit import EnumTimeUnit
-from ...exceptions.onex_error import OnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
+from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.exceptions.onex_error import OnexError
 
 T = TypeVar("T", int, float)
 

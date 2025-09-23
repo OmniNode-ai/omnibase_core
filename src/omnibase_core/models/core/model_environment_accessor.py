@@ -6,81 +6,74 @@ Specialized accessor for environment properties with automatic type conversion.
 
 from __future__ import annotations
 
-from ..common.model_schema_value import ModelSchemaValue
+from typing import TypeVar, cast
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 from .model_field_accessor import ModelFieldAccessor
+
+# Type variable for generic property handling
+T = TypeVar("T")
 
 
 class ModelEnvironmentAccessor(ModelFieldAccessor):
     """Specialized accessor for environment properties with type coercion."""
 
-    def get_string(self, path: str, default: str = "") -> str:
-        """Get string value with type coercion."""
+    def get_typed_value(self, path: str, expected_type: type[T], default: T) -> T:
+        """Get a field value with specific type checking using generic type inference."""
         schema_default = ModelSchemaValue.from_value(default)
         result = self.get_field(path, schema_default)
-        if result.is_ok():
-            value = result.unwrap()
-            raw_value = value.to_value()
-            return str(raw_value) if raw_value is not None else default
-        return default
 
-    def get_int(self, path: str, default: int = 0) -> int:
-        """Get integer value with type coercion."""
-        schema_default = ModelSchemaValue.from_value(default)
-        result = self.get_field(path, schema_default)
-        if result.is_ok():
-            value = result.unwrap()
-            raw_value = value.to_value()
-            if isinstance(raw_value, (int, float)) or (
-                isinstance(raw_value, str) and raw_value.isdigit()
+        if not result.is_ok():
+            return default
+
+        value = result.unwrap()
+        raw_value = value.to_value()
+
+        if raw_value is None:
+            return default
+
+        try:
+            # Type-specific coercion logic based on expected type
+            if expected_type == str:
+                return cast(T, str(raw_value))
+            elif expected_type == int:
+                if isinstance(raw_value, (int, float)) or (
+                    isinstance(raw_value, str) and raw_value.isdigit()
+                ):
+                    return cast(T, int(raw_value))
+            elif expected_type == float:
+                if isinstance(raw_value, (int, float)):
+                    return cast(T, float(raw_value))
+                elif isinstance(raw_value, str):
+                    return cast(T, float(raw_value))
+            elif expected_type == bool:
+                if isinstance(raw_value, bool):
+                    return cast(T, raw_value)
+                elif isinstance(raw_value, str):
+                    return cast(
+                        T, raw_value.lower() in ["true", "yes", "1", "on", "enabled"]
+                    )
+                elif isinstance(raw_value, (int, float)):
+                    return cast(T, bool(raw_value))
+            elif expected_type == list or (
+                hasattr(expected_type, "__origin__")
+                and expected_type.__origin__ is list
             ):
-                return int(raw_value)
-        return default
+                # Handle list types
+                if isinstance(raw_value, list):
+                    return cast(T, [str(item) for item in raw_value])
+                elif isinstance(raw_value, str):
+                    # Support comma-separated values
+                    return cast(
+                        T,
+                        [item.strip() for item in raw_value.split(",") if item.strip()],
+                    )
+            elif isinstance(raw_value, expected_type):
+                return cast(T, raw_value)
+        except (ValueError, TypeError):
+            pass
 
-    def get_float(self, path: str, default: float = 0.0) -> float:
-        """Get float value with type coercion."""
-        schema_default = ModelSchemaValue.from_value(default)
-        result = self.get_field(path, schema_default)
-        if result.is_ok():
-            value = result.unwrap()
-            raw_value = value.to_value()
-            if isinstance(raw_value, (int, float)):
-                return float(raw_value)
-            if isinstance(raw_value, str):
-                try:
-                    return float(raw_value)
-                except ValueError:
-                    return default
-        return default
-
-    def get_bool(self, path: str, default: bool = False) -> bool:
-        """Get boolean value with type coercion."""
-        schema_default = ModelSchemaValue.from_value(default)
-        result = self.get_field(path, schema_default)
-        if result.is_ok():
-            value = result.unwrap()
-            raw_value = value.to_value()
-            if isinstance(raw_value, bool):
-                return raw_value
-            if isinstance(raw_value, str):
-                return raw_value.lower() in ["true", "yes", "1", "on", "enabled"]
-            if isinstance(raw_value, (int, float)):
-                return bool(raw_value)
-        return default
-
-    def get_list(self, path: str, default: list[str] | None = None) -> list[str]:
-        """Get list value with type coercion."""
-        if default is None:
-            default = []
-        schema_default = ModelSchemaValue.from_value(default)
-        result = self.get_field(path, schema_default)
-        if result.is_ok():
-            value = result.unwrap()
-            raw_value = value.to_value()
-            if isinstance(raw_value, list):
-                return [str(item) for item in raw_value]
-            if isinstance(raw_value, str):
-                # Support comma-separated values
-                return [item.strip() for item in raw_value.split(",") if item.strip()]
         return default
 
 

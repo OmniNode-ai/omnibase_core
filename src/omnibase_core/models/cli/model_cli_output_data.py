@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_cli_status import EnumCliStatus
-from ...enums.enum_output_format import EnumOutputFormat
-from ...enums.enum_output_type import EnumOutputType
-from ..infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.enums.enum_cli_status import EnumCliStatus
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
+from omnibase_core.enums.enum_output_type import EnumOutputType
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
 class ModelCliOutputData(BaseModel):

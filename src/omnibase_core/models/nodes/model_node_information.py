@@ -10,12 +10,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from ...enums.enum_metadata_node_type import EnumMetadataNodeType
-from ...enums.enum_node_health_status import EnumNodeHealthStatus
-from ...enums.enum_registry_status import EnumRegistryStatus
-from ...enums.enum_status import EnumStatus
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
+from omnibase_core.enums.enum_status import EnumStatus
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 from .model_node_capabilities_info import ModelNodeCapabilitiesInfo
 from .model_node_configuration import ModelNodeConfiguration
 from .model_node_core_info import ModelNodeCoreInfo

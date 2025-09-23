@@ -12,7 +12,7 @@ from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
-from ..infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 # Decorator to allow dict[str, Any] usage with justification
 F = TypeVar("F", bound=Callable[..., Any])
@@ -36,9 +36,9 @@ def allow_dict_any(func: F) -> F:
     return func
 
 
-from ...enums.enum_color_scheme import EnumColorScheme
-from ...enums.enum_table_alignment import EnumTableAlignment
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_color_scheme import EnumColorScheme
+from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelOutputFormatOptions(BaseModel):

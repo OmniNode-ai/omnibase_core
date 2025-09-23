@@ -11,8 +11,8 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel
 
-from ..common.model_schema_value import ModelSchemaValue
-from ..infrastructure.model_result import Result
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.infrastructure.model_result import Result
 
 
 # TypedDict for field values to replace loose Any typing

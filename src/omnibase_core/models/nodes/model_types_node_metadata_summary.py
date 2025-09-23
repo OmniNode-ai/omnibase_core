@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 from uuid import UUID
 
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class NodeMetadataSummaryType(TypedDict):

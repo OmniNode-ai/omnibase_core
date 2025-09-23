@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_instance_type import EnumInstanceType
+from omnibase_core.enums.enum_instance_type import EnumInstanceType
 
 
 class ModelCloudServiceProperties(BaseModel):

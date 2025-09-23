@@ -10,7 +10,8 @@ from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from ...enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+
 from .model_generic_factory import ModelGenericFactory, TypedDictFactoryKwargs
 
 T = TypeVar("T", bound=BaseModel)

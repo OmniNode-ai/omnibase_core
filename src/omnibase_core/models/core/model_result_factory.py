@@ -10,7 +10,8 @@ from typing import TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 from .model_generic_factory import ModelGenericFactory
 
 

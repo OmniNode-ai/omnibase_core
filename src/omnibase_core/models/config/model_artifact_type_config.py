@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_artifact_type import EnumArtifactType
+from omnibase_core.enums.enum_artifact_type import EnumArtifactType
 
 
 class ModelArtifactTypeConfig(BaseModel):

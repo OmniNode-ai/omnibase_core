@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelYamlValue(BaseModel):

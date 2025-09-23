@@ -12,8 +12,9 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
-from ..core.model_custom_properties import ModelCustomProperties
-from ..metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+
 from .model_function_deprecation_info import (
     ModelFunctionDeprecationInfo,
     TypedDictDeprecationSummary,
@@ -126,7 +127,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         if value is None:
             self.deprecation.deprecated_since = None
         else:
-            from ..metadata.model_semver import ModelSemVer
+            from omnibase_core.models.metadata.model_semver import ModelSemVer
 
             try:
                 # Try to parse as semver
@@ -312,7 +313,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         replacement: str | None = None,
     ) -> ModelFunctionNodeMetadata:
         """Create metadata for function with deprecation info."""
-        from ..metadata.model_semver import ModelSemVer
+        from omnibase_core.models.metadata.model_semver import ModelSemVer
 
         # Parse version string
         try:

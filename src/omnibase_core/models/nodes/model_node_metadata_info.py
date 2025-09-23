@@ -11,12 +11,13 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from ...enums.enum_metadata_node_type import EnumMetadataNodeType
-from ...enums.enum_node_health_status import EnumNodeHealthStatus
-from ...protocols_local.node_info_like_protocol import NodeInfoLike
-from ..metadata.model_metadata_value import ModelMetadataValue
-from ..metadata.model_semver import ModelSemVer
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.protocols_local.node_info_like_protocol import NodeInfoLike
+
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_performance_metrics import ModelNodePerformanceMetrics

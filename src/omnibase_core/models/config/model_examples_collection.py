@@ -8,7 +8,8 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_data_format import EnumDataFormat
+from omnibase_core.enums.enum_data_format import EnumDataFormat
+
 from .model_example import ModelExample
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
@@ -145,7 +146,7 @@ class ModelExamples(BaseModel):
             schema_compliant=self.schema_compliant,
             example_count=self.example_count(),
             valid_example_count=self.valid_example_count(),
-            last_updated=str(datetime.now(UTC)),
+            last_updated=datetime.now(UTC),
         )
 
     @classmethod

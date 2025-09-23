@@ -7,11 +7,13 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_data_format import EnumDataFormat
+from omnibase_core.enums.enum_data_format import EnumDataFormat
+
 from .model_example_metadata_summary import ModelExampleMetadataSummary
 from .model_example_summary import ModelExampleSummary
 
@@ -55,7 +57,7 @@ class ModelExamplesCollectionSummary(BaseModel):
         description="Percentage of valid examples",
     )
 
-    last_updated: str | None = Field(None, description="Last update timestamp")
+    last_updated: datetime | None = Field(None, description="Last update timestamp")
 
     def model_post_init(self, __context: Any) -> None:
         """Calculate completion rate after initialization."""

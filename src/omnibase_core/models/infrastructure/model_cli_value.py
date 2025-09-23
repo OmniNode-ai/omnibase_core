@@ -11,10 +11,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from ...enums.enum_cli_value_type import EnumCliValueType
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...exceptions.onex_error import OnexError
-from ..common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Note: Previously had type alias (CliDictValueType)
 # Removed to comply with ONEX strong typing standards.

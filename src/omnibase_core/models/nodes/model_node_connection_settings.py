@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_protocol_type import EnumProtocolType
+from omnibase_core.enums.enum_protocol_type import EnumProtocolType
+
 from .model_types_node_connection_summary import NodeConnectionSummaryType
 
 

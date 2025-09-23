@@ -11,9 +11,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ...enums.enum_category_filter import EnumCategoryFilter
-from ...enums.enum_cli_action import EnumCliAction
-from ...enums.enum_output_format import EnumOutputFormat
+from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
+from omnibase_core.enums.enum_cli_action import EnumCliAction
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
+
 from .model_cli_advanced_params import ModelCliAdvancedParams
 
 

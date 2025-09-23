@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_complexity import EnumComplexity
-from ...enums.enum_memory_usage import EnumMemoryUsage
-from ...enums.enum_runtime_category import EnumRuntimeCategory
+from omnibase_core.enums.enum_complexity import EnumComplexity
+from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
+from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 
 
 class ModelFunctionNodePerformance(BaseModel):

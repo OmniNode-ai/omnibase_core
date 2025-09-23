@@ -195,6 +195,12 @@ PR_DESCRIPTION.md
 
 # Project-specific
 /backups
+/reports
+reports/
+*_report*.json
+*_analysis*.json
+*_errors*.txt
+mypy_*.txt
 
 # OmniBase / ONEX .gitignore
 

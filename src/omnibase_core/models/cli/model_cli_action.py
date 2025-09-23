@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_action_category import EnumActionCategory
+from omnibase_core.enums.enum_action_category import EnumActionCategory
 
 
 class ModelCliAction(BaseModel):

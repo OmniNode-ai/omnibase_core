@@ -11,14 +11,15 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...enums.enum_execution_phase import EnumExecutionPhase
-from ...enums.enum_status_message import EnumStatusMessage
-from ...exceptions.onex_error import OnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
+from omnibase_core.enums.enum_status_message import EnumStatusMessage
+from omnibase_core.exceptions.onex_error import OnexError
 
 # Import proper discriminated union models to replace complex unions
-from ..common.model_flexible_value import ModelFlexibleValue
-from ..metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+
 from .model_metrics_data import ModelMetricsData
 
 

@@ -12,8 +12,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
-from ...enums.enum_core_error_code import EnumCoreErrorCode
-from ...exceptions.onex_error import OnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
 

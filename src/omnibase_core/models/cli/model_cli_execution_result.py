@@ -12,7 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ...core.decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
+
 from .model_cli_output_data import ModelCliOutputData
 
 

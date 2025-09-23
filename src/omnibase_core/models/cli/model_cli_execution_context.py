@@ -14,8 +14,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...enums.enum_context_source import EnumContextSource
-from ...enums.enum_context_type import EnumContextType
+from omnibase_core.enums.enum_context_source import EnumContextSource
+from omnibase_core.enums.enum_context_type import EnumContextType
 
 
 class ModelCliExecutionContext(BaseModel):

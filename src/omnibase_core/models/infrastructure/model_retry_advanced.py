@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ..core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
 class ModelRetryAdvanced(BaseModel):
@@ -65,7 +65,7 @@ class ModelRetryAdvanced(BaseModel):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add custom metadata."""
-        from ..common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         schema_value = ModelSchemaValue.from_value(value)
         self.custom_properties.set_custom_value(key, schema_value)

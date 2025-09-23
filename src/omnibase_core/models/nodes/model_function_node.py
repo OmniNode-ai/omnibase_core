@@ -12,8 +12,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_function_status import EnumFunctionStatus
-from ...enums.enum_return_type import EnumReturnType
+from omnibase_core.enums.enum_function_status import EnumFunctionStatus
+from omnibase_core.enums.enum_return_type import EnumReturnType
+
 from .model_function_node_core import ModelFunctionNodeCore
 from .model_function_node_metadata import ModelFunctionNodeMetadata
 from .model_function_node_performance import ModelFunctionNodePerformance
@@ -189,7 +190,7 @@ class ModelFunctionNode(BaseModel):
     ) -> ModelFunctionNode:
         """Create a simple function node."""
         # Import the enum to convert string to enum
-        from ...enums.enum_function_type import EnumFunctionType
+        from omnibase_core.enums.enum_function_type import EnumFunctionType
 
         # Convert string to enum for type safety
         try:

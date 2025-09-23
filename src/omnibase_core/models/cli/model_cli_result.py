@@ -12,10 +12,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_config_category import EnumConfigCategory
-from ..common.model_schema_value import ModelSchemaValue
-from ..infrastructure.model_duration import ModelDuration
-from ..validation.model_validation_error import ModelValidationError
+from omnibase_core.enums.enum_config_category import EnumConfigCategory
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.infrastructure.model_duration import ModelDuration
+from omnibase_core.models.validation.model_validation_error import ModelValidationError
+
 from .model_cli_debug_info import ModelCliDebugInfo
 from .model_cli_execution import ModelCliExecution
 from .model_cli_output_data import ModelCliOutputData
@@ -209,7 +210,7 @@ class ModelCliResult(BaseModel):
             from datetime import UTC, datetime
             from uuid import uuid4
 
-            now = datetime.now(UTC).isoformat()
+            now = datetime.now(UTC)
             self.trace_data = ModelTraceData(
                 trace_id=uuid4(),
                 span_id=uuid4(),

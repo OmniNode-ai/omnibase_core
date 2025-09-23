@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_context_source import EnumContextSource
-from ...enums.enum_context_type import EnumContextType
+from omnibase_core.enums.enum_context_source import EnumContextSource
+from omnibase_core.enums.enum_context_type import EnumContextType
+
 from .model_cli_execution_context import ModelCliExecutionContext
 
 
