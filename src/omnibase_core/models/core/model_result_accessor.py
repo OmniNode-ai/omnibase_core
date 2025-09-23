@@ -17,7 +17,7 @@ class ModelResultAccessor(ModelFieldAccessor):
     def get_result_value(
         self,
         key: str,
-        default: ModelSchemaValue = None,
+        default: ModelSchemaValue | None = None,
     ) -> Result[ModelSchemaValue, str]:
         """Get result value from results or metadata fields."""
         # Try results first

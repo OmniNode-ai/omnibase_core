@@ -291,15 +291,6 @@ class ModelPropertyValue(BaseModel):
             is_validated=True,
         )
 
-    @classmethod
-    def from_list(
-        cls,
-        value: list[str],
-        source: str | None = None,
-    ) -> ModelPropertyValue:
-        """Create property value from string list (backward compatibility alias)."""
-        return cls.from_string_list(value, source)
-
     def as_string(self) -> str:
         """Get value as string."""
         if self.value_type == EnumPropertyType.STRING:

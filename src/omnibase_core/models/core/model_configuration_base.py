@@ -31,12 +31,12 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     """
 
     # Core metadata
-    name: str = Field(default=None, description="Configuration name")
-    description: str = Field(
+    name: str | None = Field(default=None, description="Configuration name")
+    description: str | None = Field(
         default=None,
         description="Configuration description",
     )
-    version: ModelSemVer = Field(
+    version: ModelSemVer | None = Field(
         default=None,
         description="Configuration version",
     )
@@ -47,7 +47,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Generic configuration data
-    config_data: T = Field(default=None, description="Typed configuration data")
+    config_data: T | None = Field(default=None, description="Typed configuration data")
 
     def update_timestamp(self) -> None:
         """Update the modification timestamp."""
@@ -56,7 +56,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     def get_config_value(
         self,
         key: str,
-        default: ModelSchemaValue = None,
+        default: ModelSchemaValue | None = None,
     ) -> Result[ModelSchemaValue, str]:
         """Get configuration value by key from config_data."""
         if self.config_data and hasattr(self.config_data, key):

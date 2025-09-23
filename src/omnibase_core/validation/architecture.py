@@ -58,8 +58,6 @@ class ModelCounter(ast.NodeVisitor):
             self.models.append(class_name)
         elif class_name.startswith("Enum") and class_name not in self.enums:
             self.enums.append(class_name)
-        elif class_name.startswith("Protocol") and class_name not in self.protocols:
-            self.protocols.append(class_name)
 
         self.generic_visit(node)
 

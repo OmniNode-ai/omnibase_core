@@ -115,14 +115,6 @@ class ModelFieldValidationRules(BaseModel):
         """Get maximum value as ModelNumericValue."""
         return self.max_value
 
-    def get_min_value_as_python(self) -> float | None:
-        """Get minimum value as Python float for backward compatibility."""
-        return self.min_value.to_python_value() if self.min_value else None
-
-    def get_max_value_as_python(self) -> float | None:
-        """Get maximum value as Python float for backward compatibility."""
-        return self.max_value.to_python_value() if self.max_value else None
-
 
 # Export the model
 __all__ = ["ModelFieldValidationRules"]

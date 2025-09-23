@@ -16,8 +16,9 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
     def get_string(self, path: str, default: str = "") -> str:
         """Get string value with type coercion."""
         schema_default = ModelSchemaValue.from_value(default)
-        value = self.get_field(path, schema_default)
-        if value is not None:
+        result = self.get_field(path, schema_default)
+        if result.is_ok():
+            value = result.unwrap()
             raw_value = value.to_value()
             return str(raw_value) if raw_value is not None else default
         return default
@@ -25,8 +26,9 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
     def get_int(self, path: str, default: int = 0) -> int:
         """Get integer value with type coercion."""
         schema_default = ModelSchemaValue.from_value(default)
-        value = self.get_field(path, schema_default)
-        if value is not None:
+        result = self.get_field(path, schema_default)
+        if result.is_ok():
+            value = result.unwrap()
             raw_value = value.to_value()
             if isinstance(raw_value, (int, float)) or (
                 isinstance(raw_value, str) and raw_value.isdigit()
@@ -37,8 +39,9 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
     def get_float(self, path: str, default: float = 0.0) -> float:
         """Get float value with type coercion."""
         schema_default = ModelSchemaValue.from_value(default)
-        value = self.get_field(path, schema_default)
-        if value is not None:
+        result = self.get_field(path, schema_default)
+        if result.is_ok():
+            value = result.unwrap()
             raw_value = value.to_value()
             if isinstance(raw_value, (int, float)):
                 return float(raw_value)
@@ -52,8 +55,9 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
     def get_bool(self, path: str, default: bool = False) -> bool:
         """Get boolean value with type coercion."""
         schema_default = ModelSchemaValue.from_value(default)
-        value = self.get_field(path, schema_default)
-        if value is not None:
+        result = self.get_field(path, schema_default)
+        if result.is_ok():
+            value = result.unwrap()
             raw_value = value.to_value()
             if isinstance(raw_value, bool):
                 return raw_value
@@ -68,8 +72,9 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
         if default is None:
             default = []
         schema_default = ModelSchemaValue.from_value(default)
-        value = self.get_field(path, schema_default)
-        if value is not None:
+        result = self.get_field(path, schema_default)
+        if result.is_ok():
+            value = result.unwrap()
             raw_value = value.to_value()
             if isinstance(raw_value, list):
                 return [str(item) for item in raw_value]

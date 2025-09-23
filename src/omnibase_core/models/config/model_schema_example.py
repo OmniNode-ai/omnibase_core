@@ -73,11 +73,12 @@ class ModelSchemaExample(BaseModel):
         Returns:
             Value of the requested type or default
         """
-        schema_value = self.example_data.get_custom_value(key)
-        if schema_value is None:
+        schema_value_result = self.example_data.get_custom_value(key)
+        if schema_value_result.is_err():
             return default
 
         # Extract raw value from ModelSchemaValue
+        schema_value = schema_value_result.unwrap()
         raw_value = schema_value.to_value()
 
         # Type check against default type
@@ -112,9 +113,10 @@ class ModelSchemaExample(BaseModel):
         Returns:
             Raw Python value or None if not found
         """
-        schema_value = self.example_data.get_custom_value(key)
-        if schema_value is None:
+        schema_value_result = self.example_data.get_custom_value(key)
+        if schema_value_result.is_err():
             return None
+        schema_value = schema_value_result.unwrap()
         return schema_value.to_value()
 
     def set_raw_value(self, key: str, value: Any) -> None:
@@ -150,9 +152,9 @@ class ModelSchemaExample(BaseModel):
         """
         result = {}
         for key in self.get_all_keys():
-            schema_value = self.example_data.get_custom_value(key)
-            if schema_value is not None:
-                result[key] = schema_value
+            schema_value_result = self.example_data.get_custom_value(key)
+            if schema_value_result.is_ok():
+                result[key] = schema_value_result.unwrap()
         return result
 
     @classmethod

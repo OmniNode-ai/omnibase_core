@@ -88,39 +88,6 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         # All validation is now handled by Pydantic model
         # Legacy manual validation removed for ONEX compliance
 
-        # Legacy check for compatibility - this can be removed once all contracts are migrated
-        if isinstance(yaml_data, dict):
-            # Check for common contract fields (legacy support)
-            required_fields = ["metadata", "specification"]
-            missing_fields = [
-                field for field in required_fields if field not in yaml_data
-            ]
-
-            if missing_fields:
-                errors.append(f"Missing required fields: {', '.join(missing_fields)}")
-
-            # Validate metadata section
-            if "metadata" in yaml_data:
-                metadata = yaml_data["metadata"]
-                if not isinstance(metadata, dict):
-                    errors.append("metadata field must be an object")
-                else:
-                    # Check for required metadata fields
-                    required_metadata = ["name", "version"]
-                    missing_metadata = [
-                        field for field in required_metadata if field not in metadata
-                    ]
-                    if missing_metadata:
-                        errors.append(
-                            f"Missing required metadata fields: {', '.join(missing_metadata)}",
-                        )
-
-            # Validate specification section
-            if "specification" in yaml_data:
-                spec = yaml_data["specification"]
-                if not isinstance(spec, dict):
-                    errors.append("specification field must be an object")
-
     except Exception as e:
         errors.append(f"Error reading file: {e}")
 

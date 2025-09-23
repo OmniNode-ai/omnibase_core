@@ -43,9 +43,11 @@ class ModelItemSummary(BaseModel):
     priority: int = Field(default=0, description="Item priority")
 
     # Timestamps
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Update timestamp")
-    accessed_at: datetime | None = Field(None, description="Last accessed timestamp")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(default=None, description="Update timestamp")
+    accessed_at: datetime | None = Field(
+        default=None, description="Last accessed timestamp"
+    )
 
     # Organization
     tags: list[str] = Field(default_factory=list, description="Item tags")

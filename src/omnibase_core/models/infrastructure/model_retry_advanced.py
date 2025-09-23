@@ -72,8 +72,10 @@ class ModelRetryAdvanced(BaseModel):
 
     def get_metadata(self, key: str) -> Any:
         """Get custom metadata value."""
-        schema_value = self.custom_properties.get_custom_value(key)
-        return schema_value.to_value() if schema_value else None
+        schema_value_result = self.custom_properties.get_custom_value(key)
+        if schema_value_result.is_ok():
+            return schema_value_result.unwrap().to_value()
+        return None
 
     def remove_metadata(self, key: str) -> None:
         """Remove custom metadata."""

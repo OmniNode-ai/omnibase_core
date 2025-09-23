@@ -32,7 +32,7 @@ class ModelFieldAccessor(BaseModel):
     def get_field(
         self,
         path: str,
-        default: ModelSchemaValue = None,
+        default: ModelSchemaValue | None = None,
     ) -> Result[ModelSchemaValue, str]:
         """Get field using dot notation: 'metadata.custom_fields.key'"""
         try:

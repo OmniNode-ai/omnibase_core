@@ -20,17 +20,25 @@ from .model_function_deprecation_info import (
 )
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
+from .types_function_documentation_summary import FunctionDocumentationSummaryType
 
 # Removed type alias - using ModelMetadataValue for proper type safety
+
+
+class TypedDictDocumentationSummaryFiltered(TypedDict):
+    """Type-safe dictionary for filtered documentation summary (quality_score excluded)."""
+
+    has_documentation: bool
+    has_examples: bool
+    has_notes: bool
+    examples_count: int
+    notes_count: int
 
 
 class TypedDictFunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
 
-    documentation: dict[
-        str,
-        bool | int,
-    ]  # has_* (bool) and *_count (int) and quality_score moved out
+    documentation: TypedDictDocumentationSummaryFiltered  # Properly typed documentation summary (quality_score handled separately)
     deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
     relationships: dict[
         str,
@@ -251,11 +259,13 @@ class ModelFunctionNodeMetadata(BaseModel):
         dep_summary = self.deprecation.get_deprecation_summary()
         rel_summary = self.relationships.get_relationships_summary()
 
-        # Convert documentation summary to expected format (bool | int only)
-        doc_filtered = {
-            key: value
-            for key, value in doc_summary.items()
-            if isinstance(value, (bool, int))
+        # Convert documentation summary to expected format (exclude quality_score - handled separately)
+        doc_filtered: TypedDictDocumentationSummaryFiltered = {
+            "has_documentation": doc_summary.get("has_documentation", False),
+            "has_examples": doc_summary.get("has_examples", False),
+            "has_notes": doc_summary.get("has_notes", False),
+            "examples_count": doc_summary.get("examples_count", 0),
+            "notes_count": doc_summary.get("notes_count", 0),
         }
 
         # Convert relationships summary to ModelMetadataValue format
@@ -319,4 +329,8 @@ class ModelFunctionNodeMetadata(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFunctionNodeMetadata", "TypedDictFunctionMetadataSummary"]
+__all__ = [
+    "ModelFunctionNodeMetadata",
+    "TypedDictFunctionMetadataSummary",
+    "TypedDictDocumentationSummaryFiltered",
+]

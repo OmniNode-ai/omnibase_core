@@ -8,7 +8,11 @@ import shutil
 from pathlib import Path
 from typing import cast
 
-from .migration_types import TypedDictMigrationStepDict
+from .migration_types import (
+    TypedDictMigrationDuplicateConflictDict,
+    TypedDictMigrationNameConflictDict,
+    TypedDictMigrationStepDict,
+)
 from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_migration_plan import ModelMigrationPlan
 from .model_migration_result import ModelMigrationResult
@@ -190,35 +194,33 @@ class ProtocolMigrator:
                 spi_protocol = spi_by_name[source_protocol.name]
                 if source_protocol.signature_hash != spi_protocol.signature_hash:
                     conflicts.append(
-                        cast(
-                            TypedDictMigrationNameConflictDict,
-                            {
-                                "type": "name_conflict",
-                                "protocol_name": source_protocol.name,
-                                "source_file": source_protocol.file_path,
-                                "spi_file": spi_protocol.file_path,
-                                "source_signature": source_protocol.signature_hash,
-                                "spi_signature": spi_protocol.signature_hash,
-                                "recommendation": "Rename one of the protocols or merge if appropriate",
-                            },
-                        ),
+                        ModelMigrationConflictUnion.from_name_conflict(
+                            TypedDictMigrationNameConflictDict(
+                                type="name_conflict",
+                                protocol_name=source_protocol.name,
+                                source_file=source_protocol.file_path,
+                                spi_file=spi_protocol.file_path,
+                                source_signature=source_protocol.signature_hash,
+                                spi_signature=spi_protocol.signature_hash,
+                                recommendation="Rename one of the protocols or merge if appropriate",
+                            )
+                        )
                     )
 
             # Check for exact signature duplicates
             elif source_protocol.signature_hash in spi_by_signature:
                 spi_protocol = spi_by_signature[source_protocol.signature_hash]
                 conflicts.append(
-                    cast(
-                        TypedDictMigrationDuplicateConflictDict,
-                        {
-                            "type": "exact_duplicate",
-                            "protocol_name": source_protocol.name,
-                            "source_file": source_protocol.file_path,
-                            "spi_file": spi_protocol.file_path,
-                            "signature_hash": source_protocol.signature_hash,
-                            "recommendation": f"Skip migration - use existing SPI version: {spi_protocol.name}",
-                        },
-                    ),
+                    ModelMigrationConflictUnion.from_duplicate_conflict(
+                        TypedDictMigrationDuplicateConflictDict(
+                            type="exact_duplicate",
+                            protocol_name=source_protocol.name,
+                            source_file=source_protocol.file_path,
+                            spi_file=spi_protocol.file_path,
+                            signature_hash=source_protocol.signature_hash,
+                            recommendation=f"Skip migration - use existing SPI version: {spi_protocol.name}",
+                        )
+                    )
                 )
 
         return conflicts
@@ -404,7 +406,7 @@ class ProtocolMigrator:
 
         if plan.conflicts_detected:
             for conflict in plan.conflicts_detected:
-                if "spi_file" in conflict:
+                if hasattr(conflict, "spi_file") and conflict.spi_file:
                     pass
 
         if plan.protocols_to_migrate and not plan.conflicts_detected:

@@ -40,7 +40,7 @@ class ModelContainer(BaseModel, Generic[T]):
         description="Type identifier for the container",
     )
 
-    source: str = Field(
+    source: str | None = Field(
         default=None,
         description="Source of the contained value",
     )
@@ -50,7 +50,7 @@ class ModelContainer(BaseModel, Generic[T]):
         description="Whether value has been validated",
     )
 
-    validation_notes: str = Field(
+    validation_notes: str | None = Field(
         default=None,
         description="Notes about validation status",
     )
@@ -60,9 +60,9 @@ class ModelContainer(BaseModel, Generic[T]):
         cls,
         value: T,
         container_type: str,
-        source: str = None,
+        source: str | None = None,
         is_validated: bool = False,
-        validation_notes: str = None,
+        validation_notes: str | None = None,
     ) -> ModelContainer[T]:
         """
         Create a new container with the specified value and metadata.
@@ -90,8 +90,8 @@ class ModelContainer(BaseModel, Generic[T]):
         cls,
         value: T,
         container_type: str,
-        source: str = None,
-        validation_notes: str = None,
+        source: str | None = None,
+        validation_notes: str | None = None,
     ) -> ModelContainer[T]:
         """
         Create a validated container.
@@ -237,8 +237,8 @@ class ModelContainer(BaseModel, Generic[T]):
             True if values are equal
         """
         if isinstance(other, ModelContainer):
-            return self.value == other.value
-        return self.value == other
+            return bool(self.value == other.value)
+        return bool(self.value == other)
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison based on contained value."""

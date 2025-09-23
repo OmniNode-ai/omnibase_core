@@ -30,7 +30,7 @@ class ModelNumericValue(BaseModel):
 
     # Value storage with type tracking
     value: float = Field(
-        description="The numeric value (stored as float for compatibility)",
+        description="The numeric value",
     )
 
     value_type: EnumNumericType = Field(
@@ -64,7 +64,7 @@ class ModelNumericValue(BaseModel):
                     },
                 ),
             )
-        return float(v)  # Always store as float for compatibility
+        return float(v)
 
     @classmethod
     def from_int(cls, value: int, source: str | None = None) -> ModelNumericValue:

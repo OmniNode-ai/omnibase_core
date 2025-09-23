@@ -194,7 +194,7 @@ class ModelGenericFactory(Generic[T]):
     def create_success_result(
         cls,
         model_class: type[T],
-        result_data: ModelSchemaValue = None,
+        result_data: ModelSchemaValue | None = None,
         **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """

@@ -178,9 +178,9 @@ class Result(BaseModel, Generic[T, E]):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return Result.err(self.error)
+        return cast(Result[U, Exception], Result.err(self.error))
 
-    def map_err(self, f: Callable[[E], F]) -> Result[T, F | Exception]:
+    def map_err(self, f: Callable[[E], F]) -> Result[T, F]:
         """
         Map function over the error value.
 
@@ -203,9 +203,9 @@ class Result(BaseModel, Generic[T, E]):
             new_error = f(self.error)
             return Result.err(new_error)
         except Exception as e:
-            return Result.err(e)
+            return cast(Result[T, F], Result.err(e))
 
-    def and_then(self, f: Callable[[T], Result[U, E]]) -> Result[U, E | Exception]:
+    def and_then(self, f: Callable[[T], Result[U, E]]) -> Result[U, Exception]:
         """
         Flat map (bind) operation for chaining Results.
 
@@ -221,7 +221,7 @@ class Result(BaseModel, Generic[T, E]):
                     )
                 result = f(self.value)
                 # Cast the result to the expected type since we know it's compatible
-                return cast(Result[U, E | Exception], result)
+                return cast(Result[U, Exception], result)
             except Exception as e:
                 return Result.err(e)
         if self.error is None:
@@ -229,9 +229,9 @@ class Result(BaseModel, Generic[T, E]):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return Result.err(self.error)
+        return cast(Result[U, Exception], Result.err(self.error))
 
-    def or_else(self, f: Callable[[E], Result[T, F]]) -> Result[T, F | Exception]:
+    def or_else(self, f: Callable[[E], Result[T, F]]) -> Result[T, Exception]:
         """
         Alternative operation for error recovery.
 
@@ -252,7 +252,7 @@ class Result(BaseModel, Generic[T, E]):
                     message="Error result has None error",
                 )
             result = f(self.error)
-            return cast(Result[T, F | Exception], result)
+            return cast(Result[T, Exception], result)
         except Exception as e:
             return Result.err(e)
 

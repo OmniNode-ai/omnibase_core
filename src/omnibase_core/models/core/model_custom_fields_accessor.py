@@ -17,7 +17,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
     def get_custom_field(
         self,
         key: str,
-        default: ModelSchemaValue = None,
+        default: ModelSchemaValue | None = None,
     ) -> Result[ModelSchemaValue, str]:
         """Get a custom field value, initializing custom_fields if needed."""
         if not self.has_field("custom_fields"):

@@ -110,7 +110,7 @@ class ModelPropertyCollection(BaseModel):
         source: str | None = None,
     ) -> None:
         """Add a string list property with convenience method."""
-        property_value = ModelPropertyValue.from_list(value, source)
+        property_value = ModelPropertyValue.from_string_list(value, source)
         self.add_property(key, property_value, description, required)
 
     def get_property(self, key: str) -> ModelTypedProperty | None:

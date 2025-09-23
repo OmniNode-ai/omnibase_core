@@ -60,35 +60,6 @@ class ValidationResult:
         if self.metadata is None:
             self.metadata = {}
 
-    # Legacy compatibility properties
-    @property
-    def message(self) -> str:
-        """Legacy message property for backward compatibility."""
-        if self.success:
-            return f"Validation passed: {self.files_checked} files checked"
-        return f"Validation failed: {len(self.errors)} errors found"
-
-    @property
-    def violations(self) -> list[str]:
-        """Legacy violations property for backward compatibility."""
-        return self.errors
-
-    @property
-    def protocols_found(self) -> int:
-        """Legacy protocols_found property for backward compatibility."""
-        if not self.metadata:
-            return 0
-        value = self.metadata.get("protocols_found", 0)
-        return int(value) if isinstance(value, (int, float)) else 0
-
-    @property
-    def recommendations(self) -> list[str]:
-        """Legacy recommendations property for backward compatibility."""
-        if not self.metadata:
-            return []
-        value = self.metadata.get("recommendations", [])
-        return list(value) if isinstance(value, list) else []
-
 
 @dataclass
 class DuplicationInfo:
