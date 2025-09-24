@@ -57,65 +57,8 @@ try:
 
     PYDANTIC_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Pydantic models not available: {e}")
-    PYDANTIC_AVAILABLE = False
-
-    # Fallback implementations when Pydantic models are not available
-    class AnalysisType:
-        ENHANCED_CODE_CHANGES_WITH_CORRELATION = (
-            "enhanced_code_changes_with_correlation"
-        )
-
-    class RiskLevel:
-        LOW = "low"
-        MEDIUM = "medium"
-        HIGH = "high"
-        CRITICAL = "critical"
-
-    class SecurityStatus:
-        CLEAN = "clean"
-        SUSPICIOUS = "suspicious"
-        FLAGGED = "flagged"
-
-    class _FallbackModel:
-        def __init__(self, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
-
-        def dict(self):
-            return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-
-        @classmethod
-        def create_intelligence_document(cls, **kwargs):
-            return cls(**kwargs)
-
-        @classmethod
-        def from_intelligence_document(cls, doc):
-            if isinstance(doc, dict):
-                return cls(**doc)
-            return cls(**doc.model_dump()) if hasattr(doc, "model_dump") else cls()
-
-    # Create fallback classes
-    ChangeSummary = _FallbackModel
-    CrossRepositoryCorrelation = _FallbackModel
-    ImpactAssessment = _FallbackModel
-    IntelligenceDocumentContent = _FallbackModel
-    IntelligenceHookConfig = _FallbackModel
-    IntelligenceMetadata = _FallbackModel
-    IntelligenceServiceRequest = _FallbackModel
-    MCPCreateDocumentRequest = _FallbackModel
-    MCPResponse = _FallbackModel
-    SecurityAndPrivacy = _FallbackModel
-    TechnicalAnalysis = _FallbackModel
-
-    def create_change_summary(**kwargs):
-        return ChangeSummary(**kwargs)
-
-    def create_intelligence_metadata(**kwargs):
-        return IntelligenceMetadata(**kwargs)
-
-    def validate_intelligence_document(doc):
-        return True  # Always valid in fallback mode
+    print(f"❌ Error: Required Pydantic models not available: {e}", file=sys.stderr)
+    sys.exit(1)
 
 
 # Import centralized configuration
@@ -124,23 +67,8 @@ try:
 
     CONFIG_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Centralized configuration not available: {e}")
-    CONFIG_AVAILABLE = False
-
-    # Fallback configuration functions
-    class _FallbackConfig:
-        def __init__(self):
-            self.intelligence_service = _FallbackService()
-
-    class _FallbackService:
-        def __init__(self):
-            self.port = 8053
-
-    def get_archon_config():
-        return _FallbackConfig()
-
-    def get_intelligence_endpoint():
-        return "http://localhost:8053/extract/document"
+    print(f"❌ Error: Centralized Archon config not available: {e}", file=sys.stderr)
+    sys.exit(1)
 
 
 # Try to import httpx first (available in most ONEX repositories)
@@ -179,10 +107,8 @@ class IntelligenceHook:
                     f"Using centralized config - Intelligence service: {self.api_url}"
                 )
             except Exception as e:
-                self.logger.warning(f"Failed to load centralized config: {e}")
-                # Fallback to legacy configuration - use intelligence service
-                self.api_url = "http://localhost:8053/extract/document"
-                self.use_mcp_format = False
+                self.logger.error(f"Failed to load centralized config: {e}")
+                raise
         else:
             # Legacy configuration loading
             archon_endpoint = self.config.get(
@@ -613,20 +539,19 @@ class IntelligenceHook:
         matching_commits = []
 
         try:
-            # Build grep pattern for keywords
-            grep_pattern = "|".join(
-                keywords[:5]
-            )  # Limit keywords to avoid long commands
-
-            # Search recent commits for keyword matches
+            # Search recent commits for keyword matches (OR semantics)
+            lookback_days = self.config.get("analysis", {}).get(
+                "correlation_lookback_days", 3
+            )
             cmd = [
                 "git",
                 "log",
-                "--since=3 days ago",
-                f"--grep={grep_pattern}",
+                f"--since={lookback_days} days ago",
                 "--pretty=format:%H|%s|%an",
                 "--max-count=5",
             ]
+            for kw in keywords[:5]:  # Limit keywords to keep command short
+                cmd.extend(["--grep", kw])
 
             output = self.run_git_command(cmd, cwd=repo_path)
 
@@ -867,9 +792,16 @@ class IntelligenceHook:
 
         # Get first commit for metadata (most recent)
         first_commit = commits[0] if commits else {}
-        branch = first_commit.get("branch", "main")
-        author = first_commit.get("author", "unknown")
-        commit_message = first_commit.get("commit_message", "Multiple commits")
+        branch = first_commit.get("branch") or "main"
+        author = first_commit.get("author") or first_commit.get(
+            "author_name", "unknown"
+        )
+        commit_message = (
+            first_commit.get("commit_message")
+            or first_commit.get("message")
+            or first_commit.get("subject")
+            or "Multiple commits"
+        )
 
         # Create metadata using helper function
         metadata = create_intelligence_metadata(
@@ -1316,11 +1248,10 @@ class IntelligenceHook:
                 )
                 return 0
 
-            # Remove duplicates and limit
+            # Remove duplicates while preserving order, then limit
             original_count = len(commits_to_push)
-            commits_to_push = list(set(commits_to_push))[
-                : self.config.get("analysis", {}).get("max_commits", 10)
-            ]
+            max_commits = self.config.get("analysis", {}).get("max_commits", 10)
+            commits_to_push = list(dict.fromkeys(commits_to_push))[:max_commits]
             if len(commits_to_push) != original_count:
                 self.logger.debug(
                     f"Deduplicated commits: {original_count} → {len(commits_to_push)}"
