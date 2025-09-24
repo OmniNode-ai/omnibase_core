@@ -105,7 +105,7 @@ def main():
     total_changes = fix_directory(target_path)
 
     print("=" * 60)
-    print(f"✅ Import pattern fixes complete!")
+    print("✅ Import pattern fixes complete!")
     print(f"📊 Total changes made: {total_changes}")
 
     if total_changes > 0:
