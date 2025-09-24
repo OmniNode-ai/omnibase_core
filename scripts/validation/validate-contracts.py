@@ -18,6 +18,8 @@ import yaml
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
 FILE_DISCOVERY_TIMEOUT = 30  # seconds
 VALIDATION_TIMEOUT = 300  # 5 minutes
+# Ruff TRY003: keep messages as constants
+TIMEOUT_ERROR_MESSAGE = "Validation operation timed out"
 
 
 def validate_yaml_file(file_path: Path) -> list[str]:
@@ -108,8 +110,8 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 def setup_timeout_handler():
     """Setup timeout handler for long-running validations (Unix only)."""
 
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Validation operation timed out")
+    def timeout_handler(_signum, _frame):
+        raise TimeoutError(TIMEOUT_ERROR_MESSAGE)
 
     # SIGALRM is Unix-only, not available on Windows
     if hasattr(signal, "SIGALRM"):
@@ -154,7 +156,9 @@ def main():
         # signal.alarm is Unix-only, not available on Windows
         if hasattr(signal, "SIGALRM"):
             signal.alarm(FILE_DISCOVERY_TIMEOUT)
-        yaml_files = list(base_path.rglob("*.yaml")) + list(base_path.rglob("*.yml"))
+        # Single walk; filter by suffix to avoid duplicate rglob passes
+        files_iter = base_path.rglob("*")
+        yaml_files = [f for f in files_iter if f.suffix in (".yaml", ".yml")]
         if hasattr(signal, "SIGALRM"):
             signal.alarm(0)  # Cancel timeout
     except TimeoutError:
