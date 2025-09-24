@@ -43,6 +43,15 @@ repos:
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
+      # Claude workflow protection (must remain read-only and unmodified)
+      - id: validate-claude-workflow-protection
+        name: Claude Workflow Protection
+        entry: poetry run python scripts/validation/validate-claude-workflow-protection.py
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
       # MyPy Type Checking
       - id: mypy-poetry
         name: MyPy Type Checking (via Poetry)
