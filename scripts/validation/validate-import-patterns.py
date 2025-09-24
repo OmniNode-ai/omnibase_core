@@ -20,10 +20,105 @@ Exit Codes:
 
 import argparse
 import ast
+import logging
+import os
 import re
 import sys
+import threading
+import time
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Iterator, List, Set, Tuple
+
+# Constants
+FILE_DISCOVERY_TIMEOUT = 30  # seconds
+VALIDATION_TIMEOUT = 300  # 5 minutes
+FILE_DISCOVERY_TIMEOUT_ERROR = "File discovery operation timed out"
+VALIDATION_TIMEOUT_ERROR = "Validation operation timed out"
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+
+class TimeoutContext:
+    """Cross-platform timeout context manager using threading."""
+
+    def __init__(self, seconds: int, error_message: str):
+        self.seconds = seconds
+        self.error_message = error_message
+        self.timer: threading.Timer | None = None
+        self.timed_out = False
+
+    def _timeout_handler(self):
+        """Called when timeout occurs."""
+        self.timed_out = True
+        logging.error(self.error_message)
+
+    def __enter__(self):
+        self.timer = threading.Timer(self.seconds, self._timeout_handler)
+        self.timer.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.timer:
+            self.timer.cancel()
+        if self.timed_out:
+            raise TimeoutError(self.error_message)
+
+
+def discover_python_files_optimized(base_path: Path) -> Iterator[Path]:
+    """
+    Optimized Python file discovery using single walk with filtering.
+
+    Args:
+        base_path: Base directory to search
+
+    Yields:
+        Path objects for Python files
+    """
+    try:
+        # Single walk through directory tree with immediate filtering
+        for root, dirs, files in os.walk(base_path):
+            root_path = Path(root)
+
+            # Skip directories early to prevent recursion
+            dirs_to_skip = []
+            for dir_name in dirs:
+                if dir_name in (
+                    "__pycache__",
+                    "archived",
+                    ".git",
+                    ".pytest_cache",
+                    "node_modules",
+                    ".venv",
+                    "venv",
+                ) or dir_name.startswith("."):
+                    dirs_to_skip.append(dir_name)
+
+            # Remove from dirs to prevent os.walk from recursing
+            for skip_dir in dirs_to_skip:
+                if skip_dir in dirs:
+                    dirs.remove(skip_dir)
+
+            # Skip if we're in an archived path or test files
+            root_str = str(root_path)
+            if "/archived/" in root_str or "archived" in root_path.parts:
+                continue
+
+            # Process files with immediate Python filtering
+            for file_name in files:
+                if (
+                    file_name.endswith(".py")
+                    and not file_name.startswith(".")
+                    and not any(
+                        skip in file_name
+                        for skip in ["__pycache__", ".pyc", "test_", "_test.py"]
+                    )
+                ):
+                    yield root_path / file_name
+
+    except (OSError, PermissionError) as e:
+        logging.error(f"Error during file discovery: {e}")
+        raise
 
 
 class ImportPatternValidator:
@@ -108,8 +203,49 @@ class ImportPatternValidator:
 
         return absolute_path
 
+    def _escape_sed_pattern(self, text: str) -> str:
+        """Properly escape special characters for sed patterns."""
+        # Escape sed special characters: / \ & [ ] * ^ $ . ( ) + ? { } |
+        special_chars = r"\/&\[\]*^$.()+?{}|"
+        escaped = text
+        for char in special_chars:
+            escaped = escaped.replace(char, f"\\{char}")
+        return escaped
+
+    def _generate_cross_platform_sed(
+        self, file_path: str, current: str, fixed: str
+    ) -> Dict[str, str]:
+        """Generate cross-platform sed commands with proper error handling."""
+        current_escaped = self._escape_sed_pattern(current)
+        fixed_escaped = self._escape_sed_pattern(fixed)
+
+        # BSD sed (macOS) command with specific .bak file removal
+        bsd_command = (
+            f"if sed -i '.tmp_backup' 's/{current_escaped}/{fixed_escaped}/g' '{file_path}'; then "
+            f"rm -f '{file_path}.tmp_backup'; else "
+            f"[ -f '{file_path}.tmp_backup' ] && mv '{file_path}.tmp_backup' '{file_path}'; "
+            f"echo 'Error: sed operation failed for {file_path}' >&2; exit 1; fi"
+        )
+
+        # GNU sed (Linux) command with error handling
+        gnu_command = (
+            f"if cp '{file_path}' '{file_path}.tmp_backup'; then "
+            f"if sed -i 's/{current_escaped}/{fixed_escaped}/g' '{file_path}'; then "
+            f"rm -f '{file_path}.tmp_backup'; else "
+            f"mv '{file_path}.tmp_backup' '{file_path}'; "
+            f"echo 'Error: sed operation failed for {file_path}' >&2; exit 1; fi; else "
+            f"echo 'Error: backup creation failed for {file_path}' >&2; exit 1; fi"
+        )
+
+        return {
+            "bsd_command": bsd_command,
+            "gnu_command": gnu_command,
+            "current_escaped": current_escaped,
+            "fixed_escaped": fixed_escaped,
+        }
+
     def _generate_sed_fix(self, violation: Dict[str, str]) -> None:
-        """Generate sed command to fix the import."""
+        """Generate cross-platform sed commands to fix the import."""
         directory = violation["directory"]
         current = violation["current_import"].strip()
         suggested = violation["suggested_absolute"]
@@ -120,14 +256,9 @@ class ImportPatternValidator:
             import_items = match.group(2)
             fixed_line = f"from {suggested} import {import_items}"
 
-            # Create sed command (escape special characters)
-            current_escaped = current.replace("/", "\\/")
-            fixed_escaped = fixed_line.replace("/", "\\/")
-
-            # Create cross-platform sed command
-            sed_command = (
-                f"sed -i.bak 's/{current_escaped}/{fixed_escaped}/g' "
-                f"'{violation['file']}' && rm -f '{violation['file']}.bak'"
+            # Generate cross-platform sed commands with proper escaping and error handling
+            sed_commands = self._generate_cross_platform_sed(
+                violation["file"], current, fixed_line
             )
 
             if directory not in self.fixes_by_directory:
@@ -136,32 +267,73 @@ class ImportPatternValidator:
             self.fixes_by_directory[directory].append(
                 {
                     "file": violation["file"],
-                    "sed_command": sed_command,
+                    "bsd_sed_command": sed_commands["bsd_command"],
+                    "gnu_sed_command": sed_commands["gnu_command"],
                     "original": current,
                     "fixed": fixed_line,
+                    "current_escaped": sed_commands["current_escaped"],
+                    "fixed_escaped": sed_commands["fixed_escaped"],
                 }
             )
 
     def validate_directory(self, directory: Path) -> None:
-        """Validate all Python files in a directory."""
+        """Validate all Python files in a directory with optimized discovery and timeout."""
         if not directory.exists():
+            logging.error(f"Directory does not exist: {directory}")
             print(f"❌ ERROR: Directory does not exist: {directory}")
             sys.exit(1)
 
-        python_files = list(directory.glob("**/*.py"))
+        # Use optimized file discovery with timeout
+        python_files = []
+        try:
+            with TimeoutContext(FILE_DISCOVERY_TIMEOUT, FILE_DISCOVERY_TIMEOUT_ERROR):
+                python_files = list(discover_python_files_optimized(directory))
+
+            logging.debug(f"Found {len(python_files)} Python files to analyze")
+
+        except TimeoutError:
+            logging.error(
+                f"File discovery timed out after {FILE_DISCOVERY_TIMEOUT} seconds"
+            )
+            print(f"❌ ERROR: File discovery timed out in {directory}")
+            sys.exit(1)
+        except (OSError, PermissionError) as e:
+            logging.error(f"Error during file discovery: {e}")
+            print(f"❌ ERROR: Cannot access directory {directory}: {e}")
+            sys.exit(1)
 
         if not python_files:
             print(f"No Python files found in {directory}")
             return
 
-        for file_path in python_files:
-            # Skip certain directories
-            if any(
-                skip in str(file_path)
-                for skip in ["__pycache__", ".pyc", "test_", "_test.py"]
-            ):
-                continue
-            self.detect_multi_level_relative_imports(file_path)
+        # Validate files with timeout
+        processed_files = 0
+        try:
+            with TimeoutContext(VALIDATION_TIMEOUT, VALIDATION_TIMEOUT_ERROR):
+                for file_path in python_files:
+                    try:
+                        logging.debug(f"Analyzing: {file_path}")
+                        self.detect_multi_level_relative_imports(file_path)
+                        processed_files += 1
+                    except Exception as e:
+                        logging.error(f"Error analyzing {file_path}: {e}")
+                        print(
+                            f"Warning: Skipped {file_path} due to error: {e}",
+                            file=sys.stderr,
+                        )
+
+        except TimeoutError:
+            logging.error(f"Validation timed out after {VALIDATION_TIMEOUT} seconds")
+            print(
+                f"❌ ERROR: Validation timeout after processing {processed_files}/{len(python_files)} files"
+            )
+            sys.exit(1)
+        except KeyboardInterrupt:
+            logging.info("Validation interrupted by user")
+            print(
+                f"\n❌ Validation interrupted after processing {processed_files}/{len(python_files)} files"
+            )
+            sys.exit(1)
 
     def generate_report(self) -> None:
         """Generate and print violation report."""
@@ -246,17 +418,32 @@ class ImportPatternValidator:
                     for fix in file_fixes:
                         print(f"# {fix['original']} -> {fix['fixed']}")
 
-                    # Generate combined sed command for file
-                    print(
-                        f"{file_fixes[0]['sed_command'].replace(file_fixes[0]['original'], '')}..."
-                    )
+                    # Generate cross-platform sed commands for file
+                    print(f"\\n# BSD/macOS sed command (with error handling):")
+                    print(f"# {file_fixes[0]['bsd_sed_command']}")
+                    print(f"\\n# GNU/Linux sed command (with error handling):")
+                    print(f"# {file_fixes[0]['gnu_sed_command']}")
 
-                print("\\n# Or fix all files in directory (cross-platform):")
                 print(
-                    f"# For macOS/BSD: find {relative_dir} -name '*.py' -exec sed -i '' 's/from \\.\\.\\./from omnibase_core./g' {{}} \\;"
+                    "\\n# Or fix all files in directory (safer cross-platform approach):"
                 )
                 print(
-                    f"# For Linux/GNU: find {relative_dir} -name '*.py' -exec sed -i 's/from \\.\\.\\./from omnibase_core./g' {{}} \\;"
+                    f"# For macOS/BSD: find {relative_dir} -name '*.py' -type f -exec sh -c '"
+                    f"for file do "
+                    f'if sed -i ".tmp_bak" "s/from \\\\\\.\\.\\\\\\./from omnibase_core\\./g" "$file"; then '
+                    f'rm -f "$file.tmp_bak"; else '
+                    f'[ -f "$file.tmp_bak" ] && mv "$file.tmp_bak" "$file"; '
+                    f'echo "Error processing $file" >&2; fi; '
+                    f"done' sh {{}} +"
+                )
+                print(
+                    f"# For Linux/GNU: find {relative_dir} -name '*.py' -type f -exec sh -c '"
+                    f"for file do "
+                    f'if cp "$file" "$file.tmp_bak" && sed -i "s/from \\\\\\.\\.\\\\\\./from omnibase_core\\./g" "$file"; then '
+                    f'rm -f "$file.tmp_bak"; else '
+                    f'[ -f "$file.tmp_bak" ] && mv "$file.tmp_bak" "$file"; '
+                    f'echo "Error processing $file" >&2; fi; '
+                    f"done' sh {{}} +"
                 )
 
     def generate_directory_fixes(self) -> None:
@@ -286,7 +473,7 @@ class ImportPatternValidator:
                         patterns[pattern] = 0
                     patterns[pattern] += 1
 
-            # Generate sed commands for common patterns
+            # Generate safer sed commands for common patterns with error handling
             for pattern, count in sorted(
                 patterns.items(), key=lambda x: x[1], reverse=True
             ):
@@ -297,12 +484,26 @@ class ImportPatternValidator:
                 else:
                     continue
 
-                print(f"# Fix {count} imports from {pattern} (cross-platform)")
+                # Properly escape pattern for sed
+                pattern_escaped = self._escape_sed_pattern(f"from {pattern}")
+                replacement_escaped = self._escape_sed_pattern(f"from {replacement}")
+
+                print(f"# Fix {count} imports from {pattern} (safe cross-platform)")
                 print(
-                    f"# macOS/BSD: sed -i '' 's/from {re.escape(pattern)}/from {replacement}/g' *.py"
+                    f"# macOS/BSD: for file in *.py; do "
+                    f'[ -f "$file" ] && '
+                    f'if sed -i ".tmp_bak" \'s/{pattern_escaped}/{replacement_escaped}/g\' "$file"; then '
+                    f'rm -f "$file.tmp_bak"; else '
+                    f'[ -f "$file.tmp_bak" ] && mv "$file.tmp_bak" "$file"; '
+                    f'echo "Error processing $file" >&2; fi; done'
                 )
                 print(
-                    f"# Linux/GNU: sed -i 's/from {re.escape(pattern)}/from {replacement}/g' *.py"
+                    f"# Linux/GNU: for file in *.py; do "
+                    f'[ -f "$file" ] && '
+                    f'if cp "$file" "$file.tmp_bak" && sed -i \'s/{pattern_escaped}/{replacement_escaped}/g\' "$file"; then '
+                    f'rm -f "$file.tmp_bak"; else '
+                    f'[ -f "$file.tmp_bak" ] && mv "$file.tmp_bak" "$file"; '
+                    f'echo "Error processing $file" >&2; fi; done'
                 )
 
             print()
@@ -336,32 +537,78 @@ def main():
         "--quiet", action="store_true", help="Suppress output except for errors"
     )
 
-    args = parser.parse_args()
-
-    validator = ImportPatternValidator(
-        max_violations=args.max_violations, generate_fixes=args.generate_fixes
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
     )
 
-    # Validate the specified directory
-    path = Path(args.path)
-    validator.validate_directory(path)
+    try:
+        args = parser.parse_args()
 
-    # Generate report
-    if not args.quiet:
-        validator.generate_report()
-        if args.generate_fixes:
-            validator.generate_directory_fixes()
+        # Configure logging level
+        if args.verbose:
+            logging.getLogger().setLevel(logging.DEBUG)
+        elif args.quiet:
+            logging.getLogger().setLevel(logging.ERROR)
 
-    # Exit with appropriate code
-    violation_count = len(validator.violations)
-
-    if violation_count == 0:
-        sys.exit(0)
-    elif violation_count > validator.max_violations:
+    except Exception as e:
+        logging.error(f"Error parsing arguments: {e}")
         sys.exit(1)
-    else:
-        # Violations within acceptable limit
-        sys.exit(0)
+
+    try:
+        validator = ImportPatternValidator(
+            max_violations=args.max_violations, generate_fixes=args.generate_fixes
+        )
+
+        # Validate the specified directory
+        path = Path(args.path).resolve()
+        logging.debug(f"Validating import patterns in: {path}")
+
+        if not path.exists():
+            logging.error(f"Path does not exist: {path}")
+            print(f"❌ ERROR: Path does not exist: {path}")
+            sys.exit(1)
+
+        if not os.access(path, os.R_OK):
+            logging.error(f"Cannot read path: {path}")
+            print(f"❌ ERROR: Cannot read path: {path}")
+            sys.exit(1)
+
+        validator.validate_directory(path)
+
+        # Generate report
+        if not args.quiet:
+            validator.generate_report()
+            if args.generate_fixes:
+                validator.generate_directory_fixes()
+
+        # Exit with appropriate code
+        violation_count = len(validator.violations)
+
+        if violation_count == 0:
+            logging.info(
+                f"Import pattern validation completed successfully: {violation_count} violations found"
+            )
+            sys.exit(0)
+        elif violation_count > validator.max_violations:
+            logging.info(
+                f"Import pattern validation failed: {violation_count} violations exceed limit of {validator.max_violations}"
+            )
+            sys.exit(1)
+        else:
+            # Violations within acceptable limit
+            logging.info(
+                f"Import pattern validation completed with acceptable violations: {violation_count} violations within limit of {validator.max_violations}"
+            )
+            sys.exit(0)
+
+    except KeyboardInterrupt:
+        logging.info("Import pattern validation interrupted by user")
+        print("\n❌ Validation interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        logging.error(f"Unexpected error during import pattern validation: {e}")
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

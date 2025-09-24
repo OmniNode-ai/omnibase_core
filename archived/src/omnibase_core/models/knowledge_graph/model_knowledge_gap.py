@@ -69,4 +69,8 @@ class ModelKnowledgeGap(BaseModel):
     resolution_status: str = Field("open", description="Resolution status")
     resolution_notes: str | None = Field(None, description="Notes about resolution")
 
-    model_config = ConfigDict(frozen=False, validate_assignment=True)
+    model_config = ConfigDict(
+        frozen=False,
+        validate_assignment=True,
+        use_enum_values=True,  # Ensure proper enum serialization
+    )

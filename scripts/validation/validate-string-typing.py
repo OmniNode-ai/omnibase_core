@@ -732,13 +732,15 @@ class StringTypingValidator:
         return len(errors) > 0 or len(self.errors) > 0
 
 
+import timeout_utils
+
+# Import cross-platform timeout utility
+from timeout_utils import timeout_context
+
+
 def setup_timeout_handler():
-    """Setup timeout handler for long-running validations."""
-
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Validation operation timed out")
-
-    signal.signal(signal.SIGALRM, timeout_handler)
+    """Legacy compatibility function - use timeout_context instead."""
+    pass  # No-op for compatibility
 
 
 def main() -> int:
@@ -813,17 +815,12 @@ def main() -> int:
                 else:
                     print(f"Warning: Skipping {path} (not a Python file)")
 
-        # Setup timeout
-        setup_timeout_handler()
-        signal.alarm(VALIDATION_TIMEOUT)
+        # Setup timeout and complete validation
+        with timeout_context("validation"):
+            validator.print_results()
+            return 0 if success and not validator.has_errors() else 1
 
-        validator.print_results()
-
-        signal.alarm(0)  # Cancel timeout
-
-        return 0 if success and not validator.has_errors() else 1
-
-    except TimeoutError:
+    except timeout_utils.TimeoutError:
         print("Error: Validation timeout after 10 minutes")
         return 1
     except KeyboardInterrupt:

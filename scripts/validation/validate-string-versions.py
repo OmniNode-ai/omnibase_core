@@ -702,13 +702,15 @@ class StringVersionValidator:
             )
 
 
+import timeout_utils
+
+# Import cross-platform timeout utility
+from timeout_utils import timeout_context
+
+
 def setup_timeout_handler():
-    """Setup timeout handler for long-running validations."""
-
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Validation operation timed out")
-
-    signal.signal(signal.SIGALRM, timeout_handler)
+    """Legacy compatibility function - use timeout_context instead."""
+    pass  # No-op for compatibility
 
 
 def main() -> int:
@@ -763,81 +765,76 @@ def main() -> int:
                                 continue
 
                             # Setup timeout for directory scanning (30 seconds)
-                            setup_timeout_handler()
-
                             try:
-                                signal.alarm(DIRECTORY_SCAN_TIMEOUT)
+                                with timeout_context("directory_scan"):
+                                    # Recursively find all YAML and Python files, but exclude non-ONEX directories
+                                    exclude_patterns = [
+                                        "deployment",
+                                        ".github",
+                                        "docker-compose",
+                                        "prometheus",
+                                        "alerts.yml",
+                                        "grafana",
+                                        "kubernetes",
+                                        "ci-cd.yml",  # GitHub Actions CI file
+                                        "__pycache__",
+                                        ".mypy_cache",
+                                        ".pytest_cache",
+                                        "node_modules",
+                                        "archive",  # Exclude archived code
+                                        "archived",  # Exclude archived code (alternative naming)
+                                        "tests",  # Exclude test files
+                                        "examples_validation_container_usage.py",  # Exclude specific example files
+                                    ]
 
-                                # Recursively find all YAML and Python files, but exclude non-ONEX directories
-                                exclude_patterns = [
-                                    "deployment",
-                                    ".github",
-                                    "docker-compose",
-                                    "prometheus",
-                                    "alerts.yml",
-                                    "grafana",
-                                    "kubernetes",
-                                    "ci-cd.yml",  # GitHub Actions CI file
-                                    "__pycache__",
-                                    ".mypy_cache",
-                                    ".pytest_cache",
-                                    "node_modules",
-                                    "archive",  # Exclude archived code
-                                    "archived",  # Exclude archived code (alternative naming)
-                                    "tests",  # Exclude test files
-                                    "examples_validation_container_usage.py",  # Exclude specific example files
-                                ]
+                                    try:
+                                        all_files = (
+                                            list(path.rglob("*.yaml"))
+                                            + list(path.rglob("*.yml"))
+                                            + list(path.rglob("*.py"))
+                                        )
+                                    except PermissionError as e:
+                                        print(
+                                            f"Warning: Permission denied scanning directory {path}: {e}"
+                                        )
+                                        continue
+                                    except OSError as e:
+                                        print(
+                                            f"Warning: OS error scanning directory {path}: {e}"
+                                        )
+                                        continue
 
-                                try:
-                                    all_files = (
-                                        list(path.rglob("*.yaml"))
-                                        + list(path.rglob("*.yml"))
-                                        + list(path.rglob("*.py"))
-                                    )
-                                except PermissionError as e:
-                                    print(
-                                        f"Warning: Permission denied scanning directory {path}: {e}"
-                                    )
-                                    continue
-                                except OSError as e:
-                                    print(
-                                        f"Warning: OS error scanning directory {path}: {e}"
-                                    )
-                                    continue
+                                    # Filter out excluded files using path components
+                                    try:
+                                        for file_path in all_files:
+                                            try:
+                                                should_exclude = False
+                                                path_parts = file_path.parts
+                                                file_name = file_path.name
 
-                                signal.alarm(0)  # Cancel timeout
+                                                # Check if any path component or filename matches exclusion patterns
+                                                for pattern in exclude_patterns:
+                                                    if (
+                                                        pattern in path_parts
+                                                        or file_name.startswith(pattern)
+                                                    ):
+                                                        should_exclude = True
+                                                        break
 
-                                # Filter out excluded files using path components
-                                try:
-                                    for file_path in all_files:
-                                        try:
-                                            should_exclude = False
-                                            path_parts = file_path.parts
-                                            file_name = file_path.name
+                                                if not should_exclude:
+                                                    yaml_files.append(file_path)
+                                            except Exception as e:
+                                                print(
+                                                    f"Warning: Error processing file {file_path}: {e}"
+                                                )
+                                                continue
+                                    except Exception as e:
+                                        print(
+                                            f"Warning: Error filtering files in {path}: {e}"
+                                        )
+                                        continue
 
-                                            # Check if any path component or filename matches exclusion patterns
-                                            for pattern in exclude_patterns:
-                                                if (
-                                                    pattern in path_parts
-                                                    or file_name.startswith(pattern)
-                                                ):
-                                                    should_exclude = True
-                                                    break
-
-                                            if not should_exclude:
-                                                yaml_files.append(file_path)
-                                        except Exception as e:
-                                            print(
-                                                f"Warning: Error processing file {file_path}: {e}"
-                                            )
-                                            continue
-                                except Exception as e:
-                                    print(
-                                        f"Warning: Error filtering files in {path}: {e}"
-                                    )
-                                    continue
-
-                            except TimeoutError:
+                            except timeout_utils.TimeoutError:
                                 print(f"Warning: Timeout scanning directory {path}")
                                 continue
 
@@ -881,19 +878,15 @@ def main() -> int:
 
         try:
             # Setup timeout for validation (10 minutes)
-            setup_timeout_handler()
-            signal.alarm(VALIDATION_TIMEOUT)
+            with timeout_context("validation"):
+                success = validator.validate_all_files(yaml_files)
+                validator.print_results()
 
-            success = validator.validate_all_files(yaml_files)
-            validator.print_results()
+                # Consider both string version errors and AST violations
+                has_violations = bool(validator.errors or validator.ast_violations)
+                return 0 if success and not has_violations else 1
 
-            signal.alarm(0)  # Cancel timeout
-
-            # Consider both string version errors and AST violations
-            has_violations = bool(validator.errors or validator.ast_violations)
-            return 0 if success and not has_violations else 1
-
-        except TimeoutError:
+        except timeout_utils.TimeoutError:
             print("Error: Validation timeout after 10 minutes")
             return 1
         except Exception as e:

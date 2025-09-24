@@ -125,5 +125,10 @@ def test_find_matching_commits_builds_or_grep_and_lookback_days(tmp_path: Path):
     # Ensure multiple --grep are present (OR semantics)
     grep_flags = [x for x in cmd if x == "--grep"]
     assert len(grep_flags) >= 1
-    # Ensure no single pipe-joined pattern
-    assert not any("|" in str(x) for x in cmd)
+    # Ensure no single pipe-joined pattern in grep arguments
+    # (check arguments that come after --grep flags, not format strings)
+    grep_indices = [i for i, x in enumerate(cmd) if x == "--grep"]
+    grep_values = [cmd[i + 1] for i in grep_indices if i + 1 < len(cmd)]
+    assert not any(
+        "|" in str(x) for x in grep_values
+    ), f"Found pipe in grep values: {grep_values}"

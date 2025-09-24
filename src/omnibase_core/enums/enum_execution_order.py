@@ -25,6 +25,8 @@ class EnumExecutionOrder(str, Enum):
     FORWARD = "forward"
     PARALLEL = "parallel"
 
+    # Classification constants moved outside enum definition to avoid MyPy errors
+
     def __str__(self) -> str:
         """Return the string value for serialization."""
         return self.value
@@ -32,17 +34,17 @@ class EnumExecutionOrder(str, Enum):
     @classmethod
     def is_sequential(cls, order: "EnumExecutionOrder") -> bool:
         """Check if the execution order is sequential."""
-        return order in {cls.REVERSE, cls.FORWARD}
+        return order in SEQUENTIAL_ORDERS
 
     @classmethod
     def is_concurrent(cls, order: "EnumExecutionOrder") -> bool:
         """Check if the execution order allows concurrency."""
-        return order == cls.PARALLEL
+        return order in CONCURRENT_ORDERS
 
     @classmethod
     def preserves_dependency_order(cls, order: "EnumExecutionOrder") -> bool:
         """Check if the execution order preserves dependency relationships."""
-        return order in {cls.REVERSE, cls.FORWARD}
+        return order in SEQUENTIAL_ORDERS
 
     @classmethod
     def requires_synchronization(cls, order: "EnumExecutionOrder") -> bool:
@@ -85,5 +87,13 @@ class EnumExecutionOrder(str, Enum):
         return characteristics.get(order, "Unknown characteristics")
 
 
+# Classification sets - defined outside enum to avoid MyPy issues
+SEQUENTIAL_ORDERS: frozenset[EnumExecutionOrder] = frozenset(
+    [EnumExecutionOrder.REVERSE, EnumExecutionOrder.FORWARD]
+)
+CONCURRENT_ORDERS: frozenset[EnumExecutionOrder] = frozenset(
+    [EnumExecutionOrder.PARALLEL]
+)
+
 # Export for use
-__all__ = ["EnumExecutionOrder"]
+__all__ = ["EnumExecutionOrder", "SEQUENTIAL_ORDERS", "CONCURRENT_ORDERS"]

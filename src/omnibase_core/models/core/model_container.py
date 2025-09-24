@@ -255,12 +255,12 @@ class ModelContainer(BaseModel, Generic[T]):
     def __repr__(self) -> str:
         """Detailed representation."""
         return (
-            f"ModelContainer("
+            "ModelContainer("
             f"value={self.value!r}, "
             f"container_type={self.container_type!r}, "
             f"source={self.source!r}, "
             f"is_validated={self.is_validated}"
-            f")"
+            ")"
         )
 
 

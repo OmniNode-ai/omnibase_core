@@ -69,4 +69,8 @@ class ModelEntityType(BaseModel):
         description="Whether this entity needs implementation",
     )
 
-    model_config = ConfigDict(frozen=True, validate_assignment=True)
+    model_config = ConfigDict(
+        frozen=True,
+        validate_assignment=True,
+        use_enum_values=True,  # Ensure proper enum serialization
+    )

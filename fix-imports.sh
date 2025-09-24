@@ -4,48 +4,174 @@
 
 set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe errors
 
+# Global variables for better scoping
+declare REPO_ROOT=""
+declare PLATFORM=""
+declare PYTHON_CMD=""
+
 # Color output functions
 print_status() { echo "🔧 $1"; }
 print_success() { echo "✅ $1"; }
 print_error() { echo "❌ ERROR: $1" >&2; }
 print_warning() { echo "⚠️  WARNING: $1" >&2; }
 
-# Cross-platform detection
+# Cross-platform detection with enhanced error handling
 detect_platform() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macos"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "linux"
-    elif [[ "$OSTYPE" == cygwin* || "$OSTYPE" == msys* || "$OSTYPE" == mingw* || "$OSTYPE" == "win32" ]]; then
-        echo "windows"
+    local detected_platform=""
+
+    if [[ -n "${OSTYPE:-}" ]]; then
+        case "$OSTYPE" in
+            darwin*)
+                detected_platform="macos"
+                ;;
+            linux-gnu*|linux*)
+                detected_platform="linux"
+                ;;
+            cygwin*|msys*|mingw*|win32)
+                detected_platform="windows"
+                ;;
+            *)
+                detected_platform="unknown"
+                ;;
+        esac
     else
-        echo "unknown"
+        # Fallback detection if OSTYPE is not set
+        if command -v uname >/dev/null 2>&1; then
+            local uname_result
+            uname_result=$(uname -s 2>/dev/null || echo "unknown")
+            case "$uname_result" in
+                Darwin)
+                    detected_platform="macos"
+                    ;;
+                Linux)
+                    detected_platform="linux"
+                    ;;
+                CYGWIN*|MINGW*|MSYS*)
+                    detected_platform="windows"
+                    ;;
+                *)
+                    detected_platform="unknown"
+                    ;;
+            esac
+        else
+            detected_platform="unknown"
+        fi
     fi
+
+    if [[ "$detected_platform" == "unknown" ]]; then
+        print_warning "Could not detect platform, assuming POSIX-compatible"
+        detected_platform="posix"
+    fi
+
+    echo "$detected_platform"
 }
 
-# Dynamic repo root detection
+# Dynamic repo root detection with enhanced error handling
 get_repo_root() {
-    local repo_root
-    repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
-    if [[ $? -ne 0 ]]; then
-        print_error "Not in a git repository or git not available"
-        exit 1
+    local repo_root=""
+    local git_exit_code=0
+
+    # Check if git is available first
+    if ! command -v git >/dev/null 2>&1; then
+        print_error "Git is not available in PATH"
+        return 1
     fi
+
+    # Try to get the repository root
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || git_exit_code=$?
+
+    if [[ $git_exit_code -ne 0 ]]; then
+        print_error "Not in a git repository or git command failed (exit code: $git_exit_code)"
+        return 1
+    fi
+
+    # Validate the repository root exists and is accessible
+    if [[ -z "$repo_root" ]]; then
+        print_error "Git returned empty repository root"
+        return 1
+    fi
+
     if [[ ! -d "$repo_root" ]]; then
-        print_error "Repository root not found: $repo_root"
-        exit 1
+        print_error "Repository root directory not found or not accessible: $repo_root"
+        return 1
     fi
+
+    # Ensure we have read access
+    if [[ ! -r "$repo_root" ]]; then
+        print_error "Repository root is not readable: $repo_root"
+        return 1
+    fi
+
     echo "$repo_root"
+    return 0
 }
 
-# (portable_sed removed; not used)
+# Python command detection with cross-platform compatibility
+detect_python_command() {
+    local python_candidates=("python3" "python" "py")
+    local detected_python=""
+
+    for cmd in "${python_candidates[@]}"; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            # Verify it's actually Python 3
+            local python_version
+            python_version=$("$cmd" -c "import sys; print(f'{sys.version_info.major}')" 2>/dev/null || echo "0")
+            if [[ "$python_version" == "3" ]]; then
+                detected_python="$cmd"
+                break
+            fi
+        fi
+    done
+
+    if [[ -z "$detected_python" ]]; then
+        print_error "Python 3 is required but not found in PATH"
+        return 1
+    fi
+
+    echo "$detected_python"
+    return 0
+}
 
 # Safer file replacement using Python for complex operations
 fix_imports_in_file() {
     local file="$1"
-    local temp_file="${file}.tmp"
+    local temp_file=""
+    local python_exit_code=0
 
-    python3 - "$file" "$temp_file" << 'EOF'
+    # Input validation
+    if [[ -z "$file" ]]; then
+        print_error "No file specified for import fixing"
+        return 1
+    fi
+
+    if [[ ! -f "$file" ]]; then
+        print_error "File not found: $file"
+        return 1
+    fi
+
+    if [[ ! -r "$file" ]]; then
+        print_error "File not readable: $file"
+        return 1
+    fi
+
+    if [[ ! -w "$(dirname "$file")" ]]; then
+        print_error "Directory not writable: $(dirname "$file")"
+        return 1
+    fi
+
+    # Validate Python command is available
+    if [[ -z "$PYTHON_CMD" ]]; then
+        print_error "Python command not detected"
+        return 1
+    fi
+
+    # Set temp file name
+    temp_file="${file}.tmp.$$"
+
+    # Ensure temp file cleanup on exit
+    trap 'rm -f "$temp_file" 2>/dev/null || true' EXIT
+
+    "$PYTHON_CMD" - "$file" "$temp_file" << 'EOF' || python_exit_code=$?
 import sys
 import re
 
@@ -94,11 +220,31 @@ if __name__ == "__main__":
         sys.exit(1)
 EOF
 
-    if [[ $? -eq 0 && -f "$temp_file" ]]; then
-        mv "$temp_file" "$file"
+    # Check Python script execution result
+    if [[ $python_exit_code -ne 0 ]]; then
+        print_error "Python script failed with exit code: $python_exit_code"
+        return 1
+    fi
+
+    # Verify temp file was created successfully
+    if [[ ! -f "$temp_file" ]]; then
+        print_error "Temporary file was not created: $temp_file"
+        return 1
+    fi
+
+    # Verify temp file is not empty (basic sanity check)
+    if [[ ! -s "$temp_file" ]]; then
+        print_warning "Temporary file is empty, skipping replacement: $temp_file"
+        return 1
+    fi
+
+    # Atomically replace the original file
+    if mv "$temp_file" "$file" 2>/dev/null; then
+        # Clear the trap since we successfully moved the file
+        trap - EXIT
         return 0
     else
-        [[ -f "$temp_file" ]] && rm -f "$temp_file"
+        print_error "Failed to replace file: $file"
         return 1
     fi
 }
@@ -149,25 +295,30 @@ fix_directory_imports() {
 main() {
     print_status "Starting cross-platform import pattern fixes..."
 
-    # Detect platform and git repo
-    local platform
-    platform=$(detect_platform)
-    local repo_root
-    repo_root=$(get_repo_root)
+    # Initialize global variables
+    PLATFORM=$(detect_platform) || {
+        print_error "Failed to detect platform"
+        exit 1
+    }
 
-    print_status "Platform: $platform"
-    print_status "Repository root: $repo_root"
+    REPO_ROOT=$(get_repo_root) || {
+        print_error "Failed to get repository root"
+        exit 1
+    }
+
+    PYTHON_CMD=$(detect_python_command) || {
+        print_error "Failed to detect Python command"
+        exit 1
+    }
+
+    print_status "Platform: $PLATFORM"
+    print_status "Repository root: $REPO_ROOT"
+    print_status "Python command: $PYTHON_CMD"
 
     # Verify required directories exist
-    local src_dir="$repo_root/src/omnibase_core"
+    local src_dir="$REPO_ROOT/src/omnibase_core"
     if [[ ! -d "$src_dir" ]]; then
         print_error "Source directory not found: $src_dir"
-        exit 1
-    fi
-
-    # Check if Python3 is available
-    if ! command -v python3 &> /dev/null; then
-        print_error "python3 is required but not found in PATH"
         exit 1
     fi
 
@@ -205,12 +356,15 @@ main() {
     print_success "All directories processed!"
 
     # Run validation if available
-    local validation_script="$repo_root/scripts/validation/validate-import-patterns.py"
-    if [[ -f "$validation_script" ]] && command -v poetry &> /dev/null; then
+    local validation_script="$REPO_ROOT/scripts/validation/validate-import-patterns.py"
+    if [[ -f "$validation_script" ]] && command -v poetry >/dev/null 2>&1; then
         print_status "Running validation to check results..."
-        cd "$repo_root"
+        cd "$REPO_ROOT" || {
+            print_error "Failed to change to repository root directory"
+            return 1
+        }
 
-        if poetry run python "$validation_script" src/ --max-violations 0; then
+        if poetry run python "$validation_script" src/ --max-violations 0 2>/dev/null; then
             print_success "Validation passed - all import patterns fixed!"
         else
             print_warning "Validation found remaining issues - manual review may be needed"

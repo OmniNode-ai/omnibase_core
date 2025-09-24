@@ -7,19 +7,16 @@ from __future__ import annotations
 
 import argparse
 import os
-import signal
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Iterator
 
+import timeout_utils
 import yaml
+from timeout_utils import timeout_context
 
 # Constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
-FILE_DISCOVERY_TIMEOUT = 30  # seconds
-VALIDATION_TIMEOUT = 300  # 5 minutes
-# Ruff TRY003: keep messages as constants
-TIMEOUT_ERROR_MESSAGE = "Validation operation timed out"
 
 
 def validate_yaml_file(file_path: Path) -> list[str]:
@@ -107,15 +104,58 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     return errors
 
 
-def setup_timeout_handler():
-    """Setup timeout handler for long-running validations (Unix only)."""
+def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
+    """
+    Optimized file discovery using single walk with filtering.
 
-    def timeout_handler(_signum, _frame):
-        raise TimeoutError(TIMEOUT_ERROR_MESSAGE)
+    Args:
+        base_path: Base directory to search
 
-    # SIGALRM is Unix-only, not available on Windows
-    if hasattr(signal, "SIGALRM"):
-        signal.signal(signal.SIGALRM, timeout_handler)
+    Yields:
+        Path objects for YAML files
+    """
+    try:
+        # Single walk through directory tree with immediate filtering
+        for root, dirs, files in os.walk(base_path):
+            root_path = Path(root)
+
+            # Skip archived directories and test fixtures early
+            dirs_to_skip = []
+            for dir_name in dirs:
+                if dir_name in ("archived", "__pycache__") or dir_name.startswith("."):
+                    dirs_to_skip.append(dir_name)
+
+            # Remove from dirs to prevent os.walk from recursing
+            for skip_dir in dirs_to_skip:
+                if skip_dir in dirs:
+                    dirs.remove(skip_dir)
+
+            # Skip if we're in an archived path or invalid test fixtures
+            root_str = str(root_path)
+            root_parts = root_path.parts
+            if (
+                "/archived/" in root_str
+                or "archived" in root_parts
+                or "tests/fixtures/validation/invalid/" in root_str
+                or (
+                    "tests" in root_parts
+                    and "fixtures" in root_parts
+                    and "validation" in root_parts
+                    and "invalid" in root_parts
+                )
+            ):
+                continue
+
+            # Process files with immediate YAML filtering
+            for file_name in files:
+                if file_name.endswith((".yaml", ".yml")) and not file_name.startswith(
+                    "."
+                ):
+                    yield root_path / file_name
+
+    except (OSError, PermissionError) as e:
+        print(f"Error during file discovery: {e}", file=sys.stderr)
+        raise
 
 
 def main():
@@ -149,19 +189,14 @@ def main():
         print(f"❌ Error processing path: {e}")
         return 1
 
-    # Setup timeout for file discovery (30 seconds) - Unix only
-    setup_timeout_handler()
-
+    # File discovery with cross-platform timeout
     try:
-        # signal.alarm is Unix-only, not available on Windows
-        if hasattr(signal, "SIGALRM"):
-            signal.alarm(FILE_DISCOVERY_TIMEOUT)
-        # Single walk; filter by suffix to avoid duplicate rglob passes
-        files_iter = base_path.rglob("*")
-        yaml_files = [f for f in files_iter if f.suffix in (".yaml", ".yml")]
-        if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)  # Cancel timeout
-    except TimeoutError:
+        yaml_files = []
+
+        with timeout_context("file_discovery"):
+            yaml_files = list(discover_yaml_files_optimized(base_path))
+
+    except timeout_utils.TimeoutError:
         print("❌ Timeout during file discovery")
         return 1
     except PermissionError as e:
@@ -174,19 +209,6 @@ def main():
         print(f"❌ Error during file discovery: {e}")
         return 1
 
-    # Filter out archived files and invalid test fixtures
-    try:
-        yaml_files = [
-            f
-            for f in yaml_files
-            if "/archived/" not in str(f)
-            and "archived" not in f.parts
-            and "tests/fixtures/validation/invalid/" not in str(f)
-        ]
-    except Exception as e:
-        print(f"❌ Error filtering files: {e}")
-        return 1
-
     if not yaml_files:
         print("✅ Contract validation: No YAML files to validate")
         return 0
@@ -194,31 +216,32 @@ def main():
     total_errors = 0
     processed_files = 0
 
-    # Setup timeout for validation - Unix only
+    # Validation with cross-platform timeout and cleanup
+    def cleanup_on_timeout():
+        """Cleanup function for timeout scenarios."""
+        print(
+            f"\n⚠️  Validation interrupted after processing {processed_files}/{len(yaml_files)} files"
+        )
+        # Could add more cleanup logic here if needed
+
     try:
-        # signal.alarm is Unix-only, not available on Windows
-        if hasattr(signal, "SIGALRM"):
-            signal.alarm(VALIDATION_TIMEOUT)
+        with timeout_context("validation", cleanup_func=cleanup_on_timeout):
+            for yaml_file in yaml_files:
+                try:
+                    errors = validate_yaml_file(yaml_file)
+                    processed_files += 1
 
-        for yaml_file in yaml_files:
-            try:
-                errors = validate_yaml_file(yaml_file)
-                processed_files += 1
+                    if errors:
+                        print(f"❌ {yaml_file}:")
+                        for error in errors:
+                            print(f"   {error}")
+                        total_errors += len(errors)
 
-                if errors:
-                    print(f"❌ {yaml_file}:")
-                    for error in errors:
-                        print(f"   {error}")
-                    total_errors += len(errors)
+                except Exception as e:
+                    print(f"❌ {yaml_file}: Unexpected validation error: {e}")
+                    total_errors += 1
 
-            except Exception as e:
-                print(f"❌ {yaml_file}: Unexpected validation error: {e}")
-                total_errors += 1
-
-        if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)  # Cancel timeout
-
-    except TimeoutError:
+    except timeout_utils.TimeoutError:
         print(
             f"❌ Validation timeout after processing {processed_files}/{len(yaml_files)} files"
         )

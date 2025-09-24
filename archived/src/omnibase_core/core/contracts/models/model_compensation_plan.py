@@ -246,7 +246,8 @@ class ModelCompensationPlan(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",  # Reject additional fields for strict typing
-        validate_assignment=True,
+        validate_assignment=True,  # Validate on attribute assignment
+        use_enum_values=True,  # Ensure proper enum serialization
     )
 
     def to_dict(self) -> dict[str, str | list[str] | bool | int]:
@@ -256,7 +257,7 @@ class ModelCompensationPlan(BaseModel):
         Returns:
             Dictionary representation with type information preserved
         """
-        return self.model_dump(exclude_none=True, mode="python")
+        return self.model_dump(exclude_none=True, mode="json")
 
     @classmethod
     def from_dict(

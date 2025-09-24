@@ -97,6 +97,7 @@ class ModelCliNodeExecutionInput(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "example": {
                 "action": "list_nodes",
