@@ -2,7 +2,7 @@
 # Cross-platform import pattern fixes for ONEX codebase
 # Now with dynamic repo detection and portable operations
 
-set -e  # Exit on error
+set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe errors
 
 # Color output functions
 print_status() { echo "🔧 $1"; }
@@ -16,7 +16,7 @@ detect_platform() {
         echo "macos"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "linux"
-    elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    elif [[ "$OSTYPE" == cygwin* || "$OSTYPE" == msys* || "$OSTYPE" == mingw* || "$OSTYPE" == "win32" ]]; then
         echo "windows"
     else
         echo "unknown"
@@ -38,20 +38,7 @@ get_repo_root() {
     echo "$repo_root"
 }
 
-# Cross-platform sed function
-portable_sed() {
-    local pattern="$1"
-    local file="$2"
-    local platform=$(detect_platform)
-
-    if [[ "$platform" == "macos" ]]; then
-        # macOS uses BSD sed
-        sed -i '' "$pattern" "$file"
-    else
-        # Linux uses GNU sed
-        sed -i "$pattern" "$file"
-    fi
-}
+# (portable_sed removed; not used)
 
 # Safer file replacement using Python for complex operations
 fix_imports_in_file() {
@@ -119,7 +106,8 @@ EOF
 # Process directory with import fixes
 fix_directory_imports() {
     local dir_path="$1"
-    local dir_name=$(basename "$dir_path")
+    local dir_name
+    dir_name=$(basename "$dir_path")
 
     if [[ ! -d "$dir_path" ]]; then
         print_warning "Directory not found: $dir_path"
@@ -128,23 +116,25 @@ fix_directory_imports() {
 
     print_status "Processing $dir_name directory..."
 
-    local py_files=$(find "$dir_path" -name "*.py" -type f 2>/dev/null)
-    if [[ -z "$py_files" ]]; then
-        print_warning "No Python files found in $dir_path"
-        return 0
-    fi
-
     local processed=0
     local failed=0
+    local found_any=0
 
-    while IFS= read -r file; do
+    # Use NUL-delimited stream to handle spaces/newlines in paths
+    while IFS= read -r -d '' file; do
+        found_any=1
         if fix_imports_in_file "$file"; then
             ((processed++))
         else
             print_warning "Failed to process: $file"
             ((failed++))
         fi
-    done <<< "$py_files"
+    done < <(find "$dir_path" -type f -name '*.py' -print0 2>/dev/null)
+
+    if [[ $found_any -eq 0 ]]; then
+        print_warning "No Python files found in $dir_path"
+        return 0
+    fi
 
     if [[ $failed -eq 0 ]]; then
         print_success "$dir_name directory fixed ($processed files)"
@@ -160,8 +150,10 @@ main() {
     print_status "Starting cross-platform import pattern fixes..."
 
     # Detect platform and git repo
-    local platform=$(detect_platform)
-    local repo_root=$(get_repo_root)
+    local platform
+    platform=$(detect_platform)
+    local repo_root
+    repo_root=$(get_repo_root)
 
     print_status "Platform: $platform"
     print_status "Repository root: $repo_root"
@@ -180,7 +172,9 @@ main() {
     fi
 
     # Save original directory
-    local original_dir=$(pwd)
+    local original_dir
+    original_dir=$(pwd)
+    trap 'cd "$original_dir" > /dev/null 2>&1 || true' EXIT
     local total_failures=0
 
     # Define directories to process (with their expected violation counts in comments)
