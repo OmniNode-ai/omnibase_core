@@ -63,9 +63,7 @@ except ImportError as e:
 
 # Import centralized configuration
 try:
-    from server.config.archon_config import get_archon_config, get_intelligence_endpoint
-
-    CONFIG_AVAILABLE = True
+    from server.config.archon_config import get_archon_config
 except ImportError as e:
     print(f"❌ Error: Centralized Archon config not available: {e}", file=sys.stderr)
     sys.exit(1)
@@ -96,35 +94,18 @@ class IntelligenceHook:
         self.config = self._load_config(config_path)
         self.logger = self._setup_logging()
 
-        # API configuration - use centralized config system if available
-        if CONFIG_AVAILABLE:
-            try:
-                archon_config = get_archon_config()
-                # Use Intelligence service for document creation (port 8053)
-                self.api_url = f"http://localhost:{archon_config.intelligence_service.port}/extract/document"
-                self.use_mcp_format = False
-                self.logger.info(
-                    f"Using centralized config - Intelligence service: {self.api_url}"
-                )
-            except Exception as e:
-                self.logger.error(f"Failed to load centralized config: {e}")
-                raise
-        else:
-            # Legacy configuration loading
-            archon_endpoint = self.config.get(
-                "archon_mcp_endpoint", "http://localhost:8051/mcp"
+        # API configuration - centralized config only
+        try:
+            archon_config = get_archon_config()
+            # Use Intelligence service for document creation (port 8053)
+            self.api_url = f"http://localhost:{archon_config.intelligence_service.port}/extract/document"
+            self.use_mcp_format = False
+            self.logger.info(
+                f"Using centralized config - Intelligence service: {self.api_url}"
             )
-            intelligence_api_url = self.config.get("intelligence_api", {}).get(
-                "url", "http://localhost:8053/extract/document"
-            )
-
-            # Use MCP endpoint for document creation (proper format)
-            if "archon_mcp_endpoint" in self.config:
-                self.api_url = archon_endpoint
-                self.use_mcp_format = True
-            else:
-                self.api_url = intelligence_api_url
-                self.use_mcp_format = False
+        except Exception:
+            self.logger.exception("Failed to load centralized config")
+            raise
 
         self.api_timeout = self.config.get("intelligence_api", {}).get("timeout", 10)
         self.retry_attempts = self.config.get("intelligence_api", {}).get(
@@ -232,8 +213,8 @@ class IntelligenceHook:
                 f"Git command output ({len(output)} chars): {output[:200]}..."
             )
             return output
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Git command failed: {' '.join(cmd)}, error: {e.stderr}")
+        except subprocess.CalledProcessError:
+            self.logger.exception(f"Git command failed: {' '.join(cmd)}")
             return ""
 
     def get_commit_info(self, commit_hash: str) -> Dict[str, Any]:
@@ -311,8 +292,8 @@ class IntelligenceHook:
                 "timestamp": parsed_timestamp,
                 "file_changes": file_changes,
             }
-        except Exception as e:
-            self.logger.error(f"Failed to get commit info for {commit_hash}: {e}")
+        except Exception:
+            self.logger.exception(f"Failed to get commit info for {commit_hash}")
             return {}
 
     def analyze_file_changes(
@@ -527,8 +508,8 @@ class IntelligenceHook:
                             f"No matching commits found in {sibling.name}"
                         )
 
-        except Exception as e:
-            self.logger.error(f"Failed to find cross-repo correlations: {e}")
+        except Exception:
+            self.logger.exception("Failed to find cross-repo correlations")
 
         return correlations
 
@@ -567,8 +548,8 @@ class IntelligenceHook:
                             }
                         )
 
-        except Exception as e:
-            self.logger.debug(f"Failed to search commits in {repo_path}: {e}")
+        except Exception:
+            self.logger.exception(f"Failed to search commits in {repo_path}")
 
         return matching_commits
 
@@ -729,7 +710,7 @@ class IntelligenceHook:
             else:
                 actions.append("general development")
 
-        unique_actions = list(set(actions))
+        unique_actions = list(dict.fromkeys(actions))
         if len(unique_actions) == 1:
             return f"Batch commit focused on {unique_actions[0]}"
         else:
@@ -935,34 +916,19 @@ class IntelligenceHook:
                     repository_name=doc.get("repository_name", "Unknown"),
                 )
                 payload = mcp_request.model_dump(mode="json")
-            except Exception as e:
-                self.logger.error(f"Failed to create validated MCP payload: {e}")
+            except Exception:
+                self.logger.exception("Failed to create validated MCP payload")
 
                 # Fallback to dictionary format if validation fails
-                # Use JSON serialization for datetime objects in fallback
-                def serialize_datetime_objects(obj):
-                    """Recursively convert datetime objects to ISO format strings."""
-                    if isinstance(obj, datetime):
-                        return obj.isoformat()
-                    elif isinstance(obj, dict):
-                        return {
-                            k: serialize_datetime_objects(v) for k, v in obj.items()
-                        }
-                    elif isinstance(obj, list):
-                        return [serialize_datetime_objects(item) for item in obj]
-                    else:
-                        return obj
-
-                serializable_doc = serialize_datetime_objects(doc)
                 payload = {
                     "method": "tools/call",
                     "params": {
                         "name": "mcp__archon__create_document",
                         "arguments": {
                             "project_id": self.project_id,
-                            "title": f"Intelligence: {serializable_doc.get('repository_name', 'Unknown')} Code Changes with Analysis",
+                            "title": f"Intelligence: {doc.get('repository_name', 'Unknown')} Code Changes with Analysis",
                             "document_type": "intelligence",
-                            "content": serializable_doc,
+                            "content": doc,
                             "author": "Intelligence Hook v3.1",
                             "tags": ["intelligence", "automation", "git-hook"],
                         },
@@ -985,46 +951,29 @@ class IntelligenceHook:
                 )
                 # Use model_dump with serialization mode to handle datetime objects
                 payload = service_request.model_dump(mode="json")
-            except Exception as e:
-                self.logger.error(f"Failed to create validated service payload: {e}")
+            except Exception:
+                self.logger.exception("Failed to create validated service payload")
 
                 # Fallback to dictionary format if validation fails
-                # Use JSON serialization for datetime objects in fallback
-                def serialize_datetime_objects(obj):
-                    """Recursively convert datetime objects to ISO format strings."""
-                    if isinstance(obj, datetime):
-                        return obj.isoformat()
-                    elif isinstance(obj, dict):
-                        return {
-                            k: serialize_datetime_objects(v) for k, v in obj.items()
-                        }
-                    elif isinstance(obj, list):
-                        return [serialize_datetime_objects(item) for item in obj]
-                    else:
-                        return obj
-
-                serializable_doc = serialize_datetime_objects(doc)
-                content = json.dumps(
-                    serializable_doc, indent=2, default=json_datetime_serializer
-                )
-                source_path = f"git://{serializable_doc.get('repository_name', 'unknown')}/commit/{serializable_doc.get('commit_hash', 'unknown')}"
+                content = json.dumps(doc, indent=2, default=json_datetime_serializer)
+                source_path = f"git://{doc.get('repository_name', 'unknown')}/commit/{doc.get('commit_hash', 'unknown')}"
 
                 payload = {
                     "content": content,
                     "source_path": source_path,
                     "metadata": {
                         "type": "intelligence_document",
-                        "repository": serializable_doc.get("repository_name"),
-                        "commit_hash": serializable_doc.get("commit_hash"),
-                        "timestamp": serializable_doc.get("timestamp"),
-                        "commits_analyzed": serializable_doc.get("commits_analyzed"),
+                        "repository": doc.get("repository_name"),
+                        "commit_hash": doc.get("commit_hash"),
+                        "timestamp": doc.get("timestamp"),
+                        "commits_analyzed": doc.get("commits_analyzed"),
                         "generated_by": "intelligence_hook_v3.1",
                     },
                     "store_entities": True,
                     "extract_relationships": True,
                     "trigger_freshness_analysis": True,
                 }
-            self.logger.debug(f"Using intelligence service format")
+            self.logger.debug("Using intelligence service format")
 
         # Wrap payload in JSON-RPC format only for MCP endpoint
         if self.use_mcp_format:
@@ -1088,7 +1037,7 @@ class IntelligenceHook:
                                 # Intelligence service returns different success format
                                 if "entities" in result or "document_id" in result:
                                     self.logger.info(
-                                        f"✅ Intelligence document submitted successfully"
+                                        "✅ Intelligence document submitted successfully"
                                     )
                                     if "entities" in result:
                                         self.logger.info(
@@ -1103,9 +1052,9 @@ class IntelligenceHook:
                                     self.logger.error(
                                         f"Unexpected API response format: {result}"
                                     )
-                            except Exception as e:
-                                self.logger.error(
-                                    f"Invalid JSON response: {e}, raw response: {response.text[:500]}"
+                            except Exception:
+                                self.logger.exception(
+                                    f"Invalid JSON response; raw: {response.text[:500]}"
                                 )
                         else:
                             self.logger.error(
@@ -1140,7 +1089,7 @@ class IntelligenceHook:
                             # Intelligence service returns different success format
                             if "entities" in result or "document_id" in result:
                                 self.logger.info(
-                                    f"✅ Intelligence document submitted successfully"
+                                    "✅ Intelligence document submitted successfully"
                                 )
                                 if "entities" in result:
                                     self.logger.info(
@@ -1155,9 +1104,9 @@ class IntelligenceHook:
                                 self.logger.error(
                                     f"Unexpected API response format: {result}"
                                 )
-                        except json.JSONDecodeError as e:
-                            self.logger.error(
-                                f"Invalid JSON response: {e}, raw response: {response.text[:500]}"
+                        except json.JSONDecodeError:
+                            self.logger.exception(
+                                f"Invalid JSON response; raw: {response.text[:500]}"
                             )
                     else:
                         self.logger.error(
@@ -1180,10 +1129,10 @@ class IntelligenceHook:
                             f"Request failed (attempt {attempt + 1}): {e}"
                         )
                 else:
-                    self.logger.error(f"Unexpected error (attempt {attempt + 1}): {e}")
+                    self.logger.exception(f"Unexpected error (attempt {attempt + 1})")
 
             if attempt < self.retry_attempts:
-                self.logger.info(f"Retrying in 1 second...")
+                self.logger.info("Retrying in 1 second...")
                 time.sleep(1)
 
         self.logger.error(
@@ -1212,7 +1161,7 @@ class IntelligenceHook:
                     parts = line.strip().split()
                     if len(parts) >= 4:
                         # local_ref local_sha remote_ref remote_sha
-                        local_ref, local_sha, remote_ref, remote_sha = parts[:4]
+                        _local_ref, local_sha, _remote_ref, remote_sha = parts[:4]
 
                         if local_sha != "0000000000000000000000000000000000000000":
                             # Get commits being pushed
@@ -1283,11 +1232,8 @@ class IntelligenceHook:
                 )
                 return 0
 
-        except Exception as e:
-            self.logger.error(f"💥 Pre-push hook processing failed with exception: {e}")
-            import traceback
-
-            self.logger.debug(f"Full traceback: {traceback.format_exc()}")
+        except Exception:
+            self.logger.exception("💥 Pre-push hook processing failed")
             return 1
 
 
