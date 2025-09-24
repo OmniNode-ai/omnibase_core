@@ -6,7 +6,7 @@ Specialized accessor for environment properties with automatic type conversion.
 
 from __future__ import annotations
 
-from typing import TypeVar, cast
+from typing import TypeVar, cast, get_origin
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -56,10 +56,7 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
                     )
                 elif isinstance(raw_value, (int, float)):
                     return cast(T, bool(raw_value))
-            elif expected_type == list or (
-                hasattr(expected_type, "__origin__")
-                and expected_type.__origin__ is list
-            ):
+            elif expected_type == list or get_origin(expected_type) is list:
                 # Handle list types
                 if isinstance(raw_value, list):
                     return cast(T, [str(item) for item in raw_value])
@@ -70,7 +67,7 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
                         [item.strip() for item in raw_value.split(",") if item.strip()],
                     )
             elif isinstance(raw_value, expected_type):
-                return cast(T, raw_value)
+                return raw_value
         except (ValueError, TypeError):
             pass
 

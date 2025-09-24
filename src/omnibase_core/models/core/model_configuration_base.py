@@ -13,7 +13,7 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import Result
+from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 T = TypeVar("T")
@@ -57,20 +57,20 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         self,
         key: str,
         default: ModelSchemaValue | None = None,
-    ) -> Result[ModelSchemaValue, str]:
+    ) -> ModelResult[ModelSchemaValue, str]:
         """Get configuration value by key from config_data."""
         if self.config_data and hasattr(self.config_data, key):
             value = getattr(self.config_data, key)
             if isinstance(value, (str, int, bool, float)):
-                return Result.ok(ModelSchemaValue.from_value(value))
+                return ModelResult.ok(ModelSchemaValue.from_value(value))
             if default is not None:
-                return Result.ok(default)
-            return Result.err(
+                return ModelResult.ok(default)
+            return ModelResult.err(
                 f"Config value '{key}' has unsupported type: {type(value)}"
             )
         if default is not None:
-            return Result.ok(default)
-        return Result.err(f"Config key '{key}' not found in config_data")
+            return ModelResult.ok(default)
+        return ModelResult.err(f"Config key '{key}' not found in config_data")
 
     def is_enabled(self) -> bool:
         """Check if configuration is enabled."""

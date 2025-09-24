@@ -13,10 +13,10 @@ class EnumIOType(str, Enum):
     """Strongly typed input/output type values."""
 
     INPUT = "INPUT"
-    OUTPUT = "OUTPUT"
-    CONFIGURATION = "CONFIGURATION"
-    METADATA = "METADATA"
-    PARAMETERS = "PARAMETERS"
+    OUTPUT = "output"
+    CONFIGURATION = "configuration"
+    METADATA = "metadata"
+    PARAMETERS = "parameters"
 
 
 # Export for use

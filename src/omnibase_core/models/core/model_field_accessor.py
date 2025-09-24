@@ -7,23 +7,12 @@ dot notation support and type safety.
 
 from __future__ import annotations
 
-from typing import TypedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 
-
-# TypedDict for field values to replace loose Any typing
-class TypedDictFieldValue(TypedDict, total=False):
-    """Typed dictionary for field values."""
-
-    string_value: str
-    int_value: int
-    float_value: float
-    bool_value: bool
-    list_value: list[str]
+from .model_typed_dict_field_value import TypedDictFieldValue
 
 
 class ModelFieldAccessor(BaseModel):

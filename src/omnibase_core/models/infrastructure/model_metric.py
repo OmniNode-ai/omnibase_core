@@ -11,9 +11,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+
 # Import metadata value for type-safe metric handling
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.models.metadata.model_numeric_value import ModelNumericValue
 
 
 class ModelMetric(BaseModel):

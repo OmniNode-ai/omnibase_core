@@ -18,9 +18,9 @@ class EnumContextType(str, Enum):
     """
 
     USER = "USER"
-    SYSTEM = "SYSTEM"
+    SYSTEM = "system"
     BATCH = "BATCH"
-    INTERACTIVE = "INTERACTIVE"
+    INTERACTIVE = "interactive"
     API = "API"
 
     def __str__(self) -> str:

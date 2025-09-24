@@ -19,7 +19,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import Result
+from omnibase_core.models.infrastructure.model_result import ModelResult
 
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
@@ -125,7 +125,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             return True
         return False
 
-    def get_item(self, item_id: UUID) -> Result[T, str]:
+    def get_item(self, item_id: UUID) -> ModelResult[T, str]:
         """
         Get an item by ID if it has an 'id' attribute.
 
@@ -137,10 +137,10 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         """
         for item in self.items:
             if hasattr(item, "id") and item.id == item_id:
-                return Result.ok(item)
-        return Result.err(f"Item with ID {item_id} not found in collection")
+                return ModelResult.ok(item)
+        return ModelResult.err(f"Item with ID {item_id} not found in collection")
 
-    def get_item_by_name(self, name: str) -> Result[T, str]:
+    def get_item_by_name(self, name: str) -> ModelResult[T, str]:
         """
         Get an item by name if it has a 'name' attribute.
 
@@ -152,10 +152,10 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         """
         for item in self.items:
             if hasattr(item, "name") and item.name == name:
-                return Result.ok(item)
-        return Result.err(f"Item with name '{name}' not found in collection")
+                return ModelResult.ok(item)
+        return ModelResult.err(f"Item with name '{name}' not found in collection")
 
-    def get_item_by_index(self, index: int) -> Result[T, str]:
+    def get_item_by_index(self, index: int) -> ModelResult[T, str]:
         """
         Get an item by index with bounds checking.
 
@@ -166,8 +166,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             Result containing the item if found, or error message if index is out of bounds
         """
         if 0 <= index < len(self.items):
-            return Result.ok(self.items[index])
-        return Result.err(
+            return ModelResult.ok(self.items[index])
+        return ModelResult.err(
             f"Index {index} out of bounds for collection of size {len(self.items)}"
         )
 
@@ -302,7 +302,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if an item with that name exists
         """
-        return self.get_item_by_name(name).is_ok()
+        result = self.get_item_by_name(name)
+        return result.is_ok()
 
     def has_item_with_id(self, item_id: UUID) -> bool:
         """
@@ -314,7 +315,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if an item with that ID exists
         """
-        return self.get_item(item_id).is_ok()
+        result = self.get_item(item_id)
+        return result.is_ok()
 
     def get_summary(self) -> ModelGenericCollectionSummary:
         """

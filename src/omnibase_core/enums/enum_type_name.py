@@ -18,49 +18,49 @@ class EnumTypeName(str, Enum):
     """
 
     # Generation nodes
-    CONTRACT_TO_MODEL = "CONTRACT_TO_MODEL"
-    MULTI_DOC_MODEL_GENERATOR = "MULTI_DOC_MODEL_GENERATOR"
-    GENERATE_ERROR_CODES = "GENERATE_ERROR_CODES"
-    GENERATE_INTROSPECTION = "GENERATE_INTROSPECTION"
-    NODE_GENERATOR = "NODE_GENERATOR"
+    CONTRACT_TO_MODEL = "contract_to_model"
+    MULTI_DOC_MODEL_GENERATOR = "multi_doc_model_generator"
+    GENERATE_ERROR_CODES = "generate_error_codes"
+    GENERATE_INTROSPECTION = "generate_introspection"
+    NODE_GENERATOR = "node_generator"
 
     # Template nodes
-    TEMPLATE_ENGINE = "TEMPLATE_ENGINE"
-    FILE_GENERATOR = "FILE_GENERATOR"
-    TEMPLATE_VALIDATOR = "TEMPLATE_VALIDATOR"
+    TEMPLATE_ENGINE = "template_engine"
+    FILE_GENERATOR = "file_generator"
+    TEMPLATE_VALIDATOR = "template_validator"
 
     # Validation nodes
-    VALIDATION_ENGINE = "VALIDATION_ENGINE"
-    STANDARDS_COMPLIANCE_FIXER = "STANDARDS_COMPLIANCE_FIXER"
-    PARITY_VALIDATOR_WITH_FIXES = "PARITY_VALIDATOR_WITH_FIXES"
-    CONTRACT_COMPLIANCE = "CONTRACT_COMPLIANCE"
-    INTROSPECTION_VALIDITY = "INTROSPECTION_VALIDITY"
-    SCHEMA_CONFORMANCE = "SCHEMA_CONFORMANCE"
-    ERROR_CODE_USAGE = "ERROR_CODE_USAGE"
+    VALIDATION_ENGINE = "validation_engine"
+    STANDARDS_COMPLIANCE_FIXER = "standards_compliance_fixer"
+    PARITY_VALIDATOR_WITH_FIXES = "parity_validator_with_fixes"
+    CONTRACT_COMPLIANCE = "contract_compliance"
+    INTROSPECTION_VALIDITY = "introspection_validity"
+    SCHEMA_CONFORMANCE = "schema_conformance"
+    ERROR_CODE_USAGE = "error_code_usage"
 
     # CLI nodes
-    CLI_COMMANDS = "CLI_COMMANDS"
-    CLI_NODE_PARITY = "CLI_NODE_PARITY"
+    CLI_COMMANDS = "cli_commands"
+    CLI_NODE_PARITY = "cli_node_parity"
 
     # Discovery nodes
-    NODE_DISCOVERY = "NODE_DISCOVERY"
-    NODE_VALIDATION = "NODE_VALIDATION"
-    METADATA_LOADER = "METADATA_LOADER"
+    NODE_DISCOVERY = "node_discovery"
+    NODE_VALIDATION = "node_validation"
+    METADATA_LOADER = "metadata_loader"
 
     # Schema nodes
-    SCHEMA_GENERATOR = "SCHEMA_GENERATOR"
-    SCHEMA_DISCOVERY = "SCHEMA_DISCOVERY"
-    SCHEMA_TO_PYDANTIC = "SCHEMA_TO_PYDANTIC"
-    PROTOCOL_GENERATOR = "PROTOCOL_GENERATOR"
+    SCHEMA_GENERATOR = "schema_generator"
+    SCHEMA_DISCOVERY = "schema_discovery"
+    SCHEMA_TO_PYDANTIC = "schema_to_pydantic"
+    PROTOCOL_GENERATOR = "protocol_generator"
 
     # Runtime nodes
-    BACKEND_SELECTION = "BACKEND_SELECTION"
-    NODE_MANAGER_RUNNER = "NODE_MANAGER_RUNNER"
-    MAINTENANCE = "MAINTENANCE"
+    BACKEND_SELECTION = "backend_selection"
+    NODE_MANAGER_RUNNER = "node_manager_runner"
+    MAINTENANCE = "maintenance"
 
     # Logging nodes
     NODE_LOGGER_EMIT_LOG_EVENT = "node_logger_emit_log_event"
-    LOGGING_UTILS = "LOGGING_UTILS"
+    LOGGING_UTILS = "logging_utils"
 
     # Testing nodes
     SCENARIO_RUNNER = "scenario_runner"

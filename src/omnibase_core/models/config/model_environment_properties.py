@@ -7,7 +7,7 @@ Type-safe custom environment properties with access methods.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypeVar, cast
+from typing import TypeVar, cast, get_origin
 
 from pydantic import BaseModel, Field
 
@@ -55,10 +55,7 @@ class ModelEnvironmentProperties(BaseModel):
                 return cast(T, prop_value.as_float())
             elif expected_type == bool:
                 return cast(T, prop_value.as_bool())
-            elif expected_type == list or (
-                hasattr(expected_type, "__origin__")
-                and expected_type.__origin__ is list
-            ):
+            elif expected_type == list or get_origin(expected_type) is list:
                 # Handle list types
                 if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
                     return cast(T, [str(item) for item in prop_value.value])

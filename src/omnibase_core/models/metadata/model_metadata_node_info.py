@@ -15,6 +15,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_standard_category import EnumStandardCategory
+from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.enums.enum_validation_level import EnumValidationLevel
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
@@ -24,6 +26,9 @@ from omnibase_core.models.metadata.model_metadata_usage_metrics import (
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_semver import ModelSemVer
+from .model_structured_description import ModelStructuredDescription
+from .model_structured_display_name import ModelStructuredDisplayName
+from .model_structured_tags import ModelStructuredTags
 
 # Removed Any import - replaced with specific types
 
@@ -44,8 +49,17 @@ class ModelMetadataNodeInfo(BaseModel):
 
     # Core identification
     node_id: UUID = Field(..., description="UUID for node identifier")
-    node_display_name: str | None = Field(None, description="Human-readable node name")
-    description: str = Field(default="", description="Node description")
+
+    # Structured naming and description (reduces string fields)
+    display_name: ModelStructuredDisplayName = Field(
+        default_factory=lambda: ModelStructuredDisplayName.for_metadata_node("default"),
+        description="Structured display name with consistent naming patterns",
+    )
+
+    description: ModelStructuredDescription = Field(
+        default_factory=lambda: ModelStructuredDescription.for_metadata_node("default"),
+        description="Structured description with standardized templates",
+    )
     node_type: EnumMetadataNodeType = Field(
         default=EnumMetadataNodeType.FUNCTION,
         description="Node type",
@@ -79,9 +93,13 @@ class ModelMetadataNodeInfo(BaseModel):
         description="Last validation timestamp",
     )
 
-    # Categorization
-    tags: list[str] = Field(default_factory=list, description="Node tags")
-    categories: list[str] = Field(default_factory=list, description="Node categories")
+    # Categorization (structured)
+    tags: ModelStructuredTags = Field(
+        default_factory=lambda: ModelStructuredTags.for_metadata_node(),
+        description="Structured tags with standard and custom classifications",
+    )
+
+    # Categories now handled through tags.primary_category and tags.secondary_categories
 
     # Documentation and examples
     has_documentation: bool = Field(
@@ -163,20 +181,30 @@ class ModelMetadataNodeInfo(BaseModel):
         }
         return complexity_scores.get(self.complexity, 1)
 
-    def add_tag(self, tag: str) -> None:
-        """Add a tag if not already present."""
-        if tag not in self.tags:
-            self.tags.append(tag)
+    def add_tag(self, tag: str) -> bool:
+        """Add a tag (standard or custom)."""
+        # Try as standard tag first
+        standard_tag = EnumStandardTag.from_string(tag)
+        if standard_tag:
+            return self.tags.add_standard_tag(standard_tag)
+        else:
+            return self.tags.add_custom_tag(tag)
 
-    def remove_tag(self, tag: str) -> None:
-        """Remove a tag if present."""
-        if tag in self.tags:
-            self.tags.remove(tag)
+    def remove_tag(self, tag: str) -> bool:
+        """Remove a tag."""
+        standard_tag = EnumStandardTag.from_string(tag)
+        if standard_tag:
+            return self.tags.remove_standard_tag(standard_tag)
+        else:
+            return self.tags.remove_custom_tag(tag)
 
-    def add_category(self, category: str) -> None:
-        """Add a category if not already present."""
-        if category not in self.categories:
-            self.categories.append(category)
+    def add_category(self, category: str) -> bool:
+        """Add a category (as secondary category)."""
+        category_enum = EnumStandardCategory.from_string(category)
+        if category_enum and category_enum not in self.tags.secondary_categories:
+            self.tags.secondary_categories.append(category_enum)
+            return True
+        return False
 
     def add_dependency(self, dependency: UUID) -> None:
         """Add a dependency if not already present."""
@@ -285,30 +313,45 @@ class ModelMetadataNodeInfo(BaseModel):
             EnumDocumentationQuality.UNKNOWN,
         )
 
-        return ModelNodeInfoSummary(
-            node_id=self.node_id,
-            node_display_name=self.node_display_name,
-            description=self.description,
-            node_type=node_type,
-            status=self.status,
-            complexity=complexity,
-            version=self.version,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            last_validated=self.last_validated,
-            tags=self.tags,
-            categories=self.categories,
-            dependencies=self.dependencies,
-            related_nodes=self.related_nodes,
-            has_documentation=self.has_documentation,
-            has_examples=self.has_examples,
-            documentation_quality=documentation_quality,
-            usage_count=self.usage_metrics.total_invocations,
-            success_rate=self.get_success_rate(),
-            error_rate=1.0 - self.get_success_rate(),
-            average_execution_time_ms=self.usage_metrics.average_execution_time_ms,
-            memory_usage_mb=self.usage_metrics.peak_memory_usage_mb,
+        summary = ModelNodeInfoSummary()
+
+        # Set core properties
+        summary.core.node_id = self.node_id
+        summary.core.node_display_name = self.display_name.display_name
+        summary.core.description = self.description.summary_description
+        summary.core.node_type = node_type
+        summary.core.version = self.version
+
+        # Set timestamps
+        summary.timestamps.created_at = self.created_at
+        summary.timestamps.updated_at = self.updated_at
+        summary.timestamps.last_validated = self.last_validated
+
+        # Set categorization
+        summary.categorization.tags = self.tags.all_tags
+        summary.categorization.categories = [
+            cat
+            for cat in [self.tags.primary_category] + self.tags.secondary_categories
+            if cat is not None
+        ]
+        summary.categorization.dependencies = self.dependencies
+        summary.categorization.related_nodes = self.related_nodes
+
+        # Set quality indicators
+        summary.quality.has_documentation = self.has_documentation
+        summary.quality.has_examples = self.has_examples
+        summary.quality.documentation_quality = documentation_quality
+
+        # Set performance metrics
+        summary.performance.usage_count = self.usage_metrics.total_invocations
+        summary.performance.success_rate = self.get_success_rate()
+        summary.performance.error_rate = 1.0 - self.get_success_rate()
+        summary.performance.average_execution_time_ms = (
+            self.usage_metrics.average_execution_time_ms
         )
+        summary.performance.memory_usage_mb = self.usage_metrics.peak_memory_usage_mb
+
+        return summary
 
     @classmethod
     def create_simple(
@@ -326,10 +369,17 @@ class ModelMetadataNodeInfo(BaseModel):
             f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}",
         )
 
+        display_name = ModelStructuredDisplayName.for_metadata_node(name)
+        structured_description = ModelStructuredDescription.for_metadata_node(
+            name, functionality=description
+        )
+        tags = ModelStructuredTags.for_metadata_node()
+
         return cls(
             node_id=node_id,
-            node_display_name=name,
-            description=description,
+            display_name=display_name,
+            description=structured_description,
+            tags=tags,
             node_type=node_type,
         )
 
@@ -349,10 +399,35 @@ class ModelMetadataNodeInfo(BaseModel):
             f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}",
         )
 
+        display_name = ModelStructuredDisplayName.for_metadata_node(
+            name, category=EnumStandardCategory.BUSINESS_LOGIC
+        )
+        structured_description = ModelStructuredDescription.for_metadata_node(
+            name,
+            functionality=description,
+            category=EnumStandardCategory.BUSINESS_LOGIC,
+        )
+
+        # Map complexity to standard tag
+        complexity_tag = None
+        if complexity == EnumMetadataNodeComplexity.SIMPLE:
+            complexity_tag = EnumStandardTag.SIMPLE
+        elif complexity == EnumMetadataNodeComplexity.MODERATE:
+            complexity_tag = EnumStandardTag.MODERATE
+        elif complexity == EnumMetadataNodeComplexity.COMPLEX:
+            complexity_tag = EnumStandardTag.COMPLEX
+        elif complexity == EnumMetadataNodeComplexity.ADVANCED:
+            complexity_tag = EnumStandardTag.ADVANCED
+
+        tags = ModelStructuredTags.for_metadata_node(
+            complexity=complexity_tag, domain=EnumStandardTag.API
+        )
+
         return cls(
             node_id=node_id,
-            node_display_name=name,
-            description=description,
+            display_name=display_name,
+            description=structured_description,
+            tags=tags,
             node_type=EnumMetadataNodeType.FUNCTION,
             complexity=complexity,
         )
@@ -372,10 +447,21 @@ class ModelMetadataNodeInfo(BaseModel):
             f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}",
         )
 
+        display_name = ModelStructuredDisplayName.for_metadata_node(
+            name, category=EnumStandardCategory.DOCUMENTATION
+        )
+        structured_description = ModelStructuredDescription.for_metadata_node(
+            name, functionality=description, category=EnumStandardCategory.DOCUMENTATION
+        )
+        tags = ModelStructuredTags.for_metadata_node(
+            complexity=EnumStandardTag.SIMPLE, domain=EnumStandardTag.DOCUMENTED
+        )
+
         return cls(
             node_id=node_id,
-            node_display_name=name,
-            description=description,
+            display_name=display_name,
+            description=structured_description,
+            tags=tags,
             node_type=EnumMetadataNodeType.DOCUMENTATION,
             has_documentation=True,
             documentation_quality=EnumValidationLevel.GOOD,

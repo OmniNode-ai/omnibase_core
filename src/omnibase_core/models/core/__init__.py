@@ -1,54 +1,8 @@
-"""Core models for OmniBase - Re-exports from domain-specific directories."""
+"""Core models for OmniBase - Core domain models only.
 
-# CLI models
-from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
-
-from omnibase_core.models.cli.model_cli_execution import ModelCliExecution
-from omnibase_core.models.cli.model_cli_execution_result import ModelCliExecutionResult
-
-# Connection models
-from omnibase_core.models.connections.model_custom_connection_properties import (
-    ModelCustomConnectionProperties,
-)
-
-# Data models
-from omnibase_core.models.data.model_custom_fields import ModelCustomFields
-
-# Infrastructure models
-from omnibase_core.models.infrastructure.model_duration import ModelDuration
-from omnibase_core.models.infrastructure.model_environment_variables import (
-    ModelEnvironmentVariables,
-)
-from omnibase_core.models.infrastructure.model_progress import ModelProgress
-from omnibase_core.models.infrastructure.model_result import (
-    ModelResult,
-    collect_results,
-    err,
-    ok,
-    try_result,
-)
-from omnibase_core.models.infrastructure.model_retry_policy import ModelRetryPolicy
-from omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
-from omnibase_core.models.infrastructure.model_timeout import ModelTimeout
-
-# Metadata models
-from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
-from omnibase_core.models.metadata.model_metadata_node_analytics import (
-    ModelMetadataNodeAnalytics,
-)
-from omnibase_core.models.metadata.model_metadata_node_info import (
-    ModelMetadataNodeComplexity,
-    ModelMetadataNodeInfo,
-    ModelMetadataNodeStatus,
-    ModelMetadataNodeType,
-    ModelMetadataUsageMetrics,
-)
-from omnibase_core.models.metadata.model_metadata_usage_metrics import (
-    ModelMetadataUsageMetrics as ModelMetadataUsageMetricsStandalone,
-)
-
-# Node models - removed ModelFunctionNode to avoid circular import with ModelCustomProperties
-from omnibase_core.models.nodes.model_node_configuration import ModelNodeConfiguration
+This module contains only core domain models to prevent circular dependencies.
+Other domains should import from their respective modules directly.
+"""
 
 # Configuration base classes
 from .model_configuration_base import ModelConfigurationBase
@@ -72,6 +26,7 @@ from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_result_accessor import ModelResultAccessor
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
+from .model_typed_dict_field_value import TypedDictFieldValue
 
 # Generic factory pattern
 try:
@@ -86,33 +41,16 @@ except ImportError:
     _FACTORY_AVAILABLE = False
 
 __all__ = [
-    "ModelCliExecution",
-    "ModelCliExecutionResult",
-    "ModelCustomConnectionProperties",
-    "ModelCustomFields",
-    "ModelDuration",
-    "ModelEnvironmentVariables",
-    "ModelGenericMetadata",
-    "ModelMetadataNodeAnalytics",
-    "ModelMetadataNodeComplexity",
-    "ModelMetadataNodeInfo",
-    "ModelMetadataNodeStatus",
-    "ModelMetadataNodeType",
-    "ModelMetadataUsageMetrics",
-    "ModelMetadataUsageMetricsStandalone",
-    "ModelNodeConfiguration",
-    "ModelProgress",
-    "ModelRetryPolicy",
-    "ModelTimeBased",
-    "ModelTimeout",
-    "ProtocolSupportedMetadataType",
-    "ModelResult",
-    "ok",
-    "err",
-    "try_result",
-    "collect_results",
+    # Configuration base classes
+    "ModelConfigurationBase",
+    "ModelTypedConfiguration",
+    # Custom properties pattern
+    "ModelCustomProperties",
+    # Generic container pattern
+    "ModelContainer",
     # Field accessor patterns
     "ModelFieldAccessor",
+    "TypedDictFieldValue",
     "ModelTypedAccessor",
     "ModelEnvironmentAccessor",
     "ModelResultAccessor",
@@ -120,22 +58,9 @@ __all__ = [
     # Generic collection pattern
     "ModelGenericCollection",
     "ModelGenericCollectionSummary",
-    # Generic container pattern
-    "ModelContainer",
-    # Configuration base classes
-    "ModelConfigurationBase",
-    "ModelTypedConfiguration",
-    # Custom properties pattern
-    "ModelCustomProperties",
+    # Factory patterns (with graceful degradation)
+    "ModelCapabilityFactory",
+    "ModelGenericFactory",
+    "ModelResultFactory",
+    "ModelValidationErrorFactory",
 ]
-
-# Add factory classes to __all__ if available
-if _FACTORY_AVAILABLE:
-    __all__.extend(
-        [
-            "ModelCapabilityFactory",
-            "ModelGenericFactory",
-            "ModelResultFactory",
-            "ModelValidationErrorFactory",
-        ],
-    )

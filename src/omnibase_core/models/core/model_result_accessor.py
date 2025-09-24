@@ -7,7 +7,7 @@ Specialized accessor for handling CLI execution results and metadata.
 from __future__ import annotations
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import Result
+from omnibase_core.models.infrastructure.model_result import ModelResult
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -19,7 +19,7 @@ class ModelResultAccessor(ModelFieldAccessor):
         self,
         key: str,
         default: ModelSchemaValue | None = None,
-    ) -> Result[ModelSchemaValue, str]:
+    ) -> ModelResult[ModelSchemaValue, str]:
         """Get result value from results or metadata fields."""
         # Try results first
         results_value = self.get_field(f"results.{key}")
@@ -33,8 +33,8 @@ class ModelResultAccessor(ModelFieldAccessor):
 
         # If both failed, return default if provided, otherwise error
         if default is not None:
-            return Result.ok(default)
-        return Result.err(f"Result value '{key}' not found in results or metadata")
+            return ModelResult.ok(default)
+        return ModelResult.err(f"Result value '{key}' not found in results or metadata")
 
     def set_result_value(self, key: str, value: ModelSchemaValue) -> bool:
         """Set result value in results field."""

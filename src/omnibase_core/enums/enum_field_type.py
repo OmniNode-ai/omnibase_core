@@ -40,12 +40,12 @@ class EnumFieldType(str, Enum):
     SET = "set"
 
     # Optional versions
-    OPTIONAL_STRING = "str | None"
-    OPTIONAL_INTEGER = "int | None"
-    OPTIONAL_FLOAT = "float | None"
-    OPTIONAL_BOOLEAN = "bool | None"
-    OPTIONAL_DATETIME = "datetime | None"
-    OPTIONAL_UUID = "uuid | None"
+    OPTIONAL_STRING = "str | none"
+    OPTIONAL_INTEGER = "int | none"
+    OPTIONAL_FLOAT = "float | none"
+    OPTIONAL_BOOLEAN = "bool | none"
+    OPTIONAL_DATETIME = "datetime | none"
+    OPTIONAL_UUID = "uuid | none"
 
     # Complex types
     JSON = "json"

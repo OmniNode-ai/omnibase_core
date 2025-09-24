@@ -12,13 +12,13 @@ from enum import Enum
 class EnumMetricsCategory(str, Enum):
     """Strongly typed metrics category values."""
 
-    GENERAL = "GENERAL"
-    PERFORMANCE = "PERFORMANCE"
-    SYSTEM = "SYSTEM"
-    BUSINESS = "BUSINESS"
-    ANALYTICS = "ANALYTICS"
-    PROGRESS = "PROGRESS"
-    CUSTOM = "CUSTOM"
+    GENERAL = "general"
+    PERFORMANCE = "performance"
+    SYSTEM = "system"
+    BUSINESS = "business"
+    ANALYTICS = "analytics"
+    PROGRESS = "progress"
+    CUSTOM = "custom"
 
 
 # Export for use

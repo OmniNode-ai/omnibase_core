@@ -332,6 +332,9 @@ def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], li
     return ModelResult.ok(values)
 
 
+# Note: Type alias removed to comply with ONEX standards
+# Use ModelResult directly instead of alias
+
 # Export for use
 __all__ = [
     "ModelResult",

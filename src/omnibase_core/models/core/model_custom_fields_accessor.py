@@ -7,7 +7,7 @@ Specialized accessor for managing custom fields with automatic initialization.
 from __future__ import annotations
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import Result
+from omnibase_core.models.infrastructure.model_result import ModelResult
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -19,12 +19,12 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
         self,
         key: str,
         default: ModelSchemaValue | None = None,
-    ) -> Result[ModelSchemaValue, str]:
+    ) -> ModelResult[ModelSchemaValue, str]:
         """Get a custom field value, initializing custom_fields if needed."""
         if not self.has_field("custom_fields"):
             if default is not None:
-                return Result.ok(default)
-            return Result.err(
+                return ModelResult.ok(default)
+            return ModelResult.err(
                 f"Custom fields not initialized and no default provided for key '{key}'"
             )
         return self.get_field(f"custom_fields.{key}", default)

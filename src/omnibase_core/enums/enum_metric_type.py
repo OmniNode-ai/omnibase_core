@@ -12,11 +12,11 @@ from enum import Enum
 class EnumMetricType(str, Enum):
     """Strongly typed metric type values."""
 
-    PERFORMANCE = "PERFORMANCE"
-    SYSTEM = "SYSTEM"
-    BUSINESS = "BUSINESS"
-    CUSTOM = "CUSTOM"
-    HEALTH = "HEALTH"
+    PERFORMANCE = "performance"
+    SYSTEM = "system"
+    BUSINESS = "business"
+    CUSTOM = "custom"
+    HEALTH = "health"
 
 
 # Export for use

@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.metadata.model_numeric_value import ModelNumericValue
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
 class ModelSchemaValue(BaseModel):

@@ -17,11 +17,11 @@ class EnumOutputType(str, Enum):
     type safety and IDE support.
     """
 
-    STREAM = "STREAM"
+    STREAM = "stream"
     FILE = "FILE"
-    CONSOLE = "CONSOLE"
+    CONSOLE = "console"
     API = "API"
-    DATABASE = "DATABASE"
+    DATABASE = "database"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

@@ -56,7 +56,7 @@ class EnumDifficultyLevel(str, Enum):
         cls, difficulty: EnumDifficultyLevel
     ) -> list[str]:
         """Get recommended prerequisites for difficulty level."""
-        prerequisites = {
+        prerequisites: dict[EnumDifficultyLevel, list[str]] = {
             cls.NOVICE: [],
             cls.BEGINNER: ["Basic programming concepts"],
             cls.INTERMEDIATE: ["Programming fundamentals", "Basic frameworks"],

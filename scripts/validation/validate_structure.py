@@ -58,6 +58,7 @@ class OmniStructureValidator:
         self.validate_forbidden_directories()
         self.validate_required_structure()
         self.validate_model_organization()
+        self.validate_types_organization()
         self.validate_enum_organization()
         self.validate_protocol_locations()
         self.validate_node_structure()
@@ -221,6 +222,48 @@ class OmniStructureValidator:
                                 message=f"Model file must start with 'model_': {file}",
                                 path=str(path.relative_to(self.repo_path)),
                                 suggestion=f"Rename to: model_{file}",
+                            )
+                        )
+
+    def validate_types_organization(self):
+        """Validate TypedDict file organization and naming."""
+        types_path = self.src_path / "types"
+        if not types_path.exists():
+            self.violations.append(
+                StructureViolation(
+                    level=ViolationLevel.WARNING,
+                    category="Missing Types Directory",
+                    message="No types/ directory found",
+                    path="src/{repo_name}/types/",
+                    suggestion="Create types directory for TypedDict definitions",
+                )
+            )
+            return
+
+        # Check TypedDict file naming
+        ignore_dirs = {
+            ".mypy_cache",
+            "__pycache__",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".onex_cache",
+        }
+
+        for root, dirs, files in os.walk(types_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+
+            for file in files:
+                if file.endswith(".py") and file != "__init__.py":
+                    if not file.startswith("typed_dict_"):
+                        path = Path(root) / file
+                        self.violations.append(
+                            StructureViolation(
+                                level=ViolationLevel.ERROR,
+                                category="TypedDict Naming",
+                                message=f"TypedDict file must start with 'typed_dict_': {file}",
+                                path=str(path.relative_to(self.repo_path)),
+                                suggestion=f"Rename to: typed_dict_{file}",
                             )
                         )
 

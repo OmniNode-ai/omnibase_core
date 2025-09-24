@@ -11,7 +11,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.metadata.model_numeric_value import ModelNumericValue
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
 class ModelNodeConfigurationValue(BaseModel):

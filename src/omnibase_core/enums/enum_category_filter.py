@@ -17,12 +17,12 @@ class EnumCategoryFilter(str, Enum):
     type safety and IDE support for category filtering operations.
     """
 
-    PRIMARY = "PRIMARY"
-    SECONDARY = "SECONDARY"
-    TERTIARY = "TERTIARY"
+    PRIMARY = "primary"
+    SECONDARY = "secondary"
+    TERTIARY = "tertiary"
     ALL = "ALL"
-    CUSTOM = "CUSTOM"
-    ARCHIVED = "ARCHIVED"
+    CUSTOM = "custom"
+    ARCHIVED = "archived"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

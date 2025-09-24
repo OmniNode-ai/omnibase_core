@@ -233,25 +233,39 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def to_summary(self) -> ModelMetadataAnalyticsSummary:
         """Get analytics summary with clean typing."""
-        return ModelMetadataAnalyticsSummary(
-            collection_id=self.collection_id,
-            collection_display_name=self.collection_display_name,
-            total_nodes=self.total_nodes,
-            health_score=self.health_score,
-            success_rate=self.overall_success_rate,
-            documentation_coverage=self.documentation_coverage,
-            active_nodes=self.get_active_node_count(),
-            deprecated_nodes=self.get_deprecated_node_count(),
-            disabled_nodes=self.get_disabled_node_count(),
-            error_count=self.error_count,
-            warning_count=self.warning_count,
-            last_modified=self.last_modified,
-            last_validated=self.last_validated,
-            average_execution_time_ms=self.average_execution_time_ms,
-            peak_memory_usage_mb=self.peak_memory_usage_mb,
-            total_invocations=self.total_invocations,
-            critical_error_count=self.critical_error_count,
+        summary = ModelMetadataAnalyticsSummary(
+            last_modified=None,
+            last_validated=None,
         )
+
+        # Set core properties
+        summary.core.collection_id = self.collection_id
+        summary.core.collection_display_name = self.collection_display_name
+        summary.core.total_nodes = self.total_nodes
+        summary.core.active_nodes = self.get_active_node_count()
+        summary.core.deprecated_nodes = self.get_deprecated_node_count()
+        summary.core.disabled_nodes = self.get_disabled_node_count()
+
+        # Set quality properties
+        summary.quality.health_score = self.health_score
+        summary.quality.success_rate = self.overall_success_rate
+        summary.quality.documentation_coverage = self.documentation_coverage
+
+        # Set error properties
+        summary.errors.error_count = self.error_count
+        summary.errors.warning_count = self.warning_count
+        summary.errors.critical_error_count = self.critical_error_count
+
+        # Set performance properties
+        summary.performance.average_execution_time_ms = self.average_execution_time_ms
+        summary.performance.peak_memory_usage_mb = self.peak_memory_usage_mb
+        summary.performance.total_invocations = self.total_invocations
+
+        # Set timestamps
+        summary.last_modified = self.last_modified
+        summary.last_validated = self.last_validated
+
+        return summary
 
     @classmethod
     def create_default(cls, collection_name: str = "") -> ModelMetadataNodeAnalytics:

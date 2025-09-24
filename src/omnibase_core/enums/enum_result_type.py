@@ -17,11 +17,11 @@ class EnumResultType(str, Enum):
     type safety and IDE support.
     """
 
-    SUCCESS = "SUCCESS"
-    ERROR = "ERROR"
-    WARNING = "WARNING"
+    SUCCESS = "success"
+    ERROR = "error"
+    WARNING = "warning"
     INFO = "INFO"
-    PARTIAL = "PARTIAL"
+    PARTIAL = "partial"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

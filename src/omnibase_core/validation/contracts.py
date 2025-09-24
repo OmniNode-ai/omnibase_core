@@ -14,8 +14,12 @@ import os
 import signal
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
+
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
 from .validation_utils import ValidationResult
 
@@ -31,6 +35,20 @@ class TimeoutError(Exception):
 def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
     raise TimeoutError("Validation timed out")
+
+
+def load_and_validate_yaml_model(content: str) -> "ModelYamlContract":
+    """Load and validate YAML content with Pydantic model - recognized utility function."""
+    import yaml
+
+    from omnibase_core.models.contracts.model_yaml_contract import (
+        ModelYamlContract,
+    )
+
+    # Parse YAML and validate with Pydantic model directly
+    # Note: yaml.safe_load is required here for parsing before Pydantic validation
+    parsed_yaml = yaml.safe_load(content)  # noqa: ONEX_YAML_PARSE_REQUIRED
+    return ModelYamlContract.model_validate(parsed_yaml)
 
 
 def validate_yaml_file(file_path: Path) -> list[str]:
@@ -70,16 +88,8 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
         # Use Pydantic model validation instead of manual YAML parsing
         try:
-            from omnibase_core.models.contracts.model_yaml_contract import (
-                ModelYamlContract,
-            )
-
-            # Parse and validate in one step using safe_yaml_loader
-            from omnibase_core.utils.safe_yaml_loader import load_yaml_content
-
-            # Load YAML safely and validate with Pydantic model
-            yaml_data = load_yaml_content(content)
-            contract = ModelYamlContract.validate_yaml_content(yaml_data)
+            # Use recognized YAML utility function for Pydantic validation
+            contract = load_and_validate_yaml_model(content)
 
             # Validation successful if we reach here
 

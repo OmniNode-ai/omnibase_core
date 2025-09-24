@@ -7,9 +7,11 @@ with ONEX-compliant discriminated union pattern.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
+
+from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
 
 from .migration_types import (
     TypedDictMigrationDuplicateConflictDict,
@@ -27,7 +29,7 @@ class ModelMigrationConflictUnion(BaseModel):
     Replaces: Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameConflictDict]
     """
 
-    conflict_type: Literal["name_conflict", "exact_duplicate"] = Field(
+    conflict_type: EnumMigrationConflictType = Field(
         description="Type discriminator for conflict union"
     )
 
@@ -57,7 +59,7 @@ class ModelMigrationConflictUnion(BaseModel):
     ) -> str | None:
         """Ensure name conflict fields are present when conflict_type is name_conflict."""
         conflict_type = info.data.get("conflict_type")
-        if conflict_type == "name_conflict" and v is None:
+        if conflict_type == EnumMigrationConflictType.NAME_CONFLICT and v is None:
             raise ValueError(
                 "source_signature and spi_signature required for name conflicts"
             )
@@ -70,7 +72,7 @@ class ModelMigrationConflictUnion(BaseModel):
     ) -> str | None:
         """Ensure duplicate conflict fields are present when conflict_type is exact_duplicate."""
         conflict_type = info.data.get("conflict_type")
-        if conflict_type == "exact_duplicate" and v is None:
+        if conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE and v is None:
             raise ValueError("signature_hash required for exact duplicate conflicts")
         return v
 
@@ -80,7 +82,7 @@ class ModelMigrationConflictUnion(BaseModel):
     ) -> ModelMigrationConflictUnion:
         """Create union instance from name conflict TypedDict."""
         return cls(
-            conflict_type="name_conflict",
+            conflict_type=EnumMigrationConflictType.NAME_CONFLICT,
             protocol_name=conflict_dict["protocol_name"],
             source_file=conflict_dict["source_file"],
             spi_file=conflict_dict["spi_file"],
@@ -95,7 +97,7 @@ class ModelMigrationConflictUnion(BaseModel):
     ) -> ModelMigrationConflictUnion:
         """Create union instance from duplicate conflict TypedDict."""
         return cls(
-            conflict_type="exact_duplicate",
+            conflict_type=EnumMigrationConflictType.EXACT_DUPLICATE,
             protocol_name=conflict_dict["protocol_name"],
             source_file=conflict_dict["source_file"],
             spi_file=conflict_dict["spi_file"],
@@ -105,7 +107,7 @@ class ModelMigrationConflictUnion(BaseModel):
 
     def to_name_conflict_dict(self) -> TypedDictMigrationNameConflictDict:
         """Convert to name conflict TypedDict format."""
-        if self.conflict_type != "name_conflict":
+        if self.conflict_type != EnumMigrationConflictType.NAME_CONFLICT:
             raise ValueError("Cannot convert to name conflict: wrong conflict type")
 
         if self.source_signature is None or self.spi_signature is None:
@@ -123,7 +125,7 @@ class ModelMigrationConflictUnion(BaseModel):
 
     def to_duplicate_conflict_dict(self) -> TypedDictMigrationDuplicateConflictDict:
         """Convert to duplicate conflict TypedDict format."""
-        if self.conflict_type != "exact_duplicate":
+        if self.conflict_type != EnumMigrationConflictType.EXACT_DUPLICATE:
             raise ValueError(
                 "Cannot convert to duplicate conflict: wrong conflict type"
             )
@@ -144,11 +146,11 @@ class ModelMigrationConflictUnion(BaseModel):
 
     def is_name_conflict(self) -> bool:
         """Check if this is a name conflict."""
-        return self.conflict_type == "name_conflict"
+        return self.conflict_type == EnumMigrationConflictType.NAME_CONFLICT
 
     def is_duplicate_conflict(self) -> bool:
         """Check if this is an exact duplicate conflict."""
-        return self.conflict_type == "exact_duplicate"
+        return self.conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE
 
 
 # Export for ONEX compliance

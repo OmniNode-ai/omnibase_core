@@ -253,6 +253,9 @@ docs_archived/
 .swarm/
 .claude-flow/
 claude-flow.config.json
+
+# Claude Code settings (personal/local configuration)
+.claude/settings.local.json
 *.db
 *.sqlite
 *.db-wal

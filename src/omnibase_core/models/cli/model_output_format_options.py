@@ -38,11 +38,11 @@ def allow_dict_any(func: F) -> F:
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
-from omnibase_core.models.cli.typed_dict_output_format_options_kwargs import (
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
+from omnibase_core.utils.model_field_converter import ModelFieldConverterRegistry
 
 
 class ModelOutputFormatOptions(BaseModel):
@@ -208,70 +208,61 @@ class ModelOutputFormatOptions(BaseModel):
     ) -> ModelOutputFormatOptions:
         """Create instance from string-based configuration data."""
 
-        # Helper to safely convert string to bool
-        def str_to_bool(value: str) -> bool:
-            return value.lower() in ("true", "1", "yes", "on")
+        # Create converter registry and register all known fields
+        # This replaces the large conditional field_mappings dictionary
+        registry = ModelFieldConverterRegistry()
 
-        # Helper to safely convert string to int
-        def str_to_int(value: str, default: int) -> int:
-            try:
-                return int(value)
-            except (ValueError, TypeError):
-                return default
+        # Register boolean fields
+        boolean_fields = [
+            "include_headers",
+            "include_timestamps",
+            "include_line_numbers",
+            "color_enabled",
+            "highlight_errors",
+            "show_metadata",
+            "compact_mode",
+            "verbose_details",
+            "table_borders",
+            "table_headers",
+            "pretty_print",
+            "sort_keys",
+            "escape_unicode",
+            "append_mode",
+            "create_backup",
+        ]
+        for field in boolean_fields:
+            registry.register_boolean_field(field)
 
-        # Transform string data structure to proper typed fields
-        kwargs_dict: dict[str, Any] = {}
+        # Register integer fields with defaults
+        registry.register_integer_field("indent_size", default=4, min_value=0)
+        registry.register_integer_field("line_width", default=80, min_value=1)
+
+        # Register optional integer fields (0 becomes None)
+        registry.register_optional_integer_field("page_size")
+        registry.register_optional_integer_field("max_items")
+
+        # Register enum fields
+        registry.register_enum_field(
+            "color_scheme", EnumColorScheme, EnumColorScheme.DEFAULT
+        )
+        registry.register_enum_field(
+            "table_alignment", EnumTableAlignment, EnumTableAlignment.LEFT
+        )
+
+        # Convert known fields using registry
+        kwargs_dict: TypedDictOutputFormatOptionsKwargs = cast(
+            TypedDictOutputFormatOptionsKwargs, registry.convert_data(data)
+        )
+
+        # Handle custom options separately
         custom_options: dict[str, ModelCliValue] = {}
-
-        # Convert known fields with proper type handling
-        field_mappings = {
-            "include_headers": ("include_headers", str_to_bool),
-            "include_timestamps": ("include_timestamps", str_to_bool),
-            "include_line_numbers": ("include_line_numbers", str_to_bool),
-            "color_enabled": ("color_enabled", str_to_bool),
-            "highlight_errors": ("highlight_errors", str_to_bool),
-            "show_metadata": ("show_metadata", str_to_bool),
-            "compact_mode": ("compact_mode", str_to_bool),
-            "verbose_details": ("verbose_details", str_to_bool),
-            "table_borders": ("table_borders", str_to_bool),
-            "table_headers": ("table_headers", str_to_bool),
-            "pretty_print": ("pretty_print", str_to_bool),
-            "sort_keys": ("sort_keys", str_to_bool),
-            "escape_unicode": ("escape_unicode", str_to_bool),
-            "append_mode": ("append_mode", str_to_bool),
-            "create_backup": ("create_backup", str_to_bool),
-            "indent_size": ("indent_size", lambda x: str_to_int(x, 4)),
-            "line_width": ("line_width", lambda x: str_to_int(x, 80)),
-            "page_size": ("page_size", lambda x: str_to_int(x, 0) if x else None),
-            "max_items": ("max_items", lambda x: str_to_int(x, 0) if x else None),
-            "color_scheme": (
-                "color_scheme",
-                lambda x: (
-                    EnumColorScheme(x)
-                    if x in EnumColorScheme.__members__.values()
-                    else EnumColorScheme.DEFAULT
-                ),
-            ),
-            "table_alignment": (
-                "table_alignment",
-                lambda x: (
-                    EnumTableAlignment(x)
-                    if x in EnumTableAlignment.__members__.values()
-                    else EnumTableAlignment.LEFT
-                ),
-            ),
-        }
-
         for key, value in data.items():
-            if key in field_mappings:
-                field_name, converter = field_mappings[key]
-                kwargs_dict[field_name] = converter(value)
-            elif key.startswith("custom_"):
+            if key.startswith("custom_") and not registry.has_converter(key):
                 custom_key = key[7:]  # Remove "custom_" prefix
-                # Try to infer type from value
+                # Infer type from value - this could also be moved to registry pattern
                 if value.lower() in ("true", "false"):
                     custom_options[custom_key] = ModelCliValue.from_boolean(
-                        str_to_bool(value)
+                        value.lower() == "true"
                     )
                 elif value.isdigit():
                     custom_options[custom_key] = ModelCliValue.from_integer(int(value))
@@ -281,9 +272,7 @@ class ModelOutputFormatOptions(BaseModel):
         if custom_options:
             kwargs_dict["custom_options"] = custom_options
 
-        # Cast to TypedDict for type safety while maintaining runtime flexibility
-        kwargs = cast(TypedDictOutputFormatOptionsKwargs, kwargs_dict)
-        return cls(**kwargs)
+        return cls(**kwargs_dict)
 
 
 # Export for use

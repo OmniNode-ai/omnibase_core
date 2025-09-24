@@ -224,6 +224,7 @@ class ManualYamlValidationDetector:
             "real_file_io.py",
             "yaml_dict_loader.py",
             "validate-string-versions.py",  # Validates YAML syntax for version detection
+            "contracts.py",  # Contract validation requires YAML parsing before Pydantic
         }
         return file_path.name in yaml_utility_files
 
@@ -238,6 +239,7 @@ class ManualYamlValidationDetector:
             "load_yaml_content_as_model",
             "_dump_yaml_content",
             "extract_example_from_schema",
+            "validate_contract_content",  # Contract validation requires YAML parsing
             "read_yaml",  # File I/O utilities
             "load_yaml",
             "_load_yaml_file",

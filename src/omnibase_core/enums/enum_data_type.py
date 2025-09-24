@@ -20,7 +20,7 @@ class EnumDataType(str, Enum):
     JSON = "JSON"
     XML = "XML"
     TEXT = "TEXT"
-    BINARY = "BINARY"
+    BINARY = "binary"
     CSV = "CSV"
     YAML = "YAML"
 

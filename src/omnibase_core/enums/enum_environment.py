@@ -63,7 +63,7 @@ class EnumEnvironment(str, Enum):
             cls.INTEGRATION: "INFO",
             cls.STAGING: "WARN",
             cls.PREVIEW: "WARN",
-            cls.PRODUCTION: "ERROR",
+            cls.PRODUCTION: "error",
         }
         return log_levels.get(environment, "INFO")
 

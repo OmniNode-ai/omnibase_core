@@ -7,7 +7,7 @@ with structured validation and proper type handling.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -15,7 +15,10 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+# Import ModelSchemaValue only when needed to break circular dependency
+if TYPE_CHECKING:
+    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Forward reference for type alias - will be properly defined after the class
 
@@ -53,6 +56,9 @@ class ModelNumericValue(BaseModel):
     def validate_value_type(cls, v: Any, info: ValidationInfo) -> float:
         """Validate that value is numeric."""
         if not isinstance(v, (int, float)):
+            # Use delayed import to break circular dependency
+            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value must be numeric, got {type(v)}",

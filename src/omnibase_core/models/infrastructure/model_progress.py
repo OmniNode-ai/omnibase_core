@@ -1,259 +1,225 @@
 """
-Progress Model (Updated).
+Progress Model (Composed).
 
-Specialized model for tracking and managing progress with validation and utilities.
-Updated to use ModelTimeBased for all timing aspects instead of raw datetime calculations.
+Composed model that combines focused progress tracking components.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, TypeVar
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.exceptions.onex_error import OnexError
-
-# Import numeric and metadata value types
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
-from .model_metrics_data import ModelMetricsData
-from .model_time_based import ModelTimeBased
+from .progress.model_progress_core import ModelProgressCore
+from .progress.model_progress_metrics import ModelProgressMetrics
+from .progress.model_progress_milestones import ModelProgressMilestones
+from .progress.model_progress_timing import ModelProgressTiming
 
 
 class ModelProgress(BaseModel):
     """
-    Progress tracking model with unified time-based operations.
+    Composed progress tracking model using focused components.
 
     Provides comprehensive progress tracking with percentage validation,
-    phase management, and timing utilities using ModelTimeBased.
+    phase management, timing utilities, milestone tracking, and custom metrics.
+
+    Uses composition pattern with focused components for maintainability.
     """
 
-    # Core progress tracking
-    percentage: float = Field(
-        default=0.0,
-        description="Progress percentage (0.0 to 100.0)",
-        ge=0.0,
-        le=100.0,
+    # Composed components
+    core: ModelProgressCore = Field(
+        default_factory=ModelProgressCore,
+        description="Core progress tracking (percentage, steps, phases, status)",
     )
-
-    # Progress details
-    current_step: int = Field(
-        default=0,
-        description="Current step number",
-        ge=0,
+    timing: ModelProgressTiming = Field(
+        default_factory=ModelProgressTiming,
+        description="Timing and duration calculations",
     )
-    total_steps: int = Field(
-        default=1,
-        description="Total number of steps",
-        ge=1,
+    milestones: ModelProgressMilestones = Field(
+        default_factory=ModelProgressMilestones,
+        description="Milestone management and tracking",
     )
-
-    # Phase tracking
-    current_phase: EnumExecutionPhase = Field(
-        default=EnumExecutionPhase.INITIALIZATION,
-        description="Current execution phase",
+    metrics: ModelProgressMetrics = Field(
+        default_factory=ModelProgressMetrics,
+        description="Custom metrics and tagging",
     )
-    phase_percentage: float = Field(
-        default=0.0,
-        description="Progress within current phase",
-        ge=0.0,
-        le=100.0,
-    )
-
-    # Status and description
-    status_message: EnumStatusMessage = Field(
-        default=EnumStatusMessage.PENDING,
-        description="Current progress status",
-    )
-    detailed_info: str = Field(
-        default="",
-        description="Detailed progress information",
-        max_length=2000,
-    )
-
-    # Timing information using ModelTimeBased
-    start_time: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Progress tracking start time",
-    )
-    last_update_time: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Last progress update time",
-    )
-    estimated_completion_time: datetime | None = Field(
-        default=None,
-        description="Estimated completion time",
-    )
-
-    # Time-based calculations using ModelTimeBased
-    estimated_total_duration: ModelTimeBased[float] | None = Field(
-        default=None,
-        description="Estimated total duration",
-    )
-    estimated_remaining_duration: ModelTimeBased[float] | None = Field(
-        default=None,
-        description="Estimated remaining duration",
-    )
-
-    # Progress milestones
-    milestones: dict[str, float] = Field(
-        default_factory=dict,
-        description="Named progress milestones (name -> percentage)",
-    )
-    completed_milestones: list[str] = Field(
-        default_factory=list,
-        description="List of completed milestone names",
-    )
-
-    # Metadata
-    custom_metrics: ModelMetricsData = Field(
-        default_factory=lambda: ModelMetricsData(
-            collection_id=None,
-            collection_display_name="progress_metrics",
-        ),
-        description="Custom progress metrics with clean typing",
-    )
-    tags: list[str] = Field(
-        default_factory=list,
-        description="Progress tracking tags",
-    )
-
-    @field_validator("current_step")
-    @classmethod
-    def validate_current_step(cls, v: int, info: Any) -> int:
-        """Validate current step doesn't exceed total steps."""
-        if "total_steps" in info.data and info.data["total_steps"] is not None:
-            total = info.data["total_steps"]
-            if v > total:
-                msg = "Current step cannot exceed total steps"
-                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
-        return v
-
-    @field_validator("milestones")
-    @classmethod
-    def validate_milestones(cls, v: dict[str, float]) -> dict[str, float]:
-        """Validate milestone percentages are valid."""
-        for name, percentage in v.items():
-            if not 0.0 <= percentage <= 100.0:
-                msg = f"Milestone '{name}' percentage must be between 0.0 and 100.0"
-                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
-        return v
 
     def model_post_init(self, __context: Any) -> None:
-        """Post-initialization to update calculated fields."""
-        self._update_percentage_from_steps()
-        self._check_milestones()
-        self._update_time_estimates()
+        """Post-initialization to sync components."""
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
 
-    def _update_percentage_from_steps(self) -> None:
-        """Update percentage based on steps if available."""
-        if self.total_steps is not None and self.total_steps > 0:
-            calculated_percentage = (self.current_step / self.total_steps) * 100.0
-            # Only update if not manually set (i.e., still at default)
-            if (
-                self.percentage == 0.0
-                or abs(self.percentage - calculated_percentage) < 0.1
-            ):
-                self.percentage = min(100.0, calculated_percentage)
+    def _sync_timing_with_core(self) -> None:
+        """Sync timing estimates with core progress."""
+        self.timing.update_time_estimates(self.core.percentage)
 
-    def _check_milestones(self) -> None:
-        """Check and update completed milestones."""
-        for name, milestone_percentage in self.milestones.items():
-            if (
-                self.percentage >= milestone_percentage
-                and name not in self.completed_milestones
-            ):
-                self.completed_milestones.append(name)
+    def _sync_milestones_with_core(self) -> None:
+        """Sync milestone completion with core progress."""
+        self.milestones.check_milestones(self.core.percentage)
 
-    def _update_time_estimates(self) -> None:
-        """Update time estimates using ModelTimeBased."""
-        if self.percentage <= 0.0:
-            self.estimated_total_duration = None
-            self.estimated_remaining_duration = None
-            return
-
-        elapsed_seconds = self.elapsed_seconds
-        estimated_total_seconds = (elapsed_seconds / self.percentage) * 100.0
-
-        self.estimated_total_duration = ModelTimeBased.from_seconds(
-            estimated_total_seconds,
+    def _sync_metrics_with_core(self) -> None:
+        """Sync standard metrics with core progress."""
+        self.metrics.update_standard_metrics(
+            percentage=self.core.percentage,
+            current_step=self.core.current_step,
+            total_steps=self.core.total_steps,
+            is_completed=self.core.is_completed,
+            elapsed_seconds=self.timing.elapsed_seconds,
         )
 
-        if self.is_completed:
-            self.estimated_remaining_duration = ModelTimeBased.from_seconds(0.0)
-        else:
-            remaining_seconds = estimated_total_seconds - elapsed_seconds
-            self.estimated_remaining_duration = ModelTimeBased.from_seconds(
-                max(0.0, remaining_seconds),
-            )
+    # Properties for direct access
+    @property
+    def percentage(self) -> float:
+        """Get progress percentage."""
+        return self.core.percentage
 
-        # Update estimated completion time
-        if self.estimated_remaining_duration and not self.is_completed:
-            self.estimated_completion_time = (
-                datetime.now(UTC) + self.estimated_remaining_duration.to_timedelta()
-            )
+    @percentage.setter
+    def percentage(self, value: float) -> None:
+        """Set progress percentage."""
+        self.core.update_percentage(value)
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
+
+    @property
+    def current_step(self) -> int:
+        """Get current step."""
+        return self.core.current_step
+
+    @current_step.setter
+    def current_step(self, value: int) -> None:
+        """Set current step."""
+        self.core.update_step(value)
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
+
+    @property
+    def total_steps(self) -> int:
+        """Get total steps."""
+        return self.core.total_steps
+
+    @total_steps.setter
+    def total_steps(self, value: int) -> None:
+        """Set total steps."""
+        self.core.total_steps = value
+        self.core._update_percentage_from_steps()
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
+
+    @property
+    def current_phase(self) -> EnumExecutionPhase:
+        """Get current phase."""
+        return self.core.current_phase
+
+    @property
+    def phase_percentage(self) -> float:
+        """Get phase percentage."""
+        return self.core.phase_percentage
+
+    @property
+    def status_message(self) -> EnumStatusMessage:
+        """Get status message."""
+        return self.core.status_message
+
+    @property
+    def detailed_info(self) -> str:
+        """Get detailed info."""
+        return self.core.detailed_info
+
+    @property
+    def start_time(self) -> datetime:
+        """Get start time."""
+        return self.timing.start_time
+
+    @property
+    def last_update_time(self) -> datetime:
+        """Get last update time."""
+        return self.timing.last_update_time
+
+    @property
+    def estimated_completion_time(self) -> datetime | None:
+        """Get estimated completion time."""
+        return self.timing.estimated_completion_time
 
     @property
     def is_completed(self) -> bool:
-        """Check if progress is completed (100%)."""
-        return self.percentage >= 100.0
+        """Check if progress is completed."""
+        return self.core.is_completed
 
     @property
     def is_started(self) -> bool:
-        """Check if progress has started (> 0%)."""
-        return self.percentage > 0.0
+        """Check if progress has started."""
+        return self.core.is_started
 
     @property
     def elapsed_time(self) -> timedelta:
-        """Get elapsed time since start."""
-        return datetime.now(UTC) - self.start_time
+        """Get elapsed time."""
+        return self.timing.elapsed_time
 
     @property
     def elapsed_seconds(self) -> float:
-        """Get elapsed time in seconds."""
-        return self.elapsed_time.total_seconds()
+        """Get elapsed seconds."""
+        return self.timing.elapsed_seconds
 
     @property
     def elapsed_minutes(self) -> float:
-        """Get elapsed time in minutes."""
-        return self.elapsed_seconds / 60.0
+        """Get elapsed minutes."""
+        return self.timing.elapsed_minutes
 
     @property
-    def elapsed_time_based(self) -> ModelTimeBased[float]:
-        """Get elapsed time as ModelTimeBased for consistent time operations."""
-        return ModelTimeBased.from_seconds(self.elapsed_seconds)
+    def estimated_total_duration(self) -> timedelta | None:
+        """Get estimated total duration."""
+        if self.timing.estimated_total_duration:
+            return self.timing.estimated_total_duration.to_timedelta()
+        return None
+
+    @property
+    def estimated_remaining_duration(self) -> timedelta | None:
+        """Get estimated remaining duration."""
+        if self.timing.estimated_remaining_duration:
+            return self.timing.estimated_remaining_duration.to_timedelta()
+        return None
 
     @property
     def completion_rate_per_minute(self) -> float:
-        """Get completion rate as percentage per minute."""
-        if self.elapsed_minutes <= 0.0:
-            return 0.0
-        return self.percentage / self.elapsed_minutes
+        """Get completion rate per minute."""
+        return self.timing.get_completion_rate_per_minute(self.core.percentage)
 
+    @property
+    def custom_metrics(self) -> Any:
+        """Get custom metrics."""
+        return self.metrics.custom_metrics
+
+    @property
+    def tags(self) -> list[str]:
+        """Get tags."""
+        return self.metrics.tags
+
+    # Update methods
     def update_percentage(self, new_percentage: float) -> None:
         """Update progress percentage."""
-        self.percentage = max(0.0, min(100.0, new_percentage))
-        self.last_update_time = datetime.now(UTC)
-        self._check_milestones()
-        self._update_time_estimates()
+        self.core.update_percentage(new_percentage)
+        self.timing.update_timestamp()
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
 
     def update_step(self, new_step: int) -> None:
-        """Update current step and recalculate percentage."""
-        if self.total_steps is not None:
-            new_step = min(new_step, self.total_steps)
-        self.current_step = max(0, new_step)
-        self.last_update_time = datetime.now(UTC)
-        self._update_percentage_from_steps()
-        self._check_milestones()
-        self._update_time_estimates()
+        """Update current step."""
+        self.core.update_step(new_step)
+        self.timing.update_timestamp()
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
 
     def increment_step(self, steps: int = 1) -> None:
-        """Increment current step by specified amount."""
-        self.update_step(self.current_step + steps)
+        """Increment current step."""
+        self.core.increment_step(steps)
+        self.timing.update_timestamp()
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
 
     def set_phase(
         self,
@@ -261,143 +227,123 @@ class ModelProgress(BaseModel):
         phase_percentage: float = 0.0,
     ) -> None:
         """Set current execution phase."""
-        self.current_phase = phase
-        self.phase_percentage = max(0.0, min(100.0, phase_percentage))
-        self.last_update_time = datetime.now(UTC)
+        self.core.set_phase(phase, phase_percentage)
+        self.timing.update_timestamp()
 
     def update_phase_percentage(self, percentage: float) -> None:
         """Update percentage within current phase."""
-        self.phase_percentage = max(0.0, min(100.0, percentage))
-        self.last_update_time = datetime.now(UTC)
+        self.core.update_phase_percentage(percentage)
+        self.timing.update_timestamp()
 
     def set_status(self, status: EnumStatusMessage, detailed_info: str = "") -> None:
         """Set status and detailed info."""
-        self.status_message = status
-        if detailed_info:
-            self.detailed_info = detailed_info
-        self.last_update_time = datetime.now(UTC)
+        self.core.set_status(status, detailed_info)
+        self.timing.update_timestamp()
 
     def add_milestone(self, name: str, percentage: float) -> None:
         """Add a progress milestone."""
-        if not 0.0 <= percentage <= 100.0:
-            msg = "Milestone percentage must be between 0.0 and 100.0"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
-        self.milestones[name] = percentage
-        self._check_milestones()
+        self.milestones.add_milestone(name, percentage)
+        self._sync_milestones_with_core()
 
     def remove_milestone(self, name: str) -> bool:
-        """Remove a milestone. Returns True if milestone existed."""
-        removed = name in self.milestones
-        self.milestones.pop(name, None)
-        if name in self.completed_milestones:
-            self.completed_milestones.remove(name)
-        return removed
+        """Remove a milestone."""
+        return self.milestones.remove_milestone(name)
 
     def get_next_milestone(self) -> tuple[str, float] | None:
         """Get the next uncompleted milestone."""
-        uncompleted = {
-            name: percentage
-            for name, percentage in self.milestones.items()
-            if name not in self.completed_milestones and percentage > self.percentage
-        }
-        if not uncompleted:
-            return None
-
-        next_name = min(uncompleted, key=lambda name: uncompleted[name])
-        return (next_name, uncompleted[next_name])
+        return self.milestones.get_next_milestone(self.core.percentage)
 
     def add_custom_metric(self, key: str, value: ModelMetadataValue) -> None:
-        """Add custom progress metric with proper typing."""
-        self.custom_metrics.add_metric(key, value)
-        self.last_update_time = datetime.now(UTC)
+        """Add custom progress metric."""
+        self.metrics.add_custom_metric(key, value)
 
     def add_tag(self, tag: str) -> None:
         """Add a progress tag."""
-        if tag not in self.tags:
-            self.tags.append(tag)
+        self.metrics.add_tag(tag)
 
     def remove_tag(self, tag: str) -> bool:
-        """Remove a progress tag. Returns True if tag existed."""
-        try:
-            self.tags.remove(tag)
-            return True
-        except ValueError:
-            return False
+        """Remove a progress tag."""
+        return self.metrics.remove_tag(tag)
 
     def reset(self) -> None:
         """Reset progress to initial state."""
-        self.percentage = 0.0
-        self.current_step = 0
-        self.phase_percentage = 0.0
-        self.current_phase = EnumExecutionPhase.INITIALIZATION
-        self.status_message = EnumStatusMessage.PENDING
-        self.detailed_info = ""
-        self.start_time = datetime.now(UTC)
-        self.last_update_time = self.start_time
-        self.estimated_completion_time = None
-        self.estimated_total_duration = None
-        self.estimated_remaining_duration = None
-        self.completed_milestones.clear()
-        self.custom_metrics.clear_all_metrics()
+        self.core.reset()
+        self.timing.reset()
+        self.milestones.reset()
+        self.metrics.reset()
 
     def get_time_remaining_formatted(self) -> str:
         """Get formatted remaining time string."""
-        if self.estimated_remaining_duration is None:
-            return "Unknown"
-        if self.is_completed:
-            return "Completed"
-        return str(self.estimated_remaining_duration)
+        return self.timing.get_time_remaining_formatted()
 
     def get_elapsed_formatted(self) -> str:
         """Get formatted elapsed time string."""
-        return str(self.elapsed_time_based)
+        return self.timing.get_elapsed_formatted()
 
     def get_estimated_total_formatted(self) -> str:
         """Get formatted estimated total time string."""
-        if self.estimated_total_duration is None:
-            return "Unknown"
-        return str(self.estimated_total_duration)
+        return self.timing.get_estimated_total_formatted()
 
     def get_summary(self) -> dict[str, ModelMetadataValue]:
         """Get progress summary."""
-        return {
-            "percentage": ModelMetadataValue.from_float(self.percentage),
-            "current_step": ModelMetadataValue.from_int(self.current_step),
-            "total_steps": ModelMetadataValue.from_int(self.total_steps),
+        # Sync all components
+        self._sync_timing_with_core()
+        self._sync_milestones_with_core()
+        self._sync_metrics_with_core()
+
+        # Get comprehensive summary
+        summary = {
+            "percentage": ModelMetadataValue.from_float(self.core.percentage),
+            "current_step": ModelMetadataValue.from_int(self.core.current_step),
+            "total_steps": ModelMetadataValue.from_int(self.core.total_steps),
             "current_phase": ModelMetadataValue.from_string(
-                self.current_phase.value if self.current_phase else "None"
+                self.core.current_phase.value
             ),
-            "phase_percentage": ModelMetadataValue.from_float(self.phase_percentage),
-            "status_message": ModelMetadataValue.from_string(str(self.status_message)),
-            "is_completed": ModelMetadataValue.from_bool(self.is_completed),
-            "elapsed_seconds": ModelMetadataValue.from_float(self.elapsed_seconds),
+            "phase_percentage": ModelMetadataValue.from_float(
+                self.core.phase_percentage
+            ),
+            "status_message": ModelMetadataValue.from_string(
+                str(self.core.status_message)
+            ),
+            "is_completed": ModelMetadataValue.from_bool(self.core.is_completed),
+            "elapsed_seconds": ModelMetadataValue.from_float(
+                self.timing.elapsed_seconds
+            ),
             "estimated_remaining_seconds": ModelMetadataValue.from_float(
-                self.estimated_remaining_duration.to_seconds()
-                if self.estimated_remaining_duration
+                self.timing.estimated_remaining_duration.to_seconds()
+                if self.timing.estimated_remaining_duration
                 else 0.0
             ),
             "completed_milestones": ModelMetadataValue.from_int(
-                len(self.completed_milestones)
+                self.milestones.get_completed_count()
             ),
-            "total_milestones": ModelMetadataValue.from_int(len(self.milestones)),
+            "total_milestones": ModelMetadataValue.from_int(
+                self.milestones.get_total_count()
+            ),
             "completion_rate_per_minute": ModelMetadataValue.from_float(
-                self.completion_rate_per_minute
+                self.timing.get_completion_rate_per_minute(self.core.percentage)
             ),
             "elapsed_formatted": ModelMetadataValue.from_string(
-                self.get_elapsed_formatted()
+                self.timing.get_elapsed_formatted()
             ),
             "remaining_formatted": ModelMetadataValue.from_string(
-                self.get_time_remaining_formatted()
+                self.timing.get_time_remaining_formatted()
             ),
             "total_formatted": ModelMetadataValue.from_string(
-                self.get_estimated_total_formatted()
+                self.timing.get_estimated_total_formatted()
             ),
         }
+
+        # Add custom metrics
+        summary.update(self.metrics.get_metrics_summary())
+
+        return summary
 
     @classmethod
     def create_simple(cls, total_steps: int | None = None) -> ModelProgress:
         """Create simple progress tracker."""
-        return cls(total_steps=total_steps or 0)
+        core = ModelProgressCore.create_simple(total_steps or 1)
+        return cls(core=core)
 
     @classmethod
     def create_with_milestones(
@@ -406,10 +352,9 @@ class ModelProgress(BaseModel):
         total_steps: int | None = None,
     ) -> ModelProgress:
         """Create progress tracker with predefined milestones."""
-        return cls(
-            total_steps=total_steps or 0,
-            milestones=milestones,
-        )
+        core = ModelProgressCore.create_simple(total_steps or 1)
+        milestone_component = ModelProgressMilestones.create_with_milestones(milestones)
+        return cls(core=core, milestones=milestone_component)
 
     @classmethod
     def create_phased(
@@ -418,17 +363,9 @@ class ModelProgress(BaseModel):
         total_steps: int | None = None,
     ) -> ModelProgress:
         """Create progress tracker with phase milestones."""
-        milestones = {}
-        phase_increment = 100.0 / len(phases)
-
-        for i, phase in enumerate(phases):
-            milestone_percentage = (i + 1) * phase_increment
-            milestones[f"phase_{phase.value}"] = milestone_percentage
-
-        return cls(
-            total_steps=total_steps or 0,
-            milestones=milestones,
-        )
+        core = ModelProgressCore.create_phased(phases, total_steps or 1)
+        milestone_component = ModelProgressMilestones.create_phased_milestones(phases)
+        return cls(core=core, milestones=milestone_component)
 
 
 # Export for use

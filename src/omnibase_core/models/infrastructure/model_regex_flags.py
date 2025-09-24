@@ -8,11 +8,12 @@ patterns commonly used in validation scripts and text processing.
 from __future__ import annotations
 
 import re
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_regex_flag_type import EnumRegexFlagType
 from omnibase_core.exceptions.onex_error import OnexError
 
 
@@ -23,7 +24,7 @@ class ModelRegexFlags(BaseModel):
     Replaces Union[re.DOTALL, re.IGNORECASE, re.MULTILINE] with structured flag handling.
     """
 
-    flag_type: Literal["dotall", "ignorecase", "multiline", "combined"] = Field(
+    flag_type: EnumRegexFlagType = Field(
         description="Type discriminator for regex flag"
     )
 
@@ -34,9 +35,9 @@ class ModelRegexFlags(BaseModel):
     def validate_flag_value(self) -> "ModelRegexFlags":
         """Ensure flag value matches the declared type."""
         expected_values = {
-            "dotall": re.DOTALL,
-            "ignorecase": re.IGNORECASE,
-            "multiline": re.MULTILINE,
+            EnumRegexFlagType.DOTALL: re.DOTALL,
+            EnumRegexFlagType.IGNORECASE: re.IGNORECASE,
+            EnumRegexFlagType.MULTILINE: re.MULTILINE,
         }
 
         if self.flag_type in expected_values:
@@ -45,7 +46,7 @@ class ModelRegexFlags(BaseModel):
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Flag value {self.flag_value} doesn't match type {self.flag_type}",
                 )
-        elif self.flag_type == "combined":
+        elif self.flag_type == EnumRegexFlagType.COMBINED:
             # For combined flags, just ensure it's a valid combination
             valid_flags = {re.DOTALL, re.IGNORECASE, re.MULTILINE}
             if not isinstance(self.flag_value, int) or self.flag_value <= 0:
@@ -59,17 +60,17 @@ class ModelRegexFlags(BaseModel):
     @classmethod
     def dotall(cls) -> "ModelRegexFlags":
         """Create DOTALL flag."""
-        return cls(flag_type="dotall", flag_value=re.DOTALL)
+        return cls(flag_type=EnumRegexFlagType.DOTALL, flag_value=re.DOTALL)
 
     @classmethod
     def ignorecase(cls) -> "ModelRegexFlags":
         """Create IGNORECASE flag."""
-        return cls(flag_type="ignorecase", flag_value=re.IGNORECASE)
+        return cls(flag_type=EnumRegexFlagType.IGNORECASE, flag_value=re.IGNORECASE)
 
     @classmethod
     def multiline(cls) -> "ModelRegexFlags":
         """Create MULTILINE flag."""
-        return cls(flag_type="multiline", flag_value=re.MULTILINE)
+        return cls(flag_type=EnumRegexFlagType.MULTILINE, flag_value=re.MULTILINE)
 
     @classmethod
     def combined(cls, *flags: int) -> "ModelRegexFlags":
@@ -77,7 +78,7 @@ class ModelRegexFlags(BaseModel):
         combined_value = 0
         for flag in flags:
             combined_value |= flag
-        return cls(flag_type="combined", flag_value=combined_value)
+        return cls(flag_type=EnumRegexFlagType.COMBINED, flag_value=combined_value)
 
     @classmethod
     def dotall_ignorecase_multiline(cls) -> "ModelRegexFlags":

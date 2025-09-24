@@ -7,12 +7,13 @@ with structured discriminated union pattern for type safety.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
 from omnibase_core.exceptions.onex_error import OnexError
 
 from .model_error_context import ModelErrorContext
@@ -31,16 +32,9 @@ class ModelFlexibleValue(BaseModel):
     structured type safety and proper validation.
     """
 
-    value_type: Literal[
-        "string",
-        "integer",
-        "float",
-        "boolean",
-        "dict",
-        "list",
-        "uuid",
-        "none",
-    ] = Field(description="Type discriminator for value")
+    value_type: EnumFlexibleValueType = Field(
+        description="Type discriminator for value"
+    )
 
     # Value storage (only one should be populated)
     string_value: str | None = None
@@ -61,21 +55,21 @@ class ModelFlexibleValue(BaseModel):
     def validate_single_value(self) -> ModelFlexibleValue:
         """Ensure only one value is set based on type discriminator."""
         values_map = {
-            "string": self.string_value,
-            "integer": self.integer_value,
-            "float": self.float_value,
-            "boolean": self.boolean_value,
-            "dict": self.dict_value,
-            "list": self.list_value,
-            "uuid": self.uuid_value,
-            "none": None,
+            EnumFlexibleValueType.STRING: self.string_value,
+            EnumFlexibleValueType.INTEGER: self.integer_value,
+            EnumFlexibleValueType.FLOAT: self.float_value,
+            EnumFlexibleValueType.BOOLEAN: self.boolean_value,
+            EnumFlexibleValueType.DICT: self.dict_value,
+            EnumFlexibleValueType.LIST: self.list_value,
+            EnumFlexibleValueType.UUID: self.uuid_value,
+            EnumFlexibleValueType.NONE: None,
         }
 
         # Count non-None values
         non_none_count = sum(1 for v in values_map.values() if v is not None)
 
         # For "none" type, all values should be None
-        if self.value_type == "none":
+        if self.value_type == EnumFlexibleValueType.NONE:
             if non_none_count > 0:
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -130,7 +124,7 @@ class ModelFlexibleValue(BaseModel):
     def from_string(cls, value: str, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value from string."""
         return cls(
-            value_type="string",
+            value_type=EnumFlexibleValueType.STRING,
             string_value=value,
             source=source,
             is_validated=True,
@@ -140,7 +134,7 @@ class ModelFlexibleValue(BaseModel):
     def from_integer(cls, value: int, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value from integer."""
         return cls(
-            value_type="integer",
+            value_type=EnumFlexibleValueType.INTEGER,
             integer_value=value,
             source=source,
             is_validated=True,
@@ -150,7 +144,7 @@ class ModelFlexibleValue(BaseModel):
     def from_float(cls, value: float, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value from float."""
         return cls(
-            value_type="float",
+            value_type=EnumFlexibleValueType.FLOAT,
             float_value=value,
             source=source,
             is_validated=True,
@@ -160,7 +154,7 @@ class ModelFlexibleValue(BaseModel):
     def from_boolean(cls, value: bool, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value from boolean."""
         return cls(
-            value_type="boolean",
+            value_type=EnumFlexibleValueType.BOOLEAN,
             boolean_value=value,
             source=source,
             is_validated=True,
@@ -172,7 +166,7 @@ class ModelFlexibleValue(BaseModel):
     ) -> ModelFlexibleValue:
         """Create flexible value from dictionary of ModelSchemaValue."""
         return cls(
-            value_type="dict",
+            value_type=EnumFlexibleValueType.DICT,
             dict_value=value,
             source=source,
             is_validated=True,
@@ -194,7 +188,7 @@ class ModelFlexibleValue(BaseModel):
     ) -> ModelFlexibleValue:
         """Create flexible value from list."""
         return cls(
-            value_type="list",
+            value_type=EnumFlexibleValueType.LIST,
             list_value=value,
             source=source,
             is_validated=True,
@@ -204,7 +198,7 @@ class ModelFlexibleValue(BaseModel):
     def from_uuid(cls, value: UUID, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value from UUID."""
         return cls(
-            value_type="uuid",
+            value_type=EnumFlexibleValueType.UUID,
             uuid_value=value,
             source=source,
             is_validated=True,
@@ -214,7 +208,7 @@ class ModelFlexibleValue(BaseModel):
     def from_none(cls, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value representing None."""
         return cls(
-            value_type="none",
+            value_type=EnumFlexibleValueType.NONE,
             source=source,
             is_validated=True,
         )
@@ -243,21 +237,21 @@ class ModelFlexibleValue(BaseModel):
 
     def get_value(self) -> Any:
         """Get the actual value with proper type."""
-        if self.value_type == "string":
+        if self.value_type == EnumFlexibleValueType.STRING:
             return self.string_value
-        if self.value_type == "integer":
+        if self.value_type == EnumFlexibleValueType.INTEGER:
             return self.integer_value
-        if self.value_type == "float":
+        if self.value_type == EnumFlexibleValueType.FLOAT:
             return self.float_value
-        if self.value_type == "boolean":
+        if self.value_type == EnumFlexibleValueType.BOOLEAN:
             return self.boolean_value
-        if self.value_type == "dict":
+        if self.value_type == EnumFlexibleValueType.DICT:
             return self.dict_value
-        if self.value_type == "list":
+        if self.value_type == EnumFlexibleValueType.LIST:
             return self.list_value
-        if self.value_type == "uuid":
+        if self.value_type == EnumFlexibleValueType.UUID:
             return self.uuid_value
-        if self.value_type == "none":
+        if self.value_type == EnumFlexibleValueType.NONE:
             return None
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -275,28 +269,36 @@ class ModelFlexibleValue(BaseModel):
     def get_python_type(self) -> type:
         """Get the Python type of the stored value."""
         type_map = {
-            "string": str,
-            "integer": int,
-            "float": float,
-            "boolean": bool,
-            "dict": dict,
-            "list": list,
-            "uuid": UUID,
-            "none": type(None),
+            EnumFlexibleValueType.STRING: str,
+            EnumFlexibleValueType.INTEGER: int,
+            EnumFlexibleValueType.FLOAT: float,
+            EnumFlexibleValueType.BOOLEAN: bool,
+            EnumFlexibleValueType.DICT: dict,
+            EnumFlexibleValueType.LIST: list,
+            EnumFlexibleValueType.UUID: UUID,
+            EnumFlexibleValueType.NONE: type(None),
         }
         return type_map[self.value_type]
 
     def is_none(self) -> bool:
         """Check if the value represents None."""
-        return self.value_type == "none"
+        return self.value_type == EnumFlexibleValueType.NONE
 
     def is_primitive(self) -> bool:
         """Check if the value is a primitive type (string, int, float, bool)."""
-        return self.value_type in ["string", "integer", "float", "boolean"]
+        return self.value_type in [
+            EnumFlexibleValueType.STRING,
+            EnumFlexibleValueType.INTEGER,
+            EnumFlexibleValueType.FLOAT,
+            EnumFlexibleValueType.BOOLEAN,
+        ]
 
     def is_collection(self) -> bool:
         """Check if the value is a collection type (dict, list)."""
-        return self.value_type in ["dict", "list"]
+        return self.value_type in [
+            EnumFlexibleValueType.DICT,
+            EnumFlexibleValueType.LIST,
+        ]
 
     def to_schema_value(self) -> ModelSchemaValue:
         """Convert to ModelSchemaValue."""

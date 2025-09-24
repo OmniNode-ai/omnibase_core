@@ -13,9 +13,9 @@ class EnumExecutionMode(str, Enum):
     """Strongly typed execution mode values."""
 
     AUTO = "AUTO"
-    MANUAL = "MANUAL"
-    SCHEDULED = "SCHEDULED"
-    TRIGGER_BASED = "TRIGGER_BASED"
+    MANUAL = "manual"
+    SCHEDULED = "scheduled"
+    TRIGGER_BASED = "trigger_based"
 
 
 # Export for use

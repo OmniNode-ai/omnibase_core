@@ -21,6 +21,7 @@ class EnumComplexityLevel(str, Enum):
     COMPLEX = "complex"
     ADVANCED = "advanced"
     EXPERT = "expert"
+    CRITICAL = "critical"
     UNKNOWN = "unknown"
 
     def __str__(self) -> str:
@@ -40,6 +41,7 @@ class EnumComplexityLevel(str, Enum):
             cls.COMPLEX: 8,
             cls.ADVANCED: 9,
             cls.EXPERT: 10,
+            cls.CRITICAL: 11,
             cls.UNKNOWN: 5,  # Default to medium
         }
         return mapping.get(level, 5)
@@ -52,7 +54,7 @@ class EnumComplexityLevel(str, Enum):
     @classmethod
     def is_complex(cls, level: EnumComplexityLevel) -> bool:
         """Check if complexity level is considered complex."""
-        return level in {cls.HIGH, cls.COMPLEX, cls.ADVANCED, cls.EXPERT}
+        return level in {cls.HIGH, cls.COMPLEX, cls.ADVANCED, cls.EXPERT, cls.CRITICAL}
 
 
 # Export for use

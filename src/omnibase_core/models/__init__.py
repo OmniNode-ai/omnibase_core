@@ -19,8 +19,13 @@ from . import (
 )
 
 # Re-export key models for convenience
-from .common import ModelErrorContext, ModelOnexError, ModelSchemaValue
-from .infrastructure import Result, err, ok
+from .common import (
+    ModelErrorContext,
+    ModelNumericValue,
+    ModelOnexError,
+    ModelSchemaValue,
+)
+from .infrastructure import err, ok
 from .model_yaml_dump_options import ModelYamlDumpOptions
 from .validation import ModelValidationError
 
@@ -38,10 +43,10 @@ __all__ = [
     "validation",
     # Commonly used models
     "ModelErrorContext",
+    "ModelNumericValue",
     "ModelOnexError",
     "ModelSchemaValue",
     "ModelYamlDumpOptions",
-    "Result",
     "ok",
     "err",
     "ModelValidationError",

@@ -11,7 +11,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import Result
+from omnibase_core.models.infrastructure.model_result import ModelResult
 
 
 class ModelCustomProperties(BaseModel):
@@ -53,16 +53,16 @@ class ModelCustomProperties(BaseModel):
         """Set a custom boolean value."""
         self.custom_flags[key] = value
 
-    def get_custom_value(self, key: str) -> Result[ModelSchemaValue, str]:
+    def get_custom_value(self, key: str) -> ModelResult[ModelSchemaValue, str]:
         """Get custom value from any category."""
         # Check each category with explicit typing
         if key in self.custom_strings:
-            return Result.ok(ModelSchemaValue.from_value(self.custom_strings[key]))
+            return ModelResult.ok(ModelSchemaValue.from_value(self.custom_strings[key]))
         if key in self.custom_numbers:
-            return Result.ok(ModelSchemaValue.from_value(self.custom_numbers[key]))
+            return ModelResult.ok(ModelSchemaValue.from_value(self.custom_numbers[key]))
         if key in self.custom_flags:
-            return Result.ok(ModelSchemaValue.from_value(self.custom_flags[key]))
-        return Result.err(f"Custom field '{key}' not found in any category")
+            return ModelResult.ok(ModelSchemaValue.from_value(self.custom_flags[key]))
+        return ModelResult.err(f"Custom field '{key}' not found in any category")
 
     def has_custom_field(self, key: str) -> bool:
         """Check if custom field exists in any category."""

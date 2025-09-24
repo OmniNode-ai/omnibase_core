@@ -1,7 +1,8 @@
 # Generated from contract: tool_claude_code_response_models v1.0.0
-from typing import Literal
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_cell_type import EnumCellType
+from omnibase_core.enums.enum_edit_mode import EnumEditMode
 
 
 class ModelNotebookEditToolResponse(BaseModel):
@@ -13,11 +14,11 @@ class ModelNotebookEditToolResponse(BaseModel):
         description="Cell number that was modified (0-indexed)",
     )
     cell_id: str | None = Field(None, description="Cell ID that was modified")
-    edit_mode: Literal["replace", "insert", "delete"] = Field(
+    edit_mode: EnumEditMode = Field(
         ...,
         description="Type of edit operation performed",
     )
-    cell_type: Literal["code", "markdown"] | None = Field(
+    cell_type: EnumCellType | None = Field(
         None,
         description="Type of cell that was modified",
     )

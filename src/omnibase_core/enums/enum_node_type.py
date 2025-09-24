@@ -18,14 +18,14 @@ class EnumNodeType(str, Enum):
     """
 
     # Core ONEX node types
-    COMPUTE = "COMPUTE"
-    GATEWAY = "GATEWAY"
-    ORCHESTRATOR = "ORCHESTRATOR"
-    REDUCER = "REDUCER"
-    EFFECT = "EFFECT"
-    VALIDATOR = "VALIDATOR"
-    TRANSFORMER = "TRANSFORMER"
-    AGGREGATOR = "AGGREGATOR"
+    COMPUTE = "compute"
+    GATEWAY = "gateway"
+    ORCHESTRATOR = "orchestrator"
+    REDUCER = "reducer"
+    EFFECT = "effect"
+    VALIDATOR = "validator"
+    TRANSFORMER = "transformer"
+    AGGREGATOR = "aggregator"
 
     # Generic node types
     FUNCTION = "function"

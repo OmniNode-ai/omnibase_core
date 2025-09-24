@@ -17,11 +17,11 @@ class EnumFunctionType(str, Enum):
     type safety and IDE support.
     """
 
-    TRANSFORM = "TRANSFORM"
-    VALIDATE = "VALIDATE"
-    COMPUTE = "COMPUTE"
-    GATEWAY = "GATEWAY"
-    ORCHESTRATOR = "ORCHESTRATOR"
+    TRANSFORM = "transform"
+    VALIDATE = "validate"
+    COMPUTE = "compute"
+    GATEWAY = "gateway"
+    ORCHESTRATOR = "orchestrator"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

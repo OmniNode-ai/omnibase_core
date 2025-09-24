@@ -7,6 +7,7 @@ Models for metadata collection, analytics, and field information.
 from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 
 from .model_generic_metadata import ModelGenericMetadata
+from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
 from .model_metadata_field_info import ModelMetadataFieldInfo
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_collection import ModelMetadataNodeCollection
@@ -16,12 +17,14 @@ from .model_metadata_node_info import (
 )
 from .model_metadata_usage_metrics import ModelMetadataUsageMetrics
 from .model_metadata_value import ModelMetadataValue
+from .model_node_info_summary import ModelNodeInfoSummary
 from .model_numeric_value import ModelNumericValue
 from .model_semver import ModelSemVer
 from .model_typed_metrics import ModelTypedMetrics
 
 __all__ = [
     "ModelGenericMetadata",
+    "ModelMetadataAnalyticsSummary",
     "ModelMetadataFieldInfo",
     "ModelMetadataNodeAnalytics",
     "ModelMetadataNodeCollection",
@@ -29,6 +32,7 @@ __all__ = [
     "ModelMetadataNodeType",
     "ModelMetadataUsageMetrics",
     "ModelMetadataValue",
+    "ModelNodeInfoSummary",
     "ModelNumericValue",
     "ModelSemVer",
     "ModelTypedMetrics",

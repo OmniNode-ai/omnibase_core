@@ -7,11 +7,11 @@ with proper Pydantic validation and type safety for saga pattern workflows.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from typing import Literal
-
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
+from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
 
 
 class ModelCompensationPlan(BaseModel):
@@ -56,13 +56,13 @@ class ModelCompensationPlan(BaseModel):
     )
 
     # Compensation strategy
-    compensation_strategy: Literal["rollback", "forward_recovery", "mixed"] = Field(
-        default="rollback",
+    compensation_strategy: EnumCompensationStrategy = Field(
+        default=EnumCompensationStrategy.ROLLBACK,
         description="Overall compensation strategy",
     )
 
-    execution_order: Literal["reverse", "forward", "parallel"] = Field(
-        default="reverse",
+    execution_order: EnumExecutionOrder = Field(
+        default=EnumExecutionOrder.REVERSE,
         description="Order to execute compensation actions",
     )
 
