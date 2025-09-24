@@ -82,8 +82,8 @@ class ImportPatternValidator:
                         if self.generate_fixes:
                             self._generate_sed_fix(violation)
 
-        except Exception as e:
-            print(f"Error analyzing {file_path}: {e}")
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"Error analyzing {file_path}: {e}", file=sys.stderr)
 
     def _generate_absolute_import(
         self, file_path: Path, relative_path: str, level: int
@@ -126,7 +126,8 @@ class ImportPatternValidator:
 
             # Create cross-platform sed command
             sed_command = (
-                f"sed -i.bak 's/{current_escaped}/{fixed_escaped}/g' && rm *.bak"
+                f"sed -i.bak 's/{current_escaped}/{fixed_escaped}/g' "
+                f"'{violation['file']}' && rm -f '{violation['file']}.bak'"
             )
 
             if directory not in self.fixes_by_directory:
@@ -250,7 +251,7 @@ class ImportPatternValidator:
                         f"{file_fixes[0]['sed_command'].replace(file_fixes[0]['original'], '')}..."
                     )
 
-                print(f"\\n# Or fix all files in directory (cross-platform):")
+                print("\\n# Or fix all files in directory (cross-platform):")
                 print(
                     f"# For macOS/BSD: find {relative_dir} -name '*.py' -exec sed -i '' 's/from \\.\\.\\./from omnibase_core./g' {{}} \\;"
                 )
