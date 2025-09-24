@@ -4,9 +4,10 @@ Trend type enumeration for trend data models.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTrendType(str, Enum):
     """
     Enumeration for trend types.

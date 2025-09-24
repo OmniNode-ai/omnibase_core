@@ -7,9 +7,10 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSeverityLevel(str, Enum):
     """
     Strongly typed severity level for messages and logging.

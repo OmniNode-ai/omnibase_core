@@ -6,9 +6,10 @@ Strongly typed enumeration for YAML dumper option value types.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumYamlOptionType(str, Enum):
     """
     Strongly typed YAML dumper option value types.

@@ -124,7 +124,10 @@ class ImportPatternValidator:
             current_escaped = current.replace("/", "\\/")
             fixed_escaped = fixed_line.replace("/", "\\/")
 
-            sed_command = f"sed -i 's/{current_escaped}/{fixed_escaped}/g'"
+            # Create cross-platform sed command
+            sed_command = (
+                f"sed -i.bak 's/{current_escaped}/{fixed_escaped}/g' && rm *.bak"
+            )
 
             if directory not in self.fixes_by_directory:
                 self.fixes_by_directory[directory] = []
@@ -247,9 +250,12 @@ class ImportPatternValidator:
                         f"{file_fixes[0]['sed_command'].replace(file_fixes[0]['original'], '')}..."
                     )
 
-                print(f"\\n# Or fix all files in directory:")
+                print(f"\\n# Or fix all files in directory (cross-platform):")
                 print(
-                    f"find {relative_dir} -name '*.py' -exec sed -i 's/from \\.\\.\\./from omnibase_core./g' {{}} \\;"
+                    f"# For macOS/BSD: find {relative_dir} -name '*.py' -exec sed -i '' 's/from \\.\\.\\./from omnibase_core./g' {{}} \\;"
+                )
+                print(
+                    f"# For Linux/GNU: find {relative_dir} -name '*.py' -exec sed -i 's/from \\.\\.\\./from omnibase_core./g' {{}} \\;"
                 )
 
     def generate_directory_fixes(self) -> None:
@@ -290,8 +296,13 @@ class ImportPatternValidator:
                 else:
                     continue
 
-                print(f"# Fix {count} imports from {pattern}")
-                print(f"sed -i 's/from {re.escape(pattern)}/from {replacement}/g' *.py")
+                print(f"# Fix {count} imports from {pattern} (cross-platform)")
+                print(
+                    f"# macOS/BSD: sed -i '' 's/from {re.escape(pattern)}/from {replacement}/g' *.py"
+                )
+                print(
+                    f"# Linux/GNU: sed -i 's/from {re.escape(pattern)}/from {replacement}/g' *.py"
+                )
 
             print()
 

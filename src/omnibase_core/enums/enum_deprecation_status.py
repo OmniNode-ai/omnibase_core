@@ -7,9 +7,10 @@ Part of the ONEX strong typing foundation.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDeprecationStatus(str, Enum):
     """
     Deprecation status enumeration for lifecycle management.

@@ -5,9 +5,10 @@ ONEX Core Error Codes
 Standardized error codes for the ONEX framework.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCoreErrorCode(str, Enum):
     """Core error codes for ONEX system."""
 
@@ -22,3 +23,6 @@ class EnumCoreErrorCode(str, Enum):
     RESOURCE_ERROR = "resource_error"
     INTERNAL_ERROR = "internal_error"
     CONVERSION_ERROR = "conversion_error"
+
+
+__all__ = ["EnumCoreErrorCode"]

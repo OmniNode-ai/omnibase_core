@@ -7,9 +7,10 @@ Replaces Literal["create", "overwrite", "append"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOperationType(str, Enum):
     """
     Strongly typed file operation type discriminators.

@@ -6,9 +6,10 @@ Strongly typed context type values for configuration and processing.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumContextType(str, Enum):
     """
     Strongly typed context type values.
@@ -17,11 +18,11 @@ class EnumContextType(str, Enum):
     type safety and IDE support.
     """
 
-    USER = "USER"
+    USER = "user"
     SYSTEM = "system"
-    BATCH = "BATCH"
+    BATCH = "batch"
     INTERACTIVE = "interactive"
-    API = "API"
+    API = "api"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

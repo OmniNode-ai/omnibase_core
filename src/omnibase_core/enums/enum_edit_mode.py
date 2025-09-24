@@ -7,9 +7,10 @@ Replaces Literal["replace", "insert", "delete"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEditMode(str, Enum):
     """
     Strongly typed edit mode discriminators.

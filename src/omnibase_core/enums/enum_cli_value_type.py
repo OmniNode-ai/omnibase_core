@@ -4,9 +4,10 @@ CLI value type enumeration.
 Enumeration for discriminated union types in CLI value objects.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCliValueType(str, Enum):
     """CLI value type enumeration."""
 

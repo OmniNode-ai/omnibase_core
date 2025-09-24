@@ -6,9 +6,10 @@ Strongly typed configuration type values for system configuration classification
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConfigType(str, Enum):
     """
     Strongly typed configuration type values.

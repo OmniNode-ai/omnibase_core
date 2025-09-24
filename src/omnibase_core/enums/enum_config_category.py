@@ -7,9 +7,10 @@ across the ONEX architecture.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConfigCategory(str, Enum):
     """
     Strongly typed configuration categories.

@@ -7,9 +7,10 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConnectionState(str, Enum):
     """
     Strongly typed connection state for lifecycle tracking.

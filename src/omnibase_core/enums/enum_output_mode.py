@@ -7,9 +7,10 @@ Replaces Literal["content", "files_with_matches", "count"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOutputMode(str, Enum):
     """
     Strongly typed output mode discriminators.

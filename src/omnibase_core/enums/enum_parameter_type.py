@@ -6,9 +6,10 @@ Strongly typed parameter type values for ONEX architecture parameter validation.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumParameterType(str, Enum):
     """
     Strongly typed parameter type values for ONEX architecture.
@@ -17,14 +18,14 @@ class EnumParameterType(str, Enum):
     type safety and IDE support for parameter validation operations.
     """
 
-    STRING = "STRING"
-    INTEGER = "INTEGER"
-    FLOAT = "FLOAT"
-    BOOLEAN = "BOOLEAN"
-    OBJECT = "OBJECT"
-    ARRAY = "ARRAY"
-    UUID = "UUID"
-    ENUM = "ENUM"
+    STRING = "string"
+    INTEGER = "integer"
+    FLOAT = "float"
+    BOOLEAN = "boolean"
+    OBJECT = "object"
+    ARRAY = "array"
+    UUID = "uuid"
+    ENUM = "enum"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

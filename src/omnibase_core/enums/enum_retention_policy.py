@@ -6,9 +6,10 @@ Defines data retention policies for compliance and lifecycle management.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRetentionPolicy(str, Enum):
     """
     Enumeration of data retention policies.

@@ -4,9 +4,10 @@ Time period enumeration for trend data models.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTimePeriod(str, Enum):
     """
     Enumeration for time periods in trend analysis.

@@ -6,10 +6,11 @@ Defines communication protocols for node configurations.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
-class EnumProtocolType(Enum):
+@unique
+class EnumProtocolType(str, Enum):
     """Communication protocol types."""
 
     HTTP = "http"
@@ -20,6 +21,9 @@ class EnumProtocolType(Enum):
     GRPC = "grpc"
     REST = "rest"
     GRAPHQL = "graphql"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 # Export for use

@@ -6,9 +6,10 @@ Strongly typed enumeration for regex flag type discriminators.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRegexFlagType(str, Enum):
     """
     Strongly typed regex flag type discriminators.

@@ -7,9 +7,10 @@ Reduces reliance on free-form string tags while maintaining extensibility.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStandardTag(str, Enum):
     """
     Standard tags for metadata classification.

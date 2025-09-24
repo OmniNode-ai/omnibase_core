@@ -7,9 +7,10 @@ Replaces Literal["end_turn", "max_tokens", "stop_sequence"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStopReason(str, Enum):
     """
     Strongly typed stop reason discriminators.

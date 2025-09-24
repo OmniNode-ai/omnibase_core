@@ -7,9 +7,10 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFunctionStatus(str, Enum):
     """
     Strongly typed function status for node operations.

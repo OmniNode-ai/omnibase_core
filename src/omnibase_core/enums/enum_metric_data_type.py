@@ -6,9 +6,10 @@ Strongly typed metric data type values for data type classification.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumMetricDataType(str, Enum):
     """Strongly typed metric data type values."""
 

@@ -6,9 +6,10 @@ Strongly typed category filter values for ONEX architecture filtering operations
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCategoryFilter(str, Enum):
     """
     Strongly typed category filter values for ONEX architecture.
@@ -17,12 +18,12 @@ class EnumCategoryFilter(str, Enum):
     type safety and IDE support for category filtering operations.
     """
 
-    PRIMARY = "PRIMARY"
-    SECONDARY = "SECONDARY"
-    TERTIARY = "TERTIARY"
-    ALL = "ALL"
-    CUSTOM = "CUSTOM"
-    ARCHIVED = "ARCHIVED"
+    PRIMARY = "primary"
+    SECONDARY = "secondary"
+    TERTIARY = "tertiary"
+    ALL = "all"
+    CUSTOM = "custom"
+    ARCHIVED = "archived"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

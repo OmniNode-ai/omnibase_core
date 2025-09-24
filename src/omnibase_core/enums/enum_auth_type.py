@@ -7,9 +7,10 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAuthType(str, Enum):
     """
     Strongly typed authentication type for security operations.

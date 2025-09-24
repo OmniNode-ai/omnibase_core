@@ -6,9 +6,10 @@ Strongly typed enumeration for flexible value type discriminators.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFlexibleValueType(str, Enum):
     """
     Strongly typed flexible value type discriminators.

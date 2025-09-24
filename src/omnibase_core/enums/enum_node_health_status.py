@@ -6,10 +6,11 @@ Defines the health states for nodes in the system.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
-class EnumNodeHealthStatus(Enum):
+@unique
+class EnumNodeHealthStatus(str, Enum):
     """Health status for nodes."""
 
     HEALTHY = "healthy"
@@ -17,6 +18,9 @@ class EnumNodeHealthStatus(Enum):
     UNHEALTHY = "unhealthy"
     CRITICAL = "critical"
     UNKNOWN = "unknown"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 # Export for use

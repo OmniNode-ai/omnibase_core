@@ -14,22 +14,22 @@ class TestEnumStatusMessage:
 
     def test_enum_values(self) -> None:
         """Test all enum values are accessible."""
-        assert EnumStatusMessage.ACTIVE == "ACTIVE"
-        assert EnumStatusMessage.INACTIVE == "INACTIVE"
-        assert EnumStatusMessage.PENDING == "PENDING"
-        assert EnumStatusMessage.PROCESSING == "PROCESSING"
-        assert EnumStatusMessage.COMPLETED == "COMPLETED"
-        assert EnumStatusMessage.FAILED == "FAILED"
+        assert EnumStatusMessage.ACTIVE == "active"
+        assert EnumStatusMessage.INACTIVE == "inactive"
+        assert EnumStatusMessage.PENDING == "pending"
+        assert EnumStatusMessage.PROCESSING == "processing"
+        assert EnumStatusMessage.COMPLETED == "completed"
+        assert EnumStatusMessage.FAILED == "failed"
 
     def test_enum_string_values(self) -> None:
         """Test that enum values have correct string representations."""
         expected_mappings = {
-            EnumStatusMessage.ACTIVE: "ACTIVE",
-            EnumStatusMessage.INACTIVE: "INACTIVE",
-            EnumStatusMessage.PENDING: "PENDING",
-            EnumStatusMessage.PROCESSING: "PROCESSING",
-            EnumStatusMessage.COMPLETED: "COMPLETED",
-            EnumStatusMessage.FAILED: "FAILED",
+            EnumStatusMessage.ACTIVE: "active",
+            EnumStatusMessage.INACTIVE: "inactive",
+            EnumStatusMessage.PENDING: "pending",
+            EnumStatusMessage.PROCESSING: "processing",
+            EnumStatusMessage.COMPLETED: "completed",
+            EnumStatusMessage.FAILED: "failed",
         }
 
         for enum_member, expected_str in expected_mappings.items():
@@ -49,10 +49,10 @@ class TestEnumStatusMessage:
 
     def test_enum_membership(self) -> None:
         """Test enum membership testing."""
-        assert "ACTIVE" in EnumStatusMessage._value2member_map_
-        assert "INACTIVE" in EnumStatusMessage._value2member_map_
-        assert "PENDING" in EnumStatusMessage._value2member_map_
-        assert "PROCESSING" in EnumStatusMessage._value2member_map_
-        assert "COMPLETED" in EnumStatusMessage._value2member_map_
-        assert "FAILED" in EnumStatusMessage._value2member_map_
-        assert "INVALID" not in EnumStatusMessage._value2member_map_
+        assert "active" in EnumStatusMessage._value2member_map_
+        assert "inactive" in EnumStatusMessage._value2member_map_
+        assert "pending" in EnumStatusMessage._value2member_map_
+        assert "processing" in EnumStatusMessage._value2member_map_
+        assert "completed" in EnumStatusMessage._value2member_map_
+        assert "failed" in EnumStatusMessage._value2member_map_
+        assert "invalid" not in EnumStatusMessage._value2member_map_

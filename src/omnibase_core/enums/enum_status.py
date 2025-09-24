@@ -6,9 +6,10 @@ Provides standardized status values for state management across the system.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStatus(str, Enum):
     """
     General status enumeration for state tracking.

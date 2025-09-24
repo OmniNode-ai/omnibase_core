@@ -6,9 +6,10 @@ Defines format types for data collections and exports.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCollectionFormat(str, Enum):
     """
     Enumeration of collection format types.

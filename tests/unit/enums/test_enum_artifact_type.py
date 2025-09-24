@@ -42,13 +42,13 @@ class TestEnumArtifactType:
     def test_enum_string_values(self):
         """Test that enum values have correct string representations."""
         expected_mappings = {
-            EnumArtifactType.TOOL: "TOOL",
-            EnumArtifactType.VALIDATOR: "VALIDATOR",
-            EnumArtifactType.AGENT: "AGENT",
-            EnumArtifactType.MODEL: "MODEL",
-            EnumArtifactType.PLUGIN: "PLUGIN",
-            EnumArtifactType.SCHEMA: "SCHEMA",
-            EnumArtifactType.CONFIG: "CONFIG",
+            EnumArtifactType.TOOL: "tool",
+            EnumArtifactType.VALIDATOR: "validator",
+            EnumArtifactType.AGENT: "agent",
+            EnumArtifactType.MODEL: "model",
+            EnumArtifactType.PLUGIN: "plugin",
+            EnumArtifactType.SCHEMA: "schema",
+            EnumArtifactType.CONFIG: "config",
         }
 
         for enum_member, expected_str in expected_mappings.items():
@@ -57,23 +57,23 @@ class TestEnumArtifactType:
 
     def test_enum_can_be_created_from_string(self):
         """Test that enum members can be created from string values."""
-        assert EnumArtifactType("TOOL") == EnumArtifactType.TOOL
-        assert EnumArtifactType("VALIDATOR") == EnumArtifactType.VALIDATOR
-        assert EnumArtifactType("AGENT") == EnumArtifactType.AGENT
-        assert EnumArtifactType("MODEL") == EnumArtifactType.MODEL
-        assert EnumArtifactType("PLUGIN") == EnumArtifactType.PLUGIN
-        assert EnumArtifactType("SCHEMA") == EnumArtifactType.SCHEMA
-        assert EnumArtifactType("CONFIG") == EnumArtifactType.CONFIG
+        assert EnumArtifactType("tool") == EnumArtifactType.TOOL
+        assert EnumArtifactType("validator") == EnumArtifactType.VALIDATOR
+        assert EnumArtifactType("agent") == EnumArtifactType.AGENT
+        assert EnumArtifactType("model") == EnumArtifactType.MODEL
+        assert EnumArtifactType("plugin") == EnumArtifactType.PLUGIN
+        assert EnumArtifactType("schema") == EnumArtifactType.SCHEMA
+        assert EnumArtifactType("config") == EnumArtifactType.CONFIG
 
     def test_enum_string_comparison(self):
         """Test that enum members can be compared with strings."""
-        assert EnumArtifactType.TOOL == "TOOL"
-        assert EnumArtifactType.VALIDATOR == "VALIDATOR"
-        assert EnumArtifactType.AGENT == "AGENT"
-        assert EnumArtifactType.MODEL == "MODEL"
-        assert EnumArtifactType.PLUGIN == "PLUGIN"
-        assert EnumArtifactType.SCHEMA == "SCHEMA"
-        assert EnumArtifactType.CONFIG == "CONFIG"
+        assert EnumArtifactType.TOOL == "tool"
+        assert EnumArtifactType.VALIDATOR == "validator"
+        assert EnumArtifactType.AGENT == "agent"
+        assert EnumArtifactType.MODEL == "model"
+        assert EnumArtifactType.PLUGIN == "plugin"
+        assert EnumArtifactType.SCHEMA == "schema"
+        assert EnumArtifactType.CONFIG == "config"
 
     def test_enum_member_count(self):
         """Test that the enum has the expected number of members."""
@@ -92,13 +92,13 @@ class TestEnumArtifactType:
     def test_enum_iteration(self):
         """Test that enum can be iterated over."""
         expected_values = {
-            "TOOL",
-            "VALIDATOR",
-            "AGENT",
-            "MODEL",
-            "PLUGIN",
-            "SCHEMA",
-            "CONFIG",
+            "tool",
+            "validator",
+            "agent",
+            "model",
+            "plugin",
+            "schema",
+            "config",
         }
         actual_values = {member.value for member in EnumArtifactType}
         assert actual_values == expected_values
@@ -115,7 +115,7 @@ class TestEnumArtifactType:
 
         # Test that strings work with member values
         tool_member = EnumArtifactType.TOOL
-        assert "TOOL" == tool_member.value
+        assert "tool" == tool_member.value
 
     def test_enum_hash_consistency(self):
         """Test that enum members are hashable and consistent."""
@@ -127,10 +127,10 @@ class TestEnumArtifactType:
 
     def test_enum_repr(self):
         """Test that enum members have proper string representation."""
-        assert repr(EnumArtifactType.TOOL) == "<EnumArtifactType.TOOL: 'TOOL'>"
+        assert repr(EnumArtifactType.TOOL) == "<EnumArtifactType.TOOL: 'tool'>"
         assert (
             repr(EnumArtifactType.VALIDATOR)
-            == "<EnumArtifactType.VALIDATOR: 'VALIDATOR'>"
+            == "<EnumArtifactType.VALIDATOR: 'validator'>"
         )
 
     def test_enum_bool_evaluation(self):
@@ -154,10 +154,10 @@ class TestEnumArtifactType:
     def test_enum_case_sensitivity(self):
         """Test that enum values are case sensitive."""
         with pytest.raises(ValueError):
-            EnumArtifactType("tool")  # Should be "TOOL"
+            EnumArtifactType("TOOL")  # Should be "tool"
 
         with pytest.raises(ValueError):
-            EnumArtifactType("Tool")  # Should be "TOOL"
+            EnumArtifactType("Tool")  # Should be "tool"
 
     def test_enum_with_pydantic_compatibility(self):
         """Test that enum works with Pydantic models."""
@@ -171,12 +171,12 @@ class TestEnumArtifactType:
         assert model.artifact_type == EnumArtifactType.TOOL
 
         # Test string initialization
-        model = TestModel(artifact_type="VALIDATOR")
+        model = TestModel(artifact_type="validator")
         assert model.artifact_type == EnumArtifactType.VALIDATOR
 
         # Test serialization
         data = model.model_dump()
-        assert data["artifact_type"] == "VALIDATOR"
+        assert data["artifact_type"] == "validator"
 
         # Test deserialization
         new_model = TestModel.model_validate(data)
@@ -191,8 +191,8 @@ class TestEnumArtifactType:
         assert EnumArtifactType.TOOL is not EnumArtifactType.VALIDATOR
 
         # Equality with strings should work
-        assert EnumArtifactType.TOOL == "TOOL"
-        assert EnumArtifactType.TOOL != "VALIDATOR"
+        assert EnumArtifactType.TOOL == "tool"
+        assert EnumArtifactType.TOOL != "validator"
 
     def test_enum_ordering_behavior(self):
         """Test that enum members support ordering (inherits from str)."""
@@ -213,12 +213,12 @@ class TestEnumArtifactType:
         assert config.name == EnumArtifactType.TOOL
 
         # Test string initialization
-        config2 = ModelArtifactTypeConfig(name="VALIDATOR")
+        config2 = ModelArtifactTypeConfig(name="validator")
         assert config2.name == EnumArtifactType.VALIDATOR
 
         # Test serialization/deserialization
         data = config.model_dump()
-        assert data["name"] == "TOOL"
+        assert data["name"] == "tool"
 
         reconstructed = ModelArtifactTypeConfig.model_validate(data)
         assert reconstructed.name == EnumArtifactType.TOOL
@@ -240,10 +240,10 @@ class TestEnumArtifactTypeEdgeCases:
     def test_enum_with_whitespace(self):
         """Test behavior with whitespace strings."""
         with pytest.raises(ValueError):
-            EnumArtifactType(" TOOL ")
+            EnumArtifactType(" tool ")
 
         with pytest.raises(ValueError):
-            EnumArtifactType("TOOL ")
+            EnumArtifactType("tool ")
 
     def test_enum_pickling(self):
         """Test that enum members can be pickled and unpickled."""

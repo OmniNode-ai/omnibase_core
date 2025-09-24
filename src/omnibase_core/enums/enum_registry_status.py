@@ -6,9 +6,10 @@ Strongly typed status values for registry operations.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRegistryStatus(str, Enum):
     """Strongly typed registry status values."""
 

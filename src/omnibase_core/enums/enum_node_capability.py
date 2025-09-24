@@ -7,9 +7,10 @@ and functionality across the ONEX architecture.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeCapability(str, Enum):
     """
     Strongly typed node capabilities.

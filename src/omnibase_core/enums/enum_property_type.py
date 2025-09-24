@@ -7,9 +7,10 @@ in environment property storage with proper validation and constraints.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPropertyType(str, Enum):
     """Enum for supported property types."""
 
@@ -22,3 +23,6 @@ class EnumPropertyType(str, Enum):
     FLOAT_LIST = "float_list"
     DATETIME = "datetime"
     UUID = "uuid"
+
+
+__all__ = ["EnumPropertyType"]

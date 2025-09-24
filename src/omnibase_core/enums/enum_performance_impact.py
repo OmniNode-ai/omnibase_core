@@ -6,9 +6,10 @@ Strongly typed enumeration for performance impact levels replacing magic strings
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPerformanceImpact(str, Enum):
     """Performance impact levels for capabilities and operations."""
 
@@ -17,3 +18,6 @@ class EnumPerformanceImpact(str, Enum):
     HIGH = "high"
     CRITICAL = "critical"
     NEGLIGIBLE = "negligible"
+
+
+__all__ = ["EnumPerformanceImpact"]

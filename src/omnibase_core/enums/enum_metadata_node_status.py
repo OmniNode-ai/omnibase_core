@@ -4,9 +4,10 @@ Metadata node status enumeration.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumMetadataNodeStatus(str, Enum):
     """Metadata node status enumeration."""
 
@@ -17,3 +18,6 @@ class EnumMetadataNodeStatus(str, Enum):
     STABLE = "stable"
     BETA = "beta"
     ALPHA = "alpha"
+
+
+__all__ = ["EnumMetadataNodeStatus"]

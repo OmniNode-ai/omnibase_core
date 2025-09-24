@@ -6,9 +6,10 @@ Provides standardized item type values for item classification and filtering.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumItemType(str, Enum):
     """
     Item type enumeration for collection item classification.

@@ -6,9 +6,10 @@ Defines purposes for data collections and analytics.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCollectionPurpose(str, Enum):
     """
     Enumeration of collection purposes.

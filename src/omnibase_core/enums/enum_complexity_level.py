@@ -6,9 +6,10 @@ Defines complexity levels for functions and operations.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumComplexityLevel(str, Enum):
     """Complexity levels for functions and operations."""
 

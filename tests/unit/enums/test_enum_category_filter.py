@@ -15,12 +15,12 @@ class TestEnumCategoryFilter:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
-            "PRIMARY",
-            "SECONDARY",
-            "TERTIARY",
-            "ALL",
-            "CUSTOM",
-            "ARCHIVED",
+            "primary",
+            "secondary",
+            "tertiary",
+            "all",
+            "custom",
+            "archived",
         }
         actual_values = {filter_type.value for filter_type in EnumCategoryFilter}
         assert actual_values == expected_values
@@ -28,7 +28,7 @@ class TestEnumCategoryFilter:
     def test_string_inheritance(self):
         """Test that enum inherits from str."""
         assert isinstance(EnumCategoryFilter.PRIMARY, str)
-        assert EnumCategoryFilter.PRIMARY == "PRIMARY"
+        assert EnumCategoryFilter.PRIMARY == "primary"
 
     def test_is_hierarchical(self):
         """Test hierarchical classification."""

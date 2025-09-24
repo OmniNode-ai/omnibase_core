@@ -7,9 +7,11 @@ Replaces Literal["rollback", "forward_recovery", "mixed"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
+from typing import Literal, assert_never
 
 
+@unique
 class EnumCompensationStrategy(str, Enum):
     """
     Strongly typed compensation strategy discriminators.
@@ -74,14 +76,19 @@ class EnumCompensationStrategy(str, Enum):
         return use_cases.get(strategy, "Unknown use case")
 
     @classmethod
-    def get_complexity_level(cls, strategy: "EnumCompensationStrategy") -> str:
+    def get_complexity_level(
+        cls, strategy: "EnumCompensationStrategy"
+    ) -> Literal["low", "medium", "high", "unknown"]:
         """Get the complexity level of implementing the strategy."""
-        complexity = {
-            cls.ROLLBACK: "medium",
-            cls.FORWARD_RECOVERY: "low",
-            cls.MIXED: "high",
-        }
-        return complexity.get(strategy, "unknown")
+        if strategy == cls.ROLLBACK:
+            return "medium"
+        elif strategy == cls.FORWARD_RECOVERY:
+            return "low"
+        elif strategy == cls.MIXED:
+            return "high"
+        else:
+            # This should never be reached for valid enum values
+            assert_never(strategy)
 
 
 # Export for use

@@ -24,12 +24,12 @@ class TestEnumDataType:
     def test_enum_values(self):
         """Test that all expected enum values are present."""
         expected_values = {
-            "JSON": "JSON",
-            "XML": "XML",
-            "TEXT": "TEXT",
+            "JSON": "json",
+            "XML": "xml",
+            "TEXT": "text",
             "BINARY": "binary",
-            "CSV": "CSV",
-            "YAML": "YAML",
+            "CSV": "csv",
+            "YAML": "yaml",
         }
 
         for name, value in expected_values.items():
@@ -39,10 +39,10 @@ class TestEnumDataType:
 
     def test_string_representation(self):
         """Test string representation of enum values."""
-        assert str(EnumDataType.JSON) == "JSON"
-        assert str(EnumDataType.XML) == "XML"
-        assert str(EnumDataType.TEXT) == "TEXT"
-        assert str(EnumDataType.BINARY) == "binary"  # Only lowercase one
+        assert str(EnumDataType.JSON) == "json"
+        assert str(EnumDataType.XML) == "xml"
+        assert str(EnumDataType.TEXT) == "text"
+        assert str(EnumDataType.BINARY) == "binary"
 
     def test_is_structured(self):
         """Test the is_structured class method."""
@@ -148,7 +148,7 @@ class TestEnumDataType:
         assert len(data_types) == 6
 
         data_type_values = [dt.value for dt in data_types]
-        expected_values = ["JSON", "XML", "TEXT", "binary", "CSV", "YAML"]
+        expected_values = ["json", "xml", "text", "binary", "csv", "yaml"]
 
         assert set(data_type_values) == set(expected_values)
 
@@ -157,12 +157,12 @@ class TestEnumDataType:
         # Test direct serialization
         data_type = EnumDataType.JSON
         json_str = json.dumps(data_type, default=str)
-        assert json_str == '"JSON"'
+        assert json_str == '"json"'
 
         # Test in dictionary
         data = {"format": EnumDataType.YAML}
         json_str = json.dumps(data, default=str)
-        assert '"format": "YAML"' in json_str
+        assert '"format": "yaml"' in json_str
 
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
@@ -175,7 +175,7 @@ class TestEnumDataType:
         assert config.format == EnumDataType.JSON
 
         # Test string assignment (should work due to str inheritance)
-        config = DataConfig(format="XML")
+        config = DataConfig(format="xml")
         assert config.format == EnumDataType.XML
 
         # Test invalid value should raise ValidationError
@@ -192,17 +192,17 @@ class TestEnumDataType:
 
         # Test dict serialization
         config_dict = config.model_dump()
-        assert config_dict == {"format": "CSV"}
+        assert config_dict == {"format": "csv"}
 
         # Test JSON serialization
         json_str = config.model_dump_json()
-        assert json_str == '{"format":"CSV"}'
+        assert json_str == '{"format":"csv"}'
 
     def test_edge_cases(self):
         """Test edge cases and error conditions."""
         # Test case sensitivity - values should match exactly
-        assert EnumDataType.JSON.value == "JSON"
-        assert EnumDataType.JSON.value != "json"
+        assert EnumDataType.JSON.value == "json"
+        assert EnumDataType.JSON.value != "JSON"
         assert EnumDataType.BINARY.value == "binary"
         assert EnumDataType.BINARY.value != "BINARY"
 
@@ -243,32 +243,29 @@ class TestEnumDataType:
         # Test that enum values are YAML serializable
         data = {"data_type": EnumDataType.YAML.value}
         yaml_str = yaml.dump(data, default_flow_style=False)
-        assert "data_type: YAML" in yaml_str
+        assert "data_type: yaml" in yaml_str
 
         # Test that we can load it back
         loaded_data = yaml.safe_load(yaml_str)
-        assert loaded_data["data_type"] == "YAML"
+        assert loaded_data["data_type"] == "yaml"
 
         # Test that the enum value equals the string
-        assert EnumDataType.YAML == "YAML"
+        assert EnumDataType.YAML == "yaml"
 
     def test_case_sensitivity_handling(self):
         """Test that case sensitivity is preserved correctly."""
-        # Most values are uppercase
-        uppercase_types = [
+        # All values are now lowercase for ONEX consistency
+        lowercase_types = [
             EnumDataType.JSON,
             EnumDataType.XML,
             EnumDataType.TEXT,
             EnumDataType.CSV,
             EnumDataType.YAML,
+            EnumDataType.BINARY,
         ]
 
-        for data_type in uppercase_types:
-            assert data_type.value == data_type.value.upper()
-
-        # BINARY is the exception - lowercase
-        assert EnumDataType.BINARY.value == "binary"
-        assert EnumDataType.BINARY.value == EnumDataType.BINARY.value.lower()
+        for data_type in lowercase_types:
+            assert data_type.value == data_type.value.lower()
 
     def test_format_specific_logic(self):
         """Test format-specific logic and use cases."""

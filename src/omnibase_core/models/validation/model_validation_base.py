@@ -75,23 +75,15 @@ class ModelValidationBase(BaseModel):
             enum_module = importlib.import_module(
                 "omnibase_core.enums.enum_core_error_code"
             )
-            EnumCoreErrorCode = enum_module.EnumCoreErrorCode
-        except ImportError:
-            # Fallback if enum module not available
-            EnumCoreErrorCode = None
+            # Get error code strings with fallbacks
+            validation_error_code = enum_module.EnumCoreErrorCode.VALIDATION_ERROR.value
+            internal_error_code = enum_module.EnumCoreErrorCode.INTERNAL_ERROR.value
+        except (ImportError, AttributeError):
+            # Fallback if enum module not available or attributes missing
+            validation_error_code = "validation_error"
+            internal_error_code = "internal_error"
 
         try:
-            # Get error code strings with fallbacks
-            validation_error_code = (
-                EnumCoreErrorCode.VALIDATION_ERROR.value
-                if EnumCoreErrorCode is not None
-                else "validation_error"
-            )
-            internal_error_code = (
-                EnumCoreErrorCode.INTERNAL_ERROR.value
-                if EnumCoreErrorCode is not None
-                else "internal_error"
-            )
 
             # Validate the validation container exists and is properly configured
             # Note: self.validation is never None due to default_factory, but we validate it's working

@@ -6,9 +6,10 @@ Strongly typed output type values for configuration and processing.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOutputType(str, Enum):
     """
     Strongly typed output type values.
@@ -18,9 +19,9 @@ class EnumOutputType(str, Enum):
     """
 
     STREAM = "stream"
-    FILE = "FILE"
+    FILE = "file"
     CONSOLE = "console"
-    API = "API"
+    API = "api"
     DATABASE = "database"
 
     def __str__(self) -> str:

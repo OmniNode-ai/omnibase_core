@@ -7,9 +7,10 @@ Replaces Literal["code", "markdown"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCellType(str, Enum):
     """
     Strongly typed cell type discriminators.

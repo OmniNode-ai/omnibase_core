@@ -6,9 +6,10 @@ Defines environment types for deployment and execution contexts.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEnvironment(str, Enum):
     """
     Enumeration of environment types.

@@ -6,9 +6,10 @@ Defines color schemes for CLI output formatting.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumColorScheme(str, Enum):
     """
     Enumeration of color schemes for CLI output.

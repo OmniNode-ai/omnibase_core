@@ -4,9 +4,10 @@ Validation severity enumeration.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumValidationSeverity(str, Enum):
     """Validation error severity levels."""
 
@@ -14,3 +15,6 @@ class EnumValidationSeverity(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+
+
+__all__ = ["EnumValidationSeverity"]

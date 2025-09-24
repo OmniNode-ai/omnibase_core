@@ -79,15 +79,16 @@ class TestValidationIntegration:
 
         # Create valid model file
         model_content = '''
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ModelUserAuth(BaseModel):
     """User authentication model."""
     user_id: str
     username: str
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 '''
         (models_dir / "model_user_auth.py").write_text(model_content)
 

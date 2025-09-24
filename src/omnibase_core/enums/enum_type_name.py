@@ -6,9 +6,10 @@ Strongly typed type name values for node types.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTypeName(str, Enum):
     """
     Strongly typed type name values for node types.

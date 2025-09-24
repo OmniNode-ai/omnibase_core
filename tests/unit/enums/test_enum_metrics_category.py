@@ -14,24 +14,24 @@ class TestEnumMetricsCategory:
 
     def test_enum_values(self) -> None:
         """Test all enum values are accessible."""
-        assert EnumMetricsCategory.GENERAL == "GENERAL"
-        assert EnumMetricsCategory.PERFORMANCE == "PERFORMANCE"
-        assert EnumMetricsCategory.SYSTEM == "SYSTEM"
-        assert EnumMetricsCategory.BUSINESS == "BUSINESS"
-        assert EnumMetricsCategory.ANALYTICS == "ANALYTICS"
-        assert EnumMetricsCategory.PROGRESS == "PROGRESS"
-        assert EnumMetricsCategory.CUSTOM == "CUSTOM"
+        assert EnumMetricsCategory.GENERAL == "general"
+        assert EnumMetricsCategory.PERFORMANCE == "performance"
+        assert EnumMetricsCategory.SYSTEM == "system"
+        assert EnumMetricsCategory.BUSINESS == "business"
+        assert EnumMetricsCategory.ANALYTICS == "analytics"
+        assert EnumMetricsCategory.PROGRESS == "progress"
+        assert EnumMetricsCategory.CUSTOM == "custom"
 
     def test_enum_string_values(self) -> None:
         """Test that enum values have correct string representations."""
         expected_mappings = {
-            EnumMetricsCategory.GENERAL: "GENERAL",
-            EnumMetricsCategory.PERFORMANCE: "PERFORMANCE",
-            EnumMetricsCategory.SYSTEM: "SYSTEM",
-            EnumMetricsCategory.BUSINESS: "BUSINESS",
-            EnumMetricsCategory.ANALYTICS: "ANALYTICS",
-            EnumMetricsCategory.PROGRESS: "PROGRESS",
-            EnumMetricsCategory.CUSTOM: "CUSTOM",
+            EnumMetricsCategory.GENERAL: "general",
+            EnumMetricsCategory.PERFORMANCE: "performance",
+            EnumMetricsCategory.SYSTEM: "system",
+            EnumMetricsCategory.BUSINESS: "business",
+            EnumMetricsCategory.ANALYTICS: "analytics",
+            EnumMetricsCategory.PROGRESS: "progress",
+            EnumMetricsCategory.CUSTOM: "custom",
         }
 
         for enum_member, expected_str in expected_mappings.items():
@@ -52,11 +52,11 @@ class TestEnumMetricsCategory:
 
     def test_enum_membership(self) -> None:
         """Test enum membership testing."""
-        assert "GENERAL" in EnumMetricsCategory._value2member_map_
-        assert "PERFORMANCE" in EnumMetricsCategory._value2member_map_
-        assert "SYSTEM" in EnumMetricsCategory._value2member_map_
-        assert "BUSINESS" in EnumMetricsCategory._value2member_map_
-        assert "ANALYTICS" in EnumMetricsCategory._value2member_map_
-        assert "PROGRESS" in EnumMetricsCategory._value2member_map_
-        assert "CUSTOM" in EnumMetricsCategory._value2member_map_
+        assert "general" in EnumMetricsCategory._value2member_map_
+        assert "performance" in EnumMetricsCategory._value2member_map_
+        assert "system" in EnumMetricsCategory._value2member_map_
+        assert "business" in EnumMetricsCategory._value2member_map_
+        assert "analytics" in EnumMetricsCategory._value2member_map_
+        assert "progress" in EnumMetricsCategory._value2member_map_
+        assert "custom" in EnumMetricsCategory._value2member_map_
         assert "INVALID" not in EnumMetricsCategory._value2member_map_

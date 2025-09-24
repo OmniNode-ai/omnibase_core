@@ -6,9 +6,10 @@ Strongly typed result type values for configuration and processing.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumResultType(str, Enum):
     """
     Strongly typed result type values.
@@ -20,7 +21,7 @@ class EnumResultType(str, Enum):
     SUCCESS = "success"
     ERROR = "error"
     WARNING = "warning"
-    INFO = "INFO"
+    INFO = "info"
     PARTIAL = "partial"
 
     def __str__(self) -> str:

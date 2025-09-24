@@ -6,9 +6,10 @@ Defines quality levels for documentation assessment.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDocumentationQuality(str, Enum):
     """
     Enumeration of documentation quality levels.

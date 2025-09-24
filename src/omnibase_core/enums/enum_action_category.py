@@ -6,9 +6,10 @@ Categories for organizing different types of CLI actions.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumActionCategory(str, Enum):
     """
     Categories for organizing different types of CLI actions.
@@ -40,3 +41,6 @@ class EnumActionCategory(str, Enum):
     def is_inspection_category(self) -> bool:
         """Check if this category involves inspection operations."""
         return self in [self.VALIDATION, self.INTROSPECTION]
+
+
+__all__ = ["EnumActionCategory"]

@@ -4,9 +4,10 @@ CLI command option value type enumeration.
 Enumeration for discriminated union types in CLI command option value objects.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCliOptionValueType(str, Enum):
     """CLI command option value type enumeration."""
 

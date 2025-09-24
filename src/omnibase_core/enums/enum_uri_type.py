@@ -6,9 +6,10 @@ Defines ONEX URI types for the unified resource identification system.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumUriType(str, Enum):
     """
     Enumeration of ONEX URI types.

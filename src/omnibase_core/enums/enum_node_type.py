@@ -6,9 +6,10 @@ Strongly typed node type values for ONEX architecture node classification.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeType(str, Enum):
     """
     Strongly typed node type values for ONEX architecture.
@@ -18,27 +19,27 @@ class EnumNodeType(str, Enum):
     """
 
     # Core ONEX node types
-    COMPUTE = "COMPUTE"
-    GATEWAY = "GATEWAY"
-    ORCHESTRATOR = "ORCHESTRATOR"
-    REDUCER = "REDUCER"
-    EFFECT = "EFFECT"
-    VALIDATOR = "VALIDATOR"
-    TRANSFORMER = "TRANSFORMER"
-    AGGREGATOR = "AGGREGATOR"
+    COMPUTE = "compute"
+    GATEWAY = "gateway"
+    ORCHESTRATOR = "orchestrator"
+    REDUCER = "reducer"
+    EFFECT = "effect"
+    VALIDATOR = "validator"
+    TRANSFORMER = "transformer"
+    AGGREGATOR = "aggregator"
 
     # Generic node types
-    FUNCTION = "FUNCTION"
-    TOOL = "TOOL"
-    AGENT = "AGENT"
-    MODEL = "MODEL"
-    PLUGIN = "PLUGIN"
-    SCHEMA = "SCHEMA"
-    NODE = "NODE"
-    WORKFLOW = "WORKFLOW"
-    SERVICE = "SERVICE"
-    COMPUTE_GENERIC = "COMPUTE"  # Generic compute node type
-    UNKNOWN = "UNKNOWN"
+    FUNCTION = "function"
+    TOOL = "tool"
+    AGENT = "agent"
+    MODEL = "model"
+    PLUGIN = "plugin"
+    SCHEMA = "schema"
+    NODE = "node"
+    WORKFLOW = "workflow"
+    SERVICE = "service"
+    COMPUTE_GENERIC = "compute_generic"  # Generic compute node type
+    UNKNOWN = "unknown"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

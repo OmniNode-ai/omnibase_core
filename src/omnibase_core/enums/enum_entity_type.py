@@ -6,9 +6,10 @@ Strongly typed entity type values for data classification.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEntityType(str, Enum):
     """
     Strongly typed entity type values for data classification.

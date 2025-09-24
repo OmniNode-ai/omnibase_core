@@ -6,9 +6,10 @@ Strongly typed enumeration for migration conflict type discriminators.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumMigrationConflictType(str, Enum):
     """
     Strongly typed migration conflict type discriminators.

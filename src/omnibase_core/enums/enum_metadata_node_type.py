@@ -4,9 +4,10 @@ Metadata node type enumeration.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumMetadataNodeType(str, Enum):
     """Metadata node type enumeration."""
 
@@ -22,3 +23,6 @@ class EnumMetadataNodeType(str, Enum):
     DOCUMENTATION = "documentation"
     EXAMPLE = "example"
     TEST = "test"
+
+
+__all__ = ["EnumMetadataNodeType"]

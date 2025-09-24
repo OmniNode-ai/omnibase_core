@@ -6,9 +6,10 @@ Strongly typed enumeration for YAML value type discriminators.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumYamlValueType(str, Enum):
     """
     Strongly typed YAML value type discriminators.

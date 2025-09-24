@@ -7,9 +7,10 @@ Replaces Literal["orchestrator", "compute", "reducer", "effect"] patterns.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeArchitectureType(str, Enum):
     """
     Strongly typed 4-node architecture type discriminators.

@@ -6,10 +6,11 @@ Defines the available retry backoff strategies for retry policies.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
-class EnumRetryBackoffStrategy(Enum):
+@unique
+class EnumRetryBackoffStrategy(str, Enum):
     """Retry backoff strategy enumeration."""
 
     FIXED = "fixed"  # Fixed delay between retries
@@ -17,6 +18,9 @@ class EnumRetryBackoffStrategy(Enum):
     EXPONENTIAL = "exponential"  # Exponentially increasing delay
     RANDOM = "random"  # Random delay within range
     FIBONACCI = "fibonacci"  # Fibonacci sequence delays
+
+    def __str__(self) -> str:
+        return self.value  # Fibonacci sequence delays
 
 
 # Export for use

@@ -7,7 +7,9 @@ with proper Pydantic validation and type safety for saga pattern workflows.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
@@ -242,12 +244,10 @@ class ModelCompensationPlan(BaseModel):
 
         return validated
 
-    class Config:
-        """Pydantic configuration for ONEX compliance."""
-
-        extra = "forbid"  # Reject additional fields for strict typing
-        use_enum_values = True  # Convert enums to values
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="forbid",  # Reject additional fields for strict typing
+        validate_assignment=True,
+    )
 
     def to_dict(self) -> dict[str, str | list[str] | bool | int]:
         """

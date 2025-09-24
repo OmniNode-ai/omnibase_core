@@ -6,9 +6,10 @@ Defines data classification levels for security and compliance.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDataClassification(str, Enum):
     """
     Enumeration of data classification levels.

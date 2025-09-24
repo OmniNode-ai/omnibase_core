@@ -4,9 +4,10 @@ CLI context value type enumeration.
 Enumeration for discriminated union types in CLI execution context value objects.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCliContextValueType(str, Enum):
     """CLI context value type enumeration."""
 

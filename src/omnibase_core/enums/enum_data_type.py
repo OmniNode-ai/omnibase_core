@@ -6,9 +6,10 @@ Strongly typed data type values for configuration and processing.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDataType(str, Enum):
     """
     Strongly typed data type values.
@@ -17,12 +18,12 @@ class EnumDataType(str, Enum):
     type safety and IDE support.
     """
 
-    JSON = "JSON"
-    XML = "XML"
-    TEXT = "TEXT"
+    JSON = "json"
+    XML = "xml"
+    TEXT = "text"
     BINARY = "binary"
-    CSV = "CSV"
-    YAML = "YAML"
+    CSV = "csv"
+    YAML = "yaml"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

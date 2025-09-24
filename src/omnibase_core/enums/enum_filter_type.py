@@ -6,9 +6,10 @@ Strongly typed filter type values.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFilterType(str, Enum):
     """Strongly typed filter type values."""
 

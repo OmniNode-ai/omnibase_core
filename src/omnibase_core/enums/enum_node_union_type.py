@@ -6,9 +6,10 @@ Strongly typed enumeration for node union type discriminators.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeUnionType(str, Enum):
     """
     Strongly typed node union type discriminators.
@@ -40,12 +41,14 @@ class EnumNodeUnionType(str, Enum):
     @classmethod
     def is_node_related(cls, node_type: EnumNodeUnionType) -> bool:
         """Check if the node type is related to function nodes."""
-        return node_type in {cls.FUNCTION_NODE, cls.FUNCTION_NODE_DATA}
+        # Future-proof: derive from all enum members
+        return node_type in set(cls)
 
     @classmethod
     def get_all_node_types(cls) -> list[EnumNodeUnionType]:
         """Get all node union types."""
-        return [cls.FUNCTION_NODE, cls.FUNCTION_NODE_DATA]
+        # Future-proof: derive from all enum members
+        return list(cls)
 
 
 # Export for use

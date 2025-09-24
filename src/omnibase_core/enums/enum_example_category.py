@@ -6,9 +6,10 @@ Strongly typed example category values for configuration.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumExampleCategory(str, Enum):
     """Strongly typed example category values."""
 

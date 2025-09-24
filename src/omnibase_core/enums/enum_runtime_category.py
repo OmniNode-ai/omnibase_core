@@ -6,10 +6,11 @@ Defines categories for estimated runtime durations.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
-class EnumRuntimeCategory(Enum):
+@unique
+class EnumRuntimeCategory(str, Enum):
     """
     Runtime category enumeration.
 

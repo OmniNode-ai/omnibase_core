@@ -6,9 +6,10 @@ Strongly typed status values for scenario execution.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumScenarioStatus(str, Enum):
     """Strongly typed scenario status values."""
 

@@ -1,125 +1,240 @@
 #!/bin/bash
-# Automated import pattern fixes for ONEX codebase
+# Cross-platform import pattern fixes for ONEX codebase
+# Now with dynamic repo detection and portable operations
 
-# Fix models/config directory
-echo "🔧 Fixing models/config directory (54 violations)..."
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config
+set -e  # Exit on error
 
-# Fix triple-dot imports to enums
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
+# Color output functions
+print_status() { echo "🔧 $1"; }
+print_success() { echo "✅ $1"; }
+print_error() { echo "❌ ERROR: $1" >&2; }
+print_warning() { echo "⚠️  WARNING: $1" >&2; }
 
-# Fix triple-dot imports to exceptions
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
+# Cross-platform detection
+detect_platform() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "linux"
+    elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        echo "windows"
+    else
+        echo "unknown"
+    fi
+}
 
-# Fix triple-dot imports to protocols_local
-find . -name "*.py" -exec sed -i 's/from \.\.\.protocols_local\./from omnibase_core.protocols_local./g' {} \;
+# Dynamic repo root detection
+get_repo_root() {
+    local repo_root
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        print_error "Not in a git repository or git not available"
+        exit 1
+    fi
+    if [[ ! -d "$repo_root" ]]; then
+        print_error "Repository root not found: $repo_root"
+        exit 1
+    fi
+    echo "$repo_root"
+}
 
-# Fix double-dot imports to other model directories
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.metadata\./from omnibase_core.models.metadata./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.infrastructure\./from omnibase_core.models.infrastructure./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.core\./from omnibase_core.models.core./g' {} \;
+# Cross-platform sed function
+portable_sed() {
+    local pattern="$1"
+    local file="$2"
+    local platform=$(detect_platform)
 
-echo "✅ models/config directory fixed"
+    if [[ "$platform" == "macos" ]]; then
+        # macOS uses BSD sed
+        sed -i '' "$pattern" "$file"
+    else
+        # Linux uses GNU sed
+        sed -i "$pattern" "$file"
+    fi
+}
 
-# Fix models/nodes directory
-echo "🔧 Fixing models/nodes directory (108 violations)..."
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes
+# Safer file replacement using Python for complex operations
+fix_imports_in_file() {
+    local file="$1"
+    local temp_file="${file}.tmp"
 
-# Fix triple-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.protocols_local\./from omnibase_core.protocols_local./g' {} \;
+    python3 - "$file" "$temp_file" << 'EOF'
+import sys
+import re
 
-# Fix double-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.metadata\./from omnibase_core.models.metadata./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.infrastructure\./from omnibase_core.models.infrastructure./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.core\./from omnibase_core.models.core./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.connections\./from omnibase_core.models.connections./g' {} \;
+def fix_import_patterns(content):
+    """Fix import patterns using regex replacements."""
 
-echo "✅ models/nodes directory fixed"
+    # Define replacement patterns
+    patterns = [
+        # Triple-dot imports
+        (r'from \.\.\.enums\.', 'from omnibase_core.enums.'),
+        (r'from \.\.\.exceptions\.', 'from omnibase_core.exceptions.'),
+        (r'from \.\.\.protocols_local\.', 'from omnibase_core.protocols_local.'),
+        (r'from \.\.\.utils\.', 'from omnibase_core.utils.'),
+        (r'from \.\.\.models\.', 'from omnibase_core.models.'),
 
-# Fix models/cli directory
-echo "🔧 Fixing models/cli directory (92 violations)..."
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli
+        # Double-dot imports to models subdirectories
+        (r'from \.\.common\.', 'from omnibase_core.models.common.'),
+        (r'from \.\.metadata\.', 'from omnibase_core.models.metadata.'),
+        (r'from \.\.infrastructure\.', 'from omnibase_core.models.infrastructure.'),
+        (r'from \.\.core\.', 'from omnibase_core.models.core.'),
+        (r'from \.\.connections\.', 'from omnibase_core.models.connections.'),
+        (r'from \.\.nodes\.', 'from omnibase_core.models.nodes.'),
+    ]
 
-# Fix triple-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
+    # Apply replacements
+    for old_pattern, replacement in patterns:
+        content = re.sub(old_pattern, replacement, content)
 
-# Fix double-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.metadata\./from omnibase_core.models.metadata./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.infrastructure\./from omnibase_core.models.infrastructure./g' {} \;
+    return content
 
-echo "✅ models/cli directory fixed"
+if __name__ == "__main__":
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
 
-# Fix models/metadata directory
-echo "🔧 Fixing models/metadata directory (83 violations)..."
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata
+    try:
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
 
-# Fix triple-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.utils\./from omnibase_core.utils./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.models\./from omnibase_core.models./g' {} \;
+        fixed_content = fix_import_patterns(content)
 
-# Fix double-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.infrastructure\./from omnibase_core.models.infrastructure./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.nodes\./from omnibase_core.models.nodes./g' {} \;
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(fixed_content)
 
-echo "✅ models/metadata directory fixed"
+    except Exception as e:
+        print(f"Error processing {input_file}: {e}", file=sys.stderr)
+        sys.exit(1)
+EOF
 
-# Fix models/core directory
-echo "🔧 Fixing models/core directory (51 violations)..."
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core
+    if [[ $? -eq 0 && -f "$temp_file" ]]; then
+        mv "$temp_file" "$file"
+        return 0
+    else
+        [[ -f "$temp_file" ]] && rm -f "$temp_file"
+        return 1
+    fi
+}
 
-# Fix double-dot imports
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.infrastructure\./from omnibase_core.models.infrastructure./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.metadata\./from omnibase_core.models.metadata./g' {} \;
+# Process directory with import fixes
+fix_directory_imports() {
+    local dir_path="$1"
+    local dir_name=$(basename "$dir_path")
 
-echo "✅ models/core directory fixed"
+    if [[ ! -d "$dir_path" ]]; then
+        print_warning "Directory not found: $dir_path"
+        return 1
+    fi
 
-# Fix remaining smaller directories
-echo "🔧 Fixing remaining directories..."
+    print_status "Processing $dir_name directory..."
 
-# models/connections (26 violations)
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
+    local py_files=$(find "$dir_path" -name "*.py" -type f 2>/dev/null)
+    if [[ -z "$py_files" ]]; then
+        print_warning "No Python files found in $dir_path"
+        return 0
+    fi
 
-# models/infrastructure (46 violations)
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.metadata\./from omnibase_core.models.metadata./g' {} \;
+    local processed=0
+    local failed=0
 
-# models/contracts (3 violations)
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.metadata\./from omnibase_core.models.metadata./g' {} \;
+    while IFS= read -r file; do
+        if fix_imports_in_file "$file"; then
+            ((processed++))
+        else
+            print_warning "Failed to process: $file"
+            ((failed++))
+        fi
+    done <<< "$py_files"
 
-# models/validation (8 violations)
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/validation
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
+    if [[ $failed -eq 0 ]]; then
+        print_success "$dir_name directory fixed ($processed files)"
+    else
+        print_warning "$dir_name directory processed with $failed failures ($processed successes)"
+    fi
 
-# models/common (24 violations)
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/common
-find . -name "*.py" -exec sed -i 's/from \.\.\.enums\./from omnibase_core.enums./g' {} \;
-find . -name "*.py" -exec sed -i 's/from \.\.\.exceptions\./from omnibase_core.exceptions./g' {} \;
+    return $failed
+}
 
-# models/utils (1 violation)
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/utils
-find . -name "*.py" -exec sed -i 's/from \.\.common\./from omnibase_core.models.common./g' {} \;
+# Main execution
+main() {
+    print_status "Starting cross-platform import pattern fixes..."
 
-echo "✅ All directories processed!"
-echo "🔍 Running validation to check results..."
+    # Detect platform and git repo
+    local platform=$(detect_platform)
+    local repo_root=$(get_repo_root)
 
-# Return to root and run validation
-cd /Volumes/PRO-G40/Code/omnibase_core
-poetry run python scripts/validation/validate-import-patterns.py src/ --max-violations 0
+    print_status "Platform: $platform"
+    print_status "Repository root: $repo_root"
+
+    # Verify required directories exist
+    local src_dir="$repo_root/src/omnibase_core"
+    if [[ ! -d "$src_dir" ]]; then
+        print_error "Source directory not found: $src_dir"
+        exit 1
+    fi
+
+    # Check if Python3 is available
+    if ! command -v python3 &> /dev/null; then
+        print_error "python3 is required but not found in PATH"
+        exit 1
+    fi
+
+    # Save original directory
+    local original_dir=$(pwd)
+    local total_failures=0
+
+    # Define directories to process (with their expected violation counts in comments)
+    local directories=(
+        "$src_dir/models/config"        # 54 violations
+        "$src_dir/models/nodes"         # 108 violations
+        "$src_dir/models/cli"           # 92 violations
+        "$src_dir/models/metadata"      # 83 violations
+        "$src_dir/models/core"          # 51 violations
+        "$src_dir/models/connections"   # 26 violations
+        "$src_dir/models/infrastructure" # 46 violations
+        "$src_dir/models/contracts"     # 3 violations
+        "$src_dir/models/validation"    # 8 violations
+        "$src_dir/models/common"        # 24 violations
+        "$src_dir/models/utils"         # 1 violation
+    )
+
+    # Process each directory
+    for dir_path in "${directories[@]}"; do
+        if ! fix_directory_imports "$dir_path"; then
+            ((total_failures++))
+        fi
+    done
+
+    # Return to original directory
+    cd "$original_dir"
+
+    print_success "All directories processed!"
+
+    # Run validation if available
+    local validation_script="$repo_root/scripts/validation/validate-import-patterns.py"
+    if [[ -f "$validation_script" ]] && command -v poetry &> /dev/null; then
+        print_status "Running validation to check results..."
+        cd "$repo_root"
+
+        if poetry run python "$validation_script" src/ --max-violations 0; then
+            print_success "Validation passed - all import patterns fixed!"
+        else
+            print_warning "Validation found remaining issues - manual review may be needed"
+            total_failures=$((total_failures + 1))
+        fi
+    else
+        print_warning "Validation script not found or poetry not available - skipping validation"
+    fi
+
+    # Final status
+    if [[ $total_failures -eq 0 ]]; then
+        print_success "Import fixes completed successfully!"
+        exit 0
+    else
+        print_error "Import fixes completed with $total_failures issues"
+        exit 1
+    fi
+}
+
+# Run main function
+main "$@"

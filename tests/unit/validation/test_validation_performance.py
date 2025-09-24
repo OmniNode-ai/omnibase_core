@@ -79,7 +79,7 @@ class TestLargeFilePerformance:
         large_content = '''
 """Large Python file for performance testing."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Dict, List, Optional
 from enum import Enum
 
@@ -99,9 +99,10 @@ class ModelTest{i:04d}(BaseModel):
     metadata_{i}: Optional[Dict[str, str]] = None
     tags_{i}: List[str] = []
 
-    class Config:
-        extra = "forbid"
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+    )
 
     def get_summary_{i}(self) -> Dict[str, any]:
         """Get summary for model {i}."""

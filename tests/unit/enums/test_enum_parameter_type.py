@@ -15,14 +15,14 @@ class TestEnumParameterType:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
-            "STRING",
-            "INTEGER",
-            "FLOAT",
-            "BOOLEAN",
-            "OBJECT",
-            "ARRAY",
-            "UUID",
-            "ENUM",
+            "string",
+            "integer",
+            "float",
+            "boolean",
+            "object",
+            "array",
+            "uuid",
+            "enum",
         }
         actual_values = {param_type.value for param_type in EnumParameterType}
         assert actual_values == expected_values
@@ -30,7 +30,7 @@ class TestEnumParameterType:
     def test_string_inheritance(self):
         """Test that enum inherits from str."""
         assert isinstance(EnumParameterType.STRING, str)
-        assert EnumParameterType.STRING == "STRING"
+        assert EnumParameterType.STRING == "string"
 
     def test_is_primitive(self):
         """Test primitive type classification."""

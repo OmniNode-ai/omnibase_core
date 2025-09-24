@@ -7,9 +7,10 @@ configurations, and data processing across the ONEX architecture.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDataFormat(str, Enum):
     """
     Strongly typed data formats.

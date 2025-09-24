@@ -6,9 +6,10 @@ Strongly typed return type values for ONEX architecture output classification.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumReturnType(str, Enum):
     """
     Strongly typed return type values for ONEX architecture.
@@ -17,23 +18,23 @@ class EnumReturnType(str, Enum):
     type safety and IDE support for return type validation operations.
     """
 
-    MODELS = "MODELS"
-    FILES = "FILES"
-    REPORTS = "REPORTS"
-    ENUMS = "ENUMS"
-    TEXT = "TEXT"
-    METADATA = "METADATA"
-    BINARY = "BINARY"
-    JSON = "JSON"
-    XML = "XML"
-    COMMANDS = "COMMANDS"
-    NODES = "NODES"
+    MODELS = "models"
+    FILES = "files"
+    REPORTS = "reports"
+    ENUMS = "enums"
+    TEXT = "text"
+    METADATA = "metadata"
+    BINARY = "binary"
+    JSON = "json"
+    XML = "xml"
+    COMMANDS = "commands"
+    NODES = "nodes"
     SCHEMAS = "schemas"
     PROTOCOLS = "protocols"
     BACKEND = "backend"
     RESULT = "result"
     STATUS = "status"
-    LOGS = "LOGS"
+    LOGS = "logs"
     RESULTS = "results"
     UNKNOWN = "unknown"
 

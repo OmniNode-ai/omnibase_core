@@ -4,9 +4,10 @@ Metadata node complexity enumeration.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumMetadataNodeComplexity(str, Enum):
     """Metadata node complexity enumeration."""
 
@@ -14,3 +15,6 @@ class EnumMetadataNodeComplexity(str, Enum):
     MODERATE = "moderate"
     COMPLEX = "complex"
     ADVANCED = "advanced"
+
+
+__all__ = ["EnumMetadataNodeComplexity"]

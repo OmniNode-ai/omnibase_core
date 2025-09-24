@@ -4,9 +4,10 @@ CLI input data value type enumeration.
 Enumeration for discriminated union types in CLI execution input data value objects.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCliInputValueType(str, Enum):
     """CLI input data value type enumeration."""
 

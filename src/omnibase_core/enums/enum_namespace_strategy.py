@@ -6,9 +6,10 @@ Defines strategies for namespace handling in ONEX configuration system.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNamespaceStrategy(str, Enum):
     """
     Enumeration of namespace handling strategies.

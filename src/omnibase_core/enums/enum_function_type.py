@@ -6,9 +6,10 @@ Strongly typed function type values for configuration and processing.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFunctionType(str, Enum):
     """
     Strongly typed function type values.

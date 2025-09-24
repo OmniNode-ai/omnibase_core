@@ -90,7 +90,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         errors.append("YAML file too large to parse in memory")
         return errors
 
-    if not content:
+    if content is None:
         return []  # Empty files are OK
 
     # Basic YAML contract validation
@@ -106,12 +106,14 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
 
 def setup_timeout_handler():
-    """Setup timeout handler for long-running validations."""
+    """Setup timeout handler for long-running validations (Unix only)."""
 
     def timeout_handler(signum, frame):
         raise TimeoutError("Validation operation timed out")
 
-    signal.signal(signal.SIGALRM, timeout_handler)
+    # SIGALRM is Unix-only, not available on Windows
+    if hasattr(signal, "SIGALRM"):
+        signal.signal(signal.SIGALRM, timeout_handler)
 
 
 def main():
@@ -145,13 +147,16 @@ def main():
         print(f"❌ Error processing path: {e}")
         return 1
 
-    # Setup timeout for file discovery (30 seconds)
+    # Setup timeout for file discovery (30 seconds) - Unix only
     setup_timeout_handler()
 
     try:
-        signal.alarm(FILE_DISCOVERY_TIMEOUT)
+        # signal.alarm is Unix-only, not available on Windows
+        if hasattr(signal, "SIGALRM"):
+            signal.alarm(FILE_DISCOVERY_TIMEOUT)
         yaml_files = list(base_path.rglob("*.yaml")) + list(base_path.rglob("*.yml"))
-        signal.alarm(0)  # Cancel timeout
+        if hasattr(signal, "SIGALRM"):
+            signal.alarm(0)  # Cancel timeout
     except TimeoutError:
         print("❌ Timeout during file discovery")
         return 1
@@ -185,9 +190,11 @@ def main():
     total_errors = 0
     processed_files = 0
 
-    # Setup timeout for validation
+    # Setup timeout for validation - Unix only
     try:
-        signal.alarm(VALIDATION_TIMEOUT)
+        # signal.alarm is Unix-only, not available on Windows
+        if hasattr(signal, "SIGALRM"):
+            signal.alarm(VALIDATION_TIMEOUT)
 
         for yaml_file in yaml_files:
             try:
@@ -204,7 +211,8 @@ def main():
                 print(f"❌ {yaml_file}: Unexpected validation error: {e}")
                 total_errors += 1
 
-        signal.alarm(0)  # Cancel timeout
+        if hasattr(signal, "SIGALRM"):
+            signal.alarm(0)  # Cancel timeout
 
     except TimeoutError:
         print(

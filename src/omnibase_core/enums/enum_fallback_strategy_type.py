@@ -7,9 +7,10 @@ core fallback strategy types in the ONEX Configuration-Driven Registry System.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFallbackStrategyType(str, Enum):
     """Core fallback strategy types."""
 
@@ -18,3 +19,6 @@ class EnumFallbackStrategyType(str, Enum):
     LOCAL = "local"
     DEGRADED = "degraded"
     FAIL_FAST = "fail_fast"
+
+
+__all__ = ["EnumFallbackStrategyType"]

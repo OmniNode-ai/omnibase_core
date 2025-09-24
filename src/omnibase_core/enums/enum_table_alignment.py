@@ -6,9 +6,10 @@ Defines alignment options for table columns and content.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTableAlignment(str, Enum):
     """
     Enumeration of table alignment options.

@@ -6,10 +6,11 @@ Defines categories for memory usage levels.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 
 
-class EnumMemoryUsage(Enum):
+@unique
+class EnumMemoryUsage(str, Enum):
     """
     Memory usage enumeration.
 
