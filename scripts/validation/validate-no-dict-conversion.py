@@ -51,41 +51,95 @@ class DictConversionDetector(ast.NodeVisitor):
                 }
             )
 
-        # Check for dict[str, Any] return types in methods
-        if (
-            hasattr(node, "returns")
-            and node.returns
-            and isinstance(node.returns, ast.Subscript)
-        ):
-            if (
-                isinstance(node.returns.value, ast.Name)
-                and node.returns.value.id == "dict"
-            ):
-                # Check if it's dict[str, Any] pattern
-                if (
-                    isinstance(node.returns.slice, ast.Tuple)
-                    and len(node.returns.slice.elts) == 2
-                ):
-                    key_type = node.returns.slice.elts[0]
-                    value_type = node.returns.slice.elts[1]
-
-                    if (
-                        isinstance(key_type, ast.Name)
-                        and key_type.id == "str"
-                        and isinstance(value_type, ast.Name)
-                        and value_type.id == "Any"
-                    ):
-                        self.violations.append(
-                            {
-                                "file": self.current_file,
-                                "line": node.lineno,
-                                "type": "dict_any_return",
-                                "method": node.name,
-                                "message": f"Anti-pattern: Method '{node.name}' returns dict[str, Any] - use Pydantic model instead",
-                            }
-                        )
+        # Check for dict patterns in return types
+        if hasattr(node, "returns") and node.returns:
+            self._check_dict_type_annotation(node.returns, node.name, node.lineno)
 
         self.generic_visit(node)
+
+    def _check_dict_type_annotation(
+        self, annotation: ast.AST, context: str, line: int
+    ) -> None:
+        """Check if type annotation contains dict patterns."""
+        # Check for dict[str, Any] or typing.Dict[str, Any]
+        if isinstance(annotation, ast.Subscript):
+            # Built-in dict or typing.Dict
+            if self._is_dict_type(annotation.value):
+                if self._is_str_any_dict_pattern(annotation):
+                    self.violations.append(
+                        {
+                            "file": self.current_file,
+                            "line": line,
+                            "type": "dict_any_return",
+                            "method": context,
+                            "message": f"Anti-pattern: {context} returns dict[str, Any] - use Pydantic model instead",
+                        }
+                    )
+
+            # Check for Optional[dict[...]] or Union[dict[...], None] patterns
+            elif self._is_optional_or_union(annotation.value):
+                for arg in self._get_union_args(annotation):
+                    if isinstance(arg, ast.Subscript) and self._is_dict_type(arg.value):
+                        if self._is_str_any_dict_pattern(arg):
+                            self.violations.append(
+                                {
+                                    "file": self.current_file,
+                                    "line": line,
+                                    "type": "optional_dict_any_return",
+                                    "method": context,
+                                    "message": f"Anti-pattern: {context} returns Optional[dict[str, Any]] - use Pydantic model instead",
+                                }
+                            )
+
+    def _is_dict_type(self, node: ast.AST) -> bool:
+        """Check if AST node represents dict or typing.Dict."""
+        if isinstance(node, ast.Name):
+            return node.id == "dict"
+        elif isinstance(node, ast.Attribute):
+            # Handle typing.Dict
+            return (
+                isinstance(node.value, ast.Name)
+                and node.value.id == "typing"
+                and node.attr == "Dict"
+            )
+        return False
+
+    def _is_optional_or_union(self, node: ast.AST) -> bool:
+        """Check if AST node represents Optional or Union from typing."""
+        if isinstance(node, ast.Name):
+            return node.id in ("Optional", "Union")
+        elif isinstance(node, ast.Attribute):
+            return (
+                isinstance(node.value, ast.Name)
+                and node.value.id == "typing"
+                and node.attr in ("Optional", "Union")
+            )
+        return False
+
+    def _get_union_args(self, annotation: ast.Subscript) -> list[ast.AST]:
+        """Get arguments from Union or Optional type annotation."""
+        if isinstance(annotation.slice, ast.Tuple):
+            return annotation.slice.elts
+        else:
+            # For Optional[T], it's equivalent to Union[T, None]
+            return [annotation.slice]
+
+    def _is_str_any_dict_pattern(self, dict_annotation: ast.Subscript) -> bool:
+        """Check if dict annotation is dict[str, Any] pattern."""
+        if (
+            isinstance(dict_annotation.slice, ast.Tuple)
+            and len(dict_annotation.slice.elts) == 2
+        ):
+            key_type = dict_annotation.slice.elts[0]
+            value_type = dict_annotation.slice.elts[1]
+
+            return (
+                isinstance(key_type, ast.Name)
+                and key_type.id == "str"
+                and isinstance(value_type, ast.Name)
+                and value_type.id == "Any"
+            )
+        return False
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for to_dict() and from_dict() method calls."""
@@ -126,7 +180,10 @@ class DictConversionDetector(ast.NodeVisitor):
 
 
 def find_python_files(directory: Path, exclude_patterns: list[str]) -> list[Path]:
-    """Find all Python files, excluding specified patterns."""
+    """Find all Python files, excluding specified patterns.
+
+    Returns files in deterministic order for stable CI output.
+    """
     python_files = []
 
     for py_file in directory.rglob("*.py"):
@@ -137,6 +194,8 @@ def find_python_files(directory: Path, exclude_patterns: list[str]) -> list[Path
         if not should_exclude:
             python_files.append(py_file)
 
+    # Sort files by path for deterministic order across different systems
+    python_files.sort(key=lambda p: str(p))
     return python_files
 
 
@@ -208,9 +267,22 @@ def main() -> int:
             violations_by_file[file_path] = []
         violations_by_file[file_path].append(violation)
 
-    # Print violations grouped by file
-    for file_path, violations in violations_by_file.items():
-        print(f"❌ {file_path}")
+    # Sort violations by file path and then by line number for reproducible output
+    for file_path in violations_by_file:
+        violations_by_file[file_path].sort(key=lambda v: v["line"])
+
+    # Print violations grouped by file in deterministic order
+    for file_path in sorted(violations_by_file.keys()):
+        violations = violations_by_file[file_path]
+        # Use relative path for cleaner output when possible
+        try:
+            relative_path = Path(file_path).relative_to(Path.cwd())
+            display_path = str(relative_path)
+        except ValueError:
+            # If relative path computation fails, use absolute path
+            display_path = file_path
+
+        print(f"❌ {display_path}")
         for violation in violations:
             print(f"   Line {violation['line']}: {violation['message']}")
         print()

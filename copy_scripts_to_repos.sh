@@ -3,19 +3,32 @@
 
 set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe errors
 
+# Enhanced error handling with ERR trap for better diagnosis
+cleanup_on_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Script failed at line $line_number with exit code $exit_code"
+    print_error "Failed command was: ${BASH_COMMAND}"
+    exit $exit_code
+}
+trap 'cleanup_on_error $LINENO' ERR
+
 # Global variables for better scoping
 declare SCRIPT_DIR=""
 declare SUCCESS_COUNT=0
 declare FAILURE_COUNT=0
 
-# Repository list
+# Get script directory for anchoring repo paths
+declare -r SCRIPT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Repository list - use canonicalized paths anchored to script directory
 declare -ra REPOS=(
-    "../omnibase_spi"
-    "../omniagent"
-    "../omnibase_infra"
-    "../omniplan"
-    "../omnimcp"
-    "../omnimemory"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnibase_spi" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnibase_spi")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omniagent" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omniagent")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnibase_infra" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnibase_infra")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omniplan" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omniplan")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnimcp" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnimcp")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnimemory" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnimemory")"
 )
 
 # Output functions for consistent messaging
@@ -26,7 +39,9 @@ print_warning() { echo "⚠️  WARNING: $1" >&2; }
 
 # Validate source scripts directory
 validate_scripts_directory() {
-    SCRIPT_DIR="$(pwd)/scripts"
+    # Resolve SCRIPT_DIR relative to script location instead of CWD
+    local script_parent_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SCRIPT_DIR="$script_parent_dir/scripts"
 
     if [[ ! -d "$SCRIPT_DIR" ]]; then
         print_error "Scripts directory not found: $SCRIPT_DIR"
@@ -60,16 +75,22 @@ copy_scripts_to_repo() {
 
     print_status "Copying scripts/ to $repo_name..."
 
-    # Remove existing scripts directory if it exists
+    # Ensure destination directory exists and is writable
+    if [[ ! -d "$repo" ]]; then
+        print_error "Cannot create destination - parent directory missing: $repo"
+        return 1
+    fi
+
+    # Remove existing scripts directory if it exists (safer removal with --)
     if [[ -d "$repo/scripts" ]]; then
-        if ! rm -rf "$repo/scripts" 2>/dev/null; then
+        if ! rm -rf -- "$repo/scripts"; then
             print_error "Failed to remove existing scripts directory in $repo_name"
             return 1
         fi
     fi
 
-    # Copy scripts directory
-    if cp -r "$SCRIPT_DIR" "$repo/" 2>/dev/null; then
+    # Copy scripts directory (preserving permissions, symlinks, and metadata)
+    if cp -a "$SCRIPT_DIR" "$repo/"; then
         print_success "Copied scripts/ directory to $repo_name"
         return 0
     else

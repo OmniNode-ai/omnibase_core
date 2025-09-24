@@ -3,20 +3,33 @@
 
 set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe errors
 
+# Enhanced error handling with ERR trap for better diagnosis
+cleanup_on_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Script failed at line $line_number with exit code $exit_code"
+    print_error "Failed command was: ${BASH_COMMAND}"
+    exit $exit_code
+}
+trap 'cleanup_on_error $LINENO' ERR
+
 # Global variables for better scoping
 declare SOURCE_DIR=""
 declare SUCCESS_COUNT=0
 declare FAILURE_COUNT=0
 declare FILES_COPIED=0
 
-# Repository list
+# Get script directory for anchoring repo paths
+declare -r SCRIPT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Repository list - use canonicalized paths anchored to script directory
 declare -ra REPOS=(
-    "../omnibase_spi"
-    "../omniagent"
-    "../omnibase_infra"
-    "../omniplan"
-    "../omnimcp"
-    "../omnimemory"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnibase_spi" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnibase_spi")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omniagent" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omniagent")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnibase_infra" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnibase_infra")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omniplan" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omniplan")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnimcp" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnimcp")"
+    "$(realpath "$SCRIPT_BASE_DIR/../omnimemory" 2>/dev/null || echo "$SCRIPT_BASE_DIR/../omnimemory")"
 )
 
 # Files to copy
@@ -34,7 +47,8 @@ print_warning() { echo "⚠️  WARNING: $1" >&2; }
 
 # Validate source files and directory
 validate_source_files() {
-    SOURCE_DIR="$(pwd)"
+    # Use script directory as default SOURCE_DIR instead of CWD
+    SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local missing_files=0
 
     print_status "Validating source files in: $SOURCE_DIR"
@@ -85,7 +99,18 @@ copy_files_to_repo() {
         local dest_file="$repo/$file"
 
         if [[ -f "$source_file" ]]; then
-            if cp "$source_file" "$dest_file" 2>/dev/null; then
+            # Ensure destination directory exists
+            local dest_dir="$(dirname "$dest_file")"
+            if [[ ! -d "$dest_dir" ]]; then
+                if ! mkdir -p "$dest_dir"; then
+                    print_error "  Failed to create destination directory: $dest_dir"
+                    ((repo_failures++))
+                    continue
+                fi
+            fi
+
+            # Copy with preserved permissions and metadata
+            if cp -a "$source_file" "$dest_file"; then
                 print_success "  Copied $file to $repo_name"
                 ((repo_success++))
                 ((FILES_COPIED++))

@@ -247,7 +247,6 @@ class ManualYamlValidationDetector:
             "load_yaml_content_as_model",
             "_dump_yaml_content",
             "extract_example_from_schema",
-            "validate_contract_content",  # Contract validation requires YAML parsing
             "read_yaml",  # File I/O utilities
             "load_yaml",
             "_load_yaml_file",

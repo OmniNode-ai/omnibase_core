@@ -647,6 +647,8 @@ class StringTypingValidator:
         try:
             # Find Python files in models directory
             python_files = list(directory.rglob("*.py"))
+            # Sort files for deterministic order across different systems
+            python_files.sort(key=lambda p: str(p))
 
             for file_path in python_files:
                 if not self.validate_file(file_path):
@@ -687,8 +689,19 @@ class StringTypingValidator:
                         by_file[violation.file_path] = []
                     by_file[violation.file_path].append(violation)
 
-                for file_path, file_violations in by_file.items():
-                    print(f"📁 {file_path}")
+                # Sort violations by file path and line number for reproducible output
+                for file_path in by_file:
+                    by_file[file_path].sort(key=lambda v: (v.line_number, v.column))
+
+                # Process files in sorted order for deterministic output
+                for file_path in sorted(by_file.keys()):
+                    file_violations = by_file[file_path]
+                    # Use reliable relative path computation with Path APIs
+                    try:
+                        relative_path = str(Path(file_path).relative_to(Path.cwd()))
+                    except ValueError:
+                        relative_path = file_path
+                    print(f"📁 {relative_path}")
 
                     for violation in file_violations:
                         severity_icon = "❌" if violation.severity == "error" else "⚠️"

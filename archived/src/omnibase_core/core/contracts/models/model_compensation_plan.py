@@ -9,7 +9,7 @@ ZERO TOLERANCE: No Any types or dict patterns allowed.
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
@@ -277,7 +277,7 @@ class ModelCompensationPlan(BaseModel):
         """
         try:
             return cls.model_validate(data)
-        except Exception as e:
+        except ValidationError as e:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"Compensation plan validation failed: {e}",

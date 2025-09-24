@@ -3,20 +3,33 @@
 
 set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe errors
 
+# Enhanced error handling with ERR trap for better diagnosis
+cleanup_on_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Script failed at line $line_number with exit code $exit_code"
+    print_error "Failed command was: ${BASH_COMMAND}"
+    exit $exit_code
+}
+trap 'cleanup_on_error $LINENO' ERR
+
 # Global variables for better scoping
 declare FOUND_COUNT=0
 declare REMOVED_COUNT=0
 declare NOT_FOUND_COUNT=0
 declare ERROR_COUNT=0
 
-# Repository list
+# Get script directory for anchoring repo paths
+declare -r SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Repository list - anchor paths to script directory to avoid CWD breakage
 declare -ra REPOS=(
-    "../omnibase_spi"
-    "../omniagent"
-    "../omnibase_infra"
-    "../omniplan"
-    "../omnimcp"
-    "../omnimemory"
+    "$SCRIPT_DIR/../omnibase_spi"
+    "$SCRIPT_DIR/../omniagent"
+    "$SCRIPT_DIR/../omnibase_infra"
+    "$SCRIPT_DIR/../omniplan"
+    "$SCRIPT_DIR/../omnimcp"
+    "$SCRIPT_DIR/../omnimemory"
 )
 
 # File path to remove
@@ -59,8 +72,8 @@ remove_requirements_from_repo() {
         return 1
     fi
 
-    # Attempt to remove the file
-    if rm "$requirements_file" 2>/dev/null; then
+    # Attempt to remove the file (safer removal with --)
+    if rm -f -- "$requirements_file"; then
         print_success "Removed requirements.txt from $repo_name"
         ((REMOVED_COUNT++))
         return 0

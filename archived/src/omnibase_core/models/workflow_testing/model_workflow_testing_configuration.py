@@ -433,7 +433,20 @@ class ModelWorkflowTestingConfiguration(BaseModel):
                         "default_accommodation_strategy": "hybrid_smart",
                     },
                     "dependency_accommodation": {},
-                    "test_workflows": [],
+                    "test_workflows": [
+                        {
+                            "workflow_id": "minimal_test_workflow",
+                            "workflow_description": "Minimal test workflow for configuration validation",
+                            "workflow_priority": "low",
+                            "accommodation_strategy": "hybrid_smart",
+                            "test_execution_steps": [
+                                {
+                                    "step_id": "minimal_validation_step",
+                                    "step_action": "validate_configuration",
+                                }
+                            ],
+                        }
+                    ],
                     "test_contexts": ["local_development", "ci_cd_environment"],
                 },
             ],

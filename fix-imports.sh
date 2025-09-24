@@ -4,6 +4,19 @@
 
 set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe errors
 
+# Enhanced error handling with ERR trap for better diagnosis
+cleanup_on_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Script failed at line $line_number with exit code $exit_code"
+    print_error "Failed command was: ${BASH_COMMAND}"
+    # Clean up any temp files on error
+    local temp_pattern="${TMPDIR:-/tmp}/fix-imports.*.tmp.$$"
+    rm -f -- $temp_pattern 2>/dev/null || true
+    exit $exit_code
+}
+trap 'cleanup_on_error $LINENO' ERR
+
 # Global variables for better scoping
 declare REPO_ROOT=""
 declare PLATFORM=""
@@ -168,8 +181,8 @@ fix_imports_in_file() {
     # Set temp file name
     temp_file="${file}.tmp.$$"
 
-    # Ensure temp file cleanup on exit
-    trap 'rm -f "$temp_file" 2>/dev/null || true' EXIT
+    # Ensure temp file cleanup on exit (safer removal with --)
+    trap 'rm -f -- "$temp_file" 2>/dev/null || true' EXIT
 
     "$PYTHON_CMD" - "$file" "$temp_file" << 'EOF' || python_exit_code=$?
 import sys

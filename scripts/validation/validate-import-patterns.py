@@ -27,7 +27,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Iterator, List, Set, Tuple
+from typing import Iterator
 
 # Constants
 FILE_DISCOVERY_TIMEOUT = 30  # seconds
@@ -105,7 +105,8 @@ def discover_python_files_optimized(base_path: Path) -> Iterator[Path]:
                 continue
 
             # Process files with immediate Python filtering
-            for file_name in files:
+            # Sort files for deterministic order across different systems
+            for file_name in sorted(files):
                 if (
                     file_name.endswith(".py")
                     and not file_name.startswith(".")
@@ -127,8 +128,8 @@ class ImportPatternValidator:
     def __init__(self, max_violations: int = 0, generate_fixes: bool = False):
         self.max_violations = max_violations
         self.generate_fixes = generate_fixes
-        self.violations: List[Dict[str, str]] = []
-        self.fixes_by_directory: Dict[str, List[str]] = {}
+        self.violations: list[dict[str, str]] = []
+        self.fixes_by_directory: dict[str, list[str]] = {}
 
     def detect_multi_level_relative_imports(self, file_path: Path) -> None:
         """Detect relative imports with multiple levels (.., ..., etc.)."""
@@ -214,7 +215,7 @@ class ImportPatternValidator:
 
     def _generate_cross_platform_sed(
         self, file_path: str, current: str, fixed: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Generate cross-platform sed commands with proper error handling."""
         current_escaped = self._escape_sed_pattern(current)
         fixed_escaped = self._escape_sed_pattern(fixed)
@@ -244,7 +245,7 @@ class ImportPatternValidator:
             "fixed_escaped": fixed_escaped,
         }
 
-    def _generate_sed_fix(self, violation: Dict[str, str]) -> None:
+    def _generate_sed_fix(self, violation: dict[str, str]) -> None:
         """Generate cross-platform sed commands to fix the import."""
         directory = violation["directory"]
         current = violation["current_import"].strip()
@@ -353,17 +354,34 @@ class ImportPatternValidator:
                 violations_by_dir[directory] = []
             violations_by_dir[directory].append(violation)
 
+        # Sort violations by directory and line number for reproducible output
+        for directory in violations_by_dir:
+            violations_by_dir[directory].sort(key=lambda v: (v["file"], int(v["line"])))
+
         print(
             f"Found {len(self.violations)} multi-level relative import violations:\\n"
         )
 
-        for directory, dir_violations in violations_by_dir.items():
-            relative_dir = directory.replace(str(Path.cwd()), ".")
+        # Process directories in sorted order for deterministic output
+        for directory in sorted(violations_by_dir.keys()):
+            dir_violations = violations_by_dir[directory]
+            # Use reliable relative path computation with Path APIs
+            try:
+                relative_dir = str(Path(directory).relative_to(Path.cwd()))
+            except ValueError:
+                relative_dir = directory
+            if relative_dir == ".":
+                relative_dir = "."
+
             print(f"📁 {relative_dir} ({len(dir_violations)} violations)")
 
             # Show sample violations
             for violation in dir_violations[:3]:  # Show first 3
-                relative_file = violation["file"].replace(str(Path.cwd()), ".")
+                # Use reliable relative path computation with Path APIs
+                try:
+                    relative_file = str(Path(violation["file"]).relative_to(Path.cwd()))
+                except ValueError:
+                    relative_file = violation["file"]
                 print(f"  🚨 {Path(relative_file).name}:{violation['line']}")
                 print(f"     Current:  {violation['current_import']}")
                 print(
@@ -410,7 +428,11 @@ class ImportPatternValidator:
                 files = set(fix["file"] for fix in fixes)
                 for file_path in sorted(files):
                     file_fixes = [f for f in fixes if f["file"] == file_path]
-                    relative_file = file_path.replace(str(Path.cwd()), ".")
+                    # Use reliable relative path computation with Path APIs
+                    try:
+                        relative_file = str(Path(file_path).relative_to(Path.cwd()))
+                    except ValueError:
+                        relative_file = file_path
 
                     print(
                         f"\\n# Fix {Path(relative_file).name} ({len(file_fixes)} imports)"

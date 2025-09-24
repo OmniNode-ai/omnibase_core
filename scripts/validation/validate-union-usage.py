@@ -13,7 +13,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
 
 
 class UnionLegitimacyValidator:
@@ -40,7 +40,7 @@ class UnionLegitimacyValidator:
 
     def validate_union_legitimacy(
         self, union_pattern: "UnionPattern", file_content: str = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate if a union pattern is legitimate according to ONEX standards.
 
@@ -227,7 +227,7 @@ class UnionLegitimacyValidator:
         types_set = set(pattern.types)
         return any(combo.issubset(types_set) for combo in problematic_combinations)
 
-    def _evaluate_semantic_legitimacy(self, pattern: "UnionPattern") -> Dict[str, Any]:
+    def _evaluate_semantic_legitimacy(self, pattern: "UnionPattern") -> dict[str, Any]:
         """Evaluate legitimacy based on semantic coherence when no specific pattern matches."""
         # Default to legitimate for small, coherent unions
         if len(pattern.types) <= 2:
@@ -250,7 +250,7 @@ class UnionLegitimacyValidator:
 
     def _get_suggestions_for_pattern(
         self, pattern_type: str, pattern: "UnionPattern"
-    ) -> List[str]:
+    ) -> list[str]:
         """Get specific suggestions for improving invalid patterns."""
         suggestions = {
             "primitive_soup": [
@@ -284,7 +284,7 @@ class UnionLegitimacyValidator:
 class UnionPattern:
     """Represents a Union pattern for analysis."""
 
-    def __init__(self, types: List[str], line: int, file_path: str):
+    def __init__(self, types: list[str], line: int, file_path: str):
         self.types = sorted(types)  # Sort for consistent comparison
         self.line = line
         self.file_path = file_path
@@ -311,13 +311,13 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.issues = []
         self.file_path = file_path
         self.file_content = file_content
-        self.union_patterns: List[UnionPattern] = []
+        self.union_patterns: list[UnionPattern] = []
         self.legitimacy_validator = UnionLegitimacyValidator()
 
         # Track patterns by legitimacy
-        self.legitimate_patterns: List[UnionPattern] = []
-        self.invalid_patterns: List[UnionPattern] = []
-        self.validation_results: Dict[str, Any] = {}
+        self.legitimate_patterns: list[UnionPattern] = []
+        self.invalid_patterns: list[UnionPattern] = []
+        self.validation_results: dict[str, Any] = {}
 
         # Statistics
         self.pattern_statistics = {
@@ -344,7 +344,7 @@ class UnionUsageChecker(ast.NodeVisitor):
                 return "None"
             return type(node.value).__name__
         elif isinstance(node, ast.Subscript):
-            # Handle List[str], Dict[str, int], etc.
+            # Handle list[str], dict[str, int], etc.
             if isinstance(node.value, ast.Name):
                 return node.value.id
         elif isinstance(node, ast.Attribute):
@@ -427,7 +427,7 @@ class UnionUsageChecker(ast.NodeVisitor):
                 self._analyze_union_pattern(union_pattern)
         self.generic_visit(node)
 
-    def _extract_union_from_binop(self, node: ast.BinOp) -> List[str]:
+    def _extract_union_from_binop(self, node: ast.BinOp) -> list[str]:
         """Extract union types from modern union syntax (A | B | C)."""
         types = []
 
@@ -466,7 +466,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         self._analyze_union_pattern(union_pattern)
 
 
-def validate_python_file(file_path: Path) -> Dict[str, Any]:
+def validate_python_file(file_path: Path) -> dict[str, Any]:
     """Validate Union usage in a Python file with legitimacy analysis."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -502,7 +502,7 @@ def validate_python_file(file_path: Path) -> Dict[str, Any]:
         }
 
 
-def analyze_repeated_patterns(all_patterns: List[UnionPattern]) -> List[str]:
+def analyze_repeated_patterns(all_patterns: list[UnionPattern]) -> list[str]:
     """Analyze repeated union patterns across files."""
     pattern_counts = Counter()
     pattern_files = defaultdict(set)
@@ -529,7 +529,7 @@ def analyze_repeated_patterns(all_patterns: List[UnionPattern]) -> List[str]:
     return issues
 
 
-def generate_model_suggestions(patterns: List[UnionPattern]) -> List[str]:
+def generate_model_suggestions(patterns: list[UnionPattern]) -> list[str]:
     """Generate specific suggestions for replacing unions with models."""
     suggestions = []
 
@@ -668,6 +668,8 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
         python_files = [base_path]
     else:
         python_files = list(base_path.rglob("*.py"))
+        # Sort files for deterministic order across different systems
+        python_files.sort(key=lambda p: str(p))
 
     # Filter out archived files, examples, and __pycache__
     python_files = [
@@ -850,13 +852,13 @@ def export_legitimacy_report(
     total_unions: int,
     total_legitimate: int,
     total_invalid: int,
-    total_issues: List[str],
-    all_patterns: List[UnionPattern],
-    legitimate_patterns: List[UnionPattern],
-    invalid_patterns: List[UnionPattern],
-    global_statistics: Dict[str, int],
-    suggestions: List[str],
-    python_files: List[Path],
+    total_issues: list[str],
+    all_patterns: list[UnionPattern],
+    legitimate_patterns: list[UnionPattern],
+    invalid_patterns: list[UnionPattern],
+    global_statistics: dict[str, int],
+    suggestions: list[str],
+    python_files: list[Path],
 ) -> None:
     """Export a detailed legitimacy-based report to a file."""
     import json
@@ -1012,11 +1014,11 @@ def export_legitimacy_report(
 def export_detailed_report(
     file_path: str,
     total_unions: int,
-    total_issues: List[str],
-    all_patterns: List[UnionPattern],
-    suggestions: List[str],
+    total_issues: list[str],
+    all_patterns: list[UnionPattern],
+    suggestions: list[str],
     min_complexity: int,
-    python_files: List[Path],
+    python_files: list[Path],
 ) -> None:
     """Export a detailed report to a file."""
     import json

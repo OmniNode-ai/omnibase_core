@@ -9,7 +9,7 @@ This validation script detects the anti-pattern where classes have both:
 This violates ONEX principles of code reuse and proper generic type usage.
 
 Usage:
-    python validate-generic-type-methods.py [path] [--max-violations MAX] [--fix]
+    python validate-generic-type-methods.py [file_or_directory_path] [--max-violations MAX] [--fix]
 
 Exit Codes:
     0: No violations found or within acceptable limits
@@ -23,7 +23,8 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+
+# Using built-in generics (Python 3.9+)
 
 
 class GenericTypeMethodValidator:
@@ -32,7 +33,7 @@ class GenericTypeMethodValidator:
     def __init__(self, max_violations: int = 0, auto_fix: bool = False):
         self.max_violations = max_violations
         self.auto_fix = auto_fix
-        self.violations: List[Dict[str, str]] = []
+        self.violations: list[dict[str, str]] = []
 
         # Pattern: generic method + type-specific methods
         self.generic_method_patterns = [
@@ -64,14 +65,30 @@ class GenericTypeMethodValidator:
         generic_methods = []
         type_specific_methods = []
 
-        # Collect all methods
+        # Collect all methods (including async methods)
         for node in class_node.body:
-            if isinstance(node, ast.FunctionDef):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 methods.append(node.name)
 
-        # Find generic methods
+        # Find generic methods - use exact match or common prefixes to reduce false positives
         for method_name in methods:
-            if any(pattern in method_name for pattern in self.generic_method_patterns):
+            # Check for exact matches or methods that clearly follow generic patterns
+            is_generic = False
+            for pattern in self.generic_method_patterns:
+                if (
+                    method_name == pattern
+                    or method_name.startswith(pattern + "_")
+                    or (
+                        pattern in method_name
+                        and any(
+                            generic_indicator in method_name.lower()
+                            for generic_indicator in ["typed", "generic", "_t"]
+                        )
+                    )
+                ):
+                    is_generic = True
+                    break
+            if is_generic:
                 generic_methods.append(method_name)
 
         # Find type-specific method groups
@@ -125,6 +142,42 @@ class GenericTypeMethodValidator:
         except Exception as e:
             print(f"Error analyzing {file_path}: {e}")
 
+    def _should_skip_file(self, file_path: Path) -> bool:
+        """
+        Determine if a file should be skipped using path-safe logic.
+
+        Args:
+            file_path: Path to the file to check
+
+        Returns:
+            True if the file should be skipped, False otherwise
+        """
+        # Convert to relative path for consistent checking
+        try:
+            rel_path = file_path.relative_to(Path.cwd())
+        except ValueError:
+            # File is not under current directory, use absolute path
+            rel_path = file_path
+
+        # Check if file is in a test directory
+        if any(part in ["tests", "__pycache__"] for part in rel_path.parts):
+            return True
+
+        # Check if file is in validation directory
+        if any(part == "validation" for part in rel_path.parts):
+            return True
+
+        # Check if filename starts with test_ or ends with _test.py
+        filename = file_path.name
+        if filename.startswith("test_") or filename.endswith("_test.py"):
+            return True
+
+        # Check for conftest.py or other test-related files
+        if filename in ["conftest.py", "pytest.ini", "setup.cfg", "tox.ini"]:
+            return True
+
+        return False
+
     def validate_directory(self, directory: Path) -> None:
         """Validate all Python files in a directory."""
         if not directory.exists():
@@ -138,13 +191,38 @@ class GenericTypeMethodValidator:
             return
 
         for file_path in python_files:
-            # Skip test files and validation scripts
-            if any(
-                skip in str(file_path)
-                for skip in ["test_", "_test.py", "tests/", "validation/"]
-            ):
+            # Skip test files and validation scripts using path-safe logic
+            if self._should_skip_file(file_path):
                 continue
             self.analyze_file(file_path)
+
+    def validate_path(self, path: Path) -> None:
+        """
+        Validate a path - can be either a single file or directory.
+
+        Args:
+            path: Path to validate (file or directory)
+        """
+        if not path.exists():
+            print(f"❌ ERROR: Path does not exist: {path}")
+            sys.exit(1)
+
+        if path.is_file():
+            # Single file validation
+            if path.suffix == ".py":
+                if not self._should_skip_file(path):
+                    self.analyze_file(path)
+                else:
+                    print(f"Skipping {path} (matches skip criteria)")
+            else:
+                print(f"❌ ERROR: {path} is not a Python file")
+                sys.exit(1)
+        elif path.is_dir():
+            # Directory validation
+            self.validate_directory(path)
+        else:
+            print(f"❌ ERROR: {path} is neither a file nor a directory")
+            sys.exit(1)
 
     def generate_report(self) -> None:
         """Generate and print violation report."""
@@ -156,9 +234,14 @@ class GenericTypeMethodValidator:
             print("All classes use proper generic method patterns")
             return
 
+        # Sort violations deterministically by file path and line number
+        sorted_violations = sorted(
+            self.violations, key=lambda v: (v["file"], int(v["line"]))
+        )
+
         # Group violations by file
         violations_by_file = {}
-        for violation in self.violations:
+        for violation in sorted_violations:
             file_path = violation["file"]
             if file_path not in violations_by_file:
                 violations_by_file[file_path] = []
@@ -168,7 +251,9 @@ class GenericTypeMethodValidator:
             f"Found {len(self.violations)} generic type method anti-pattern violations:\\n"
         )
 
-        for file_path, file_violations in violations_by_file.items():
+        # Process files in sorted order for deterministic output
+        for file_path in sorted(violations_by_file.keys()):
+            file_violations = violations_by_file[file_path]
             relative_path = file_path.replace(str(Path.cwd()), ".")
             print(f"📁 {relative_path}")
 
@@ -214,7 +299,10 @@ def main():
     )
 
     parser.add_argument(
-        "path", nargs="?", default="src", help="Path to analyze (default: src)"
+        "path",
+        nargs="?",
+        default="src",
+        help="File or directory path to analyze (default: src)",
     )
 
     parser.add_argument(
@@ -238,9 +326,9 @@ def main():
         max_violations=args.max_violations, auto_fix=args.fix
     )
 
-    # Validate the specified directory
+    # Validate the specified path (file or directory)
     path = Path(args.path)
-    validator.validate_directory(path)
+    validator.validate_path(path)
 
     # Generate report
     if not args.quiet:

@@ -113,6 +113,8 @@ class EnumCaseValidator:
             sys.exit(1)
 
         enum_files = list(directory.glob("**/enum_*.py"))
+        # Sort files for deterministic order across different systems
+        enum_files.sort(key=lambda p: str(p))
 
         if not enum_files:
             print(f"No enum files found in {directory}")
@@ -139,10 +141,20 @@ class EnumCaseValidator:
                 violations_by_file[file_path] = []
             violations_by_file[file_path].append(violation)
 
+        # Sort violations by file and line number for reproducible output
+        for file_path in violations_by_file:
+            violations_by_file[file_path].sort(key=lambda v: v["line"])
+
         print(f"Found {len(self.violations)} enum case consistency violations:\n")
 
-        for file_path, file_violations in violations_by_file.items():
-            relative_path = file_path.replace(str(Path.cwd()), ".")
+        # Process files in sorted order for deterministic output
+        for file_path in sorted(violations_by_file.keys()):
+            file_violations = violations_by_file[file_path]
+            # Use reliable relative path computation with Path APIs
+            try:
+                relative_path = str(Path(file_path).relative_to(Path.cwd()))
+            except ValueError:
+                relative_path = file_path
             print(f"📁 {relative_path}")
 
             for violation in file_violations:
