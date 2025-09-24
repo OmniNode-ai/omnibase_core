@@ -7,9 +7,18 @@ from __future__ import annotations
 from typing import Generic, TypeVar, cast
 from uuid import UUID
 
-from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
+# FIXME: ProtocolSupportedMetadataType not available in omnibase_spi
+# from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
+# Temporarily using Protocol metadata as replacement
+from omnibase_spi.protocols.types import (
+    ProtocolMetadata as ProtocolSupportedMetadataType,
+)
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_semver import ModelSemVer
@@ -58,8 +67,18 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
     def set_field(self, key: str, value: T) -> None:
         """Set a custom field value with type validation."""
         if not isinstance(value, (str, int, bool, float)):
-            raise TypeError(
-                f"Value must be str, int, bool, or float, got {type(value)}",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be str, int, bool, or float, got {type(value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "key": ModelSchemaValue.from_value(key),
+                        "value_type": ModelSchemaValue.from_value(str(type(value))),
+                        "expected_types": ModelSchemaValue.from_value(
+                            "str, int, bool, float"
+                        ),
+                    }
+                ),
             )
         if self.custom_fields is None:
             self.custom_fields = {}
@@ -94,8 +113,18 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             else:
                 self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
-            raise TypeError(
-                f"Value type {type(value)} not supported for metadata storage",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value type {type(value)} not supported for metadata storage",
+                details=ModelErrorContext.with_context(
+                    {
+                        "key": ModelSchemaValue.from_value(key),
+                        "value_type": ModelSchemaValue.from_value(str(type(value))),
+                        "supported_interface": ModelSchemaValue.from_value(
+                            "ProtocolSupportedMetadataType"
+                        ),
+                    }
+                ),
             )
 
     def has_field(self, key: str) -> bool:

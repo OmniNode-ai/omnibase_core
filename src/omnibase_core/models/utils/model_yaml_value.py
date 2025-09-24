@@ -8,7 +8,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -64,7 +67,19 @@ class ModelYamlValue(BaseModel):
             return {k: v.to_serializable() for k, v in (self.dict_value or {}).items()}
         elif self.value_type == EnumYamlValueType.LIST:
             return [v.to_serializable() for v in (self.list_value or [])]
-        raise ValueError(f"Invalid value_type: {self.value_type}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid value_type: {self.value_type}",
+            details=ModelErrorContext.with_context(
+                {
+                    "value_type": ModelSchemaValue.from_value(self.value_type),
+                    "expected_types": ModelSchemaValue.from_value(
+                        ["SCHEMA_VALUE", "DICT", "LIST"]
+                    ),
+                    "function": ModelSchemaValue.from_value("to_serializable"),
+                }
+            ),
+        )
 
 
 # Export the model

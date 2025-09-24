@@ -206,9 +206,7 @@ class TestEnumArtifactType:
 
     def test_artifact_type_model_integration(self):
         """Test integration with ModelArtifactTypeConfig."""
-        from ..core.model_artifact_type_config import (
-            ModelArtifactTypeConfig,
-        )
+        from ..core.model_artifact_type_config import ModelArtifactTypeConfig
 
         # Test valid enum usage
         config = ModelArtifactTypeConfig(name=EnumArtifactType.TOOL)

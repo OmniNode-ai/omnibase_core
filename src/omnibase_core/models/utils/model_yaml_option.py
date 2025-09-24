@@ -8,7 +8,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelYamlOption(BaseModel):
@@ -59,7 +63,16 @@ class ModelYamlOption(BaseModel):
             return self.integer_value
         elif self.option_type == EnumYamlOptionType.STRING:
             return self.string_value
-        raise ValueError(f"Invalid option_type: {self.option_type}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid option_type: {self.option_type}",
+            details=ModelErrorContext.with_context(
+                {
+                    "option_type": ModelSchemaValue.from_value(str(self.option_type)),
+                    "method": ModelSchemaValue.from_value("to_value"),
+                }
+            ),
+        )
 
 
 # Export the model

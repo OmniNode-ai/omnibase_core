@@ -17,11 +17,11 @@ class EnumParameterType(str, Enum):
     type safety and IDE support for parameter validation operations.
     """
 
-    STRING = "string"
-    INTEGER = "integer"
+    STRING = "STRING"
+    INTEGER = "INTEGER"
     FLOAT = "FLOAT"
-    BOOLEAN = "boolean"
-    OBJECT = "object"
+    BOOLEAN = "BOOLEAN"
+    OBJECT = "OBJECT"
     ARRAY = "ARRAY"
     UUID = "UUID"
     ENUM = "ENUM"

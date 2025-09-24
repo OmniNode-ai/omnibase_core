@@ -5,12 +5,12 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from src.omnibase_core.models.core import (
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.models.core import (
     ModelCapabilityFactory,
     ModelGenericFactory,
-    ResultFactory,
-    ValidationErrorFactory,
+    ModelResultFactory,
+    ModelValidationErrorFactory,
 )
 
 
@@ -136,12 +136,12 @@ class TestModelGenericFactory:
         assert result.exit_code == 1
 
 
-class TestResultFactory:
+class TestModelResultFactory:
     """Test the specialized result factory."""
 
     def test_init(self):
         """Test result factory initialization."""
-        factory = ResultFactory(TestResultModel)
+        factory = ModelResultFactory(TestResultModel)
         assert factory.model_class == TestResultModel
         assert factory.has_builder("success")
         assert factory.has_builder("error")
@@ -149,7 +149,7 @@ class TestResultFactory:
 
     def test_build_success_result(self):
         """Test building success result."""
-        factory = ResultFactory(TestResultModel)
+        factory = ModelResultFactory(TestResultModel)
         result = factory.build("success", data="test_data")
 
         assert result.success is True
@@ -159,7 +159,7 @@ class TestResultFactory:
 
     def test_build_error_result(self):
         """Test building error result."""
-        factory = ResultFactory(TestResultModel)
+        factory = ModelResultFactory(TestResultModel)
         result = factory.build("error", error_message="test error", exit_code=5)
 
         assert result.success is False
@@ -168,7 +168,7 @@ class TestResultFactory:
 
     def test_build_validation_error_result(self):
         """Test building validation error result."""
-        factory = ResultFactory(TestResultModel)
+        factory = ModelResultFactory(TestResultModel)
         result = factory.build("validation_error", error_message="validation failed")
 
         assert result.success is False
@@ -221,12 +221,12 @@ class TestModelCapabilityFactory:
         assert result.experimental is True
 
 
-class TestValidationErrorFactory:
+class TestModelValidationErrorFactory:
     """Test the specialized validation error factory."""
 
     def test_init(self):
         """Test validation error factory initialization."""
-        factory = ValidationErrorFactory(TestValidationModel)
+        factory = ModelValidationErrorFactory(TestValidationModel)
         assert factory.model_class == TestValidationModel
         assert factory.has_builder("error")
         assert factory.has_builder("warning")
@@ -235,7 +235,7 @@ class TestValidationErrorFactory:
 
     def test_build_error(self):
         """Test building error validation."""
-        factory = ValidationErrorFactory(TestValidationModel)
+        factory = ModelValidationErrorFactory(TestValidationModel)
         result = factory.build("error", message="Test error", field_name="test_field")
 
         assert result.message == "Test error"
@@ -244,7 +244,7 @@ class TestValidationErrorFactory:
 
     def test_build_warning(self):
         """Test building warning validation."""
-        factory = ValidationErrorFactory(TestValidationModel)
+        factory = ModelValidationErrorFactory(TestValidationModel)
         result = factory.build("warning", message="Test warning")
 
         assert result.message == "Test warning"
@@ -252,7 +252,7 @@ class TestValidationErrorFactory:
 
     def test_build_critical(self):
         """Test building critical validation."""
-        factory = ValidationErrorFactory(TestValidationModel)
+        factory = ModelValidationErrorFactory(TestValidationModel)
         result = factory.build("critical", message="Critical error")
 
         assert result.message == "Critical error"
@@ -260,7 +260,7 @@ class TestValidationErrorFactory:
 
     def test_build_info(self):
         """Test building info validation."""
-        factory = ValidationErrorFactory(TestValidationModel)
+        factory = ModelValidationErrorFactory(TestValidationModel)
         result = factory.build("info", message="Info message")
 
         assert result.message == "Info message"

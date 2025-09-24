@@ -11,7 +11,11 @@ from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelNodeConfigurationValue(BaseModel):
@@ -92,7 +96,19 @@ class ModelNodeConfigurationValue(BaseModel):
             return self.string_value
         if self.value_type == "numeric" and self.numeric_value is not None:
             return self.numeric_value.to_python_value()
-        raise ValueError(f"Invalid configuration value state: {self.value_type}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid configuration value state: {self.value_type}",
+            details=ModelErrorContext.with_context(
+                {
+                    "value_type": ModelSchemaValue.from_value(str(self.value_type)),
+                    "string_value": ModelSchemaValue.from_value(str(self.string_value)),
+                    "numeric_value": ModelSchemaValue.from_value(
+                        str(self.numeric_value)
+                    ),
+                }
+            ),
+        )
 
     def as_numeric(self) -> Any:
         """Get value as numeric type.
@@ -102,7 +118,16 @@ class ModelNodeConfigurationValue(BaseModel):
         """
         if self.value_type == "numeric" and self.numeric_value is not None:
             return self.numeric_value.to_python_value()
-        raise ValueError("Configuration value is not numeric")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="Configuration value is not numeric",
+            details=ModelErrorContext.with_context(
+                {
+                    "value_type": ModelSchemaValue.from_value(str(self.value_type)),
+                    "method": ModelSchemaValue.from_value("as_numeric"),
+                }
+            ),
+        )
 
     def as_string(self) -> str:
         """Get configuration value as string."""
@@ -110,7 +135,19 @@ class ModelNodeConfigurationValue(BaseModel):
             return self.string_value
         if self.numeric_value is not None:
             return str(self.numeric_value.to_python_value())
-        raise ValueError("No value set in configuration")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="No value set in configuration",
+            details=ModelErrorContext.with_context(
+                {
+                    "method": ModelSchemaValue.from_value("as_string"),
+                    "string_value": ModelSchemaValue.from_value(str(self.string_value)),
+                    "numeric_value": ModelSchemaValue.from_value(
+                        str(self.numeric_value)
+                    ),
+                }
+            ),
+        )
 
     def as_int(self) -> int:
         """Get configuration value as integer (if numeric)."""
@@ -120,11 +157,35 @@ class ModelNodeConfigurationValue(BaseModel):
             try:
                 return int(self.string_value)
             except ValueError as e:
-                raise ValueError(
-                    f"Cannot convert string '{self.string_value}' to int",
+                raise OnexError(
+                    code=EnumCoreErrorCode.CONVERSION_ERROR,
+                    message=f"Cannot convert string '{self.string_value}' to int",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "string_value": ModelSchemaValue.from_value(
+                                str(self.string_value)
+                            ),
+                            "target_type": ModelSchemaValue.from_value("int"),
+                            "original_error": ModelSchemaValue.from_value(str(e)),
+                        }
+                    ),
                 ) from e
         else:
-            raise ValueError("No value set in configuration")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="No value set in configuration",
+                details=ModelErrorContext.with_context(
+                    {
+                        "method": ModelSchemaValue.from_value("as_int"),
+                        "string_value": ModelSchemaValue.from_value(
+                            str(self.string_value)
+                        ),
+                        "numeric_value": ModelSchemaValue.from_value(
+                            str(self.numeric_value)
+                        ),
+                    }
+                ),
+            )
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison."""

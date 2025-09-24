@@ -172,7 +172,17 @@ class ModelFieldConverterRegistry:
             if default is not None:
                 return default
 
-            raise ValueError(f"Invalid {enum_class.__name__} value: {value}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid {enum_class.__name__} value: {value}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "enum_class": ModelSchemaValue.from_value(enum_class.__name__),
+                        "invalid_value": ModelSchemaValue.from_value(value),
+                        "field_name": ModelSchemaValue.from_value(field_name),
+                    }
+                ),
+            )
 
         self._converters[field_name] = FieldConverter(
             field_name=field_name,

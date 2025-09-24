@@ -58,6 +58,10 @@ class EnumItemType(str, Enum):
     UNKNOWN = "unknown"
     OTHER = "other"
 
+    def __str__(self) -> str:
+        """Return the string value for serialization."""
+        return self.value
+
     def is_content_type(self) -> bool:
         """Check if this represents a content-related item type."""
         return self in {

@@ -13,12 +13,12 @@ class EnumArtifactType(str, Enum):
     """Strongly typed artifact type values."""
 
     TOOL = "TOOL"
-    VALIDATOR = "validator"
+    VALIDATOR = "VALIDATOR"
     AGENT = "AGENT"
     MODEL = "MODEL"
-    PLUGIN = "plugin"
-    SCHEMA = "schema"
-    CONFIG = "config"
+    PLUGIN = "PLUGIN"
+    SCHEMA = "SCHEMA"
+    CONFIG = "CONFIG"
 
 
 # Export for use

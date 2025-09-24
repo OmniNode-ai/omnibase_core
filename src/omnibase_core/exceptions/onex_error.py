@@ -5,8 +5,13 @@ ONEX Error System
 Standardized error handling for the ONEX framework.
 """
 
+from typing import TYPE_CHECKING
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_error_context import ModelErrorContext
+
+# Import only when needed to break circular dependencies
+if TYPE_CHECKING:
+    from omnibase_core.models.common.model_error_context import ModelErrorContext
 
 
 class OnexError(Exception):
@@ -20,7 +25,7 @@ class OnexError(Exception):
         self,
         code: EnumCoreErrorCode,
         message: str,
-        details: ModelErrorContext | None = None,
+        details: "ModelErrorContext | None" = None,
         cause: Exception | None = None,
     ):
         """
@@ -34,7 +39,16 @@ class OnexError(Exception):
         """
         self.code = code
         self.message = message
-        self.details = details or ModelErrorContext.with_context({})
+
+        # Use delayed import to break circular dependencies
+        if details is None:
+            from omnibase_core.models.common.model_error_context import (
+                ModelErrorContext,
+            )
+
+            details = ModelErrorContext.with_context({})
+
+        self.details = details
         self.cause = cause
 
         # Build full message

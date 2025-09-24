@@ -7,14 +7,26 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import TypeVar
+# FIXME: protocols_local module doesn't exist - temporarily using placeholder
+# from omnibase_core.protocols_local.supported_property_value_protocol import \
+#     ProtocolSupportedPropertyValue
+# Temporary placeholder protocol
+from typing import Callable, Protocol, TypeVar
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
-from omnibase_core.protocols_local.supported_property_value_protocol import (
-    ProtocolSupportedPropertyValue,
-)
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+
+class ProtocolSupportedPropertyValue(Protocol):
+    """Placeholder protocol for supported property values."""
+
+    pass
+
 
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
@@ -64,25 +76,62 @@ class ModelPropertyCollection(BaseModel):
     ) -> None:
         """Add a typed property using generic type inference."""
         # Create ModelPropertyValue using appropriate factory method based on type
-        if isinstance(value, str):
-            property_value = ModelPropertyValue.from_string(value, source)
-        elif isinstance(value, int):
-            property_value = ModelPropertyValue.from_int(value, source)
-        elif isinstance(value, float):
-            property_value = ModelPropertyValue.from_float(value, source)
-        elif isinstance(value, bool):
-            property_value = ModelPropertyValue.from_bool(value, source)
-        elif isinstance(value, list) and all(isinstance(item, str) for item in value):
-            property_value = ModelPropertyValue.from_string_list(value, source)
-        elif isinstance(value, list) and all(isinstance(item, int) for item in value):
-            property_value = ModelPropertyValue.from_int_list(value, source)
-        elif isinstance(value, list) and all(isinstance(item, float) for item in value):
-            property_value = ModelPropertyValue.from_float_list(value, source)
-        else:
-            msg = f"Unsupported property type: {type(value)}"
-            raise ValueError(msg)
-
+        property_value = self._create_property_value_by_type(value, source)
         self.add_property(key, property_value, description, required)
+
+    def _create_property_value_by_type(
+        self,
+        value: T,
+        source: str | None = None,
+    ) -> ModelPropertyValue:
+        """Create ModelPropertyValue using type-specific factory methods."""
+        # Define type handlers as a list of (checker_function, factory_method) tuples
+        # Order matches original elif chain to preserve existing behavior
+        from typing import Any
+
+        type_handlers: list[
+            tuple[Callable[[T], bool], Callable[[Any, str | None], ModelPropertyValue]]
+        ] = [
+            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),
+            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),
+            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),
+            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),
+            (
+                lambda v: isinstance(v, list)
+                and all(isinstance(item, str) for item in v),
+                ModelPropertyValue.from_string_list,
+            ),
+            (
+                lambda v: isinstance(v, list)
+                and all(isinstance(item, int) for item in v),
+                ModelPropertyValue.from_int_list,
+            ),
+            (
+                lambda v: isinstance(v, list)
+                and all(isinstance(item, float) for item in v),
+                ModelPropertyValue.from_float_list,
+            ),
+        ]
+
+        # Find the appropriate handler
+        for type_checker, factory_method in type_handlers:
+            if type_checker(value):
+                return factory_method(value, source)
+
+        # If no handler matches, raise error
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unsupported property type: {type(value)}",
+            details=ModelErrorContext.with_context(
+                {
+                    "value_type": ModelSchemaValue.from_value(str(type(value))),
+                    "source": ModelSchemaValue.from_value(str(source)),
+                    "supported_types": ModelSchemaValue.from_value(
+                        "str, int, bool, float, dict"
+                    ),
+                }
+            ),
+        )
 
     def get_property(self, key: str) -> ModelTypedProperty | None:
         """Get a property by key."""

@@ -93,7 +93,7 @@ except ImportError as e:
         def from_intelligence_document(cls, doc):
             if isinstance(doc, dict):
                 return cls(**doc)
-            return cls(**doc.dict()) if hasattr(doc, "dict") else cls()
+            return cls(**doc.model_dump()) if hasattr(doc, "model_dump") else cls()
 
     # Create fallback classes
     ChangeSummary = _FallbackModel

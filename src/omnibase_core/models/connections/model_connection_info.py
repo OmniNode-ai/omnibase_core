@@ -11,12 +11,7 @@ import uuid
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    field_serializer,
-)
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth

@@ -64,7 +64,126 @@ class ModelValidationBase(BaseModel):
 
         This method should populate the validation container with
         any errors or warnings found during validation.
+
+        Base implementation performs fundamental model validation checks.
         """
+        # Import only what we need to avoid circular imports
+        import importlib
+
+        try:
+            # Dynamic import to avoid circular import issues
+            enum_module = importlib.import_module(
+                "omnibase_core.enums.enum_core_error_code"
+            )
+            EnumCoreErrorCode = enum_module.EnumCoreErrorCode
+        except ImportError:
+            # Fallback if enum module not available
+            EnumCoreErrorCode = None
+
+        try:
+            # Get error code strings with fallbacks
+            validation_error_code = (
+                EnumCoreErrorCode.VALIDATION_ERROR.value
+                if EnumCoreErrorCode is not None
+                else "validation_error"
+            )
+            internal_error_code = (
+                EnumCoreErrorCode.INTERNAL_ERROR.value
+                if EnumCoreErrorCode is not None
+                else "internal_error"
+            )
+
+            # Validate the validation container exists and is properly configured
+            # Note: self.validation is never None due to default_factory, but we validate it's working
+            if not hasattr(self.validation, "add_error"):
+                # This shouldn't happen with proper ModelValidationContainer, but safety check
+                return
+
+            # Validate model fields are accessible and properly typed
+            try:
+                model_fields = self.model_fields
+                if not model_fields:
+                    self.add_validation_warning(
+                        "Model has no defined fields - this may indicate a configuration issue"
+                    )
+                else:
+                    # Check for fields that are required but None
+                    for field_name, field_info in model_fields.items():
+                        if field_name == "validation":
+                            continue  # Skip validation field itself
+
+                        field_value = getattr(self, field_name, None)
+
+                        # Check if required field is None/empty
+                        if (
+                            hasattr(field_info, "is_required")
+                            and getattr(field_info, "is_required", False)
+                            and field_value is None
+                        ):
+                            self.add_validation_error(
+                                message=f"Required field '{field_name}' is None or missing",
+                                field=field_name,
+                                error_code=validation_error_code,
+                            )
+            except Exception as field_error:
+                self.add_validation_error(
+                    message=f"Failed to access model fields: {str(field_error)}",
+                    field="model_structure",
+                    error_code=internal_error_code,
+                )
+
+            # Validate that model can be serialized (basic integrity check)
+            try:
+                model_dict = self.model_dump(exclude={"validation"})
+                # Note: model_dump() always returns dict, so no need to check isinstance
+                # This is just to ensure the serialization process works
+                if not model_dict:
+                    self.add_validation_error(
+                        message="Model serialization succeeded but returned empty dictionary",
+                        field="model_integrity",
+                        error_code=validation_error_code,
+                    )
+            except Exception as serialize_error:
+                self.add_validation_error(
+                    message=f"Model serialization failed: {str(serialize_error)}",
+                    field="model_integrity",
+                    error_code=validation_error_code,
+                )
+
+            # Check for circular references in model structure
+            try:
+                # Attempt to convert to JSON to detect circular references
+                import json
+
+                json.dumps(self.model_dump(exclude={"validation"}), default=str)
+            except (ValueError, TypeError, RecursionError) as json_error:
+                if "circular reference" in str(json_error).lower() or isinstance(
+                    json_error, RecursionError
+                ):
+                    self.add_validation_error(
+                        message="Model contains circular references that prevent serialization",
+                        field="model_structure",
+                        error_code=validation_error_code,
+                        critical=True,
+                    )
+                else:
+                    self.add_validation_warning(
+                        f"Model may have serialization issues: {str(json_error)}"
+                    )
+
+        except Exception as unexpected_error:
+            # For base validation, we'll add the error to the validation container
+            # rather than raising ONEX errors to avoid circular import issues
+            self.add_validation_error(
+                message=f"Unexpected error during model validation: {str(unexpected_error)}",
+                field="validation_system",
+                error_code=(
+                    validation_error_code
+                    if "validation_error_code" in locals()
+                    else "validation_error"
+                ),
+                critical=True,
+            )
 
     def perform_validation(self) -> bool:
         """

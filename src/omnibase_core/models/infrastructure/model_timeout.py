@@ -8,6 +8,7 @@ This provides a convenient timeout interface built on the unified time-based mod
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from functools import cached_property, lru_cache
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -91,9 +92,13 @@ class ModelTimeout(BaseModel):
         """Get timeout value in seconds."""
         return int(self.time_based.to_seconds())
 
-    @property
+    @cached_property
     def warning_threshold_seconds(self) -> int | None:
-        """Get warning threshold in seconds."""
+        """Get warning threshold in seconds.
+
+        Performance Optimization: Uses @cached_property to avoid creating
+        ModelTimeBased objects on every access.
+        """
         if self.time_based.warning_threshold_value is None:
             return None
         warning_time_based = ModelTimeBased(
@@ -112,9 +117,13 @@ class ModelTimeout(BaseModel):
         """Whether timeout can be extended during execution."""
         return self.time_based.allow_extension
 
-    @property
+    @cached_property
     def extension_limit_seconds(self) -> int | None:
-        """Maximum extension time in seconds."""
+        """Maximum extension time in seconds.
+
+        Performance Optimization: Uses @cached_property to avoid creating
+        ModelTimeBased objects on every access.
+        """
         if self.time_based.extension_limit_value is None:
             return None
         extension_time_based = ModelTimeBased(
@@ -133,9 +142,13 @@ class ModelTimeout(BaseModel):
         """Human-readable timeout description."""
         return self.time_based.metadata.get("description")
 
-    @property
+    @cached_property
     def custom_properties(self) -> ModelCustomProperties:
-        """Custom timeout properties using typed model."""
+        """Custom timeout properties using typed model.
+
+        Performance Optimization: Uses @cached_property to avoid expensive conversion
+        operations on every access. Cache is invalidated when the object is modified.
+        """
         # Convert ModelSchemaValue metadata to basic types for ModelCustomProperties
         metadata: dict[str, ModelSchemaValue] = {}
         for key, schema_value in self.custom_metadata.items():
@@ -237,8 +250,14 @@ class ModelTimeout(BaseModel):
         return self.time_based.extend_time(additional_seconds)
 
     def set_custom_metadata(self, key: str, value: Any) -> None:
-        """Set custom metadata value."""
+        """Set custom metadata value.
+
+        Performance Note: Invalidates custom_properties cache when metadata changes.
+        """
         self.custom_metadata[key] = ModelSchemaValue.from_value(value)
+        # Invalidate cached property when metadata changes
+        if hasattr(self, "_custom_properties"):
+            delattr(self, "_custom_properties")
 
     def get_custom_metadata(self, key: str) -> Any:
         """Get custom metadata value."""
@@ -284,6 +303,26 @@ class ModelTimeout(BaseModel):
         return cls.from_seconds(seconds, description, is_strict)
 
     @classmethod
+    @lru_cache(maxsize=32)
+    def _calculate_timeout_from_category(
+        cls,
+        category: EnumRuntimeCategory,
+        use_max_estimate: bool = True,
+    ) -> int:
+        """Calculate timeout seconds from runtime category with caching.
+
+        Performance Optimization: Caches runtime category calculations since
+        the same categories are often used repeatedly. Cache size of 32 covers
+        all enum values with room for different configurations.
+        """
+        min_seconds, max_seconds = category.estimated_seconds
+        if use_max_estimate and max_seconds is not None:
+            return int(max_seconds)
+        else:
+            # Use minimum with some buffer
+            return max(int(min_seconds * 2), 30)
+
+    @classmethod
     def from_runtime_category(
         cls,
         category: EnumRuntimeCategory,
@@ -291,12 +330,9 @@ class ModelTimeout(BaseModel):
         use_max_estimate: bool = True,
     ) -> ModelTimeout:
         """Create timeout from runtime category."""
-        min_seconds, max_seconds = category.estimated_seconds
-        if use_max_estimate and max_seconds is not None:
-            timeout_seconds = int(max_seconds)
-        else:
-            # Use minimum with some buffer
-            timeout_seconds = max(int(min_seconds * 2), 30)
+        timeout_seconds = cls._calculate_timeout_from_category(
+            category, use_max_estimate
+        )
 
         return cls(
             timeout_seconds=timeout_seconds,

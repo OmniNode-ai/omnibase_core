@@ -154,7 +154,7 @@ class ModelResult(BaseModel, Generic[T, E]):
             )
         return self.value
 
-    def map(self, f: Callable[[T], U]) -> ModelResult[U, Exception]:
+    def map(self, f: Callable[[T], U]) -> ModelResult[U, E | Exception]:
         """
         Map function over the success value.
 
@@ -178,9 +178,10 @@ class ModelResult(BaseModel, Generic[T, E]):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return cast(ModelResult[U, Exception], ModelResult.err(self.error))
+        # Return the original error without unsafe cast
+        return ModelResult.err(self.error)
 
-    def map_err(self, f: Callable[[E], F]) -> ModelResult[T, F]:
+    def map_err(self, f: Callable[[E], F]) -> ModelResult[T, F | Exception]:
         """
         Map function over the error value.
 
@@ -203,11 +204,12 @@ class ModelResult(BaseModel, Generic[T, E]):
             new_error = f(self.error)
             return ModelResult.err(new_error)
         except Exception as e:
-            return cast(ModelResult[T, F], ModelResult.err(e))
+            # Return exception directly without unsafe cast
+            return ModelResult.err(e)
 
     def and_then(
         self, f: Callable[[T], ModelResult[U, E]]
-    ) -> ModelResult[U, Exception]:
+    ) -> ModelResult[U, E | Exception]:
         """
         Flat map (bind) operation for chaining Results.
 
@@ -222,8 +224,8 @@ class ModelResult(BaseModel, Generic[T, E]):
                         message="Success result has None value",
                     )
                 result = f(self.value)
-                # Cast the result to the expected type since we know it's compatible
-                return cast(ModelResult[U, Exception], result)
+                # Cast to match the union return type signature
+                return cast(ModelResult[U, E | Exception], result)
             except Exception as e:
                 return ModelResult.err(e)
         if self.error is None:
@@ -231,9 +233,12 @@ class ModelResult(BaseModel, Generic[T, E]):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return cast(ModelResult[U, Exception], ModelResult.err(self.error))
+        # Return the original error without unsafe cast
+        return ModelResult.err(self.error)
 
-    def or_else(self, f: Callable[[E], ModelResult[T, F]]) -> ModelResult[T, Exception]:
+    def or_else(
+        self, f: Callable[[E], ModelResult[T, F]]
+    ) -> ModelResult[T, F | Exception]:
         """
         Alternative operation for error recovery.
 
@@ -254,7 +259,8 @@ class ModelResult(BaseModel, Generic[T, E]):
                     message="Error result has None error",
                 )
             result = f(self.error)
-            return cast(ModelResult[T, Exception], result)
+            # Cast to match the union return type signature
+            return cast(ModelResult[T, F | Exception], result)
         except Exception as e:
             return ModelResult.err(e)
 

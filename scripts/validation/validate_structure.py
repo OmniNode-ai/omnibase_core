@@ -360,8 +360,21 @@ class OmniStructureValidator:
         if not nodes_path.exists():
             return  # Not all repos need nodes
 
+        # Directories to ignore during validation (cache directories, etc.)
+        ignore_dirs = {
+            ".mypy_cache",
+            "__pycache__",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".onex_cache",
+        }
+
         for node_dir in nodes_path.iterdir():
             if not node_dir.is_dir():
+                continue
+
+            # Skip cache directories and other ignored directories
+            if node_dir.name in ignore_dirs:
                 continue
 
             # Validate node naming pattern

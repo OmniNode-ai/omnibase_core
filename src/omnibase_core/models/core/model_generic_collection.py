@@ -9,11 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import (
-    Generic,
-    TypedDict,
-    TypeVar,
-)
+from typing import Generic, TypedDict, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field

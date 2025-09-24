@@ -13,6 +13,9 @@ from typing import Any, TypeVar, cast
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.config.model_schema_example import ModelSchemaExample
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
@@ -22,14 +25,6 @@ from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
 # ModelYamlWithExamples import removed - using direct YAML parsing
 
 # Type-safe YAML-serializable data structures using discriminated union
-
-
-class YamlLoadingError(Exception):
-    """Error raised during YAML loading operations."""
-
-    def __init__(self, message: str, original_error: Exception | None = None):
-        super().__init__(message)
-        self.original_error = original_error
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -42,7 +37,7 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
     """
     Load a YAML file and validate it against the provided Pydantic model class.
     Returns the validated model instance.
-    Raises YamlLoadingError if loading or validation fails.
+    Raises OnexError if loading or validation fails.
 
     Args:
         path: Path to the YAML file
@@ -52,7 +47,7 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
         Validated model instance
 
     Raises:
-        YamlLoadingError: If file cannot be read, YAML is invalid, or validation fails
+        OnexError: If file cannot be read, YAML is invalid, or validation fails
     """
     try:
         with path.open("r", encoding="utf-8") as f:
@@ -67,13 +62,41 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
         return model_cls.model_validate(data)
 
     except ValidationError as ve:
-        raise YamlLoadingError(f"YAML validation error for {path}: {ve}", ve)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"YAML validation error for {path}: {ve}",
+            context=ModelErrorContext(
+                operation="load_and_validate_yaml_model", path=str(path)
+            ),
+            cause=ve,
+        )
     except FileNotFoundError as e:
-        raise YamlLoadingError(f"YAML file not found: {path}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.NOT_FOUND,
+            message=f"YAML file not found: {path}",
+            context=ModelErrorContext(
+                operation="load_and_validate_yaml_model", path=str(path)
+            ),
+            cause=e,
+        )
     except yaml.YAMLError as e:
-        raise YamlLoadingError(f"YAML parsing error for {path}: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            message=f"YAML parsing error for {path}: {e}",
+            context=ModelErrorContext(
+                operation="load_and_validate_yaml_model", path=str(path)
+            ),
+            cause=e,
+        )
     except Exception as e:
-        raise YamlLoadingError(f"Failed to load or validate YAML: {path}: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            message=f"Failed to load or validate YAML: {path}: {e}",
+            context=ModelErrorContext(
+                operation="load_and_validate_yaml_model", path=str(path)
+            ),
+            cause=e,
+        )
 
 
 # load_yaml_as_generic function removed - ModelGenericYaml anti-pattern eliminated
@@ -91,7 +114,7 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
         Validated model instance
 
     Raises:
-        YamlLoadingError: If YAML is invalid or validation fails
+        OnexError: If YAML is invalid or validation fails
     """
     try:
         # Direct YAML parsing with Pydantic validation - no fallback
@@ -103,11 +126,26 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
         return model_cls.model_validate(data)
 
     except ValidationError as ve:
-        raise YamlLoadingError(f"YAML validation error: {ve}", ve)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"YAML validation error: {ve}",
+            context=ModelErrorContext(operation="load_yaml_content_as_model"),
+            cause=ve,
+        )
     except yaml.YAMLError as e:
-        raise YamlLoadingError(f"YAML parsing error: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            message=f"YAML parsing error: {e}",
+            context=ModelErrorContext(operation="load_yaml_content_as_model"),
+            cause=e,
+        )
     except Exception as e:
-        raise YamlLoadingError(f"Failed to load or validate YAML content: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            message=f"Failed to load or validate YAML content: {e}",
+            context=ModelErrorContext(operation="load_yaml_content_as_model"),
+            cause=e,
+        )
 
 
 def _dump_yaml_content(
@@ -154,17 +192,31 @@ def _dump_yaml_content(
         yaml_str = yaml_str.replace("\xa0", " ")
         yaml_str = yaml_str.replace("\r\n", "\n").replace("\r", "\n")
         if "\r" in yaml_str:
-            raise YamlLoadingError("Carriage return found in YAML string")
+            raise OnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Carriage return found in YAML string",
+                context=ModelErrorContext(operation="_dump_yaml_content"),
+            )
 
         # Validate UTF-8 encoding
         try:
             yaml_str.encode("utf-8")
         except UnicodeEncodeError as e:
-            raise YamlLoadingError(f"Invalid UTF-8 in YAML output: {e}", e)
+            raise OnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid UTF-8 in YAML output: {e}",
+                context=ModelErrorContext(operation="_dump_yaml_content"),
+                cause=e,
+            )
 
         return cast(str, yaml_str)
     except yaml.YAMLError as e:
-        raise YamlLoadingError(f"YAML serialization error: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            message=f"YAML serialization error: {e}",
+            context=ModelErrorContext(operation="_dump_yaml_content"),
+            cause=e,
+        )
 
 
 def serialize_pydantic_model_to_yaml(
@@ -184,7 +236,7 @@ def serialize_pydantic_model_to_yaml(
         YAML string representation of the model
 
     Raises:
-        YamlLoadingError: If serialization fails
+        OnexError: If serialization fails
     """
     try:
         # Use to_serializable_dict if available (for compact entrypoint format)
@@ -205,7 +257,12 @@ def serialize_pydantic_model_to_yaml(
 
         return yaml_str
     except Exception as e:
-        raise YamlLoadingError(f"Failed to serialize model to YAML: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            message=f"Failed to serialize model to YAML: {e}",
+            context=ModelErrorContext(operation="serialize_pydantic_model_to_yaml"),
+            cause=e,
+        )
 
 
 def serialize_data_to_yaml(
@@ -228,7 +285,7 @@ def serialize_data_to_yaml(
         YAML string representation of the data
 
     Raises:
-        YamlLoadingError: If serialization fails
+        OnexError: If serialization fails
     """
     try:
         yaml_str = _dump_yaml_content(data, **yaml_options)
@@ -241,7 +298,12 @@ def serialize_data_to_yaml(
 
         return yaml_str
     except Exception as e:
-        raise YamlLoadingError(f"Failed to serialize data to YAML: {e}", e)
+        raise OnexError(
+            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            message=f"Failed to serialize data to YAML: {e}",
+            context=ModelErrorContext(operation="serialize_data_to_yaml"),
+            cause=e,
+        )
 
 
 def extract_example_from_schema(
@@ -251,7 +313,7 @@ def extract_example_from_schema(
     """
     Extract a node metadata example from a YAML schema file's 'examples' section.
     Returns the example at the given index as a typed model.
-    Raises YamlLoadingError if the schema or example is missing or malformed.
+    Raises OnexError if the schema or example is missing or malformed.
 
     Args:
         schema_path: Path to the schema YAML file
@@ -261,7 +323,7 @@ def extract_example_from_schema(
         ModelSchemaExample containing the validated example data
 
     Raises:
-        YamlLoadingError: If schema file is invalid or example is not found
+        OnexError: If schema file is invalid or example is not found
     """
     try:
         # Load the schema using direct YAML parsing
@@ -271,19 +333,39 @@ def extract_example_from_schema(
         # Extract examples directly from YAML data
         examples = schema_data.get("examples") if schema_data else None
         if not examples:
-            raise YamlLoadingError(
-                f"No 'examples' section found in schema: {schema_path}",
+            raise OnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"No 'examples' section found in schema: {schema_path}",
+                context=ModelErrorContext(
+                    operation="extract_example_from_schema",
+                    path=str(schema_path),
+                    example_index=example_index,
+                ),
             )
 
         if example_index >= len(examples):
-            raise YamlLoadingError(
-                f"Example index {example_index} out of range for schema: {schema_path}",
+            raise OnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Example index {example_index} out of range for schema: {schema_path}",
+                context=ModelErrorContext(
+                    operation="extract_example_from_schema",
+                    path=str(schema_path),
+                    example_index=example_index,
+                    examples_count=len(examples),
+                ),
             )
 
         example = examples[example_index]
         if not isinstance(example, dict):
-            raise YamlLoadingError(
-                f"Example at index {example_index} is not a dict in schema: {schema_path}",
+            raise OnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Example at index {example_index} is not a dict in schema: {schema_path}",
+                context=ModelErrorContext(
+                    operation="extract_example_from_schema",
+                    path=str(schema_path),
+                    example_index=example_index,
+                    example_type=type(example).__name__,
+                ),
             )
 
         # Convert example dict to ModelCustomProperties
@@ -306,10 +388,16 @@ def extract_example_from_schema(
             is_validated=True,
         )
 
-    except YamlLoadingError:
+    except OnexError:
         raise
     except Exception as e:
-        raise YamlLoadingError(
-            f"Failed to extract example from schema: {schema_path}: {e}",
-            e,
+        raise OnexError(
+            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            message=f"Failed to extract example from schema: {schema_path}: {e}",
+            context=ModelErrorContext(
+                operation="extract_example_from_schema",
+                path=str(schema_path),
+                example_index=example_index,
+            ),
+            cause=e,
         )

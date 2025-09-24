@@ -256,6 +256,37 @@ repos:
         exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
         stages: [pre-commit]
 
+      # ONEX Error Handling Compliance (from omnibase_3 patterns)
+      - id: validate-onex-error-compliance
+        name: ONEX Error Handling Compliance Validation
+        entry: poetry run python scripts/validation/validate-onex-error-compliance.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
+      # Stubbed Functionality Detection (from omnibase_3 patterns)
+      - id: validate-stubbed-functionality
+        name: ONEX Stubbed Functionality Detection
+        entry: poetry run python scripts/validation/validate-stubbed-functionality.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|examples/|prototypes/).*\.py$
+        stages: [pre-commit]
+
+      # Elif Chain Limit Enforcement (from omnibase_3 patterns)
+      - id: validate-elif-limit
+        name: ONEX Elif Chain Limit Validation
+        entry: poetry run python scripts/validation/validate-elif-limit.py
+        args: ['--max-elif', '5']
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
 
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation

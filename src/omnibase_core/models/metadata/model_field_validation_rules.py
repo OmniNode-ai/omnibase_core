@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from .model_numeric_value import ModelNumericValue
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
 class ModelFieldValidationRules(BaseModel):

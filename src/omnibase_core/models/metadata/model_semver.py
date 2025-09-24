@@ -6,14 +6,16 @@ Pydantic model for semantic versioning following SemVer specification.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 
-from .model_input_state import ModelInputState
+# Import only when needed to break circular dependencies
+if TYPE_CHECKING:
+    from .model_input_state import ModelInputState
 
 
 class ModelSemVer(BaseModel):
@@ -68,31 +70,33 @@ class ModelSemVer(BaseModel):
             and self.patch == other.patch
         )
 
-    def __lt__(self, other: ModelSemVer) -> bool:
+    def __lt__(self, other: object) -> bool:
         """Check if this version is less than another."""
         if not isinstance(other, ModelSemVer):
-            raise TypeError(f"Cannot compare ModelSemVer with {type(other).__name__}")
+            msg = f"Cannot compare ModelSemVer with {type(other).__name__}"
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return (self.major, self.minor, self.patch) < (
             other.major,
             other.minor,
             other.patch,
         )
 
-    def __le__(self, other: ModelSemVer) -> bool:
+    def __le__(self, other: object) -> bool:
         """Check if this version is less than or equal to another."""
         return self == other or self < other
 
-    def __gt__(self, other: ModelSemVer) -> bool:
+    def __gt__(self, other: object) -> bool:
         """Check if this version is greater than another."""
         if not isinstance(other, ModelSemVer):
-            raise TypeError(f"Cannot compare ModelSemVer with {type(other).__name__}")
+            msg = f"Cannot compare ModelSemVer with {type(other).__name__}"
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return (self.major, self.minor, self.patch) > (
             other.major,
             other.minor,
             other.patch,
         )
 
-    def __ge__(self, other: ModelSemVer) -> bool:
+    def __ge__(self, other: object) -> bool:
         """Check if this version is greater than or equal to another."""
         return self == other or self > other
 
@@ -157,6 +161,9 @@ def parse_input_state_version(
         ValueError: If version is missing, is a string, or has invalid format
     """
     # Convert to structured input state for better type safety
+    # Use delayed import to break circular dependencies
+    from .model_input_state import ModelInputState
+
     if isinstance(input_state, ModelInputState):
         structured_state = input_state
     else:

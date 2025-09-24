@@ -1,0 +1,126 @@
+{
+  "timestamp": "2025-09-24 07:58:34",
+  "results": [
+    {
+      "operation": "JSON Serialization",
+      "iterations": 1000,
+      "total_time": 0.002113901369739324,
+      "avg_time": 2.113901369739324e-06,
+      "median_time": 2.0830193534493446e-06,
+      "std_dev": 3.484241144785696e-07,
+      "min_time": 1.9999861251562834e-06,
+      "max_time": 1.2042000889778137e-05,
+      "operations_per_second": 473058.96780005173
+    },
+    {
+      "operation": "JSON Deserialization",
+      "iterations": 1000,
+      "total_time": 0.001767545734765008,
+      "avg_time": 1.767545734765008e-06,
+      "median_time": 1.7500133253633976e-06,
+      "std_dev": 3.07567295268084e-07,
+      "min_time": 1.6659905668348074e-06,
+      "max_time": 1.1083000572398305e-05,
+      "operations_per_second": 565756.2236334146
+    },
+    {
+      "operation": "Dict Copy",
+      "iterations": 1000,
+      "total_time": 0.00012557939044199884,
+      "avg_time": 1.2557939044199884e-07,
+      "median_time": 1.2500095181167126e-07,
+      "std_dev": 2.701004418749915e-08,
+      "min_time": 8.297502063214779e-08,
+      "max_time": 5.00003807246685e-07,
+      "operations_per_second": 7963090.093687534
+    },
+    {
+      "operation": "Nested Dict Access",
+      "iterations": 1000,
+      "total_time": 0.0001338804722763598,
+      "avg_time": 1.338804722763598e-07,
+      "median_time": 1.2500095181167126e-07,
+      "std_dev": 3.0547860967580974e-08,
+      "min_time": 8.297502063214779e-08,
+      "max_time": 6.67001586407423e-07,
+      "operations_per_second": 7469349.211255934
+    },
+    {
+      "operation": "Pydantic-like Validation",
+      "iterations": 1000,
+      "total_time": 0.0003477778227534145,
+      "avg_time": 3.477778227534145e-07,
+      "median_time": 3.3300602808594704e-07,
+      "std_dev": 7.248669465929524e-08,
+      "min_time": 2.9098009690642357e-07,
+      "max_time": 1.9580184016376734e-06,
+      "operations_per_second": 2875398.989167379
+    },
+    {
+      "operation": "Property Computation",
+      "iterations": 1000,
+      "total_time": 0.000521941197803244,
+      "avg_time": 5.21941197803244e-07,
+      "median_time": 5.00003807246685e-07,
+      "std_dev": 4.442471583172916e-07,
+      "min_time": 4.169996827840805e-07,
+      "max_time": 1.4249992091208696e-05,
+      "operations_per_second": 1915924.6371216124
+    },
+    {
+      "operation": "Enum Lookup Pattern",
+      "iterations": 1000,
+      "total_time": 0.0004755785339511931,
+      "avg_time": 4.755785339511931e-07,
+      "median_time": 4.580069798976183e-07,
+      "std_dev": 7.836632391974765e-08,
+      "min_time": 4.169996827840805e-07,
+      "max_time": 2.749991836026311e-06,
+      "operations_per_second": 2102702.137734893
+    },
+    {
+      "operation": "Unoptimized Property Access",
+      "iterations": 100,
+      "total_time": 0.000342753017321229,
+      "avg_time": 3.4275301732122896e-06,
+      "median_time": 3.334018401801586e-06,
+      "std_dev": 3.71888999911963e-07,
+      "min_time": 3.249995643272996e-06,
+      "max_time": 6.749993190169334e-06,
+      "operations_per_second": 291755.27259116655
+    },
+    {
+      "operation": "Optimized Property Access",
+      "iterations": 100,
+      "total_time": 4.570189048536122e-05,
+      "avg_time": 4.5701890485361216e-07,
+      "median_time": 4.169996827840805e-07,
+      "std_dev": 1.8635727238452033e-07,
+      "min_time": 3.7497375160455704e-07,
+      "max_time": 2.2500171326100826e-06,
+      "operations_per_second": 2188093.291940101
+    },
+    {
+      "operation": "Uncached Calculations",
+      "iterations": 100,
+      "total_time": 0.0011867850844282657,
+      "avg_time": 1.1867850844282657e-05,
+      "median_time": 1.1708005331456661e-05,
+      "std_dev": 5.700664568797511e-07,
+      "min_time": 1.158300437964499e-05,
+      "max_time": 1.479100319556892e-05,
+      "operations_per_second": 84261.25446982261
+    },
+    {
+      "operation": "Cached Calculations",
+      "iterations": 100,
+      "total_time": 0.0015634532319381833,
+      "avg_time": 1.563453231938183e-05,
+      "median_time": 1.5415993402712047e-05,
+      "std_dev": 9.909411363970234e-07,
+      "min_time": 1.5083001926541328e-05,
+      "max_time": 2.387500717304647e-05,
+      "operations_per_second": 63960.97942503333
+    }
+  ]
+}

@@ -35,9 +35,7 @@ class ValidationMetadataType(TypedDict, total=False):
     complex_patterns: int
 
 
-from .exceptions import (
-    InputValidationError,
-)
+from .exceptions import InputValidationError
 from .model_protocol_info import ProtocolInfo
 from .model_protocol_signature_extractor import ProtocolSignatureExtractor
 

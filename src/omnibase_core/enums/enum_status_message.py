@@ -12,12 +12,12 @@ from enum import Enum
 class EnumStatusMessage(str, Enum):
     """Strongly typed status message values."""
 
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 # Export for use
