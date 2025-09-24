@@ -7,22 +7,14 @@ typed property with validation in the environment property system.
 
 from __future__ import annotations
 
-# FIXME: protocols_local module doesn't exist - temporarily using placeholder
-# from omnibase_core.protocols_local.supported_property_value_protocol import \
-#     ProtocolSupportedPropertyValue
-# Temporary placeholder protocol
-from typing import Protocol, TypeVar, cast
+from typing import TypeVar, cast
 
+from omnibase_spi.protocols.types.core_types import (
+    ProtocolSupportedPropertyValue,
+)
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
-
-
-class ProtocolSupportedPropertyValue(Protocol):
-    """Placeholder protocol for supported property values."""
-
-    pass
-
 
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue

@@ -7,13 +7,9 @@ Simple model for node metadata information used in CLI output.
 from __future__ import annotations
 
 from datetime import datetime
-
-# FIXME: protocols_local module doesn't exist - temporarily using placeholder
-# from omnibase_core.protocols_local.node_info_like_protocol import NodeInfoLike
-# Temporary placeholder protocol
-from typing import Protocol
 from uuid import UUID, uuid4
 
+from omnibase_spi.protocols.types.core_types import ProtocolNodeInfoLike
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
@@ -22,13 +18,6 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
-
-
-class NodeInfoLike(Protocol):
-    """Placeholder protocol for node info-like objects."""
-
-    pass
-
 
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
@@ -350,7 +339,7 @@ class ModelNodeMetadataInfo(BaseModel):
         )
 
     @classmethod
-    def from_node_info(cls, node_info: NodeInfoLike) -> ModelNodeMetadataInfo:
+    def from_node_info(cls, node_info: ProtocolNodeInfoLike) -> ModelNodeMetadataInfo:
         """Create from node info object."""
         # Extract basic information and distribute to sub-models
         core = ModelNodeCoreMetadata(

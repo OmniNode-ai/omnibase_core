@@ -7,12 +7,11 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-# FIXME: protocols_local module doesn't exist - temporarily using placeholder
-# from omnibase_core.protocols_local.supported_property_value_protocol import \
-#     ProtocolSupportedPropertyValue
-# Temporary placeholder protocol
-from typing import Callable, Protocol, TypeVar
+from typing import Callable, TypeVar
 
+from omnibase_spi.protocols.types.core_types import (
+    ProtocolSupportedPropertyValue,
+)
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -20,13 +19,6 @@ from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-
-class ProtocolSupportedPropertyValue(Protocol):
-    """Placeholder protocol for supported property values."""
-
-    pass
-
 
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
