@@ -138,8 +138,8 @@ def discover_python_files_optimized(base_path: Path) -> Iterator[Path]:
                 ):
                     yield root_path / file_name
 
-    except (OSError, PermissionError) as e:
-        logging.error(f"Error during file discovery: {e}")
+    except (OSError, PermissionError):
+        logging.exception("Error during file discovery")
         raise
 
 
@@ -211,17 +211,21 @@ class ImportPatternValidator:
             src_index = file_path.parts.index("src")
             current_parts = file_path.parts[src_index + 1 :]  # omnibase_core/models/...
         except ValueError:
-            return f"omnibase_core.{relative_path.replace('.', '/')}"
+            # Fall back to absolute import within omnibase_core; normalize any slashes
+            return f"omnibase_core.{relative_path.replace('/', '.')}"
 
-        # Calculate the target path by going up 'level' directories
-        target_parts = current_parts[:-level]  # Remove file and go up levels
+        # Drop filename and go up (level - 1) package levels
+        dir_parts = current_parts[:-1]  # remove file
+        ascend = max(level - 1, 0)
+        if ascend:
+            dir_parts = dir_parts[:-ascend]
 
         # Add the relative path parts
-        relative_parts = relative_path.split(".")
-        target_parts = target_parts + tuple(relative_parts)
+        relative_parts = tuple(relative_path.split("."))
+        full_parts = (*dir_parts, *relative_parts)
 
         # Join with dots for Python import
-        absolute_path = ".".join(target_parts)
+        absolute_path = ".".join(p for p in full_parts if p)
 
         return absolute_path
 
@@ -319,9 +323,9 @@ class ImportPatternValidator:
             )
             print(f"❌ ERROR: File discovery timed out in {directory}")
             sys.exit(1)
-        except (OSError, PermissionError) as e:
-            logging.exception(f"Error during file discovery: {e}")
-            print(f"❌ ERROR: Cannot access directory {directory}: {e}")
+        except (OSError, PermissionError):
+            logging.exception("Error during file discovery")
+            print(f"❌ ERROR: Cannot access directory {directory}")
             sys.exit(1)
 
         if not python_files:
@@ -345,7 +349,9 @@ class ImportPatternValidator:
                         )
 
         except TimeoutError:
-            logging.error(f"Validation timed out after {VALIDATION_TIMEOUT} seconds")
+            logging.exception(
+                "Validation timed out after %s seconds", VALIDATION_TIMEOUT
+            )
             print(
                 f"❌ ERROR: Validation timeout after processing {processed_files}/{len(python_files)} files"
             )
@@ -442,7 +448,10 @@ class ImportPatternValidator:
             print("=" * 30)
 
             for directory, fixes in self.fixes_by_directory.items():
-                relative_dir = directory.replace(str(Path.cwd()), ".")
+                try:
+                    relative_dir = str(Path(directory).relative_to(Path.cwd()))
+                except ValueError:
+                    relative_dir = directory
                 print(f"\\n📁 {relative_dir}:")
 
                 # Group by file for efficiency

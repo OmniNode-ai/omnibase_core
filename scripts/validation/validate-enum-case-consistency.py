@@ -6,7 +6,7 @@ This validation script enforces consistent case formatting for enum string value
 to maintain code quality and consistency across the ONEX framework.
 
 Usage:
-    python validate-enum-case-consistency.py [--max-violations MAX] [--strict] [--help]
+    python validate-enum-case-consistency.py [--max-violations MAX] [--strict] [--quiet] [--help]
 
 Exit Codes:
     0: No violations found or within acceptable limits
@@ -21,7 +21,16 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, TypedDict
+
+
+class Violation(TypedDict):
+    file: str
+    line: int
+    enum_name: str
+    current_value: str
+    suggested_value: str
+    class_name: str
 
 
 class EnumCaseValidator:
@@ -30,7 +39,7 @@ class EnumCaseValidator:
     def __init__(self, max_violations: int = 0, strict_mode: bool = False):
         self.max_violations = max_violations
         self.strict_mode = strict_mode
-        self.violations: List[Dict[str, str]] = []
+        self.violations: List[Violation] = []
 
         # Patterns for legitimate uppercase values (cloud instance types, etc.)
         self.exempted_patterns = [
@@ -65,16 +74,27 @@ class EnumCaseValidator:
                 if isinstance(node, ast.ClassDef):
                     # Check if this is an enum class
                     is_enum = any(
-                        (isinstance(base, ast.Name) and "Enum" in base.id)
-                        or (isinstance(base, ast.Attribute) and base.attr == "Enum")
+                        (
+                            (
+                                isinstance(base, ast.Name)
+                                and ("Enum" in base.id or base.id.endswith("Flag"))
+                            )
+                            or (
+                                isinstance(base, ast.Attribute)
+                                and (
+                                    base.attr.endswith("Enum")
+                                    or base.attr.endswith("Flag")
+                                )
+                            )
+                        )
                         for base in node.bases
                     )
 
                     if is_enum:
                         self._check_enum_class(node, file_path)
 
-        except (OSError, ValueError, SyntaxError) as e:
-            print(f"Error analyzing {file_path}: {e}")
+        except (OSError, UnicodeDecodeError, SyntaxError) as e:
+            print(f"Error analyzing {file_path}: {e}", file=sys.stderr)
 
     def _check_enum_class(self, class_node: ast.ClassDef, file_path: Path) -> None:
         """Check enum class for case consistency violations."""
@@ -132,7 +152,7 @@ class EnumCaseValidator:
             return
 
         # Group violations by file
-        violations_by_file = {}
+        violations_by_file: Dict[str, List[Violation]] = {}
         for violation in self.violations:
             file_path = violation["file"]
             if file_path not in violations_by_file:
@@ -161,7 +181,7 @@ class EnumCaseValidator:
                 )
                 print(f"     Current:   \"{violation['current_value']}\"")
                 print(f"     Suggested: \"{violation['suggested_value']}\"")
-                print(f"     💡 Use lowercase for consistency with ONEX standards")
+                print("     💡 Use lowercase for consistency with ONEX standards")
                 print()
 
         # Summary

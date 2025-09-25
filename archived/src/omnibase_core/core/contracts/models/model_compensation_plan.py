@@ -159,12 +159,22 @@ class ModelCompensationPlan(BaseModel):
         le=60000,  # Max 1 minute delay
     )
 
-    @field_validator("plan_id")
+    @field_validator("plan_id", mode="before")
     @classmethod
-    def validate_plan_id(cls, v: str) -> str:
+    def validate_plan_id(cls, v: str | UUID) -> str:
         """Validate plan ID format."""
-        v = v.strip()
-        if not v:
+        if isinstance(v, UUID):
+            v_str = str(v)
+        elif isinstance(v, str):
+            v_str = v.strip()
+        else:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message="Plan ID must be provided as a string or UUID",
+                context={"context": {"received_type": type(v).__name__}},
+            )
+
+        if not v_str:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message="Plan ID cannot be empty",
@@ -172,19 +182,19 @@ class ModelCompensationPlan(BaseModel):
             )
 
         # Check for valid identifier format
-        if not v.replace("_", "").replace("-", "").isalnum():
+        if not v_str.replace("_", "").replace("-", "").isalnum():
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Invalid plan_id '{v}'. Must contain only alphanumeric characters, hyphens, and underscores.",
+                message=f"Invalid plan_id '{v_str}'. Must contain only alphanumeric characters, hyphens, and underscores.",
                 context={
                     "context": {
-                        "plan_id": v,
+                        "plan_id": v_str,
                         "onex_principle": "Strong validation for identifiers",
                     }
                 },
             )
 
-        return v
+        return v_str
 
     @field_validator(
         "rollback_actions",
