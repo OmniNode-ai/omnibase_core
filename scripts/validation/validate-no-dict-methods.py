@@ -94,7 +94,7 @@ def find_dict_method_violations(file_path: Path) -> list[tuple[int, str]]:
     except SyntaxError as e:
         print(f"Syntax error in {file_path}: {e}")
         return []
-    except Exception as e:
+    except (OSError, ValueError) as e:
         print(f"Error parsing {file_path}: {e}")
         return []
 
@@ -139,7 +139,7 @@ def validate_path(path: Path, max_violations: int = 0) -> bool:
 
     # Report results
     if total_violations > max_violations:
-        print(f"❌ ONEX Dict Methods Anti-Pattern Detection FAILED")
+        print("❌ ONEX Dict Methods Anti-Pattern Detection FAILED")
         print(f"Found {total_violations} violations (max allowed: {max_violations})")
         print()
 
@@ -169,7 +169,7 @@ def validate_path(path: Path, max_violations: int = 0) -> bool:
         print()
         return False
 
-    print(f"✅ ONEX Dict Methods Anti-Pattern Detection PASSED")
+    print("✅ ONEX Dict Methods Anti-Pattern Detection PASSED")
     print(f"Found {total_violations} violations (max allowed: {max_violations})")
     return True
 

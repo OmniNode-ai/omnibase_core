@@ -5,13 +5,14 @@ set -euo pipefail  # Exit on error, unset vars are errors, and fail on pipe erro
 
 # Enhanced error handling with ERR trap for better diagnosis
 cleanup_on_error() {
-    local exit_code=$?
-    local line_number=$1
+    local exit_code="$1"
+    local line_number="$2"
+    local failed_command="$3"
     print_error "Script failed at line $line_number with exit code $exit_code"
-    print_error "Failed command was: ${BASH_COMMAND}"
-    exit $exit_code
+    print_error "Failed command was: ${failed_command}"
+    exit "$exit_code"
 }
-trap 'cleanup_on_error $LINENO' ERR
+trap 'cleanup_on_error "$?" "${BASH_LINENO[0]}" "$BASH_COMMAND"' ERR
 
 # Global variables for better scoping
 declare FOUND_COUNT=0
@@ -20,7 +21,8 @@ declare NOT_FOUND_COUNT=0
 declare ERROR_COUNT=0
 
 # Get script directory for anchoring repo paths
-declare -r SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
 
 # Repository list - anchor paths to script directory to avoid CWD breakage
 declare -ra REPOS=(

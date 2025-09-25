@@ -27,7 +27,28 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, TypedDict
+
+
+class Violation(TypedDict):
+    file: str
+    line: int
+    current_import: str
+    relative_path: str
+    level: int
+    suggested_absolute: str
+    directory: str
+
+
+class Fix(TypedDict):
+    file: str
+    bsd_sed_command: str
+    gnu_sed_command: str
+    original: str
+    fixed: str
+    current_escaped: str
+    fixed_escaped: str
+
 
 # Constants
 FILE_DISCOVERY_TIMEOUT = 30  # seconds
@@ -128,8 +149,8 @@ class ImportPatternValidator:
     def __init__(self, max_violations: int = 0, generate_fixes: bool = False):
         self.max_violations = max_violations
         self.generate_fixes = generate_fixes
-        self.violations: list[dict[str, str]] = []
-        self.fixes_by_directory: dict[str, list[str]] = {}
+        self.violations: list[Violation] = []
+        self.fixes_by_directory: dict[str, list[Fix]] = {}
 
     def detect_multi_level_relative_imports(self, file_path: Path) -> None:
         """Detect relative imports with multiple levels (.., ..., etc.)."""
@@ -245,7 +266,7 @@ class ImportPatternValidator:
             "fixed_escaped": fixed_escaped,
         }
 
-    def _generate_sed_fix(self, violation: dict[str, str]) -> None:
+    def _generate_sed_fix(self, violation: Violation) -> None:
         """Generate cross-platform sed commands to fix the import."""
         directory = violation["directory"]
         current = violation["current_import"].strip()
@@ -293,13 +314,13 @@ class ImportPatternValidator:
             logging.debug(f"Found {len(python_files)} Python files to analyze")
 
         except TimeoutError:
-            logging.error(
+            logging.exception(
                 f"File discovery timed out after {FILE_DISCOVERY_TIMEOUT} seconds"
             )
             print(f"❌ ERROR: File discovery timed out in {directory}")
             sys.exit(1)
         except (OSError, PermissionError) as e:
-            logging.error(f"Error during file discovery: {e}")
+            logging.exception(f"Error during file discovery: {e}")
             print(f"❌ ERROR: Cannot access directory {directory}: {e}")
             sys.exit(1)
 
@@ -316,10 +337,10 @@ class ImportPatternValidator:
                         logging.debug(f"Analyzing: {file_path}")
                         self.detect_multi_level_relative_imports(file_path)
                         processed_files += 1
-                    except Exception as e:
-                        logging.error(f"Error analyzing {file_path}: {e}")
+                    except Exception:
+                        logging.exception(f"Error analyzing {file_path}")
                         print(
-                            f"Warning: Skipped {file_path} due to error: {e}",
+                            f"Warning: Skipped {file_path} due to analysis error",
                             file=sys.stderr,
                         )
 
@@ -441,9 +462,9 @@ class ImportPatternValidator:
                         print(f"# {fix['original']} -> {fix['fixed']}")
 
                     # Generate cross-platform sed commands for file
-                    print(f"\\n# BSD/macOS sed command (with error handling):")
+                    print("\\n# BSD/macOS sed command (with error handling):")
                     print(f"# {file_fixes[0]['bsd_sed_command']}")
-                    print(f"\\n# GNU/Linux sed command (with error handling):")
+                    print("\\n# GNU/Linux sed command (with error handling):")
                     print(f"# {file_fixes[0]['gnu_sed_command']}")
 
                 print(
@@ -572,8 +593,8 @@ def main():
         elif args.quiet:
             logging.getLogger().setLevel(logging.ERROR)
 
-    except Exception as e:
-        logging.error(f"Error parsing arguments: {e}")
+    except Exception:
+        logging.exception("Error parsing arguments")
         sys.exit(1)
 
     try:
@@ -627,9 +648,9 @@ def main():
         logging.info("Import pattern validation interrupted by user")
         print("\n❌ Validation interrupted by user")
         sys.exit(1)
-    except Exception as e:
-        logging.error(f"Unexpected error during import pattern validation: {e}")
-        print(f"❌ Unexpected error: {e}")
+    except Exception:
+        logging.exception("Unexpected error during import pattern validation")
+        print("❌ Unexpected error during import pattern validation")
         sys.exit(1)
 
 

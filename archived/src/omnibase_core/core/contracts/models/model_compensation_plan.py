@@ -8,6 +8,7 @@ ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
@@ -27,11 +28,9 @@ class ModelCompensationPlan(BaseModel):
     """
 
     # Plan identification
-    plan_id: str = Field(
+    plan_id: UUID = Field(
         ...,
         description="Unique identifier for this compensation plan",
-        min_length=1,
-        max_length=100,
     )
 
     plan_name: str = Field(
@@ -277,9 +276,18 @@ class ModelCompensationPlan(BaseModel):
         """
         try:
             return cls.model_validate(data)
+        except OnexError:
+            # Preserve existing domain error as-is
+            raise
         except ValidationError as e:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Compensation plan validation failed: {e}",
+                message="Compensation plan validation failed",
+                context={"context": {"input_data": data, "errors": e.errors()}},
+            ) from e
+        except Exception as e:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Compensation plan parsing failed: {e}",
                 context={"context": {"input_data": data}},
             ) from e

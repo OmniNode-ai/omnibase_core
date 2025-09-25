@@ -20,7 +20,8 @@ declare FAILURE_COUNT=0
 declare FILES_COPIED=0
 
 # Get script directory for anchoring repo paths
-declare -r SCRIPT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_BASE_DIR
 
 # Repository list - use canonicalized paths anchored to script directory
 declare -ra REPOS=(
@@ -77,7 +78,6 @@ copy_files_to_repo() {
     local repo="$1"
     local repo_name
     repo_name=$(basename "$repo")
-    local repo_success=0
     local repo_failures=0
 
     # Validate repository directory
@@ -100,7 +100,8 @@ copy_files_to_repo() {
 
         if [[ -f "$source_file" ]]; then
             # Ensure destination directory exists
-            local dest_dir="$(dirname "$dest_file")"
+            local dest_dir
+            dest_dir="$(dirname "$dest_file")"
             if [[ ! -d "$dest_dir" ]]; then
                 if ! mkdir -p "$dest_dir"; then
                     print_error "  Failed to create destination directory: $dest_dir"
@@ -112,7 +113,6 @@ copy_files_to_repo() {
             # Copy with preserved permissions and metadata
             if cp -a "$source_file" "$dest_file"; then
                 print_success "  Copied $file to $repo_name"
-                ((repo_success++))
                 ((FILES_COPIED++))
             else
                 print_error "  Failed to copy $file to $repo_name"

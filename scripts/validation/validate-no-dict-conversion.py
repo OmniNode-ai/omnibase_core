@@ -170,10 +170,10 @@ class DictConversionDetector(ast.NodeVisitor):
             tree = ast.parse(content)
             self.visit(tree)
 
-        except (SyntaxError, UnicodeDecodeError) as e:
+        except (SyntaxError, UnicodeDecodeError):
             # Skip files with syntax errors or encoding issues
             pass
-        except Exception as e:
+        except (OSError, ValueError) as e:
             print(f"Warning: Could not process {file_path}: {e}", file=sys.stderr)
 
         return self.violations

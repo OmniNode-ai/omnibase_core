@@ -65,17 +65,15 @@ class EnumCaseValidator:
                 if isinstance(node, ast.ClassDef):
                     # Check if this is an enum class
                     is_enum = any(
-                        isinstance(base, ast.Name)
-                        and "Enum" in base.id
-                        or isinstance(base, ast.Attribute)
-                        and base.attr == "Enum"
+                        (isinstance(base, ast.Name) and "Enum" in base.id)
+                        or (isinstance(base, ast.Attribute) and base.attr == "Enum")
                         for base in node.bases
                     )
 
                     if is_enum:
                         self._check_enum_class(node, file_path)
 
-        except Exception as e:
+        except (OSError, ValueError, SyntaxError) as e:
             print(f"Error analyzing {file_path}: {e}")
 
     def _check_enum_class(self, class_node: ast.ClassDef, file_path: Path) -> None:

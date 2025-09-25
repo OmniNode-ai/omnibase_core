@@ -19,7 +19,8 @@ declare SUCCESS_COUNT=0
 declare FAILURE_COUNT=0
 
 # Get script directory for anchoring repo paths
-declare -r SCRIPT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_BASE_DIR
 
 # Repository list - use canonicalized paths anchored to script directory
 declare -ra REPOS=(
@@ -40,7 +41,8 @@ print_warning() { echo "⚠️  WARNING: $1" >&2; }
 # Validate source scripts directory
 validate_scripts_directory() {
     # Resolve SCRIPT_DIR relative to script location instead of CWD
-    local script_parent_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local script_parent_dir
+    script_parent_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     SCRIPT_DIR="$script_parent_dir/scripts"
 
     if [[ ! -d "$SCRIPT_DIR" ]]; then

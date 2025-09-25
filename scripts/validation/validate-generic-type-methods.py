@@ -23,8 +23,19 @@ import argparse
 import ast
 import sys
 from pathlib import Path
+from typing import TypedDict
 
 # Using built-in generics (Python 3.9+)
+
+
+class Violation(TypedDict):
+    file: str
+    line: int
+    class_name: str
+    generic_methods: str
+    type_specific_methods: str
+    violation_type: str
+    suggestion: str
 
 
 class GenericTypeMethodValidator:
@@ -33,7 +44,7 @@ class GenericTypeMethodValidator:
     def __init__(self, max_violations: int = 0, auto_fix: bool = False):
         self.max_violations = max_violations
         self.auto_fix = auto_fix
-        self.violations: list[dict[str, str]] = []
+        self.violations: list[Violation] = []
 
         # Pattern: generic method + type-specific methods
         self.generic_method_patterns = [
@@ -92,8 +103,9 @@ class GenericTypeMethodValidator:
                 generic_methods.append(method_name)
 
         # Find type-specific method groups
+        methods_set = set(methods)
         for pattern_group in self.type_specific_patterns:
-            found_in_group = [method for method in methods if method in pattern_group]
+            found_in_group = list(methods_set.intersection(pattern_group))
             if len(found_in_group) >= 3:  # At least 3 type-specific methods
                 type_specific_methods.extend(found_in_group)
 
@@ -139,8 +151,8 @@ class GenericTypeMethodValidator:
                 if isinstance(node, ast.ClassDef):
                     self.analyze_class_for_anti_pattern(node, file_path)
 
-        except Exception as e:
-            print(f"Error analyzing {file_path}: {e}")
+        except (SyntaxError, UnicodeDecodeError, OSError, ValueError) as e:
+            print(f"Error analyzing {file_path}: {e}", file=sys.stderr)
 
     def _should_skip_file(self, file_path: Path) -> bool:
         """
@@ -236,7 +248,7 @@ class GenericTypeMethodValidator:
 
         # Sort violations deterministically by file path and line number
         sorted_violations = sorted(
-            self.violations, key=lambda v: (v["file"], int(v["line"]))
+            self.violations, key=lambda v: (v["file"], v["line"])
         )
 
         # Group violations by file
