@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_stop_reason import EnumStopReason
 from omnibase_core.models.proxy.model_anthropic_text_content import (
     ModelAnthropicTextContent,
 )
@@ -24,7 +25,7 @@ class ModelAnthropicMessage(BaseModel):
         description="Message content blocks",
     )
     model: str = Field(..., description="Model used", min_length=1)
-    stop_reason: Literal["end_turn", "max_tokens", "stop_sequence"] | None = Field(
+    stop_reason: EnumStopReason | None = Field(
         None,
         description="Reason for stopping generation",
     )

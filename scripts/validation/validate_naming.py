@@ -60,6 +60,12 @@ class NamingConventionValidator:
             "description": "Nodes must start with 'Node' (e.g., NodeEffectUserData)",
             "directory": "nodes",
         },
+        "typeddicts": {
+            "pattern": r"^TypedDict[A-Z][A-Za-z0-9]*$",
+            "file_prefix": None,  # TypedDict can be in any file
+            "description": "TypedDict classes must start with 'TypedDict' (e.g., TypedDictUserParams)",
+            "directory": None,  # TypedDict can be in any directory
+        },
     }
 
     # Exception patterns - classes that don't need to follow strict naming
@@ -83,6 +89,14 @@ class NamingConventionValidator:
 
     def _validate_category_files(self, category: str, rules: dict[str, str]):
         """Validate naming conventions for a specific category."""
+        # Special handling for TypedDict - scan all Python files
+        if category == "typeddicts":
+            for file_path in self.repo_path.rglob("*.py"):
+                if "__pycache__" in str(file_path) or "/archived/" in str(file_path):
+                    continue
+                self._validate_typeddict_in_file(file_path, category, rules)
+            return
+
         # Find all files matching the prefix pattern
         for file_path in self.repo_path.rglob(f"{rules['file_prefix']}*.py"):
             # Skip __pycache__, archived directories, and similar
@@ -147,6 +161,35 @@ class NamingConventionValidator:
         except (SyntaxError, UnicodeDecodeError) as e:
             print(f"Warning: Could not parse {file_path}: {e}")
 
+    def _validate_typeddict_in_file(
+        self, file_path: Path, category: str, rules: dict[str, str]
+    ):
+        """Validate TypedDict classes in any file."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            tree = ast.parse(content, filename=str(file_path))
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef):
+                    # Check if this is a TypedDict class
+                    if self._is_typeddict_class(node):
+                        self._check_class_naming(file_path, node, category, rules)
+
+        except (SyntaxError, UnicodeDecodeError) as e:
+            print(f"Warning: Could not parse {file_path}: {e}")
+
+    def _is_typeddict_class(self, node: ast.ClassDef) -> bool:
+        """Check if a class definition inherits from TypedDict."""
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id == "TypedDict":
+                return True
+            # Handle cases like typing.TypedDict
+            if isinstance(base, ast.Attribute) and base.attr == "TypedDict":
+                return True
+        return False
+
     def _contains_relevant_classes(self, content: str, pattern: str) -> bool:
         """Check if file contains classes that should match the pattern."""
         try:
@@ -172,9 +215,14 @@ class NamingConventionValidator:
         if self._is_exception_class(class_name):
             return
 
+        # Skip TypedDict classes when validating other categories
+        # They should only be validated in the typeddicts category
+        if category != "typeddicts" and self._is_typeddict_class(node):
+            return
+
         # Check if this file is in the right directory for this category
         expected_dir = rules["directory"]
-        in_correct_directory = expected_dir in str(file_path)
+        in_correct_directory = expected_dir is None or expected_dir in str(file_path)
 
         # If class matches pattern but file is in wrong place
         if re.match(pattern, class_name) and not in_correct_directory:
@@ -190,8 +238,9 @@ class NamingConventionValidator:
             )
 
         # If class doesn't match pattern but seems like it should
-        elif not re.match(pattern, class_name) and self._should_match_pattern(
-            class_name, category
+        elif not re.match(pattern, class_name) and (
+            self._should_match_pattern(class_name, category)
+            or self._is_in_category_directory(file_path, expected_dir)
         ):
             self.violations.append(
                 NamingViolation(
@@ -208,6 +257,14 @@ class NamingConventionValidator:
         """Check if class name matches exception patterns."""
         return any(re.match(pattern, class_name) for pattern in self.EXCEPTION_PATTERNS)
 
+    def _is_in_category_directory(
+        self, file_path: Path, expected_dir: str | None
+    ) -> bool:
+        """Check if file is in the expected category directory."""
+        if expected_dir is None:
+            return False
+        return expected_dir in str(file_path)
+
     def _should_match_pattern(self, class_name: str, category: str) -> bool:
         """Determine if a class should match the pattern for a category."""
         # Heuristics to determine if a class should follow naming conventions
@@ -219,6 +276,7 @@ class NamingConventionValidator:
             "services": ["service", "manager", "handler", "processor"],
             "mixins": ["mixin", "mix"],
             "nodes": ["node", "effect", "compute", "reducer", "orchestrator"],
+            "typeddicts": ["params", "kwargs", "dict", "config", "options"],
         }
 
         indicators = category_indicators.get(category, [])
@@ -262,7 +320,10 @@ class NamingConventionValidator:
         report += "=" * 33 + "\n"
         for category, rules in self.NAMING_PATTERNS.items():
             report += f"• {category.title()}: {rules['description']}\n"
-            report += f"  File Pattern: {rules['file_prefix']}*.py\n"
+            if rules["file_prefix"]:
+                report += f"  File Pattern: {rules['file_prefix']}*.py\n"
+            else:
+                report += f"  File Pattern: Any .py file\n"
             report += f"  Class Pattern: {rules['pattern']}\n\n"
 
         return report

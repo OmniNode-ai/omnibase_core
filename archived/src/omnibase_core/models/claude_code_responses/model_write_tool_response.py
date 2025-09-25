@@ -1,7 +1,7 @@
 # Generated from contract: tool_claude_code_response_models v1.0.0
-from typing import Literal
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_operation_type import EnumOperationType
 
 
 class ModelWriteToolResponse(BaseModel):
@@ -15,7 +15,7 @@ class ModelWriteToolResponse(BaseModel):
         description="Whether file existed before write operation",
     )
     encoding_used: str = Field(default="utf-8", description="Encoding used for writing")
-    operation_type: Literal["create", "overwrite", "append"] = Field(
+    operation_type: EnumOperationType = Field(
         ...,
         description="Type of write operation performed",
     )

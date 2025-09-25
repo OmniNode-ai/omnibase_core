@@ -7,6 +7,7 @@ to specify how state should change in response to actions.
 
 from enum import Enum
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -56,9 +57,14 @@ class ModelSimpleTransition(BaseModel):
 class ModelToolBasedTransition(BaseModel):
     """Transition that delegates to a tool for state computation."""
 
-    tool_name: str = Field(
+    tool_id: UUID = Field(
         ...,
-        description="Name of the tool to invoke (e.g., 'tool_state_calculator')",
+        description="UUID of the tool to invoke",
+    )
+
+    tool_display_name: str | None = Field(
+        None,
+        description="Human-readable name of the tool (e.g., 'State Calculator Tool')",
     )
 
     tool_params: dict[str, Any] | None = Field(
@@ -75,6 +81,16 @@ class ModelToolBasedTransition(BaseModel):
         5000,
         description="Tool invocation timeout in milliseconds",
     )
+
+    @property
+    def tool_name(self) -> str:
+        """Backward compatibility property for tool_name."""
+        return self.tool_display_name or f"tool_{str(self.tool_id)[:8]}"
+
+    @tool_name.setter
+    def tool_name(self, value: str) -> None:
+        """Backward compatibility setter for tool_name."""
+        self.tool_display_name = value
 
 
 class ModelConditionalTransition(BaseModel):
@@ -239,7 +255,8 @@ class ModelStateTransition(BaseModel):
         cls,
         name: str,
         triggers: list[str],
-        tool_name: str,
+        tool_id: UUID,
+        tool_display_name: str | None = None,
         tool_params: dict[str, Any] | None = None,
         description: str | None = None,
     ) -> "ModelStateTransition":
@@ -250,9 +267,37 @@ class ModelStateTransition(BaseModel):
             triggers=triggers,
             transition_type=EnumTransitionType.TOOL_BASED,
             tool_config=ModelToolBasedTransition(
-                tool_name=tool_name,
+                tool_id=tool_id,
+                tool_display_name=tool_display_name,
                 tool_params=tool_params,
             ),
+        )
+
+    @classmethod
+    def create_tool_based_legacy(
+        cls,
+        name: str,
+        triggers: list[str],
+        tool_name: str,
+        tool_params: dict[str, Any] | None = None,
+        description: str | None = None,
+    ) -> "ModelStateTransition":
+        """Legacy factory method for tool-based transitions using tool name."""
+        # Generate a UUID from the tool name for backward compatibility
+        import hashlib
+
+        name_hash = hashlib.sha256(tool_name.encode()).hexdigest()
+        tool_id = UUID(
+            f"{name_hash[:8]}-{name_hash[8:12]}-{name_hash[12:16]}-{name_hash[16:20]}-{name_hash[20:32]}"
+        )
+
+        return cls.create_tool_based(
+            name=name,
+            triggers=triggers,
+            tool_id=tool_id,
+            tool_display_name=tool_name,
+            tool_params=tool_params,
+            description=description,
         )
 
 

@@ -11,7 +11,7 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -25,6 +25,7 @@ from omnibase_core.core.subcontracts import (
     ModelStateManagementSubcontract,
     ModelWorkflowCoordinationSubcontract,
 )
+from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
@@ -201,8 +202,8 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
         # Call parent post-init validation
         super().model_post_init(__context)
 
-    node_type: Literal["REDUCER"] = Field(
-        default="REDUCER",
+    node_type: EnumNodeArchitectureType = Field(
+        default=EnumNodeArchitectureType.REDUCER,
         description="Node type classification for 4-node architecture",
     )
 

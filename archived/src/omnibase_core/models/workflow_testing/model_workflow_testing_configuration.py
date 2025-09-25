@@ -33,6 +33,7 @@ class ModelDependencyFlexibility(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -45,7 +46,7 @@ class ModelDependencyFlexibility(BaseModel):
                     "default_accommodation_strategy": "hybrid_smart",
                 },
             ],
-        }
+        },
     )
 
 
@@ -113,6 +114,7 @@ class ModelAccommodationOptions(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -129,7 +131,7 @@ class ModelAccommodationOptions(BaseModel):
                     "fallback_strategy": "mock_if_real_unavailable",
                 },
             ],
-        }
+        },
     )
 
 
@@ -147,6 +149,7 @@ class ModelDependencyAccommodation(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -165,7 +168,7 @@ class ModelDependencyAccommodation(BaseModel):
                     },
                 },
             ],
-        }
+        },
     )
 
 
@@ -194,6 +197,7 @@ class ModelExpectedOutcome(BaseModel):
         return ModelGenericValue.from_python_value(v)
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -203,7 +207,7 @@ class ModelExpectedOutcome(BaseModel):
                     "validation_message": "Text transformation should convert to uppercase",
                 },
             ],
-        }
+        },
     )
 
 
@@ -341,6 +345,7 @@ class ModelTestWorkflow(BaseModel):
         return v
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -358,7 +363,7 @@ class ModelTestWorkflow(BaseModel):
                     ],
                 },
             ],
-        }
+        },
     )
 
 
@@ -411,6 +416,7 @@ class ModelWorkflowTestingConfiguration(BaseModel):
         return v
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -427,9 +433,22 @@ class ModelWorkflowTestingConfiguration(BaseModel):
                         "default_accommodation_strategy": "hybrid_smart",
                     },
                     "dependency_accommodation": {},
-                    "test_workflows": [],
+                    "test_workflows": [
+                        {
+                            "workflow_id": "minimal_test_workflow",
+                            "workflow_description": "Minimal test workflow for configuration validation",
+                            "workflow_priority": "low",
+                            "accommodation_strategy": "hybrid_smart",
+                            "test_execution_steps": [
+                                {
+                                    "step_id": "minimal_validation_step",
+                                    "step_action": "validate_configuration",
+                                }
+                            ],
+                        }
+                    ],
                     "test_contexts": ["local_development", "ci_cd_environment"],
                 },
             ],
-        }
+        },
     )

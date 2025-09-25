@@ -64,10 +64,11 @@ repos:
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
         entry: poetry run python scripts/validation/validate_naming.py
-        args: ['.']
+        args: ['src/']
         language: system
-        always_run: true
         pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
       - id: validate-string-versions

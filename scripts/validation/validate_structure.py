@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import os
 import sys
 from dataclasses import dataclass
@@ -41,11 +42,60 @@ class StructureViolation:
 class OmniStructureValidator:
     """Validates omni* repository structure against standardized framework."""
 
+    # Cache directories to ignore during validation
+    IGNORED_DIRS = {
+        ".mypy_cache",
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".onex_cache",
+    }
+
     def __init__(self, repo_path: str, repo_name: str):
         self.repo_path = Path(repo_path).resolve()
         self.repo_name = repo_name
         self.violations: list[StructureViolation] = []
         self.src_path = self.repo_path / "src" / repo_name
+
+    def _contains_typeddict(self, file_path: Path) -> bool:
+        """
+        Check if a Python file contains actual TypedDict class definitions.
+
+        Args:
+            file_path: Path to the Python file to analyze
+
+        Returns:
+            bool: True if the file contains TypedDict classes, False otherwise
+        """
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            tree = ast.parse(content, filename=str(file_path))
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef):
+                    # Check if any base class is TypedDict
+                    for base in node.bases:
+                        # Handle direct TypedDict reference: class MyType(TypedDict)
+                        if isinstance(base, ast.Name) and base.id == "TypedDict":
+                            return True
+                        # Handle qualified TypedDict reference: class MyType(typing.TypedDict)
+                        elif (
+                            isinstance(base, ast.Attribute) and base.attr == "TypedDict"
+                        ):
+                            return True
+                        # Handle typing_extensions.TypedDict
+                        elif (
+                            isinstance(base, ast.Attribute)
+                            and isinstance(base.value, ast.Name)
+                            and base.value.id in ("typing", "typing_extensions")
+                            and base.attr == "TypedDict"
+                        ):
+                            return True
+            return False
+        except (OSError, SyntaxError, UnicodeDecodeError):
+            # If we can't parse the file, assume it doesn't contain TypedDict
+            # to avoid false positives
+            return False
 
     def validate_all(self) -> list[StructureViolation]:
         """Run all structure validations."""
@@ -58,6 +108,7 @@ class OmniStructureValidator:
         self.validate_forbidden_directories()
         self.validate_required_structure()
         self.validate_model_organization()
+        self.validate_types_organization()
         self.validate_enum_organization()
         self.validate_protocol_locations()
         self.validate_node_structure()
@@ -76,6 +127,9 @@ class OmniStructureValidator:
         ]
 
         for root, dirs, _ in os.walk(self.src_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
             for dir_name in dirs:
                 for forbidden, suggestion in forbidden_patterns:
                     if dir_name == forbidden:
@@ -90,33 +144,47 @@ class OmniStructureValidator:
                             )
                         )
 
-        # Check for scattered model directories
+        # Check for scattered model directories (ignoring cache directories)
         for root, dirs, _ in os.walk(self.src_path):
-            if "models" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
-                path = Path(root) / "models"
-                self.violations.append(
-                    StructureViolation(
-                        level=ViolationLevel.ERROR,
-                        category="Scattered Models",
-                        message=f"Models directory found outside root: {path}",
-                        path=str(path.relative_to(self.repo_path)),
-                        suggestion="Move all models to src/{repo_name}/models/ organized by domain",
-                    )
-                )
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
 
-        # Check for scattered enum directories
-        for root, dirs, _ in os.walk(self.src_path):
-            if "enums" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
-                path = Path(root) / "enums"
-                self.violations.append(
-                    StructureViolation(
-                        level=ViolationLevel.ERROR,
-                        category="Scattered Enums",
-                        message=f"Enums directory found outside root: {path}",
-                        path=str(path.relative_to(self.repo_path)),
-                        suggestion="Move all enums to src/{repo_name}/enums/ organized by domain",
+            if "models" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
+                # Skip if this is inside a cache directory
+                if not any(
+                    ignore_dir in str(Path(root)) for ignore_dir in self.IGNORED_DIRS
+                ):
+                    path = Path(root) / "models"
+                    self.violations.append(
+                        StructureViolation(
+                            level=ViolationLevel.ERROR,
+                            category="Scattered Models",
+                            message=f"Models directory found outside root: {path}",
+                            path=str(path.relative_to(self.repo_path)),
+                            suggestion=f"Move all models to src/{self.repo_name}/models/ organized by domain",
+                        )
                     )
-                )
+
+        # Check for scattered enum directories (ignoring cache directories)
+        for root, dirs, _ in os.walk(self.src_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
+            if "enums" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
+                # Skip if this is inside a cache directory
+                if not any(
+                    ignore_dir in str(Path(root)) for ignore_dir in self.IGNORED_DIRS
+                ):
+                    path = Path(root) / "enums"
+                    self.violations.append(
+                        StructureViolation(
+                            level=ViolationLevel.ERROR,
+                            category="Scattered Enums",
+                            message=f"Enums directory found outside root: {path}",
+                            path=str(path.relative_to(self.repo_path)),
+                            suggestion=f"Move all enums to src/{self.repo_name}/enums/ organized by domain",
+                        )
+                    )
 
     def validate_required_structure(self):
         """Validate presence of required directories."""
@@ -150,7 +218,7 @@ class OmniStructureValidator:
                     level=ViolationLevel.WARNING,
                     category="Missing Models Directory",
                     message="No models/ directory found",
-                    path="src/{repo_name}/models/",
+                    path=f"src/{self.repo_name}/models/",
                     suggestion="Create models directory organized by domain",
                 )
             )
@@ -171,13 +239,16 @@ class OmniStructureValidator:
                     level=ViolationLevel.WARNING,
                     category="Model Organization",
                     message="Models are not organized by domain",
-                    path="src/{repo_name}/models/",
+                    path=f"src/{self.repo_name}/models/",
                     suggestion=f"Organize models into domains: {', '.join(expected_domains)}",
                 )
             )
 
         # Check model file naming
-        for root, _, files in os.walk(models_path):
+        for root, dirs, files in os.walk(models_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
                     if not file.startswith("model_"):
@@ -192,6 +263,45 @@ class OmniStructureValidator:
                             )
                         )
 
+    def validate_types_organization(self):
+        """Validate TypedDict file organization and naming."""
+        types_path = self.src_path / "types"
+        if not types_path.exists():
+            self.violations.append(
+                StructureViolation(
+                    level=ViolationLevel.WARNING,
+                    category="Missing Types Directory",
+                    message="No types/ directory found",
+                    path=f"src/{self.repo_name}/types/",
+                    suggestion="Create types directory for TypedDict definitions",
+                )
+            )
+            return
+
+        # Check TypedDict file naming using AST-based detection
+        for root, dirs, files in os.walk(types_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
+            for file in files:
+                if file.endswith(".py") and file != "__init__.py":
+                    file_path = Path(root) / file
+
+                    # Only enforce "typed_dict_" naming for files that actually contain TypedDict classes
+                    if self._contains_typeddict(file_path):
+                        if not file.startswith("typed_dict_"):
+                            self.violations.append(
+                                StructureViolation(
+                                    level=ViolationLevel.ERROR,
+                                    category="TypedDict Naming",
+                                    message=f"File containing TypedDict classes must start with 'typed_dict_': {file}",
+                                    path=str(file_path.relative_to(self.repo_path)),
+                                    suggestion=f"Rename to: typed_dict_{file}",
+                                )
+                            )
+                    # Allow other type files (protocols, aliases, etc.) to use descriptive names
+                    # No violation is added for non-TypedDict files regardless of naming
+
     def validate_enum_organization(self):
         """Validate enum file organization and naming."""
         enums_path = self.src_path / "enums"
@@ -202,14 +312,17 @@ class OmniStructureValidator:
                     level=ViolationLevel.WARNING,
                     category="Missing Enums Directory",
                     message="No enums/ directory found",
-                    path="src/{repo_name}/enums/",
+                    path=f"src/{self.repo_name}/enums/",
                     suggestion="Create enums directory organized by domain",
                 )
             )
             return
 
         # Check enum file naming
-        for root, _, files in os.walk(enums_path):
+        for root, dirs, files in os.walk(enums_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
                     if not file.startswith("enum_"):
@@ -234,7 +347,7 @@ class OmniStructureValidator:
                     level=ViolationLevel.ERROR,
                     category="Protocol Location",
                     message=f"Only omnibase_spi should contain protocols directory",
-                    path="src/{repo_name}/protocols/",
+                    path=f"src/{self.repo_name}/protocols/",
                     suggestion="Remove local protocols, import from omnibase_spi instead",
                 )
             )
@@ -242,7 +355,10 @@ class OmniStructureValidator:
         # Count protocol files in non-SPI repositories
         if self.repo_name != "omnibase_spi":
             protocol_count = 0
-            for root, _, files in os.walk(self.src_path):
+            for _root, dirs, files in os.walk(self.src_path):
+                # Filter out cache directories from dirs list to prevent walking into them
+                dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
                 for file in files:
                     if file.startswith("protocol_") and file.endswith(".py"):
                         protocol_count += 1
@@ -253,7 +369,7 @@ class OmniStructureValidator:
                         level=ViolationLevel.ERROR,
                         category="Too Many Protocols",
                         message=f"Found {protocol_count} protocol files (max 3 allowed for non-SPI repos)",
-                        path="src/{repo_name}/",
+                        path=f"src/{self.repo_name}/",
                         suggestion="Migrate excess protocols to omnibase_spi",
                     )
                 )
@@ -267,6 +383,10 @@ class OmniStructureValidator:
 
         for node_dir in nodes_path.iterdir():
             if not node_dir.is_dir():
+                continue
+
+            # Skip cache directories and other ignored directories
+            if node_dir.name in self.IGNORED_DIRS:
                 continue
 
             # Validate node naming pattern

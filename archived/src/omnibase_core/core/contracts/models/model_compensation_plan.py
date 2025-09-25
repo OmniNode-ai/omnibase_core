@@ -8,10 +8,13 @@ ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
 from typing import Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
+from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
 
 
 class ModelCompensationPlan(BaseModel):
@@ -25,11 +28,9 @@ class ModelCompensationPlan(BaseModel):
     """
 
     # Plan identification
-    plan_id: str = Field(
+    plan_id: UUID = Field(
         ...,
         description="Unique identifier for this compensation plan",
-        min_length=1,
-        max_length=100,
     )
 
     plan_name: str = Field(
@@ -56,13 +57,13 @@ class ModelCompensationPlan(BaseModel):
     )
 
     # Compensation strategy
-    compensation_strategy: Literal["rollback", "forward_recovery", "mixed"] = Field(
-        default="rollback",
+    compensation_strategy: EnumCompensationStrategy = Field(
+        default=EnumCompensationStrategy.ROLLBACK,
         description="Overall compensation strategy",
     )
 
-    execution_order: Literal["reverse", "forward", "parallel"] = Field(
-        default="reverse",
+    execution_order: EnumExecutionOrder = Field(
+        default=EnumExecutionOrder.REVERSE,
         description="Order to execute compensation actions",
     )
 
@@ -158,12 +159,22 @@ class ModelCompensationPlan(BaseModel):
         le=60000,  # Max 1 minute delay
     )
 
-    @field_validator("plan_id")
+    @field_validator("plan_id", mode="before")
     @classmethod
-    def validate_plan_id(cls, v: str) -> str:
+    def validate_plan_id(cls, v: str | UUID) -> str:
         """Validate plan ID format."""
-        v = v.strip()
-        if not v:
+        if isinstance(v, UUID):
+            v_str = str(v)
+        elif isinstance(v, str):
+            v_str = v.strip()
+        else:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message="Plan ID must be provided as a string or UUID",
+                context={"context": {"received_type": type(v).__name__}},
+            )
+
+        if not v_str:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message="Plan ID cannot be empty",
@@ -171,19 +182,19 @@ class ModelCompensationPlan(BaseModel):
             )
 
         # Check for valid identifier format
-        if not v.replace("_", "").replace("-", "").isalnum():
+        if not v_str.replace("_", "").replace("-", "").isalnum():
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Invalid plan_id '{v}'. Must contain only alphanumeric characters, hyphens, and underscores.",
+                message=f"Invalid plan_id '{v_str}'. Must contain only alphanumeric characters, hyphens, and underscores.",
                 context={
                     "context": {
-                        "plan_id": v,
+                        "plan_id": v_str,
                         "onex_principle": "Strong validation for identifiers",
                     }
                 },
             )
 
-        return v
+        return v_str
 
     @field_validator(
         "rollback_actions",
@@ -242,12 +253,11 @@ class ModelCompensationPlan(BaseModel):
 
         return validated
 
-    class Config:
-        """Pydantic configuration for ONEX compliance."""
-
-        extra = "forbid"  # Reject additional fields for strict typing
-        use_enum_values = True  # Convert enums to values
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="forbid",  # Reject additional fields for strict typing
+        validate_assignment=True,  # Validate on attribute assignment
+        use_enum_values=True,  # Ensure proper enum serialization
+    )
 
     def to_dict(self) -> dict[str, str | list[str] | bool | int]:
         """
@@ -256,7 +266,7 @@ class ModelCompensationPlan(BaseModel):
         Returns:
             Dictionary representation with type information preserved
         """
-        return self.model_dump(exclude_none=True, mode="python")
+        return self.model_dump(exclude_none=True, mode="json")
 
     @classmethod
     def from_dict(
@@ -276,9 +286,18 @@ class ModelCompensationPlan(BaseModel):
         """
         try:
             return cls.model_validate(data)
+        except OnexError:
+            # Preserve existing domain error as-is
+            raise
+        except ValidationError as e:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message="Compensation plan validation failed",
+                context={"context": {"input_data": data, "errors": e.errors()}},
+            ) from e
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Compensation plan validation failed: {e}",
+                message=f"Compensation plan parsing failed: {e}",
                 context={"context": {"input_data": data}},
             ) from e

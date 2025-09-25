@@ -1,7 +1,7 @@
 # Generated from contract: tool_claude_code_response_models v1.0.0
-from typing import Literal
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_output_mode import EnumOutputMode
 
 
 class ModelGrepMatch(BaseModel):
@@ -48,8 +48,8 @@ class ModelGrepToolResponse(BaseModel):
         default=True,
         description="Whether pattern was treated as regex",
     )
-    output_mode: Literal["content", "files_with_matches", "count"] = Field(
-        default="files_with_matches",
+    output_mode: EnumOutputMode = Field(
+        default=EnumOutputMode.FILES_WITH_MATCHES,
         description="Output mode used for search",
     )
     search_path: str | None = Field(

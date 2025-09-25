@@ -1,0 +1,413 @@
+"""
+Tests for ModelExecutionResult.
+
+Comprehensive test suite for the enhanced execution result pattern
+that extends Result[T, E] with execution-specific features.
+"""
+
+from datetime import UTC, datetime
+from typing import Any
+from uuid import UUID
+
+import pytest
+
+from src.omnibase_core.models.infrastructure.model_duration import ModelDuration
+from src.omnibase_core.models.infrastructure.model_execution_result import (
+    ModelExecutionResult,
+    execution_err,
+    execution_ok,
+    try_execution,
+)
+
+
+class TestModelExecutionResult:
+    """Test ModelExecutionResult functionality."""
+
+    def test_successful_creation_with_ok(self) -> None:
+        """Test creating successful execution result."""
+        result = ModelExecutionResult.ok("test_value")
+
+        assert result.is_ok()
+        assert result.success is True
+        assert result.value == "test_value"
+        assert result.error is None
+        assert isinstance(result.execution_id, UUID)
+        assert isinstance(result.start_time, datetime)
+        assert result.end_time is None
+        assert result.duration is None
+        assert result.warnings == []
+        assert len(result.metadata.custom_strings) == 0
+        assert len(result.metadata.custom_numbers) == 0
+        assert len(result.metadata.custom_flags) == 0
+
+    def test_error_creation_with_err(self) -> None:
+        """Test creating error execution result."""
+        result = ModelExecutionResult.err("test_error")
+
+        assert result.is_err()
+        assert result.success is False
+        assert result.value is None
+        assert result.error == "test_error"
+        assert isinstance(result.execution_id, UUID)
+        assert isinstance(result.start_time, datetime)
+        assert result.end_time is None
+        assert result.duration is None
+        assert result.warnings == []
+        assert len(result.metadata.custom_strings) == 0
+        assert len(result.metadata.custom_numbers) == 0
+        assert len(result.metadata.custom_flags) == 0
+
+    def test_custom_execution_id(self) -> None:
+        """Test creating result with custom execution ID."""
+        custom_id = UUID("12345678-1234-5678-9abc-123456789abc")
+        result = ModelExecutionResult.ok("value", execution_id=custom_id)
+
+        assert result.execution_id == custom_id
+
+    def test_metadata_initialization(self) -> None:
+        """Test creating result with initial metadata."""
+        from src.omnibase_core.models.core import ModelCustomProperties
+
+        metadata = ModelCustomProperties()
+        metadata.set_custom_string("tool", "test_tool")
+        metadata.set_custom_string("version", "1.0")
+        result = ModelExecutionResult.ok("value", metadata=metadata)
+
+        assert result.get_metadata("tool") == "test_tool"
+        assert result.get_metadata("version") == "1.0"
+
+    def test_add_warning(self) -> None:
+        """Test adding warnings to execution result."""
+        result = ModelExecutionResult.ok("value")
+
+        result.add_warning("Warning 1")
+        assert result.warnings == ["Warning 1"]
+        assert result.has_warnings()
+
+        result.add_warning("Warning 2")
+        assert result.warnings == ["Warning 1", "Warning 2"]
+
+        # Test duplicate warning prevention
+        result.add_warning("Warning 1")
+        assert result.warnings == ["Warning 1", "Warning 2"]
+
+    def test_add_warnings_multiple(self) -> None:
+        """Test adding multiple warnings at once."""
+        result = ModelExecutionResult.ok("value")
+
+        warnings = ["Warning A", "Warning B", "Warning A"]  # Include duplicate
+        result.add_warnings(warnings)
+
+        assert result.warnings == ["Warning A", "Warning B"]  # No duplicates
+
+    def test_metadata_operations(self) -> None:
+        """Test metadata add and get operations."""
+        result = ModelExecutionResult.ok("value")
+
+        result.add_metadata("key1", "value1")
+        result.add_metadata("key2", 42)
+
+        assert result.get_metadata("key1") == "value1"
+        assert result.get_metadata("key2") == 42
+        assert result.get_metadata("nonexistent") is None
+        assert result.get_metadata("nonexistent", "default") == "default"
+
+    def test_mark_completed(self) -> None:
+        """Test marking execution as completed."""
+        result = ModelExecutionResult.ok("value")
+
+        assert not result.is_completed()
+        assert result.end_time is None
+        assert result.duration is None
+
+        result.mark_completed()
+
+        assert result.is_completed()
+        assert result.end_time is not None
+        assert result.duration is not None
+        from src.omnibase_core.models.infrastructure.model_execution_result import (
+            ModelExecutionDuration,
+        )
+
+        assert isinstance(result.duration, ModelExecutionDuration)
+        assert result.duration.total_milliseconds() >= 0
+
+    def test_duration_calculations(self) -> None:
+        """Test duration calculation methods."""
+        result = ModelExecutionResult.ok("value")
+
+        # Before completion
+        assert result.get_duration_ms() is None
+        assert result.get_duration_seconds() is None
+
+        result.mark_completed()
+
+        # After completion
+        duration_ms = result.get_duration_ms()
+        duration_seconds = result.get_duration_seconds()
+
+        assert duration_ms is not None
+        assert duration_ms >= 0
+        assert duration_seconds is not None
+        assert duration_seconds >= 0
+        assert (
+            abs(duration_ms / 1000.0 - duration_seconds) < 0.001
+        )  # Should be equivalent
+
+    def test_execution_summary(self) -> None:
+        """Test execution summary generation."""
+        result = ModelExecutionResult.ok("value")
+        result.add_warning("Test warning")
+        result.add_metadata("tool", "test_tool")
+        result.mark_completed()
+
+        summary = result.get_execution_summary()
+
+        assert summary.execution_id == result.execution_id
+        assert summary.success is True
+        assert summary.duration_ms is not None
+        assert summary.warning_count == 1
+        assert summary.has_metadata is True
+        assert summary.completed is True
+
+    def test_cli_result_conversion(self) -> None:
+        """Test conversion to CLI result data format."""
+        result = ModelExecutionResult.ok("test_output")
+        result.add_metadata("tool_name", "test_tool")
+        result.add_metadata("status_code", 0)
+        result.add_warning("Test warning")
+        result.mark_completed()
+
+        cli_result = result.to_cli_result()
+
+        assert cli_result.success is True
+        assert cli_result.execution_id == result.execution_id
+        assert cli_result.output_data == "test_output"
+        assert cli_result.error_message is None
+        assert cli_result.tool_name == "test_tool"
+        assert cli_result.execution_time_ms is not None
+        assert cli_result.status_code == 0
+        assert cli_result.warnings == ["Test warning"]
+        assert cli_result.metadata.get_custom_value("tool_name") == "test_tool"
+
+    def test_cli_result_conversion_error(self) -> None:
+        """Test CLI result conversion for error case."""
+        result = ModelExecutionResult.err("test_error")
+        result.add_metadata("tool_name", "test_tool")
+        result.add_metadata("status_code", 1)
+
+        cli_result = result.to_cli_result()
+
+        assert cli_result.success is False
+        assert cli_result.output_data is None
+        assert cli_result.error_message == "test_error"
+        assert cli_result.tool_name == "test_tool"
+        assert cli_result.status_code == 1
+
+    def test_create_cli_success(self) -> None:
+        """Test CLI success factory method."""
+        output_data = {"result": "success", "data": [1, 2, 3]}
+        cli_id = UUID("12345678-1234-5678-9abc-123456789abc")
+        result = ModelExecutionResult.create_cli_success(
+            output_data, tool_name="test_tool", execution_id=cli_id
+        )
+
+        assert result.is_ok()
+        assert result.value == output_data
+        assert result.execution_id == cli_id
+        assert result.get_metadata("tool_name") == "test_tool"
+
+    def test_create_cli_failure(self) -> None:
+        """Test CLI failure factory method."""
+        failure_id = UUID("87654321-4321-8765-cba9-876543210fed")
+        result = ModelExecutionResult.create_cli_failure(
+            "Command failed",
+            tool_name="test_tool",
+            status_code=2,
+            execution_id=failure_id,
+        )
+
+        assert result.is_err()
+        assert result.error == "Command failed"
+        assert result.execution_id == failure_id
+        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.get_metadata("status_code") == 2.0
+
+    def test_inherited_result_methods(self) -> None:
+        """Test that Result[T, E] methods still work correctly."""
+        # Test successful result
+        success_result = ModelExecutionResult.ok("test_value")
+
+        assert success_result.unwrap() == "test_value"
+        assert success_result.unwrap_or("default") == "test_value"
+        assert success_result.expect("Should not fail") == "test_value"
+
+        # Test error result
+        error_result = ModelExecutionResult.err("test_error")
+
+        assert error_result.unwrap_or("default") == "default"
+
+        with pytest.raises(ValueError, match="Called unwrap\\(\\) on error result"):
+            error_result.unwrap()
+
+        with pytest.raises(ValueError, match="Custom message"):
+            error_result.expect("Custom message")
+
+    def test_map_operations(self) -> None:
+        """Test map operations from Result[T, E]."""
+        result = ModelExecutionResult.ok("hello")
+
+        # Test successful map
+        mapped = result.map(lambda x: x.upper())
+        assert mapped.is_ok()
+        assert mapped.unwrap() == "HELLO"
+
+        # Test map on error result
+        error_result = ModelExecutionResult.err("error")
+        mapped_error = error_result.map(lambda x: x.upper())
+        assert mapped_error.is_err()
+        assert mapped_error.error == "error"
+
+    def test_and_then_operations(self) -> None:
+        """Test and_then (flatMap) operations."""
+        result = ModelExecutionResult.ok(5)
+
+        # Test successful chain
+        chained = result.and_then(lambda x: ModelExecutionResult.ok(x * 2))
+        assert chained.is_ok()
+        assert chained.unwrap() == 10
+
+        # Test chain with error
+        error_chain = result.and_then(
+            lambda x: ModelExecutionResult.err("chained error")
+        )
+        assert error_chain.is_err()
+        assert error_chain.error == "chained error"
+
+    def test_enhanced_repr(self) -> None:
+        """Test enhanced string representation."""
+        result = ModelExecutionResult.ok("value")
+        result.add_warning("Test warning")
+        result.mark_completed()
+
+        repr_str = repr(result)
+
+        assert "Result.ok('value')" in repr_str
+        assert "duration:" in repr_str
+        assert "1 warnings" in repr_str
+
+
+class TestConvenienceFactories:
+    """Test convenience factory functions."""
+
+    def test_execution_ok(self) -> None:
+        """Test execution_ok factory function."""
+        result = execution_ok("success", tool_name="test_tool")
+
+        assert result.is_ok()
+        assert result.value == "success"
+        assert result.get_metadata("tool_name") == "test_tool"
+
+    def test_execution_err(self) -> None:
+        """Test execution_err factory function."""
+        result = execution_err("error", tool_name="test_tool", status_code=2)
+
+        assert result.is_err()
+        assert result.error == "error"
+        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.get_metadata("status_code") == 2.0
+
+    def test_try_execution_success(self) -> None:
+        """Test try_execution with successful function."""
+
+        def success_func() -> str:
+            return "success_result"
+
+        result = try_execution(success_func, tool_name="test_tool")
+
+        assert result.is_ok()
+        assert result.value == "success_result"
+        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.is_completed()
+
+    def test_try_execution_failure(self) -> None:
+        """Test try_execution with failing function."""
+
+        def failing_func() -> str:
+            raise ValueError("Function failed")
+
+        result = try_execution(failing_func, tool_name="test_tool")
+
+        assert result.is_err()
+        assert result.error == "Function failed"
+        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.is_completed()
+
+
+class TestTypeAliases:
+    """Test type alias functionality."""
+
+    def test_cli_execution_result(self) -> None:
+        """Test explicit CLI execution result typing."""
+        result: ModelExecutionResult[dict[str, str], Any] = ModelExecutionResult.ok(
+            {"data": "test"}
+        )
+
+        assert result.is_ok()
+        assert isinstance(result.value, dict)
+
+    def test_string_execution_result(self) -> None:
+        """Test explicit string execution result typing."""
+        result: ModelExecutionResult[str, Any] = ModelExecutionResult.ok("test_string")
+
+        assert result.is_ok()
+        assert isinstance(result.value, str)
+
+    def test_bool_execution_result(self) -> None:
+        """Test explicit bool execution result typing."""
+        result: ModelExecutionResult[bool, Any] = ModelExecutionResult.ok(True)
+
+        assert result.is_ok()
+        assert isinstance(result.value, bool)
+
+
+class TestBackwardsCompatibility:
+    """Test backwards compatibility with existing patterns."""
+
+    def test_result_interface_compatibility(self) -> None:
+        """Test that ModelExecutionResult maintains Result[T, E] interface."""
+        result = ModelExecutionResult.ok("test")
+
+        # Should behave like Result[T, E]
+        assert result.success is True
+        assert result.value == "test"
+        assert result.error is None
+        assert result.is_ok()
+        assert not result.is_err()
+
+    def test_cli_compatibility_methods(self) -> None:
+        """Test CLI compatibility factory methods."""
+        # Test create_cli_success
+        success_result = ModelExecutionResult.create_cli_success(
+            {"output": "data"}, tool_name="tool1"
+        )
+        assert success_result.is_ok()
+        assert success_result.get_metadata("tool_name") == "tool1"
+
+        # Test create_cli_failure
+        error_result = ModelExecutionResult.create_cli_failure(
+            "Command failed", tool_name="tool1", status_code=1
+        )
+        assert error_result.is_err()
+        assert error_result.get_metadata("tool_name") == "tool1"
+        assert error_result.get_metadata("status_code") == 1.0
+
+    def test_validation_error_handling(self) -> None:
+        """Test proper validation error handling."""
+        # Should still validate that success results have values
+        with pytest.raises(ValueError, match="Success result must have a value"):
+            ModelExecutionResult(success=True, value=None, error=None)
+
+        # Should still validate that error results have errors
+        with pytest.raises(ValueError, match="Error result must have an error"):
+            ModelExecutionResult(success=False, value=None, error=None)

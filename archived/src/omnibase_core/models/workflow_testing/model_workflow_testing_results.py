@@ -203,6 +203,7 @@ class ModelTestStepResult(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -218,7 +219,7 @@ class ModelTestStepResult(BaseModel):
                     "error_details": None,
                 },
             ],
-        }
+        },
     )
 
 
@@ -245,6 +246,7 @@ class ModelAccommodationResult(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -256,7 +258,7 @@ class ModelAccommodationResult(BaseModel):
                     "setup_time_ms": 15.2,
                 },
             ],
-        }
+        },
     )
 
 
@@ -332,6 +334,7 @@ class ModelTestWorkflowResult(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -351,7 +354,7 @@ class ModelTestWorkflowResult(BaseModel):
                     "end_time": "2025-07-29T12:00:01Z",
                 },
             ],
-        }
+        },
     )
 
 
@@ -390,6 +393,7 @@ class ModelWorkflowTestingResults(BaseModel):
     )
 
     model_config = ConfigDict(
+        use_enum_values=True,  # Ensure proper enum serialization
         json_schema_extra={
             "examples": [
                 {
@@ -413,5 +417,5 @@ class ModelWorkflowTestingResults(BaseModel):
                     "summary_report": "All 5 test workflows executed successfully",
                 },
             ],
-        }
+        },
     )

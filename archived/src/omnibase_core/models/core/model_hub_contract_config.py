@@ -8,6 +8,7 @@ and provide a unified interface for contract-driven hub configuration.
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -83,10 +84,14 @@ class ModelHubConfiguration(BaseModel):
     """Unified hub configuration supporting both contract formats."""
 
     # Core hub identity
-    domain: str = Field(
+    domain_id: UUID = Field(
         ...,
-        description="Hub domain (e.g., 'generation', 'ai')",
-        pattern=r"^[a-z_][a-z0-9_]*$",
+        description="UUID of the hub domain",
+    )
+
+    domain_display_name: str | None = Field(
+        None,
+        description="Human-readable domain name (e.g., 'generation', 'ai')",
     )
 
     # Service configuration
@@ -103,6 +108,42 @@ class ModelHubConfiguration(BaseModel):
         description="Hub coordination strategy",
     )
 
+    @classmethod
+    def create_with_legacy_domain(
+        cls,
+        domain_name: str,
+        service_port: int | None = None,
+        managed_tool_names: list[str] | None = None,
+        **kwargs: Any,
+    ) -> "ModelHubConfiguration":
+        """Factory method to create hub configuration with legacy domain name."""
+        import hashlib
+
+        # Generate UUID for domain
+        domain_hash = hashlib.sha256(domain_name.encode()).hexdigest()
+        domain_id = UUID(
+            f"{domain_hash[:8]}-{domain_hash[8:12]}-{domain_hash[12:16]}-{domain_hash[16:20]}-{domain_hash[20:32]}"
+        )
+
+        # Generate UUIDs for managed tools
+        managed_tool_ids = []
+        tool_display_names = managed_tool_names or []
+        for tool_name in tool_display_names:
+            tool_hash = hashlib.sha256(tool_name.encode()).hexdigest()
+            tool_id = UUID(
+                f"{tool_hash[:8]}-{tool_hash[8:12]}-{tool_hash[12:16]}-{tool_hash[16:20]}-{tool_hash[20:32]}"
+            )
+            managed_tool_ids.append(tool_id)
+
+        return cls(
+            domain_id=domain_id,
+            domain_display_name=domain_name,
+            service_port=service_port,
+            managed_tool_ids=managed_tool_ids,
+            managed_tool_display_names=tool_display_names,
+            **kwargs,
+        )
+
     capabilities: list[EnumHubCapability] | None = Field(
         default_factory=list,
         description="Hub capabilities",
@@ -116,9 +157,14 @@ class ModelHubConfiguration(BaseModel):
     )
 
     # Tool management
-    managed_tools: list[str] | None = Field(
+    managed_tool_ids: list[UUID] | None = Field(
         default_factory=list,
-        description="Tools managed by this hub",
+        description="UUIDs of tools managed by this hub",
+    )
+
+    managed_tool_display_names: list[str] | None = Field(
+        default_factory=list,
+        description="Human-readable names of managed tools",
     )
 
     # Service registry configuration
@@ -133,6 +179,28 @@ class ModelHubConfiguration(BaseModel):
         60,
         description="Auto cleanup interval in seconds",
     )
+
+    @property
+    def domain(self) -> str:
+        """Backward compatibility property for domain."""
+        return self.domain_display_name or f"domain_{str(self.domain_id)[:8]}"
+
+    @domain.setter
+    def domain(self, value: str) -> None:
+        """Backward compatibility setter for domain."""
+        self.domain_display_name = value
+
+    @property
+    def managed_tools(self) -> list[str]:
+        """Backward compatibility property for managed_tools."""
+        if self.managed_tool_display_names:
+            return self.managed_tool_display_names
+        return [f"tool_{str(tool_id)[:8]}" for tool_id in (self.managed_tool_ids or [])]
+
+    @managed_tools.setter
+    def managed_tools(self, value: list[str]) -> None:
+        """Backward compatibility setter for managed_tools."""
+        self.managed_tool_display_names = value
 
 
 class ModelUnifiedHubContract(BaseModel):
@@ -238,11 +306,31 @@ class ModelUnifiedHubContract(BaseModel):
         if self.service_configuration and self.service_configuration.default_port:
             service_port = self.service_configuration.default_port
 
+        # Convert domain and tools to UUID format
+        import hashlib
+
+        # Generate UUID for domain
+        domain_hash = hashlib.sha256(domain.encode()).hexdigest()
+        domain_id = UUID(
+            f"{domain_hash[:8]}-{domain_hash[8:12]}-{domain_hash[12:16]}-{domain_hash[16:20]}-{domain_hash[20:32]}"
+        )
+
+        # Generate UUIDs for managed tools
+        managed_tool_ids = []
+        for tool in managed_tools:
+            tool_hash = hashlib.sha256(tool.encode()).hexdigest()
+            tool_id = UUID(
+                f"{tool_hash[:8]}-{tool_hash[8:12]}-{tool_hash[12:16]}-{tool_hash[16:20]}-{tool_hash[20:32]}"
+            )
+            managed_tool_ids.append(tool_id)
+
         return ModelHubConfiguration(
-            domain=domain,
+            domain_id=domain_id,
+            domain_display_name=domain,
             service_port=service_port,
             capabilities=capabilities,
-            managed_tools=managed_tools,
+            managed_tool_ids=managed_tool_ids,
+            managed_tool_display_names=managed_tools,
             coordination_mode=EnumCoordinationMode.EVENT_ROUTER,
         )
 

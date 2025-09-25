@@ -1,0 +1,190 @@
+"""
+Progress Metrics Model.
+
+Custom metrics and tagging for progress tracking.
+Follows ONEX one-model-per-file architecture.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+
+
+class ModelProgressMetrics(BaseModel):
+    """
+    Progress metrics with custom data and tagging support.
+
+    Focused on extensible metrics tracking and categorization.
+    """
+
+    # Metadata
+    custom_metrics: ModelMetricsData = Field(
+        default_factory=lambda: ModelMetricsData(
+            collection_id=None,
+            collection_display_name="progress_metrics",
+        ),
+        description="Custom progress metrics with clean typing",
+    )
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Progress tracking tags",
+    )
+
+    # Metrics timestamps
+    metrics_last_updated: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        description="Last metrics update timestamp",
+    )
+
+    def add_custom_metric(self, key: str, value: ModelMetadataValue) -> None:
+        """Add custom progress metric with proper typing."""
+        self.custom_metrics.add_metric(key, value)
+        self.metrics_last_updated = datetime.now(UTC)
+
+    def get_custom_metric(self, key: str) -> ModelMetadataValue | None:
+        """Get custom metric value."""
+        raw_value = self.custom_metrics.get_metric_by_key(key)
+        if raw_value is not None:
+            return ModelMetadataValue.from_any(raw_value, source="progress_metrics")
+        return None
+
+    def remove_custom_metric(self, key: str) -> bool:
+        """Remove custom metric. Returns True if metric existed."""
+        existed = key in self.custom_metrics.get_all_keys()
+        if existed:
+            # Remove metric by filtering the list
+            self.custom_metrics.metrics = [
+                metric for metric in self.custom_metrics.metrics if metric.key != key
+            ]
+            self.metrics_last_updated = datetime.now(UTC)
+        return existed
+
+    def add_tag(self, tag: str) -> None:
+        """Add a progress tag."""
+        if tag not in self.tags:
+            self.tags.append(tag)
+            self.metrics_last_updated = datetime.now(UTC)
+
+    def remove_tag(self, tag: str) -> bool:
+        """Remove a progress tag. Returns True if tag existed."""
+        try:
+            self.tags.remove(tag)
+            self.metrics_last_updated = datetime.now(UTC)
+            return True
+        except ValueError:
+            return False
+
+    def has_tag(self, tag: str) -> bool:
+        """Check if progress has a specific tag."""
+        return tag in self.tags
+
+    def add_tags(self, tags: list[str]) -> None:
+        """Add multiple tags."""
+        for tag in tags:
+            self.add_tag(tag)
+
+    def remove_tags(self, tags: list[str]) -> list[str]:
+        """Remove multiple tags. Returns list of tags that were actually removed."""
+        removed = []
+        for tag in tags:
+            if self.remove_tag(tag):
+                removed.append(tag)
+        return removed
+
+    def clear_tags(self) -> None:
+        """Clear all tags."""
+        if self.tags:
+            self.tags.clear()
+            self.metrics_last_updated = datetime.now(UTC)
+
+    def get_tags_count(self) -> int:
+        """Get count of tags."""
+        return len(self.tags)
+
+    def get_metrics_count(self) -> int:
+        """Get count of custom metrics."""
+        return len(self.custom_metrics.metrics)
+
+    def has_custom_metrics(self) -> bool:
+        """Check if any custom metrics exist."""
+        return self.get_metrics_count() > 0
+
+    def get_metrics_summary(self) -> dict[str, ModelMetadataValue]:
+        """Get summary of all custom metrics."""
+        summary = {}
+        for key in self.custom_metrics.get_all_keys():
+            metric_value = self.get_custom_metric(key)
+            if metric_value is not None:
+                summary[key] = metric_value
+        return summary
+
+    def update_standard_metrics(
+        self,
+        percentage: float,
+        current_step: int,
+        total_steps: int,
+        is_completed: bool,
+        elapsed_seconds: float,
+    ) -> None:
+        """Update standard progress metrics."""
+        self.add_custom_metric(
+            "percentage",
+            ModelMetadataValue.from_float(percentage),
+        )
+        self.add_custom_metric(
+            "current_step",
+            ModelMetadataValue.from_int(current_step),
+        )
+        self.add_custom_metric(
+            "total_steps",
+            ModelMetadataValue.from_int(total_steps),
+        )
+        self.add_custom_metric(
+            "is_completed",
+            ModelMetadataValue.from_bool(is_completed),
+        )
+        self.add_custom_metric(
+            "elapsed_seconds",
+            ModelMetadataValue.from_float(elapsed_seconds),
+        )
+
+    def reset(self) -> None:
+        """Reset all metrics and tags."""
+        self.custom_metrics.clear_all_metrics()
+        self.tags.clear()
+        self.metrics_last_updated = datetime.now(UTC)
+
+    def reset_metrics_only(self) -> None:
+        """Reset only custom metrics, keep tags."""
+        self.custom_metrics.clear_all_metrics()
+        self.metrics_last_updated = datetime.now(UTC)
+
+    def reset_tags_only(self) -> None:
+        """Reset only tags, keep custom metrics."""
+        self.tags.clear()
+        self.metrics_last_updated = datetime.now(UTC)
+
+    @classmethod
+    def create_with_tags(cls, tags: list[str]) -> ModelProgressMetrics:
+        """Create metrics instance with initial tags."""
+        return cls(tags=tags.copy())
+
+    @classmethod
+    def create_with_metrics(
+        cls,
+        initial_metrics: dict[str, ModelMetadataValue],
+    ) -> ModelProgressMetrics:
+        """Create metrics instance with initial custom metrics."""
+        instance = cls()
+        for key, value in initial_metrics.items():
+            instance.add_custom_metric(key, value)
+        return instance
+
+
+# Export for use
+__all__ = ["ModelProgressMetrics"]

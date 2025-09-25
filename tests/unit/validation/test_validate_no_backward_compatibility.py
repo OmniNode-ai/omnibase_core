@@ -70,16 +70,17 @@ class TestBackwardCompatibilityDetector:
     def test_valid_file_without_compatibility_patterns(self, temp_repo, detector):
         """Test validation of files without backward compatibility patterns."""
         valid_content = '''
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ModelUserAuth(BaseModel):
     """User authentication model."""
     user_id: str
     username: str
 
-    class Config:
-        extra = "forbid"
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+    )
 
 def process_user_data(data: dict) -> dict:
     """Process user data."""
@@ -183,15 +184,16 @@ def check_protocol_name(name: str) -> bool:
     def test_extra_allow_configuration_detection(self, temp_repo, detector):
         """Test detection of permissive configuration for compatibility."""
         config_content = '''
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ModelUser(BaseModel):
     """User model."""
     user_id: str
 
-    class Config:
-        extra = "allow"  # Allow extra fields for compatibility
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="allow",  # Allow extra fields for compatibility
+        validate_assignment=True,
+    )
 
 class ConfigSettings:
     """Settings with compatibility config."""

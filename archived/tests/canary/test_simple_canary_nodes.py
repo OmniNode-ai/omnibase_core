@@ -12,6 +12,15 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.operations.model_computation_data import (
+    ModelComputationInputData,
+    ModelComputationOutputData,
+)
+from omnibase_core.models.operations.model_operation_parameters import (
+    ModelEffectParameters,
+    ModelOperationParameters,
+)
+
 # ===== SIMPLIFIED MODELS =====
 
 
@@ -19,8 +28,8 @@ class ModelCanaryComputeInput(BaseModel):
     """Input model for Canary Compute operations."""
 
     operation_type: str = Field(..., description="Type of computation to perform")
-    data: dict[str, Any] = Field(
-        default_factory=dict,
+    data: ModelComputationInputData = Field(
+        default_factory=ModelComputationInputData,
         description="Input data for computation",
     )
     correlation_id: str = Field(default="", description="Request correlation ID")
@@ -29,8 +38,8 @@ class ModelCanaryComputeInput(BaseModel):
 class ModelCanaryComputeOutput(BaseModel):
     """Output model for Canary Compute operations."""
 
-    result: dict[str, Any] = Field(
-        default_factory=dict,
+    result: ModelComputationOutputData = Field(
+        default_factory=ModelComputationOutputData,
         description="Computation result",
     )
     success: bool = Field(default=True, description="Whether operation succeeded")
@@ -53,8 +62,8 @@ class ModelCanaryEffectInput(BaseModel):
         default=None,
         description="Target system for effect operation",
     )
-    parameters: dict[str, Any] = Field(
-        default_factory=dict,
+    parameters: ModelEffectParameters = Field(
+        default_factory=ModelEffectParameters,
         description="Operation-specific parameters",
     )
     correlation_id: str | None = Field(

@@ -79,7 +79,7 @@ class TestLargeFilePerformance:
         large_content = '''
 """Large Python file for performance testing."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Dict, List, Optional
 from enum import Enum
 
@@ -99,9 +99,10 @@ class ModelTest{i:04d}(BaseModel):
     metadata_{i}: Optional[Dict[str, str]] = None
     tags_{i}: List[str] = []
 
-    class Config:
-        extra = "forbid"
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+    )
 
     def get_summary_{i}(self) -> Dict[str, any]:
         """Get summary for model {i}."""
@@ -171,11 +172,11 @@ class ModelProcessor{i:03d}(BaseModel):
         result = {{}}
         for key, value in input_data.items():
             if isinstance(value, str):
-                result[f"processed_{key}_{i}"] = value.upper()
+                result[f"processed_{{key}}_{i}"] = value.upper()
             elif isinstance(value, (int, float)):
-                result[f"processed_{key}_{i}"] = value * {i + 1}
+                result[f"processed_{{key}}_{i}"] = value * {i + 1}
             else:
-                result[f"processed_{key}_{i}"] = str(value)
+                result[f"processed_{{key}}_{i}"] = str(value)
         return result
 
     def validate_input_{i}(self, data: Dict[str, Any]) -> bool:
@@ -788,13 +789,13 @@ class ModelDeepNested(BaseModel):
         # Create file with complex nested structures
         complex_content = '''
 from pydantic import BaseModel
-from typing import Dict, List, Union, Optional, Any
+from typing import Dict, List, Optional, Any
 from enum import Enum
 
 class ModelComplexAST(BaseModel):
     """Model with complex AST for testing."""
 
-    def complex_method(self, data: Dict[str, Union[List[Dict[str, Any]], Optional[str]]]) -> Dict[str, Any]:
+    def complex_method(self, data: Dict[str, List[Dict[str, Any]] | str | None]) -> Dict[str, Any]:
         """Method with complex type annotations."""
         result = {}
 

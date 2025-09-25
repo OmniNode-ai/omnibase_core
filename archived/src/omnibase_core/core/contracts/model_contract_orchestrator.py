@@ -14,7 +14,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -30,6 +30,7 @@ from omnibase_core.core.contracts.models import (
     ModelWorkflowStep,
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
 if TYPE_CHECKING:
@@ -494,8 +495,8 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         # Call parent post-init validation
         super().model_post_init(__context)
 
-    node_type: Literal["ORCHESTRATOR"] = Field(
-        default="ORCHESTRATOR",
+    node_type: EnumNodeArchitectureType = Field(
+        default=EnumNodeArchitectureType.ORCHESTRATOR,
         description="Node type classification for 4-node architecture",
     )
 

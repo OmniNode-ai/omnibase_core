@@ -23,7 +23,10 @@ from omnibase_core.models.classification.model_work_characteristics import (
 class ModelWorkRiskAssessment(BaseModel):
     """Complete risk assessment for a work item."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,  # Ensure proper enum serialization
+    )
 
     work_item_id: str = Field(..., description="Unique identifier for work item")
     title: str = Field(..., description="Work item title")

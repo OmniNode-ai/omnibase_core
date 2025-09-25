@@ -195,6 +195,12 @@ PR_DESCRIPTION.md
 
 # Project-specific
 /backups
+/reports
+reports/
+*_report*.json
+*_analysis*.json
+*_errors*.txt
+mypy_*.txt
 
 # OmniBase / ONEX .gitignore
 
@@ -246,6 +252,10 @@ docs_archived/
 .hive-mind/
 .swarm/
 .claude-flow/
+claude-flow.config.json
+
+# Claude Code settings (personal/local configuration)
+.claude/settings.local.json
 *.db
 *.sqlite
 *.db-wal
@@ -255,3 +265,13 @@ docs_archived/
 *-metrics.json
 session-*.json
 *auto-save*.json
+
+# Development and Analysis Documents (temporary files)
+*_ANALYSIS.md
+*_SUMMARY.md
+*_GUIDE.md
+*_IMPLEMENTATION*.md
+REFACTORING_EXAMPLE.py
+examples_*.py
+factory_pattern_analysis.md
+migration_guide_*.md

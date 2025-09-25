@@ -225,7 +225,16 @@ class ManualYamlValidationDetector:
             "yaml_dict_loader.py",
             "validate-string-versions.py",  # Validates YAML syntax for version detection
         }
-        return file_path.name in yaml_utility_files
+
+        # Specific path for contracts.py to avoid false positives
+        specific_allowed_paths = {
+            "src/omnibase_core/validation/contracts.py",
+        }
+
+        # Check both filename and specific allowed paths
+        return file_path.name in yaml_utility_files or str(file_path).endswith(
+            tuple(specific_allowed_paths)
+        )
 
     def _is_in_yaml_utility_function(self) -> bool:
         """Check if we're in a legitimate YAML utility function."""
@@ -248,13 +257,7 @@ class ManualYamlValidationDetector:
             "test_yaml_deserialization_comprehensive",
             "test_yaml_round_trip_serialization",
         }
-        return (
-            current_function in yaml_utility_functions
-            or current_function.startswith("from_yaml")
-            or current_function.endswith("_yaml")
-            or "yaml" in current_function.lower()
-            or current_function.startswith("test_yaml_")  # Allow YAML test functions
-        )
+        return current_function in yaml_utility_functions
 
     def _is_in_test_file(self, file_path: Path) -> bool:
         """Check if we're in a test file where YAML usage might be legitimate."""

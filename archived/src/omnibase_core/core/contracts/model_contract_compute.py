@@ -11,7 +11,7 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,6 +21,7 @@ from omnibase_core.core.subcontracts import (
     ModelEventTypeSubcontract,
 )
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
 
@@ -269,8 +270,8 @@ class ModelContractCompute(ModelContractBase, MixinLazyEvaluation):
         # Call parent post-init validation
         super().model_post_init(__context)
 
-    node_type: Literal["COMPUTE"] = Field(
-        default="COMPUTE",
+    node_type: EnumNodeArchitectureType = Field(
+        default=EnumNodeArchitectureType.COMPUTE,
         description="Node type classification for 4-node architecture",
     )
 

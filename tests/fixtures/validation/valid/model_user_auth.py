@@ -4,7 +4,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelUserAuth(BaseModel):
@@ -17,9 +17,10 @@ class ModelUserAuth(BaseModel):
     last_login: Optional[datetime] = None
     is_active: bool = True
 
-    class Config:
-        extra = "forbid"
-        validate_assignment = True
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+    )
 
 
 class ModelUserSession(BaseModel):

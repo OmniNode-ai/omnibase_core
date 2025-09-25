@@ -11,7 +11,7 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -22,6 +22,7 @@ from omnibase_core.core.subcontracts import (
     ModelEventTypeSubcontract,
     ModelRoutingSubcontract,
 )
+from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
@@ -298,8 +299,8 @@ class ModelContractEffect(ModelContractBase, MixinLazyEvaluation):
         # Call parent post-init validation
         super().model_post_init(__context)
 
-    node_type: Literal["EFFECT"] = Field(
-        default="EFFECT",
+    node_type: EnumNodeArchitectureType = Field(
+        default=EnumNodeArchitectureType.EFFECT,
         description="Node type classification for 4-node architecture",
     )
 

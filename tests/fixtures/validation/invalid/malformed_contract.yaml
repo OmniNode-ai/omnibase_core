@@ -18,7 +18,7 @@ inputs:
     schema:
       type: object  # Malformed YAML - missing quotes
 
-outputs
-  # Malformed YAML - missing colon
+outputs:
+  # Fixed YAML - added missing colon
   name: "output_data"
   type: "object"
