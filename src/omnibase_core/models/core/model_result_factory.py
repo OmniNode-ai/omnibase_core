@@ -6,26 +6,15 @@ Specialized factory for result-type models with success/error patterns.
 
 from __future__ import annotations
 
-from typing import TypedDict, TypeVar, Unpack
+from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.typed_dict_result_factory_kwargs import (
+    TypedDictResultFactoryKwargs,
+)
 
 from .model_generic_factory import ModelGenericFactory
-
-
-# TypedDict for result factory specific kwargs
-class TypedDictResultFactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for result factory parameters."""
-
-    success: bool
-    exit_code: int
-    error_message: str
-    data: ModelSchemaValue
-    output_text: str
-    warnings: list[str]
-
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -49,7 +38,7 @@ class ModelResultFactory(ModelGenericFactory[T]):
 
     def _build_success_result(
         self,
-        **kwargs: Unpack[TypedDictResultFactoryKwargs],
+        **kwargs: Unpack[ModelResultFactoryKwargs],
     ) -> T:
         """Build a success result with standard fields."""
         # Remove conflicting fields and set standard success values
@@ -63,7 +52,7 @@ class ModelResultFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_error_result(self, **kwargs: Unpack[TypedDictResultFactoryKwargs]) -> T:
+    def _build_error_result(self, **kwargs: Unpack[ModelResultFactoryKwargs]) -> T:
         """Build an error result with standard fields."""
         # Remove conflicting fields and set standard error values
         filtered_kwargs = {
@@ -80,7 +69,7 @@ class ModelResultFactory(ModelGenericFactory[T]):
 
     def _build_validation_error_result(
         self,
-        **kwargs: Unpack[TypedDictResultFactoryKwargs],
+        **kwargs: Unpack[ModelResultFactoryKwargs],
     ) -> T:
         """Build a validation error result with standard fields."""
         # Remove conflicting fields and set standard validation error values
@@ -100,5 +89,5 @@ class ModelResultFactory(ModelGenericFactory[T]):
 # Export result factory class and types
 __all__ = [
     "ModelResultFactory",
-    "TypedDictResultFactoryKwargs",
+    "ModelResultFactoryKwargs",
 ]

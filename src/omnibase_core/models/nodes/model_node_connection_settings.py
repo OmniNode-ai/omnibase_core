@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_protocol_type import EnumProtocolType
 
-from .model_types_node_connection_summary import NodeConnectionSummaryType
+from .model_types_node_connection_summary import ModelNodeConnectionSummaryType
 
 
 class ModelNodeConnectionSettings(BaseModel):
@@ -69,7 +69,7 @@ class ModelNodeConnectionSettings(BaseModel):
         protocol_prefix = self.protocol.value.lower()  # type: ignore
         return f"{protocol_prefix}://{self.endpoint}:{self.port}"
 
-    def get_connection_summary(self) -> NodeConnectionSummaryType:
+    def get_connection_summary(self) -> ModelNodeConnectionSummaryType:
         """Get connection settings summary."""
         return {
             "endpoint": self.endpoint,

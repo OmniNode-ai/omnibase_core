@@ -8,21 +8,14 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TypedDict
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
-
-
-class TypedDictSSLContextOptions(TypedDict, total=False):
-    """SSL context options for connection libraries."""
-
-    verify: bool | None
-    cert: Path | None
-    key: Path | None
-    ca_certs: Path | None
+from omnibase_core.types.typed_dict_ssl_context_options import (
+    TypedDictSSLContextOptions,
+)
 
 
 class ModelConnectionSecurity(BaseModel):

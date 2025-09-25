@@ -8,76 +8,44 @@ Generated from workflow_coordination subcontract following ONEX patterns.
 """
 
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Optional
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 # Import existing enums instead of duplicating
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
-
-
-class WorkflowStatus(str, Enum):
-    """Workflow execution status."""
-
-    CREATED = "CREATED"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
-
-    # Use EnumNodeType from omnibase_core.enums.node instead
-    """ONEX node types for coordination."""
-
-    COMPUTE = "COMPUTE"
-    EFFECT = "EFFECT"
-    REDUCER = "REDUCER"
-
-
-class AssignmentStatus(str, Enum):
-    """Node assignment status."""
-
-    ASSIGNED = "ASSIGNED"
-    EXECUTING = "EXECUTING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-
-
-class ExecutionPattern(str, Enum):
-    """Workflow execution patterns."""
-
-    SEQUENTIAL = "sequential"
-    PARALLEL_COMPUTE = "parallel_compute"
-    PIPELINE = "pipeline"
-    SCATTER_GATHER = "scatter_gather"
-
-
-class FailureRecoveryStrategy(str, Enum):
-    """Failure recovery strategies."""
-
-    RETRY = "RETRY"
-    ROLLBACK = "ROLLBACK"
-    COMPENSATE = "COMPENSATE"
-    ABORT = "ABORT"
+from omnibase_core.enums.enum_workflow_coordination import (
+    EnumAssignmentStatus,
+    EnumExecutionPattern,
+    EnumFailureRecoveryStrategy,
+    EnumWorkflowStatus,
+)
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelWorkflowInstance(BaseModel):
     """A workflow execution instance."""
 
-    workflow_id: str = Field(
-        ..., description="Unique identifier for the workflow instance"
+    workflow_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the workflow instance"
     )
 
     workflow_name: str = Field(..., description="Name of the workflow")
 
-    workflow_version: str = Field(..., description="Version of the workflow definition")
+    workflow_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the workflow definition",
+    )
 
     created_timestamp: datetime = Field(
         ..., description="When the workflow instance was created"
     )
 
-    status: WorkflowStatus = Field(..., description="Current status of the workflow")
+    status: EnumWorkflowStatus = Field(
+        ..., description="Current status of the workflow"
+    )
 
     input_parameters: Dict[str, Any] = Field(
         default_factory=dict, description="Input parameters for the workflow"
@@ -91,11 +59,13 @@ class ModelWorkflowInstance(BaseModel):
 class ModelNodeAssignment(BaseModel):
     """Node assignment for workflow execution."""
 
-    node_id: str = Field(..., description="Unique identifier for the node")
+    node_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the node"
+    )
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
-    assignment_status: AssignmentStatus = Field(
+    assignment_status: EnumAssignmentStatus = Field(
         ..., description="Current status of the assignment"
     )
 
@@ -123,11 +93,13 @@ class ModelSynchronizationPoint(BaseModel):
 class ModelCoordinationResult(BaseModel):
     """Result of node coordination operation."""
 
-    coordination_id: str = Field(
-        ..., description="Unique identifier for this coordination"
+    coordination_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for this coordination"
     )
 
-    workflow_id: str = Field(..., description="Workflow this coordination belongs to")
+    workflow_id: UUID = Field(
+        default_factory=uuid4, description="Workflow this coordination belongs to"
+    )
 
     nodes_coordinated: List[ModelNodeAssignment] = Field(
         default_factory=list, description="List of nodes that were coordinated"
@@ -146,7 +118,9 @@ class ModelCoordinationResult(BaseModel):
 class ModelNodeProgress(BaseModel):
     """Progress information for a single node."""
 
-    node_id: str = Field(..., description="Unique identifier for the node")
+    node_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the node"
+    )
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
@@ -160,7 +134,7 @@ class ModelNodeProgress(BaseModel):
 class ModelProgressStatus(BaseModel):
     """Overall workflow progress status."""
 
-    workflow_id: str = Field(..., description="Workflow identifier")
+    workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
     overall_progress_percent: float = Field(
         ..., description="Overall workflow progress percentage", ge=0.0, le=100.0
@@ -214,7 +188,9 @@ class ModelWorkflowMetrics(BaseModel):
 class ModelWorkflowNode(BaseModel):
     """A node definition in a workflow graph."""
 
-    node_id: str = Field(..., description="Unique identifier for the node")
+    node_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the node"
+    )
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
@@ -222,7 +198,7 @@ class ModelWorkflowNode(BaseModel):
         default_factory=dict, description="Requirements for this node"
     )
 
-    dependencies: List[str] = Field(
+    dependencies: List[UUID] = Field(
         default_factory=list, description="List of node IDs this node depends on"
     )
 
@@ -246,8 +222,8 @@ class ModelCoordinationRules(BaseModel):
         default=True, description="Whether parallel execution is allowed"
     )
 
-    failure_recovery_strategy: FailureRecoveryStrategy = Field(
-        default=FailureRecoveryStrategy.RETRY,
+    failure_recovery_strategy: EnumFailureRecoveryStrategy = Field(
+        default=EnumFailureRecoveryStrategy.RETRY,
         description="Strategy for handling failures",
     )
 
@@ -257,7 +233,10 @@ class ModelWorkflowMetadata(BaseModel):
 
     name: str = Field(..., description="Name of the workflow")
 
-    version: str = Field(..., description="Version of the workflow")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the workflow",
+    )
 
     description: str = Field(..., description="Description of the workflow")
 
@@ -286,9 +265,9 @@ class ModelWorkflowDefinition(BaseModel):
 class ModelExecutionResult(BaseModel):
     """Result of workflow execution."""
 
-    workflow_id: str = Field(..., description="Workflow identifier")
+    workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
-    status: WorkflowStatus = Field(..., description="Final status of the workflow")
+    status: EnumWorkflowStatus = Field(..., description="Final status of the workflow")
 
     execution_time_ms: int = Field(
         ..., description="Total execution time in milliseconds", ge=0
@@ -321,8 +300,9 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         description="Name of the subcontract",
     )
 
-    subcontract_version: str = Field(
-        default="1.0.0", description="Version of the subcontract"
+    subcontract_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the subcontract",
     )
 
     applicable_node_types: List[str] = Field(
@@ -387,8 +367,8 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         default=True, description="Whether to use exponential backoff for retries"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "subcontract_name": "workflow_coordination_subcontract",
                 "subcontract_version": "1.0.0",
@@ -405,3 +385,4 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
                 "exponential_backoff": True,
             }
         }
+    }

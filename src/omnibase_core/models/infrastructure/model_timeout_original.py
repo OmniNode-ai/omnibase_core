@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, TypedDict
 
 
-class TimeoutMetadataType(TypedDict, total=False):
+class ModelTimeoutMetadataType(TypedDict, total=False):
     """Type-safe timeout metadata structure."""
 
     source: str
@@ -78,8 +78,8 @@ class ModelTimeout(BaseModel):
         default="",
         description="Human-readable timeout description",
     )
-    custom_metadata: TimeoutMetadataType = Field(
-        default_factory=lambda: TimeoutMetadataType(),
+    custom_metadata: ModelTimeoutMetadataType = Field(
+        default_factory=lambda: ModelTimeoutMetadataType(),
         description="Custom timeout metadata",
     )
 

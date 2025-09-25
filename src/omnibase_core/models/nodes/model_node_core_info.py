@@ -20,7 +20,7 @@ from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
-class TypedDictCoreSummary(TypedDict):
+class ModelCoreSummary(TypedDict):
     """Type-safe dictionary for node core summary."""
 
     node_id: UUID
@@ -93,7 +93,7 @@ class ModelNodeCoreInfo(BaseModel):
         """Check if node has an author."""
         return bool(self.author)
 
-    def get_core_summary(self) -> TypedDictCoreSummary:
+    def get_core_summary(self) -> ModelCoreSummary:
         """Get core node information summary."""
         return {
             "node_id": self.node_id,
@@ -140,4 +140,4 @@ class ModelNodeCoreInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeCoreInfo", "TypedDictCoreSummary"]
+__all__ = ["ModelNodeCoreInfo", "ModelCoreSummary"]

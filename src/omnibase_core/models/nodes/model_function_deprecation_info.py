@@ -15,7 +15,7 @@ from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
-class TypedDictDeprecationSummary(TypedDict):
+class ModelDeprecationSummary(TypedDict):
     """Type-safe dictionary for deprecation summary."""
 
     is_deprecated: bool
@@ -72,7 +72,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
         return f"deprecated since {self.deprecated_since}"
 
-    def get_deprecation_summary(self) -> TypedDictDeprecationSummary:
+    def get_deprecation_summary(self) -> ModelDeprecationSummary:
         """Get deprecation information summary."""
         return {
             "is_deprecated": self.is_deprecated(),
@@ -103,4 +103,4 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFunctionDeprecationInfo", "TypedDictDeprecationSummary"]
+__all__ = ["ModelFunctionDeprecationInfo", "ModelDeprecationSummary"]

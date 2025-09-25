@@ -11,9 +11,9 @@ from typing import TypeVar, Unpack
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.types import TypedDictFactoryKwargs
 
 from .model_generic_factory import ModelGenericFactory
-from .model_typed_dict_factory_kwargs import ModelTypedDictFactoryKwargs
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -36,7 +36,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         self.register_builder("critical", self._build_critical)
         self.register_builder("info", self._build_info)
 
-    def _build_error(self, **kwargs: Unpack[ModelTypedDictFactoryKwargs]) -> T:
+    def _build_error(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a standard error with ERROR severity."""
         severity: EnumValidationSeverity = EnumValidationSeverity.ERROR
 
@@ -51,7 +51,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_warning(self, **kwargs: Unpack[ModelTypedDictFactoryKwargs]) -> T:
+    def _build_warning(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a warning with WARNING severity."""
         severity: EnumValidationSeverity = EnumValidationSeverity.WARNING
 
@@ -66,7 +66,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_critical(self, **kwargs: Unpack[ModelTypedDictFactoryKwargs]) -> T:
+    def _build_critical(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a critical error with CRITICAL severity."""
         severity: EnumValidationSeverity = EnumValidationSeverity.CRITICAL
 
@@ -81,7 +81,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_info(self, **kwargs: Unpack[ModelTypedDictFactoryKwargs]) -> T:
+    def _build_info(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build an info message with INFO severity."""
         severity: EnumValidationSeverity = EnumValidationSeverity.INFO
 

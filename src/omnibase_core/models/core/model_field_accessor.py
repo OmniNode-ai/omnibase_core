@@ -11,8 +11,7 @@ from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
-
-from .model_typed_dict_field_value import TypedDictFieldValue
+from omnibase_core.types import TypedDictFieldValue
 
 
 class ModelFieldAccessor(BaseModel):
@@ -156,4 +155,4 @@ class ModelFieldAccessor(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFieldAccessor", "TypedDictFieldValue"]
+__all__ = ["ModelFieldAccessor"]

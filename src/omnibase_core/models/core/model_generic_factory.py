@@ -19,9 +19,9 @@ from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_typed_dict_factory_kwargs import (
-    ModelTypedDictFactoryKwargs,
+from omnibase_core.types import (
     TypedDictExecutionParams,
+    TypedDictFactoryKwargs,
     TypedDictMessageParams,
     TypedDictMetadataParams,
 )
@@ -109,9 +109,7 @@ class ModelGenericFactory(Generic[T]):
             )
         return self._factories[name]()
 
-    def build(
-        self, builder_name: str, **kwargs: Unpack[ModelTypedDictFactoryKwargs]
-    ) -> T:
+    def build(self, builder_name: str, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """
         Build instance using registered builder method.
 
@@ -161,7 +159,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         result_data: ModelSchemaValue | None = None,
-        **kwargs: Unpack[ModelTypedDictFactoryKwargs],
+        **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """
         Generic success result factory.
@@ -184,7 +182,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         error: str,
-        **kwargs: Unpack[ModelTypedDictFactoryKwargs],
+        **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """
         Generic error result factory.

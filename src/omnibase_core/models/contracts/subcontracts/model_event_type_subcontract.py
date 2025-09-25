@@ -17,6 +17,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 
 class ModelEventDefinition(BaseModel):
     """
@@ -44,8 +46,8 @@ class ModelEventDefinition(BaseModel):
         min_length=1,
     )
 
-    schema_version: str = Field(
-        default="1.0.0",
+    schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Schema version for event structure",
     )
 
@@ -392,9 +394,8 @@ class ModelEventTypeSubcontract(BaseModel):
                 )
         return v
 
-    class Config:
-        """Pydantic model configuration for ONEX compliance."""
-
-        extra = "ignore"  # Allow extra fields from YAML contracts
-        use_enum_values = False  # Keep enum objects, don't convert to strings
-        validate_assignment = True
+    model_config = {
+        "extra": "ignore",  # Allow extra fields from YAML contracts
+        "use_enum_values": False,  # Keep enum objects, don't convert to strings
+        "validate_assignment": True,
+    }

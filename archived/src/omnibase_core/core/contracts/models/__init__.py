@@ -7,9 +7,7 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from omnibase_core.core.contracts.models.model_compensation_plan import (
-    ModelCompensationPlan,
-)
+# ModelCompensationPlan migrated to src/omnibase_core/models/contracts/model_compensation_plan.py
 from omnibase_core.core.contracts.models.model_filter_conditions import (
     ModelFilterConditions,
 )
@@ -22,7 +20,7 @@ from omnibase_core.core.contracts.models.model_workflow_conditions import (
 from omnibase_core.core.contracts.models.model_workflow_step import ModelWorkflowStep
 
 __all__ = [
-    "ModelCompensationPlan",
+    # "ModelCompensationPlan",  # Migrated to src/omnibase_core/models/contracts/
     "ModelFilterConditions",
     "ModelTriggerMappings",
     "ModelWorkflowConditions",

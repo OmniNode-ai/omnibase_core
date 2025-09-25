@@ -16,7 +16,7 @@ T = TypeVar("T")
 
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
-    TypedDictPropertyMetadata,
+    ModelPropertyMetadata,
 )
 from .model_property_value import ModelPropertyValue
 
@@ -34,7 +34,7 @@ class ModelEnvironmentProperties(BaseModel):
         description="Custom property values",
     )
 
-    property_metadata: dict[str, TypedDictPropertyMetadata] = Field(
+    property_metadata: dict[str, ModelPropertyMetadata] = Field(
         default_factory=dict,
         description="Metadata about each property (description, source, etc.)",
     )

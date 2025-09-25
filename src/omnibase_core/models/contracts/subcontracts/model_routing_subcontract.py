@@ -57,12 +57,6 @@ class ModelRouteDefinition(BaseModel):
         min_length=1,
     )
 
-    # Legacy support for existing systems
-    targets: list[str] = Field(
-        default_factory=list,
-        description="Legacy target endpoints (deprecated, use service_targets)",
-    )
-
     weight: int = Field(
         default=100,
         description="Route weight for load balancing",
@@ -531,9 +525,8 @@ class ModelRoutingSubcontract(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        """Pydantic model configuration for ONEX compliance."""
-
-        extra = "ignore"  # Allow extra fields from YAML contracts
-        use_enum_values = False  # Keep enum objects, don't convert to strings
-        validate_assignment = True
+    model_config = {
+        "extra": "ignore",  # Allow extra fields from YAML contracts
+        "use_enum_values": False,  # Keep enum objects, don't convert to strings
+        "validate_assignment": True,
+    }

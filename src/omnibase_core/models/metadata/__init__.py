@@ -7,9 +7,12 @@ Models for metadata collection, analytics, and field information.
 # FIXME: ProtocolSupportedMetadataType not available in omnibase_spi
 # from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 # Temporarily using Protocol metadata as replacement
-from omnibase_spi.protocols.types import (
-    ProtocolMetadata as ProtocolSupportedMetadataType,
-)
+# from omnibase_spi.protocols.types import (
+#     ProtocolMetadata as ProtocolSupportedMetadataType,
+# )
+
+# Temporary placeholder for missing omnibase_spi module
+ProtocolSupportedMetadataType = dict[str, object]
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 

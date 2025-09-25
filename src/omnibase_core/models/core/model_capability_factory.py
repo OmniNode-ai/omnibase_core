@@ -6,24 +6,13 @@ Specialized factory for capability-type models with standardized naming and meta
 
 from __future__ import annotations
 
-from typing import TypedDict, TypeVar, Unpack
+from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
+from omnibase_core.types import TypedDictCapabilityFactoryKwargs
+
 from .model_generic_factory import ModelGenericFactory
-
-
-# TypedDict for model capability factory specific kwargs
-class TypedDictModelCapabilityFactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for model capability factory parameters."""
-
-    name: str
-    value: str
-    description: str
-    deprecated: bool
-    experimental: bool
-    enabled: bool
-
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -47,7 +36,7 @@ class ModelCapabilityFactory(ModelGenericFactory[T]):
 
     def _build_standard_capability(
         self,
-        **kwargs: Unpack[TypedDictModelCapabilityFactoryKwargs],
+        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
     ) -> T:
         """Build a standard capability with consistent naming."""
         name = kwargs.get("name", "UNKNOWN")
@@ -67,7 +56,7 @@ class ModelCapabilityFactory(ModelGenericFactory[T]):
 
     def _build_deprecated_capability(
         self,
-        **kwargs: Unpack[TypedDictModelCapabilityFactoryKwargs],
+        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
     ) -> T:
         """Build a deprecated capability with warning metadata."""
         # Ensure deprecated flag is set
@@ -76,7 +65,7 @@ class ModelCapabilityFactory(ModelGenericFactory[T]):
 
     def _build_experimental_capability(
         self,
-        **kwargs: Unpack[TypedDictModelCapabilityFactoryKwargs],
+        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
     ) -> T:
         """Build an experimental capability with appropriate metadata."""
         # Set experimental flag if the model supports it
@@ -85,8 +74,7 @@ class ModelCapabilityFactory(ModelGenericFactory[T]):
         return self._build_standard_capability(**kwargs)
 
 
-# Export model capability factory class and types
+# Export model capability factory class
 __all__ = [
     "ModelCapabilityFactory",
-    "TypedDictModelCapabilityFactoryKwargs",
 ]

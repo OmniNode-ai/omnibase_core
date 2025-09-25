@@ -471,9 +471,8 @@ class ModelAggregationSubcontract(BaseModel):
                 raise ValueError(msg)
         return v
 
-    class Config:
-        """Pydantic model configuration for ONEX compliance."""
-
-        extra = "ignore"  # Allow extra fields from YAML contracts
-        use_enum_values = False  # Keep enum objects, don't convert to strings
-        validate_assignment = True
+    model_config = {
+        "extra": "ignore",  # Allow extra fields from YAML contracts
+        "use_enum_values": False,  # Keep enum objects, don't convert to strings
+        "validate_assignment": True,
+    }

@@ -22,7 +22,7 @@ from omnibase_core.models.metadata.model_semver import ModelSemVer
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_performance_metrics import ModelNodePerformanceMetrics
-from .model_types_node_metadata_summary import NodeMetadataSummaryType
+from .model_types_node_metadata_summary import ModelNodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -292,7 +292,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Update last accessed timestamp."""
         self.performance.update_accessed_time()
 
-    def get_summary(self) -> NodeMetadataSummaryType:
+    def get_summary(self) -> ModelNodeMetadataSummaryType:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
         core_summary = self.core.get_status_summary()

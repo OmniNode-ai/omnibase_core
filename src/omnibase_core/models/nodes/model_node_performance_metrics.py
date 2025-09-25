@@ -13,7 +13,7 @@ from typing import TypedDict
 from pydantic import BaseModel, Field
 
 
-class PerformanceSummary(TypedDict):
+class ModelPerformanceSummary(TypedDict):
     """Type-safe performance summary structure."""
 
     usage_count: int
@@ -83,9 +83,9 @@ class ModelNodePerformanceMetrics(BaseModel):
         """Update last accessed timestamp."""
         self.last_accessed = datetime.now(UTC)
 
-    def get_performance_summary(self) -> PerformanceSummary:
+    def get_performance_summary(self) -> ModelPerformanceSummary:
         """Get performance metrics summary."""
-        return PerformanceSummary(
+        return ModelPerformanceSummary(
             usage_count=self.usage_count,
             error_count=self.error_count,
             success_rate=self.success_rate,

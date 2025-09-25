@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from .model_types_node_execution_summary import NodeExecutionSummaryType
+from .model_types_node_execution_summary import ModelNodeExecutionSummaryType
 
 
 class ModelNodeExecutionSettings(BaseModel):
@@ -33,7 +33,7 @@ class ModelNodeExecutionSettings(BaseModel):
         description="Enable parallel execution",
     )
 
-    def get_execution_summary(self) -> NodeExecutionSummaryType:
+    def get_execution_summary(self) -> ModelNodeExecutionSummaryType:
         """Get execution settings summary."""
         return {
             "max_retries": self.max_retries,

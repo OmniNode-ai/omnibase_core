@@ -19,17 +19,19 @@ from omnibase_core.models.core.model_custom_properties import ModelCustomPropert
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .model_function_deprecation_info import (
+    ModelDeprecationSummary,
     ModelFunctionDeprecationInfo,
-    TypedDictDeprecationSummary,
 )
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
-from .model_types_function_documentation_summary import FunctionDocumentationSummaryType
+from .model_types_function_documentation_summary import (
+    ModelFunctionDocumentationSummaryType,
+)
 
 # Removed type alias - using ModelMetadataValue for proper type safety
 
 
-class TypedDictDocumentationSummaryFiltered(TypedDict):
+class ModelDocumentationSummaryFiltered(TypedDict):
     """Type-safe dictionary for filtered documentation summary (quality_score excluded)."""
 
     has_documentation: bool
@@ -39,11 +41,11 @@ class TypedDictDocumentationSummaryFiltered(TypedDict):
     notes_count: int
 
 
-class TypedDictFunctionMetadataSummary(TypedDict):
+class ModelFunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
 
-    documentation: TypedDictDocumentationSummaryFiltered  # Properly typed documentation summary (quality_score handled separately)
-    deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
+    documentation: ModelDocumentationSummaryFiltered  # Properly typed documentation summary (quality_score handled separately)
+    deprecation: ModelDeprecationSummary  # Properly typed deprecation summary
     relationships: dict[
         str,
         ModelMetadataValue,
@@ -271,14 +273,14 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         return min(doc_score + rel_score, 1.0)
 
-    def get_metadata_summary(self) -> TypedDictFunctionMetadataSummary:
+    def get_metadata_summary(self) -> ModelFunctionMetadataSummary:
         """Get comprehensive metadata summary."""
         doc_summary = self.documentation.get_documentation_summary()
         dep_summary = self.deprecation.get_deprecation_summary()
         rel_summary = self.relationships.get_relationships_summary()
 
         # Convert documentation summary to expected format (exclude quality_score - handled separately)
-        doc_filtered: TypedDictDocumentationSummaryFiltered = {
+        doc_filtered: ModelDocumentationSummaryFiltered = {
             "has_documentation": doc_summary.get("has_documentation", False),
             "has_examples": doc_summary.get("has_examples", False),
             "has_notes": doc_summary.get("has_notes", False),
@@ -349,6 +351,6 @@ class ModelFunctionNodeMetadata(BaseModel):
 # Export for use
 __all__ = [
     "ModelFunctionNodeMetadata",
-    "TypedDictFunctionMetadataSummary",
-    "TypedDictDocumentationSummaryFiltered",
+    "ModelFunctionMetadataSummary",
+    "ModelDocumentationSummaryFiltered",
 ]

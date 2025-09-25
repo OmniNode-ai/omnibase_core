@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from .model_types_node_capabilities_summary import NodeCapabilitiesSummaryType
+from .model_types_node_capabilities_summary import ModelNodeCapabilitiesSummaryType
 
 
 class ModelNodeCapabilitiesInfo(BaseModel):
@@ -93,7 +93,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
 
     def get_capabilities_summary(
         self,
-    ) -> NodeCapabilitiesSummaryType:
+    ) -> ModelNodeCapabilitiesSummaryType:
         """Get capabilities information summary."""
         return {
             "capabilities_count": len(self.capabilities),

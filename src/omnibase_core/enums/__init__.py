@@ -95,6 +95,13 @@ from .enum_type_name import EnumTypeName
 from .enum_uri_type import EnumUriType
 from .enum_validation_level import EnumValidationLevel
 from .enum_validation_severity import EnumValidationSeverity
+from .enum_workflow_coordination import (
+    EnumAssignmentStatus,
+    EnumExecutionPattern,
+    EnumFailureRecoveryStrategy,
+    EnumWorkflowStatus,
+)
+from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 from .enum_yaml_option_type import EnumYamlOptionType
 from .enum_yaml_value_type import EnumYamlValueType
 
@@ -190,6 +197,11 @@ __all__ = [
     "EnumUriType",
     "EnumValidationLevel",
     "EnumValidationSeverity",
+    "EnumAssignmentStatus",
+    "EnumExecutionPattern",
+    "EnumFailureRecoveryStrategy",
+    "EnumWorkflowStatus",
+    "EnumWorkflowDependencyType",
     "EnumYamlOptionType",
     "EnumYamlValueType",
 ]

@@ -18,6 +18,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelConfigurationSource(BaseModel):
@@ -140,10 +141,9 @@ class ModelConfigurationSubcontract(BaseModel):
         max_length=128,
     )
 
-    config_version: str = Field(
-        default="1.0.0",
+    config_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the configuration schema",
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)*$",
     )
 
     # Configuration sources
@@ -398,13 +398,8 @@ class ModelConfigurationSubcontract(BaseModel):
         if not self.allow_runtime_updates:
             msg = "Runtime configuration updates are not allowed for this subcontract"
             raise OnexError(
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=msg,
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                context={
-                    "config_name": self.config_name,
-                    "correlation_id": str(self.correlation_id),
-                    "allow_runtime_updates": self.allow_runtime_updates,
-                },
             )
 
     def create_configuration_source(
@@ -458,15 +453,8 @@ class ModelConfigurationSubcontract(BaseModel):
                     "already exists"
                 )
                 raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    context={
-                        "config_name": self.config_name,
-                        "correlation_id": str(self.correlation_id),
-                        "priority": source.priority,
-                        "source_type": source.source_type,
-                        "source_id": str(source.source_id),
-                    },
                 )
 
         self.configuration_sources.append(source)

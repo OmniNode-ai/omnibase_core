@@ -9,13 +9,17 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Generic, TypedDict, TypeVar
+from typing import Generic, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
+from omnibase_core.types.typed_dict_collection_kwargs import (
+    TypedDictCollectionCreateKwargs,
+    TypedDictCollectionFromItemsKwargs,
+)
 
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
@@ -24,21 +28,6 @@ T = TypeVar(
     "T",
     bound=BaseModel,
 )  # Keep BaseModel bound for now, can be made more specific
-
-
-class TypedDictCollectionCreateKwargs(TypedDict, total=False):
-    """Type-safe dictionary for collection creation parameters."""
-
-    collection_display_name: str
-    collection_id: UUID
-
-
-class TypedDictCollectionFromItemsKwargs(TypedDict, total=False):
-    """Type-safe dictionary for collection creation from items parameters."""
-
-    items: list[BaseModel]  # Use BaseModel instead of unbound T
-    collection_display_name: str
-    collection_id: UUID
 
 
 class ModelGenericCollection(BaseModel, Generic[T]):
