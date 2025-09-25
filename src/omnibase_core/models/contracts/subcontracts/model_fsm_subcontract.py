@@ -15,6 +15,8 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from uuid import UUID, uuid4
+
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
@@ -343,6 +345,12 @@ class ModelFSMSubcontract(BaseModel):
         ...,
         description="Human-readable state machine description",
         min_length=1,
+    )
+
+    # ONEX correlation tracking
+    correlation_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique correlation ID for FSM instance tracking",
     )
 
     # State definitions

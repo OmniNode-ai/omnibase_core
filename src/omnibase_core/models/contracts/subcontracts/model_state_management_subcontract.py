@@ -15,7 +15,91 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from enum import Enum
+from typing import Literal
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+
+
+class EnumStorageBackend(str, Enum):
+    """Storage backend options for state persistence."""
+
+    POSTGRESQL = "postgresql"
+    REDIS = "redis"
+    MEMORY = "memory"
+    FILE_SYSTEM = "file_system"
+
+
+class EnumConsistencyLevel(str, Enum):
+    """Consistency levels for distributed state management."""
+
+    EVENTUAL = "eventual"
+    STRONG = "strong"
+    WEAK = "weak"
+    CAUSAL = "causal"
+
+
+class EnumConflictResolution(str, Enum):
+    """Conflict resolution strategies."""
+
+    TIMESTAMP_BASED = "timestamp_based"
+    LAST_WRITE_WINS = "last_write_wins"
+    MANUAL_RESOLUTION = "manual_resolution"
+    MERGE_STRATEGY = "merge_strategy"
+
+
+class EnumVersionScheme(str, Enum):
+    """State versioning schemes."""
+
+    SEMANTIC = "semantic"
+    INCREMENTAL = "incremental"
+    TIMESTAMP = "timestamp"
+    UUID_BASED = "uuid_based"
+
+
+class EnumStateScope(str, Enum):
+    """State management scope options."""
+
+    NODE_LOCAL = "node_local"
+    CLUSTER_SHARED = "cluster_shared"
+    GLOBAL_DISTRIBUTED = "global_distributed"
+
+
+class EnumStateLifecycle(str, Enum):
+    """State lifecycle management strategies."""
+
+    PERSISTENT = "persistent"
+    TRANSIENT = "transient"
+    SESSION_BASED = "session_based"
+    TTL_MANAGED = "ttl_managed"
+
+
+class EnumLockingStrategy(str, Enum):
+    """Locking strategies for state access."""
+
+    OPTIMISTIC = "optimistic"
+    PESSIMISTIC = "pessimistic"
+    READ_WRITE_LOCKS = "read_write_locks"
+    NONE = "none"
+
+
+class EnumIsolationLevel(str, Enum):
+    """Transaction isolation levels."""
+
+    READ_UNCOMMITTED = "read_uncommitted"
+    READ_COMMITTED = "read_committed"
+    REPEATABLE_READ = "repeatable_read"
+    SERIALIZABLE = "serializable"
+
+
+class EnumEncryptionAlgorithm(str, Enum):
+    """Encryption algorithms for state data."""
+
+    AES256 = "aes256"
+    AES128 = "aes128"
+    CHACHA20 = "chacha20"
+    NONE = "none"
 
 
 class ModelStatePersistence(BaseModel):
@@ -31,8 +115,8 @@ class ModelStatePersistence(BaseModel):
         description="Enable state persistence",
     )
 
-    storage_backend: str = Field(
-        default="postgresql",
+    storage_backend: EnumStorageBackend = Field(
+        default=EnumStorageBackend.POSTGRESQL,
         description="Backend storage system for state",
     )
 
@@ -129,8 +213,8 @@ class ModelStateSynchronization(BaseModel):
         description="Enable state synchronization",
     )
 
-    consistency_level: str = Field(
-        default="eventual",
+    consistency_level: EnumConsistencyLevel = Field(
+        default=EnumConsistencyLevel.EVENTUAL,
         description="Consistency level for distributed state",
     )
 
@@ -140,8 +224,8 @@ class ModelStateSynchronization(BaseModel):
         ge=1000,
     )
 
-    conflict_resolution: str = Field(
-        default="timestamp_based",
+    conflict_resolution: EnumConflictResolution = Field(
+        default=EnumConflictResolution.TIMESTAMP_BASED,
         description="Conflict resolution strategy",
     )
 
@@ -175,8 +259,8 @@ class ModelStateVersioning(BaseModel):
         description="Enable state versioning",
     )
 
-    version_scheme: str = Field(
-        default="semantic",
+    version_scheme: EnumVersionScheme = Field(
+        default=EnumVersionScheme.SEMANTIC,
         description="Versioning scheme for state",
     )
 
@@ -215,19 +299,31 @@ class ModelStateManagementSubcontract(BaseModel):
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+    )
+
+    # Correlation and tracing
+    correlation_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique correlation ID for state management operations",
+    )
+
     # Core state management configuration
     state_management_enabled: bool = Field(
         default=True,
         description="Enable state management functionality",
     )
 
-    state_scope: str = Field(
-        default="node_local",
+    state_scope: EnumStateScope = Field(
+        default=EnumStateScope.NODE_LOCAL,
         description="Scope of state management",
     )
 
-    state_lifecycle: str = Field(
-        default="persistent",
+    state_lifecycle: EnumStateLifecycle = Field(
+        default=EnumStateLifecycle.PERSISTENT,
         description="State lifecycle management strategy",
     )
 
@@ -261,8 +357,8 @@ class ModelStateManagementSubcontract(BaseModel):
         description="Enable concurrent state access",
     )
 
-    locking_strategy: str = Field(
-        default="optimistic",
+    locking_strategy: EnumLockingStrategy = Field(
+        default=EnumLockingStrategy.OPTIMISTIC,
         description="Locking strategy for state access",
     )
 
@@ -271,8 +367,8 @@ class ModelStateManagementSubcontract(BaseModel):
         description="Enable transactional state operations",
     )
 
-    isolation_level: str = Field(
-        default="read_committed",
+    isolation_level: EnumIsolationLevel = Field(
+        default=EnumIsolationLevel.READ_COMMITTED,
         description="Transaction isolation level",
     )
 
@@ -316,8 +412,8 @@ class ModelStateManagementSubcontract(BaseModel):
         description="Enable state encryption at rest",
     )
 
-    encryption_algorithm: str = Field(
-        default="aes256",
+    encryption_algorithm: EnumEncryptionAlgorithm = Field(
+        default=EnumEncryptionAlgorithm.AES256,
         description="Encryption algorithm for state data",
     )
 
@@ -376,10 +472,3 @@ class ModelStateManagementSubcontract(BaseModel):
                     msg,
                 )
         return v
-
-    class Config:
-        """Pydantic model configuration for ONEX compliance."""
-
-        extra = "ignore"  # Allow extra fields from YAML contracts
-        use_enum_values = False  # Keep enum objects, don't convert to strings
-        validate_assignment = True

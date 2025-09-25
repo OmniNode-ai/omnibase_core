@@ -9,7 +9,6 @@ from __future__ import annotations
 from enum import Enum, unique
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
 
 
 @unique
@@ -69,6 +68,8 @@ class EnumTimeUnit(str, Enum):
         multiplier_keys = set(cls._get_millisecond_multipliers().keys())
 
         if display_keys != all_members:
+            from omnibase_core.exceptions.onex_error import OnexError
+
             missing = all_members - display_keys
             raise OnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
@@ -76,6 +77,8 @@ class EnumTimeUnit(str, Enum):
             )
 
         if multiplier_keys != all_members:
+            from omnibase_core.exceptions.onex_error import OnexError
+
             missing = all_members - multiplier_keys
             raise OnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,

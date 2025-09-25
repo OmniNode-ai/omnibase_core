@@ -11,9 +11,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-# Import existing enums instead of duplicating
-from omnibase_spi.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
+
+# Import existing enums instead of duplicating
+from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_node_type import EnumNodeType
 
 
 class WorkflowStatus(str, Enum):
@@ -91,7 +93,7 @@ class ModelNodeAssignment(BaseModel):
 
     node_id: str = Field(..., description="Unique identifier for the node")
 
-    node_type: NodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(..., description="Type of the node")
 
     assignment_status: AssignmentStatus = Field(
         ..., description="Current status of the assignment"
@@ -146,7 +148,7 @@ class ModelNodeProgress(BaseModel):
 
     node_id: str = Field(..., description="Unique identifier for the node")
 
-    node_type: NodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(..., description="Type of the node")
 
     progress_percent: float = Field(
         ..., description="Progress percentage for this node", ge=0.0, le=100.0
@@ -214,7 +216,7 @@ class ModelWorkflowNode(BaseModel):
 
     node_id: str = Field(..., description="Unique identifier for the node")
 
-    node_type: NodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(..., description="Type of the node")
 
     node_requirements: Dict[str, Any] = Field(
         default_factory=dict, description="Requirements for this node"

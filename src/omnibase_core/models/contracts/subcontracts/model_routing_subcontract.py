@@ -1,36 +1,43 @@
 #!/usr/bin/env python3
 """
-Routing Subcontract Model - ONEX Standards Compliant.
+Routing Subcontract Model - ONEX Microservices Architecture Compliant.
 
-Dedicated subcontract model for routing functionality providing:
-- Route definitions with conditions and targets
-- Load balancing and failover strategies
+Advanced subcontract model for ONEX microservices routing functionality providing:
+- Route definitions with conditions and service targets
+- Load balancing and failover strategies for microservices
 - Circuit breaker and health check configuration
-- Request/response transformation rules
-- Routing metrics and monitoring
+- Request/response transformation rules with correlation tracking
+- Routing metrics and distributed tracing for microservices observability
+- Service mesh integration patterns
+- Container-aware routing for ONEX 4-node architecture
 
 This model is composed into node contracts that require routing functionality,
-providing clean separation between node logic and routing behavior.
+providing clean separation between node logic and routing behavior optimized
+for ONEX microservices ecosystem.
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
 
 class ModelRouteDefinition(BaseModel):
     """
-    Route definition for request routing.
+    Route definition for ONEX microservices routing.
 
-    Defines routing rules, conditions, targets,
-    and transformation logic for request forwarding.
+    Defines routing rules, conditions, service targets,
+    and transformation logic for request forwarding in ONEX ecosystem.
     """
+
+    route_id: UUID = Field(default_factory=uuid4, description="Unique route identifier")
 
     route_name: str = Field(..., description="Unique name for the route", min_length=1)
 
     route_pattern: str = Field(
         ...,
-        description="Pattern for matching requests",
+        description="Pattern for matching requests (supports service discovery patterns)",
         min_length=1,
     )
 
@@ -41,13 +48,19 @@ class ModelRouteDefinition(BaseModel):
 
     conditions: list[str] = Field(
         default_factory=list,
-        description="Conditions for route matching",
+        description="Conditions for route matching (supports service mesh conditions)",
     )
 
-    targets: list[str] = Field(
+    service_targets: list[str] = Field(
         ...,
-        description="Target endpoints for routing",
+        description="Target microservice endpoints for routing",
         min_length=1,
+    )
+
+    # Legacy support for existing systems
+    targets: list[str] = Field(
+        default_factory=list,
+        description="Legacy target endpoints (deprecated, use service_targets)",
     )
 
     weight: int = Field(
@@ -76,16 +89,30 @@ class ModelRouteDefinition(BaseModel):
 
     max_retries: int = Field(default=3, description="Maximum number of retries", ge=0)
 
+    # ONEX microservices specific features
+    service_mesh_enabled: bool = Field(
+        default=True,
+        description="Enable service mesh integration",
+    )
+
+    correlation_id_required: bool = Field(
+        default=True,
+        description="Require correlation ID for request tracking",
+    )
+
 
 class ModelLoadBalancing(BaseModel):
     """
-    Load balancing configuration.
+    Load balancing configuration for ONEX microservices.
 
-    Defines load balancing strategies,
-    health checking, and failover policies.
+    Defines load balancing strategies optimized for microservices,
+    health checking, and failover policies with service discovery integration.
     """
 
-    strategy: str = Field(default="round_robin", description="Load balancing strategy")
+    strategy: str = Field(
+        default="service_aware_round_robin",
+        description="Load balancing strategy (service_aware_round_robin, consistent_hash, least_connections, weighted_response_time)",
+    )
 
     health_check_enabled: bool = Field(
         default=True,
@@ -129,6 +156,22 @@ class ModelLoadBalancing(BaseModel):
     session_affinity_cookie: str | None = Field(
         default=None,
         description="Cookie name for session affinity",
+    )
+
+    # ONEX microservices specific load balancing features
+    service_discovery_enabled: bool = Field(
+        default=True,
+        description="Enable automatic service discovery for targets",
+    )
+
+    container_aware_routing: bool = Field(
+        default=True,
+        description="Enable container-aware routing for ONEX 4-node architecture",
+    )
+
+    node_type_affinity: str | None = Field(
+        default=None,
+        description="Preferred ONEX node type (Effect, Compute, Reducer, Orchestrator)",
     )
 
 
@@ -282,24 +325,30 @@ class ModelRoutingMetrics(BaseModel):
 
 class ModelRoutingSubcontract(BaseModel):
     """
-    Routing subcontract model for request routing functionality.
+    ONEX Microservices Routing subcontract model for request routing functionality.
 
     Comprehensive routing subcontract providing route definitions,
-    load balancing, circuit breaking, and request transformation.
-    Designed for composition into node contracts requiring routing functionality.
+    load balancing, circuit breaking, and request transformation optimized
+    for ONEX microservices ecosystem. Designed for composition into node
+    contracts requiring routing functionality with service mesh integration.
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
     # Core routing configuration
+    routing_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique routing configuration identifier",
+    )
+
     routing_enabled: bool = Field(
         default=True,
         description="Enable routing functionality",
     )
 
     routing_strategy: str = Field(
-        default="path_based",
-        description="Primary routing strategy",
+        default="service_mesh_aware",
+        description="Primary routing strategy (service_mesh_aware, path_based, header_based, container_aware)",
     )
 
     default_target: str | None = Field(
@@ -412,6 +461,49 @@ class ModelRoutingSubcontract(BaseModel):
         description="Enable disaster recovery mode",
     )
 
+    # ONEX Microservices Ecosystem Integration
+    onex_node_type_routing: bool = Field(
+        default=True,
+        description="Enable ONEX 4-node architecture aware routing",
+    )
+
+    service_mesh_integration: bool = Field(
+        default=True,
+        description="Enable service mesh integration for ONEX ecosystem",
+    )
+
+    correlation_tracking: bool = Field(
+        default=True,
+        description="Enable correlation ID tracking across service calls",
+    )
+
+    container_orchestration_aware: bool = Field(
+        default=True,
+        description="Enable container orchestration awareness (Docker, Kubernetes)",
+    )
+
+    # Service discovery and registry integration
+    consul_integration: bool = Field(
+        default=True,
+        description="Enable Consul service discovery integration",
+    )
+
+    redis_routing_cache: bool = Field(
+        default=True,
+        description="Enable Redis-based routing cache for performance",
+    )
+
+    # Advanced ONEX patterns
+    event_driven_routing: bool = Field(
+        default=False,
+        description="Enable event-driven routing patterns via RedPanda/event bus",
+    )
+
+    workflow_aware_routing: bool = Field(
+        default=False,
+        description="Enable workflow-aware routing for multi-step processes",
+    )
+
     @field_validator("routes")
     @classmethod
     def validate_route_priorities_unique(
@@ -419,7 +511,7 @@ class ModelRoutingSubcontract(BaseModel):
         v: list[ModelRouteDefinition],
     ) -> list[ModelRouteDefinition]:
         """Validate that route priorities are unique within same pattern."""
-        pattern_priorities = {}
+        pattern_priorities: dict[tuple[str, str], int] = {}
         for route in v:
             key = (route.route_pattern, route.method or "*")
             if key in pattern_priorities and pattern_priorities[key] == route.priority:

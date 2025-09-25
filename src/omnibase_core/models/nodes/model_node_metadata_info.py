@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from omnibase_spi.protocols.types.core_types import ProtocolNodeInfoLike
+from omnibase_spi.protocols.types.protocol_core_types import ProtocolNodeInfoLike
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Configuration Management Subcontract for ONEX Infrastructure Nodes.
 
@@ -9,12 +10,14 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.exceptions.onex_error import OnexError
 
 
 class ModelConfigurationSource(BaseModel):
@@ -27,13 +30,19 @@ class ModelConfigurationSource(BaseModel):
         str_strip_whitespace=True,
     )
 
+    # ONEX: Add unique identifier for source tracking
+    source_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique identifier for this configuration source",
+    )
+
     source_type: str = Field(
         ...,
         description="Type of configuration source (file, environment, database, etc.)",
         pattern=r"^[a-z_]+$",
     )
 
-    source_path: str | None = Field(
+    source_path: Path | str | None = Field(
         default=None,
         description="Path or identifier for the configuration source",
     )
@@ -114,6 +123,12 @@ class ModelConfigurationSubcontract(BaseModel):
         validate_assignment=True,
         str_strip_whitespace=True,
         frozen=False,  # Allow updates for runtime reconfiguration
+    )
+
+    # ONEX: Universal correlation ID for tracing
+    correlation_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique correlation ID for configuration tracking",
     )
 
     # Configuration identification
@@ -384,9 +399,10 @@ class ModelConfigurationSubcontract(BaseModel):
             msg = "Runtime configuration updates are not allowed for this subcontract"
             raise OnexError(
                 message=msg,
-                error_code=CoreErrorCode.INVALID_OPERATION,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 context={
                     "config_name": self.config_name,
+                    "correlation_id": str(self.correlation_id),
                     "allow_runtime_updates": self.allow_runtime_updates,
                 },
             )
@@ -394,11 +410,12 @@ class ModelConfigurationSubcontract(BaseModel):
     def create_configuration_source(
         self,
         source_type: str,
-        source_path: str | None = None,
+        source_path: Path | str | None = None,
         priority: int = 100,
         *,
         required: bool = False,
         watch_for_changes: bool = False,
+        source_id: UUID | None = None,
     ) -> ModelConfigurationSource:
         """
         Create a new configuration source.
@@ -409,11 +426,13 @@ class ModelConfigurationSubcontract(BaseModel):
             priority: Priority for merging (lower = higher priority)
             required: Whether this source is required
             watch_for_changes: Whether to monitor for changes
+            source_id: Optional specific UUID for the source (auto-generated if not provided)
 
         Returns:
             ModelConfigurationSource instance
         """
         return ModelConfigurationSource(
+            source_id=source_id or uuid4(),
             source_type=source_type,
             source_path=source_path,
             priority=priority,
@@ -440,11 +459,13 @@ class ModelConfigurationSubcontract(BaseModel):
                 )
                 raise OnexError(
                     message=msg,
-                    error_code=CoreErrorCode.DUPLICATE_REGISTRATION,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     context={
                         "config_name": self.config_name,
+                        "correlation_id": str(self.correlation_id),
                         "priority": source.priority,
                         "source_type": source.source_type,
+                        "source_id": str(source.source_id),
                     },
                 )
 
@@ -488,3 +509,38 @@ class ModelConfigurationSubcontract(BaseModel):
             ]
 
         return len(self.configuration_sources) < original_length
+
+    def get_configuration_source_by_id(
+        self, source_id: UUID
+    ) -> ModelConfigurationSource | None:
+        """
+        Get a configuration source by its UUID.
+
+        Args:
+            source_id: UUID of the configuration source to find
+
+        Returns:
+            ModelConfigurationSource if found, None otherwise
+        """
+        for source in self.configuration_sources:
+            if source.source_id == source_id:
+                return source
+        return None
+
+    def get_configuration_sources_by_type(
+        self, source_type: str
+    ) -> list[ModelConfigurationSource]:
+        """
+        Get all configuration sources of a specific type.
+
+        Args:
+            source_type: Type of configuration sources to retrieve
+
+        Returns:
+            List of configuration sources matching the type
+        """
+        return [
+            source
+            for source in self.configuration_sources
+            if source.source_type == source_type
+        ]
