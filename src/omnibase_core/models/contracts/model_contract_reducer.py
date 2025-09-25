@@ -12,10 +12,15 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
+from typing import Any, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Type aliases for structured data - ZERO TOLERANCE for Any types
+ParameterValue = Union[str, int, float, bool, None]
+StructuredData = dict[str, ParameterValue]
+StructuredDataList = list[StructuredData]
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.models.contracts.model_conflict_resolution_config import (
@@ -65,17 +70,8 @@ class ModelContractReducer(ModelContractBase):
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
-    def __init__(self, **data: Any) -> None:
-        """Initialize reducer contract with ONEX compliance."""
-        super().__init__(**data)
-        # Add UUID correlation tracking if not provided
-        if not hasattr(self, "_correlation_id"):
-            self._correlation_id = uuid4()
-
-    def model_post_init(self, __context: object) -> None:
-        """Post-initialization validation for ONEX compliance."""
-        # Call parent post-init validation
-        super().model_post_init(__context)
+    # Note: Removed explicit __init__ and model_post_init to avoid MyPy type issues
+    # UUID correlation is handled by field default_factory
 
     # UUID correlation tracking
     correlation_id: UUID = Field(
@@ -97,37 +93,37 @@ class ModelContractReducer(ModelContractBase):
         description="Node name for infrastructure patterns",
     )
 
-    tool_specification: dict[str, Any] | None = Field(
+    tool_specification: StructuredData | None = Field(
         default=None,
         description="Tool specification for infrastructure patterns",
     )
 
-    service_configuration: dict[str, Any] | None = Field(
+    service_configuration: StructuredData | None = Field(
         default=None,
         description="Service configuration for infrastructure patterns",
     )
 
-    input_state: dict[str, Any] | None = Field(
+    input_state: StructuredData | None = Field(
         default=None,
         description="Input state specification",
     )
 
-    output_state: dict[str, Any] | None = Field(
+    output_state: StructuredData | None = Field(
         default=None,
         description="Output state specification",
     )
 
-    actions: list[dict[str, Any]] | None = Field(
+    actions: StructuredDataList | None = Field(
         default=None,
         description="Action definitions",
     )
 
-    infrastructure: dict[str, Any] | None = Field(
+    infrastructure: StructuredData | None = Field(
         default=None,
         description="Infrastructure configuration",
     )
 
-    infrastructure_services: dict[str, Any] | None = Field(
+    infrastructure_services: StructuredData | None = Field(
         default=None,
         description="Infrastructure services configuration",
     )
@@ -222,7 +218,7 @@ class ModelContractReducer(ModelContractBase):
 
     def validate_node_specific_config(
         self,
-        original_contract_data: dict[str, Any] | None = None,
+        original_contract_data: StructuredData | None = None,
     ) -> None:
         """
         Validate reducer node-specific configuration requirements.
@@ -285,7 +281,7 @@ class ModelContractReducer(ModelContractBase):
 
     def validate_subcontract_constraints(
         self,
-        original_contract_data: dict[str, Any] | None = None,
+        original_contract_data: StructuredData | None = None,
     ) -> None:
         """
         Validate REDUCER node subcontract architectural constraints.
@@ -363,13 +359,13 @@ class ModelContractReducer(ModelContractBase):
                         msg,
                     )
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-        "str_strip_whitespace": True,
-        "validate_default": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+        str_strip_whitespace=True,
+        validate_default=True,
+    )
 
     def to_yaml(self) -> str:
         """

@@ -63,37 +63,57 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
 
     except ValidationError as ve:
         raise OnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"YAML validation error for {path}: {ve}",
-            context=ModelErrorContext(
-                operation="load_and_validate_yaml_model", path=str(path)
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_and_validate_yaml_model"
+                    ),
+                    "path": ModelSchemaValue.from_value(str(path)),
+                }
             ),
             cause=ve,
         )
     except FileNotFoundError as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.NOT_FOUND,
+            code=EnumCoreErrorCode.NOT_FOUND,
             message=f"YAML file not found: {path}",
-            context=ModelErrorContext(
-                operation="load_and_validate_yaml_model", path=str(path)
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_and_validate_yaml_model"
+                    ),
+                    "path": ModelSchemaValue.from_value(str(path)),
+                }
             ),
             cause=e,
         )
     except yaml.YAMLError as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            code=EnumCoreErrorCode.CONVERSION_ERROR,
             message=f"YAML parsing error for {path}: {e}",
-            context=ModelErrorContext(
-                operation="load_and_validate_yaml_model", path=str(path)
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_and_validate_yaml_model"
+                    ),
+                    "path": ModelSchemaValue.from_value(str(path)),
+                }
             ),
             cause=e,
         )
     except Exception as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML: {path}: {e}",
-            context=ModelErrorContext(
-                operation="load_and_validate_yaml_model", path=str(path)
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_and_validate_yaml_model"
+                    ),
+                    "path": ModelSchemaValue.from_value(str(path)),
+                }
             ),
             cause=e,
         )
@@ -127,23 +147,29 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
 
     except ValidationError as ve:
         raise OnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"YAML validation error: {ve}",
-            context=ModelErrorContext(operation="load_yaml_content_as_model"),
+            details=ModelErrorContext.with_context(
+                {"operation": ModelSchemaValue.from_value("load_yaml_content_as_model")}
+            ),
             cause=ve,
         )
     except yaml.YAMLError as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            code=EnumCoreErrorCode.CONVERSION_ERROR,
             message=f"YAML parsing error: {e}",
-            context=ModelErrorContext(operation="load_yaml_content_as_model"),
+            details=ModelErrorContext.with_context(
+                {"operation": ModelSchemaValue.from_value("load_yaml_content_as_model")}
+            ),
             cause=e,
         )
     except Exception as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML content: {e}",
-            context=ModelErrorContext(operation="load_yaml_content_as_model"),
+            details=ModelErrorContext.with_context(
+                {"operation": ModelSchemaValue.from_value("load_yaml_content_as_model")}
+            ),
             cause=e,
         )
 
@@ -193,9 +219,11 @@ def _dump_yaml_content(
         yaml_str = yaml_str.replace("\r\n", "\n").replace("\r", "\n")
         if "\r" in yaml_str:
             raise OnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Carriage return found in YAML string",
-                context=ModelErrorContext(operation="_dump_yaml_content"),
+                details=ModelErrorContext.with_context(
+                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")}
+                ),
             )
 
         # Validate UTF-8 encoding
@@ -203,18 +231,22 @@ def _dump_yaml_content(
             yaml_str.encode("utf-8")
         except UnicodeEncodeError as e:
             raise OnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid UTF-8 in YAML output: {e}",
-                context=ModelErrorContext(operation="_dump_yaml_content"),
+                details=ModelErrorContext.with_context(
+                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")}
+                ),
                 cause=e,
             )
 
         return cast(str, yaml_str)
     except yaml.YAMLError as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            code=EnumCoreErrorCode.CONVERSION_ERROR,
             message=f"YAML serialization error: {e}",
-            context=ModelErrorContext(operation="_dump_yaml_content"),
+            details=ModelErrorContext.with_context(
+                {"operation": ModelSchemaValue.from_value("_dump_yaml_content")}
+            ),
             cause=e,
         )
 
@@ -258,9 +290,15 @@ def serialize_pydantic_model_to_yaml(
         return yaml_str
     except Exception as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize model to YAML: {e}",
-            context=ModelErrorContext(operation="serialize_pydantic_model_to_yaml"),
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "serialize_pydantic_model_to_yaml"
+                    )
+                }
+            ),
             cause=e,
         )
 
@@ -299,9 +337,11 @@ def serialize_data_to_yaml(
         return yaml_str
     except Exception as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize data to YAML: {e}",
-            context=ModelErrorContext(operation="serialize_data_to_yaml"),
+            details=ModelErrorContext.with_context(
+                {"operation": ModelSchemaValue.from_value("serialize_data_to_yaml")}
+            ),
             cause=e,
         )
 
@@ -334,37 +374,51 @@ def extract_example_from_schema(
         examples = schema_data.get("examples") if schema_data else None
         if not examples:
             raise OnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"No 'examples' section found in schema: {schema_path}",
-                context=ModelErrorContext(
-                    operation="extract_example_from_schema",
-                    path=str(schema_path),
-                    example_index=example_index,
+                details=ModelErrorContext.with_context(
+                    {
+                        "operation": ModelSchemaValue.from_value(
+                            "extract_example_from_schema"
+                        ),
+                        "path": ModelSchemaValue.from_value(str(schema_path)),
+                        "example_index": ModelSchemaValue.from_value(example_index),
+                    }
                 ),
             )
 
         if example_index >= len(examples):
             raise OnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Example index {example_index} out of range for schema: {schema_path}",
-                context=ModelErrorContext(
-                    operation="extract_example_from_schema",
-                    path=str(schema_path),
-                    example_index=example_index,
-                    examples_count=len(examples),
+                details=ModelErrorContext.with_context(
+                    {
+                        "operation": ModelSchemaValue.from_value(
+                            "extract_example_from_schema"
+                        ),
+                        "path": ModelSchemaValue.from_value(str(schema_path)),
+                        "example_index": ModelSchemaValue.from_value(example_index),
+                        "examples_count": ModelSchemaValue.from_value(len(examples)),
+                    }
                 ),
             )
 
         example = examples[example_index]
         if not isinstance(example, dict):
             raise OnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Example at index {example_index} is not a dict in schema: {schema_path}",
-                context=ModelErrorContext(
-                    operation="extract_example_from_schema",
-                    path=str(schema_path),
-                    example_index=example_index,
-                    example_type=type(example).__name__,
+                details=ModelErrorContext.with_context(
+                    {
+                        "operation": ModelSchemaValue.from_value(
+                            "extract_example_from_schema"
+                        ),
+                        "path": ModelSchemaValue.from_value(str(schema_path)),
+                        "example_index": ModelSchemaValue.from_value(example_index),
+                        "example_type": ModelSchemaValue.from_value(
+                            type(example).__name__
+                        ),
+                    }
                 ),
             )
 
@@ -392,12 +446,16 @@ def extract_example_from_schema(
         raise
     except Exception as e:
         raise OnexError(
-            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to extract example from schema: {schema_path}: {e}",
-            context=ModelErrorContext(
-                operation="extract_example_from_schema",
-                path=str(schema_path),
-                example_index=example_index,
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "extract_example_from_schema"
+                    ),
+                    "path": ModelSchemaValue.from_value(str(schema_path)),
+                    "example_index": ModelSchemaValue.from_value(example_index),
+                }
             ),
             cause=e,
         )

@@ -15,7 +15,7 @@ providing clean separation between node logic and event handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -394,8 +394,8 @@ class ModelEventTypeSubcontract(BaseModel):
                 )
         return v
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+    )

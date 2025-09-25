@@ -43,16 +43,15 @@ repos:
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
-      # MyPy Type Checking - TEMPORARILY DISABLED due to internal errors
-      # TODO: Re-enable after MyPy version compatibility issues resolved
-      # - id: mypy-poetry
-      #   name: MyPy Type Checking (via Poetry)
-      #   entry: poetry run mypy
-      #   language: system
-      #   types: [python]
-      #   args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
-      #   files: ^src/omnibase_core/(core|model|enums|exceptions|decorators).*\.py$
-      #   exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
+      # MyPy Type Checking - Re-enabled after fixing compatibility issues
+      - id: mypy-poetry
+        name: MyPy Type Checking (via Poetry)
+        entry: poetry run mypy
+        language: system
+        types: [python]
+        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
+        files: ^src/omnibase_core/(core|models|enums|exceptions|types).*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
@@ -81,6 +80,16 @@ repos:
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
         exclude: ^(tests/fixtures/validation/|archived/|archive/)
+        stages: [pre-commit]
+
+      - id: validate-archived-imports
+        name: ONEX Archived Path Import Prevention
+        entry: poetry run python scripts/validation/validate-archived-imports.py
+        args: ['src/']
+        language: system
+        pass_filenames: false
+        files: ^.*\.py$
+        exclude: ^(archived/|archive/|tests/fixtures/validation/).*$
         stages: [pre-commit]
 
       - id: validate-no-backward-compatibility

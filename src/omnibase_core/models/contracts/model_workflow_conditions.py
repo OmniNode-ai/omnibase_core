@@ -214,36 +214,3 @@ class ModelWorkflowConditions(BaseModel):
         str_strip_whitespace=True,
         use_enum_values=True,
     )
-
-    def to_dict(self) -> dict[str, str | bool | int | list[str] | None]:
-        """
-        Convert to dictionary format for serialization.
-
-        Returns:
-            Dictionary representation with type information preserved
-        """
-        return self.model_dump(exclude_none=True, mode="python")
-
-    @classmethod
-    def from_dict(
-        cls, data: dict[str, str | bool | int | list[str] | None]
-    ) -> "ModelWorkflowConditions":
-        """
-        Create from dictionary data with validation.
-
-        Args:
-            data: Dictionary containing conditions configuration
-
-        Returns:
-            Validated ModelWorkflowConditions instance
-
-        Raises:
-            OnexError: If validation fails
-        """
-        try:
-            return cls.model_validate(data)
-        except Exception as e:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Workflow conditions validation failed: {e}",
-            ) from e

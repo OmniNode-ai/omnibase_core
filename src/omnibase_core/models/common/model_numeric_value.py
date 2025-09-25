@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
@@ -167,6 +167,12 @@ class ModelNumericValue(BaseModel):
     def __ge__(self, other: ModelNumericValue) -> bool:
         """Greater than or equal comparison."""
         return self.value >= other.value
+
+    model_config = ConfigDict(
+        extra="forbid",  # Reject additional fields for strict typing
+        validate_assignment=True,  # Validate on attribute assignment
+        use_enum_values=True,  # Ensure proper enum serialization
+    )
 
 
 # Note: Previously had type alias (NumericInput = ModelNumericValue)

@@ -95,6 +95,86 @@ rm archived/src/omnibase_core/enums/enum_log_level.py
 # Update this document after cleanup
 ```
 
+## Import Path Migration Guidelines
+
+### 🚫 BLOCKED Import Patterns (Prevented by Pre-commit Hook)
+
+During the migration transition, the following import patterns are **automatically blocked** by the `validate-archived-imports` pre-commit hook:
+
+#### ❌ Critical - Archived Directory Imports
+```python
+# These will cause build failures
+from archived.some_module import SomeClass
+from archive.old_module import OldFunction
+import archived.utils
+import archive.helpers
+```
+
+#### ❌ High Priority - Old Migrated Paths
+```python
+# These paths have been migrated to new locations
+from omnibase_core.core.contracts.model_contract_base import ModelContractBase
+from omnibase_core.core.mixins.some_mixin import SomeMixin
+from omnibase_core.core.subcontracts.model_aggregation_subcontract import AggregationSubcontract
+```
+
+### ✅ CORRECT Import Patterns
+
+#### ✅ Current Active Paths
+```python
+# Use these paths for migrated content
+from omnibase_core.models.contracts.subcontracts.model_aggregation_subcontract import AggregationSubcontract
+from omnibase_core.models.base import BaseModel
+from omnibase_core.types.common import CommonTypes
+from omnibase_core.enums.enum_log_level import LogLevel
+from omnibase_core.utils import UtilityFunction
+import omnibase_core.exceptions
+```
+
+### 🔧 Migration Path Mapping
+
+| Old Path (Blocked) | New Path (Current) | Status |
+|-------------------|-------------------|---------|
+| `from archived.src.omnibase_core.core.subcontracts.*` | `from omnibase_core.models.contracts.subcontracts.*` | ✅ Migrated |
+| `from omnibase_core.core.contracts.*` | `from omnibase_core.models.*` or `omnibase_core.types.*` | 🚧 Migration in progress |
+| `from omnibase_core.core.mixins.*` | `from omnibase_core.models.*` or updated patterns | 🚧 Migration in progress |
+| `from archived.src.omnibase_core.enums.*` | `from omnibase_core.enums.*` | ✅ Migrated |
+
+### 🛡️ Validation in Pre-commit Pipeline
+
+The `validate-archived-imports` hook runs automatically on every commit to:
+- **Prevent** accidental imports from `archived/` or `archive/` directories
+- **Detect** usage of old migrated paths like `omnibase_core.core.contracts.*`  
+- **Ensure** code follows current migration patterns
+- **Provide** specific fix suggestions for each violation type
+
+```yaml
+# Enabled in .pre-commit-config.yaml
+- id: validate-archived-imports
+  name: ONEX Archived Path Import Prevention
+  entry: poetry run python scripts/validation/validate-archived-imports.py
+  args: ['src/']
+  language: system
+  pass_filenames: false
+  files: ^.*\.py$
+  exclude: ^(archived/|archive/|tests/fixtures/validation/).*$
+  stages: [pre-commit]
+```
+
+### 📚 Quick Reference - Import Do's and Don'ts
+
+#### ✅ DO
+- Import from current active paths in `src/omnibase_core/`
+- Use the pre-commit hook validation before committing
+- Check migration mapping table above for correct paths
+- Verify imports work with current codebase structure
+
+#### ❌ DON'T  
+- Import anything from `archived/` or `archive/` directories
+- Use old `omnibase_core.core.contracts.*` paths
+- Use old `omnibase_core.core.mixins.*` paths
+- Skip the pre-commit validation
+
 ## Migration Guidelines
 
 ### ✅ File Successfully Migrated When:

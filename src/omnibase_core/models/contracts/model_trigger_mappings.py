@@ -152,37 +152,6 @@ class ModelTriggerMappings(BaseModel):
         use_enum_values=True,
     )
 
-    def to_dict(self) -> dict[str, dict[str, str]]:
-        """
-        Convert to dictionary format for serialization.
-
-        Returns:
-            Dictionary representation with type information preserved
-        """
-        return self.model_dump(exclude_none=True, mode="python")
-
-    @classmethod
-    def from_dict(cls, data: dict[str, dict[str, str]]) -> "ModelTriggerMappings":
-        """
-        Create from dictionary data with validation.
-
-        Args:
-            data: Dictionary containing trigger mappings
-
-        Returns:
-            Validated ModelTriggerMappings instance
-
-        Raises:
-            OnexError: If validation fails
-        """
-        try:
-            return cls.model_validate(data)
-        except Exception as e:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Trigger mappings validation failed: {e}",
-            ) from e
-
     def get_all_mappings(self) -> dict[str, str]:
         """
         Get all mappings as a single flattened dictionary.

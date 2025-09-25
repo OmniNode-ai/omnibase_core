@@ -11,13 +11,15 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
+from typing import Any, Union, assert_never
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
+from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.contracts.subcontracts.model_caching_subcontract import (
     ModelCachingSubcontract,
 )
@@ -31,6 +33,11 @@ from .model_caching_config import ModelCachingConfig
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
+
+# Type alias for validation rules input - includes all possible input types
+ValidationRulesInput = Union[
+    None, dict[str, Any], list[Any], "ModelValidationRules", str, int, float, bool
+]
 
 
 class ModelContractCompute(ModelContractBase):
@@ -51,7 +58,9 @@ class ModelContractCompute(ModelContractBase):
     # Override parent node_type with architecture-specific type
     @field_validator("node_type", mode="before")
     @classmethod
-    def validate_node_type_architecture(cls, v: Any) -> EnumNodeType:
+    def validate_node_type_architecture(
+        cls, v: Union[EnumNodeArchitectureType, EnumNodeType, str, object]
+    ) -> EnumNodeType:
         """Validate and convert architecture type to base node type."""
         if isinstance(v, EnumNodeArchitectureType):
             return EnumNodeType(v.value)  # Both have "compute" value
@@ -86,37 +95,37 @@ class ModelContractCompute(ModelContractBase):
         description="Node name for infrastructure patterns",
     )
 
-    tool_specification: dict[str, Any] | None = Field(
+    tool_specification: dict[str, ModelSchemaValue] | None = Field(
         default=None,
         description="Tool specification for infrastructure patterns",
     )
 
-    service_configuration: dict[str, Any] | None = Field(
+    service_configuration: dict[str, ModelSchemaValue] | None = Field(
         default=None,
         description="Service configuration for infrastructure patterns",
     )
 
-    input_state: dict[str, Any] | None = Field(
+    input_state: dict[str, ModelSchemaValue] | None = Field(
         default=None,
         description="Input state specification",
     )
 
-    output_state: dict[str, Any] | None = Field(
+    output_state: dict[str, ModelSchemaValue] | None = Field(
         default=None,
         description="Output state specification",
     )
 
-    actions: list[dict[str, Any]] | None = Field(
+    actions: list[dict[str, ModelSchemaValue]] | None = Field(
         default=None,
         description="Action definitions",
     )
 
-    infrastructure: dict[str, Any] | None = Field(
+    infrastructure: dict[str, ModelSchemaValue] | None = Field(
         default=None,
         description="Infrastructure configuration",
     )
 
-    infrastructure_services: dict[str, Any] | None = Field(
+    infrastructure_services: dict[str, ModelSchemaValue] | None = Field(
         default=None,
         description="Infrastructure services configuration",
     )
@@ -124,36 +133,36 @@ class ModelContractCompute(ModelContractBase):
     # Override validation_rules to support flexible formats
     @field_validator("validation_rules", mode="before")
     @classmethod
-    def validate_validation_rules_flexible(cls, v: Any) -> Any:
+    def validate_validation_rules_flexible(
+        cls,
+        v: ValidationRulesInput,
+    ) -> ModelValidationRules:
         """Validate and convert flexible validation rules format."""
         if v is None:
-            # Import here to avoid circular imports
-            from omnibase_core.models.contracts.model_validation_rules import (
-                ModelValidationRules,
-            )
-
             return ModelValidationRules()
 
         if isinstance(v, dict):
             # Convert dict to ModelValidationRules
-            from omnibase_core.models.contracts.model_validation_rules import (
-                ModelValidationRules,
-            )
-
             return ModelValidationRules(**v)
 
         if isinstance(v, list):
             # Convert list to ModelValidationRules with constraint_definitions
-            from omnibase_core.models.contracts.model_validation_rules import (
-                ModelValidationRules,
-            )
-
             # Create constraint_definitions from list
             constraints = {f"rule_{i}": str(rule) for i, rule in enumerate(v)}
             return ModelValidationRules(constraint_definitions=constraints)
 
         # If already ModelValidationRules, return as is
-        return v
+        if isinstance(v, ModelValidationRules):
+            return v
+
+        # If it's a primitive value, wrap it in ModelValidationRules
+        if isinstance(v, (str, int, float, bool)):
+            # Convert primitive to ModelValidationRules with single constraint
+            constraints = {"rule_0": str(v)}
+            return ModelValidationRules(constraint_definitions=constraints)
+
+        # This should never be reached due to exhaustive type checking
+        assert_never(v)
 
     # === CORE COMPUTATION FUNCTIONALITY ===
     # These fields define the core computation behavior
@@ -333,11 +342,11 @@ class ModelContractCompute(ModelContractBase):
             raise ValueError(msg)
         return v
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+    )
 
     def to_yaml(self) -> str:
         """

@@ -126,12 +126,13 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
         >>> assert version.major == 1 and version.minor == 2 and version.patch == 3
     """
     import re
+    from typing import Match
 
     # Basic SemVer regex pattern for major.minor.patch
     pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
 
-    match = re.match(pattern, version_str)
-    if not match:
+    match: Match[str] | None = re.match(pattern, version_str)
+    if match is None:
         msg = f"Invalid semantic version format: {version_str}"
         raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
 

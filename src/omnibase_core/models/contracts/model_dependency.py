@@ -12,9 +12,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 import re
 from functools import lru_cache
-from typing import Any, ClassVar
+from typing import ClassVar
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
@@ -76,7 +76,7 @@ class ModelDependency(BaseModel):
     # Thread-safe: ClassVar patterns are compiled once at class load time
     # and re.Pattern objects are immutable, allowing safe concurrent access
     _MODULE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
-        r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
+        r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$"
     )
     # Removed _CAMEL_TO_SNAKE_PATTERN to reduce memory footprint as requested in PR
 
@@ -245,7 +245,7 @@ class ModelDependency(BaseModel):
                             "omnibase_core.models.example"
                         ),
                         "security_policy": ModelSchemaValue.from_value(
-                            "Module paths must use only alphanumeric, underscore, hyphen, and dot characters"
+                            "Module paths must use only alphanumeric, underscore, and dot characters"
                         ),
                     }
                 ),
@@ -254,11 +254,12 @@ class ModelDependency(BaseModel):
     @classmethod
     def _validate_module_format(cls, module_path: str) -> None:
         """Validate module path format using pre-compiled pattern with caching for performance."""
+        from omnibase_core.models.common.model_error_context import (
+            ModelErrorContext,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
         if not cls._MODULE_PATTERN.match(module_path):
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -267,7 +268,7 @@ class ModelDependency(BaseModel):
                     {
                         "module_path": ModelSchemaValue.from_value(module_path),
                         "expected_format": ModelSchemaValue.from_value(
-                            "alphanumeric.segments.with_underscores_or_hyphens"
+                            "alphanumeric.segments.with_underscores"
                         ),
                         "pattern": ModelSchemaValue.from_value(
                             cls._MODULE_PATTERN.pattern
@@ -354,12 +355,12 @@ class ModelDependency(BaseModel):
         # Other types have more flexible patterns
         return True
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from various input formats
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-        "str_strip_whitespace": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from various input formats
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+        str_strip_whitespace=True,
+    )
 
 
 # ONEX-compliant dependency model - no factory functions or custom serialization

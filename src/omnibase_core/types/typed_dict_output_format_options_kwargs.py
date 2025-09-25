@@ -11,6 +11,7 @@ from typing import NotRequired, TypedDict
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
 class TypedDictOutputFormatOptionsKwargs(TypedDict):
@@ -62,7 +63,7 @@ class TypedDictOutputFormatOptionsKwargs(TypedDict):
     create_backup: NotRequired[bool]
 
     # Custom format options
-    custom_options: NotRequired[dict[str, str | int | float | bool | None]]
+    custom_options: NotRequired[dict[str, ModelCliValue]]
 
 
 # Export for use

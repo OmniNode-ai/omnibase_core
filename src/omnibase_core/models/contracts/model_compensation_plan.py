@@ -7,7 +7,7 @@ with proper Pydantic validation and type safety for saga pattern workflows.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from typing import Any, Literal
+from typing import Literal, Union
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -140,7 +140,7 @@ class ModelCompensationPlan(BaseModel):
     )
 
     # Dependencies
-    depends_on_plans: list[str] = Field(
+    depends_on_plans: list[UUID] = Field(
         default_factory=list,
         description="List of other compensation plans this depends on",
     )
@@ -162,61 +162,55 @@ class ModelCompensationPlan(BaseModel):
 
     @field_validator("plan_id", mode="before")
     @classmethod
-    def validate_plan_id(cls, v: Any) -> str:
+    def validate_plan_id(cls, v: Union[UUID, str]) -> UUID:
         """Validate plan ID format."""
         if isinstance(v, UUID):
-            v_str = str(v)
+            return v
         elif isinstance(v, str):
             v_str = v.strip()
-        else:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+            if not v_str:
+                from omnibase_core.models.common.model_error_context import (
+                    ModelErrorContext,
+                )
+                from omnibase_core.models.common.model_schema_value import (
+                    ModelSchemaValue,
+                )
 
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Plan ID must be provided as a string or UUID",
-                details=ModelErrorContext.with_context(
-                    {"received_type": ModelSchemaValue.from_value(type(v).__name__)}
-                ),
-            )
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Plan ID cannot be empty",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "onex_principle": ModelSchemaValue.from_value(
+                                "Strong types only"
+                            )
+                        }
+                    ),
+                )
 
-        if not v_str:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+            # Try to parse as UUID
+            try:
+                return UUID(v_str)
+            except ValueError:
+                from omnibase_core.models.common.model_error_context import (
+                    ModelErrorContext,
+                )
+                from omnibase_core.models.common.model_schema_value import (
+                    ModelSchemaValue,
+                )
 
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Plan ID cannot be empty",
-                details=ModelErrorContext.with_context(
-                    {"onex_principle": ModelSchemaValue.from_value("Strong types only")}
-                ),
-            )
-
-        # Check for valid identifier format
-        if not v_str.replace("_", "").replace("-", "").isalnum():
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Invalid plan_id '{v_str}'. Must contain only alphanumeric characters, hyphens, and underscores.",
-                details=ModelErrorContext.with_context(
-                    {
-                        "plan_id": ModelSchemaValue.from_value(v_str),
-                        "onex_principle": ModelSchemaValue.from_value(
-                            "Strong validation for identifiers"
-                        ),
-                    }
-                ),
-            )
-
-        return v_str
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Invalid plan_id '{v_str}'. Must be a valid UUID.",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "plan_id": ModelSchemaValue.from_value(v_str),
+                            "onex_principle": ModelSchemaValue.from_value(
+                                "Strong validation for identifiers"
+                            ),
+                        }
+                    ),
+                )
 
     @field_validator(
         "rollback_actions",
@@ -258,38 +252,45 @@ class ModelCompensationPlan(BaseModel):
 
         return validated
 
-    @field_validator("depends_on_plans")
+    @field_validator("depends_on_plans", mode="before")
     @classmethod
-    def validate_plan_dependencies(cls, v: list[str]) -> list[str]:
+    def validate_plan_dependencies(cls, v: list[Union[UUID, str]]) -> list[UUID]:
         """Validate plan dependency identifiers."""
         validated = []
         for plan_id in v:
-            plan_id = plan_id.strip()
-            if not plan_id:
-                continue  # Skip empty entries
+            if isinstance(plan_id, UUID):
+                validated.append(plan_id)
+            elif isinstance(plan_id, str):
+                plan_id_str = plan_id.strip()
+                if not plan_id_str:
+                    continue  # Skip empty entries
 
-            if not plan_id.replace("_", "").replace("-", "").isalnum():
-                from omnibase_core.models.common.model_error_context import (
-                    ModelErrorContext,
-                )
-                from omnibase_core.models.common.model_schema_value import (
-                    ModelSchemaValue,
-                )
+                # Try to parse as UUID
+                try:
+                    validated.append(UUID(plan_id_str))
+                except ValueError:
+                    from omnibase_core.models.common.model_error_context import (
+                        ModelErrorContext,
+                    )
+                    from omnibase_core.models.common.model_schema_value import (
+                        ModelSchemaValue,
+                    )
 
-                raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Invalid dependency plan_id '{plan_id}'. Must contain only alphanumeric characters, hyphens, and underscores.",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "dependency_plan_id": ModelSchemaValue.from_value(plan_id),
-                            "onex_principle": ModelSchemaValue.from_value(
-                                "Strong validation for plan dependencies"
-                            ),
-                        }
-                    ),
-                )
-
-            validated.append(plan_id)
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=f"Invalid dependency plan_id '{plan_id_str}'. Must be a valid UUID.",
+                        details=ModelErrorContext.with_context(
+                            {
+                                "dependency_plan_id": ModelSchemaValue.from_value(
+                                    plan_id_str
+                                ),
+                                "onex_principle": ModelSchemaValue.from_value(
+                                    "Strong validation for plan dependencies"
+                                ),
+                            }
+                        ),
+                    )
+            # Note: else clause removed as it's unreachable due to type annotation Union[UUID, str]
 
         return validated
 
@@ -298,63 +299,3 @@ class ModelCompensationPlan(BaseModel):
         validate_assignment=True,  # Validate on attribute assignment
         use_enum_values=True,  # Ensure proper enum serialization
     )
-
-    def to_dict(self) -> dict[str, str | list[str] | bool | int]:
-        """
-        Convert to dictionary format for serialization.
-
-        Returns:
-            Dictionary representation with type information preserved
-        """
-        return self.model_dump(exclude_none=True, mode="json")
-
-    @classmethod
-    def from_dict(
-        cls, data: dict[str, str | list[str] | bool | int]
-    ) -> "ModelCompensationPlan":
-        """
-        Create from dictionary data with validation.
-
-        Args:
-            data: Dictionary containing compensation plan configuration
-
-        Returns:
-            Validated ModelCompensationPlan instance
-
-        Raises:
-            OnexError: If validation fails
-        """
-        try:
-            return cls.model_validate(data)
-        except OnexError:
-            # Preserve existing domain error as-is
-            raise
-        except ValidationError as e:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Compensation plan validation failed",
-                details=ModelErrorContext.with_context(
-                    {
-                        "input_data": ModelSchemaValue.from_value(data),
-                        "errors": ModelSchemaValue.from_value(e.errors()),
-                    }
-                ),
-            ) from e
-        except Exception as e:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Compensation plan parsing failed: {e}",
-                details=ModelErrorContext.with_context(
-                    {"input_data": ModelSchemaValue.from_value(data)}
-                ),
-            ) from e

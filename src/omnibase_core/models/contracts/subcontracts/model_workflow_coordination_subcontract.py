@@ -8,10 +8,14 @@ Generated from workflow_coordination subcontract following ONEX patterns.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+# Type aliases for structured data - ZERO TOLERANCE for Any types
+ParameterValue = Union[str, int, float, bool, None]
+StructuredData = dict[str, ParameterValue]
 
 # Import existing enums instead of duplicating
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
@@ -47,11 +51,11 @@ class ModelWorkflowInstance(BaseModel):
         ..., description="Current status of the workflow"
     )
 
-    input_parameters: Dict[str, Any] = Field(
+    input_parameters: StructuredData = Field(
         default_factory=dict, description="Input parameters for the workflow"
     )
 
-    execution_context: Dict[str, Any] = Field(
+    execution_context: StructuredData = Field(
         default_factory=dict, description="Execution context for the workflow"
     )
 
@@ -73,7 +77,7 @@ class ModelNodeAssignment(BaseModel):
         default=0, description="Time spent executing on this node in milliseconds", ge=0
     )
 
-    resource_usage: Dict[str, float] = Field(
+    resource_usage: dict[str, float] = Field(
         default_factory=dict, description="Resource usage metrics for this node"
     )
 
@@ -101,7 +105,7 @@ class ModelCoordinationResult(BaseModel):
         default_factory=uuid4, description="Workflow this coordination belongs to"
     )
 
-    nodes_coordinated: List[ModelNodeAssignment] = Field(
+    nodes_coordinated: list[ModelNodeAssignment] = Field(
         default_factory=list, description="List of nodes that were coordinated"
     )
 
@@ -109,7 +113,7 @@ class ModelCoordinationResult(BaseModel):
         ..., description="Time spent on coordination overhead in milliseconds", ge=0
     )
 
-    synchronization_points: List[ModelSynchronizationPoint] = Field(
+    synchronization_points: list[ModelSynchronizationPoint] = Field(
         default_factory=list,
         description="Synchronization points reached during coordination",
     )
@@ -152,7 +156,7 @@ class ModelProgressStatus(BaseModel):
         default=None, description="Estimated completion time"
     )
 
-    node_progress: List[ModelNodeProgress] = Field(
+    node_progress: list[ModelNodeProgress] = Field(
         default_factory=list, description="Progress of individual nodes"
     )
 
@@ -194,11 +198,11 @@ class ModelWorkflowNode(BaseModel):
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
-    node_requirements: Dict[str, Any] = Field(
+    node_requirements: StructuredData = Field(
         default_factory=dict, description="Requirements for this node"
     )
 
-    dependencies: List[UUID] = Field(
+    dependencies: list[UUID] = Field(
         default_factory=list, description="List of node IDs this node depends on"
     )
 
@@ -206,7 +210,7 @@ class ModelWorkflowNode(BaseModel):
 class ModelExecutionGraph(BaseModel):
     """Execution graph for a workflow."""
 
-    nodes: List[ModelWorkflowNode] = Field(
+    nodes: list[ModelWorkflowNode] = Field(
         default_factory=list, description="Nodes in the execution graph"
     )
 
@@ -214,7 +218,7 @@ class ModelExecutionGraph(BaseModel):
 class ModelCoordinationRules(BaseModel):
     """Rules for workflow coordination."""
 
-    synchronization_points: List[str] = Field(
+    synchronization_points: list[str] = Field(
         default_factory=list, description="Named synchronization points in the workflow"
     )
 
@@ -273,7 +277,7 @@ class ModelExecutionResult(BaseModel):
         ..., description="Total execution time in milliseconds", ge=0
     )
 
-    result_data: Dict[str, Any] = Field(
+    result_data: StructuredData = Field(
         default_factory=dict, description="Result data from the workflow"
     )
 
@@ -305,7 +309,7 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         description="Version of the subcontract",
     )
 
-    applicable_node_types: List[str] = Field(
+    applicable_node_types: list[str] = Field(
         default=["ORCHESTRATOR"],
         description="Node types this subcontract applies to (ORCHESTRATOR only)",
     )
@@ -367,8 +371,8 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         default=True, description="Whether to use exponential backoff for retries"
     )
 
-    model_config = {
-        "json_schema_extra": {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "subcontract_name": "workflow_coordination_subcontract",
                 "subcontract_version": "1.0.0",
@@ -385,4 +389,4 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
                 "exponential_backoff": True,
             }
         }
-    }
+    )

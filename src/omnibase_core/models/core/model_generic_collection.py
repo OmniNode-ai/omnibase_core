@@ -242,7 +242,13 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Args:
             reverse: If True, sort in descending order (highest priority first)
         """
-        self.items.sort(key=lambda item: getattr(item, "priority", 0), reverse=reverse)
+
+        def safe_priority_key(item: T) -> int:
+            priority = getattr(item, "priority", 0)
+            # Handle None values by defaulting to 0
+            return priority if priority is not None else 0
+
+        self.items.sort(key=safe_priority_key, reverse=reverse)
         self.updated_at = datetime.now(UTC)
 
     def sort_by_name(self, reverse: bool = False) -> None:
@@ -252,7 +258,13 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Args:
             reverse: If True, sort in descending order
         """
-        self.items.sort(key=lambda item: getattr(item, "name", ""), reverse=reverse)
+
+        def safe_name_key(item: T) -> str:
+            name = getattr(item, "name", "")
+            # Handle None values by defaulting to empty string
+            return name if name is not None else ""
+
+        self.items.sort(key=safe_name_key, reverse=reverse)
         self.updated_at = datetime.now(UTC)
 
     def sort_by_created_at(self, reverse: bool = False) -> None:
@@ -262,8 +274,26 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Args:
             reverse: If True, sort newest first
         """
+        # Use timezone-aware minimum datetime to avoid comparison issues
+        timezone_aware_min: datetime = datetime.min.replace(tzinfo=UTC)
+
+        def safe_created_at_key(item: T) -> datetime:
+            created_at = getattr(item, "created_at", None)
+            if created_at is None:
+                return timezone_aware_min
+
+            # Ensure we have a datetime object and handle type checking
+            if not isinstance(created_at, datetime):
+                return timezone_aware_min
+
+            # Ensure the datetime is timezone-aware
+            if created_at.tzinfo is None:
+                # If naive, assume UTC
+                return created_at.replace(tzinfo=UTC)
+            return created_at
+
         self.items.sort(
-            key=lambda item: getattr(item, "created_at", datetime.min),
+            key=safe_created_at_key,
             reverse=reverse,
         )
         self.updated_at = datetime.now(UTC)

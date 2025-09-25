@@ -20,301 +20,13 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-
-class ModelRouteDefinition(BaseModel):
-    """
-    Route definition for ONEX microservices routing.
-
-    Defines routing rules, conditions, service targets,
-    and transformation logic for request forwarding in ONEX ecosystem.
-    """
-
-    route_id: UUID = Field(default_factory=uuid4, description="Unique route identifier")
-
-    route_name: str = Field(..., description="Unique name for the route", min_length=1)
-
-    route_pattern: str = Field(
-        ...,
-        description="Pattern for matching requests (supports service discovery patterns)",
-        min_length=1,
-    )
-
-    method: str | None = Field(
-        default=None,
-        description="HTTP method filter (GET, POST, etc.)",
-    )
-
-    conditions: list[str] = Field(
-        default_factory=list,
-        description="Conditions for route matching (supports service mesh conditions)",
-    )
-
-    service_targets: list[str] = Field(
-        ...,
-        description="Target microservice endpoints for routing",
-        min_length=1,
-    )
-
-    weight: int = Field(
-        default=100,
-        description="Route weight for load balancing",
-        ge=0,
-        le=1000,
-    )
-
-    priority: int = Field(
-        default=1,
-        description="Route priority for conflict resolution",
-        ge=1,
-    )
-
-    timeout_ms: int = Field(
-        default=30000,
-        description="Timeout for route requests",
-        ge=100,
-    )
-
-    retry_enabled: bool = Field(
-        default=True,
-        description="Enable retry for failed requests",
-    )
-
-    max_retries: int = Field(default=3, description="Maximum number of retries", ge=0)
-
-    # ONEX microservices specific features
-    service_mesh_enabled: bool = Field(
-        default=True,
-        description="Enable service mesh integration",
-    )
-
-    correlation_id_required: bool = Field(
-        default=True,
-        description="Require correlation ID for request tracking",
-    )
-
-
-class ModelLoadBalancing(BaseModel):
-    """
-    Load balancing configuration for ONEX microservices.
-
-    Defines load balancing strategies optimized for microservices,
-    health checking, and failover policies with service discovery integration.
-    """
-
-    strategy: str = Field(
-        default="service_aware_round_robin",
-        description="Load balancing strategy (service_aware_round_robin, consistent_hash, least_connections, weighted_response_time)",
-    )
-
-    health_check_enabled: bool = Field(
-        default=True,
-        description="Enable health checking for targets",
-    )
-
-    health_check_path: str = Field(
-        default="/health",
-        description="Health check endpoint path",
-    )
-
-    health_check_interval_ms: int = Field(
-        default=30000,
-        description="Health check interval",
-        ge=1000,
-    )
-
-    health_check_timeout_ms: int = Field(
-        default=5000,
-        description="Health check timeout",
-        ge=100,
-    )
-
-    unhealthy_threshold: int = Field(
-        default=3,
-        description="Failures before marking unhealthy",
-        ge=1,
-    )
-
-    healthy_threshold: int = Field(
-        default=2,
-        description="Successes before marking healthy",
-        ge=1,
-    )
-
-    sticky_sessions: bool = Field(
-        default=False,
-        description="Enable sticky session routing",
-    )
-
-    session_affinity_cookie: str | None = Field(
-        default=None,
-        description="Cookie name for session affinity",
-    )
-
-    # ONEX microservices specific load balancing features
-    service_discovery_enabled: bool = Field(
-        default=True,
-        description="Enable automatic service discovery for targets",
-    )
-
-    container_aware_routing: bool = Field(
-        default=True,
-        description="Enable container-aware routing for ONEX 4-node architecture",
-    )
-
-    node_type_affinity: str | None = Field(
-        default=None,
-        description="Preferred ONEX node type (Effect, Compute, Reducer, Orchestrator)",
-    )
-
-
-class ModelCircuitBreaker(BaseModel):
-    """
-    Circuit breaker configuration.
-
-    Defines circuit breaker behavior for fault tolerance,
-    including failure thresholds and recovery policies.
-    """
-
-    enabled: bool = Field(
-        default=True,
-        description="Enable circuit breaker functionality",
-    )
-
-    failure_threshold: int = Field(
-        default=5,
-        description="Failures before opening circuit",
-        ge=1,
-    )
-
-    success_threshold: int = Field(
-        default=3,
-        description="Successes before closing circuit",
-        ge=1,
-    )
-
-    timeout_ms: int = Field(default=60000, description="Circuit open timeout", ge=1000)
-
-    half_open_max_calls: int = Field(
-        default=3,
-        description="Max calls in half-open state",
-        ge=1,
-    )
-
-    failure_rate_threshold: float = Field(
-        default=0.5,
-        description="Failure rate threshold",
-        ge=0.0,
-        le=1.0,
-    )
-
-    minimum_calls: int = Field(
-        default=10,
-        description="Minimum calls before evaluation",
-        ge=1,
-    )
-
-    slow_call_duration_ms: int = Field(
-        default=60000,
-        description="Duration for slow call detection",
-        ge=1000,
-    )
-
-    slow_call_rate_threshold: float = Field(
-        default=0.6,
-        description="Slow call rate threshold",
-        ge=0.0,
-        le=1.0,
-    )
-
-
-class ModelRequestTransformation(BaseModel):
-    """
-    Request transformation configuration.
-
-    Defines request/response transformation rules,
-    header manipulation, and payload modification.
-    """
-
-    transformation_enabled: bool = Field(
-        default=False,
-        description="Enable request transformation",
-    )
-
-    header_transformations: dict[str, str] = Field(
-        default_factory=dict,
-        description="Header transformation rules",
-    )
-
-    path_rewrite_rules: list[str] = Field(
-        default_factory=list,
-        description="Path rewrite patterns",
-    )
-
-    query_parameter_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Query parameter transformation",
-    )
-
-    payload_transformation: str | None = Field(
-        default=None,
-        description="Payload transformation template",
-    )
-
-    response_transformation: bool = Field(
-        default=False,
-        description="Enable response transformation",
-    )
-
-    response_header_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Response header transformation",
-    )
-
-
-class ModelRoutingMetrics(BaseModel):
-    """
-    Routing metrics configuration.
-
-    Defines metrics collection, monitoring,
-    and alerting for routing operations.
-    """
-
-    metrics_enabled: bool = Field(
-        default=True,
-        description="Enable routing metrics collection",
-    )
-
-    detailed_metrics: bool = Field(
-        default=False,
-        description="Enable detailed per-route metrics",
-    )
-
-    latency_buckets: list[float] = Field(
-        default_factory=lambda: [0.1, 0.5, 1.0, 2.5, 5.0, 10.0],
-        description="Latency histogram buckets",
-    )
-
-    error_rate_threshold: float = Field(
-        default=0.05,
-        description="Error rate alerting threshold",
-        ge=0.0,
-        le=1.0,
-    )
-
-    latency_threshold_ms: int = Field(
-        default=5000,
-        description="Latency alerting threshold",
-        ge=100,
-    )
-
-    sampling_rate: float = Field(
-        default=1.0,
-        description="Metrics sampling rate",
-        ge=0.0,
-        le=1.0,
-    )
+from .model_circuit_breaker import ModelCircuitBreaker
+from .model_load_balancing import ModelLoadBalancing
+from .model_request_transformation import ModelRequestTransformation
+from .model_route_definition import ModelRouteDefinition
+from .model_routing_metrics import ModelRoutingMetrics
 
 
 class ModelRoutingSubcontract(BaseModel):
@@ -505,15 +217,24 @@ class ModelRoutingSubcontract(BaseModel):
         v: list[ModelRouteDefinition],
     ) -> list[ModelRouteDefinition]:
         """Validate that route priorities are unique within same pattern."""
-        pattern_priorities: dict[tuple[str, str], int] = {}
+        # Group routes by pattern to check priority uniqueness within each pattern
+        pattern_routes: dict[str, list[ModelRouteDefinition]] = {}
+
         for route in v:
-            key = (route.route_pattern, route.method or "*")
-            if key in pattern_priorities and pattern_priorities[key] == route.priority:
-                msg = f"Duplicate priority {route.priority} for pattern {route.route_pattern}"
-                raise ValueError(
-                    msg,
-                )
-            pattern_priorities[key] = route.priority
+            pattern = route.route_pattern
+            if pattern not in pattern_routes:
+                pattern_routes[pattern] = []
+            pattern_routes[pattern].append(route)
+
+        # Check for duplicate priorities within each pattern group
+        for pattern, routes in pattern_routes.items():
+            priorities_seen = set()
+            for route in routes:
+                if route.priority in priorities_seen:
+                    msg = f"Duplicate priority {route.priority} found in pattern '{pattern}' (route: {route.route_name})"
+                    raise ValueError(msg)
+                priorities_seen.add(route.priority)
+
         return v
 
     @field_validator("trace_sampling_rate")
@@ -525,8 +246,8 @@ class ModelRoutingSubcontract(BaseModel):
             raise ValueError(msg)
         return v
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+    )

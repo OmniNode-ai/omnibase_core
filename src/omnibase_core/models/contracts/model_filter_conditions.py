@@ -7,6 +7,7 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -126,16 +127,14 @@ class ModelFilterConditions(BaseModel):
     )
 
     # Time-based filters
-    after_timestamp: str | None = Field(
+    after_timestamp: datetime | None = Field(
         default=None,
-        description="ISO timestamp - only events after this time",
-        max_length=30,
+        description="DateTime - only events after this time",
     )
 
-    before_timestamp: str | None = Field(
+    before_timestamp: datetime | None = Field(
         default=None,
-        description="ISO timestamp - only events before this time",
-        max_length=30,
+        description="DateTime - only events before this time",
     )
 
     # List-based filters
@@ -192,20 +191,15 @@ class ModelFilterConditions(BaseModel):
 
     @field_validator("after_timestamp", "before_timestamp")
     @classmethod
-    def validate_timestamp(cls, v: str | None) -> str | None:
-        """Validate ISO timestamp format."""
+    def validate_timestamp(cls, v: datetime | None) -> datetime | None:
+        """Validate datetime object."""
         if v is not None:
-            v = v.strip()
-            if not v:
-                return None
+            # Ensure datetime is timezone-aware or convert to UTC
+            if v.tzinfo is None:
+                # If naive datetime, treat as UTC
+                from datetime import timezone
 
-            # Basic ISO timestamp validation
-            if len(v) < 19:  # Minimum "YYYY-MM-DDTHH:MM:SS"
-                raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Invalid timestamp '{v}'. Must be in ISO format (YYYY-MM-DDTHH:MM:SS[.mmm]Z)",
-                )
-
+                v = v.replace(tzinfo=timezone.utc)
         return v
 
     @field_validator(
@@ -237,36 +231,3 @@ class ModelFilterConditions(BaseModel):
         str_strip_whitespace=True,
         use_enum_values=True,
     )
-
-    def to_dict(self) -> dict[str, str | int | float | bool | list[str] | None]:
-        """
-        Convert to dictionary format for serialization.
-
-        Returns:
-            Dictionary representation with type information preserved
-        """
-        return self.model_dump(exclude_none=True, mode="python")
-
-    @classmethod
-    def from_dict(
-        cls, data: dict[str, str | int | float | bool | list[str] | None]
-    ) -> "ModelFilterConditions":
-        """
-        Create from dictionary data with validation.
-
-        Args:
-            data: Dictionary containing filter conditions
-
-        Returns:
-            Validated ModelFilterConditions instance
-
-        Raises:
-            OnexError: If validation fails
-        """
-        try:
-            return cls.model_validate(data)
-        except Exception as e:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Filter conditions validation failed: {e}",
-            ) from e

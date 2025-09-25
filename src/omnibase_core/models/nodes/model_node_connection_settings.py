@@ -66,7 +66,10 @@ class ModelNodeConnectionSettings(BaseModel):
         if not self.is_fully_configured():
             return None
 
-        protocol_prefix = self.protocol.value.lower()  # type: ignore
+        # Safe access to protocol value (already checked in is_fully_configured)
+        if self.protocol is None:
+            return None
+        protocol_prefix = self.protocol.value.lower()
         return f"{protocol_prefix}://{self.endpoint}:{self.port}"
 
     def get_connection_summary(self) -> ModelNodeConnectionSummaryType:

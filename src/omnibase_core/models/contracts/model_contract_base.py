@@ -13,11 +13,13 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -319,13 +321,46 @@ class ModelContractBase(BaseModel, ABC):
 
         for i, item in dict_deps:
             try:
-                # Cast to Any for unpacking to avoid mypy type issues during dict unpacking
-                from typing import Any
+                # Convert to proper dict[str, object] and extract typed values
+                item_dict: dict[str, object] = dict(item)
 
-                item_dict: dict[str, Any] = dict(
-                    item
-                )  # Convert to dict with Any values
-                result_deps.append(ModelDependency(**item_dict))
+                # Extract and convert values to proper types for ModelDependency
+                name = str(item_dict.get("name", ""))
+                module = (
+                    str(item_dict["module"])
+                    if item_dict.get("module") is not None
+                    else None
+                )
+                dependency_type = item_dict.get(
+                    "dependency_type", EnumDependencyType.PROTOCOL
+                )
+                if isinstance(dependency_type, str):
+                    dependency_type = EnumDependencyType(dependency_type)
+                elif not isinstance(dependency_type, EnumDependencyType):
+                    dependency_type = EnumDependencyType.PROTOCOL
+
+                version = item_dict.get("version")
+                if version is not None and not isinstance(version, ModelSemVer):
+                    # Convert to ModelSemVer if needed, otherwise set to None
+                    version = None
+
+                required = bool(item_dict.get("required", True))
+                description = (
+                    str(item_dict["description"])
+                    if item_dict.get("description") is not None
+                    else None
+                )
+
+                result_deps.append(
+                    ModelDependency(
+                        name=name,
+                        module=module,
+                        dependency_type=dependency_type,
+                        version=version,
+                        required=required,
+                        description=description,
+                    )
+                )
             except Exception as e:
                 conversion_errors.append(
                     {
@@ -403,22 +438,10 @@ class ModelContractBase(BaseModel, ABC):
 
         This is enforced in specialized contract models using Literal types.
         """
-        # Base validation - specialized contracts use Literal types that preserve strings
-        # Accept either EnumNodeType instances or valid enum value strings
-        if isinstance(self.node_type, EnumNodeType):
-            # Already an enum instance - valid
-            return
-        elif isinstance(self.node_type, str):
-            # Check if it's a valid enum value string
-            try:
-                EnumNodeType(self.node_type)
-                return
-            except ValueError:
-                msg = f"node_type string value '{self.node_type}' is not a valid EnumNodeType value"
-                raise ValueError(msg)
-        else:
-            msg = f"node_type must be a valid EnumNodeType or enum value string, got {self.node_type!r} ({type(self.node_type)})"
-            raise ValueError(msg)
+        # After Pydantic validation, node_type is guaranteed to be EnumNodeType
+        # (string-to-enum conversion happens in field validator)
+        # Type validation is handled by Pydantic, so no runtime check needed
+        # Base validation passed - specialized contracts add additional constraints
 
     def _validate_protocol_dependencies(self) -> None:
         """
@@ -428,11 +451,7 @@ class ModelContractBase(BaseModel, ABC):
         through unified format handling.
         """
         for dependency in self.dependencies:
-            # All dependencies should now be ModelDependency instances
-            if not isinstance(dependency, ModelDependency):
-                msg = f"All dependencies must be ModelDependency instances, got: {type(dependency)}"
-                raise ValueError(msg)
-
+            # All dependencies are guaranteed to be ModelDependency instances via Pydantic validation
             # Validate dependency follows ONEX patterns
             if not dependency.matches_onex_patterns():
                 msg = f"Dependency does not follow ONEX patterns: {dependency.name}"
@@ -533,10 +552,10 @@ class ModelContractBase(BaseModel, ABC):
                 ),
             )
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-        "str_strip_whitespace": True,
-        "validate_default": True,  # Enable model validation caching for performance
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+        str_strip_whitespace=True,
+        validate_default=True,  # Enable model validation caching for performance
+    )

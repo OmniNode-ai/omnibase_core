@@ -9,7 +9,7 @@ data conflicts during reduction operations.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelConflictResolutionConfig(BaseModel):
@@ -38,4 +38,11 @@ class ModelConflictResolutionConfig(BaseModel):
     conflict_logging_enabled: bool = Field(
         default=True,
         description="Enable detailed conflict logging",
+    )
+
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        str_strip_whitespace=True,
+        use_enum_values=False,
     )

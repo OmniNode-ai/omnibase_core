@@ -154,36 +154,3 @@ class ModelWorkflowStep(BaseModel):
         str_strip_whitespace=True,
         use_enum_values=True,
     )
-
-    def to_dict(self) -> dict[str, str | int | bool | list[str] | None]:
-        """
-        Convert to dictionary format for serialization.
-
-        Returns:
-            Dictionary representation with type information preserved
-        """
-        return self.model_dump(exclude_none=True, mode="python")
-
-    @classmethod
-    def from_dict(
-        cls, data: dict[str, str | int | bool | list[str] | None]
-    ) -> "ModelWorkflowStep":
-        """
-        Create from dictionary data with validation.
-
-        Args:
-            data: Dictionary containing step configuration
-
-        Returns:
-            Validated ModelWorkflowStep instance
-
-        Raises:
-            OnexError: If validation fails
-        """
-        try:
-            return cls.model_validate(data)
-        except Exception as e:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Workflow step validation failed: {e}",
-            ) from e

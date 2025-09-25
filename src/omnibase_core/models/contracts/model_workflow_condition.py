@@ -9,7 +9,17 @@ ZERO TOLERANCE: No string conditions or Any types allowed.
 
 from typing import Any, Union, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+
+# Type alias for recursive context data structure
+ContextValue = Union[
+    str,
+    int,
+    float,
+    bool,
+    list[Union[str, int, float, bool]],
+    dict[str, Any],  # Using Any for recursive dict values to avoid type complexity
+]
 
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
@@ -150,10 +160,17 @@ class ModelWorkflowCondition(BaseModel):
             )
 
         except KeyError as e:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Field '{self.field_name}' not found in context data",
-            ) from e
+            # Handle missing fields specially for EXISTS/NOT_EXISTS operators
+            if self.operator == EnumConditionOperator.EXISTS:
+                return False  # Field doesn't exist, so EXISTS is False
+            elif self.operator == EnumConditionOperator.NOT_EXISTS:
+                return True  # Field doesn't exist, so NOT_EXISTS is True
+            else:
+                # For other operators, missing fields are an error
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Field '{self.field_name}' not found in context data",
+                ) from e
 
     def _extract_field_value(
         self,
@@ -176,7 +193,7 @@ class ModelWorkflowCondition(BaseModel):
         | dict[str, str | int | float | bool]
     ):
         """Extract field value supporting nested field paths with dot notation."""
-        current_value: Any = context_data
+        current_value: ContextValue = context_data
 
         for field_part in field_path.split("."):
             if isinstance(current_value, dict) and field_part in current_value:
@@ -184,15 +201,7 @@ class ModelWorkflowCondition(BaseModel):
             else:
                 raise KeyError(f"Field path '{field_path}' not found")
 
-        return cast(
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool],
-            current_value,
-        )
+        return current_value
 
     def _extract_container_value(
         self,
@@ -345,3 +354,9 @@ class ModelWorkflowCondition(BaseModel):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Cannot use {operator.value} operator with {type(expected_value).__name__} - expected value must be string or list",
             )
+
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=True,  # Convert enums to strings for serialization consistency
+        validate_assignment=True,
+    )

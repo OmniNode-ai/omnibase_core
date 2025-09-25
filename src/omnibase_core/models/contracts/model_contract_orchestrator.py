@@ -12,10 +12,9 @@ Specialized contract model for NodeOrchestrator implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -259,8 +258,8 @@ class ModelContractOrchestrator(ModelContractBase):
 
         return v
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=True,
+        validate_assignment=True,
+    )
