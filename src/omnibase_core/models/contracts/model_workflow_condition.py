@@ -268,9 +268,9 @@ class ModelWorkflowCondition(BaseModel):
             case EnumConditionOperator.IS_FALSE:
                 return bool(actual_value) is False
             case EnumConditionOperator.EXISTS:
-                return actual_value is not None
+                return True  # Field exists in context (regardless of value)
             case EnumConditionOperator.NOT_EXISTS:
-                return actual_value is None
+                return False  # Field exists in context (regardless of value)
             case _:
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,

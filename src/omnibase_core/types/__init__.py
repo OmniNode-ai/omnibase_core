@@ -25,6 +25,7 @@ from .typed_dict_node_resource_constraint_kwargs import (
 )
 from .typed_dict_output_format_options_kwargs import TypedDictOutputFormatOptionsKwargs
 from .typed_dict_performance_metric_data import TypedDictPerformanceMetricData
+from .typed_dict_property_metadata import TypedDictPropertyMetadata
 from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
 from .typed_dict_ssl_context_options import TypedDictSSLContextOptions
 from .typed_dict_trace_info_data import TypedDictTraceInfoData
@@ -44,6 +45,7 @@ __all__ = [
     "TypedDictNodeResourceConstraintKwargs",
     "TypedDictOutputFormatOptionsKwargs",
     "TypedDictPerformanceMetricData",
+    "TypedDictPropertyMetadata",
     "TypedDictResultFactoryKwargs",
     "TypedDictSSLContextOptions",
     "TypedDictTraceInfoData",

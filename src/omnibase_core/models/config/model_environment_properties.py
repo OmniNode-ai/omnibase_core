@@ -14,9 +14,10 @@ from pydantic import BaseModel, Field
 # Type variable for generic property handling
 T = TypeVar("T")
 
+from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
+
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
-    ModelPropertyMetadata,
 )
 from .model_property_value import ModelPropertyValue
 
@@ -34,7 +35,7 @@ class ModelEnvironmentProperties(BaseModel):
         description="Custom property values",
     )
 
-    property_metadata: dict[str, ModelPropertyMetadata] = Field(
+    property_metadata: dict[str, TypedDictPropertyMetadata] = Field(
         default_factory=dict,
         description="Metadata about each property (description, source, etc.)",
     )
