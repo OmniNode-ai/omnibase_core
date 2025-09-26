@@ -299,10 +299,12 @@ class ModelFunctionNodeMetadata(BaseModel):
             "deprecation": dep_summary,
             "relationships": rel_converted,
             "documentation_quality_score": self.get_documentation_quality_score(),
-            "is_fully_documented": self.is_recently_updated(),  # Map to boolean field
-            "deprecation_status": (
-                "validated" if self.last_validated is not None else "unvalidated"
+            # Consider "fully documented" based on documentation, not recency
+            "is_fully_documented": (
+                doc_filtered.get("has_documentation", False)
+                and doc_filtered.get("has_examples", False)
             ),
+            "deprecation_status": self.deprecation.get_deprecation_status().value,
         }
 
     @classmethod

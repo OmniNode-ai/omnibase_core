@@ -35,8 +35,16 @@ from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 
 # Type alias for validation rules input - includes all possible input types
+# Using ModelSchemaValue instead of Any for ONEX compliance
 ValidationRulesInput = Union[
-    None, dict[str, Any], list[Any], "ModelValidationRules", str, int, float, bool
+    None,
+    dict[str, ModelSchemaValue],
+    list[ModelSchemaValue],
+    "ModelValidationRules",
+    str,
+    int,
+    float,
+    bool,
 ]
 
 
@@ -142,13 +150,17 @@ class ModelContractCompute(ModelContractBase):
             return ModelValidationRules()
 
         if isinstance(v, dict):
-            # Convert dict to ModelValidationRules
-            return ModelValidationRules(**v)
+            # Convert dict of ModelSchemaValue to raw values for ModelValidationRules
+            raw_dict = {k: schema_val.to_value() for k, schema_val in v.items()}
+            return ModelValidationRules(**raw_dict)
 
         if isinstance(v, list):
-            # Convert list to ModelValidationRules with constraint_definitions
-            # Create constraint_definitions from list
-            constraints = {f"rule_{i}": str(rule) for i, rule in enumerate(v)}
+            # Convert list of ModelSchemaValue to ModelValidationRules with constraint_definitions
+            # Create constraint_definitions from list, extracting raw values from ModelSchemaValue
+            constraints = {
+                f"rule_{i}": str(rule.to_value() if hasattr(rule, "to_value") else rule)
+                for i, rule in enumerate(v)
+            }
             return ModelValidationRules(constraint_definitions=constraints)
 
         # If already ModelValidationRules, return as is

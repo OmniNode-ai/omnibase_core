@@ -200,7 +200,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             List of items that have the specified tag
         """
         return self.filter_items(
-            lambda item: hasattr(item, "tags") and tag in getattr(item, "tags", []),
+            lambda item: tag in (getattr(item, "tags", None) or []),
         )
 
     def item_count(self) -> int:

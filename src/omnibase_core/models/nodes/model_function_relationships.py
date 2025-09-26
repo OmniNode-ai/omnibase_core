@@ -98,7 +98,9 @@ class ModelFunctionRelationships(BaseModel):
             "has_related_functions": self.has_related_functions(),
             "has_tags": self.has_tags(),
             "has_categories": self.has_categories(),
-            "primary_category": self.categories[0] if self.categories else "None",
+            "primary_category": (
+                self.categories[0].value if self.categories else "None"
+            ),
         }
 
     @classmethod

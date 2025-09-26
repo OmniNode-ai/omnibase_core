@@ -90,8 +90,8 @@ class ModelNodeCoreInfo(BaseModel):
         return bool(self.description)
 
     def has_author(self) -> bool:
-        """Check if node has an author."""
-        return bool(self.author)
+        """Check if node has any author identifier or display name."""
+        return bool(self.author_id or self.author_display_name)
 
     def get_core_summary(self) -> ModelCoreSummary:
         """Get core node information summary."""
