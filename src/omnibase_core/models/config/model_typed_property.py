@@ -7,11 +7,16 @@ typed property with validation in the environment property system.
 
 from __future__ import annotations
 
-from typing import TypeVar, cast
+from typing import TypeVar, Union, cast
 
-from omnibase_spi.protocols.types.protocol_core_types import (
-    ProtocolSupportedPropertyValue,
-)
+# Handle optional omnibase_spi dependency
+try:
+    from omnibase_spi.protocols.types.protocol_core_types import (
+        ProtocolSupportedPropertyValue,
+    )
+except ImportError:
+    # Fallback type for development when SPI unavailable
+    ProtocolSupportedPropertyValue = Union[str, int, float, bool, dict, list, object]
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
@@ -19,9 +24,9 @@ from omnibase_core.enums.enum_property_type import EnumPropertyType
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
 
-# Use Any for property values since we support many types through the protocol
+# Use object for property values since we support many types through the protocol
 # All types must implement ProtocolSupportedPropertyValue (convertible to string)
-# Using explicit Any type instead of type alias per ONEX standards
+# Using explicit object type instead of Any per ONEX standards
 
 # Type variable for generic property handling
 T = TypeVar("T", bound=ProtocolSupportedPropertyValue)

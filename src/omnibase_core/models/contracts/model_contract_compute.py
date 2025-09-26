@@ -11,7 +11,7 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Union, assert_never
+from typing import Union, assert_never
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -19,12 +19,22 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
+from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
+from omnibase_core.models.contracts.model_performance_requirements import (
+    ModelPerformanceRequirements,
+)
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
+
+# Avoid circular import - import ValidationRulesConverter at function level
 from omnibase_core.models.contracts.subcontracts.model_caching_subcontract import (
     ModelCachingSubcontract,
 )
 from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
     ModelEventTypeSubcontract,
+)
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.utils.model_subcontract_constraint_validator import (
+    ModelSubcontractConstraintValidator,
 )
 
 # Import configuration models from individual files
@@ -59,9 +69,98 @@ class ModelContractCompute(ModelContractBase):
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         """Initialize compute contract."""
-        super().__init__(**data)
+        # Extract required parameters from data
+        data_dict = dict(data)  # Convert to mutable dict for type safety
+
+        # Required fields with type validation
+        name = data_dict.pop("name", None)
+        assert isinstance(name, str), f"name must be str, got {type(name)}"
+
+        version = data_dict.pop("version", None)
+        assert isinstance(
+            version, ModelSemVer
+        ), f"version must be ModelSemVer, got {type(version)}"
+
+        description = data_dict.pop("description", None)
+        assert isinstance(
+            description, str
+        ), f"description must be str, got {type(description)}"
+
+        node_type = data_dict.pop("node_type", None)
+        assert isinstance(
+            node_type, EnumNodeType
+        ), f"node_type must be EnumNodeType, got {type(node_type)}"
+
+        input_model = data_dict.pop("input_model", None)
+        assert isinstance(
+            input_model, str
+        ), f"input_model must be str, got {type(input_model)}"
+
+        output_model = data_dict.pop("output_model", None)
+        assert isinstance(
+            output_model, str
+        ), f"output_model must be str, got {type(output_model)}"
+
+        # Optional fields with type validation
+        performance = data_dict.pop("performance", None)
+        if performance is not None and not isinstance(
+            performance, ModelPerformanceRequirements
+        ):
+            performance = ModelPerformanceRequirements()
+
+        lifecycle = data_dict.pop("lifecycle", None)
+        if lifecycle is not None and not isinstance(lifecycle, ModelLifecycleConfig):
+            lifecycle = ModelLifecycleConfig()
+
+        dependencies = data_dict.pop("dependencies", None)
+        if dependencies is not None and not isinstance(dependencies, list):
+            dependencies = []
+
+        protocol_interfaces = data_dict.pop("protocol_interfaces", None)
+        if protocol_interfaces is not None and not isinstance(
+            protocol_interfaces, list
+        ):
+            protocol_interfaces = []
+
+        validation_rules = data_dict.pop("validation_rules", None)
+        if validation_rules is not None and not isinstance(
+            validation_rules, ModelValidationRules
+        ):
+            validation_rules = ModelValidationRules()
+
+        author = data_dict.pop("author", None)
+        if author is not None and not isinstance(author, (str, type(None))):
+            author = None
+
+        documentation_url = data_dict.pop("documentation_url", None)
+        if documentation_url is not None and not isinstance(
+            documentation_url, (str, type(None))
+        ):
+            documentation_url = None
+
+        tags = data_dict.pop("tags", None)
+        if tags is not None and not isinstance(tags, list):
+            tags = []
+
+        # Call parent constructor with extracted and validated parameters
+        super().__init__(
+            name=name,
+            version=version,
+            description=description,
+            node_type=node_type,
+            input_model=input_model,
+            output_model=output_model,
+            performance=performance or ModelPerformanceRequirements(),
+            lifecycle=lifecycle or ModelLifecycleConfig(),
+            dependencies=dependencies or [],
+            protocol_interfaces=protocol_interfaces or [],
+            validation_rules=validation_rules or ModelValidationRules(),
+            author=author,
+            documentation_url=documentation_url,
+            tags=tags or [],
+        )
 
     # Override parent node_type with architecture-specific type
     @field_validator("node_type", mode="before")
@@ -145,36 +244,13 @@ class ModelContractCompute(ModelContractBase):
         cls,
         v: ValidationRulesInput,
     ) -> ModelValidationRules:
-        """Validate and convert flexible validation rules format."""
-        if v is None:
-            return ModelValidationRules()
+        """Validate and convert flexible validation rules format using shared utility."""
+        # Local import to avoid circular import
+        from omnibase_core.models.utils.model_validation_rules_converter import (
+            ModelValidationRulesConverter,
+        )
 
-        if isinstance(v, dict):
-            # Convert dict of ModelSchemaValue to raw values for ModelValidationRules
-            raw_dict = {k: schema_val.to_value() for k, schema_val in v.items()}
-            return ModelValidationRules(**raw_dict)
-
-        if isinstance(v, list):
-            # Convert list of ModelSchemaValue to ModelValidationRules with constraint_definitions
-            # Create constraint_definitions from list, extracting raw values from ModelSchemaValue
-            constraints = {
-                f"rule_{i}": str(rule.to_value() if hasattr(rule, "to_value") else rule)
-                for i, rule in enumerate(v)
-            }
-            return ModelValidationRules(constraint_definitions=constraints)
-
-        # If already ModelValidationRules, return as is
-        if isinstance(v, ModelValidationRules):
-            return v
-
-        # If it's a primitive value, wrap it in ModelValidationRules
-        if isinstance(v, (str, int, float, bool)):
-            # Convert primitive to ModelValidationRules with single constraint
-            constraints = {"rule_0": str(v)}
-            return ModelValidationRules(constraint_definitions=constraints)
-
-        # This should never be reached due to exhaustive type checking
-        assert_never(v)
+        return ModelValidationRulesConverter.convert_to_validation_rules(v)
 
     # === CORE COMPUTATION FUNCTIONALITY ===
     # These fields define the core computation behavior
@@ -248,11 +324,28 @@ class ModelContractCompute(ModelContractBase):
         Raises:
             ValidationError: If compute-specific validation fails
         """
-        # Validate algorithm factors are defined
+        # Validate algorithm configuration
+        self._validate_compute_algorithm_config()
+
+        # Validate performance and caching configuration
+        self._validate_compute_performance_config()
+
+        # Validate infrastructure patterns if present
+        self._validate_compute_infrastructure_config()
+
+        # Validate subcontract constraints using shared utility
+        ModelSubcontractConstraintValidator.validate_node_subcontract_constraints(
+            "compute", self.model_dump(), original_contract_data
+        )
+
+    def _validate_compute_algorithm_config(self) -> None:
+        """Validate algorithm configuration for compute nodes."""
         if not self.algorithm.factors:
             msg = "Compute node must define at least one algorithm factor"
             raise ValueError(msg)
 
+    def _validate_compute_performance_config(self) -> None:
+        """Validate performance, parallel processing, and caching configuration."""
         # Validate parallel processing compatibility
         if (
             self.parallel_processing.enabled
@@ -273,10 +366,10 @@ class ModelContractCompute(ModelContractBase):
         # Validate performance requirements for compute nodes
         if not self.performance.single_operation_max_ms:
             msg = "Compute nodes must specify single_operation_max_ms performance requirement"
-            raise ValueError(
-                msg,
-            )
+            raise ValueError(msg)
 
+    def _validate_compute_infrastructure_config(self) -> None:
+        """Validate infrastructure pattern configuration."""
         # Validate tool specification if present (infrastructure pattern)
         if self.tool_specification:
             required_fields = ["tool_name", "main_tool_class"]
@@ -284,63 +377,6 @@ class ModelContractCompute(ModelContractBase):
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
                     raise ValueError(msg)
-
-        # Validate subcontract constraints
-        self.validate_subcontract_constraints(original_contract_data)
-
-    def validate_subcontract_constraints(
-        self,
-        original_contract_data: dict[str, object] | None = None,
-    ) -> None:
-        """
-        Validate COMPUTE node subcontract architectural constraints.
-
-        COMPUTE nodes are stateless and should not have state management,
-        aggregation, or state transition subcontracts.
-
-        Args:
-            original_contract_data: The original contract YAML data
-        """
-        # Use lazy evaluation for expensive model_dump operation
-        if original_contract_data is not None:
-            contract_data = original_contract_data
-        else:
-            # Use model_dump to get contract data for validation
-            contract_data = self.model_dump()
-        violations = []
-
-        # COMPUTE nodes cannot have state management
-        if "state_management" in contract_data:
-            violations.append(
-                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_management subcontracts",
-            )
-            violations.append("   💡 Use REDUCER nodes for stateful operations")
-
-        # COMPUTE nodes cannot have aggregation subcontracts
-        if "aggregation" in contract_data:
-            violations.append(
-                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have aggregation subcontracts",
-            )
-            violations.append("   💡 Use REDUCER nodes for data aggregation")
-
-        # COMPUTE nodes cannot have state transitions
-        if "state_transitions" in contract_data:
-            violations.append(
-                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_transitions subcontracts",
-            )
-            violations.append("   💡 Use REDUCER nodes for state machine workflows")
-
-        # All nodes should have event_type subcontracts
-        if "event_type" not in contract_data:
-            violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
-            )
-            violations.append(
-                "   💡 Add event_type configuration for event-driven architecture",
-            )
-
-        if violations:
-            raise ValueError("\n".join(violations))
 
     @field_validator("algorithm")
     @classmethod

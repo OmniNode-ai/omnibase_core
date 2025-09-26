@@ -7,11 +7,16 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar, Union
 
-from omnibase_spi.protocols.types.protocol_core_types import (
-    ProtocolSupportedPropertyValue,
-)
+# Handle optional omnibase_spi dependency
+try:
+    from omnibase_spi.protocols.types.protocol_core_types import (
+        ProtocolSupportedPropertyValue,
+    )
+except ImportError:
+    # Fallback type for development when SPI unavailable
+    ProtocolSupportedPropertyValue = Union[str, int, float, bool, dict, list, object]
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -79,11 +84,10 @@ class ModelPropertyCollection(BaseModel):
         """Create ModelPropertyValue using type-specific factory methods."""
         # Define type handlers as a list of (checker_function, factory_method) tuples
         # Order matches original elif chain to preserve existing behavior
-        from typing import Any
+        TypeChecker = Callable[[Any], bool]
+        FactoryMethod = Callable[[Any, str | None], ModelPropertyValue]
 
-        type_handlers: list[
-            tuple[Callable[[T], bool], Callable[[Any, str | None], ModelPropertyValue]]
-        ] = [
+        type_handlers: list[tuple[TypeChecker, FactoryMethod]] = [
             (lambda v: isinstance(v, str), ModelPropertyValue.from_string),
             (lambda v: isinstance(v, int), ModelPropertyValue.from_int),
             (lambda v: isinstance(v, float), ModelPropertyValue.from_float),

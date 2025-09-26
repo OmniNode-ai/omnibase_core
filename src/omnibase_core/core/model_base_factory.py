@@ -7,7 +7,7 @@ Abstract base class for typed factories following ONEX one-model-per-file archit
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ class BaseFactory(ABC, BaseModel, Generic[T]):
     """Abstract base class for typed factories."""
 
     @abstractmethod
-    def create(self, **kwargs: Any) -> T:
+    def create(self, **kwargs: object) -> T:
         """Create an object of type T."""
         ...
 

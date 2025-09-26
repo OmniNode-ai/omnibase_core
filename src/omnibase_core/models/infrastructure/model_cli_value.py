@@ -7,7 +7,7 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Union
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -33,11 +33,13 @@ class ModelCliValue(BaseModel):
     """
 
     value_type: EnumCliValueType = Field(description="Type of the CLI value")
-    raw_value: Any = Field(description="Raw value data")
+    raw_value: Union[
+        str, int, float, bool, dict[str, ModelSchemaValue], list[object], None
+    ] = Field(description="Raw value data")
 
     @field_validator("raw_value")
     @classmethod
-    def validate_raw_value(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_raw_value(cls, v: object, info: ValidationInfo) -> object:
         """Validate raw value matches declared type."""
         if "value_type" not in info.data:
             return v
@@ -103,7 +105,7 @@ class ModelCliValue(BaseModel):
         return cls(value_type=EnumCliValueType.BOOLEAN, raw_value=value)
 
     @classmethod
-    def from_list(cls, value: list[Any]) -> ModelCliValue:
+    def from_list(cls, value: list[object]) -> ModelCliValue:
         """Create CLI value from list."""
         return cls(value_type=EnumCliValueType.LIST, raw_value=value)
 
@@ -118,7 +120,7 @@ class ModelCliValue(BaseModel):
         return cls(value_type=EnumCliValueType.NULL, raw_value=None)
 
     @classmethod
-    def from_any(cls, value: Any) -> ModelCliValue:
+    def from_any(cls, value: object) -> ModelCliValue:
         """Create CLI value from any Python value with automatic type detection."""
         if value is None:
             return cls.from_null()
@@ -140,7 +142,7 @@ class ModelCliValue(BaseModel):
         # Convert unknown types to string representation
         return cls.from_string(str(value))
 
-    def to_python_value(self) -> Any:
+    def to_python_value(self) -> object:
         """Convert back to Python native value."""
         return self.raw_value
 

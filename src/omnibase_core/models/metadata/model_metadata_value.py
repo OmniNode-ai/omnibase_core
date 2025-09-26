@@ -7,8 +7,6 @@ with structured validation and proper type handling for metadata fields.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
@@ -17,7 +15,7 @@ from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-# Use Any for internal storage with field validator ensuring proper types
+# Use object for internal storage with field validator ensuring proper types
 # This avoids primitive union violations while maintaining type safety through validation
 
 
@@ -29,8 +27,8 @@ class ModelMetadataValue(BaseModel):
     that maintains type information for metadata fields.
     """
 
-    # Value storage with type tracking - uses Any with validator for type safety
-    value: Any = Field(
+    # Value storage with type tracking - uses object with validator for type safety
+    value: object = Field(
         description="The actual metadata value",
     )
 
@@ -51,9 +49,9 @@ class ModelMetadataValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
         """Validate that value matches its declared type."""
-        if hasattr(info, "data") and "value_type" in info.data:
+        if info.data is not None and "value_type" in info.data:
             value_type = info.data["value_type"]
 
             # Type validation based on declared type
@@ -152,7 +150,7 @@ class ModelMetadataValue(BaseModel):
         )
 
     @classmethod
-    def from_any(cls, value: Any, source: str | None = None) -> ModelMetadataValue:
+    def from_any(cls, value: object, source: str | None = None) -> ModelMetadataValue:
         """Create metadata value from any supported type."""
         if isinstance(value, str):
             return cls.from_string(value, source)
@@ -185,11 +183,40 @@ class ModelMetadataValue(BaseModel):
     def as_int(self) -> int:
         """Get value as integer."""
         if self.value_type == EnumCliValueType.INTEGER:
+            if not isinstance(self.value, (int, float, str)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Expected numeric or string type, got {type(self.value)}",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_types": ModelSchemaValue.from_value(
+                                "int, float, str"
+                            ),
+                            "actual_type": ModelSchemaValue.from_value(
+                                str(type(self.value))
+                            ),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
             return int(self.value)
         if isinstance(self.value, (int, float)):
             return int(self.value)
         if isinstance(self.value, str):
-            return int(self.value)
+            try:
+                return int(self.value)
+            except ValueError:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Cannot convert string '{self.value}' to int",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "source_type": ModelSchemaValue.from_value("str"),
+                            "target_type": ModelSchemaValue.from_value("int"),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to int",
@@ -205,9 +232,40 @@ class ModelMetadataValue(BaseModel):
     def as_float(self) -> float:
         """Get value as float."""
         if self.value_type in (EnumCliValueType.FLOAT, EnumCliValueType.INTEGER):
+            if not isinstance(self.value, (int, float, str)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Expected numeric or string type, got {type(self.value)}",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_types": ModelSchemaValue.from_value(
+                                "int, float, str"
+                            ),
+                            "actual_type": ModelSchemaValue.from_value(
+                                str(type(self.value))
+                            ),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
+            return float(self.value)
+        if isinstance(self.value, (int, float)):
             return float(self.value)
         if isinstance(self.value, str):
-            return float(self.value)
+            try:
+                return float(self.value)
+            except ValueError:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Cannot convert string '{self.value}' to float",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "source_type": ModelSchemaValue.from_value("str"),
+                            "target_type": ModelSchemaValue.from_value("float"),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to float",
@@ -228,7 +286,7 @@ class ModelMetadataValue(BaseModel):
             return self.value.lower() in ("true", "1", "yes", "on")
         return bool(self.value)
 
-    def to_python_value(self) -> Any:
+    def to_python_value(self) -> object:
         """Get the underlying Python value."""
         return self.value
 

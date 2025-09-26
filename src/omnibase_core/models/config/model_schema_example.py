@@ -7,7 +7,7 @@ replacing dict[str, Any] return types with structured models.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -62,7 +62,7 @@ class ModelSchemaExample(BaseModel):
         """Check if example contains any data."""
         return not self.example_data.is_empty()
 
-    def get_value(self, key: str, default: Any) -> Any:
+    def get_value(self, key: str, default: object) -> object:
         """
         Get typed value with proper default handling.
 
@@ -87,7 +87,7 @@ class ModelSchemaExample(BaseModel):
 
         return default
 
-    def set_value(self, key: str, value: Any) -> None:
+    def set_value(self, key: str, value: object) -> None:
         """
         Set typed value in example data.
 
@@ -103,7 +103,7 @@ class ModelSchemaExample(BaseModel):
         """Get all keys from example data."""
         return list(self.example_data.get_all_custom_fields().keys())
 
-    def get_raw_value(self, key: str) -> Any:
+    def get_raw_value(self, key: str) -> object:
         """
         Get raw value without type checking.
 
@@ -119,7 +119,7 @@ class ModelSchemaExample(BaseModel):
         schema_value = schema_value_result.unwrap()
         return schema_value.to_value()
 
-    def set_raw_value(self, key: str, value: Any) -> None:
+    def set_raw_value(self, key: str, value: object) -> None:
         """
         Set raw value (any type) in example data.
 

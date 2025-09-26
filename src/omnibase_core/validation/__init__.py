@@ -25,8 +25,6 @@ Usage Examples:
     python -m omnibase_core.validation all
 """
 
-from typing import Any
-
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
 
@@ -82,7 +80,8 @@ def validate_patterns(
 
 
 def validate_all(
-    directory_path: str = "src/", **kwargs: Any
+    directory_path: str = "src/",
+    **kwargs: object,
 ) -> dict[str, ValidationResult]:
     """Run all validations and return results."""
     from pathlib import Path
@@ -92,24 +91,24 @@ def validate_all(
 
 
 __all__ = [
-    # Main validation functions (recommended)
-    "validate_architecture",
-    "validate_union_usage",
-    "validate_contracts",
-    "validate_patterns",
-    "validate_all",
-    # Individual module functions
-    "validate_architecture_directory",
-    "validate_one_model_per_file",
-    "validate_contracts_directory",
-    "validate_yaml_file",
-    "validate_no_manual_yaml",
-    "validate_patterns_directory",
-    "validate_patterns_file",
-    "validate_union_usage_directory",
-    "validate_union_usage_file",
+    "ProtocolInfo",
     # Core classes and types
     "ValidationResult",
     "ValidationSuite",
-    "ProtocolInfo",
+    "validate_all",
+    # Main validation functions (recommended)
+    "validate_architecture",
+    # Individual module functions
+    "validate_architecture_directory",
+    "validate_contracts",
+    "validate_contracts_directory",
+    "validate_no_manual_yaml",
+    "validate_one_model_per_file",
+    "validate_patterns",
+    "validate_patterns_directory",
+    "validate_patterns_file",
+    "validate_union_usage",
+    "validate_union_usage_directory",
+    "validate_union_usage_file",
+    "validate_yaml_file",
 ]

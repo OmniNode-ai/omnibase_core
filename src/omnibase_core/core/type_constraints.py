@@ -6,7 +6,7 @@ and type constraints to replace overly broad generic usage patterns.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
 from omnibase_spi.protocols.types import ProtocolExecutable as Executable
@@ -54,7 +54,7 @@ ErrorType = TypeVar("ErrorType", str, Exception, BaseException)
 
 # Collection types with constraints
 CollectionItemType = TypeVar("CollectionItemType", bound=BaseModel)
-DictValueType = TypeVar("DictValueType", str, int, bool, float, list[Any])
+DictValueType = TypeVar("DictValueType", str, int, bool, float, list[object])
 
 
 # Import abstract base classes from separate files (ONEX one-model-per-file)
@@ -65,37 +65,37 @@ from .model_base_processor import BaseProcessor
 # Type guards for runtime checking
 
 
-def is_serializable(obj: Any) -> bool:
+def is_serializable(obj: object) -> bool:
     """Check if object implements Serializable protocol."""
     return isinstance(obj, Serializable)
 
 
-def is_identifiable(obj: Any) -> bool:
+def is_identifiable(obj: object) -> bool:
     """Check if object implements Identifiable protocol."""
     return isinstance(obj, Identifiable)
 
 
-def is_nameable(obj: Any) -> bool:
+def is_nameable(obj: object) -> bool:
     """Check if object implements Nameable protocol."""
     return isinstance(obj, Nameable)
 
 
-def is_validatable(obj: Any) -> bool:
+def is_validatable(obj: object) -> bool:
     """Check if object implements Validatable protocol."""
     return isinstance(obj, Validatable)
 
 
-def is_configurable(obj: Any) -> bool:
+def is_configurable(obj: object) -> bool:
     """Check if object implements Configurable protocol."""
     return isinstance(obj, Configurable)
 
 
-def is_executable(obj: Any) -> bool:
+def is_executable(obj: object) -> bool:
     """Check if object implements Executable protocol."""
     return isinstance(obj, Executable)
 
 
-def is_metadata_provider(obj: Any) -> bool:
+def is_metadata_provider(obj: object) -> bool:
     """Check if object implements MetadataProvider protocol."""
     return isinstance(obj, MetadataProvider)
 

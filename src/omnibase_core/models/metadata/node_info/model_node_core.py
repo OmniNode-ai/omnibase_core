@@ -102,24 +102,34 @@ class ModelNodeCore(BaseModel):
         patch: int | None = None,
     ) -> None:
         """Update version components."""
-        if major is not None:
-            self.version.major = major
-        if minor is not None:
-            self.version.minor = minor
-        if patch is not None:
-            self.version.patch = patch
+        current_major = self.version.major if major is None else major
+        current_minor = self.version.minor if minor is None else minor
+        current_patch = self.version.patch if patch is None else patch
+
+        # Create a new ModelSemVer since it's frozen
+        object.__setattr__(
+            self,
+            "version",
+            ModelSemVer(major=current_major, minor=current_minor, patch=current_patch),
+        )
 
     def increment_version(self, level: str = "patch") -> None:
         """Increment version level."""
         if level == "major":
-            self.version.major += 1
-            self.version.minor = 0
-            self.version.patch = 0
+            new_version = ModelSemVer(major=self.version.major + 1, minor=0, patch=0)
         elif level == "minor":
-            self.version.minor += 1
-            self.version.patch = 0
+            new_version = ModelSemVer(
+                major=self.version.major, minor=self.version.minor + 1, patch=0
+            )
         else:  # patch
-            self.version.patch += 1
+            new_version = ModelSemVer(
+                major=self.version.major,
+                minor=self.version.minor,
+                patch=self.version.patch + 1,
+            )
+
+        # Create a new ModelSemVer since it's frozen
+        object.__setattr__(self, "version", new_version)
 
     def has_description(self) -> bool:
         """Check if node has a description."""

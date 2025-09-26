@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -34,7 +34,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: str,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[str]:
         """Create a string metric."""
         import hashlib
@@ -50,7 +49,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
     @classmethod
@@ -60,7 +58,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: int,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
         import hashlib
@@ -76,7 +73,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
     @classmethod
@@ -86,7 +82,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: float,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
         import hashlib
@@ -102,7 +97,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
     @classmethod
@@ -112,7 +106,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: bool,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""
         import hashlib
@@ -128,7 +121,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
 

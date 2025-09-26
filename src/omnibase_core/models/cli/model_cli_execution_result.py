@@ -7,7 +7,7 @@ for CLI tool execution operations.
 
 from __future__ import annotations
 
-from typing import Any
+# Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -73,7 +73,7 @@ class ModelCliExecutionResult(BaseModel):
         tool_id: UUID | None = None,
         tool_display_name: str | None = None,
         execution_time_ms: float | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliExecutionResult:
         """
         Create a successful execution result.
@@ -88,8 +88,16 @@ class ModelCliExecutionResult(BaseModel):
         Returns:
             Success result instance
         """
+        # Extract known fields with proper types from kwargs
+        warning_message = kwargs.get("warning_message", None)
+
+        # Type validation for extracted kwargs
+        if warning_message is not None and not isinstance(warning_message, str):
+            warning_message = None
+
         return cls(
             success=True,
+            error_message=None,
             output_data=output_data
             or ModelCliOutputData(
                 stdout="",
@@ -101,7 +109,7 @@ class ModelCliExecutionResult(BaseModel):
             tool_display_name=tool_display_name,
             execution_time_ms=execution_time_ms,
             status_code=0,
-            **kwargs,
+            warning_message=warning_message,
         )
 
     @classmethod
@@ -112,7 +120,7 @@ class ModelCliExecutionResult(BaseModel):
         tool_display_name: str | None = None,
         status_code: int = 1,
         output_data: ModelCliOutputData | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliExecutionResult:
         """
         Create an error execution result.
@@ -122,12 +130,24 @@ class ModelCliExecutionResult(BaseModel):
             tool_id: UUID of tool that failed
             tool_display_name: Human-readable name of tool that failed
             status_code: Numeric error code
-            output_data: Any partial output data
+            output_data: Partial output data if available
             **kwargs: Additional fields
 
         Returns:
             Error result instance
         """
+        # Extract known fields with proper types from kwargs
+        execution_time_ms = kwargs.get("execution_time_ms", None)
+        warning_message = kwargs.get("warning_message", None)
+
+        # Type validation for extracted kwargs
+        if execution_time_ms is not None and not isinstance(
+            execution_time_ms, (int, float)
+        ):
+            execution_time_ms = None
+        if warning_message is not None and not isinstance(warning_message, str):
+            warning_message = None
+
         return cls(
             success=False,
             error_message=error_message,
@@ -141,7 +161,8 @@ class ModelCliExecutionResult(BaseModel):
                 execution_time_ms=0.0,
                 memory_usage_mb=0.0,
             ),
-            **kwargs,
+            execution_time_ms=execution_time_ms,
+            warning_message=warning_message,
         )
 
     model_config = ConfigDict(

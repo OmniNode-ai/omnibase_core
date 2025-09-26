@@ -7,8 +7,6 @@ Each sub-model handles a specific concern area.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
@@ -62,7 +60,7 @@ class ModelCustomConnectionProperties(BaseModel):
         schema_name: str | None = None,
         charset: str | None = None,
         collation: str | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCustomConnectionProperties:
         """Create database connection properties."""
         database_props = ModelDatabaseProperties(
@@ -71,7 +69,41 @@ class ModelCustomConnectionProperties(BaseModel):
             charset=charset,
             collation=collation,
         )
-        return cls(database=database_props, **kwargs)
+
+        # Extract known parameters from kwargs and validate types
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
+        message_queue = kwargs_dict.pop("message_queue", None)
+        if message_queue is not None and not isinstance(
+            message_queue, ModelMessageQueueProperties
+        ):
+            message_queue = ModelMessageQueueProperties()
+
+        cloud_service = kwargs_dict.pop("cloud_service", None)
+        if cloud_service is not None and not isinstance(
+            cloud_service, ModelCloudServiceProperties
+        ):
+            cloud_service = ModelCloudServiceProperties()
+
+        performance = kwargs_dict.pop("performance", None)
+        if performance is not None and not isinstance(
+            performance, ModelPerformanceProperties
+        ):
+            performance = ModelPerformanceProperties()
+
+        custom_properties = kwargs_dict.pop("custom_properties", None)
+        if custom_properties is not None and not isinstance(
+            custom_properties, ModelCustomProperties
+        ):
+            custom_properties = ModelCustomProperties()
+
+        # Call constructor with explicit parameters
+        return cls(
+            database=database_props,
+            message_queue=message_queue or ModelMessageQueueProperties(),
+            cloud_service=cloud_service or ModelCloudServiceProperties(),
+            performance=performance or ModelPerformanceProperties(),
+            custom_properties=custom_properties or ModelCustomProperties(),
+        )
 
     @classmethod
     def create_queue_connection(
@@ -80,7 +112,7 @@ class ModelCustomConnectionProperties(BaseModel):
         exchange_name: str | None = None,
         routing_key: str | None = None,
         durable: bool | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCustomConnectionProperties:
         """Create message queue connection properties."""
         queue_props = ModelMessageQueueProperties(
@@ -89,7 +121,39 @@ class ModelCustomConnectionProperties(BaseModel):
             routing_key=routing_key,
             durable=durable,
         )
-        return cls(message_queue=queue_props, **kwargs)
+
+        # Extract known parameters from kwargs and validate types
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
+        database = kwargs_dict.pop("database", None)
+        if database is not None and not isinstance(database, ModelDatabaseProperties):
+            database = ModelDatabaseProperties()
+
+        cloud_service = kwargs_dict.pop("cloud_service", None)
+        if cloud_service is not None and not isinstance(
+            cloud_service, ModelCloudServiceProperties
+        ):
+            cloud_service = ModelCloudServiceProperties()
+
+        performance = kwargs_dict.pop("performance", None)
+        if performance is not None and not isinstance(
+            performance, ModelPerformanceProperties
+        ):
+            performance = ModelPerformanceProperties()
+
+        custom_properties = kwargs_dict.pop("custom_properties", None)
+        if custom_properties is not None and not isinstance(
+            custom_properties, ModelCustomProperties
+        ):
+            custom_properties = ModelCustomProperties()
+
+        # Call constructor with explicit parameters
+        return cls(
+            database=database or ModelDatabaseProperties(),
+            message_queue=queue_props,
+            cloud_service=cloud_service or ModelCloudServiceProperties(),
+            performance=performance or ModelPerformanceProperties(),
+            custom_properties=custom_properties or ModelCustomProperties(),
+        )
 
     @classmethod
     def create_service_connection(
@@ -98,7 +162,7 @@ class ModelCustomConnectionProperties(BaseModel):
         instance_type: EnumInstanceType | None = None,
         region: str | None = None,
         availability_zone: str | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCustomConnectionProperties:
         """Create service connection properties."""
 
@@ -108,7 +172,39 @@ class ModelCustomConnectionProperties(BaseModel):
             region=region,
             availability_zone=availability_zone,
         )
-        return cls(cloud_service=cloud_props, **kwargs)
+
+        # Extract known parameters from kwargs and validate types
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
+        database = kwargs_dict.pop("database", None)
+        if database is not None and not isinstance(database, ModelDatabaseProperties):
+            database = ModelDatabaseProperties()
+
+        message_queue = kwargs_dict.pop("message_queue", None)
+        if message_queue is not None and not isinstance(
+            message_queue, ModelMessageQueueProperties
+        ):
+            message_queue = ModelMessageQueueProperties()
+
+        performance = kwargs_dict.pop("performance", None)
+        if performance is not None and not isinstance(
+            performance, ModelPerformanceProperties
+        ):
+            performance = ModelPerformanceProperties()
+
+        custom_properties = kwargs_dict.pop("custom_properties", None)
+        if custom_properties is not None and not isinstance(
+            custom_properties, ModelCustomProperties
+        ):
+            custom_properties = ModelCustomProperties()
+
+        # Call constructor with explicit parameters
+        return cls(
+            database=database or ModelDatabaseProperties(),
+            message_queue=message_queue or ModelMessageQueueProperties(),
+            cloud_service=cloud_props,
+            performance=performance or ModelPerformanceProperties(),
+            custom_properties=custom_properties or ModelCustomProperties(),
+        )
 
     # Property accessors
     @property

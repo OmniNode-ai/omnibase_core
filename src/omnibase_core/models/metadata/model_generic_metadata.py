@@ -4,15 +4,16 @@ Generic metadata model for flexible data storage.
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar, cast
+# Import proper type with fallback mechanism from metadata package
+from typing import TYPE_CHECKING, Generic, TypeVar, cast
 from uuid import UUID
 
-# FIXME: ProtocolSupportedMetadataType not available in omnibase_spi
-# from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
-# Temporarily using Protocol metadata as replacement
-from omnibase_spi.protocols.types import (
-    ProtocolMetadata as ProtocolSupportedMetadataType,
-)
+if TYPE_CHECKING:
+    from . import ProtocolSupportedMetadataType
+else:
+    # Runtime fallback - will be dict[str, object] from __init__.py
+    from . import ProtocolSupportedMetadataType
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

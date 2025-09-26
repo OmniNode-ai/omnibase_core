@@ -7,7 +7,10 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from pydantic import BaseModel, Field
 
@@ -63,14 +66,14 @@ class ModelRetryAdvanced(BaseModel):
         """Get circuit breaker reset delay."""
         return self.circuit_breaker_reset_timeout_seconds
 
-    def add_metadata(self, key: str, value: Any) -> None:
+    def add_metadata(self, key: str, value: object) -> None:
         """Add custom metadata."""
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         schema_value = ModelSchemaValue.from_value(value)
         self.custom_properties.set_custom_value(key, schema_value)
 
-    def get_metadata(self, key: str) -> Any:
+    def get_metadata(self, key: str) -> object:
         """Get custom metadata value."""
         schema_value_result = self.custom_properties.get_custom_value(key)
         if schema_value_result.is_ok():

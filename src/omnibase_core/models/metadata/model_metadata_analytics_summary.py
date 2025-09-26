@@ -7,7 +7,7 @@ Composed model that combines focused analytics components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -36,20 +36,22 @@ class TypedDictAnalyticsSummaryData(TypedDict):
     """Typed structure for analytics summary serialization."""
 
     core: TypedDictCoreAnalytics
-    quality: Any  # From component method call - returns list[str]
-    errors: Any  # From component method call - returns ModelAnalyticsErrorSummary
-    performance: (
-        Any  # From component method call - returns ModelAnalyticsPerformanceSummary
-    )
+    quality: list[str]  # From component method call - returns list[str]
+    errors: ModelAnalyticsErrorSummary  # From component method call - returns ModelAnalyticsErrorSummary
+    performance: ModelAnalyticsPerformanceSummary  # From component method call - returns ModelAnalyticsPerformanceSummary
     timestamps: TypedDictTimestampData
 
 
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .analytics.model_analytics_core import ModelAnalyticsCore
+from .analytics.model_analytics_error_summary import ModelAnalyticsErrorSummary
 from .analytics.model_analytics_error_tracking import ModelAnalyticsErrorTracking
 from .analytics.model_analytics_performance_metrics import (
     ModelAnalyticsPerformanceMetrics,
+)
+from .analytics.model_analytics_performance_summary import (
+    ModelAnalyticsPerformanceSummary,
 )
 from .analytics.model_analytics_quality_metrics import ModelAnalyticsQualityMetrics
 

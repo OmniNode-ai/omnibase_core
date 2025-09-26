@@ -7,18 +7,18 @@ Composed model that combines focused node information components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Callable, TypedDict, TypeVar
+from typing import Any, Callable, Mapping, TypedDict, TypeVar, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 # Type variable for decorator
-F = TypeVar("F", bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., object])
 
 
-def allow_dict_any(func: F) -> F:
+def allow_dict_object(func: F) -> F:
     """
-    Decorator to allow dict[str, Any] usage in specific functions.
+    Decorator to allow dict[str, object] usage in specific functions.
 
     This should only be used when:
     1. Converting untyped external data to typed internal models
@@ -49,7 +49,7 @@ class TypedDictNodeCore(TypedDict):
     """Node core data structure."""
 
     node_id: UUID
-    node_name: str | None
+    node_display_name: str | None
     description: str | None
     node_type: str
     status: str
@@ -63,10 +63,18 @@ class TypedDictNodeInfoSummaryData(TypedDict):
     """Typed structure for node info summary serialization."""
 
     core: TypedDictNodeCore
-    timestamps: Any  # From component method call
-    categorization: Any  # From component method call
-    quality: Any  # From component method call
-    performance: Any  # From component method call
+    timestamps: Mapping[
+        str, object
+    ]  # From component method call - returns lifecycle summary
+    categorization: Mapping[
+        str, object
+    ]  # From component method call - returns categorization summary
+    quality: Mapping[
+        str, object
+    ]  # From component method call - returns quality summary
+    performance: Mapping[
+        str, object
+    ]  # From component method call - returns performance summary
 
 
 class ModelNodeInfoSummary(BaseModel):
@@ -333,7 +341,7 @@ class ModelNodeInfoSummary(BaseModel):
         return {
             "core": {
                 "node_id": self.core.node_id,
-                "node_name": self.core.node_name,
+                "node_display_name": self.core.node_display_name,
                 "description": self.core.description,
                 "node_type": self.core.node_type.value,
                 "status": self.core.status.value,
@@ -344,30 +352,49 @@ class ModelNodeInfoSummary(BaseModel):
             },
             "timestamps": self.timestamps.get_lifecycle_summary(),
             "categorization": self.categorization.get_categorization_summary(),
-            "quality": self.quality.get_quality_summary(),
-            "performance": self.performance.get_performance_summary(),
+            "quality": self.quality.get_quality_summary().model_dump(),
+            "performance": self.performance.get_performance_summary().model_dump(),
         }
 
-    @allow_dict_any
+    @allow_dict_object
     def update_all_metrics(
         self,
-        core_data: dict[str, Any] | None = None,
+        core_data: (
+            dict[str, Union[str, EnumMetadataNodeStatus, EnumComplexityLevel, None]]
+            | None
+        ) = None,
         timestamp_data: dict[str, datetime | None] | None = None,
         categorization_data: dict[str, list[str]] | None = None,
-        quality_data: dict[str, Any] | None = None,
-        performance_data: dict[str, int | float] | None = None,
+        quality_data: (
+            dict[str, Union[bool, EnumDocumentationQuality, None]] | None
+        ) = None,
+        performance_data: dict[str, Union[int, float]] | None = None,
     ) -> None:
         """Update all component metrics."""
         # Update core data
         if core_data:
             if "node_display_name" in core_data:
-                self.core.node_display_name = core_data["node_display_name"]
+                value = core_data["node_display_name"]
+                self.core.node_display_name = str(value) if value is not None else None
             if "description" in core_data:
-                self.core.description = core_data["description"]
+                value = core_data["description"]
+                self.core.description = str(value) if value is not None else None
             if "status" in core_data:
-                self.core.update_status(core_data["status"])
+                from omnibase_core.enums.enum_metadata_node_status import (
+                    EnumMetadataNodeStatus,
+                )
+
+                value = core_data["status"]
+                if isinstance(value, EnumMetadataNodeStatus):
+                    self.core.update_status(value)
             if "complexity" in core_data:
-                self.core.update_complexity(core_data["complexity"])
+                from omnibase_core.enums.enum_complexity_level import (
+                    EnumComplexityLevel,
+                )
+
+                value = core_data["complexity"]
+                if isinstance(value, EnumComplexityLevel):
+                    self.core.update_complexity(value)
 
         # Update timestamps
         if timestamp_data:
@@ -397,12 +424,35 @@ class ModelNodeInfoSummary(BaseModel):
                     "has_examples",
                 ]
             ):
+                # Extract and validate documentation status parameters
+                has_doc_value = quality_data.get(
+                    "has_documentation", self.quality.has_documentation
+                )
+                doc_quality_value = quality_data.get("documentation_quality")
+                has_examples_value = quality_data.get("has_examples")
+
+                # Type check and convert values
+                has_doc = (
+                    bool(has_doc_value)
+                    if has_doc_value is not None
+                    else self.quality.has_documentation
+                )
+
+                doc_quality = None
+                if doc_quality_value is not None:
+                    from omnibase_core.enums.enum_documentation_quality import (
+                        EnumDocumentationQuality,
+                    )
+
+                    if isinstance(doc_quality_value, EnumDocumentationQuality):
+                        doc_quality = doc_quality_value
+
+                has_examples = None
+                if has_examples_value is not None:
+                    has_examples = bool(has_examples_value)
+
                 self.quality.update_documentation_status(
-                    quality_data.get(
-                        "has_documentation", self.quality.has_documentation
-                    ),
-                    quality_data.get("documentation_quality"),
-                    quality_data.get("has_examples"),
+                    has_doc, doc_quality, has_examples
                 )
 
         # Update performance

@@ -7,7 +7,7 @@ with structured validation and proper type handling.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -53,7 +53,7 @@ class ModelNumericValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: ValidationInfo) -> float:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> float:
         """Validate that value is numeric."""
         if not isinstance(v, (int, float)):
             # Use delayed imports to break circular dependencies

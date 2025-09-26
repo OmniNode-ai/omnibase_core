@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from hashlib import md5
-from typing import Any, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field

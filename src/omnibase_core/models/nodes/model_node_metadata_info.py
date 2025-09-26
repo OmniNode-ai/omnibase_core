@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID, uuid4
 
+# Import SPI protocol directly - no fallback pattern per ONEX standards
 from omnibase_spi.protocols.types.protocol_core_types import ProtocolNodeInfoLike
 from pydantic import BaseModel, Field
 

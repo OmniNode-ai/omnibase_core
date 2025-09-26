@@ -6,7 +6,7 @@ Discriminated union for error values following ONEX one-model-per-file architect
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -22,13 +22,17 @@ class ModelErrorValue(BaseModel):
     Replaces str | Exception | None union with structured error handling.
     """
 
+    model_config = {"arbitrary_types_allowed": True}
+
     error_type: EnumErrorValueType = Field(
         description="Type discriminator for error value"
     )
 
     # Error value storage (only one should be populated)
     string_error: str | None = None
-    exception_error: Any | None = None  # Use Any for Exception storage
+    exception_error: object | None = (
+        None  # Using object for ONEX compliance and Pydantic compatibility
+    )
 
     @model_validator(mode="after")
     def validate_single_error(self) -> "ModelErrorValue":
@@ -79,12 +83,19 @@ class ModelErrorValue(BaseModel):
         """Create empty error value."""
         return cls(error_type=EnumErrorValueType.NONE)
 
-    def get_error(self) -> Any:
+    def get_error(self) -> str | object | None:
         """Get the actual error value."""
         if self.error_type == EnumErrorValueType.STRING:
             return self.string_error
         elif self.error_type == EnumErrorValueType.EXCEPTION:
-            return self.exception_error
+            # Cast object back to Exception for type safety
+            if isinstance(self.exception_error, Exception):
+                return self.exception_error
+            elif self.exception_error is not None:
+                # Handle case where object is not actually an Exception
+                return Exception(str(self.exception_error))
+            else:
+                return None
         else:
             return None
 

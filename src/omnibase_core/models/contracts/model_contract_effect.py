@@ -11,7 +11,7 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Union, assert_never
+from typing import Union, assert_never
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
@@ -22,8 +22,9 @@ StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
 
 # Type alias for validation rules input - includes all possible input types
+# Using ModelSchemaValue instead of Any for ONEX compliance
 ValidationRulesInput = Union[
-    None, dict[str, Any], list[Any], "ModelValidationRules", str, int, float, bool
+    None, dict[str, object], list[object], "ModelValidationRules", str, int, float, bool
 ]
 
 from omnibase_core.enums import EnumNodeType
@@ -46,6 +47,8 @@ from omnibase_core.models.contracts.model_transaction_config import (
 from omnibase_core.models.contracts.model_validation_rules import (
     ModelValidationRules,
 )
+
+# Avoid circular import - import ValidationRulesConverter at function level
 from omnibase_core.models.contracts.subcontracts.model_caching_subcontract import (
     ModelCachingSubcontract,
 )
@@ -54,6 +57,9 @@ from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract im
 )
 from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
     ModelRoutingSubcontract,
+)
+from omnibase_core.models.utils.model_subcontract_constraint_validator import (
+    ModelSubcontractConstraintValidator,
 )
 
 
@@ -158,32 +164,13 @@ class ModelContractEffect(ModelContractBase):
     def validate_validation_rules_flexible(
         cls, v: ValidationRulesInput
     ) -> ModelValidationRules:
-        """Validate and convert flexible validation rules format."""
-        if v is None:
-            return ModelValidationRules()
+        """Validate and convert flexible validation rules format using shared utility."""
+        # Local import to avoid circular import
+        from omnibase_core.models.utils.model_validation_rules_converter import (
+            ModelValidationRulesConverter,
+        )
 
-        if isinstance(v, dict):
-            # Convert dict to ModelValidationRules
-            return ModelValidationRules(**v)
-
-        if isinstance(v, list):
-            # Convert list to ModelValidationRules with constraint_definitions
-            # Create constraint_definitions from list
-            constraints = {f"rule_{i}": str(rule) for i, rule in enumerate(v)}
-            return ModelValidationRules(constraint_definitions=constraints)
-
-        # If already ModelValidationRules, return as is
-        if isinstance(v, ModelValidationRules):
-            return v
-
-        # If it's a primitive value, wrap it in ModelValidationRules
-        if isinstance(v, (str, int, float, bool)):
-            # Convert primitive to ModelValidationRules with single constraint
-            constraints = {"rule_0": str(v)}
-            return ModelValidationRules(constraint_definitions=constraints)
-
-        # This should never be reached due to exhaustive type checking
-        assert_never(v)
+        return ModelValidationRulesConverter.convert_to_validation_rules(v)
 
     # === CORE EFFECT FUNCTIONALITY ===
     # These fields define the core side-effect behavior
@@ -275,19 +262,37 @@ class ModelContractEffect(ModelContractBase):
         Raises:
             ValidationError: If effect-specific validation fails
         """
-        # Validate at least one I/O operation is defined
+        # Validate I/O operations configuration
+        self._validate_effect_io_operations()
+
+        # Validate transaction and retry configuration
+        self._validate_effect_transaction_config()
+
+        # Validate external services configuration
+        self._validate_effect_external_services()
+
+        # Validate infrastructure patterns if present
+        self._validate_effect_infrastructure_config()
+
+        # Validate subcontract constraints using shared utility
+        ModelSubcontractConstraintValidator.validate_node_subcontract_constraints(
+            "effect", self.model_dump(), original_contract_data
+        )
+
+    def _validate_effect_io_operations(self) -> None:
+        """Validate I/O operations configuration for effect nodes."""
         if not self.io_operations:
             msg = "Effect node must define at least one I/O operation"
             raise ValueError(msg)
 
+    def _validate_effect_transaction_config(self) -> None:
+        """Validate transaction management and retry configuration."""
         # Validate transaction configuration consistency
         if self.transaction_management.enabled and not any(
             op.atomic for op in self.io_operations
         ):
             msg = "Transaction management requires at least one atomic operation"
-            raise ValueError(
-                msg,
-            )
+            raise ValueError(msg)
 
         # Validate retry configuration
         if (
@@ -296,18 +301,18 @@ class ModelContractEffect(ModelContractBase):
             > self.retry_policies.max_attempts
         ):
             msg = "Circuit breaker threshold cannot exceed max retry attempts"
-            raise ValueError(
-                msg,
-            )
+            raise ValueError(msg)
 
+    def _validate_effect_external_services(self) -> None:
+        """Validate external services configuration."""
         # Validate external services have proper configuration
         for service in self.external_services:
             if service.authentication_method != "none" and not service.endpoint_url:
                 msg = "External services with authentication must specify endpoint_url"
-                raise ValueError(
-                    msg,
-                )
+                raise ValueError(msg)
 
+    def _validate_effect_infrastructure_config(self) -> None:
+        """Validate infrastructure pattern configuration."""
         # Validate tool specification if present (infrastructure pattern)
         if self.tool_specification:
             required_fields = ["tool_name", "main_tool_class"]
@@ -315,56 +320,6 @@ class ModelContractEffect(ModelContractBase):
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
                     raise ValueError(msg)
-
-        # Validate subcontract constraints
-        self.validate_subcontract_constraints(original_contract_data)
-
-    def validate_subcontract_constraints(
-        self,
-        original_contract_data: dict[str, object] | None = None,
-    ) -> None:
-        """
-        Validate EFFECT node subcontract architectural constraints.
-
-        EFFECT nodes handle side effects and can have caching and routing
-        subcontracts, but should not have state_management subcontracts.
-
-        Args:
-            original_contract_data: The original contract YAML data
-        """
-        # Use lazy evaluation for expensive model_dump operation
-        if original_contract_data is not None:
-            contract_data = original_contract_data
-        else:
-            # Use model_dump to get contract data for validation
-            contract_data = self.model_dump()
-        violations = []
-
-        # EFFECT nodes should not have state_management (delegate to REDUCER)
-        if "state_management" in contract_data:
-            violations.append(
-                "❌ SUBCONTRACT VIOLATION: EFFECT nodes should not have state_management subcontracts",
-            )
-            violations.append("   💡 Delegate state management to REDUCER nodes")
-
-        # EFFECT nodes should not have aggregation subcontracts
-        if "aggregation" in contract_data:
-            violations.append(
-                "❌ SUBCONTRACT VIOLATION: EFFECT nodes should not have aggregation subcontracts",
-            )
-            violations.append("   💡 Use REDUCER nodes for data aggregation")
-
-        # All nodes should have event_type subcontracts
-        if "event_type" not in contract_data:
-            violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
-            )
-            violations.append(
-                "   💡 Add event_type configuration for event-driven architecture",
-            )
-
-        if violations:
-            raise ValueError("\n".join(violations))
 
     @field_validator("io_operations")
     @classmethod

@@ -7,7 +7,7 @@ with structured validation and proper type handling for node configurations.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Union, cast
 
 from pydantic import BaseModel, Field
 
@@ -68,7 +68,7 @@ class ModelNodeConfigurationValue(BaseModel):
         )
 
     @classmethod
-    def from_value(cls, value: Any) -> ModelNodeConfigurationValue:
+    def from_value(cls, value: object) -> ModelNodeConfigurationValue:
         """Create configuration value from any supported type.
 
         Args:
@@ -86,7 +86,7 @@ class ModelNodeConfigurationValue(BaseModel):
         # Fallback to string representation for bool and other types
         return cls.from_string(str(value))
 
-    def to_python_value(self) -> Any:
+    def to_python_value(self) -> Union[str, int, float]:
         """Get the underlying Python value as the original type.
 
         Returns:
@@ -110,7 +110,7 @@ class ModelNodeConfigurationValue(BaseModel):
             ),
         )
 
-    def as_numeric(self) -> Any:
+    def as_numeric(self) -> Union[int, float]:
         """Get value as numeric type.
 
         Returns:
@@ -196,7 +196,7 @@ class ModelNodeConfigurationValue(BaseModel):
             )
         # Allow comparison with raw values
         try:
-            return cast(bool, self.to_python_value() == other)
+            return self.to_python_value() == other
         except (ValueError, TypeError):
             return False
 

@@ -7,7 +7,7 @@ enables plugin extensibility and contract-driven action registration.
 
 from __future__ import annotations
 
-from typing import Any
+# Removed Any import - using object for ONEX compliance
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -48,7 +48,7 @@ class ModelCliAction(BaseModel):
         node_id: UUID,
         node_name: str,
         description: str | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliAction:
         """Factory method for creating actions from contract data."""
         import hashlib
@@ -59,14 +59,41 @@ class ModelCliAction(BaseModel):
             f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}",
         )
 
-        return cls(
-            action_name_id=action_name_id,
-            action_display_name=action_name,
-            node_id=node_id,
-            node_display_name=node_name,
-            description=description or f"{action_name} action for {node_name}",
-            **kwargs,
-        )
+        # Extract known fields with proper types from kwargs
+        action_id = kwargs.get("action_id", None)
+        deprecated = kwargs.get("deprecated", False)
+        category = kwargs.get("category", None)
+
+        # Type validation for extracted kwargs
+        if action_id is not None and not isinstance(action_id, UUID):
+            action_id = None  # Use default UUID generation
+        if not isinstance(deprecated, bool):
+            deprecated = False
+        if category is not None and not isinstance(category, EnumActionCategory):
+            category = None
+
+        # Return instance with typed arguments
+        if action_id is not None:
+            return cls(
+                action_id=action_id,
+                action_name_id=action_name_id,
+                action_display_name=action_name,
+                node_id=node_id,
+                node_display_name=node_name,
+                description=description or f"{action_name} action for {node_name}",
+                deprecated=deprecated,
+                category=category,
+            )
+        else:
+            return cls(
+                action_name_id=action_name_id,
+                action_display_name=action_name,
+                node_id=node_id,
+                node_display_name=node_name,
+                description=description or f"{action_name} action for {node_name}",
+                deprecated=deprecated,
+                category=category,
+            )
 
     def get_qualified_name(self) -> str:
         """Get fully qualified action name."""

@@ -13,7 +13,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -187,6 +187,27 @@ class ModelContractBase(BaseModel, ABC):
         if not v:
             return []
 
+        # Perform basic validation checks
+        cls._validate_dependencies_basic_checks(v)
+
+        # Cast to list after validation - we know it's a list after basic checks
+        validated_list = cast(list[object], v)
+
+        # Delegate to batch processing
+        return cls._validate_dependencies_batch_processing(validated_list)
+
+    @classmethod
+    def _validate_dependencies_basic_checks(cls, v: object) -> None:
+        """Perform basic validation checks on dependencies input.
+
+        Validates type requirements and memory safety constraints.
+
+        Args:
+            v: Dependencies input to validate
+
+        Raises:
+            OnexError: If basic validation fails
+        """
         if not isinstance(v, list):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -216,6 +237,18 @@ class ModelContractBase(BaseModel, ABC):
                 ),
             )
 
+    @classmethod
+    def _validate_dependencies_batch_processing(
+        cls, v: list[object]
+    ) -> list[ModelDependency]:
+        """Process dependencies list with batch validation.
+
+        Args:
+            v: List of dependencies to process
+
+        Returns:
+            list[ModelDependency]: Validated and converted dependencies
+        """
         # Batch validation approach for better performance
         return cls._validate_dependency_batch(v)
 
@@ -232,32 +265,73 @@ class ModelContractBase(BaseModel, ABC):
         if not dependencies:
             return []
 
-        # Pre-categorize items by type for batch processing
-        model_deps = []
-        dict_deps = []
-        string_deps = []
-        invalid_deps = []
+        # Categorize dependencies by type for batch processing
+        categorized = cls._categorize_dependencies_by_type(dependencies)
+
+        # Process categorized dependencies
+        return cls._process_categorized_dependencies(categorized)
+
+    @classmethod
+    def _categorize_dependencies_by_type(
+        cls, dependencies: list[object]
+    ) -> dict[str, list[tuple[int, object]]]:
+        """Categorize dependencies by type for efficient batch processing.
+
+        Args:
+            dependencies: List of dependency objects to categorize
+
+        Returns:
+            dict: Categorized dependencies by type
+        """
+        categorized: dict[str, list[tuple[int, object]]] = {
+            "model_deps": [],
+            "dict_deps": [],
+            "string_deps": [],
+            "invalid_deps": [],
+        }
 
         # Single pass categorization
         for i, item in enumerate(dependencies):
             if isinstance(item, ModelDependency):
-                model_deps.append((i, item))
+                categorized["model_deps"].append((i, item))
             elif isinstance(item, dict):
-                dict_deps.append((i, item))
+                categorized["dict_deps"].append((i, item))
             elif isinstance(item, str):
-                string_deps.append((i, item))
+                categorized["string_deps"].append((i, item))
             else:
-                invalid_deps.append((i, item))
+                categorized["invalid_deps"].append((i, item))
 
+        return categorized
+
+    @classmethod
+    def _process_categorized_dependencies(
+        cls, categorized: dict[str, list[tuple[int, object]]]
+    ) -> list[ModelDependency]:
+        """Process categorized dependencies and return validated list.
+
+        Args:
+            categorized: Dependencies categorized by type
+
+        Returns:
+            list[ModelDependency]: Validated dependencies
+        """
         # Immediate rejection of invalid types with batch error messages
-        if string_deps or invalid_deps:
-            cls._raise_batch_validation_errors(string_deps, invalid_deps)
+        if categorized["string_deps"] or categorized["invalid_deps"]:
+            # Cast to expected types - we know string_deps contains strings
+            string_deps = cast(list[tuple[int, str]], categorized["string_deps"])
+            cls._raise_batch_validation_errors(string_deps, categorized["invalid_deps"])
 
         # Batch process valid ModelDependency instances
-        result_deps = [item for _, item in model_deps]
+        result_deps: list[ModelDependency] = [
+            cast(ModelDependency, item) for _, item in categorized["model_deps"]
+        ]
 
         # Batch convert dict dependencies to ModelDependency
-        if dict_deps:
+        if categorized["dict_deps"]:
+            # Cast to expected type - we know dict_deps contains dicts
+            dict_deps = cast(
+                list[tuple[int, dict[str, object]]], categorized["dict_deps"]
+            )
             result_deps.extend(cls._batch_convert_dict_dependencies(dict_deps))
 
         return result_deps

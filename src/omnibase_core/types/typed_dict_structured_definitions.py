@@ -8,11 +8,11 @@ Follows ONEX strong typing principles.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal, NotRequired, TypedDict, TypeVar, Union
+from typing import Literal, NotRequired, TypedDict, TypeVar, Union
 from uuid import UUID
 
 
-def _parse_datetime(value: Any) -> datetime:
+def _parse_datetime(value: object) -> datetime:
     """Parse a datetime value from various input types."""
     if isinstance(value, datetime):
         return value
@@ -259,92 +259,9 @@ class TypedDictSystemState(TypedDict):
     dependencies: list[TypedDictDependencyInfo]
 
 
-# Legacy input types for converter functions (ONEX-compliant)
-class TypedDictLegacyStats(TypedDict, total=False):
-    """Legacy stats input structure for converter functions."""
-
-    execution_count: str | None
-    success_count: str | None
-    failure_count: str | None
-    average_duration_ms: str | None
-    last_execution: datetime | None
-    total_duration_ms: str | None
-
-
-class TypedDictLegacyHealth(TypedDict, total=False):
-    """Legacy health input structure for converter functions."""
-
-    status: str | None
-    uptime_seconds: str | None
-    last_check: datetime | None
-    error_count: str | None
-    warning_count: str | None
-    checks_passed: str | None
-    checks_total: str | None
-
-
-class TypedDictLegacyError(TypedDict, total=False):
-    """Legacy error input structure for converter functions."""
-
-    error_code: str | None
-    error_message: str | None
-    error_type: str | None
-    timestamp: str | None  # String representation of datetime
-    stack_trace: str | None
-    context: dict[str, str | None] | None
-
-
-# Conversion utilities for legacy compatibility
-def convert_stats_to_typed_dict(stats: TypedDictLegacyStats) -> TypedDictExecutionStats:
-    """Convert legacy stats dict to TypedDict."""
-    return TypedDictExecutionStats(
-        execution_count=int(stats.get("execution_count", 0) or 0),
-        success_count=int(stats.get("success_count", 0) or 0),
-        failure_count=int(stats.get("failure_count", 0) or 0),
-        average_duration_ms=float(stats.get("average_duration_ms", 0.0) or 0.0),
-        last_execution=_parse_datetime(stats.get("last_execution")),
-        total_duration_ms=int(stats.get("total_duration_ms", 0) or 0),
-    )
-
-
-def convert_health_to_typed_dict(
-    health: TypedDictLegacyHealth,
-) -> TypedDictHealthStatus:
-    """Convert legacy health dict to TypedDict."""
-    return TypedDictHealthStatus(
-        status=str(health.get("status", "unknown")),
-        uptime_seconds=int(health.get("uptime_seconds", 0) or 0),
-        last_check=_parse_datetime(health.get("last_check")),
-        error_count=int(health.get("error_count", 0) or 0),
-        warning_count=int(health.get("warning_count", 0) or 0),
-        checks_passed=int(health.get("checks_passed", 0) or 0),
-        checks_total=int(health.get("checks_total", 0) or 0),
-    )
-
-
-def convert_error_details_to_typed_dict(
-    error: TypedDictLegacyError,
-) -> TypedDictErrorDetails:
-    """Convert legacy error dict to TypedDict."""
-    result = TypedDictErrorDetails(
-        error_code=str(error.get("error_code", "")),
-        error_message=str(error.get("error_message", "")),
-        error_type=str(error.get("error_type", "")),
-        timestamp=_parse_datetime(error.get("timestamp")),
-    )
-
-    if "stack_trace" in error:
-        result["stack_trace"] = str(error["stack_trace"])
-
-    if "context" in error and isinstance(error["context"], dict):
-        result["context"] = {k: str(v) for k, v in error["context"].items()}
-
-    return result
-
-
 # Field conversion types (using ModelSchemaValue for ONEX compliance)
 # Import the ONEX-compliant value representation
 # Use ModelSchemaValue directly in type annotations instead of alias
 
-# ONEX-compliant input value type for legacy data conversion
+# ONEX-compliant input value type for structured data
 # All inputs come as strings or None initially and are converted to proper types

@@ -6,16 +6,16 @@ Type-safe dictionary for node configuration summary.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 
 class TypedDictNodeConfigurationSummary(TypedDict):
     """Type-safe dictionary for node configuration summary."""
 
-    execution: Any  # Don't import model types from types directory
-    resources: Any
-    features: Any
-    connection: Any
+    execution: object  # ONEX compliance: Use object instead of Any
+    resources: object  # ONEX compliance: Use object instead of Any
+    features: object  # ONEX compliance: Use object instead of Any
+    connection: object  # ONEX compliance: Use object instead of Any
     is_production_ready: bool
     is_performance_optimized: bool
     has_custom_settings: bool

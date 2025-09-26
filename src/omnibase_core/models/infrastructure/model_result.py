@@ -8,7 +8,7 @@ success/error handling with proper MyPy compliance.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar, cast
+from typing import Generic, TypeVar, Union, cast
 
 from pydantic import BaseModel, Field
 
@@ -41,7 +41,7 @@ class ModelResult(BaseModel, Generic[T, E]):
         success: bool,
         value: T | None = None,
         error: E | None = None,
-        **data: Any,
+        **data: Union[str, int, float, bool, dict[str, object], list[object], None],
     ) -> None:
         """Initialize Result with type validation."""
         super().__init__(success=success, value=value, error=error, **data)

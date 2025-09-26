@@ -7,7 +7,7 @@ Restructured using composition to reduce string field count and follow ONEX one-
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 
@@ -19,7 +19,7 @@ class TypedDictExecutionParams(TypedDict, total=False):
     success: bool
     exit_code: int
     error_message: str
-    data: Any  # Don't import models from types - use Any for generic data
+    data: object  # ONEX compliance - use object instead of Any for generic data
 
 
 class TypedDictMetadataParams(TypedDict, total=False):

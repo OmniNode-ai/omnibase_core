@@ -8,12 +8,13 @@ the codebase.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
+
+# Removed unused import: from typing import Any
+
 
 # Note: Previously had type alias (ValidationConvertibleValue = Any)
 # Removed to comply with ONEX strong typing standards.
@@ -65,8 +66,12 @@ class ModelValidationContainer(BaseModel):
         """Add a standard validation error with automatic conversion of raw details."""
         converted_details = None
         if raw_details:
+            from typing import cast
+
+            from .model_validation_value import InputValueType
+
             converted_details = {
-                key: ModelValidationValue.from_any(value)
+                key: ModelValidationValue.from_any(cast(InputValueType, value))
                 for key, value in raw_details.items()
             }
 
@@ -104,8 +109,12 @@ class ModelValidationContainer(BaseModel):
         """Add a critical validation error with automatic conversion of raw details."""
         converted_details = None
         if raw_details:
+            from typing import cast
+
+            from .model_validation_value import InputValueType
+
             converted_details = {
-                key: ModelValidationValue.from_any(value)
+                key: ModelValidationValue.from_any(cast(InputValueType, value))
                 for key, value in raw_details.items()
             }
 

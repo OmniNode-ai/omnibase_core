@@ -6,8 +6,6 @@ Discriminated union for function node types following ONEX one-model-per-file ar
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -75,7 +73,7 @@ class ModelNodeUnion(BaseModel):
             node_type=EnumNodeUnionType.FUNCTION_NODE_DATA, function_node_data=node_data
         )
 
-    def get_node(self) -> Any:
+    def get_node(self) -> ModelFunctionNode | ModelFunctionNodeData:
         """Get the actual node value.
 
         Returns:

@@ -154,7 +154,10 @@ class UnionUsageChecker(ast.NodeVisitor):
         return types
 
     def _process_union_types(
-        self, node: ast.AST, slice_node: ast.AST, line_no: int
+        self,
+        node: ast.AST,
+        slice_node: ast.AST,
+        line_no: int,
     ) -> None:
         """Process union types from Union[...] syntax."""
         # Extract union types

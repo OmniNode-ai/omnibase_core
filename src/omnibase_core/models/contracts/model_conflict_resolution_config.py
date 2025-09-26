@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Conflict Resolution Configuration Model - ONEX Standards Compliant.
 

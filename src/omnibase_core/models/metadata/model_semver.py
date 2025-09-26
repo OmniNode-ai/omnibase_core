@@ -6,7 +6,7 @@ Pydantic model for semantic versioning following SemVer specification.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -147,7 +147,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
 
 
 def parse_input_state_version(
-    input_state: Any,
+    input_state: object,
 ) -> ModelSemVer:
     """
     Parse a version from an input state dict, requiring structured dictionary format.

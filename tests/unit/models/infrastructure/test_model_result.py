@@ -118,7 +118,9 @@ class TestModelResultCreation:
         assert isinstance(exception_err.error, ValueError)
 
         dict_err = ModelResult.err({"code": "E001", "message": "Error occurred"})
-        assert dict_err.error["code"] == "E001"
+        # Use safe dictionary access with isinstance check
+        assert isinstance(dict_err.error, dict)
+        assert dict_err.error.get("code") == "E001"
 
 
 class TestModelResultUnwrapping:

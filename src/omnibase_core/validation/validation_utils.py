@@ -9,7 +9,7 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TypedDict
 
 
 class ValidationMetadataType(TypedDict, total=False):
@@ -337,16 +337,16 @@ def extract_protocols_from_directory(directory: Path) -> list[ProtocolInfo]:
 
 # Export all public functions, classes, and types
 __all__ = [
-    "ValidationMetadataType",
-    "ValidationResult",
     "DuplicationInfo",
     "ProtocolInfo",
-    "extract_protocol_signature",
+    "ValidationMetadataType",
+    "ValidationResult",
     "determine_repository_name",
-    "suggest_spi_location",
-    "is_protocol_file",
+    "extract_protocol_signature",
+    "extract_protocols_from_directory",
     "find_protocol_files",
+    "is_protocol_file",
+    "suggest_spi_location",
     "validate_directory_path",
     "validate_file_path",
-    "extract_protocols_from_directory",
 ]

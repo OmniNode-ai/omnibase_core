@@ -7,18 +7,24 @@ string-based condition support and enforces structured condition evaluation.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from typing import Any, Union, cast
+from typing import Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 # Type alias for recursive context data structure
+# Using object for maximum flexibility while maintaining type safety
 ContextValue = Union[
     str,
     int,
     float,
     bool,
     list[Union[str, int, float, bool]],
-    dict[str, Any],  # Using Any for recursive dict values to avoid type complexity
+    dict[
+        str,
+        Union[
+            str, int, float, bool, list[Union[str, int, float, bool]], dict[str, object]
+        ],
+    ],
 ]
 
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
@@ -193,15 +199,26 @@ class ModelWorkflowCondition(BaseModel):
         | dict[str, str | int | float | bool]
     ):
         """Extract field value supporting nested field paths with dot notation."""
-        current_value: ContextValue = context_data
+        current_value: ContextValue = cast(ContextValue, context_data)
 
         for field_part in field_path.split("."):
             if isinstance(current_value, dict) and field_part in current_value:
-                current_value = current_value[field_part]
+                current_value = cast(ContextValue, current_value[field_part])
             else:
                 raise KeyError(f"Field path '{field_path}' not found")
 
-        return current_value
+        # Cast return to match expected return type annotation
+        return cast(
+            Union[
+                str,
+                int,
+                float,
+                bool,
+                list[Union[str, int, float, bool]],
+                dict[str, Union[str, int, float, bool]],
+            ],
+            current_value,
+        )
 
     def _extract_container_value(
         self,

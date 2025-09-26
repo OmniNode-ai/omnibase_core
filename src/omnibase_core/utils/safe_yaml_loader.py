@@ -175,7 +175,7 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
 
 
 def _dump_yaml_content(
-    data: Any,
+    data: object,
     sort_keys: bool = False,
     default_flow_style: bool = False,
     allow_unicode: bool = True,
@@ -198,7 +198,7 @@ def _dump_yaml_content(
         )
 
         # Convert ModelYamlOption values to Python values
-        yaml_kwargs = {
+        yaml_kwargs: dict[str, Any] = {
             k: v.to_value() if isinstance(v, ModelYamlOption) else v
             for k, v in kwargs.items()
         }
@@ -304,7 +304,7 @@ def serialize_pydantic_model_to_yaml(
 
 
 def serialize_data_to_yaml(
-    data: Any,
+    data: object,
     comment_prefix: str = "",
     **yaml_options: Any,
 ) -> str:

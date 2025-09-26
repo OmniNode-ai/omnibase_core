@@ -7,9 +7,7 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
@@ -70,7 +68,7 @@ class ModelRetryConfig(BaseModel):
 
     @field_validator("max_delay_seconds")
     @classmethod
-    def validate_max_delay(cls, v: float, info: Any) -> float:
+    def validate_max_delay(cls, v: float, info: ValidationInfo) -> float:
         """Validate max delay is greater than base delay."""
         if "base_delay_seconds" in info.data:
             base = info.data["base_delay_seconds"]

@@ -8,7 +8,6 @@ with structured validation and proper type handling.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -28,8 +27,8 @@ class ModelPropertyValue(BaseModel):
     type safety while avoiding overly broad Union types.
     """
 
-    # Value storage with runtime validation - Any type with discriminated validation
-    value: Any = Field(
+    # Value storage with runtime validation - object type with discriminated validation
+    value: object = Field(
         description="The actual property value - validated against value_type",
     )
 
@@ -50,7 +49,7 @@ class ModelPropertyValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
             value_type = info.data["value_type"]
@@ -300,6 +299,9 @@ class ModelPropertyValue(BaseModel):
     def as_int(self) -> int:
         """Get value as integer."""
         if self.value_type == EnumPropertyType.INTEGER:
+            assert isinstance(
+                self.value, (int, float, str)
+            ), f"Expected numeric or string type, got {type(self.value)}"
             return int(self.value)
         if isinstance(self.value, (int, float)):
             return int(self.value)
@@ -320,6 +322,9 @@ class ModelPropertyValue(BaseModel):
     def as_float(self) -> float:
         """Get value as float."""
         if self.value_type in (EnumPropertyType.FLOAT, EnumPropertyType.INTEGER):
+            assert isinstance(
+                self.value, (int, float, str)
+            ), f"Expected numeric or string type, got {type(self.value)}"
             return float(self.value)
         if isinstance(self.value, str):
             return float(self.value)
@@ -343,13 +348,16 @@ class ModelPropertyValue(BaseModel):
             return self.value.lower() in ("true", "1", "yes", "on")
         return bool(self.value)
 
-    def as_list(self) -> list[Any]:
+    def as_list(self) -> list[object]:
         """Get value as list."""
         if self.value_type in (
             EnumPropertyType.STRING_LIST,
             EnumPropertyType.INTEGER_LIST,
             EnumPropertyType.FLOAT_LIST,
         ):
+            assert isinstance(
+                self.value, list
+            ), f"Expected list type, got {type(self.value)}"
             return list(self.value)
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -368,6 +376,9 @@ class ModelPropertyValue(BaseModel):
         if self.value_type == EnumPropertyType.UUID:
             if isinstance(self.value, UUID):
                 return self.value
+            assert isinstance(
+                self.value, str
+            ), f"Expected string type for UUID conversion, got {type(self.value)}"
             return UUID(self.value)
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,

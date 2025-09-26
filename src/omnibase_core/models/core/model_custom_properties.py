@@ -104,8 +104,11 @@ class ModelCustomProperties(BaseModel):
             self.set_custom_string(key, raw_value)
         elif isinstance(raw_value, bool):
             self.set_custom_flag(key, raw_value)
-        else:  # isinstance(raw_value, (int, float))
+        elif isinstance(raw_value, (int, float)):
             self.set_custom_number(key, float(raw_value))
+        else:
+            # Fallback for other types - convert to string
+            self.set_custom_string(key, str(raw_value))
 
     def update_properties(self, **kwargs: ModelSchemaValue) -> None:
         """Update custom properties using kwargs."""

@@ -6,7 +6,6 @@ This model replaces Any type usage in schema definitions by providing
 a structured representation of possible schema values.
 """
 
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -42,7 +41,7 @@ class ModelSchemaValue(BaseModel):
     )
 
     @classmethod
-    def from_value(cls, value: Any) -> "ModelSchemaValue":
+    def from_value(cls, value: object) -> "ModelSchemaValue":
         """
         Create ModelSchemaValue from a Python value.
 
@@ -123,7 +122,7 @@ class ModelSchemaValue(BaseModel):
             object_value=None,
         )
 
-    def to_value(self) -> Any:
+    def to_value(self) -> object:
         """
         Convert back to Python value.
 

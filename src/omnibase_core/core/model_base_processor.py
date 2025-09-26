@@ -7,7 +7,6 @@ Abstract base class for typed processors following ONEX one-model-per-file archi
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -16,12 +15,12 @@ class BaseProcessor(ABC, BaseModel):
     """Abstract base class for typed processors."""
 
     @abstractmethod
-    def process(self, input_data: Any) -> object:
+    def process(self, input_data: object) -> object:
         """Process input data."""
         ...
 
     @abstractmethod
-    def can_process(self, input_data: Any) -> bool:
+    def can_process(self, input_data: object) -> bool:
         """Check if the processor can handle the input data."""
         ...
 

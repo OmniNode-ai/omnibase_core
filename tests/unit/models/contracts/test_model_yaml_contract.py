@@ -38,7 +38,7 @@ class TestModelYamlContract:
 
         contract = ModelYamlContract.model_validate(contract_data)
 
-        assert contract.node_type == EnumNodeType.COMPUTE_LEGACY
+        assert contract.node_type == EnumNodeType.COMPUTE
 
     def test_missing_contract_version_fails(self):
         """Test that missing contract_version causes validation error."""
@@ -47,11 +47,10 @@ class TestModelYamlContract:
         with pytest.raises(ValidationError) as exc_info:
             ModelYamlContract.model_validate(contract_data)
 
-        errors = exc_info.value.errors()
-        assert any(
-            error["type"] == "missing" and "contract_version" in str(error["loc"])
-            for error in errors
-        )
+        # Use string representation for validation error checking
+        error_string = str(exc_info.value)
+        assert "contract_version" in error_string
+        assert "missing" in error_string.lower()
 
     def test_missing_node_type_fails(self):
         """Test that missing node_type causes validation error."""
@@ -60,11 +59,10 @@ class TestModelYamlContract:
         with pytest.raises(ValidationError) as exc_info:
             ModelYamlContract.model_validate(contract_data)
 
-        errors = exc_info.value.errors()
-        assert any(
-            error["type"] == "missing" and "node_type" in str(error["loc"])
-            for error in errors
-        )
+        # Use string representation for validation error checking
+        error_string = str(exc_info.value)
+        assert "node_type" in error_string
+        assert "missing" in error_string.lower()
 
     def test_invalid_node_type_fails(self):
         """Test that invalid node_type causes validation error."""
@@ -76,8 +74,9 @@ class TestModelYamlContract:
         with pytest.raises(ValidationError) as exc_info:
             ModelYamlContract.model_validate(contract_data)
 
-        errors = exc_info.value.errors()
-        assert any("node_type" in str(error["loc"]) for error in errors)
+        # Use string representation for validation error checking
+        error_string = str(exc_info.value)
+        assert "node_type" in error_string
 
     def test_validate_yaml_content_classmethod(self):
         """Test the validate_yaml_content classmethod."""

@@ -4,7 +4,7 @@ YAML option value model with discriminated union.
 Author: ONEX Framework Team
 """
 
-from typing import Any
+# Remove Any import - using object for YAML option value types
 
 from pydantic import BaseModel, Field
 
@@ -55,7 +55,7 @@ class ModelYamlOption(BaseModel):
             string_value=value,
         )
 
-    def to_value(self) -> Any:
+    def to_value(self) -> object:
         """Convert back to Python value."""
         if self.option_type == EnumYamlOptionType.BOOLEAN:
             return self.boolean_value

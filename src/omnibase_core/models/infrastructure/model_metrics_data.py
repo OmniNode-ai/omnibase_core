@@ -7,8 +7,6 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any
-
 # Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
@@ -55,7 +53,7 @@ class ModelMetricsData(BaseModel):
     def add_metric(
         self,
         key: str,
-        value: Any,
+        value: object,
         description: str | None = None,
         unit: str | None = None,
     ) -> None:
@@ -68,7 +66,7 @@ class ModelMetricsData(BaseModel):
         )
         self.metrics.append(metric)
 
-    def get_metric_by_key(self, key: str) -> Any:
+    def get_metric_by_key(self, key: str) -> object:
         """Get metric value by key."""
         for metric in self.metrics:
             if metric.key == key:
