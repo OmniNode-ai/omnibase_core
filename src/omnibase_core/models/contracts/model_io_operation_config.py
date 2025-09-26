@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 I/O Operation Configuration Model.
 
@@ -56,6 +55,12 @@ class ModelIOOperationConfig(BaseModel):
         default=True,
         description="Enable operation result validation",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 __all__ = ["ModelIOOperationConfig"]

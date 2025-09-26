@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 External Service Configuration Model.
 
@@ -60,6 +59,12 @@ class ModelExternalServiceConfig(BaseModel):
         description="Request timeout in seconds",
         ge=1,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 __all__ = ["ModelExternalServiceConfig"]

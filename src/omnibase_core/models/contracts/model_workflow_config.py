@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Workflow Configuration Model - ONEX Standards Compliant.
 
@@ -61,3 +60,9 @@ class ModelWorkflowConfig(BaseModel):
         default=True,
         description="Enable automatic workflow recovery",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

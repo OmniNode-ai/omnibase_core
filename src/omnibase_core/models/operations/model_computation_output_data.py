@@ -36,6 +36,12 @@ class ModelComputationOutputData(BaseModel):
         default_factory=dict, description="Processing information and diagnostics"
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelComputationOutputData"]

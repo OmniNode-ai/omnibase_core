@@ -49,6 +49,12 @@ class ModelExampleInputData(BaseModel):
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelExampleInputData"]

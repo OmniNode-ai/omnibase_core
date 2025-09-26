@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Routing Subcontract Model - ONEX Microservices Architecture Compliant.
 

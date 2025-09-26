@@ -338,6 +338,12 @@ class ModelStructuredTags(BaseModel):
         """String representation returns comma-separated tags."""
         return ", ".join(self.all_tags)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelStructuredTags"]

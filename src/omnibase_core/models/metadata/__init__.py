@@ -7,10 +7,10 @@ Models for metadata collection, analytics, and field information.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # Use proper type during type checking when available
+    # Use proper protocol type during type checking when available
     try:
-        from omnibase_spi.protocols.types import (
-            ProtocolMetadata as ProtocolSupportedMetadataType,
+        from omnibase_spi.protocols.types.protocol_core_types import (
+            ProtocolSupportedMetadataType,
         )
     except ImportError:
         # Fallback type for development when SPI unavailable

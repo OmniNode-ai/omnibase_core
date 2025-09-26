@@ -30,7 +30,11 @@ class ModelResultDict(BaseModel):
         description="Error value (if success=False)",
     )
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Type alias for dictionary-based data structures

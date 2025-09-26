@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 State Persistence Model - ONEX Standards Compliant.
 
@@ -68,3 +67,9 @@ class ModelStatePersistence(BaseModel):
         default=False,
         description="Enable state compression",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

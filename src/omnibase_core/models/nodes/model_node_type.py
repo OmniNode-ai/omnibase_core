@@ -489,3 +489,9 @@ class ModelNodeType(BaseModel):
         if isinstance(other, EnumTypeName):
             return self.type_name == other
         return False
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

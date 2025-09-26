@@ -112,6 +112,12 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             description=f"Disabled {name} configuration",
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelConfigurationBase"]

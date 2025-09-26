@@ -50,3 +50,9 @@ class ModelConnectionMetrics(BaseModel):
         default=0,
         description="Number of connection timeouts",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Model for representing error context with proper type safety.
 
@@ -67,3 +66,9 @@ class ModelErrorContext(BaseModel):
             stack_trace=None,
             additional_context=additional_context,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

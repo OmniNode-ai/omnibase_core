@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Transaction Configuration Model.
 
@@ -51,6 +50,12 @@ class ModelTransactionConfig(BaseModel):
         default=True,
         description="Enable consistency checking before commit",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 __all__ = ["ModelTransactionConfig"]

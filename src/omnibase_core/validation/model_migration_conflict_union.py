@@ -159,6 +159,12 @@ class ModelMigrationConflictUnion(BaseModel):
         """Check if this is an exact duplicate conflict."""
         return self.conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for ONEX compliance
 __all__ = ["ModelMigrationConflictUnion"]

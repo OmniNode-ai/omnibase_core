@@ -331,6 +331,12 @@ class ModelFlexibleValue(BaseModel):
             f"value={self.get_value()}, source='{self.source}')"
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelFlexibleValue"]

@@ -263,6 +263,12 @@ class ModelContainer(BaseModel, Generic[T]):
             ")"
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Note: Previously had type aliases (StringContainer, IntContainer, etc.)
 # These were removed to comply with ONEX strong typing standards.

@@ -36,6 +36,12 @@ class ModelCliResultData(BaseModel):
     warnings: list[str] = Field(description="Warning messages")
     metadata: ModelCustomProperties = Field(description="Execution metadata")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCliResultData"]

@@ -39,9 +39,8 @@ class ModelConflictResolutionConfig(BaseModel):
         description="Enable detailed conflict logging",
     )
 
-    model_config = ConfigDict(
-        extra="forbid",
-        validate_assignment=True,
-        str_strip_whitespace=True,
-        use_enum_values=False,
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

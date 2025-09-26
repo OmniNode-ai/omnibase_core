@@ -114,3 +114,9 @@ class ModelCliAction(BaseModel):
     def matches_action_id(self, action_id: UUID) -> bool:
         """Check if this action has the specified action ID."""
         return self.action_id == action_id
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

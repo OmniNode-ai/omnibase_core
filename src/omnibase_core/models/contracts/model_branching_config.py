@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Branching Configuration Model - ONEX Standards Compliant.
 
@@ -55,3 +54,9 @@ class ModelBranchingConfig(BaseModel):
         description="Maximum branching depth",
         ge=1,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

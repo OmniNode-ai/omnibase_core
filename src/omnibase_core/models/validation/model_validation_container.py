@@ -225,6 +225,12 @@ class ModelValidationContainer(BaseModel):
         self.extend_errors(other.errors)
         self.extend_warnings(other.warnings)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Use .model_dump() for serialization - no to_dict() method needed
     # Pydantic provides native serialization via .model_dump()
 

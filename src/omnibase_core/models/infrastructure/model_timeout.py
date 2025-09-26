@@ -431,6 +431,12 @@ class ModelTimeout(BaseModel):
 
         return cls(**init_data)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelTimeout"]

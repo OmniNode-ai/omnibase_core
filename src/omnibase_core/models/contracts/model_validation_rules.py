@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Validation Rules Model - ONEX Standards Compliant.
 
@@ -46,3 +45,9 @@ class ModelValidationRules(BaseModel):
         default_factory=dict,
         description="Custom constraint definitions for validation",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -25,6 +25,12 @@ class ModelNodeCapabilitiesSummary(BaseModel):
     primary_capability: str | None = Field(description="Primary capability if any")
     metrics_count: int = Field(description="Number of metrics")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNodeCapabilitiesSummary"]

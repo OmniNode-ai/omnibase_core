@@ -114,6 +114,12 @@ class ModelValidationValue(BaseModel):
             return "null"
         return str(self.raw_value)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelValidationValue"]

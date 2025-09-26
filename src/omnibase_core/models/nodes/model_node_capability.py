@@ -281,3 +281,9 @@ class ModelNodeCapability(BaseModel):
     def is_compatible_with_version(self, version: ModelSemVer) -> bool:
         """Check if this capability is available in a given ONEX version."""
         return self.version_introduced <= version
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

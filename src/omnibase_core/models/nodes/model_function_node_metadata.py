@@ -349,6 +349,12 @@ class ModelFunctionNodeMetadata(BaseModel):
         dep = ModelFunctionDeprecationInfo.create_deprecated(version, replacement)
         return cls(deprecation=dep)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = [

@@ -165,17 +165,8 @@ class ModelCliExecutionResult(BaseModel):
             warning_message=warning_message,
         )
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "success": True,
-                "error_message": None,
-                "output_data": {"result": "operation completed"},
-                "tool_id": "550e8400-e29b-41d4-a716-446655440000",
-                "tool_display_name": "tool_discovery",
-                "execution_time_ms": 150.5,
-                "status_code": 0,
-                "warning_message": None,
-            },
-        },
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

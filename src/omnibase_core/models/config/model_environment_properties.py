@@ -187,6 +187,12 @@ class ModelEnvironmentProperties(BaseModel):
         """Create empty properties instance."""
         return cls()
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelEnvironmentProperties"]

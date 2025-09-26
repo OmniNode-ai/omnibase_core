@@ -25,7 +25,11 @@ class ModelSemVer(BaseModel):
     minor: int = Field(ge=0, description="Minor version number")
     patch: int = Field(ge=0, description="Patch version number")
 
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     @field_validator("major", "minor", "patch")
     @classmethod

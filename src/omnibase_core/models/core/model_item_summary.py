@@ -80,6 +80,12 @@ class ModelItemSummary(BaseModel):
             or self.boolean_properties,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelItemSummary"]

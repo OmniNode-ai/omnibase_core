@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Streaming Configuration Model - ONEX Standards Compliant.
 
@@ -44,3 +43,9 @@ class ModelStreamingConfig(BaseModel):
         default=True,
         description="Enable backpressure handling for streaming",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

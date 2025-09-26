@@ -39,6 +39,12 @@ class ModelCloudServiceProperties(BaseModel):
             return str(self.service_id)
         return None
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelCloudServiceProperties"]

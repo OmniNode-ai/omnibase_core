@@ -102,6 +102,12 @@ class ModelRegexFlags(BaseModel):
         """Get flag as integer."""
         return self.flag_value
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelRegexFlags"]

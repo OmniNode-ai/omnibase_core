@@ -36,6 +36,12 @@ class ModelWorkflowPayload(BaseModel):
         default_factory=dict, description="Workflow state data with proper typing"
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelWorkflowPayload"]

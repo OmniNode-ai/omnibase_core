@@ -46,6 +46,12 @@ class ModelNodeConfigurationSummary(BaseModel):
         description="Whether configuration has custom settings",
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNodeConfigurationSummary"]

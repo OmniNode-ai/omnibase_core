@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Route Definition Model - ONEX Standards Compliant.
 
@@ -83,3 +82,9 @@ class ModelRouteDefinition(BaseModel):
         default=True,
         description="Require correlation ID for request tracking",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

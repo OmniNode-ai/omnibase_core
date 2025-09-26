@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Input Validation Configuration Model - ONEX Standards Compliant.
 
@@ -43,3 +42,9 @@ class ModelInputValidationConfig(BaseModel):
         default=True,
         description="Enable input sanitization",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

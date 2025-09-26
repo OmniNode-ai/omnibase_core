@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Orchestrator Contract Model - ONEX Standards Compliant.
 

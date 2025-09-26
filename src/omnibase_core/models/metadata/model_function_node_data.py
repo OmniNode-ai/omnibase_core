@@ -206,6 +206,12 @@ class ModelFunctionNodeData(BaseModel):
         """Check if tag is present."""
         return self.tags.has_tag(tag)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelFunctionNodeData"]

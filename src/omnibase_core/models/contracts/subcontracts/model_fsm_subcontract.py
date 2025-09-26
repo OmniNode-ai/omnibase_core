@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
 

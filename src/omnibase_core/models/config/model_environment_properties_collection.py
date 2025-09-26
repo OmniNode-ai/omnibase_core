@@ -43,6 +43,12 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         """Check if collection has any properties."""
         return len(self.properties) > 0
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Note: Removed to_dict() and from_dict() methods to comply with pure Pydantic architecture
     # Use model.properties directly or ModelEnvironmentPropertiesCollection(**data) for creation
 

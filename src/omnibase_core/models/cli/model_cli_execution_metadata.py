@@ -105,6 +105,12 @@ class ModelCliExecutionMetadata(BaseModel):
         """Create metadata with custom context."""
         return cls(custom_context=context)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCliExecutionMetadata"]

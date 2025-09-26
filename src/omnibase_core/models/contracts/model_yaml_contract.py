@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 YAML Contract Validation Model - ONEX Standards Compliant.
 
@@ -31,12 +30,11 @@ class ModelYamlContract(BaseModel):
     All other fields are preserved as additional data to support flexible contract formats.
     """
 
-    model_config = ConfigDict(
-        extra="allow",  # Allow additional fields for flexible contract formats
-        validate_default=True,
-        str_strip_whitespace=True,
-        validate_assignment=True,
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Required fields for contract validation
     contract_version: ModelSemVer = Field(

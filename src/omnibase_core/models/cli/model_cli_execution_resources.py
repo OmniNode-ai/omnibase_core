@@ -90,6 +90,12 @@ class ModelCliExecutionResources(BaseModel):
             max_retries=1,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCliExecutionResources"]

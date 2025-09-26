@@ -20,3 +20,9 @@ class ModelConditionValueList(BaseModel):
     def contains(self, item: str | int | float | bool) -> bool:
         """Check if the list contains the specified item."""
         return item in self.values
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

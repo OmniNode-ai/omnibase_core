@@ -294,8 +294,8 @@ class ModelCompensationPlan(BaseModel):
 
         return validated
 
-    model_config = ConfigDict(
-        extra="forbid",  # Reject additional fields for strict typing
-        validate_assignment=True,  # Validate on attribute assignment
-        use_enum_values=True,  # Ensure proper enum serialization
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

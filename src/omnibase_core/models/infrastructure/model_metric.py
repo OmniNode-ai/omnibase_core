@@ -125,6 +125,12 @@ class ModelMetric(BaseModel):
         # Convert unsupported types to string representation
         return cls.create_string_metric(key, str(value), description)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelMetric"]

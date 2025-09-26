@@ -463,6 +463,12 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             collection_display_name=collection_display_name,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelGenericCollection"]

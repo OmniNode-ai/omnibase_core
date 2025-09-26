@@ -368,6 +368,12 @@ class ModelProgress(BaseModel):
         milestone_component = ModelProgressMilestones.create_phased_milestones(phases)
         return cls(core=core, milestones=milestone_component)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelProgress"]

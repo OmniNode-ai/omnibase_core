@@ -67,6 +67,12 @@ class ModelExamplesCollectionSummary(BaseModel):
         else:
             self.completion_rate = 0.0
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the models
 __all__ = [

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 State Synchronization Model - ONEX Standards Compliant.
 
@@ -60,3 +59,9 @@ class ModelStateSynchronization(BaseModel):
         default=False,
         description="Enable distributed locking for state access",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

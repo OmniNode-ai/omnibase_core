@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Memory Management Configuration Model - ONEX Standards Compliant.
 
@@ -42,3 +41,9 @@ class ModelMemoryManagementConfig(BaseModel):
         default=True,
         description="Enable spilling to disk when memory is full",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

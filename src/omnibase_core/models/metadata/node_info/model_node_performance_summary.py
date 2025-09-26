@@ -110,6 +110,12 @@ class ModelNodePerformanceSummary(BaseModel):
             improvement_suggestions=improvement_suggestions,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelNodePerformanceSummary"]

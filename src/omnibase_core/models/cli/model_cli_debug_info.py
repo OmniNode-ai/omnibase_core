@@ -113,6 +113,12 @@ class ModelCliDebugInfo(BaseModel):
             return str(cli_value.to_python_value())
         return default
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelCliDebugInfo"]

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 State Management Subcontract Model - ONEX Standards Compliant.
 

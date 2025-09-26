@@ -298,6 +298,12 @@ class ModelNodeInformation(BaseModel):
         )
         return cls(core_info=core_info, capabilities=caps_info)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelNodeInformation"]

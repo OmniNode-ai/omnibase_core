@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Performance Requirements Model - ONEX Standards Compliant.
 
@@ -52,3 +51,9 @@ class ModelPerformanceRequirements(BaseModel):
         description="Minimum throughput in operations per second",
         ge=0.0,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -18,3 +18,9 @@ class ModelPerformanceMetrics(BaseModel):
     cpu_usage_percent: float = Field(default=0.0, description="CPU usage percentage")
     io_operations: int = Field(default=0, description="Number of I/O operations")
     network_calls: int = Field(default=0, description="Number of network calls")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -83,3 +83,9 @@ class ModelExample(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When this example was last updated",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

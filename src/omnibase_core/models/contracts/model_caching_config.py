@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Caching Configuration Model - ONEX Standards Compliant.
 
@@ -47,3 +46,9 @@ class ModelCachingConfig(BaseModel):
         default="least_recently_used",
         description="Eviction policy when cache is full",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

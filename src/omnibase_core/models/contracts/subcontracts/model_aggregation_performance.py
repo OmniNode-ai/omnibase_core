@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Aggregation Performance Model - ONEX Standards Compliant.
 
@@ -62,3 +61,9 @@ class ModelAggregationPerformance(BaseModel):
         default=False,
         description="Enable lazy evaluation of aggregations",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

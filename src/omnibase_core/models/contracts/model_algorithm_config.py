@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Algorithm Configuration Model - ONEX Standards Compliant.
 
@@ -56,3 +55,9 @@ class ModelAlgorithmConfig(BaseModel):
             msg = f"Factor weights must sum to 1.0, got {total_weight}"
             raise ValueError(msg)
         return v
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

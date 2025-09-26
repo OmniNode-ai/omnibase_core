@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Common models for shared use across domains.
 

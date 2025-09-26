@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Aggregation Function Model - ONEX Standards Compliant.
 
@@ -80,3 +79,9 @@ class ModelAggregationFunction(BaseModel):
         default=False,
         description="Whether function is commutative",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

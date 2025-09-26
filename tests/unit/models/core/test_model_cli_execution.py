@@ -18,8 +18,7 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-
-from ..core.model_cli_execution import ModelCliExecution
+from omnibase_core.models.cli.model_cli_execution import ModelCliExecution
 
 
 class TestModelCliExecution:

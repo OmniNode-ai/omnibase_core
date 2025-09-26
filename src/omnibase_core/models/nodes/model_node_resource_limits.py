@@ -89,6 +89,12 @@ class ModelNodeResourceLimits(BaseModel):
             kwargs["max_cpu_percent"] = cpu_percent
         return cls(**kwargs)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelNodeResourceLimits"]

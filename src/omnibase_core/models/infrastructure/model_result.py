@@ -30,7 +30,12 @@ class ModelResult(BaseModel, Generic[T, E]):
     or fail with error E. Provides monadic operations for chaining.
     """
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+        "arbitrary_types_allowed": True,  # Allow Exception and other arbitrary types
+    }
 
     success: bool = Field(..., description="Whether the operation succeeded")
     value: T | None = Field(None, description="Success value (if success=True)")

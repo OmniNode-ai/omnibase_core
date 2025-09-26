@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Reducer Contract Model - ONEX Standards Compliant (Clean Architecture).
 

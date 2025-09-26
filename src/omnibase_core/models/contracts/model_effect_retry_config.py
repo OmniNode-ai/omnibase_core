@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Effect Retry Configuration Model.
 
@@ -70,6 +69,12 @@ class ModelEffectRetryConfig(BaseModel):
             msg = "max_delay_ms must be greater than base_delay_ms"
             raise ValueError(msg)
         return v
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 __all__ = ["ModelEffectRetryConfig"]

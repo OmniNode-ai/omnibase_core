@@ -29,3 +29,9 @@ class ModelPropertyMetadata(BaseModel):
         default_factory=list,
         description="Allowed values for enum-like properties",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

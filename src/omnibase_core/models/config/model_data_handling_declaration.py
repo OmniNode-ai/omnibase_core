@@ -55,3 +55,9 @@ class ModelDataHandlingDeclaration(BaseModel):
                     )
 
         return self
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

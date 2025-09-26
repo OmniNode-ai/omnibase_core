@@ -35,6 +35,12 @@ class ModelGenericCollectionSummary(BaseModel):
     updated_at: datetime = Field(description="When the collection was last modified")
     has_items: bool = Field(description="Whether the collection contains any items")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelGenericCollectionSummary"]

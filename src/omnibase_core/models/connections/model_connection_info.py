@@ -107,7 +107,11 @@ class ModelConnectionInfo(BaseModel):
         """Get SSL flag from security."""
         return self.security.use_ssl
 
-    model_config = ConfigDict()
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     def get_connection_string(self) -> str:
         """Generate connection string."""

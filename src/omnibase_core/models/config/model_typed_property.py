@@ -95,3 +95,9 @@ class ModelTypedProperty(BaseModel):
     def get_raw_value(self) -> ProtocolSupportedPropertyValue:
         """Get the raw value implementing the protocol."""
         return cast(ProtocolSupportedPropertyValue, self.value.value)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

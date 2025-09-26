@@ -142,3 +142,9 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             del self.custom_fields[key]
             return True
         return False
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

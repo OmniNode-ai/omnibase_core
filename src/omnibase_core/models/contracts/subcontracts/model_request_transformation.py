@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Request Transformation Model - ONEX Standards Compliant.
 
@@ -53,3 +52,9 @@ class ModelRequestTransformation(BaseModel):
         default_factory=dict,
         description="Response header transformation",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

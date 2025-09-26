@@ -25,6 +25,12 @@ class ModelPerformanceProperties(BaseModel):
     compression_level: int = Field(default=6, description="Compression level")
     enable_caching: bool = Field(default=True, description="Enable caching")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelPerformanceProperties"]

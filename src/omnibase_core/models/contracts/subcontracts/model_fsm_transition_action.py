@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FSM Transition Action Model - ONEX Standards Compliant.
 
@@ -57,3 +56,9 @@ class ModelFSMTransitionAction(BaseModel):
         description="Timeout for action execution",
         ge=1,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

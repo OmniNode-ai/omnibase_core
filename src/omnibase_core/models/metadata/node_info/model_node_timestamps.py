@@ -169,6 +169,12 @@ class ModelNodeTimestamps(BaseModel):
             last_validated=None,  # intentionally None
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelNodeTimestamps"]

@@ -268,6 +268,12 @@ class ModelCustomConnectionProperties(BaseModel):
         """Get service identifier for display purposes."""
         return self.cloud_service.get_service_identifier()
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCustomConnectionProperties"]

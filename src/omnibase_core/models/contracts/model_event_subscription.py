@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Subscription Model - ONEX Standards Compliant.
 
@@ -62,3 +61,9 @@ class ModelEventSubscription(BaseModel):
         default=True,
         description="Enable dead letter queue for failed events",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

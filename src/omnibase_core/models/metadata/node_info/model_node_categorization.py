@@ -195,6 +195,12 @@ class ModelNodeCategorization(BaseModel):
             related_nodes=related_nodes.copy() if related_nodes else [],
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelNodeCategorization"]

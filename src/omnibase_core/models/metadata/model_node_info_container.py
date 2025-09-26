@@ -46,6 +46,12 @@ class ModelNodeInfoContainer(BaseModel):
         """Get the total number of nodes in the container."""
         return len(self.nodes)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNodeInfoContainer"]

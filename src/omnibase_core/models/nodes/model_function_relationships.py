@@ -127,6 +127,12 @@ class ModelFunctionRelationships(BaseModel):
             related_functions=related_functions or [],
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelFunctionRelationships"]

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Reduction Configuration Model - ONEX Standards Compliant.
 
@@ -62,3 +61,9 @@ class ModelReductionConfig(BaseModel):
         default=True,
         description="Cache intermediate reduction results",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

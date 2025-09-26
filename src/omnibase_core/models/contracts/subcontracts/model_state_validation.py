@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 State Validation Model - ONEX Standards Compliant.
 
@@ -50,3 +49,9 @@ class ModelStateValidation(BaseModel):
         default_factory=list,
         description="Available repair strategies",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

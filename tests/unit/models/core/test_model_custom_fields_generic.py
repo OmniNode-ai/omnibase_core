@@ -1,37 +1,39 @@
 """
-Unit tests for generic ModelCustomFields[T].
+Unit tests for generic ModelCustomFieldsAccessor[T].
 
 Tests the generic type parameter functionality and type safety
-of the ModelCustomFields implementation.
+of the ModelCustomFieldsAccessor implementation.
 """
 
 from typing import Any
 
 import pytest
 
-from src.omnibase_core.models.data import ModelCustomFields
+from omnibase_core.models.core.model_custom_fields_accessor import (
+    ModelCustomFieldsAccessor,
+)
 
 
-class TestModelCustomFieldsGeneric:
-    """Test cases for generic ModelCustomFields[T] functionality."""
+class TestModelCustomFieldsAccessorGeneric:
+    """Test cases for generic ModelCustomFieldsAccessor[T] functionality."""
 
     def test_generic_type_instantiation(self):
         """Test that generic type can be instantiated with type parameters."""
         # Test with string type
-        string_fields = ModelCustomFields[str]()
-        assert isinstance(string_fields, ModelCustomFields)
+        string_fields = ModelCustomFieldsAccessor()
+        assert isinstance(string_fields, ModelCustomFieldsAccessor)
 
         # Test with int type
-        int_fields = ModelCustomFields[int]()
-        assert isinstance(int_fields, ModelCustomFields)
+        int_fields = ModelCustomFieldsAccessor()
+        assert isinstance(int_fields, ModelCustomFieldsAccessor)
 
         # Test with dict type
-        dict_fields = ModelCustomFields[dict[str, Any]]()
-        assert isinstance(dict_fields, ModelCustomFields)
+        dict_fields = ModelCustomFieldsAccessor[dict[str, Any]]()
+        assert isinstance(dict_fields, ModelCustomFieldsAccessor)
 
     def test_generic_type_field_operations(self):
         """Test that field operations work with generic types."""
-        fields = ModelCustomFields[str]()
+        fields = ModelCustomFieldsAccessor()
 
         # Test setting and getting fields
         fields.set_field("name", "test_value")
@@ -43,7 +45,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_type_inheritance_behavior(self):
         """Test that generic type inheritance behavior is preserved."""
-        fields = ModelCustomFields[dict[str, Any]]()
+        fields = ModelCustomFieldsAccessor[dict[str, Any]]()
 
         # Add various types
         fields.set_field("config", {"key": "value"})
@@ -63,7 +65,7 @@ class TestModelCustomFieldsGeneric:
         data = {"name": "test", "value": 123, "active": True, "tags": ["a", "b"]}
 
         # Test BaseModel instantiation with generic type
-        fields = ModelCustomFields[dict[str, Any]](**data)
+        fields = ModelCustomFieldsAccessor[dict[str, Any]](**data)
 
         assert fields.get_string("name") == "test"
         assert fields.get_int("value") == 123
@@ -72,13 +74,13 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_copy_operations(self):
         """Test copy operations with generic types."""
-        original = ModelCustomFields[str]()
+        original = ModelCustomFieldsAccessor()
         original.set_field("name", "original")
         original.set_field("count", 10)
 
         # Test copy_fields
         copy = original.copy_fields()
-        assert isinstance(copy, ModelCustomFields)
+        assert isinstance(copy, ModelCustomFieldsAccessor)
         assert copy.get_string("name") == "original"
         assert copy.get_int("count") == 10
 
@@ -89,11 +91,11 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_merge_operations(self):
         """Test merge operations with generic types."""
-        fields1 = ModelCustomFields[str]()
+        fields1 = ModelCustomFieldsAccessor()
         fields1.set_field("name", "first")
         fields1.set_field("count", 1)
 
-        fields2 = ModelCustomFields[str]()
+        fields2 = ModelCustomFieldsAccessor()
         fields2.set_field("name", "second")  # Should override
         fields2.set_field("value", 100)  # Should add new
 
@@ -106,7 +108,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_serialization(self):
         """Test serialization with generic types."""
-        fields = ModelCustomFields[Any]()
+        fields = ModelCustomFieldsAccessor[Any]()
         fields.set_field("string_val", "test")
         fields.set_field("int_val", 42)
         fields.set_field("bool_val", True)
@@ -123,13 +125,13 @@ class TestModelCustomFieldsGeneric:
         assert data == expected
 
         # Test round-trip
-        restored = ModelCustomFields[Any](**data)
+        restored = ModelCustomFieldsAccessor[Any](**data)
         assert restored.model_dump(exclude_none=True) == expected
 
     def test_generic_pydantic_validation(self):
         """Test Pydantic validation with generic types."""
         # Test model validation
-        fields = ModelCustomFields[str](
+        fields = ModelCustomFieldsAccessor(
             string_fields={"name": "test"},
             int_fields={"count": 10},
             bool_fields={"active": True},
@@ -144,7 +146,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_json_serialization(self):
         """Test JSON serialization with generic types."""
-        fields = ModelCustomFields[dict[str, Any]]()
+        fields = ModelCustomFieldsAccessor[dict[str, Any]]()
         fields.set_field("config", {"nested": "value"})
         fields.set_field("count", 42)
 
@@ -153,7 +155,9 @@ class TestModelCustomFieldsGeneric:
         assert isinstance(json_str, str)
 
         # Test JSON deserialization
-        restored = ModelCustomFields[dict[str, Any]].model_validate_json(json_str)
+        restored = ModelCustomFieldsAccessor[dict[str, Any]].model_validate_json(
+            json_str
+        )
         # Note: dict gets converted to string as fallback
         assert restored.get_field("config") == "{'nested': 'value'}"
         assert restored.get_field("count") == 42
@@ -163,8 +167,8 @@ class TestModelCustomFieldsGeneric:
         # While Python's runtime doesn't enforce generic type parameters,
         # we can test that the typing works correctly for static analysis
 
-        string_fields: ModelCustomFields[str] = ModelCustomFields()
-        int_fields: ModelCustomFields[int] = ModelCustomFields()
+        string_fields: ModelCustomFieldsAccessor = ModelCustomFieldsAccessor()
+        int_fields: ModelCustomFieldsAccessor = ModelCustomFieldsAccessor()
 
         # These should work without type errors
         string_fields.set_field("name", "value")
@@ -177,7 +181,7 @@ class TestModelCustomFieldsGeneric:
     def test_generic_with_complex_types(self):
         """Test generic types with complex type parameters."""
         # Test with nested generic types
-        complex_fields = ModelCustomFields[dict[str, list[int]]]()
+        complex_fields = ModelCustomFieldsAccessor[dict[str, list[int]]]()
 
         # Set complex data
         complex_data = {"numbers": [1, 2, 3], "values": [10, 20, 30]}
@@ -190,7 +194,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_field_type_detection(self):
         """Test field type detection with generic implementations."""
-        fields = ModelCustomFields[Any]()
+        fields = ModelCustomFieldsAccessor[Any]()
 
         # Set different types and check detection
         fields.set_field("str_field", "string")
@@ -208,7 +212,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_field_validation(self):
         """Test field validation with generic types."""
-        fields = ModelCustomFields[str]()
+        fields = ModelCustomFieldsAccessor()
 
         # Set initial field
         fields.set_field("name", "test")
@@ -222,7 +226,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_all_field_operations(self):
         """Test comprehensive field operations with generic types."""
-        fields = ModelCustomFields[dict[str, Any]]()
+        fields = ModelCustomFieldsAccessor[dict[str, Any]]()
 
         # Add various fields
         fields.set_field("config", {"key": "value"})
@@ -251,7 +255,7 @@ class TestModelCustomFieldsGeneric:
 
     def test_generic_fields_by_type(self):
         """Test getting fields by type with generic implementations."""
-        fields = ModelCustomFields[Any]()
+        fields = ModelCustomFieldsAccessor[Any]()
 
         # Add fields of different types
         fields.set_field("name", "test")
@@ -270,13 +274,13 @@ class TestModelCustomFieldsGeneric:
         assert bool_fields == {"active": True}
 
 
-class TestModelCustomFieldsGenericEdgeCases:
-    """Test edge cases for generic ModelCustomFields[T]."""
+class TestModelCustomFieldsAccessorGenericEdgeCases:
+    """Test edge cases for generic ModelCustomFieldsAccessor[T]."""
 
     def test_generic_with_none_type(self):
         """Test generic behavior with None type parameter."""
         # This tests the edge case where T might be None
-        fields = ModelCustomFields[None]()
+        fields = ModelCustomFieldsAccessor[None]()
 
         # Should still work for basic operations
         fields.set_field("test", "value")
@@ -285,8 +289,8 @@ class TestModelCustomFieldsGenericEdgeCases:
     def test_generic_inheritance_compatibility(self):
         """Test that generic types maintain inheritance compatibility."""
         # Test that generic instances are compatible with base type
-        generic_fields = ModelCustomFields[str]()
-        base_fields = ModelCustomFields()
+        generic_fields = ModelCustomFieldsAccessor()
+        base_fields = ModelCustomFieldsAccessor()
 
         # Both should have the same interface
         generic_fields.set_field("test", "value")
@@ -297,12 +301,12 @@ class TestModelCustomFieldsGenericEdgeCases:
     def test_generic_separate_type_parameters(self):
         """Test behavior when using separate type parameters instead of union types."""
         # Test with string type
-        string_fields = ModelCustomFields[str]()
+        string_fields = ModelCustomFieldsAccessor()
         string_fields.set_field("text", "string_value")
         assert string_fields.get_field("text") == "string_value"
 
         # Test with int type separately
-        int_fields = ModelCustomFields[int]()
+        int_fields = ModelCustomFieldsAccessor()
         int_fields.set_field("number", 42)
         assert int_fields.get_field("number") == 42
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Statistical Computation Model - ONEX Standards Compliant.
 
@@ -67,3 +66,9 @@ class ModelStatisticalComputation(BaseModel):
         description="Threshold for outlier detection",
         ge=0.5,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

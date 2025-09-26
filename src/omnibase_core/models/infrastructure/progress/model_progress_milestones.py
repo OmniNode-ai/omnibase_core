@@ -170,6 +170,12 @@ class ModelProgressMilestones(BaseModel):
 
         return cls(milestones=milestones)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelProgressMilestones"]

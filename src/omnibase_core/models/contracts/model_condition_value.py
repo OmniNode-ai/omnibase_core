@@ -24,3 +24,9 @@ class ModelConditionValue(BaseModel, Generic[ConditionValue]):
     def python_type(self) -> type:
         """Get the Python type of the contained value."""
         return type(self.value)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

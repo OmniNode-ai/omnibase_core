@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FSM Operation Model - ONEX Standards Compliant.
 
@@ -77,3 +76,9 @@ class ModelFSMOperation(BaseModel):
         description="Maximum execution time for operation",
         ge=1,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

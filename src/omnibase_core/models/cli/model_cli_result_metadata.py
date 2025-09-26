@@ -202,6 +202,12 @@ class ModelCliResultMetadata(BaseModel):
         """Check if all compliance flags are True."""
         return all(self.compliance_flags.values()) if self.compliance_flags else True
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelCliResultMetadata"]

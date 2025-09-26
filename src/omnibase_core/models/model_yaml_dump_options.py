@@ -18,6 +18,12 @@ class ModelYamlDumpOptions(BaseModel):
     indent: int = 2
     width: int = 120
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelYamlDumpOptions"]

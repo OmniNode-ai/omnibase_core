@@ -37,6 +37,12 @@ class ModelComputationInputData(BaseModel):
         default_factory=dict, description="String metadata context"
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelComputationInputData"]

@@ -290,6 +290,12 @@ class ModelMetadataValue(BaseModel):
         """Get the underlying Python value."""
         return self.value
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelMetadataValue"]

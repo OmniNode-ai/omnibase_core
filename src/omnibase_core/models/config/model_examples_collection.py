@@ -175,3 +175,9 @@ class ModelExamples(BaseModel):
             updated_at=datetime.now(UTC),
         )
         return cls(examples=[example])
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

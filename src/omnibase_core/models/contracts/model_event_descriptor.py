@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Descriptor Model - ONEX Standards Compliant.
 
@@ -60,3 +59,9 @@ class ModelEventDescriptor(BaseModel):
         default="normal",
         description="Event criticality level (low, normal, high, critical)",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

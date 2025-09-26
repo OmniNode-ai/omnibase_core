@@ -31,6 +31,12 @@ class ModelExampleSummary(BaseModel):
     input_data: ModelExampleInputData | None = Field(None, description="Input data")
     output_data: ModelExampleOutputData | None = Field(None, description="Output data")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelExampleSummary"]

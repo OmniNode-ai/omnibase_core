@@ -193,6 +193,12 @@ class ModelValidationBase(BaseModel):
         # Return success status
         return self.is_valid()
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelValidationBase"]

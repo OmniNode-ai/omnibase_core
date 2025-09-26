@@ -96,6 +96,12 @@ class ModelCliExecutionContext(BaseModel):
         self.value = new_value
         self.updated_at = datetime.now()
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCliExecutionContext"]

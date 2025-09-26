@@ -25,6 +25,12 @@ class ModelFsmTransition(BaseModel):
         default_factory=list, description="Actions to execute on transition"
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelFsmTransition"]

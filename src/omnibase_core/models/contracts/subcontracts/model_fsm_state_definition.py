@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FSM State Definition Model - ONEX Standards Compliant.
 
@@ -73,3 +72,9 @@ class ModelFSMStateDefinition(BaseModel):
         default_factory=list,
         description="Validation rules for state data",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -102,7 +102,9 @@ class ModelNodeOrganizationMetadata(BaseModel):
             "dependents_count": str(len(self.dependents)),
             "has_description": str(bool(self.description)),
             "has_author": str(bool(self.author)),
-            "primary_category": self.categories[0] if self.categories else "none",
+            "primary_category": (
+                self.categories[0].value if self.categories else "none"
+            ),
             "primary_capability": self.capabilities[0] if self.capabilities else "none",
         }
 
@@ -131,6 +133,12 @@ class ModelNodeOrganizationMetadata(BaseModel):
             description=description,
             author=author,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

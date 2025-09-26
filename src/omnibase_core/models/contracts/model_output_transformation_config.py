@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Output Transformation Configuration Model - ONEX Standards Compliant.
 
@@ -35,3 +34,9 @@ class ModelOutputTransformationConfig(BaseModel):
         default=True,
         description="Enable output validation before return",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

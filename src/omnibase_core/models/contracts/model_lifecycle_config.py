@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Lifecycle Configuration Model - ONEX Standards Compliant.
 
@@ -49,3 +48,9 @@ class ModelLifecycleConfig(BaseModel):
         description="Health check interval in seconds",
         ge=1,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

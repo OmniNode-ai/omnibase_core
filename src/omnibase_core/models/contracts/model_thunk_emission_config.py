@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Thunk Emission Configuration Model - ONEX Standards Compliant.
 
@@ -56,3 +55,9 @@ class ModelThunkEmissionConfig(BaseModel):
         default=True,
         description="Automatically retry failed thunk executions",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

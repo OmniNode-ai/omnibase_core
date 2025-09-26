@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 """
-Configuration Management Subcontract for ONEX Infrastructure Nodes.
+Configuration Management Subcontract Model - ONEX Standards Compliant.
 
-This module provides the ModelConfigurationSubcontract that standardizes
-configuration management patterns across infrastructure nodes, including
-validation, defaults, environment integration, and runtime reconfiguration.
+Dedicated subcontract model for configuration management functionality providing:
+- Configuration source specification with priority handling
+- Validation rules and constraints for configuration data
+- Environment-specific configuration management
+- Runtime configuration updates and monitoring
+- Sensitive data handling and security
 
-Author: ONEX Framework Team
+This model is composed into node contracts that require configuration management functionality,
+providing clean separation between node logic and configuration behavior.
+
+ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
@@ -20,85 +26,9 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
-
-class ModelConfigurationSource(BaseModel):
-    """Configuration source specification with priority and validation."""
-
-    model_config = ConfigDict(
-        extra="forbid",
-        use_enum_values=True,
-        validate_assignment=True,
-        str_strip_whitespace=True,
-    )
-
-    # ONEX: Add unique identifier for source tracking
-    source_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for this configuration source",
-    )
-
-    source_type: str = Field(
-        ...,
-        description="Type of configuration source (file, environment, database, etc.)",
-        pattern=r"^[a-z_]+$",
-    )
-
-    source_path: Path | str | None = Field(
-        default=None,
-        description="Path or identifier for the configuration source",
-    )
-
-    priority: int = Field(
-        default=100,
-        description="Priority for configuration merging (lower = higher priority)",
-        ge=0,
-        le=1000,
-    )
-
-    required: bool = Field(
-        default=False,
-        description="Whether this configuration source is required",
-    )
-
-    watch_for_changes: bool = Field(
-        default=False,
-        description="Whether to monitor this source for configuration changes",
-    )
-
-
-class ModelConfigurationValidation(BaseModel):
-    """Configuration validation rules and constraints."""
-
-    model_config = ConfigDict(
-        extra="forbid",
-        use_enum_values=True,
-        validate_assignment=True,
-    )
-
-    required_keys: list[str] = Field(
-        default_factory=list,
-        description="Configuration keys that must be present",
-    )
-
-    optional_keys: list[str] = Field(
-        default_factory=list,
-        description="Configuration keys that are optional",
-    )
-
-    validation_schema: dict[str, str] | None = Field(
-        default=None,
-        description="JSON schema or validation rules for configuration values",
-    )
-
-    environment_specific: dict[EnumEnvironment, dict[str, str]] = Field(
-        default_factory=dict,
-        description="Environment-specific validation rules",
-    )
-
-    sensitive_keys: list[str] = Field(
-        default_factory=list,
-        description="Configuration keys that contain sensitive data",
-    )
+# Import individual configuration model components
+from .model_configuration_source import ModelConfigurationSource
+from .model_configuration_validation import ModelConfigurationValidation
 
 
 class ModelConfigurationSubcontract(BaseModel):
@@ -116,15 +46,15 @@ class ModelConfigurationSubcontract(BaseModel):
     - Support runtime configuration updates with validation
     - Manage sensitive configuration data securely
     - Monitor configuration sources for changes
+
+    ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
-    model_config = ConfigDict(
-        extra="forbid",
-        use_enum_values=True,
-        validate_assignment=True,
-        str_strip_whitespace=True,
-        frozen=False,  # Allow updates for runtime reconfiguration
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # ONEX: Universal correlation ID for tracing
     correlation_id: UUID = Field(

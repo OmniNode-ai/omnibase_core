@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ModelValidationRulesConverter - Shared Validation Rules Conversion Utility.
 

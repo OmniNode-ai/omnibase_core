@@ -51,6 +51,12 @@ class ModelWorkflowMetadata(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict, description="Workflow tags")
     labels: dict[str, str] = Field(default_factory=dict, description="Workflow labels")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelWorkflowMetadata"]

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FSM State Transition Model - ONEX Standards Compliant.
 
@@ -80,3 +79,9 @@ class ModelFSMStateTransition(BaseModel):
         description="Delay between retry attempts",
         ge=0,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Circuit Breaker Model - ONEX Standards Compliant.
 
@@ -69,3 +68,9 @@ class ModelCircuitBreaker(BaseModel):
         ge=0.0,
         le=1.0,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

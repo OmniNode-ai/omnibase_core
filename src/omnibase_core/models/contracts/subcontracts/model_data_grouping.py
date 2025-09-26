@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Data Grouping Model - ONEX Standards Compliant.
 
@@ -52,3 +51,9 @@ class ModelDataGrouping(BaseModel):
         description="Expiration time for inactive groups",
         ge=1000,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

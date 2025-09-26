@@ -7,7 +7,7 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar, Union
+from typing import Callable, TypeVar, Union
 
 # Handle optional omnibase_spi dependency
 try:
@@ -84,28 +84,29 @@ class ModelPropertyCollection(BaseModel):
         """Create ModelPropertyValue using type-specific factory methods."""
         # Define type handlers as a list of (checker_function, factory_method) tuples
         # Order matches original elif chain to preserve existing behavior
-        TypeChecker = Callable[[Any], bool]
-        FactoryMethod = Callable[[Any, str | None], ModelPropertyValue]
+        # Use object instead of Any for type dispatch pattern
+        TypeChecker = Callable[[object], bool]
+        FactoryMethod = Callable[[object, str | None], ModelPropertyValue]
 
         type_handlers: list[tuple[TypeChecker, FactoryMethod]] = [
-            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),
-            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),
-            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),
-            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),
+            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),  # type: ignore[list-item]
+            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),  # type: ignore[list-item]
+            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),  # type: ignore[list-item]
+            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),  # type: ignore[list-item]
             (
                 lambda v: isinstance(v, list)
                 and all(isinstance(item, str) for item in v),
-                ModelPropertyValue.from_string_list,
+                ModelPropertyValue.from_string_list,  # type: ignore[list-item]
             ),
             (
                 lambda v: isinstance(v, list)
                 and all(isinstance(item, int) for item in v),
-                ModelPropertyValue.from_int_list,
+                ModelPropertyValue.from_int_list,  # type: ignore[list-item]
             ),
             (
                 lambda v: isinstance(v, list)
                 and all(isinstance(item, float) for item in v),
-                ModelPropertyValue.from_float_list,
+                ModelPropertyValue.from_float_list,  # type: ignore[list-item]
             ),
         ]
 
@@ -157,3 +158,9 @@ class ModelPropertyCollection(BaseModel):
             for key, prop in self.properties.items()
             if prop.value.value_type == property_type
         ]
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

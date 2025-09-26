@@ -158,6 +158,12 @@ class ModelValidationError(BaseModel):
             error_code=error_code,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelValidationError"]

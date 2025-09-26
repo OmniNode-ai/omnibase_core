@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Windowing Strategy Model - ONEX Standards Compliant.
 
@@ -67,3 +66,9 @@ class ModelWindowingStrategy(BaseModel):
         default="event_time",
         description="Watermark strategy for event ordering",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

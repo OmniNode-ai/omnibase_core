@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Load Balancing Model - ONEX Standards Compliant.
 
@@ -83,3 +82,9 @@ class ModelLoadBalancing(BaseModel):
         default=None,
         description="Preferred ONEX node type (Effect, Compute, Reducer, Orchestrator)",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

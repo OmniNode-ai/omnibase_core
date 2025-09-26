@@ -24,6 +24,12 @@ class BaseProcessor(ABC, BaseModel):
         """Check if the processor can handle the input data."""
         ...
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["BaseProcessor"]

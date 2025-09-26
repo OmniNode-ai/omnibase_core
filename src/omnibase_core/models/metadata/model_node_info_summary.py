@@ -564,6 +564,12 @@ class ModelNodeInfoSummary(BaseModel):
         timestamps = ModelNodeTimestamps.create_new()
         return cls(core=core, timestamps=timestamps)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNodeInfoSummary"]

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 State Versioning Model - ONEX Standards Compliant.
 
@@ -53,3 +52,9 @@ class ModelStateVersioning(BaseModel):
         default=True,
         description="Enable state rollback to previous versions",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

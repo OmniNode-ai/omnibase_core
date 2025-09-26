@@ -86,6 +86,12 @@ class ModelNodeUnion(BaseModel):
             assert self.function_node_data is not None  # Guaranteed by validator
             return self.function_node_data
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNodeUnion"]

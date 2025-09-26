@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Registry Configuration Model - ONEX Standards Compliant.
 
@@ -60,3 +59,9 @@ class ModelEventRegistryConfig(BaseModel):
         default=True,
         description="Enable security for registry communication",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

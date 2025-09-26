@@ -36,6 +36,12 @@ class ModelEventPayload(BaseModel):
         default_factory=dict, description="Event routing information"
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelEventPayload"]

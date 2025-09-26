@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ModelSubcontractConstraintValidator - Shared Subcontract Validation Logic.
 

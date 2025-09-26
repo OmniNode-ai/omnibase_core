@@ -153,6 +153,12 @@ class ModelFieldAccessor(BaseModel):
         except (AttributeError, KeyError, TypeError):
             return False
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelFieldAccessor"]

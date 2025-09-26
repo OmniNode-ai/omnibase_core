@@ -365,3 +365,9 @@ class ModelMetadataFieldInfo(BaseModel):
         if isinstance(other, ModelMetadataFieldInfo):
             return self.identity.identity_id == other.identity.identity_id
         return False
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

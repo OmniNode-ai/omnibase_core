@@ -55,6 +55,12 @@ class ModelFieldIdentity(BaseModel):
             identity_name.upper() == name.upper() or field_name.lower() == name.lower()
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelFieldIdentity"]

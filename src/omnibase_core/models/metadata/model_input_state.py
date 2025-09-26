@@ -72,6 +72,12 @@ class ModelInputState(BaseModel):
             return self.version
         return self.additional_fields.get(key)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelInputState"]

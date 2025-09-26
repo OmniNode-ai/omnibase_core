@@ -165,6 +165,12 @@ class ModelProgressCore(BaseModel):
             current_phase=phases[0] if phases else EnumExecutionPhase.INITIALIZATION,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelProgressCore"]

@@ -22,7 +22,11 @@ class ModelErrorValue(BaseModel):
     Replaces str | Exception | None union with structured error handling.
     """
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     error_type: EnumErrorValueType = Field(
         description="Type discriminator for error value"

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Coordination Configuration Model - ONEX Standards Compliant.
 
@@ -55,3 +54,9 @@ class ModelEventCoordinationConfig(BaseModel):
         default=True,
         description="Enable duplicate event detection",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

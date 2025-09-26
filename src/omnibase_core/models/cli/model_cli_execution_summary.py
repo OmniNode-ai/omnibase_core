@@ -106,6 +106,12 @@ class ModelCliExecutionSummary(BaseModel):
             return None
         return self.target_node_display_name or f"node_{str(self.target_node_id)[:8]}"
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCliExecutionSummary"]

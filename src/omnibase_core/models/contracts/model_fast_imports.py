@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Fast Import Module - Aggressive Performance Optimization
 
@@ -165,19 +164,31 @@ def factory_stats() -> dict[str, object]:
 
 # Ultra-fast contract creation helpers
 def create_compute_contract(**kwargs: Any) -> "ModelContractCompute":
-    """Create ModelContractCompute instance with fast loading."""
+    """Create ModelContractCompute instance with fast loading.
+
+    Note: Any type is required here for factory pattern that accepts
+    arbitrary keyword arguments which are validated by Pydantic at runtime.
+    """
     ComputeContract = compute()
     return ComputeContract(**kwargs)
 
 
 def create_effect_contract(**kwargs: Any) -> "ModelContractEffect":
-    """Create ModelContractEffect instance with fast loading."""
+    """Create ModelContractEffect instance with fast loading.
+
+    Note: Any type is required here for factory pattern that accepts
+    arbitrary keyword arguments which are validated by Pydantic at runtime.
+    """
     EffectContract = effect()
     return EffectContract(**kwargs)
 
 
 def create_base_contract(**kwargs: Any) -> "ModelContractBase":
-    """Create ModelContractBase instance with fast loading."""
+    """Create ModelContractBase instance with fast loading.
+
+    Note: Any type is required here for factory pattern that accepts
+    arbitrary keyword arguments which are validated by Pydantic at runtime.
+    """
     BaseContract = base()
     return BaseContract(**kwargs)
 

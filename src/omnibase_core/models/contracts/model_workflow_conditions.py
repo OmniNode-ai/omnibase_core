@@ -207,10 +207,8 @@ class ModelWorkflowConditions(BaseModel):
 
         return validated
 
-    model_config = ConfigDict(
-        extra="forbid",  # Reject additional fields for strict typing
-        validate_assignment=True,
-        # ONEX compliance
-        str_strip_whitespace=True,
-        use_enum_values=True,
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

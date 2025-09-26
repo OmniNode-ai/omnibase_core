@@ -358,6 +358,12 @@ class ModelTimeBased(BaseModel, Generic[T]):
             metadata=metadata,
         )  # type: ignore[return-value]
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelTimeBased"]

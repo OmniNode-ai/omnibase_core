@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Aggregation Subcontract Model - ONEX Standards Compliant.
 

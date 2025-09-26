@@ -234,6 +234,12 @@ class ModelSchemaExample(BaseModel):
         self.is_validated = True
         return True
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelSchemaExample"]

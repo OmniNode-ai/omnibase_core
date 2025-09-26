@@ -28,6 +28,12 @@ class BaseFactory(ABC, BaseModel, Generic[T]):
         """Check if the factory can create the given type."""
         ...
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["BaseFactory"]

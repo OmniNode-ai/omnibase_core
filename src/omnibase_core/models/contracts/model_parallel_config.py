@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Parallel Configuration Model - ONEX Standards Compliant.
 
@@ -49,3 +48,9 @@ class ModelParallelConfig(BaseModel):
         description="Maximum queue size for pending operations",
         ge=1,
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

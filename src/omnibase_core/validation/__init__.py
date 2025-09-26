@@ -27,6 +27,7 @@ Usage Examples:
 
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
+from .auditor_protocol import ProtocolAuditor
 
 # Import CLI for module execution
 from .cli import ValidationSuite
@@ -34,6 +35,11 @@ from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
     validate_yaml_file,
+)
+from .exceptions import (
+    ConfigurationError,
+    InputValidationError,
+    ValidationFrameworkError,
 )
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
@@ -91,8 +97,12 @@ def validate_all(
 
 
 __all__ = [
-    "ProtocolInfo",
     # Core classes and types
+    "ConfigurationError",
+    "InputValidationError",
+    "ProtocolAuditor",
+    "ProtocolInfo",
+    "ValidationFrameworkError",
     "ValidationResult",
     "ValidationSuite",
     "validate_all",

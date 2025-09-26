@@ -187,6 +187,12 @@ class ModelCliAdvancedParams(BaseModel):
         self.security_level = EnumSecurityLevel.STRICT
         self.enable_sandbox = True
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelCliAdvancedParams"]

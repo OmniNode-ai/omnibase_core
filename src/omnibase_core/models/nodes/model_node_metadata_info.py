@@ -356,7 +356,7 @@ class ModelNodeMetadataInfo(BaseModel):
         try:
             core.health = EnumNodeHealthStatus(health_str)
         except ValueError:
-            core.health = EnumNodeHealthStatus.HEALTHY
+            core.health = EnumNodeHealthStatus.UNKNOWN
 
         organization = ModelNodeOrganizationMetadata(
             description=getattr(node_info, "description", None),
@@ -368,6 +368,12 @@ class ModelNodeMetadataInfo(BaseModel):
             performance=ModelNodePerformanceMetrics.create_new(),
             organization=organization,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use
