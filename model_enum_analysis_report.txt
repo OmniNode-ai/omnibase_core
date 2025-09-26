@@ -1,0 +1,741 @@
+================================================================================
+MODEL AND ENUM ANALYSIS REPORT
+================================================================================
+Analysis Date: Fri Sep 26 08:32:31 UTC 2025
+Source Directory: src
+Model files found: 225
+Enum files found: 101
+
+DUPLICATE CLASSES FOUND:
+----------------------------------------
+
+🔴 DUPLICATE: ModelDuration
+  1. src/omnibase_core/models/infrastructure/model_duration.py
+  2. src/omnibase_core/models/infrastructure/model_duration_original.py
+
+🔴 DUPLICATE: ModelProgress
+  1. src/omnibase_core/models/infrastructure/model_progress.py
+  2. src/omnibase_core/models/infrastructure/model_progress_original.py
+
+🔴 DUPLICATE: ModelTimeout
+  1. src/omnibase_core/models/infrastructure/model_timeout.py
+  2. src/omnibase_core/models/infrastructure/model_timeout_original.py
+
+🔴 DUPLICATE: ModelMetadataAnalyticsSummary
+  1. src/omnibase_core/models/metadata/model_metadata_analytics_summary.py
+  2. src/omnibase_core/models/metadata/model_metadata_analytics_summary_original.py
+
+🔴 DUPLICATE: ModelNodeInfoSummary
+  1. src/omnibase_core/models/metadata/model_node_info_summary.py
+  2. src/omnibase_core/models/metadata/model_node_info_summary_original.py
+
+🔴 DUPLICATE: ModelNodePerformanceMetrics
+  1. src/omnibase_core/models/metadata/node_info/model_node_performance_metrics.py
+  2. src/omnibase_core/models/nodes/model_node_performance_metrics.py
+
+BASIC TYPE USAGE ANALYSIS:
+----------------------------------------
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_action.py
+  Class: ModelCliAction
+  Field: action_display_name (str | None)
+  Suggestion: Consider creating EnumAction_display_name
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_debug_info.py
+  Class: ModelCliDebugInfo
+  Field: verbose_mode (bool)
+  Suggestion: Consider creating EnumVerbose_mode
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_debug_info.py
+  Class: ModelCliDebugInfo
+  Field: trace_mode (bool)
+  Suggestion: Consider creating EnumTrace_mode
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_execution_result.py
+  Class: ModelCliExecutionResult
+  Field: status_code (int)
+  Suggestion: Consider creating EnumStatus_code
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_input_dict.py
+  Class: TypedDictModelCliInputDict
+  Field: action (str)
+  Suggestion: Consider using EnumActionCategory
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_input_dict.py
+  Class: TypedDictModelCliInputDict
+  Field: output_format (str)
+  Suggestion: Consider using EnumOutputFormat
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_input_dict.py
+  Class: TypedDictModelCliInputDict
+  Field: category_filter (str | None)
+  Suggestion: Consider using EnumCategoryFilter
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_cli_result_metadata.py
+  Class: ModelCliResultMetadata
+  Field: confidence_level (float | None)
+  Suggestion: Consider creating EnumConfidence_level
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_debug_info_data.py
+  Class: TypedDictModelDebugInfoData
+  Field: category (str)
+  Suggestion: Consider using EnumCategory
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_output_format_options.py
+  Class: ModelOutputFormatOptions
+  Field: compact_mode (bool)
+  Suggestion: Consider creating EnumCompact_mode
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_output_format_options.py
+  Class: ModelOutputFormatOptions
+  Field: append_mode (bool)
+  Suggestion: Consider creating EnumAppend_mode
+
+🟡 SUGGESTION: src/omnibase_core/models/cli/model_performance_metric_data.py
+  Class: TypedDictModelPerformanceMetricData
+  Field: category (str)
+  Suggestion: Consider using EnumCategory
+
+🟡 SUGGESTION: src/omnibase_core/models/common/model_schema_value.py
+  Class: ModelSchemaValue
+  Field: value_type (str)
+  Suggestion: Consider creating EnumValue_type
+
+🟡 SUGGESTION: src/omnibase_core/models/connections/model_performance_properties.py
+  Class: ModelPerformanceProperties
+  Field: compression_level (int)
+  Suggestion: Consider creating EnumCompression_level
+
+🟡 SUGGESTION: src/omnibase_core/models/contracts/model_yaml_contract.py
+  Class: YamlContentType
+  Field: node_type (str)
+  Suggestion: Consider using EnumNodeType
+
+🟡 SUGGESTION: src/omnibase_core/models/core/model_container.py
+  Class: ModelContainer
+  Field: container_type (str)
+  Suggestion: Consider creating EnumContainer_type
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_data_primary.py
+  Class: ModelFsmData
+  Field: state_machine_name (str)
+  Suggestion: Consider creating EnumState_machine_name
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_data_primary.py
+  Class: ModelFsmData
+  Field: initial_state (str)
+  Suggestion: Consider creating EnumInitial_state
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_data_primary.py
+  Class: ModelFsmData
+  Field: global_actions (list[str])
+  Suggestion: Consider creating EnumGlobal_actions
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_state.py
+  Class: ModelFsmState
+  Field: entry_actions (list[str])
+  Suggestion: Consider creating EnumEntry_actions
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_state.py
+  Class: ModelFsmState
+  Field: exit_actions (list[str])
+  Suggestion: Consider creating EnumExit_actions
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_transition.py
+  Class: ModelFsmTransition
+  Field: from_state (str)
+  Suggestion: Consider creating EnumFrom_state
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_transition.py
+  Class: ModelFsmTransition
+  Field: to_state (str)
+  Suggestion: Consider creating EnumTo_state
+
+🟡 SUGGESTION: src/omnibase_core/models/fsm/model_fsm_transition.py
+  Class: ModelFsmTransition
+  Field: actions (list[str])
+  Suggestion: Consider creating EnumActions
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/model_cli_result_data.py
+  Class: ModelCliResultData
+  Field: status_code (int)
+  Suggestion: Consider creating EnumStatus_code
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/model_progress_original.py
+  Class: ModelProgress
+  Field: phase_percentage (float)
+  Suggestion: Consider creating EnumPhase_percentage
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/model_retry_conditions.py
+  Class: ModelRetryConditions
+  Field: retry_on_status_codes (list[int])
+  Suggestion: Consider creating EnumRetry_on_status_codes
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/model_retry_execution.py
+  Class: ModelRetryExecution
+  Field: last_status_code (int | None)
+  Suggestion: Consider creating EnumLast_status_code
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/model_retry_failure_info.py
+  Class: ModelRetryFailureInfo
+  Field: last_status_code (int | None)
+  Suggestion: Consider creating EnumLast_status_code
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/model_timeout_original.py
+  Class: TimeoutMetadataType
+  Field: escalation_policy (str)
+  Suggestion: Consider creating EnumEscalation_policy
+
+🟡 SUGGESTION: src/omnibase_core/models/infrastructure/progress/model_progress_core.py
+  Class: ModelProgressCore
+  Field: phase_percentage (float)
+  Suggestion: Consider creating EnumPhase_percentage
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/model_metadata_node_analytics.py
+  Class: ModelMetadataNodeAnalytics
+  Field: nodes_by_type (dict[EnumMetadataNodeType, int])
+  Suggestion: Consider creating EnumNodes_by_type
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/model_metadata_node_analytics.py
+  Class: ModelMetadataNodeAnalytics
+  Field: nodes_by_status (dict[EnumMetadataNodeStatus, int])
+  Suggestion: Consider creating EnumNodes_by_status
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/model_node_info_summary.py
+  Class: TypedDictNodeCore
+  Field: node_type (str)
+  Suggestion: Consider using EnumNodeType
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/model_node_info_summary.py
+  Class: TypedDictNodeCore
+  Field: status (str)
+  Suggestion: Consider using EnumStatus
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/analytics/model_analytics_error_summary.py
+  Class: ModelAnalyticsErrorSummary
+  Field: severity_level (str)
+  Suggestion: Consider using EnumSeverityLevel
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py
+  Class: ModelAnalyticsPerformanceSummary
+  Field: performance_level (str)
+  Suggestion: Consider creating EnumPerformance_level
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py
+  Class: ModelAnalyticsPerformanceSummary
+  Field: memory_usage_level (str)
+  Suggestion: Consider creating EnumMemory_usage_level
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py
+  Class: ModelNodePerformanceSummary
+  Field: performance_level (str)
+  Suggestion: Consider creating EnumPerformance_level
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py
+  Class: ModelNodePerformanceSummary
+  Field: reliability_level (str)
+  Suggestion: Consider creating EnumReliability_level
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py
+  Class: ModelNodePerformanceSummary
+  Field: memory_usage_level (str)
+  Suggestion: Consider creating EnumMemory_usage_level
+
+🟡 SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py
+  Class: ModelNodeQualitySummary
+  Field: quality_level (str)
+  Suggestion: Consider creating EnumQuality_level
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_function_deprecation_info.py
+  Class: TypedDictDeprecationSummary
+  Field: status (str)
+  Suggestion: Consider using EnumStatus
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_function_node_core.py
+  Class: ModelFunctionNodeCore
+  Field: parameter_types (dict[str, EnumParameterType])
+  Suggestion: Consider creating EnumParameter_types
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_function_node_metadata.py
+  Class: TypedDictFunctionMetadataSummary
+  Field: deprecation_status (str)
+  Suggestion: Consider using EnumDeprecationStatus
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_node_configuration_value.py
+  Class: ModelNodeConfigurationValue
+  Field: value_type (str)
+  Suggestion: Consider creating EnumValue_type
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_node_core_info.py
+  Class: TypedDictCoreSummary
+  Field: node_type (str)
+  Suggestion: Consider using EnumNodeType
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_node_core_info.py
+  Class: TypedDictCoreSummary
+  Field: status (str)
+  Suggestion: Consider using EnumStatus
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_types_function_relationships_summary.py
+  Class: FunctionRelationshipsSummaryType
+  Field: primary_category (str)
+  Suggestion: Consider creating EnumPrimary_category
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_types_node_feature_summary.py
+  Class: NodeFeatureSummaryType
+  Field: is_debug_mode (str)
+  Suggestion: Consider creating EnumIs_debug_mode
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_types_node_metadata_summary.py
+  Class: NodeMetadataSummaryType
+  Field: node_type (str)
+  Suggestion: Consider using EnumNodeType
+
+🟡 SUGGESTION: src/omnibase_core/models/nodes/model_types_node_metadata_summary.py
+  Class: NodeMetadataSummaryType
+  Field: status (str)
+  Suggestion: Consider using EnumStatus
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_computation_output_data.py
+  Class: ModelComputationOutputData
+  Field: status_flags (dict[str, bool])
+  Suggestion: Consider creating EnumStatus_flags
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_effect_parameters.py
+  Class: ModelEffectParameters
+  Field: operation_modes (dict[str, str])
+  Suggestion: Consider creating EnumOperation_modes
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_event_metadata.py
+  Class: ModelEventMetadata
+  Field: event_type (str)
+  Suggestion: Consider creating EnumEvent_type
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_execution_metadata.py
+  Class: ModelExecutionMetadata
+  Field: status (str)
+  Suggestion: Consider using EnumStatus
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_message_payload.py
+  Class: ModelMessagePayload
+  Field: message_type (str)
+  Suggestion: Consider creating EnumMessage_type
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_operation_payload.py
+  Class: ModelOperationPayload
+  Field: operation_type (str)
+  Suggestion: Consider using EnumOperationType
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_system_metadata.py
+  Class: ModelSystemMetadata
+  Field: health_status (str)
+  Suggestion: Consider creating EnumHealth_status
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_workflow_metadata.py
+  Class: ModelWorkflowMetadata
+  Field: workflow_type (str)
+  Suggestion: Consider creating EnumWorkflow_type
+
+🟡 SUGGESTION: src/omnibase_core/models/operations/model_workflow_payload.py
+  Class: ModelWorkflowPayload
+  Field: state_data (dict[str, ModelSchemaValue])
+  Suggestion: Consider creating EnumState_data
+
+🟡 SUGGESTION: src/omnibase_core/validation/model_protocol_info.py
+  Class: ProtocolInfo
+  Field: methods (list[str])
+  Suggestion: Consider creating EnumMethods
+
+PROTOCOL USAGE ANALYSIS:
+----------------------------------------
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/cli/model_cli_execution_config.py
+  Class: ModelCliExecutionConfig
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/cli/model_cli_execution_metadata.py
+  Class: ModelCliExecutionMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/cli/model_cli_node_execution_input.py
+  Class: ModelCliNodeExecutionInput
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/cli/model_cli_result_metadata.py
+  Class: ModelCliResultMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_artifact_type_config.py
+  Class: ModelArtifactTypeConfig
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_environment_properties_collection.py
+  Class: TypedDictPropertyMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_example_metadata.py
+  Class: ModelExampleMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_example_metadata_summary.py
+  Class: ModelExampleMetadataSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_fallback_metadata.py
+  Class: ModelFallbackMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_namespace_config.py
+  Class: ModelNamespaceConfig
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/config/model_property_metadata.py
+  Class: ModelPropertyMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/core/model_configuration_base.py
+  Class: ModelConfigurationBase
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/core/model_typed_configuration.py
+  Class: ModelTypedConfiguration
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/core/model_typed_dict_factory_kwargs.py
+  Class: TypedDictMetadataParams
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/infrastructure/model_retry_config.py
+  Class: ModelRetryConfig
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/infrastructure/model_timeout_original.py
+  Class: TimeoutMetadataType
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_function_node_data.py
+  Class: ModelFunctionNodeData
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_generic_metadata.py
+  Class: ModelGenericMetadata
+  Has SPI import: True
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_analytics_summary.py
+  Class: ModelMetadataAnalyticsSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_analytics_summary_original.py
+  Class: ModelMetadataAnalyticsSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_field_info.py
+  Class: ModelMetadataFieldInfo
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_node_analytics.py
+  Class: ModelMetadataNodeAnalytics
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_node_collection.py
+  Class: ModelMetadataNodeCollection
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_node_info.py
+  Class: ModelMetadataNodeInfo
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_usage_metrics.py
+  Class: ModelMetadataUsageMetrics
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_metadata_value.py
+  Class: ModelMetadataValue
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_nested_configuration.py
+  Class: ModelNestedConfiguration
+  Has SPI import: False
+  Suggested protocols: ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_node_info_container.py
+  Class: ModelNodeInfoContainer
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_node_info_summary.py
+  Class: TypedDictNodeCore
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_node_info_summary.py
+  Class: TypedDictNodeInfoSummaryData
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_node_info_summary.py
+  Class: ModelNodeInfoSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_node_info_summary_original.py
+  Class: ModelNodeInfoSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/model_node_union.py
+  Class: ModelNodeUnion
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_categorization.py
+  Class: ModelNodeCategorization
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_core.py
+  Class: ModelNodeCore
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_performance_metrics.py
+  Class: ModelNodePerformanceMetrics
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py
+  Class: ModelNodePerformanceSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_quality_indicators.py
+  Class: ModelNodeQualityIndicators
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py
+  Class: ModelNodeQualitySummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/metadata/node_info/model_node_timestamps.py
+  Class: ModelNodeTimestamps
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_function_node.py
+  Class: ModelFunctionNode
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_function_node_core.py
+  Class: ModelFunctionNodeCore
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_function_node_metadata.py
+  Class: TypedDictFunctionMetadataSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_function_node_metadata.py
+  Class: ModelFunctionNodeMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_function_node_performance.py
+  Class: ModelFunctionNodePerformance
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_function_node_summary.py
+  Class: ModelFunctionNodeSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_capabilities_info.py
+  Class: ModelNodeCapabilitiesInfo
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_capabilities_summary.py
+  Class: ModelNodeCapabilitiesSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_capability.py
+  Class: ModelNodeCapability
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_configuration.py
+  Class: TypedDictNodeConfigurationSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_configuration.py
+  Class: ModelNodeConfiguration
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_configuration_summary.py
+  Class: ModelNodeConfigurationSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_configuration_value.py
+  Class: ModelNodeConfigurationValue
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolConfigurable
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_connection_settings.py
+  Class: ModelNodeConnectionSettings
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_core_info.py
+  Class: ModelNodeCoreInfo
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_core_info_summary.py
+  Class: ModelNodeCoreInfoSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_core_metadata.py
+  Class: ModelNodeCoreMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_execution_settings.py
+  Class: ModelNodeExecutionSettings
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_feature_flags.py
+  Class: ModelNodeFeatureFlags
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_information.py
+  Class: ModelNodeInformation
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_information_summary.py
+  Class: ModelNodeInformationSummary
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_metadata_info.py
+  Class: ModelNodeMetadataInfo
+  Has SPI import: True
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_organization_metadata.py
+  Class: ModelNodeOrganizationMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_performance_metrics.py
+  Class: ModelNodePerformanceMetrics
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_resource_limits.py
+  Class: TypedDictNodeResourceConstraintKwargs
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_resource_limits.py
+  Class: ModelNodeResourceLimits
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_node_type.py
+  Class: ModelNodeType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_types_node_capabilities_summary.py
+  Class: NodeCapabilitiesSummaryType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_types_node_connection_summary.py
+  Class: NodeConnectionSummaryType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_types_node_execution_summary.py
+  Class: NodeExecutionSummaryType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_types_node_feature_summary.py
+  Class: NodeFeatureSummaryType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_types_node_metadata_summary.py
+  Class: NodeMetadataSummaryType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike, ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/nodes/model_types_node_resource_summary.py
+  Class: TypedDictNodeResourceSummaryType
+  Has SPI import: False
+  Suggested protocols: ProtocolNodeLike
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/operations/model_event_metadata.py
+  Class: ModelEventMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/operations/model_execution_metadata.py
+  Class: ModelExecutionMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/operations/model_system_metadata.py
+  Class: ModelSystemMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+🔵 PROTOCOL SUGGESTION: src/omnibase_core/models/operations/model_workflow_metadata.py
+  Class: ModelWorkflowMetadata
+  Has SPI import: False
+  Suggested protocols: ProtocolMetadataProvider
+
+SUMMARY:
+--------------------
+Duplicate classes: 6
+Basic type suggestions: 62
+Protocol suggestions: 77
