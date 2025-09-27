@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Cache Invalidation Model - ONEX Standards Compliant.
 

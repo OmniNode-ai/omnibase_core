@@ -18,6 +18,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 from .model_fsm_operation import ModelFSMOperation
@@ -169,8 +173,17 @@ class ModelFSMSubcontract(BaseModel):
             state_names = [state.state_name for state in v]
             if info.data["initial_state"] not in state_names:
                 msg = f"Initial state '{info.data['initial_state']}' not found in states list"
-                raise ValueError(
-                    msg,
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
                 )
         return v
 
@@ -185,7 +198,18 @@ class ModelFSMSubcontract(BaseModel):
             for state_name in v:
                 if state_name not in state_names:
                     msg = f"State '{state_name}' not found in states list"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
+                    )
         return v
 
     @field_validator("transitions")
@@ -205,13 +229,31 @@ class ModelFSMSubcontract(BaseModel):
                 # Support wildcard transitions (from_state: '*')
                 if transition.from_state not in state_names_with_wildcard:
                     msg = f"Transition from_state '{transition.from_state}' not found in states list"
-                    raise ValueError(
-                        msg,
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
                     )
                 if transition.to_state not in state_names:
                     msg = f"Transition to_state '{transition.to_state}' not found in states list"
-                    raise ValueError(
-                        msg,
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
                     )
         return v
 

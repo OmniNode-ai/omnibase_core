@@ -22,6 +22,10 @@ StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
 
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_conflict_resolution_config import (
     ModelConflictResolutionConfig,
 )
@@ -241,8 +245,17 @@ class ModelContractReducer(ModelContractBase):
             )
         ):
             msg = "Reducer with aggregation must define aggregation functions"
-            raise ValueError(
-                msg,
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
             )
 
         # Validate memory management consistency if present
@@ -251,14 +264,34 @@ class ModelContractReducer(ModelContractBase):
                 msg = (
                     "GC threshold should be less than 0.9 when spill to disk is enabled"
                 )
-                raise ValueError(
-                    msg,
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
                 )
 
         # Validate streaming configuration if present
         if self.streaming and self.streaming.enabled and self.streaming.window_size < 1:
             msg = "Streaming requires positive window_size"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Validate tool specification if present (infrastructure pattern)
         if self.tool_specification:
@@ -266,7 +299,18 @@ class ModelContractReducer(ModelContractBase):
             for field in required_fields:
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
+                    )
 
         # Validate FSM subcontract if it's not a $ref
         if self.state_transitions and isinstance(
@@ -318,7 +362,18 @@ class ModelContractReducer(ModelContractBase):
             )
 
         if violations:
-            raise ValueError("\n".join(violations))
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="\n".join(violations),
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def _validate_fsm_subcontract(self) -> None:
         """
@@ -333,14 +388,34 @@ class ModelContractReducer(ModelContractBase):
         # Basic structural validation
         if not fsm.initial_state:
             msg = "FSM subcontract must define initial_state"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Validate initial state exists in states list
         state_names = [state.state_name for state in fsm.states]
         if fsm.initial_state not in state_names:
             msg = f"Initial state '{fsm.initial_state}' must be in states list"
-            raise ValueError(
-                msg,
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
             )
 
         # Validate operations have proper atomic guarantees for critical operations
@@ -349,13 +424,31 @@ class ModelContractReducer(ModelContractBase):
             if operation.operation_name in critical_operations:
                 if not operation.requires_atomic_execution:
                     msg = f"Critical operation '{operation.operation_name}' must require atomic execution"
-                    raise ValueError(
-                        msg,
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
                     )
                 if not operation.supports_rollback:
                     msg = f"Critical operation '{operation.operation_name}' must support rollback"
-                    raise ValueError(
-                        msg,
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
                     )
 
     model_config = ConfigDict(
@@ -407,8 +500,41 @@ class ModelContractReducer(ModelContractBase):
             return cls.model_validate(yaml_data)
 
         except ValidationError as e:
-            raise ValueError(f"Contract validation failed: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Contract validation failed: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e
         except yaml.YAMLError as e:
-            raise ValueError(f"YAML parsing error: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"YAML parsing error: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e
         except Exception as e:
-            raise ValueError(f"Failed to load contract YAML: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Failed to load contract YAML: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e

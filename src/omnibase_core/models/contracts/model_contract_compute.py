@@ -15,7 +15,10 @@ from typing import Union, assert_never
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
@@ -175,7 +178,18 @@ class ModelContractCompute(ModelContractBase):
         elif isinstance(v, str):
             return EnumNodeType(v)
         else:
-            raise ValueError(f"Invalid node_type: {v}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid node_type: {v}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization validation."""
@@ -341,7 +355,18 @@ class ModelContractCompute(ModelContractBase):
         """Validate algorithm configuration for compute nodes."""
         if not self.algorithm.factors:
             msg = "Compute node must define at least one algorithm factor"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def _validate_compute_performance_config(self) -> None:
         """Validate performance, parallel processing, and caching configuration."""
@@ -351,7 +376,18 @@ class ModelContractCompute(ModelContractBase):
             and self.parallel_processing.max_workers < 1
         ):
             msg = "Parallel processing requires at least 1 worker"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Validate caching configuration if present
         if (
@@ -360,12 +396,34 @@ class ModelContractCompute(ModelContractBase):
             and self.caching.max_entries < 1
         ):
             msg = "Caching requires positive max_entries"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Validate performance requirements for compute nodes
         if not self.performance.single_operation_max_ms:
             msg = "Compute nodes must specify single_operation_max_ms performance requirement"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def _validate_compute_infrastructure_config(self) -> None:
         """Validate infrastructure pattern configuration."""
@@ -375,7 +433,18 @@ class ModelContractCompute(ModelContractBase):
             for field in required_fields:
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
+                    )
 
     @field_validator("algorithm")
     @classmethod
@@ -386,7 +455,18 @@ class ModelContractCompute(ModelContractBase):
         """Validate algorithm configuration consistency."""
         if v.algorithm_type == "weighted_factor_algorithm" and not v.factors:
             msg = "Weighted factor algorithm requires at least one factor"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         return v
 
     model_config = ConfigDict(
@@ -436,8 +516,41 @@ class ModelContractCompute(ModelContractBase):
             return cls.model_validate(yaml_data)
 
         except ValidationError as e:
-            raise ValueError(f"Contract validation failed: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Contract validation failed: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e
         except yaml.YAMLError as e:
-            raise ValueError(f"YAML parsing error: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"YAML parsing error: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e
         except Exception as e:
-            raise ValueError(f"Failed to load contract YAML: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Failed to load contract YAML: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Transformation Model - ONEX Standards Compliant.
 

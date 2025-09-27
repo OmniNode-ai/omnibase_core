@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Routing Model - ONEX Standards Compliant.
 

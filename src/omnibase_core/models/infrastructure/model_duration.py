@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_time_based import ModelTimeBased
 
@@ -39,7 +43,18 @@ class ModelDuration(BaseModel):
                     value=int(ms), unit=EnumTimeUnit.MILLISECONDS
                 )
             else:
-                raise TypeError("milliseconds must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="milliseconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "seconds" in data:
             seconds = data.pop("seconds")
             super().__init__()
@@ -49,7 +64,18 @@ class ModelDuration(BaseModel):
                     unit=EnumTimeUnit.MILLISECONDS,
                 )
             else:
-                raise TypeError("seconds must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="seconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "minutes" in data:
             minutes = data.pop("minutes")
             super().__init__()
@@ -59,7 +85,18 @@ class ModelDuration(BaseModel):
                     unit=EnumTimeUnit.MILLISECONDS,
                 )
             else:
-                raise TypeError("minutes must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="minutes must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "hours" in data:
             hours = data.pop("hours")
             super().__init__()
@@ -69,7 +106,18 @@ class ModelDuration(BaseModel):
                     unit=EnumTimeUnit.MILLISECONDS,
                 )
             else:
-                raise TypeError("hours must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="hours must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "days" in data:
             days = data.pop("days")
             super().__init__()
@@ -79,7 +127,18 @@ class ModelDuration(BaseModel):
                     unit=EnumTimeUnit.MILLISECONDS,
                 )
             else:
-                raise TypeError("days must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="days must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         else:
             super().__init__(**data)
 

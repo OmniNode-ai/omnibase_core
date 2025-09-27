@@ -13,8 +13,11 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
@@ -60,39 +63,116 @@ class ModelTimeout(BaseModel):
 
         # Type validation and conversion
         if not isinstance(timeout_seconds_raw, (int, float)):
-            raise TypeError("timeout_seconds must be a number")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="timeout_seconds must be a number",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         timeout_seconds = int(timeout_seconds_raw)
 
         warning_threshold_seconds = None
         if warning_threshold_seconds_raw is not None:
             if not isinstance(warning_threshold_seconds_raw, (int, float)):
-                raise TypeError("warning_threshold_seconds must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="warning_threshold_seconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
             warning_threshold_seconds = int(warning_threshold_seconds_raw)
 
         if not isinstance(is_strict_raw, bool):
-            raise TypeError("is_strict must be a boolean")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="is_strict must be a boolean",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         is_strict = is_strict_raw
 
         if not isinstance(allow_extension_raw, bool):
-            raise TypeError("allow_extension must be a boolean")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="allow_extension must be a boolean",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         allow_extension = allow_extension_raw
 
         extension_limit_seconds = None
         if extension_limit_seconds_raw is not None:
             if not isinstance(extension_limit_seconds_raw, (int, float)):
-                raise TypeError("extension_limit_seconds must be a number")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="extension_limit_seconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
             extension_limit_seconds = int(extension_limit_seconds_raw)
 
         runtime_category = None
         if runtime_category_raw is not None:
             if not isinstance(runtime_category_raw, EnumRuntimeCategory):
-                raise TypeError("runtime_category must be an EnumRuntimeCategory")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="runtime_category must be an EnumRuntimeCategory",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
             runtime_category = runtime_category_raw
 
         description = None
         if description_raw is not None:
             if not isinstance(description_raw, str):
-                raise TypeError("description must be a string")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="description must be a string",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
             description = description_raw
 
         # Convert custom_metadata to ModelSchemaValue format if needed
@@ -104,7 +184,18 @@ class ModelTimeout(BaseModel):
                 else:
                     processed_metadata[key] = ModelSchemaValue.from_value(value)
         elif custom_metadata_raw != {}:
-            raise TypeError("custom_metadata must be a dictionary")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="custom_metadata must be a dictionary",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Initialize parent with processed custom metadata
         super().__init__(custom_metadata=processed_metadata, **data)

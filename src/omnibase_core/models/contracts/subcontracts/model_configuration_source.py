@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Configuration Source Model - ONEX Standards Compliant.
 

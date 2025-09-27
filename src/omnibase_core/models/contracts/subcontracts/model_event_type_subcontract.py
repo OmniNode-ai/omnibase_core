@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Type Subcontract Model - ONEX Standards Compliant.
 
@@ -16,6 +15,11 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Import individual event model components
 from .model_event_definition import ModelEventDefinition
@@ -159,7 +163,18 @@ class ModelEventTypeSubcontract(BaseModel):
         """Validate that primary events list is not empty."""
         if not v:
             msg = "primary_events must contain at least one event type"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         return v
 
     @field_validator("event_categories")
@@ -168,7 +183,18 @@ class ModelEventTypeSubcontract(BaseModel):
         """Validate that event categories list is not empty."""
         if not v:
             msg = "event_categories must contain at least one category"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         return v
 
     @field_validator("batch_size")
@@ -178,8 +204,17 @@ class ModelEventTypeSubcontract(BaseModel):
         if info.data and info.data.get("batch_processing", False):
             if v < 1:
                 msg = "batch_size must be positive when batch processing is enabled"
-                raise ValueError(
-                    msg,
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
                 )
         return v
 
@@ -190,8 +225,17 @@ class ModelEventTypeSubcontract(BaseModel):
         if info.data and info.data.get("deduplication_enabled", False):
             if v < 1000:
                 msg = "deduplication_window_ms must be at least 1000ms when enabled"
-                raise ValueError(
-                    msg,
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
                 )
         return v
 

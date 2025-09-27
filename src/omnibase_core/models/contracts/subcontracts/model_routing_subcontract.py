@@ -21,6 +21,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_load_balancing import ModelLoadBalancing
 from .model_request_transformation import ModelRequestTransformation
@@ -231,7 +236,22 @@ class ModelRoutingSubcontract(BaseModel):
             for route in routes:
                 if route.priority in priorities_seen:
                     msg = f"Duplicate priority {route.priority} found in pattern '{pattern}' (route: {route.route_name})"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "pattern": ModelSchemaValue.from_value(pattern),
+                                "priority": ModelSchemaValue.from_value(route.priority),
+                                "route_name": ModelSchemaValue.from_value(
+                                    route.route_name
+                                ),
+                                "validation_type": ModelSchemaValue.from_value(
+                                    "route_priority_uniqueness"
+                                ),
+                            }
+                        ),
+                    )
                 priorities_seen.add(route.priority)
 
         return v
@@ -242,7 +262,19 @@ class ModelRoutingSubcontract(BaseModel):
         """Validate sampling rate is reasonable."""
         if v > 0.5:
             msg = "Trace sampling rate above 50% may impact performance"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "sampling_rate": ModelSchemaValue.from_value(v),
+                        "max_recommended": ModelSchemaValue.from_value(0.5),
+                        "validation_type": ModelSchemaValue.from_value(
+                            "sampling_rate_threshold"
+                        ),
+                    }
+                ),
+            )
         return v
 
     model_config = ConfigDict(

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -356,7 +356,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         self.items.extend(items)
         self.updated_at = datetime.now(UTC)
 
-    def find_items(self, **kwargs: Any) -> list[T]:
+    def find_items(self, **kwargs: object) -> list[T]:
         """
         Find items by attribute values.
 
@@ -380,7 +380,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
 
         return self.filter_items(matches_all)
 
-    def update_item(self, item_id: UUID, **updates: Any) -> bool:
+    def update_item(self, item_id: UUID, **updates: object) -> bool:
         """
         Update an item's attributes by ID.
 

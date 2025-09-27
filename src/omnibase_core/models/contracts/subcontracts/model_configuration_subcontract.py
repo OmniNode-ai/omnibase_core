@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Configuration Management Subcontract Model - ONEX Standards Compliant.
 

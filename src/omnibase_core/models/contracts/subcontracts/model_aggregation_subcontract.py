@@ -16,6 +16,11 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 from .model_aggregation_function import ModelAggregationFunction
 from .model_aggregation_performance import ModelAggregationPerformance
 from .model_data_grouping import ModelDataGrouping
@@ -190,7 +195,18 @@ class ModelAggregationSubcontract(BaseModel):
         for func in v:
             if func not in supported_functions:
                 msg = f"Unsupported aggregation function: {func}"
-                raise ValueError(msg)
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         return v
 
     model_config = ConfigDict(

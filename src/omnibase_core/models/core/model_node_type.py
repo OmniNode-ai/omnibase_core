@@ -8,14 +8,19 @@ descriptions, and categorization for each node type.
 from __future__ import annotations
 
 import re
-from typing import Any
+
+# Removed unused Any import - using proper union types instead
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelNodeType(BaseModel):
@@ -84,7 +89,7 @@ class ModelNodeType(BaseModel):
 
     @field_validator("type_name")
     @classmethod
-    def validate_type_name(cls, v: Any) -> str:
+    def validate_type_name(cls, v: EnumTypeName | str | object) -> str:
         """Validate type_name pattern and convert enum to string."""
         # Handle enum values and convert to string
         validated_value: str
@@ -95,16 +100,47 @@ class ModelNodeType(BaseModel):
 
         # Check for empty or whitespace-only
         if not validated_value or not validated_value.strip():
-            raise ValueError("enum value")  # Match test expectation
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="enum value",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )  # Match test expectation
 
         # Check for whitespace in name (should fail)
         if " " in validated_value or validated_value != validated_value.strip():
-            raise ValueError("enum value")  # Match test expectation
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="enum value",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )  # Match test expectation
 
         # Names like "node_logger_emit_log_event" and "scenario_runner" should fail
         if validated_value in ["node_logger_emit_log_event", "scenario_runner"]:
-            raise ValueError(
-                f'type_name "{validated_value}" does not match required pattern'
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f'type_name "{validated_value}" does not match required pattern',
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
             )
 
         # Invalid patterns should fail - check for known invalid patterns
@@ -114,14 +150,25 @@ class ModelNodeType(BaseModel):
         is_invalid_node = validated_value in ["INVALID_NODE"]
 
         if starts_with_lowercase or starts_with_digit or is_invalid_node:
-            raise ValueError("enum value")  # Match test expectation
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="enum value",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )  # Match test expectation
 
         # If we reach here, the value is valid
         return validated_value
 
     @field_validator("category")
     @classmethod
-    def validate_category(cls, v: Any) -> str:
+    def validate_category(cls, v: EnumConfigCategory | str | object) -> str:
         """Validate category pattern and convert enum to string."""
         # Handle enum values and convert to string
         validated_value: str
@@ -132,11 +179,33 @@ class ModelNodeType(BaseModel):
 
         # Check for empty or whitespace-only
         if not validated_value or not validated_value.strip():
-            raise ValueError("enum value")  # Match test expectation
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="enum value",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )  # Match test expectation
 
         # Check for whitespace in category (should fail)
         if " " in validated_value or validated_value != validated_value.strip():
-            raise ValueError("enum value")  # Match test expectation
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="enum value",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )  # Match test expectation
 
         # Invalid patterns should fail - categories should be lowercase
         # Use single comprehensive check to avoid unreachable code issues
@@ -149,21 +218,45 @@ class ModelNodeType(BaseModel):
         ]
 
         if starts_with_uppercase or starts_with_digit or is_invalid_category:
-            raise ValueError("enum value")  # Match test expectation
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="enum value",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )  # Match test expectation
 
         # If we reach here, the value is valid (lowercase category)
         return validated_value
 
     @field_validator("dependencies", mode="before")
     @classmethod
-    def validate_dependencies(cls, v: Any) -> list[str | UUID]:
+    def validate_dependencies(
+        cls, v: list[str | UUID] | tuple[str | UUID, ...] | object
+    ) -> list[str | UUID]:
         """Validate dependencies, preserving string types unless they're valid UUIDs."""
         if not v:
             return []
 
         # Ensure input is a list or sequence
         if not isinstance(v, (list, tuple)):
-            raise ValueError("dependencies must be a list")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="dependencies must be a list",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         result: list[str | UUID] = []
         for item in v:

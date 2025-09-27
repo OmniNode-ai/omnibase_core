@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Workflow Coordination Subcontract Model - ONEX Standards Compliant.
 

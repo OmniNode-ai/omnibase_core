@@ -27,7 +27,11 @@ ValidationRulesInput = Union[
 ]
 
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_backup_config import ModelBackupConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_dependency import ModelDependency
@@ -89,7 +93,18 @@ class ModelContractEffect(ModelContractBase):
         elif isinstance(v, str):
             return EnumNodeType(v)
         else:
-            raise ValueError(f"Invalid node_type: {v}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid node_type: {v}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization validation."""
@@ -282,7 +297,18 @@ class ModelContractEffect(ModelContractBase):
         """Validate I/O operations configuration for effect nodes."""
         if not self.io_operations:
             msg = "Effect node must define at least one I/O operation"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def _validate_effect_transaction_config(self) -> None:
         """Validate transaction management and retry configuration."""
@@ -291,7 +317,18 @@ class ModelContractEffect(ModelContractBase):
             op.atomic for op in self.io_operations
         ):
             msg = "Transaction management requires at least one atomic operation"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Validate retry configuration
         if (
@@ -300,7 +337,18 @@ class ModelContractEffect(ModelContractBase):
             > self.retry_policies.max_attempts
         ):
             msg = "Circuit breaker threshold cannot exceed max retry attempts"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def _validate_effect_external_services(self) -> None:
         """Validate external services configuration."""
@@ -308,7 +356,18 @@ class ModelContractEffect(ModelContractBase):
         for service in self.external_services:
             if service.authentication_method != "none" and not service.endpoint_url:
                 msg = "External services with authentication must specify endpoint_url"
-                raise ValueError(msg)
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
 
     def _validate_effect_infrastructure_config(self) -> None:
         """Validate infrastructure pattern configuration."""
@@ -318,7 +377,18 @@ class ModelContractEffect(ModelContractBase):
             for field in required_fields:
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation"
+                                ),
+                            }
+                        ),
+                    )
 
     @field_validator("io_operations")
     @classmethod
@@ -386,8 +456,41 @@ class ModelContractEffect(ModelContractBase):
             return cls.model_validate(yaml_data)
 
         except ValidationError as e:
-            raise ValueError(f"Contract validation failed: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Contract validation failed: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e
         except yaml.YAMLError as e:
-            raise ValueError(f"YAML parsing error: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"YAML parsing error: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e
         except Exception as e:
-            raise ValueError(f"Failed to load contract YAML: {e}") from e
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Failed to load contract YAML: {e}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            ) from e

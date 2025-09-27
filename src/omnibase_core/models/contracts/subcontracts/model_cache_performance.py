@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Cache Performance Model - ONEX Standards Compliant.
 

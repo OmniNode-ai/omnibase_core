@@ -12,7 +12,11 @@ from typing import Any, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
@@ -86,7 +90,18 @@ class ModelCliDebugInfo(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
-            raise ValueError("custom_debug_fields must be a dictionary")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="custom_debug_fields must be a dictionary",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         result = {}
         for key, value in v.items():

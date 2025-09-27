@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Definition Model - ONEX Standards Compliant.
 

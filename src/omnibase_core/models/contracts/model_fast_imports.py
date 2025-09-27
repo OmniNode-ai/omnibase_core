@@ -48,6 +48,12 @@ class ModelFastContractFactory:
         self, contract_type: str, class_name: str
     ) -> type["ModelContractBase"]:
         """Import a contract class on-demand with caching."""
+        # Function-level imports to maintain zero-import-time loading
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.exceptions.onex_error import OnexError
+        from omnibase_core.models.common.model_error_context import ModelErrorContext
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
         cache_key = f"{contract_type}_{class_name}"
 
         if cache_key in self._contract_cache:
@@ -56,7 +62,18 @@ class ModelFastContractFactory:
         # Dynamic import at runtime only
         module_path = self._import_paths.get(contract_type)
         if not module_path:
-            raise ValueError(f"Unknown contract type: {contract_type}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown contract type: {contract_type}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Import the module dynamically
         import importlib
@@ -225,6 +242,11 @@ class ModelPerformanceMonitor:
     def measure_import_time() -> dict[str, Union[float, str]]:
         """Measure import times for this module vs alternatives."""
         import time
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.exceptions.onex_error import OnexError
+        from omnibase_core.models.common.model_error_context import ModelErrorContext
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         # This should be near-zero since no imports at module level
         start = time.perf_counter()

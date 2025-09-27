@@ -7,6 +7,7 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TypedDict
 
 
@@ -15,7 +16,7 @@ class TypedDictTraceInfoData(TypedDict, total=False):
 
     key: str
     value: str  # Trace values are typically displayed as strings
-    timestamp: str
+    timestamp: datetime
     operation: str
 
 

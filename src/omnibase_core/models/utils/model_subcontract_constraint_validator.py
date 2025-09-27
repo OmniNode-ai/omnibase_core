@@ -10,6 +10,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import TypedDict, Union
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Type alias for contract data input - includes all possible contract data types
@@ -147,7 +150,18 @@ class ModelSubcontractConstraintValidator:
 
         # Raise validation error if any violations found
         if violations:
-            raise ValueError("\n".join(violations))
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="\n".join(violations),
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     @staticmethod
     def _validate_recommended_subcontracts(

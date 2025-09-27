@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Event Persistence Model - ONEX Standards Compliant.
 

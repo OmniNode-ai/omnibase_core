@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Execution Graph Model - ONEX Standards Compliant.
 

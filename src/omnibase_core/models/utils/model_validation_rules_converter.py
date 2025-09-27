@@ -9,6 +9,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Union, assert_never
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 
@@ -76,7 +79,12 @@ class ModelValidationRulesConverter:
 
         # This should never be reached due to exhaustive type checking
         # Raise exception instead of assert_never to avoid MyPy no-any-return error
-        raise ValueError(f"Unsupported validation rules format: {type(v)}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unsupported validation rules format: {type(v,
+                details=ModelErrorContext.with_context({'error_type': ModelSchemaValue.from_value('valueerror'), 'validation_context': ModelSchemaValue.from_value('model_validation')})
+            )}",
+        )
 
     @staticmethod
     def _convert_dict_to_rules(

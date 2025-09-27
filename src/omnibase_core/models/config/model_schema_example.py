@@ -11,7 +11,10 @@ from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -99,8 +102,17 @@ class ModelSchemaExample(BaseModel):
         if isinstance(value, (str, int, float, bool)):
             self.example_data.set_custom_value(key, value)
         else:
-            raise TypeError(
-                f"Unsupported value type: {type(value)}. Must be str, int, float, or bool."
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unsupported value type: {type(value)}. Must be str, int, float, or bool.",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
             )
 
     def get_all_keys(self) -> list[str]:
@@ -135,8 +147,17 @@ class ModelSchemaExample(BaseModel):
         if isinstance(value, (str, int, float, bool)):
             self.example_data.set_custom_value(key, value)
         else:
-            raise TypeError(
-                f"Unsupported value type: {type(value)}. Must be str, int, float, or bool."
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unsupported value type: {type(value)}. Must be str, int, float, or bool.",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
             )
 
     def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:

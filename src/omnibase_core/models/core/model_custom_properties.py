@@ -11,6 +11,9 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import PrimitiveValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 
@@ -126,7 +129,18 @@ class ModelCustomProperties(BaseModel):
             self.set_custom_number(key, float(value))
         else:
             # Raise error for unsupported types
-            raise TypeError(f"Unsupported custom value type: {type(value)}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unsupported custom value type: {type(value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def update_properties(self, **kwargs: ModelSchemaValue) -> None:
         """Update custom properties using kwargs."""

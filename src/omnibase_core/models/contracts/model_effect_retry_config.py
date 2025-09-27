@@ -7,6 +7,11 @@ breaker patterns for resilient side-effect operations.
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 
 class ModelEffectRetryConfig(BaseModel):
     """
@@ -67,7 +72,18 @@ class ModelEffectRetryConfig(BaseModel):
         """Validate max_delay_ms is greater than base_delay_ms."""
         if "base_delay_ms" in info.data and v <= info.data["base_delay_ms"]:
             msg = "max_delay_ms must be greater than base_delay_ms"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
         return v
 
     model_config = {
