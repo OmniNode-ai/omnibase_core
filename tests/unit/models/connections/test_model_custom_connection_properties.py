@@ -9,8 +9,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from src.omnibase_core.enums.enum_instance_type import EnumInstanceType
-from src.omnibase_core.models.connections.model_custom_connection_properties import (
+from omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.models.connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
 

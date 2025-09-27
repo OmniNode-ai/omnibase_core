@@ -187,6 +187,12 @@ class ModelCliExecutionCore(BaseModel):
             target_node_display_name=target_node_name,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelCliExecutionCore"]

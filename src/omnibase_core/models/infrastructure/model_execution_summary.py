@@ -22,6 +22,12 @@ class ModelExecutionSummary(BaseModel):
     has_metadata: bool = Field(description="Whether metadata exists")
     completed: bool = Field(description="Whether execution is completed")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelExecutionSummary"]

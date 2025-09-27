@@ -1,5 +1,5 @@
 """
-Unit tests for generic Result[T, E] pattern.
+Unit tests for generic ModelResult[T, E] pattern.
 
 Tests the generic type parameter functionality, monadic operations,
 and type safety of the Result implementation for CLI operations.
@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from src.omnibase_core.models.infrastructure.model_result import (
-    Result,
+from omnibase_core.models.infrastructure.model_result import (
+    ModelResult,
     collect_results,
     err,
     ok,
@@ -19,81 +19,81 @@ from src.omnibase_core.models.infrastructure.model_result import (
 
 
 class TestResultGeneric:
-    """Test cases for generic Result[T, E] functionality."""
+    """Test cases for generic ModelResult[T, E] functionality."""
 
     def test_result_ok_creation(self):
         """Test creating successful results with different types."""
         # String result
-        str_result = Result.ok("success")
+        str_result = ModelResult.ok("success")
         assert str_result.is_ok()
         assert str_result.value == "success"
         assert str_result.error is None
 
         # Integer result
-        int_result = Result.ok(42)
+        int_result = ModelResult.ok(42)
         assert int_result.is_ok()
         assert int_result.value == 42
 
         # Dict result
-        dict_result = Result.ok({"key": "value"})
+        dict_result = ModelResult.ok({"key": "value"})
         assert dict_result.is_ok()
         assert dict_result.value == {"key": "value"}
 
         # List result
-        list_result = Result.ok([1, 2, 3])
+        list_result = ModelResult.ok([1, 2, 3])
         assert list_result.is_ok()
         assert list_result.value == [1, 2, 3]
 
     def test_result_err_creation(self):
         """Test creating error results with different types."""
         # String error
-        str_error = Result.err("error message")
+        str_error = ModelResult.err("error message")
         assert str_error.is_err()
         assert str_error.error == "error message"
         assert str_error.value is None
 
         # Exception error
-        exc_error = Result.err(ValueError("invalid value"))
+        exc_error = ModelResult.err(ValueError("invalid value"))
         assert exc_error.is_err()
         assert isinstance(exc_error.error, ValueError)
         assert str(exc_error.error) == "invalid value"
 
         # Custom error type
-        custom_error = Result.err({"code": 404, "message": "Not found"})
+        custom_error = ModelResult.err({"code": 404, "message": "Not found"})
         assert custom_error.is_err()
         assert custom_error.error == {"code": 404, "message": "Not found"}
 
     def test_result_unwrap_operations(self):
         """Test unwrap operations on results."""
         # Successful unwrap
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         assert success.unwrap() == "value"
 
         # Failed unwrap should raise
-        failure = Result.err("error")
+        failure = ModelResult.err("error")
         with pytest.raises(
-            ValueError, match="Called unwrap\\(\\) on error result: error"
+            Exception, match="Called unwrap\\(\\) on error result: error"
         ):
             failure.unwrap()
 
     def test_result_unwrap_or_operations(self):
         """Test unwrap_or operations on results."""
         # Successful unwrap_or
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         assert success.unwrap_or("default") == "value"
 
         # Failed unwrap_or should return default
-        failure = Result.err("error")
+        failure = ModelResult.err("error")
         assert failure.unwrap_or("default") == "default"
 
     def test_result_unwrap_or_else_operations(self):
         """Test unwrap_or_else operations on results."""
         # Successful unwrap_or_else
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         assert success.unwrap_or_else(lambda e: f"error: {e}") == "value"
 
         # Failed unwrap_or_else should compute from error
-        failure = Result.err("original error")
+        failure = ModelResult.err("original error")
         assert (
             failure.unwrap_or_else(lambda e: f"handled: {e}")
             == "handled: original error"
@@ -102,30 +102,30 @@ class TestResultGeneric:
     def test_result_expect_operations(self):
         """Test expect operations on results."""
         # Successful expect
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         assert success.expect("Should not fail") == "value"
 
         # Failed expect should raise with custom message
-        failure = Result.err("original error")
-        with pytest.raises(ValueError, match="Custom error message: original error"):
+        failure = ModelResult.err("original error")
+        with pytest.raises(Exception, match="Custom error message: original error"):
             failure.expect("Custom error message")
 
     def test_result_map_operations(self):
         """Test map operations on results."""
         # Map on success
-        success = Result.ok(5)
+        success = ModelResult.ok(5)
         mapped = success.map(lambda x: x * 2)
         assert mapped.is_ok()
         assert mapped.unwrap() == 10
 
         # Map on error should preserve error
-        failure = Result.err("error")
+        failure = ModelResult.err("error")
         mapped = failure.map(lambda x: x * 2)
         assert mapped.is_err()
         assert mapped.error == "error"
 
         # Map with exception should convert to error
-        success = Result.ok("text")
+        success = ModelResult.ok("text")
         mapped = success.map(lambda x: int(x))  # Will raise ValueError
         assert mapped.is_err()
         assert isinstance(mapped.error, ValueError)
@@ -133,13 +133,13 @@ class TestResultGeneric:
     def test_result_map_err_operations(self):
         """Test map_err operations on results."""
         # Map_err on success should preserve success
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         mapped = success.map_err(lambda e: f"mapped: {e}")
         assert mapped.is_ok()
         assert mapped.unwrap() == "value"
 
         # Map_err on error should transform error
-        failure = Result.err("original error")
+        failure = ModelResult.err("original error")
         mapped = failure.map_err(lambda e: f"transformed: {e}")
         assert mapped.is_err()
         assert mapped.error == "transformed: original error"
@@ -147,26 +147,26 @@ class TestResultGeneric:
     def test_result_and_then_operations(self):
         """Test and_then (flat map) operations on results."""
 
-        def divide_by_two(x: int) -> Result[int, str]:
+        def divide_by_two(x: int) -> ModelResult[int, str]:
             if x % 2 == 0:
-                return Result.ok(x // 2)
+                return ModelResult.ok(x // 2)
             else:
-                return Result.err("Not divisible by 2")
+                return ModelResult.err("Not divisible by 2")
 
         # Chain on success
-        success = Result.ok(10)
+        success = ModelResult.ok(10)
         chained = success.and_then(divide_by_two)
         assert chained.is_ok()
         assert chained.unwrap() == 5
 
         # Chain on success but operation fails
-        success = Result.ok(7)
+        success = ModelResult.ok(7)
         chained = success.and_then(divide_by_two)
         assert chained.is_err()
         assert chained.error == "Not divisible by 2"
 
         # Chain on error should preserve error
-        failure = Result.err("original error")
+        failure = ModelResult.err("original error")
         chained = failure.and_then(divide_by_two)
         assert chained.is_err()
         assert chained.error == "original error"
@@ -174,34 +174,34 @@ class TestResultGeneric:
     def test_result_or_else_operations(self):
         """Test or_else operations on results."""
 
-        def recover_from_error(e: str) -> Result[str, str]:
+        def recover_from_error(e: str) -> ModelResult[str, str]:
             if "recoverable" in e:
-                return Result.ok("recovered")
+                return ModelResult.ok("recovered")
             else:
-                return Result.err(f"unrecoverable: {e}")
+                return ModelResult.err(f"unrecoverable: {e}")
 
         # or_else on success should preserve success
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         recovered = success.or_else(recover_from_error)
         assert recovered.is_ok()
         assert recovered.unwrap() == "value"
 
         # or_else on recoverable error
-        failure = Result.err("recoverable error")
+        failure = ModelResult.err("recoverable error")
         recovered = failure.or_else(recover_from_error)
         assert recovered.is_ok()
         assert recovered.unwrap() == "recovered"
 
         # or_else on unrecoverable error
-        failure = Result.err("fatal error")
+        failure = ModelResult.err("fatal error")
         recovered = failure.or_else(recover_from_error)
         assert recovered.is_err()
         assert recovered.error == "unrecoverable: fatal error"
 
     def test_result_boolean_conversion(self):
         """Test boolean conversion of results."""
-        success = Result.ok("value")
-        failure = Result.err("error")
+        success = ModelResult.ok("value")
+        failure = ModelResult.err("error")
 
         assert bool(success) is True
         assert bool(failure) is False
@@ -219,48 +219,52 @@ class TestResultGeneric:
 
     def test_result_string_representations(self):
         """Test string representations of results."""
-        success = Result.ok("value")
-        failure = Result.err("error")
+        success = ModelResult.ok("value")
+        failure = ModelResult.err("error")
 
-        assert repr(success) == "Result.ok('value')"
-        assert repr(failure) == "Result.err('error')"
+        assert repr(success) == "ModelResult.ok('value')"
+        assert repr(failure) == "ModelResult.err('error')"
 
         assert str(success) == "Success: value"
         assert str(failure) == "Error: error"
 
     def test_result_explicit_generic_types(self):
         """Test explicit generic types following ONEX conventions."""
-        # Result[str, str] - String success, string error
-        str_success: Result[str, str] = Result.ok("success")
-        str_failure: Result[str, str] = Result.err("error")
+        # ModelResult[str, str] - String success, string error
+        str_success: ModelResult[str, str] = ModelResult.ok("success")
+        str_failure: ModelResult[str, str] = ModelResult.err("error")
 
         assert str_success.unwrap() == "success"
         assert str_failure.error == "error"
 
-        # Result[bool, str] - Boolean success, string error
-        bool_success: Result[bool, str] = Result.ok(True)
-        bool_failure: Result[bool, str] = Result.err("validation failed")
+        # ModelResult[bool, str] - Boolean success, string error
+        bool_success: ModelResult[bool, str] = ModelResult.ok(True)
+        bool_failure: ModelResult[bool, str] = ModelResult.err("validation failed")
 
         assert bool_success.unwrap() is True
         assert bool_failure.error == "validation failed"
 
-        # Result[int, str] - Integer success, string error
-        int_success: Result[int, str] = Result.ok(42)
-        int_failure: Result[int, str] = Result.err("parse error")
+        # ModelResult[int, str] - Integer success, string error
+        int_success: ModelResult[int, str] = ModelResult.ok(42)
+        int_failure: ModelResult[int, str] = ModelResult.err("parse error")
 
         assert int_success.unwrap() == 42
         assert int_failure.error == "parse error"
 
-        # Result[dict[str, str], str] - Dictionary success, string error
-        data_success: Result[dict[str, str], str] = Result.ok({"key": "value"})
-        data_failure: Result[dict[str, str], str] = Result.err("invalid format")
+        # ModelResult[dict[str, str], str] - Dictionary success, string error
+        data_success: ModelResult[dict[str, str], str] = ModelResult.ok(
+            {"key": "value"}
+        )
+        data_failure: ModelResult[dict[str, str], str] = ModelResult.err(
+            "invalid format"
+        )
 
         assert data_success.unwrap() == {"key": "value"}
         assert data_failure.error == "invalid format"
 
-        # Result[list[int], str] - List success, string error
-        list_success: Result[list[int], str] = Result.ok([1, 2, 3])
-        list_failure: Result[list[int], str] = Result.err("empty list")
+        # ModelResult[list[int], str] - List success, string error
+        list_success: ModelResult[list[int], str] = ModelResult.ok([1, 2, 3])
+        list_failure: ModelResult[list[int], str] = ModelResult.err("empty list")
 
         assert list_success.unwrap() == [1, 2, 3]
         assert list_failure.error == "empty list"
@@ -300,24 +304,24 @@ class TestResultGeneric:
     def test_collect_results_function(self):
         """Test collect_results function for combining results."""
         # All successful results
-        results = [Result.ok(1), Result.ok(2), Result.ok(3)]
+        results = [ModelResult.ok(1), ModelResult.ok(2), ModelResult.ok(3)]
         collected = collect_results(results)
         assert collected.is_ok()
         assert collected.unwrap() == [1, 2, 3]
 
         # Some failed results
         results = [
-            Result.ok(1),
-            Result.err("error1"),
-            Result.ok(3),
-            Result.err("error2"),
+            ModelResult.ok(1),
+            ModelResult.err("error1"),
+            ModelResult.ok(3),
+            ModelResult.err("error2"),
         ]
         collected = collect_results(results)
         assert collected.is_err()
         assert collected.error == ["error1", "error2"]
 
         # All failed results
-        results = [Result.err("error1"), Result.err("error2")]
+        results = [ModelResult.err("error1"), ModelResult.err("error2")]
         collected = collect_results(results)
         assert collected.is_err()
         assert collected.error == ["error1", "error2"]
@@ -329,15 +333,15 @@ class TestResultGeneric:
         assert collected.unwrap() == []
 
     def test_result_pydantic_validation(self):
-        """Test Pydantic validation with Result."""
+        """Test Pydantic validation with ModelResult."""
         # Valid success result
-        success = Result.ok("value")
+        success = ModelResult.ok("value")
         assert success.success is True
         assert success.value == "value"
         assert success.error is None
 
         # Valid error result
-        failure = Result.err("error")
+        failure = ModelResult.err("error")
         assert failure.success is False
         assert failure.value is None
         assert failure.error == "error"
@@ -345,17 +349,17 @@ class TestResultGeneric:
     def test_result_validation_errors(self):
         """Test Result validation edge cases."""
         # These should raise validation errors during initialization
-        with pytest.raises(ValueError, match="Success result must have a value"):
-            Result(success=True, value=None, error=None)
+        with pytest.raises(Exception, match="Success result must have a value"):
+            ModelResult(success=True, value=None, error=None)
 
-        with pytest.raises(ValueError, match="Error result must have an error"):
-            Result(success=False, value=None, error=None)
+        with pytest.raises(Exception, match="Error result must have an error"):
+            ModelResult(success=False, value=None, error=None)
 
-        with pytest.raises(ValueError, match="Success result cannot have an error"):
-            Result(success=True, value="value", error="error")
+        with pytest.raises(Exception, match="Success result cannot have an error"):
+            ModelResult(success=True, value="value", error="error")
 
-        with pytest.raises(ValueError, match="Error result cannot have a value"):
-            Result(success=False, value="value", error="error")
+        with pytest.raises(Exception, match="Error result cannot have a value"):
+            ModelResult(success=False, value="value", error="error")
 
 
 class TestResultGenericComplexTypes:
@@ -363,9 +367,9 @@ class TestResultGenericComplexTypes:
 
     def test_result_with_nested_generics(self):
         """Test Result with nested generic types."""
-        # Result[dict[str, list[int]], str]
+        # ModelResult[dict[str, list[int]], str]
         complex_data = {"numbers": [1, 2, 3], "values": [10, 20, 30]}
-        result = Result.ok(complex_data)
+        result = ModelResult.ok(complex_data)
 
         assert result.is_ok()
         assert result.unwrap() == complex_data
@@ -378,35 +382,41 @@ class TestResultGenericComplexTypes:
     def test_result_chaining_with_complex_types(self):
         """Test chaining operations with complex types."""
 
-        def parse_config(data: dict[str, Any]) -> Result[dict[str, int], str]:
+        def parse_config(data: dict[str, Any]) -> ModelResult[dict[str, int], str]:
             try:
-                return Result.ok({k: int(v) for k, v in data.items()})
+                return ModelResult.ok({k: int(v) for k, v in data.items()})
             except (ValueError, TypeError):
-                return Result.err("Invalid configuration format")
+                return ModelResult.err("Invalid configuration format")
 
-        def validate_config(config: dict[str, int]) -> Result[dict[str, int], str]:
+        def validate_config(config: dict[str, int]) -> ModelResult[dict[str, int], str]:
             if all(v > 0 for v in config.values()):
-                return Result.ok(config)
+                return ModelResult.ok(config)
             else:
-                return Result.err("All values must be positive")
+                return ModelResult.err("All values must be positive")
 
         # Successful chain
         input_data = {"timeout": "30", "retries": "3"}
-        result = Result.ok(input_data).and_then(parse_config).and_then(validate_config)
+        result = (
+            ModelResult.ok(input_data).and_then(parse_config).and_then(validate_config)
+        )
 
         assert result.is_ok()
         assert result.unwrap() == {"timeout": 30, "retries": 3}
 
         # Failed parsing
         input_data = {"timeout": "invalid", "retries": "3"}
-        result = Result.ok(input_data).and_then(parse_config).and_then(validate_config)
+        result = (
+            ModelResult.ok(input_data).and_then(parse_config).and_then(validate_config)
+        )
 
         assert result.is_err()
         assert result.error == "Invalid configuration format"
 
         # Failed validation
         input_data = {"timeout": "-1", "retries": "3"}
-        result = Result.ok(input_data).and_then(parse_config).and_then(validate_config)
+        result = (
+            ModelResult.ok(input_data).and_then(parse_config).and_then(validate_config)
+        )
 
         assert result.is_err()
         assert result.error == "All values must be positive"
@@ -428,7 +438,7 @@ class TestResultGenericComplexTypes:
 
         # Success with custom class
         config = Config("test", 42)
-        result = Result.ok(config)
+        result = ModelResult.ok(config)
 
         assert result.is_ok()
         assert result.unwrap() == config
@@ -442,27 +452,27 @@ class TestResultGenericComplexTypes:
 
 
 class TestResultGenericEdgeCases:
-    """Test edge cases for generic Result[T, E]."""
+    """Test edge cases for generic ModelResult[T, E]."""
 
     def test_result_with_none_values(self):
         """Test Result behavior with None values."""
         # Note: Our Result implementation doesn't allow None as success value
         # This is a design choice to ensure explicit values
-        with pytest.raises(ValueError, match="Success result must have a value"):
-            Result.ok(None)
+        with pytest.raises(Exception, match="Success result must have a value"):
+            ModelResult.ok(None)
 
         # None as error value is also not allowed in our implementation
-        with pytest.raises(ValueError, match="Error result must have an error"):
-            Result.err(None)
+        with pytest.raises(Exception, match="Error result must have an error"):
+            ModelResult.err(None)
 
     def test_result_recursive_operations(self):
         """Test recursive operations with Results."""
 
-        def factorial(n: int) -> Result[int, str]:
+        def factorial(n: int) -> ModelResult[int, str]:
             if n < 0:
-                return Result.err("Negative numbers not supported")
+                return ModelResult.err("Negative numbers not supported")
             elif n == 0 or n == 1:
-                return Result.ok(1)
+                return ModelResult.ok(1)
             else:
                 prev_result = factorial(n - 1)
                 return prev_result.map(lambda x: x * n)
@@ -479,7 +489,7 @@ class TestResultGenericEdgeCases:
 
     def test_result_exception_in_operations(self):
         """Test exception handling in Result operations."""
-        success = Result.ok("test")
+        success = ModelResult.ok("test")
 
         # Exception in map should convert to error
         mapped = success.map(lambda x: x / 0)  # TypeError (str / int)

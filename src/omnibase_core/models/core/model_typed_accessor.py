@@ -20,9 +20,11 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
 
     def get_typed_field(self, path: str, expected_type: type[T], default: T) -> T:
         """Get field with type checking."""
-        value = self.get_field(path)
-        if value is not None and isinstance(value, expected_type):
-            return value
+        result = self.get_field(path)
+        if result.is_ok():
+            raw_value = result.unwrap().to_value()
+            if raw_value is not None and isinstance(raw_value, expected_type):
+                return raw_value
         return default
 
     def set_typed_field(self, path: str, value: T, expected_type: type[T]) -> bool:

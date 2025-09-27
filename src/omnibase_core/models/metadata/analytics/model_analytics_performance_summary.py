@@ -98,6 +98,12 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
             needs_optimization=needs_optimization,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelAnalyticsPerformanceSummary"]

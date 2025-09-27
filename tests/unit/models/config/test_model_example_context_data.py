@@ -4,13 +4,18 @@ Test suite for ModelExampleContextData.
 Tests the clean, strongly-typed replacement for dict[str, Any] in example context data.
 """
 
+from uuid import UUID, uuid4
+
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.config.model_example_context_data import (
+from omnibase_core.enums.enum_context_type import EnumContextType
+from omnibase_core.enums.enum_environment import EnumEnvironment
+from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
+from omnibase_core.models.config.model_example_context_data import (
     ModelExampleContextData,
 )
-from src.omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class TestModelExampleContextData:
@@ -20,39 +25,45 @@ class TestModelExampleContextData:
         """Test empty initialization with defaults."""
         context = ModelExampleContextData()
 
-        assert context.context_type == "example"
-        assert context.environment is None
-        assert context.execution_mode == "standard"
-        assert context.timeout_seconds is None
+        assert context.context_type == EnumContextType.USER
+        assert context.environment == EnumEnvironment.DEVELOPMENT
+        assert context.execution_mode == EnumExecutionMode.AUTO
+        assert context.timeout_seconds == 30.0
         assert context.environment_variables == {}
         assert context.configuration_overrides == {}
-        assert context.user_context is None
+        assert context.user_id is None
+        assert context.user_display_name == ""
         assert context.session_id is None
         assert context.tags == []
-        assert context.notes is None
+        assert context.notes == ""
         assert context.schema_version is None
 
     def test_initialization_with_values(self):
         """Test initialization with specific values."""
+        test_user_id = uuid4()
+        test_session_id = uuid4()
+
         context = ModelExampleContextData(
-            context_type="test",
-            environment="staging",
-            execution_mode="debug",
+            context_type=EnumContextType.SYSTEM,
+            environment=EnumEnvironment.STAGING,
+            execution_mode=EnumExecutionMode.MANUAL,
             timeout_seconds=60.0,
             environment_variables={"DEBUG": "true"},
-            user_context="test_user",
-            session_id="sess_123",
+            user_id=test_user_id,
+            user_display_name="test_user",
+            session_id=test_session_id,
             tags=["integration", "test"],
             notes="Test run notes",
         )
 
-        assert context.context_type == "test"
-        assert context.environment == "staging"
-        assert context.execution_mode == "debug"
+        assert context.context_type == EnumContextType.SYSTEM
+        assert context.environment == EnumEnvironment.STAGING
+        assert context.execution_mode == EnumExecutionMode.MANUAL
         assert context.timeout_seconds == 60.0
         assert context.environment_variables == {"DEBUG": "true"}
-        assert context.user_context == "test_user"
-        assert context.session_id == "sess_123"
+        assert context.user_id == test_user_id
+        assert context.user_display_name == "test_user"
+        assert context.session_id == test_session_id
         assert context.tags == ["integration", "test"]
         assert context.notes == "Test run notes"
 
@@ -72,16 +83,16 @@ class TestModelExampleContextData:
         assert len(context.environment_variables) == 2
 
     def test_configuration_overrides_management(self):
-        """Test configuration overrides with mixed types."""
+        """Test configuration overrides with string types."""
         context = ModelExampleContextData()
 
-        # Test different value types
-        context.configuration_overrides["max_connections"] = 100
-        context.configuration_overrides["debug_enabled"] = True
+        # Test string value types (as required by dict[str, str])
+        context.configuration_overrides["max_connections"] = "100"
+        context.configuration_overrides["debug_enabled"] = "true"
         context.configuration_overrides["service_name"] = "test-service"
 
-        assert context.configuration_overrides["max_connections"] == 100
-        assert context.configuration_overrides["debug_enabled"] is True
+        assert context.configuration_overrides["max_connections"] == "100"
+        assert context.configuration_overrides["debug_enabled"] == "true"
         assert context.configuration_overrides["service_name"] == "test-service"
 
     def test_tags_management(self):
@@ -122,11 +133,13 @@ class TestModelExampleContextData:
     def test_complex_initialization(self):
         """Test complex initialization with all fields."""
         version = ModelSemVer(major=2, minor=0, patch=0)
+        test_user_id = uuid4()
+        test_session_id = uuid4()
 
         context = ModelExampleContextData(
-            context_type="integration",
-            environment="production",
-            execution_mode="parallel",
+            context_type=EnumContextType.BATCH,
+            environment=EnumEnvironment.PRODUCTION,
+            execution_mode=EnumExecutionMode.SCHEDULED,
             timeout_seconds=300.0,
             environment_variables={
                 "DATABASE_URL": "postgresql://localhost:5432/test",
@@ -134,22 +147,23 @@ class TestModelExampleContextData:
                 "SECRET_KEY": "test_secret",
             },
             configuration_overrides={
-                "max_workers": 4,
-                "enable_cache": True,
+                "max_workers": "4",
+                "enable_cache": "true",
                 "cache_ttl": "300",
-                "compression_enabled": True,
+                "compression_enabled": "true",
             },
-            user_context="admin_user",
-            session_id="session_abc123",
+            user_id=test_user_id,
+            user_display_name="admin_user",
+            session_id=test_session_id,
             tags=["production", "high-priority", "batch-job"],
             notes="Production batch job with high priority settings",
             schema_version=version,
         )
 
         # Verify all fields
-        assert context.context_type == "integration"
-        assert context.environment == "production"
-        assert context.execution_mode == "parallel"
+        assert context.context_type == EnumContextType.BATCH
+        assert context.environment == EnumEnvironment.PRODUCTION
+        assert context.execution_mode == EnumExecutionMode.SCHEDULED
         assert context.timeout_seconds == 300.0
         assert len(context.environment_variables) == 3
         assert (
@@ -157,10 +171,11 @@ class TestModelExampleContextData:
             == "postgresql://localhost:5432/test"
         )
         assert len(context.configuration_overrides) == 4
-        assert context.configuration_overrides["max_workers"] == 4
-        assert context.configuration_overrides["enable_cache"] is True
-        assert context.user_context == "admin_user"
-        assert context.session_id == "session_abc123"
+        assert context.configuration_overrides["max_workers"] == "4"
+        assert context.configuration_overrides["enable_cache"] == "true"
+        assert context.user_id == test_user_id
+        assert context.user_display_name == "admin_user"
+        assert context.session_id == test_session_id
         assert len(context.tags) == 3
         assert "production" in context.tags
         assert context.notes == "Production batch job with high priority settings"
@@ -169,8 +184,8 @@ class TestModelExampleContextData:
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
         context = ModelExampleContextData(
-            context_type="test",
-            environment="dev",
+            context_type=EnumContextType.SYSTEM,
+            environment=EnumEnvironment.DEVELOPMENT,
             timeout_seconds=60.0,
             environment_variables={"TEST": "true"},
             tags=["unit", "fast"],
@@ -179,8 +194,8 @@ class TestModelExampleContextData:
         # Test model_dump
         data = context.model_dump()
 
-        assert data["context_type"] == "test"
-        assert data["environment"] == "dev"
+        assert data["context_type"] == "system"
+        assert data["environment"] == "development"
         assert data["timeout_seconds"] == 60.0
         assert data["environment_variables"] == {"TEST": "true"}
         assert data["tags"] == ["unit", "fast"]
@@ -188,68 +203,82 @@ class TestModelExampleContextData:
         # Test excluding None values
         data_exclude_none = context.model_dump(exclude_none=True)
 
-        assert "user_context" not in data_exclude_none
+        assert "user_id" not in data_exclude_none
         assert "session_id" not in data_exclude_none
-        assert "notes" not in data_exclude_none
+        # notes defaults to empty string, not None, so it will be included
 
     def test_pydantic_deserialization(self):
         """Test Pydantic model deserialization."""
+        test_user_id = str(uuid4())
+        test_session_id = str(uuid4())
+
         data = {
-            "context_type": "deserialize_test",
+            "context_type": "api",
             "environment": "testing",
-            "execution_mode": "isolated",
+            "execution_mode": "auto",
             "timeout_seconds": 45.0,
             "environment_variables": {"MODE": "test"},
-            "configuration_overrides": {"debug": True, "port": 8080},
-            "user_context": "test_user",
-            "session_id": "test_session",
+            "configuration_overrides": {"debug": "true", "port": "8080"},
+            "user_id": test_user_id,
+            "user_display_name": "test_user",
+            "session_id": test_session_id,
             "tags": ["deserialization", "validation"],
             "notes": "Deserialization test case",
         }
 
         context = ModelExampleContextData.model_validate(data)
 
-        assert context.context_type == "deserialize_test"
-        assert context.environment == "testing"
-        assert context.execution_mode == "isolated"
+        assert context.context_type == EnumContextType.API
+        assert context.environment == EnumEnvironment.TESTING
+        assert context.execution_mode == EnumExecutionMode.AUTO
         assert context.timeout_seconds == 45.0
         assert context.environment_variables == {"MODE": "test"}
-        assert context.configuration_overrides == {"debug": True, "port": 8080}
-        assert context.user_context == "test_user"
-        assert context.session_id == "test_session"
+        assert context.configuration_overrides == {"debug": "true", "port": "8080"}
+        assert str(context.user_id) == test_user_id
+        assert context.user_display_name == "test_user"
+        assert str(context.session_id) == test_session_id
         assert context.tags == ["deserialization", "validation"]
         assert context.notes == "Deserialization test case"
 
     def test_model_copy(self):
         """Test model copying functionality."""
         original = ModelExampleContextData(
-            context_type="original", environment="prod", tags=["tag1", "tag2"]
+            context_type=EnumContextType.BATCH,
+            environment=EnumEnvironment.PRODUCTION,
+            tags=["tag1", "tag2"],
         )
 
         # Test copy with updates
         copy = original.model_copy(
-            update={"context_type": "copied", "environment": "staging"}
+            update={
+                "context_type": EnumContextType.SYSTEM,
+                "environment": EnumEnvironment.STAGING,
+            }
         )
 
-        assert copy.context_type == "copied"
-        assert copy.environment == "staging"
+        assert copy.context_type == EnumContextType.SYSTEM
+        assert copy.environment == EnumEnvironment.STAGING
         assert copy.tags == ["tag1", "tag2"]  # Should preserve other fields
 
         # Original should remain unchanged
-        assert original.context_type == "original"
-        assert original.environment == "prod"
+        assert original.context_type == EnumContextType.BATCH
+        assert original.environment == EnumEnvironment.PRODUCTION
 
     def test_model_round_trip(self):
         """Test serialization -> deserialization round trip."""
+        test_user_id = uuid4()
+        test_session_id = uuid4()
+
         original = ModelExampleContextData(
-            context_type="round_trip",
-            environment="test",
-            execution_mode="benchmark",
+            context_type=EnumContextType.INTERACTIVE,
+            environment=EnumEnvironment.TESTING,
+            execution_mode=EnumExecutionMode.MANUAL,
             timeout_seconds=120.0,
             environment_variables={"ROUND_TRIP": "test"},
-            configuration_overrides={"setting": 42, "enabled": True},
-            user_context="round_trip_user",
-            session_id="rt_session",
+            configuration_overrides={"setting": "42", "enabled": "true"},
+            user_id=test_user_id,
+            user_display_name="round_trip_user",
+            session_id=test_session_id,
             tags=["round-trip", "test"],
             notes="Round trip test",
         )
@@ -267,7 +296,8 @@ class TestModelExampleContextData:
         assert restored.timeout_seconds == original.timeout_seconds
         assert restored.environment_variables == original.environment_variables
         assert restored.configuration_overrides == original.configuration_overrides
-        assert restored.user_context == original.user_context
+        assert restored.user_id == original.user_id
+        assert restored.user_display_name == original.user_display_name
         assert restored.session_id == original.session_id
         assert restored.tags == original.tags
         assert restored.notes == original.notes
@@ -289,44 +319,47 @@ class TestModelExampleContextData:
         assert data["tags"] == []
 
     def test_edge_cases_none_values(self):
-        """Test edge cases with None values."""
+        """Test edge cases with None values for optional fields."""
         context = ModelExampleContextData(
-            environment=None,
-            timeout_seconds=None,
-            user_context=None,
+            user_id=None,
             session_id=None,
-            notes=None,
             schema_version=None,
         )
 
-        assert context.environment is None
-        assert context.timeout_seconds is None
-        assert context.user_context is None
+        # These fields can be None
+        assert context.user_id is None
         assert context.session_id is None
-        assert context.notes is None
         assert context.schema_version is None
+
+        # These fields have defaults and cannot be None
+        assert context.environment == EnumEnvironment.DEVELOPMENT
+        assert context.timeout_seconds == 30.0
+        assert context.user_display_name == ""
+        assert context.notes == ""
 
     def test_field_types_validation(self):
         """Test field type validation."""
         # Valid initialization should work
-        context = ModelExampleContextData(context_type="test", timeout_seconds=30.0)
-        assert context.context_type == "test"
+        context = ModelExampleContextData(
+            context_type=EnumContextType.API, timeout_seconds=30.0
+        )
+        assert context.context_type == EnumContextType.API
         assert context.timeout_seconds == 30.0
 
-        # Test that configuration_overrides accepts mixed types
+        # Test that configuration_overrides accepts string types
         context.configuration_overrides["string_val"] = "test"
-        context.configuration_overrides["int_val"] = 42
-        context.configuration_overrides["bool_val"] = True
+        context.configuration_overrides["int_val"] = "42"
+        context.configuration_overrides["bool_val"] = "true"
 
         assert context.configuration_overrides["string_val"] == "test"
-        assert context.configuration_overrides["int_val"] == 42
-        assert context.configuration_overrides["bool_val"] is True
+        assert context.configuration_overrides["int_val"] == "42"
+        assert context.configuration_overrides["bool_val"] == "true"
 
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
         context = ModelExampleContextData(
-            context_type="json_test",
-            environment="test_env",
+            context_type=EnumContextType.BATCH,
+            environment=EnumEnvironment.INTEGRATION,
             timeout_seconds=60.5,
             environment_variables={"JSON_TEST": "true"},
             tags=["json", "serialization"],
@@ -335,27 +368,27 @@ class TestModelExampleContextData:
         # Test JSON serialization
         json_str = context.model_dump_json()
         assert isinstance(json_str, str)
-        assert '"context_type":"json_test"' in json_str
-        assert '"environment":"test_env"' in json_str
+        assert '"context_type":"batch"' in json_str
+        assert '"environment":"integration"' in json_str
 
         # Test JSON deserialization
         restored = ModelExampleContextData.model_validate_json(json_str)
-        assert restored.context_type == "json_test"
-        assert restored.environment == "test_env"
+        assert restored.context_type == EnumContextType.BATCH
+        assert restored.environment == EnumEnvironment.INTEGRATION
         assert restored.timeout_seconds == 60.5
 
     def test_model_equality(self):
         """Test model equality comparison."""
         context1 = ModelExampleContextData(
-            context_type="equal_test", environment="test"
+            context_type=EnumContextType.USER, environment=EnumEnvironment.TESTING
         )
 
         context2 = ModelExampleContextData(
-            context_type="equal_test", environment="test"
+            context_type=EnumContextType.USER, environment=EnumEnvironment.TESTING
         )
 
         context3 = ModelExampleContextData(
-            context_type="different_test", environment="test"
+            context_type=EnumContextType.SYSTEM, environment=EnumEnvironment.TESTING
         )
 
         # Should be equal with same values

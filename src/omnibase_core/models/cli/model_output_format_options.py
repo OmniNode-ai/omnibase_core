@@ -8,14 +8,17 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeVar, cast
+from typing import TypeVar, cast
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
+# Removed Any import - using object for ONEX compliance
+
+
 # Decorator to allow dict[str, Any] usage with justification
-F = TypeVar("F", bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., object])
 
 # Generic type for custom option values
 T = TypeVar("T", str, int, bool)
@@ -273,6 +276,12 @@ class ModelOutputFormatOptions(BaseModel):
             kwargs_dict["custom_options"] = custom_options
 
         return cls(**kwargs_dict)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

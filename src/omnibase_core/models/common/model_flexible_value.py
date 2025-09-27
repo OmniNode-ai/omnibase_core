@@ -7,7 +7,6 @@ with structured discriminated union pattern for type safety.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -42,7 +41,7 @@ class ModelFlexibleValue(BaseModel):
     float_value: float | None = None
     boolean_value: bool | None = None
     dict_value: dict[str, ModelSchemaValue] | None = None
-    list_value: list[Any] | None = None
+    list_value: list[ModelSchemaValue] | None = None
     uuid_value: UUID | None = None
 
     # Metadata
@@ -184,12 +183,12 @@ class ModelFlexibleValue(BaseModel):
 
     @classmethod
     def from_list(
-        cls, value: list[Any], source: str | None = None
+        cls, value: list[object], source: str | None = None
     ) -> ModelFlexibleValue:
         """Create flexible value from list."""
         return cls(
             value_type=EnumFlexibleValueType.LIST,
-            list_value=value,
+            list_value=[ModelSchemaValue.from_value(item) for item in value],
             source=source,
             is_validated=True,
         )
@@ -214,7 +213,7 @@ class ModelFlexibleValue(BaseModel):
         )
 
     @classmethod
-    def from_any(cls, value: Any, source: str | None = None) -> ModelFlexibleValue:
+    def from_any(cls, value: object, source: str | None = None) -> ModelFlexibleValue:
         """Create flexible value from any supported type with automatic detection."""
         if value is None:
             return cls.from_none(source)
@@ -235,7 +234,7 @@ class ModelFlexibleValue(BaseModel):
         # Fallback: convert unsupported types to string
         return cls.from_string(str(value), source)
 
-    def get_value(self) -> Any:
+    def get_value(self) -> object:
         """Get the actual value with proper type."""
         if self.value_type == EnumFlexibleValueType.STRING:
             return self.string_value
@@ -248,7 +247,7 @@ class ModelFlexibleValue(BaseModel):
         if self.value_type == EnumFlexibleValueType.DICT:
             return self.dict_value
         if self.value_type == EnumFlexibleValueType.LIST:
-            return self.list_value
+            return [item.to_value() for item in (self.list_value or [])]
         if self.value_type == EnumFlexibleValueType.UUID:
             return self.uuid_value
         if self.value_type == EnumFlexibleValueType.NONE:
@@ -305,7 +304,7 @@ class ModelFlexibleValue(BaseModel):
         value = self.get_value()
         return ModelSchemaValue.from_value(value)
 
-    def compare_value(self, other: Any) -> bool:
+    def compare_value(self, other: object) -> bool:
         """Compare with another flexible value or raw value."""
         if isinstance(other, ModelFlexibleValue):
             return (
@@ -331,6 +330,12 @@ class ModelFlexibleValue(BaseModel):
             f"ModelFlexibleValue(value_type='{self.value_type}', "
             f"value={self.get_value()}, source='{self.source}')"
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

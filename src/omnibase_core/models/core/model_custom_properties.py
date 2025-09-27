@@ -10,6 +10,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import PrimitiveValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 
@@ -53,8 +57,23 @@ class ModelCustomProperties(BaseModel):
         """Set a custom boolean value."""
         self.custom_flags[key] = value
 
-    def get_custom_value(self, key: str) -> ModelResult[ModelSchemaValue, str]:
-        """Get custom value from any category."""
+    def get_custom_value(self, key: str) -> str | float | bool | None:
+        """Get custom value from any category. Returns raw value or None if not found."""
+        # Check each category with explicit typing
+        if key in self.custom_strings:
+            return self.custom_strings[key]
+        if key in self.custom_numbers:
+            return self.custom_numbers[key]
+        if key in self.custom_flags:
+            return self.custom_flags[key]
+        return None
+
+    def get_custom_value_wrapped(
+        self,
+        key: str,
+        default: ModelSchemaValue | None = None,
+    ) -> ModelResult[ModelSchemaValue, str]:
+        """Get custom value wrapped in ModelResult for consistent API with configuration."""
         # Check each category with explicit typing
         if key in self.custom_strings:
             return ModelResult.ok(ModelSchemaValue.from_value(self.custom_strings[key]))
@@ -62,7 +81,10 @@ class ModelCustomProperties(BaseModel):
             return ModelResult.ok(ModelSchemaValue.from_value(self.custom_numbers[key]))
         if key in self.custom_flags:
             return ModelResult.ok(ModelSchemaValue.from_value(self.custom_flags[key]))
-        return ModelResult.err(f"Custom field '{key}' not found in any category")
+
+        if default is not None:
+            return ModelResult.ok(default)
+        return ModelResult.err(f"Custom key '{key}' not found")
 
     def has_custom_field(self, key: str) -> bool:
         """Check if custom field exists in any category."""
@@ -86,26 +108,39 @@ class ModelCustomProperties(BaseModel):
             removed = True
         return removed
 
-    def get_all_custom_fields(self) -> dict[str, ModelSchemaValue]:
-        """Get all custom fields as a unified dictionary."""
-        result: dict[str, ModelSchemaValue] = {}
+    def get_all_custom_fields(self) -> dict[str, str | float | bool]:
+        """Get all custom fields as a unified dictionary with raw values."""
+        result: dict[str, str | float | bool] = {}
         for key, string_value in self.custom_strings.items():
-            result[key] = ModelSchemaValue.from_value(string_value)
+            result[key] = string_value
         for key, numeric_value in self.custom_numbers.items():
-            result[key] = ModelSchemaValue.from_value(numeric_value)
+            result[key] = numeric_value
         for key, flag_value in self.custom_flags.items():
-            result[key] = ModelSchemaValue.from_value(flag_value)
+            result[key] = flag_value
         return result
 
-    def set_custom_value(self, key: str, value: ModelSchemaValue) -> None:
+    def set_custom_value(self, key: str, value: PrimitiveValueType) -> None:
         """Set custom value with automatic type detection."""
-        raw_value = value.to_value()
-        if isinstance(raw_value, str):
-            self.set_custom_string(key, raw_value)
-        elif isinstance(raw_value, bool):
-            self.set_custom_flag(key, raw_value)
-        else:  # isinstance(raw_value, (int, float))
-            self.set_custom_number(key, float(raw_value))
+        if isinstance(value, str):
+            self.set_custom_string(key, value)
+        elif isinstance(value, bool):
+            self.set_custom_flag(key, value)
+        elif isinstance(value, (int, float)):
+            self.set_custom_number(key, float(value))
+        else:
+            # Raise error for unsupported types
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unsupported custom value type: {type(value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
     def update_properties(self, **kwargs: ModelSchemaValue) -> None:
         """Update custom properties using kwargs."""
@@ -145,13 +180,28 @@ class ModelCustomProperties(BaseModel):
         return instance
 
     @classmethod
+    def from_dict(cls, data: dict[str, PrimitiveValueType]) -> ModelCustomProperties:
+        """Create ModelCustomProperties from dictionary of raw values."""
+        instance = cls()
+        for key, value in data.items():
+            instance.set_custom_value(key, value)
+        return instance
+
+    def update_from_dict(self, data: dict[str, PrimitiveValueType | None]) -> None:
+        """Update custom properties from dictionary of raw values. Skips None values."""
+        for key, value in data.items():
+            if value is not None:
+                self.set_custom_value(key, value)
+
+    @classmethod
     def from_metadata(
         cls,
-        metadata: dict[str, ModelSchemaValue],
+        metadata: dict[str, str | float | bool | ModelSchemaValue],
     ) -> ModelCustomProperties:
         """
         Create ModelCustomProperties from custom_metadata field.
         Uses .model_validate() for proper Pydantic deserialization.
+        Accepts both raw values and ModelSchemaValue instances.
         """
         # Convert to proper format for Pydantic validation
         custom_strings = {}
@@ -159,13 +209,18 @@ class ModelCustomProperties(BaseModel):
         custom_flags = {}
 
         for k, v in metadata.items():
-            raw_value = v.to_value()
-            if isinstance(raw_value, str):
+            # Handle both ModelSchemaValue objects and raw values
+            if hasattr(v, "to_value"):
+                raw_value = v.to_value()
+            else:
+                raw_value = v
+
+            if isinstance(raw_value, bool):
+                custom_flags[k] = raw_value
+            elif isinstance(raw_value, str):
                 custom_strings[k] = raw_value
             elif isinstance(raw_value, (int, float)):
                 custom_numbers[k] = float(raw_value)
-            elif isinstance(raw_value, bool):
-                custom_flags[k] = raw_value
 
         return cls.model_validate(
             {
@@ -175,22 +230,30 @@ class ModelCustomProperties(BaseModel):
             },
         )
 
-    def to_metadata(self) -> dict[str, ModelSchemaValue]:
+    def to_metadata(self) -> dict[str, str | float | bool]:
         """
         Convert to custom_metadata format using Pydantic serialization.
         Uses .model_dump() for proper Pydantic serialization.
+        Returns raw values for round-trip compatibility with from_metadata().
         """
         dumped = self.model_dump()
-        result: dict[str, ModelSchemaValue] = {}
+        result: dict[str, str | float | bool] = {}
 
+        # Return raw values instead of ModelSchemaValue instances
         for key, string_value in dumped["custom_strings"].items():
-            result[key] = ModelSchemaValue.from_value(string_value)
+            result[key] = string_value
         for key, numeric_value in dumped["custom_numbers"].items():
-            result[key] = ModelSchemaValue.from_value(numeric_value)
+            result[key] = numeric_value
         for key, flag_value in dumped["custom_flags"].items():
-            result[key] = ModelSchemaValue.from_value(flag_value)
+            result[key] = flag_value
 
         return result
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

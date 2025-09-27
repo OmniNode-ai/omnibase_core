@@ -7,18 +7,15 @@ Part of the ModelNodeConfiguration restructuring.
 
 from __future__ import annotations
 
-from typing import TypedDict, cast
+from typing import cast
 
 from pydantic import BaseModel, Field
 
-from .model_types_node_resource_summary import TypedDictNodeResourceSummaryType
+from omnibase_core.types.typed_dict_node_resource_constraint_kwargs import (
+    TypedDictNodeResourceConstraintKwargs,
+)
 
-
-class TypedDictNodeResourceConstraintKwargs(TypedDict, total=False):
-    """TypedDict for create_constrained method kwargs."""
-
-    max_memory_mb: int
-    max_cpu_percent: float
+from .model_types_node_resource_summary import ModelNodeResourceSummaryType
 
 
 class ModelNodeResourceLimits(BaseModel):
@@ -55,7 +52,7 @@ class ModelNodeResourceLimits(BaseModel):
         """Check if any resource limits are configured."""
         return self.has_memory_limit() or self.has_cpu_limit()
 
-    def get_resource_summary(self) -> TypedDictNodeResourceSummaryType:
+    def get_resource_summary(self) -> ModelNodeResourceSummaryType:
         """Get resource limits summary."""
         return {
             "max_memory_mb": self.max_memory_mb,
@@ -92,6 +89,12 @@ class ModelNodeResourceLimits(BaseModel):
             kwargs["max_cpu_percent"] = cpu_percent
         return cls(**kwargs)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
-__all__ = ["ModelNodeResourceLimits", "TypedDictNodeResourceConstraintKwargs"]
+__all__ = ["ModelNodeResourceLimits"]

@@ -27,7 +27,7 @@ class TestProtocolAuditorInitialization:
             temp_path = Path(temp_dir)
 
             with patch(
-                "omnibase_core.validation.protocol_auditor.logger"
+                "omnibase_core.validation.auditor_protocol.logger"
             ) as mock_logger:
                 auditor = ProtocolAuditor(str(temp_path))
 
@@ -70,7 +70,7 @@ class TestProtocolAuditorInitialization:
     def test_init_with_relative_path(self):
         """Test initialization with relative path."""
         # Use current directory's parent as a relative path
-        with patch("omnibase_core.validation.protocol_auditor.logger"):
+        with patch("omnibase_core.validation.auditor_protocol.logger"):
             auditor = ProtocolAuditor(".")
 
             assert auditor.repository_path.is_absolute()
@@ -98,7 +98,7 @@ class TestProtocolAuditorValidation:
                 auditor = ProtocolAuditor(temp_dir)
 
                 with patch(
-                    "omnibase_core.validation.protocol_auditor.logger"
+                    "omnibase_core.validation.auditor_protocol.logger"
                 ) as mock_logger:
                     # This should not raise an exception, just log a warning
                     result = auditor.check_against_spi(spi_dir)
@@ -188,7 +188,7 @@ class {protocol_name}(Protocol):
             assert not result.success  # Should fail due to duplicates
             assert len(result.violations) > 0
 
-    @patch("omnibase_core.validation.protocol_auditor.extract_protocols_from_directory")
+    @patch("omnibase_core.validation.auditor_protocol.extract_protocols_from_directory")
     def test_audit_handles_extraction_errors(self, mock_extract):
         """Test auditing handles protocol extraction errors gracefully."""
         mock_extract.side_effect = Exception("Extraction failed")
@@ -212,7 +212,7 @@ class TestProtocolAuditorLogging:
         """Test that auditor initialization is logged."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch(
-                "omnibase_core.validation.protocol_auditor.logger"
+                "omnibase_core.validation.auditor_protocol.logger"
             ) as mock_logger:
                 auditor = ProtocolAuditor(temp_dir)
 
@@ -229,7 +229,7 @@ class TestProtocolAuditorLogging:
                 auditor = ProtocolAuditor(temp_dir)
 
                 with patch(
-                    "omnibase_core.validation.protocol_auditor.logger"
+                    "omnibase_core.validation.auditor_protocol.logger"
                 ) as mock_logger:
                     auditor.check_against_spi(spi_dir)
 
@@ -253,7 +253,7 @@ class TestProtocolAuditorEdgeCases:
 
             # Mock extract_protocols_from_directory to raise a permission error
             with patch(
-                "omnibase_core.validation.protocol_auditor.extract_protocols_from_directory"
+                "omnibase_core.validation.auditor_protocol.extract_protocols_from_directory"
             ) as mock_extract:
                 mock_extract.side_effect = PermissionError("Permission denied")
 

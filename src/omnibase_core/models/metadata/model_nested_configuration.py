@@ -33,6 +33,12 @@ class ModelNestedConfiguration(BaseModel):
         description="Configuration settings with strongly-typed values",
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNestedConfiguration"]

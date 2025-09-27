@@ -55,6 +55,12 @@ class ModelExampleOutputData(BaseModel):
         description="Whether output matches expectations",
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelExampleOutputData"]

@@ -25,10 +25,9 @@ Usage Examples:
     python -m omnibase_core.validation all
 """
 
-from typing import Any
-
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
+from .auditor_protocol import ProtocolAuditor
 
 # Import CLI for module execution
 from .cli import ValidationSuite
@@ -36,6 +35,11 @@ from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
     validate_yaml_file,
+)
+from .exceptions import (
+    ConfigurationError,
+    InputValidationError,
+    ValidationFrameworkError,
 )
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
@@ -82,7 +86,8 @@ def validate_patterns(
 
 
 def validate_all(
-    directory_path: str = "src/", **kwargs: Any
+    directory_path: str = "src/",
+    **kwargs: object,
 ) -> dict[str, ValidationResult]:
     """Run all validations and return results."""
     from pathlib import Path
@@ -92,24 +97,28 @@ def validate_all(
 
 
 __all__ = [
-    # Main validation functions (recommended)
-    "validate_architecture",
-    "validate_union_usage",
-    "validate_contracts",
-    "validate_patterns",
-    "validate_all",
-    # Individual module functions
-    "validate_architecture_directory",
-    "validate_one_model_per_file",
-    "validate_contracts_directory",
-    "validate_yaml_file",
-    "validate_no_manual_yaml",
-    "validate_patterns_directory",
-    "validate_patterns_file",
-    "validate_union_usage_directory",
-    "validate_union_usage_file",
     # Core classes and types
+    "ConfigurationError",
+    "InputValidationError",
+    "ProtocolAuditor",
+    "ProtocolInfo",
+    "ValidationFrameworkError",
     "ValidationResult",
     "ValidationSuite",
-    "ProtocolInfo",
+    "validate_all",
+    # Main validation functions (recommended)
+    "validate_architecture",
+    # Individual module functions
+    "validate_architecture_directory",
+    "validate_contracts",
+    "validate_contracts_directory",
+    "validate_no_manual_yaml",
+    "validate_one_model_per_file",
+    "validate_patterns",
+    "validate_patterns_directory",
+    "validate_patterns_file",
+    "validate_union_usage",
+    "validate_union_usage_directory",
+    "validate_union_usage_file",
+    "validate_yaml_file",
 ]

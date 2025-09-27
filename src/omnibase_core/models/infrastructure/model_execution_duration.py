@@ -35,6 +35,12 @@ class ModelExecutionDuration(BaseModel):
         seconds = (self.milliseconds % 60000) / 1000
         return f"{minutes}m{seconds:.1f}s"
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelExecutionDuration"]

@@ -23,11 +23,9 @@
 
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from typing import Literal
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.enums.enum_uri_type import EnumUriType
 
 
 class ModelOnexUri(BaseModel):
@@ -36,19 +34,16 @@ class ModelOnexUri(BaseModel):
     See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for spec.
     """
 
-    type: EnumUriType = Field(
-        ...,
-        description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
+    type: Literal["tool", "validator", "agent", "model", "plugin", "schema", "node"] = (
+        Field(
+            ...,
+            description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
+        )
     )
 
-    # Entity reference - UUID-based with display name
-    namespace_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the namespace entity",
-    )
-    namespace_display_name: str | None = Field(
-        None,
-        description="Human-readable namespace component of the URI",
+    namespace: str = Field(
+        ...,
+        description="Namespace component of the URI",
     )
 
     version_spec: str = Field(
@@ -56,6 +51,12 @@ class ModelOnexUri(BaseModel):
         description="Version specifier (semver or constraint)",
     )
     original: str = Field(..., description="Original URI string as provided")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

@@ -7,11 +7,13 @@ Provides convenient methods for working with time durations in various units.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_time_based import ModelTimeBased
 
@@ -30,41 +32,113 @@ class ModelDuration(BaseModel):
         description="Internal time-based model",
     )
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         """Initialize duration with flexible input formats."""
         # Handle various input formats
         if "milliseconds" in data:
             ms = data.pop("milliseconds")
             super().__init__()
-            self.time_based = ModelTimeBased(value=ms, unit=EnumTimeUnit.MILLISECONDS)
+            if isinstance(ms, (int, float)):
+                self.time_based = ModelTimeBased(
+                    value=int(ms), unit=EnumTimeUnit.MILLISECONDS
+                )
+            else:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="milliseconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "seconds" in data:
             seconds = data.pop("seconds")
             super().__init__()
-            self.time_based = ModelTimeBased(
-                value=int(seconds * 1000),
-                unit=EnumTimeUnit.MILLISECONDS,
-            )
+            if isinstance(seconds, (int, float)):
+                self.time_based = ModelTimeBased(
+                    value=int(seconds * 1000),
+                    unit=EnumTimeUnit.MILLISECONDS,
+                )
+            else:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="seconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "minutes" in data:
             minutes = data.pop("minutes")
             super().__init__()
-            self.time_based = ModelTimeBased(
-                value=int(minutes * 60 * 1000),
-                unit=EnumTimeUnit.MILLISECONDS,
-            )
+            if isinstance(minutes, (int, float)):
+                self.time_based = ModelTimeBased(
+                    value=int(minutes * 60 * 1000),
+                    unit=EnumTimeUnit.MILLISECONDS,
+                )
+            else:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="minutes must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "hours" in data:
             hours = data.pop("hours")
             super().__init__()
-            self.time_based = ModelTimeBased(
-                value=int(hours * 60 * 60 * 1000),
-                unit=EnumTimeUnit.MILLISECONDS,
-            )
+            if isinstance(hours, (int, float)):
+                self.time_based = ModelTimeBased(
+                    value=int(hours * 60 * 60 * 1000),
+                    unit=EnumTimeUnit.MILLISECONDS,
+                )
+            else:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="hours must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         elif "days" in data:
             days = data.pop("days")
             super().__init__()
-            self.time_based = ModelTimeBased(
-                value=int(days * 24 * 60 * 60 * 1000),
-                unit=EnumTimeUnit.MILLISECONDS,
-            )
+            if isinstance(days, (int, float)):
+                self.time_based = ModelTimeBased(
+                    value=int(days * 24 * 60 * 60 * 1000),
+                    unit=EnumTimeUnit.MILLISECONDS,
+                )
+            else:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="days must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         else:
             super().__init__(**data)
 
@@ -153,9 +227,15 @@ class ModelDuration(BaseModel):
         """Get the underlying time-based model."""
         return self.time_based
 
-    def model_dump(self, **kwargs: Any) -> dict[str, int]:
+    def model_dump(self, **kwargs: object) -> dict[str, int]:
         """Serialize model with typed return."""
         return {"milliseconds": self.milliseconds}
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

@@ -185,6 +185,12 @@ class ModelProgressMetrics(BaseModel):
             instance.add_custom_metric(key, value)
         return instance
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelProgressMetrics"]

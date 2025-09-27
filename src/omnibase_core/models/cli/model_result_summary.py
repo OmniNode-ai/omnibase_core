@@ -27,3 +27,9 @@ class ModelResultSummary(BaseModel):
     error_count: int = Field(description="Number of errors")
     warning_count: int = Field(description="Number of warnings")
     critical_error_count: int = Field(description="Number of critical errors")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

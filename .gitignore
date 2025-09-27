@@ -255,6 +255,7 @@ docs_archived/
 claude-flow.config.json
 
 # Claude Code settings (personal/local configuration)
+.claude/
 .claude/settings.local.json
 *.db
 *.sqlite

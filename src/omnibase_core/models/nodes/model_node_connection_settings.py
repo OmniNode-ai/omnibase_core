@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_protocol_type import EnumProtocolType
 
-from .model_types_node_connection_summary import NodeConnectionSummaryType
+from .model_types_node_connection_summary import ModelNodeConnectionSummaryType
 
 
 class ModelNodeConnectionSettings(BaseModel):
@@ -66,10 +66,13 @@ class ModelNodeConnectionSettings(BaseModel):
         if not self.is_fully_configured():
             return None
 
-        protocol_prefix = self.protocol.value.lower()  # type: ignore
+        # Safe access to protocol value (already checked in is_fully_configured)
+        if self.protocol is None:
+            return None
+        protocol_prefix = self.protocol.value.lower()
         return f"{protocol_prefix}://{self.endpoint}:{self.port}"
 
-    def get_connection_summary(self) -> NodeConnectionSummaryType:
+    def get_connection_summary(self) -> ModelNodeConnectionSummaryType:
         """Get connection settings summary."""
         return {
             "endpoint": self.endpoint,
@@ -110,6 +113,12 @@ class ModelNodeConnectionSettings(BaseModel):
             port=port,
             protocol=EnumProtocolType.GRPC,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

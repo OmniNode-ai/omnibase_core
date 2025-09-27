@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class FunctionRelationshipsSummaryType(TypedDict):
+class ModelFunctionRelationshipsSummaryType(TypedDict):
     """
     Typed dictionary for function relationships summary.
 
@@ -29,4 +29,4 @@ class FunctionRelationshipsSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["FunctionRelationshipsSummaryType"]
+__all__ = ["ModelFunctionRelationshipsSummaryType"]

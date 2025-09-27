@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from hashlib import md5
-from typing import Any, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -19,17 +19,19 @@ from omnibase_core.models.core.model_custom_properties import ModelCustomPropert
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .model_function_deprecation_info import (
+    ModelDeprecationSummary,
     ModelFunctionDeprecationInfo,
-    TypedDictDeprecationSummary,
 )
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
-from .model_types_function_documentation_summary import FunctionDocumentationSummaryType
+from .model_types_function_documentation_summary import (
+    ModelFunctionDocumentationSummaryType,
+)
 
 # Removed type alias - using ModelMetadataValue for proper type safety
 
 
-class TypedDictDocumentationSummaryFiltered(TypedDict):
+class ModelDocumentationSummaryFiltered(TypedDict):
     """Type-safe dictionary for filtered documentation summary (quality_score excluded)."""
 
     has_documentation: bool
@@ -39,11 +41,11 @@ class TypedDictDocumentationSummaryFiltered(TypedDict):
     notes_count: int
 
 
-class TypedDictFunctionMetadataSummary(TypedDict):
+class ModelFunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
 
-    documentation: TypedDictDocumentationSummaryFiltered  # Properly typed documentation summary (quality_score handled separately)
-    deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
+    documentation: ModelDocumentationSummaryFiltered  # Properly typed documentation summary (quality_score handled separately)
+    deprecation: ModelDeprecationSummary  # Properly typed deprecation summary
     relationships: dict[
         str,
         ModelMetadataValue,
@@ -271,14 +273,14 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         return min(doc_score + rel_score, 1.0)
 
-    def get_metadata_summary(self) -> TypedDictFunctionMetadataSummary:
+    def get_metadata_summary(self) -> ModelFunctionMetadataSummary:
         """Get comprehensive metadata summary."""
         doc_summary = self.documentation.get_documentation_summary()
         dep_summary = self.deprecation.get_deprecation_summary()
         rel_summary = self.relationships.get_relationships_summary()
 
         # Convert documentation summary to expected format (exclude quality_score - handled separately)
-        doc_filtered: TypedDictDocumentationSummaryFiltered = {
+        doc_filtered: ModelDocumentationSummaryFiltered = {
             "has_documentation": doc_summary.get("has_documentation", False),
             "has_examples": doc_summary.get("has_examples", False),
             "has_notes": doc_summary.get("has_notes", False),
@@ -297,10 +299,12 @@ class ModelFunctionNodeMetadata(BaseModel):
             "deprecation": dep_summary,
             "relationships": rel_converted,
             "documentation_quality_score": self.get_documentation_quality_score(),
-            "is_fully_documented": self.is_recently_updated(),  # Map to boolean field
-            "deprecation_status": (
-                "validated" if self.last_validated is not None else "unvalidated"
+            # Consider "fully documented" based on documentation, not recency
+            "is_fully_documented": (
+                doc_filtered.get("has_documentation", False)
+                and doc_filtered.get("has_examples", False)
             ),
+            "deprecation_status": self.deprecation.get_deprecation_status().value,
         }
 
     @classmethod
@@ -345,10 +349,16 @@ class ModelFunctionNodeMetadata(BaseModel):
         dep = ModelFunctionDeprecationInfo.create_deprecated(version, replacement)
         return cls(deprecation=dep)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = [
     "ModelFunctionNodeMetadata",
-    "TypedDictFunctionMetadataSummary",
-    "TypedDictDocumentationSummaryFiltered",
+    "ModelFunctionMetadataSummary",
+    "ModelDocumentationSummaryFiltered",
 ]

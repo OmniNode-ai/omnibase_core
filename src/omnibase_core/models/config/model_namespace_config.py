@@ -14,3 +14,9 @@ class ModelNamespaceConfig(BaseModel):
 
     enabled: bool = True
     strategy: EnumNamespaceStrategy = EnumNamespaceStrategy.ONEX_DEFAULT
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

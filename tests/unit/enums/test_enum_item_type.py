@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.omnibase_core.enums.enum_item_type import EnumItemType
+from omnibase_core.enums.enum_item_type import EnumItemType
 
 
 class TestEnumItemType:

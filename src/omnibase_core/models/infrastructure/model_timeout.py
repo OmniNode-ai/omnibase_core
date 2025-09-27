@@ -9,12 +9,15 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from functools import cached_property, lru_cache
-from typing import Any
+from typing import Union
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
@@ -46,25 +49,153 @@ class ModelTimeout(BaseModel):
         description="Custom metadata using ModelSchemaValue",
     )
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         """Initialize timeout model."""
-        # Extract timeout-specific fields
-        timeout_seconds = data.pop("timeout_seconds", 30)
-        warning_threshold_seconds = data.pop("warning_threshold_seconds", None)
-        is_strict = data.pop("is_strict", True)
-        allow_extension = data.pop("allow_extension", False)
-        extension_limit_seconds = data.pop("extension_limit_seconds", None)
-        runtime_category = data.pop("runtime_category", None)
-        description = data.pop("description", None)
-        custom_metadata = data.pop("custom_metadata", {})
+        # Extract timeout-specific fields with proper type checking
+        timeout_seconds_raw = data.pop("timeout_seconds", 30)
+        warning_threshold_seconds_raw = data.pop("warning_threshold_seconds", None)
+        is_strict_raw = data.pop("is_strict", True)
+        allow_extension_raw = data.pop("allow_extension", False)
+        extension_limit_seconds_raw = data.pop("extension_limit_seconds", None)
+        runtime_category_raw = data.pop("runtime_category", None)
+        description_raw = data.pop("description", None)
+        custom_metadata_raw = data.pop("custom_metadata", {})
+
+        # Type validation and conversion
+        if not isinstance(timeout_seconds_raw, (int, float)):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="timeout_seconds must be a number",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
+        timeout_seconds = int(timeout_seconds_raw)
+
+        warning_threshold_seconds = None
+        if warning_threshold_seconds_raw is not None:
+            if not isinstance(warning_threshold_seconds_raw, (int, float)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="warning_threshold_seconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
+            warning_threshold_seconds = int(warning_threshold_seconds_raw)
+
+        if not isinstance(is_strict_raw, bool):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="is_strict must be a boolean",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
+        is_strict = is_strict_raw
+
+        if not isinstance(allow_extension_raw, bool):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="allow_extension must be a boolean",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
+        allow_extension = allow_extension_raw
+
+        extension_limit_seconds = None
+        if extension_limit_seconds_raw is not None:
+            if not isinstance(extension_limit_seconds_raw, (int, float)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="extension_limit_seconds must be a number",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
+            extension_limit_seconds = int(extension_limit_seconds_raw)
+
+        runtime_category = None
+        if runtime_category_raw is not None:
+            if not isinstance(runtime_category_raw, EnumRuntimeCategory):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="runtime_category must be an EnumRuntimeCategory",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
+            runtime_category = runtime_category_raw
+
+        description = None
+        if description_raw is not None:
+            if not isinstance(description_raw, str):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="description must be a string",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
+            description = description_raw
 
         # Convert custom_metadata to ModelSchemaValue format if needed
         processed_metadata = {}
-        for key, value in custom_metadata.items():
-            if isinstance(value, ModelSchemaValue):
-                processed_metadata[key] = value
-            else:
-                processed_metadata[key] = ModelSchemaValue.from_value(value)
+        if isinstance(custom_metadata_raw, dict):
+            for key, value in custom_metadata_raw.items():
+                if isinstance(value, ModelSchemaValue):
+                    processed_metadata[key] = value
+                else:
+                    processed_metadata[key] = ModelSchemaValue.from_value(value)
+        elif custom_metadata_raw != {}:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="custom_metadata must be a dictionary",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
 
         # Initialize parent with processed custom metadata
         super().__init__(custom_metadata=processed_metadata, **data)
@@ -149,16 +280,22 @@ class ModelTimeout(BaseModel):
         Performance Optimization: Uses @cached_property to avoid expensive conversion
         operations on every access. Cache is invalidated when the object is modified.
         """
-        # Convert ModelSchemaValue metadata to basic types for ModelCustomProperties
+        # Convert ModelSchemaValue metadata to basic types for
+        # ModelCustomProperties
         metadata: dict[str, ModelSchemaValue] = {}
         for key, schema_value in self.custom_metadata.items():
-            # Convert to Python value then back to ModelSchemaValue for type consistency
+            # Convert to Python value then back to ModelSchemaValue for type
+            # consistency
             python_value = schema_value.to_value()
             metadata[key] = ModelSchemaValue.from_value(python_value)
 
         # Create ModelCustomProperties from the Python values
-        converted_metadata = {key: val.to_value() for key, val in metadata.items()}
-        return ModelCustomProperties.from_metadata(converted_metadata)
+        # Convert to proper union type to satisfy type requirements
+        schema_value_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+        for key, val in metadata.items():
+            schema_value_metadata[key] = val
+
+        return ModelCustomProperties.from_metadata(schema_value_metadata)
 
     @property
     def timeout_timedelta(self) -> timedelta:
@@ -249,17 +386,17 @@ class ModelTimeout(BaseModel):
         """Extend timeout by additional seconds if allowed."""
         return self.time_based.extend_time(additional_seconds)
 
-    def set_custom_metadata(self, key: str, value: Any) -> None:
+    def set_custom_metadata(self, key: str, value: object) -> None:
         """Set custom metadata value.
 
         Performance Note: Invalidates custom_properties cache when metadata changes.
         """
         self.custom_metadata[key] = ModelSchemaValue.from_value(value)
         # Invalidate cached property when metadata changes
-        if hasattr(self, "_custom_properties"):
-            delattr(self, "_custom_properties")
+        if hasattr(self, "custom_properties"):
+            delattr(self, "custom_properties")
 
-    def get_custom_metadata(self, key: str) -> Any:
+    def get_custom_metadata(self, key: str) -> object:
         """Get custom metadata value."""
         schema_value = self.custom_metadata.get(key)
         if schema_value is None:
@@ -383,6 +520,12 @@ class ModelTimeout(BaseModel):
             init_data["description"] = None
 
         return cls(**init_data)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

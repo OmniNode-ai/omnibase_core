@@ -7,9 +7,9 @@ with structured validation and proper type handling.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
@@ -53,7 +53,7 @@ class ModelNumericValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: ValidationInfo) -> float:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> float:
         """Validate that value is numeric."""
         if not isinstance(v, (int, float)):
             # Use delayed imports to break circular dependencies
@@ -99,12 +99,15 @@ class ModelNumericValue(BaseModel):
     @classmethod
     def from_numeric(
         cls,
-        value: float,
+        value: int | float,
         source: str | None = None,
     ) -> ModelNumericValue:
-        """Create numeric value from float (supports both int and float as input)."""
-        # Since we store all as float internally, just use float creation
-        return cls.from_float(value, source)
+        """Create numeric value from int or float, preserving original type."""
+        # Detect the original type and use appropriate method
+        if isinstance(value, int):
+            return cls.from_int(value, source)
+        else:
+            return cls.from_float(value, source)
 
     def as_int(self) -> int:
         """Get value as integer."""
@@ -124,8 +127,10 @@ class ModelNumericValue(BaseModel):
         """Get value as float (property access)."""
         return self.value
 
-    def to_python_value(self) -> float:
-        """Get the underlying Python value as float."""
+    def to_python_value(self) -> int | float:
+        """Get the underlying Python value preserving original type."""
+        if self.value_type == EnumNumericType.INTEGER:
+            return int(self.value)
         return self.value
 
     def to_original_type(self) -> float:
@@ -167,6 +172,12 @@ class ModelNumericValue(BaseModel):
     def __ge__(self, other: ModelNumericValue) -> bool:
         """Greater than or equal comparison."""
         return self.value >= other.value
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Note: Previously had type alias (NumericInput = ModelNumericValue)

@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class NodeCapabilitiesSummaryType(TypedDict):
+class ModelNodeCapabilitiesSummaryType(TypedDict):
     """
     Typed dictionary for node capabilities info summary.
 
@@ -29,4 +29,4 @@ class NodeCapabilitiesSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["NodeCapabilitiesSummaryType"]
+__all__ = ["ModelNodeCapabilitiesSummaryType"]

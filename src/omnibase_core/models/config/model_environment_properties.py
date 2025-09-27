@@ -14,9 +14,10 @@ from pydantic import BaseModel, Field
 # Type variable for generic property handling
 T = TypeVar("T")
 
+from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
+
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
-    TypedDictPropertyMetadata,
 )
 from .model_property_value import ModelPropertyValue
 
@@ -185,6 +186,12 @@ class ModelEnvironmentProperties(BaseModel):
     def create_empty(cls) -> ModelEnvironmentProperties:
         """Create empty properties instance."""
         return cls()
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

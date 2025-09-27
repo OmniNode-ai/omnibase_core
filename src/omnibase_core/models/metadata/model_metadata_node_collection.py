@@ -6,8 +6,6 @@ Clean, focused implementation with proper typing and single responsibility follo
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import Field, RootModel
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
@@ -31,8 +29,8 @@ class ModelMetadataNodeCollection(
 
     def __init__(
         self,
-        root: Any = None,
-        **kwargs: Any,
+        root: dict[str, ModelNodeUnion] | ModelMetadataNodeCollection | None = None,
+        **kwargs: object,
     ) -> None:
         """Initialize with enhanced enterprise features."""
         if root is None:

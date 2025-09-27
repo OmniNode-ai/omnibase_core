@@ -24,7 +24,6 @@ from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_result_accessor import ModelResultAccessor
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
-from .model_typed_dict_field_value import TypedDictFieldValue
 
 # Generic factory pattern
 try:
@@ -48,7 +47,6 @@ __all__ = [
     "ModelContainer",
     # Field accessor patterns
     "ModelFieldAccessor",
-    "TypedDictFieldValue",
     "ModelTypedAccessor",
     "ModelEnvironmentAccessor",
     "ModelResultAccessor",

@@ -7,7 +7,6 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -96,22 +95,34 @@ class ModelFunctionNodeData(BaseModel):
         description="Nested configuration objects",
     )
 
-    def add_string_property(self, name: str, value: str, **kwargs: Any) -> None:
+    def add_string_property(
+        self, name: str, value: str, unit: str = "", description: str = ""
+    ) -> None:
         """Add a string property."""
         self.string_properties.append(
-            ModelTypedMetrics.string_metric(name=name, value=value, **kwargs),
+            ModelTypedMetrics.string_metric(
+                name=name, value=value, unit=unit, description=description
+            ),
         )
 
-    def add_numeric_property(self, name: str, value: float, **kwargs: Any) -> None:
+    def add_numeric_property(
+        self, name: str, value: float, unit: str = "", description: str = ""
+    ) -> None:
         """Add a numeric property."""
         # Use float_metric for numeric values (int converted to float automatically)
-        metric = ModelTypedMetrics.float_metric(name=name, value=value, **kwargs)
+        metric = ModelTypedMetrics.float_metric(
+            name=name, value=value, unit=unit, description=description
+        )
         self.numeric_properties.append(metric)
 
-    def add_boolean_property(self, name: str, value: bool, **kwargs: Any) -> None:
+    def add_boolean_property(
+        self, name: str, value: bool, unit: str = "", description: str = ""
+    ) -> None:
         """Add a boolean property."""
         self.boolean_properties.append(
-            ModelTypedMetrics.boolean_metric(name=name, value=value, **kwargs),
+            ModelTypedMetrics.boolean_metric(
+                name=name, value=value, unit=unit, description=description
+            ),
         )
 
     def add_configuration(
@@ -194,6 +205,12 @@ class ModelFunctionNodeData(BaseModel):
     def has_tag(self, tag: str) -> bool:
         """Check if tag is present."""
         return self.tags.has_tag(tag)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

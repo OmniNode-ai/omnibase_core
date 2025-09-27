@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class NodeConnectionSummaryType(TypedDict):
+class ModelNodeConnectionSummaryType(TypedDict):
     """
     Typed dictionary for node connection settings summary.
 
@@ -29,4 +29,4 @@ class NodeConnectionSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["NodeConnectionSummaryType"]
+__all__ = ["ModelNodeConnectionSummaryType"]

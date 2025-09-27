@@ -90,7 +90,7 @@ class ModelCliExecutionMetadata(BaseModel):
     def get_failure_reason(self) -> str | None:
         """Get failure reason from context."""
         failure_context = self.get_context("failure_reason")
-        return failure_context.value if failure_context else None
+        return str(failure_context.value) if failure_context else None
 
     @classmethod
     def create_tagged(cls, tags: list[str]) -> ModelCliExecutionMetadata:
@@ -104,6 +104,12 @@ class ModelCliExecutionMetadata(BaseModel):
     ) -> ModelCliExecutionMetadata:
         """Create metadata with custom context."""
         return cls(custom_context=context)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, TypedDict, cast
+from typing import TypedDict
 
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
@@ -64,7 +65,7 @@ class ValidationSuite:
         self,
         validation_type: str,
         directory: Path,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ValidationResult:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
@@ -83,7 +84,7 @@ class ValidationSuite:
     def run_all_validations(
         self,
         directory: Path,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> dict[str, ValidationResult]:
         """Run all validations on a directory."""
         results = {}

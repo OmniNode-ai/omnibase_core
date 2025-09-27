@@ -8,7 +8,6 @@ patterns commonly used in validation scripts and text processing.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -102,6 +101,12 @@ class ModelRegexFlags(BaseModel):
     def as_int(self) -> int:
         """Get flag as integer."""
         return self.flag_value
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

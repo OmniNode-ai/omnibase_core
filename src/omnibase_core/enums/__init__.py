@@ -49,6 +49,7 @@ from .enum_function_type import EnumFunctionType
 from .enum_instance_type import EnumInstanceType
 from .enum_io_type import EnumIOType
 from .enum_item_type import EnumItemType
+from .enum_log_level import EnumLogLevel
 from .enum_memory_usage import EnumMemoryUsage
 from .enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from .enum_metadata_node_status import EnumMetadataNodeStatus
@@ -94,6 +95,13 @@ from .enum_type_name import EnumTypeName
 from .enum_uri_type import EnumUriType
 from .enum_validation_level import EnumValidationLevel
 from .enum_validation_severity import EnumValidationSeverity
+from .enum_workflow_coordination import (
+    EnumAssignmentStatus,
+    EnumExecutionPattern,
+    EnumFailureRecoveryStrategy,
+    EnumWorkflowStatus,
+)
+from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 from .enum_yaml_option_type import EnumYamlOptionType
 from .enum_yaml_value_type import EnumYamlValueType
 
@@ -143,6 +151,7 @@ __all__ = [
     "EnumIOType",
     "EnumInstanceType",
     "EnumItemType",
+    "EnumLogLevel",
     "EnumMemoryUsage",
     "EnumMetadataNodeComplexity",
     "EnumMetadataNodeStatus",
@@ -188,6 +197,11 @@ __all__ = [
     "EnumUriType",
     "EnumValidationLevel",
     "EnumValidationSeverity",
+    "EnumAssignmentStatus",
+    "EnumExecutionPattern",
+    "EnumFailureRecoveryStrategy",
+    "EnumWorkflowStatus",
+    "EnumWorkflowDependencyType",
     "EnumYamlOptionType",
     "EnumYamlValueType",
 ]

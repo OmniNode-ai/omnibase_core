@@ -80,3 +80,9 @@ class ModelMetadataUsageMetrics(BaseModel):
         self.peak_memory_usage_mb = max(memory_usage_mb, self.peak_memory_usage_mb)
 
         self.last_invocation = datetime.now(UTC)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -5,32 +5,21 @@ Restructured to use focused sub-models for better organization.
 
 from __future__ import annotations
 
-from typing import TypedDict
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.types.typed_dict_node_configuration_summary import (
+    TypedDictNodeConfigurationSummary,
+)
 
 from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
-from .model_types_node_connection_summary import NodeConnectionSummaryType
-from .model_types_node_execution_summary import NodeExecutionSummaryType
-from .model_types_node_feature_summary import NodeFeatureSummaryType
-from .model_types_node_resource_summary import TypedDictNodeResourceSummaryType
-
-
-class TypedDictNodeConfigurationSummary(TypedDict):
-    """Type-safe dictionary for node configuration summary."""
-
-    execution: NodeExecutionSummaryType
-    resources: TypedDictNodeResourceSummaryType
-    features: NodeFeatureSummaryType
-    connection: NodeConnectionSummaryType
-    is_production_ready: bool
-    is_performance_optimized: bool
-    has_custom_settings: bool
+from .model_types_node_connection_summary import ModelNodeConnectionSummaryType
+from .model_types_node_execution_summary import ModelNodeExecutionSummaryType
+from .model_types_node_feature_summary import ModelNodeFeatureSummaryType
+from .model_types_node_resource_summary import ModelNodeResourceSummaryType
 
 
 class ModelNodeConfiguration(BaseModel):
@@ -294,6 +283,12 @@ class ModelNodeConfiguration(BaseModel):
         if port:
             config.connection.port = port
         return config
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

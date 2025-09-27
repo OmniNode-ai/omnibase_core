@@ -203,8 +203,8 @@ class ProtocolMigrator:
                                 source_signature=source_protocol.signature_hash,
                                 spi_signature=spi_protocol.signature_hash,
                                 recommendation="Rename one of the protocols or merge if appropriate",
-                            )
-                        )
+                            ),
+                        ),
                     )
 
             # Check for exact signature duplicates
@@ -219,8 +219,8 @@ class ProtocolMigrator:
                             spi_file=spi_protocol.file_path,
                             signature_hash=source_protocol.signature_hash,
                             recommendation=f"Skip migration - use existing SPI version: {spi_protocol.name}",
-                        )
-                    )
+                        ),
+                    ),
                 )
 
         return conflicts
@@ -381,7 +381,7 @@ class ProtocolMigrator:
             return ValidationResult(
                 success=False,
                 errors=[
-                    "Rollback not available - migration was not executed or was a dry run"
+                    "Rollback not available - migration was not executed or was a dry run",
                 ],
             )
 

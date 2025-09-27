@@ -169,6 +169,12 @@ class ModelFunctionNodeCore(BaseModel):
         """Get function name."""
         return self.function_display_name or f"function_{str(self.function_id)[:8]}"
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelFunctionNodeCore"]

@@ -4,7 +4,7 @@ YAML-serializable data structures model with discriminated union.
 Author: ONEX Framework Team
 """
 
-from typing import Any
+# Remove Any import - using object for YAML-serializable data types
 
 from pydantic import BaseModel, Field
 
@@ -59,7 +59,7 @@ class ModelYamlValue(BaseModel):
             list_value=list_value,
         )
 
-    def to_serializable(self) -> Any:
+    def to_serializable(self) -> object:
         """Convert back to serializable data structure."""
         if self.value_type == EnumYamlValueType.SCHEMA_VALUE:
             return self.schema_value
@@ -80,6 +80,12 @@ class ModelYamlValue(BaseModel):
                 }
             ),
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

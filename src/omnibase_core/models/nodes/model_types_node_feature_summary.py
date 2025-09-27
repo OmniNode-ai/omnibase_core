@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class NodeFeatureSummaryType(TypedDict):
+class ModelNodeFeatureSummaryType(TypedDict):
     """
     Typed dictionary for node feature flags summary.
 
@@ -27,4 +27,4 @@ class NodeFeatureSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["NodeFeatureSummaryType"]
+__all__ = ["ModelNodeFeatureSummaryType"]

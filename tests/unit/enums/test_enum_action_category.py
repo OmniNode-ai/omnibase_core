@@ -10,7 +10,7 @@ Tests all aspects of the action category enum including:
 
 import pytest
 
-from src.omnibase_core.enums.enum_action_category import EnumActionCategory
+from omnibase_core.enums.enum_action_category import EnumActionCategory
 
 
 class TestEnumActionCategory:

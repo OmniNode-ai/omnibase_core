@@ -447,9 +447,9 @@ class ModelNodeType(BaseModel):
             "BACKEND_SELECTION": cls.BACKEND_SELECTION,
             "NODE_MANAGER_RUNNER": cls.NODE_MANAGER_RUNNER,
             "MAINTENANCE": cls.MAINTENANCE,
-            "node_logger_emit_log_event": cls.LOGGER_EMIT_LOG_EVENT,
+            "NODE_LOGGER_EMIT_LOG_EVENT": cls.LOGGER_EMIT_LOG_EVENT,
             "LOGGING_UTILS": cls.LOGGING_UTILS,
-            "scenario_runner": cls.SCENARIO_RUNNER,
+            "SCENARIO_RUNNER": cls.SCENARIO_RUNNER,
         }
 
         factory = factory_map.get(name)
@@ -489,3 +489,9 @@ class ModelNodeType(BaseModel):
         if isinstance(other, EnumTypeName):
             return self.type_name == other
         return False
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -7,8 +7,6 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.decorators import allow_dict_str_any
@@ -37,6 +35,12 @@ class ModelWorkflowPayload(BaseModel):
     state_data: dict[str, ModelSchemaValue] = Field(
         default_factory=dict, description="Workflow state data with proper typing"
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

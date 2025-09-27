@@ -126,65 +126,85 @@ class OmniStructureValidator:
             ("protocol", "Use /protocols/ (plural) instead"),
         ]
 
-        for root, dirs, _ in os.walk(self.src_path):
-            # Filter out cache directories from dirs list to prevent walking into them
-            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+        try:
+            for root, dirs, _ in os.walk(self.src_path):
+                # Filter out cache directories from dirs list to prevent walking into them
+                dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
 
-            for dir_name in dirs:
-                for forbidden, suggestion in forbidden_patterns:
-                    if dir_name == forbidden:
-                        path = Path(root) / dir_name
+                for dir_name in dirs:
+                    for forbidden, suggestion in forbidden_patterns:
+                        if dir_name == forbidden:
+                            path = Path(root) / dir_name
+                            self.violations.append(
+                                StructureViolation(
+                                    level=ViolationLevel.ERROR,
+                                    category="Forbidden Directory",
+                                    message=f"Found forbidden directory: /{dir_name}/",
+                                    path=str(path.relative_to(self.repo_path)),
+                                    suggestion=suggestion,
+                                )
+                            )
+        except (PermissionError, OSError) as e:
+            # Log permission errors but continue validation
+            print(f"⚠️  Permission error accessing directory: {e}")
+
+        # Check for scattered model directories (ignoring cache directories)
+        try:
+            for root, dirs, _ in os.walk(self.src_path):
+                # Filter out cache directories from dirs list to prevent walking into them
+                dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+
+                if (
+                    "models" in dirs
+                    and str(Path(root).relative_to(self.src_path)) != "."
+                ):
+                    # Skip if this is inside a cache directory
+                    if not any(
+                        ignore_dir in str(Path(root))
+                        for ignore_dir in self.IGNORED_DIRS
+                    ):
+                        path = Path(root) / "models"
                         self.violations.append(
                             StructureViolation(
                                 level=ViolationLevel.ERROR,
-                                category="Forbidden Directory",
-                                message=f"Found forbidden directory: /{dir_name}/",
+                                category="Scattered Models",
+                                message=f"Models directory found outside root: {path}",
                                 path=str(path.relative_to(self.repo_path)),
-                                suggestion=suggestion,
+                                suggestion=f"Move all models to src/{self.repo_name}/models/ organized by domain",
                             )
                         )
-
-        # Check for scattered model directories (ignoring cache directories)
-        for root, dirs, _ in os.walk(self.src_path):
-            # Filter out cache directories from dirs list to prevent walking into them
-            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
-
-            if "models" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
-                # Skip if this is inside a cache directory
-                if not any(
-                    ignore_dir in str(Path(root)) for ignore_dir in self.IGNORED_DIRS
-                ):
-                    path = Path(root) / "models"
-                    self.violations.append(
-                        StructureViolation(
-                            level=ViolationLevel.ERROR,
-                            category="Scattered Models",
-                            message=f"Models directory found outside root: {path}",
-                            path=str(path.relative_to(self.repo_path)),
-                            suggestion=f"Move all models to src/{self.repo_name}/models/ organized by domain",
-                        )
-                    )
+        except (PermissionError, OSError) as e:
+            # Log permission errors but continue validation
+            print(f"⚠️  Permission error accessing directory: {e}")
 
         # Check for scattered enum directories (ignoring cache directories)
-        for root, dirs, _ in os.walk(self.src_path):
-            # Filter out cache directories from dirs list to prevent walking into them
-            dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+        try:
+            for root, dirs, _ in os.walk(self.src_path):
+                # Filter out cache directories from dirs list to prevent walking into them
+                dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
 
-            if "enums" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
-                # Skip if this is inside a cache directory
-                if not any(
-                    ignore_dir in str(Path(root)) for ignore_dir in self.IGNORED_DIRS
+                if (
+                    "enums" in dirs
+                    and str(Path(root).relative_to(self.src_path)) != "."
                 ):
-                    path = Path(root) / "enums"
-                    self.violations.append(
-                        StructureViolation(
-                            level=ViolationLevel.ERROR,
-                            category="Scattered Enums",
-                            message=f"Enums directory found outside root: {path}",
-                            path=str(path.relative_to(self.repo_path)),
-                            suggestion=f"Move all enums to src/{self.repo_name}/enums/ organized by domain",
+                    # Skip if this is inside a cache directory
+                    if not any(
+                        ignore_dir in str(Path(root))
+                        for ignore_dir in self.IGNORED_DIRS
+                    ):
+                        path = Path(root) / "enums"
+                        self.violations.append(
+                            StructureViolation(
+                                level=ViolationLevel.ERROR,
+                                category="Scattered Enums",
+                                message=f"Enums directory found outside root: {path}",
+                                path=str(path.relative_to(self.repo_path)),
+                                suggestion=f"Move all enums to src/{self.repo_name}/enums/ organized by domain",
+                            )
                         )
-                    )
+        except (PermissionError, OSError) as e:
+            # Log permission errors but continue validation
+            print(f"⚠️  Permission error accessing directory: {e}")
 
     def validate_required_structure(self):
         """Validate presence of required directories."""
@@ -355,13 +375,17 @@ class OmniStructureValidator:
         # Count protocol files in non-SPI repositories
         if self.repo_name != "omnibase_spi":
             protocol_count = 0
-            for _root, dirs, files in os.walk(self.src_path):
-                # Filter out cache directories from dirs list to prevent walking into them
-                dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
+            try:
+                for _root, dirs, files in os.walk(self.src_path):
+                    # Filter out cache directories from dirs list to prevent walking into them
+                    dirs[:] = [d for d in dirs if d not in self.IGNORED_DIRS]
 
-                for file in files:
-                    if file.startswith("protocol_") and file.endswith(".py"):
-                        protocol_count += 1
+                    for file in files:
+                        if file.startswith("protocol_") and file.endswith(".py"):
+                            protocol_count += 1
+            except (PermissionError, OSError) as e:
+                # Log permission errors but continue validation
+                print(f"⚠️  Permission error accessing directory: {e}")
 
             if protocol_count > 3:  # Allow up to 3 service-specific protocols
                 self.violations.append(

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar, cast
+from typing import Generic, TypeVar, Union, cast
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -69,20 +69,67 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         description="Execution metadata and context",
     )
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         """Initialize execution result with proper timing setup."""
-        if "success" in data and "value" not in data and "error" not in data:
-            if data["success"]:
-                raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Success result must have a value",
-                )
+        # Extract required parameters for parent class
+        success = data.pop("success", None)
+        value = data.pop("value", None)
+        error = data.pop("error", None)
+
+        # Validate required parameters
+        if success is None:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="success parameter is required",
+            )
+
+        if not isinstance(success, bool):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="success must be a boolean",
+            )
+
+        # Validate success/value/error combination
+        if success and value is None:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Success result must have a value",
+            )
+
+        if not success and error is None:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result must have an error",
             )
 
-        super().__init__(**data)
+        # Cast value and error to proper generic types for parent class
+        typed_value = cast("T | None", value)
+        typed_error = cast("E | None", error)
+
+        # Convert remaining data to the Union type expected by parent
+        from typing import Union
+
+        from omnibase_core.models.core.model_custom_properties import (
+            ModelCustomProperties,
+        )
+
+        filtered_data: dict[
+            str, Union[str, int, float, bool, dict[str, object], list[object], None]
+        ] = {}
+        for key, val in data.items():
+            if isinstance(val, (str, int, float, bool, dict, list)) or val is None:
+                filtered_data[key] = val
+            elif isinstance(val, ModelCustomProperties):
+                # Pass ModelCustomProperties directly as it's a Pydantic model
+                # The type annotation will be satisfied
+                filtered_data[key] = val  # type: ignore[assignment]
+            else:
+                # Convert other types to string representation for safety
+                filtered_data[key] = str(val)
+
+        super().__init__(
+            success=success, value=typed_value, error=typed_error, **filtered_data
+        )
 
     @classmethod
     def ok(
@@ -90,7 +137,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         value: T,
         execution_id: UUID | None = None,
         metadata: ModelCustomProperties | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelExecutionResult[T, E]:
         """Create a successful execution result."""
         return cls(
@@ -108,7 +155,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         error: E,
         execution_id: UUID | None = None,
         metadata: ModelCustomProperties | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelExecutionResult[T, E]:
         """Create an error execution result."""
         return cls(
@@ -123,18 +170,32 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
     @classmethod
     def create_cli_success(
         cls,
-        output_data: Any,
+        output_data: object,
         execution_id: UUID | None = None,
         tool_name: str | None = None,
-        **kwargs: Any,
-    ) -> ModelExecutionResult[Any, str]:
+        **kwargs: object,
+    ) -> ModelExecutionResult[object, str]:
         """
         Create successful CLI execution result.
         """
         metadata = kwargs.pop("metadata", ModelCustomProperties())
         if not isinstance(metadata, ModelCustomProperties):
             # Convert dict to ModelCustomProperties if needed
-            metadata = ModelCustomProperties.from_metadata(metadata)
+            if isinstance(metadata, dict):
+                # Type validation: ensure dict has proper structure
+                from omnibase_core.models.common.model_schema_value import (
+                    ModelSchemaValue,
+                )
+
+                typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+                for key, value in metadata.items():
+                    if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                        typed_metadata[key] = value
+                    else:
+                        typed_metadata[key] = ModelSchemaValue.from_value(value)
+                metadata = ModelCustomProperties.from_metadata(typed_metadata)
+            else:
+                metadata = ModelCustomProperties()
         if tool_name:
             metadata.set_custom_string("tool_name", tool_name)
 
@@ -156,15 +217,29 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         execution_id: UUID | None = None,
         tool_name: str | None = None,
         status_code: int = 1,
-        **kwargs: Any,
-    ) -> ModelExecutionResult[Any, str]:
+        **kwargs: object,
+    ) -> ModelExecutionResult[object, str]:
         """
         Create failed CLI execution result.
         """
         metadata = kwargs.pop("metadata", ModelCustomProperties())
         if not isinstance(metadata, ModelCustomProperties):
             # Convert dict to ModelCustomProperties if needed
-            metadata = ModelCustomProperties.from_metadata(metadata)
+            if isinstance(metadata, dict):
+                # Type validation: ensure dict has proper structure
+                from omnibase_core.models.common.model_schema_value import (
+                    ModelSchemaValue,
+                )
+
+                typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+                for key, value in metadata.items():
+                    if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                        typed_metadata[key] = value
+                    else:
+                        typed_metadata[key] = ModelSchemaValue.from_value(value)
+                metadata = ModelCustomProperties.from_metadata(typed_metadata)
+            else:
+                metadata = ModelCustomProperties()
         if tool_name:
             metadata.set_custom_string("tool_name", tool_name)
         metadata.set_custom_number("status_code", float(status_code))
@@ -192,14 +267,14 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
     def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add metadata entry."""
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-        self.metadata.set_custom_value(key, ModelSchemaValue.from_value(value))
+        self.metadata.set_custom_value(key, value)
 
     def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get metadata entry with optional default."""
         value = self.metadata.get_custom_value(key)
-        return cast(MetadataValueType, value if value is not None else default)
+        if value is not None:
+            return cast(MetadataValueType, value)
+        return default
 
     def mark_completed(self) -> None:
         """Mark execution as completed and calculate duration."""
@@ -295,13 +370,25 @@ def execution_ok(
     value: T,
     execution_id: UUID | None = None,
     tool_name: str | None = None,
-    **kwargs: Any,
+    **kwargs: object,
 ) -> ModelExecutionResult[T, str]:
     """Create successful execution result with optional tool context."""
     metadata = kwargs.pop("metadata", ModelCustomProperties())
     if not isinstance(metadata, ModelCustomProperties):
         # Convert dict to ModelCustomProperties if needed
-        metadata = ModelCustomProperties.from_metadata(metadata)
+        if isinstance(metadata, dict):
+            # Type validation: ensure dict has proper structure
+            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+            for key, value in metadata.items():
+                if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                    typed_metadata[key] = value
+                else:
+                    typed_metadata[key] = ModelSchemaValue.from_value(value)
+            metadata = ModelCustomProperties.from_metadata(typed_metadata)
+        else:
+            metadata = ModelCustomProperties()
     if tool_name:
         metadata.set_custom_string("tool_name", tool_name)
 
@@ -318,13 +405,25 @@ def execution_err(
     execution_id: UUID | None = None,
     tool_name: str | None = None,
     status_code: int = 1,
-    **kwargs: Any,
-) -> ModelExecutionResult[Any, str]:
+    **kwargs: object,
+) -> ModelExecutionResult[object, str]:
     """Create error execution result with optional tool context."""
     metadata = kwargs.pop("metadata", ModelCustomProperties())
     if not isinstance(metadata, ModelCustomProperties):
         # Convert dict to ModelCustomProperties if needed
-        metadata = ModelCustomProperties.from_metadata(metadata)
+        if isinstance(metadata, dict):
+            # Type validation: ensure dict has proper structure
+            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+            for key, value in metadata.items():
+                if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                    typed_metadata[key] = value
+                else:
+                    typed_metadata[key] = ModelSchemaValue.from_value(value)
+            metadata = ModelCustomProperties.from_metadata(typed_metadata)
+        else:
+            metadata = ModelCustomProperties()
     if tool_name:
         metadata.set_custom_string("tool_name", tool_name)
     if status_code != 1:
@@ -339,11 +438,11 @@ def execution_err(
 
 
 def try_execution(
-    f: Callable[[], Any],
+    f: Callable[[], object],
     execution_id: UUID | None = None,
     tool_name: str | None = None,
-    **kwargs: Any,
-) -> ModelExecutionResult[Any, str]:
+    **kwargs: object,
+) -> ModelExecutionResult[object, str]:
     """
     Execute function and wrap result/exception in execution result.
 
@@ -359,13 +458,25 @@ def try_execution(
     metadata = kwargs.pop("metadata", ModelCustomProperties())
     if not isinstance(metadata, ModelCustomProperties):
         # Convert dict to ModelCustomProperties if needed
-        metadata = ModelCustomProperties.from_metadata(metadata)
+        if isinstance(metadata, dict):
+            # Type validation: ensure dict has proper structure
+            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+            for key, value in metadata.items():
+                if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                    typed_metadata[key] = value
+                else:
+                    typed_metadata[key] = ModelSchemaValue.from_value(value)
+            metadata = ModelCustomProperties.from_metadata(typed_metadata)
+        else:
+            metadata = ModelCustomProperties()
     if tool_name:
         metadata.set_custom_string("tool_name", tool_name)
 
     try:
         value = f()
-        success_result: ModelExecutionResult[Any, str] = ModelExecutionResult(
+        success_result: ModelExecutionResult[object, str] = ModelExecutionResult(
             success=True,
             value=value,
             error=None,
@@ -376,7 +487,7 @@ def try_execution(
         success_result.mark_completed()
         return success_result
     except Exception as e:
-        error_result: ModelExecutionResult[Any, str] = ModelExecutionResult(
+        error_result: ModelExecutionResult[object, str] = ModelExecutionResult(
             success=False,
             value=None,
             error=str(e),

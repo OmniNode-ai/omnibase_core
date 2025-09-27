@@ -8,7 +8,6 @@ outcome of CLI command execution with proper typing.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -24,6 +23,8 @@ from .model_cli_result_metadata import ModelCliResultMetadata
 from .model_performance_metrics import ModelPerformanceMetrics
 from .model_result_summary import ModelResultSummary
 from .model_trace_data import ModelTraceData
+
+# Removed Any import - using object for ONEX compliance
 
 
 class ModelCliResult(BaseModel):
@@ -172,7 +173,7 @@ class ModelCliResult(BaseModel):
     def add_performance_metric(
         self,
         name: str,
-        value: Any,
+        value: object,
         unit: str = "",
         category: EnumConfigCategory = EnumConfigCategory.GENERAL,
     ) -> None:
@@ -190,19 +191,19 @@ class ModelCliResult(BaseModel):
         if hasattr(self.performance_metrics, "add_metric"):
             self.performance_metrics.add_metric(name, value, unit, category)
 
-    def add_debug_info(self, key: str, value: Any) -> None:
+    def add_debug_info(self, key: str, value: object) -> None:
         """Add debug information with proper typing."""
-        if self.execution.config.is_debug_enabled:
+        if self.execution.is_debug_enabled:
             if self.debug_info is None:
                 self.debug_info = ModelCliDebugInfo()
             # Convert value to ModelSchemaValue for proper typing
             schema_value = ModelSchemaValue.from_value(value)
-            self.debug_info.set_custom_field(key, schema_value.to_value())
+            self.debug_info.set_custom_field(key, str(schema_value.to_value()))
 
     def add_trace_data(
         self,
         key: str,
-        value: Any,
+        value: object,
         operation: str = "",
     ) -> None:
         """Add trace data with proper typing."""
@@ -223,7 +224,7 @@ class ModelCliResult(BaseModel):
         if hasattr(self.trace_data, "add_trace_info"):
             self.trace_data.add_trace_info(key, value, operation)
 
-    def add_metadata(self, key: str, value: Any) -> None:
+    def add_metadata(self, key: str, value: object) -> None:
         """Add result metadata with proper typing."""
         if self.result_metadata is None:
             self.result_metadata = ModelCliResultMetadata(
@@ -239,9 +240,9 @@ class ModelCliResult(BaseModel):
             )
         # Convert value to ModelSchemaValue for proper typing
         schema_value = ModelSchemaValue.from_value(value)
-        self.result_metadata.set_custom_field(key, schema_value.to_value())
+        self.result_metadata.set_custom_field(key, str(schema_value.to_value()))
 
-    def get_metadata(self, key: str, default: Any = None) -> Any:
+    def get_metadata(self, key: str, default: object = None) -> object:
         """Get result metadata with proper typing."""
         if self.result_metadata is None:
             return default
@@ -266,7 +267,9 @@ class ModelCliResult(BaseModel):
                 return value
         return default
 
-    def get_typed_metadata(self, key: str, field_type: type[Any], default: Any) -> Any:
+    def get_typed_metadata(
+        self, key: str, field_type: type[object], default: object
+    ) -> object:
         """Get result metadata with specific type checking."""
         if self.result_metadata is None:
             return default
@@ -278,8 +281,8 @@ class ModelCliResult(BaseModel):
     def get_output_value(
         self,
         key: str,
-        default: Any = None,
-    ) -> Any:
+        default: object = None,
+    ) -> object:
         """Get a specific output value with proper typing."""
         value = self.output_data.get_field_value(
             key, str(default) if default is not None else ""
@@ -302,11 +305,11 @@ class ModelCliResult(BaseModel):
                 return value
         return default
 
-    def set_output_value(self, key: str, value: Any) -> None:
+    def set_output_value(self, key: str, value: object) -> None:
         """Set a specific output value with proper typing."""
         # Convert value to ModelSchemaValue for proper typing
         schema_value = ModelSchemaValue.from_value(value)
-        self.output_data.set_field_value(key, schema_value.to_value())
+        self.output_data.set_field_value(key, str(schema_value.to_value()))
 
     def get_formatted_output(self) -> str:
         """Get formatted output for display."""
@@ -443,6 +446,12 @@ class ModelCliResult(BaseModel):
             performance_metrics=None,
             trace_data=None,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

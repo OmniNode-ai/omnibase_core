@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+
+# Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
@@ -28,7 +29,7 @@ class ModelCliExecutionContext(BaseModel):
 
     # Context identification
     key: str = Field(..., description="Context key identifier")
-    value: Any = Field(
+    value: object = Field(
         ...,
         description="Context value - validated against context_type discriminator",
     )
@@ -57,10 +58,10 @@ class ModelCliExecutionContext(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: Any) -> Any:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
         """Validate that value is serializable."""
         # Basic validation to ensure value can be serialized
-        # Context type validation is not needed since value: Any allows any type
+        # Context type validation is not needed since value: object allows any type
         # and context_type refers to the source/nature of the context, not data type
         return v
 
@@ -74,7 +75,7 @@ class ModelCliExecutionContext(BaseModel):
             return ",".join(str(v) for v in self.value)
         return str(self.value)
 
-    def get_typed_value(self) -> Any:
+    def get_typed_value(self) -> object:
         """Get the properly typed value."""
         return self.value
 
@@ -90,10 +91,16 @@ class ModelCliExecutionContext(BaseModel):
         """Check if this is a UUID value."""
         return isinstance(self.value, UUID)
 
-    def update_value(self, new_value: Any) -> None:
+    def update_value(self, new_value: object) -> None:
         """Update the context value and timestamp."""
         self.value = new_value
         self.updated_at = datetime.now()
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

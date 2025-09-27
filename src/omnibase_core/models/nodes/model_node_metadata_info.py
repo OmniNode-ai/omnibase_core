@@ -9,7 +9,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from omnibase_spi.protocols.types.core_types import ProtocolNodeInfoLike
+# Import SPI protocol directly - no fallback pattern per ONEX standards
+from omnibase_spi.protocols.types.protocol_core_types import ProtocolNodeInfoLike
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
@@ -22,7 +23,7 @@ from omnibase_core.models.metadata.model_semver import ModelSemVer
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_performance_metrics import ModelNodePerformanceMetrics
-from .model_types_node_metadata_summary import NodeMetadataSummaryType
+from .model_types_node_metadata_summary import ModelNodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -292,7 +293,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Update last accessed timestamp."""
         self.performance.update_accessed_time()
 
-    def get_summary(self) -> NodeMetadataSummaryType:
+    def get_summary(self) -> ModelNodeMetadataSummaryType:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
         core_summary = self.core.get_status_summary()
@@ -355,7 +356,7 @@ class ModelNodeMetadataInfo(BaseModel):
         try:
             core.health = EnumNodeHealthStatus(health_str)
         except ValueError:
-            core.health = EnumNodeHealthStatus.HEALTHY
+            core.health = EnumNodeHealthStatus.UNKNOWN
 
         organization = ModelNodeOrganizationMetadata(
             description=getattr(node_info, "description", None),
@@ -367,6 +368,12 @@ class ModelNodeMetadataInfo(BaseModel):
             performance=ModelNodePerformanceMetrics.create_new(),
             organization=organization,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

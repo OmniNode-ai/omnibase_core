@@ -34,6 +34,12 @@ class ModelNodeInformationSummary(BaseModel):
     )
     is_fully_configured: bool = Field(description="Whether node is fully configured")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export the model
 __all__ = ["ModelNodeInformationSummary"]

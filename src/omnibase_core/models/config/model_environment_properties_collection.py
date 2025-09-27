@@ -6,18 +6,11 @@ Type-safe collection of environment properties with metadata support.
 
 from __future__ import annotations
 
-from typing import TypedDict
-
 from pydantic import BaseModel, Field
 
+from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
+
 from .model_property_value import ModelPropertyValue
-
-
-class TypedDictPropertyMetadata(TypedDict, total=False):
-    """Metadata for environment properties."""
-
-    description: str
-    source: str
 
 
 class ModelEnvironmentPropertiesCollection(BaseModel):
@@ -50,6 +43,12 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         """Check if collection has any properties."""
         return len(self.properties) > 0
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Note: Removed to_dict() and from_dict() methods to comply with pure Pydantic architecture
     # Use model.properties directly or ModelEnvironmentPropertiesCollection(**data) for creation
 
@@ -58,5 +57,4 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
 __all__ = [
     "ModelEnvironmentPropertiesCollection",
     "ModelPropertyValue",
-    "TypedDictPropertyMetadata",
 ]

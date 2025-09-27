@@ -8,7 +8,7 @@ This script tests the critical P0 bug fix to ensure ONEX nodes can now initializ
 import tempfile
 from pathlib import Path
 
-from src.omnibase_core.core.contracts.model_contract_effect import ModelContractEffect
+from omnibase_core.core.contracts.model_contract_effect import ModelContractEffect
 
 
 def test_minimal_contract():

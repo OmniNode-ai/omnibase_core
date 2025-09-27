@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class FunctionDocumentationSummaryType(TypedDict):
+class ModelFunctionDocumentationSummaryType(TypedDict):
     """
     Typed dictionary for function documentation summary.
 
@@ -26,4 +26,4 @@ class FunctionDocumentationSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["FunctionDocumentationSummaryType"]
+__all__ = ["ModelFunctionDocumentationSummaryType"]

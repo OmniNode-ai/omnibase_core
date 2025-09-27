@@ -7,11 +7,14 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 
 from __future__ import annotations
 
-from typing import NotRequired, TypedDict
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+
+# Use TYPE_CHECKING to avoid circular import
+if TYPE_CHECKING:
+    from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
 class TypedDictOutputFormatOptionsKwargs(TypedDict):
@@ -63,7 +66,7 @@ class TypedDictOutputFormatOptionsKwargs(TypedDict):
     create_backup: NotRequired[bool]
 
     # Custom format options
-    custom_options: NotRequired[dict[str, ModelCliValue]]
+    custom_options: NotRequired[dict[str, "ModelCliValue"]]
 
 
 # Export for use

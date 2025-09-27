@@ -363,6 +363,12 @@ class ModelStructuredDescription(BaseModel):
         """String representation returns the summary description."""
         return self.summary_description
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelStructuredDescription"]

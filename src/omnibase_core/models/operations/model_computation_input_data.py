@@ -7,8 +7,6 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.decorators import allow_dict_str_any
@@ -38,6 +36,12 @@ class ModelComputationInputData(BaseModel):
     metadata_context: dict[str, str] = Field(
         default_factory=dict, description="String metadata context"
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

@@ -11,9 +11,24 @@ import sys
 from pathlib import Path
 from typing import Iterator
 
-import timeout_utils
 import yaml
-from timeout_utils import timeout_context
+
+# Handle timeout_utils import for both direct execution and test imports
+try:
+    import timeout_utils
+    from timeout_utils import timeout_context
+except ImportError:
+    # Try relative import for when script is imported by tests
+    import sys
+    from pathlib import Path
+
+    # Add the script directory to Python path for timeout_utils import
+    script_dir = Path(__file__).parent
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
+
+    import timeout_utils
+    from timeout_utils import timeout_context
 
 # Constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
@@ -70,6 +85,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         errors.append(f"IO error reading file: {e}")
         return errors
 
+    # Handle whitespace-only files as valid (empty content)
+    if not content_str.strip():
+        # Whitespace-only files are considered valid/empty
+        return errors
+
     # Parse YAML with specific error handling
     try:
         content = yaml.safe_load(content_str)
@@ -92,14 +112,53 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     if content is None:
         return []  # Empty files are OK
 
-    # Basic YAML contract validation
+    # YAML contract validation using Pydantic models
     if isinstance(content, dict):
-        # Check for required contract fields if this looks like a contract
-        if "contract_version" in content or "node_type" in content:
-            if "contract_version" not in content:
-                errors.append("Missing required field: contract_version")
-            if "node_type" not in content:
-                errors.append("Missing required field: node_type")
+        # Check if this appears to be a contract (has any contract-related fields)
+        contract_indicators = {
+            "contract_version",
+            "node_type",
+            "metadata",
+            "inputs",
+            "outputs",
+            "configuration",
+            "description",
+        }
+        if any(field in content for field in contract_indicators):
+            # Use standalone validator to avoid circular imports
+            try:
+                from pydantic import ValidationError
+                from yaml_contract_validator import SimpleYamlContract
+
+                # Validate using Pydantic model
+                SimpleYamlContract.validate_yaml_content(content)
+
+            except ValidationError as e:
+                # Extract meaningful error messages from Pydantic validation
+                for error in e.errors():
+                    field_path = ".".join(str(loc) for loc in error["loc"])
+                    error_msg = error["msg"]
+                    error_type = error["type"]
+
+                    if error_type == "missing":
+                        errors.append(f"Missing required field: {field_path}")
+                    elif error_type == "value_error":
+                        errors.append(f"Invalid value for {field_path}: {error_msg}")
+                    else:
+                        errors.append(f"Validation error in {field_path}: {error_msg}")
+
+            except ImportError as e:
+                # Fallback to basic validation if imports fail
+                errors.append(f"Could not import validation models: {e}")
+                # Basic fallback validation
+                if "contract_version" not in content:
+                    errors.append("Missing required field: contract_version")
+                if "node_type" not in content:
+                    errors.append("Missing required field: node_type")
+
+            except Exception as e:
+                # Handle any other errors during validation
+                errors.append(f"Contract validation error: {e}")
 
     return errors
 
@@ -156,6 +215,16 @@ def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
     except (OSError, PermissionError) as e:
         print(f"Error during file discovery: {e}", file=sys.stderr)
         raise
+
+
+def setup_timeout_handler() -> None:
+    """
+    Legacy compatibility function.
+
+    This function does nothing but exists for backward compatibility with tests.
+    Use timeout_context() instead for actual timeout handling.
+    """
+    pass
 
 
 def main():

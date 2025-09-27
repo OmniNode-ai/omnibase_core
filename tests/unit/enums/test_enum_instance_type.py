@@ -6,7 +6,7 @@ Tests the instance type enumeration for cloud and service instances.
 
 import pytest
 
-from src.omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.enums.enum_instance_type import EnumInstanceType
 
 
 class TestEnumInstanceType:

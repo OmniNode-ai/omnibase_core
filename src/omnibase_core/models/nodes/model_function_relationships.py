@@ -13,7 +13,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 
-from .model_types_function_relationships_summary import FunctionRelationshipsSummaryType
+from .model_types_function_relationships_summary import (
+    ModelFunctionRelationshipsSummaryType,
+)
 
 
 class ModelFunctionRelationships(BaseModel):
@@ -85,7 +87,7 @@ class ModelFunctionRelationships(BaseModel):
 
     def get_relationships_summary(
         self,
-    ) -> FunctionRelationshipsSummaryType:
+    ) -> ModelFunctionRelationshipsSummaryType:
         """Get relationships summary."""
         return {
             "dependencies_count": len(self.dependencies),
@@ -96,7 +98,9 @@ class ModelFunctionRelationships(BaseModel):
             "has_related_functions": self.has_related_functions(),
             "has_tags": self.has_tags(),
             "has_categories": self.has_categories(),
-            "primary_category": self.categories[0] if self.categories else "None",
+            "primary_category": (
+                self.categories[0].value if self.categories else "None"
+            ),
         }
 
     @classmethod
@@ -122,6 +126,12 @@ class ModelFunctionRelationships(BaseModel):
             dependencies=dependencies,
             related_functions=related_functions or [],
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

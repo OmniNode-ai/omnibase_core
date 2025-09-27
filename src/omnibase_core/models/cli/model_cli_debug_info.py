@@ -8,10 +8,15 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
@@ -78,6 +83,42 @@ class ModelCliDebugInfo(BaseModel):
         description="Custom debug fields",
     )
 
+    @field_validator("custom_debug_fields", mode="before")
+    @classmethod
+    def validate_custom_debug_fields(
+        cls, v: Union[dict[str, Any], dict[str, ModelCliValue]]
+    ) -> dict[str, ModelCliValue]:
+        """Convert raw values to ModelCliValue objects for custom_debug_fields."""
+        if not isinstance(v, dict):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="custom_debug_fields must be a dictionary",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation"
+                        ),
+                    }
+                ),
+            )
+
+        result = {}
+        for key, value in v.items():
+            if isinstance(value, ModelCliValue):
+                result[key] = value
+            elif (
+                isinstance(value, dict)
+                and "value_type" in value
+                and "raw_value" in value
+            ):
+                # This is a serialized ModelCliValue, reconstruct it
+                result[key] = ModelCliValue.model_validate(value)
+            else:
+                # Convert raw value to ModelCliValue
+                result[key] = ModelCliValue.from_any(value)
+        return result
+
     def add_debug_message(self, message: str) -> None:
         """Add a debug message."""
         self.debug_messages.append(message)
@@ -102,9 +143,9 @@ class ModelCliDebugInfo(BaseModel):
         """Add a stack trace."""
         self.stack_traces.append(trace)
 
-    def set_custom_field(self, key: str, value: str) -> None:
-        """Set a custom debug field. CLI debug fields are typically strings."""
-        self.custom_debug_fields[key] = ModelCliValue.from_string(value)
+    def set_custom_field(self, key: str, value: object) -> None:
+        """Set a custom debug field. Accepts any value type."""
+        self.custom_debug_fields[key] = ModelCliValue.from_any(value)
 
     def get_custom_field(self, key: str, default: str = "") -> str:
         """Get a custom debug field. CLI debug fields are strings."""
@@ -112,6 +153,12 @@ class ModelCliDebugInfo(BaseModel):
         if cli_value is not None:
             return str(cli_value.to_python_value())
         return default
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

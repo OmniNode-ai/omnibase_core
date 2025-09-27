@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Canonical Pydantic model for ONEX error serialization and validation.
 
@@ -23,19 +22,11 @@ class ModelOnexError(BaseModel):
     serialization, and schema generation capabilities.
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,  # Ensure proper enum serialization
-        json_schema_extra={
-            "example": {
-                "message": "File not found: config.yaml",
-                "error_code": "ONEX_CORE_021_FILE_NOT_FOUND",
-                "status": "error",
-                "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
-                "timestamp": "2025-05-25T22:30:00Z",
-                "context": {"file_path": "/path/to/config.yaml"},
-            },
-        },
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     message: str = Field(
         ...,

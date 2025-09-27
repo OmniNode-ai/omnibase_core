@@ -7,8 +7,6 @@ Follows ONEX one-model-per-file naming conventions and strong typing standards.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
@@ -110,7 +108,7 @@ class ModelMetric(BaseModel):
     def from_any_value(
         cls,
         key: str,
-        value: Any,
+        value: object,
         unit: str | None = None,
         description: str | None = None,
     ) -> ModelMetric:
@@ -126,6 +124,12 @@ class ModelMetric(BaseModel):
             return cls.create_numeric_metric(key, numeric_value, unit, description)
         # Convert unsupported types to string representation
         return cls.create_string_metric(key, str(value), description)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

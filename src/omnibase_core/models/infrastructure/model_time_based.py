@@ -8,9 +8,9 @@ aspects of ModelProgress with a single generic type-safe implementation.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
@@ -59,7 +59,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
     @field_validator("warning_threshold_value")
     @classmethod
-    def validate_warning_threshold(cls, v: T | None, info: Any) -> T | None:
+    def validate_warning_threshold(cls, v: T | None, info: ValidationInfo) -> T | None:
         """Validate warning threshold is less than main value."""
         if v is not None and "value" in info.data:
             main_value = info.data["value"]
@@ -70,14 +70,14 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
     @field_validator("extension_limit_value")
     @classmethod
-    def validate_extension_limit(cls, v: T | None, info: Any) -> T | None:
+    def validate_extension_limit(cls, v: T | None, info: ValidationInfo) -> T | None:
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
             raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         """Post-initialization to set runtime category if not provided."""
         if self.runtime_category is None:
             seconds = self.to_seconds()
@@ -357,6 +357,12 @@ class ModelTimeBased(BaseModel, Generic[T]):
             runtime_category=category,
             metadata=metadata,
         )  # type: ignore[return-value]
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

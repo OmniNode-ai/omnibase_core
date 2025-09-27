@@ -31,6 +31,12 @@ class ModelFsmState(BaseModel):
         default_factory=dict, description="State properties"
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
 
 # Export for use
 __all__ = ["ModelFsmState"]

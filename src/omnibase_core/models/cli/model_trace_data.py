@@ -24,3 +24,9 @@ class ModelTraceData(BaseModel):
     duration_ms: float = Field(description="Duration in milliseconds")
     tags: dict[str, str] = Field(default_factory=dict, description="Trace tags")
     logs: list[str] = Field(default_factory=list, description="Trace log entries")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

@@ -41,3 +41,9 @@ class ModelFallbackMetadata(BaseModel):
         default_factory=dict,
         description="Numeric configuration values",
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

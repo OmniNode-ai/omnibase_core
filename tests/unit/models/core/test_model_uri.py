@@ -12,7 +12,7 @@ Tests all aspects of the ONEX URI model including:
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.config.model_uri import ModelOnexUri
+from omnibase_core.models.config.model_uri import ModelOnexUri
 
 
 class TestModelOnexUri:
@@ -594,7 +594,7 @@ class TestModelOnexUriEdgeCases:
         ]
 
         for scenario in scenarios:
-            uri = ModelOnexUri(**scenario)
+            uri = ModelOnexUri.model_validate(scenario)
             assert uri.type == scenario["type"]
             assert uri.namespace == scenario["namespace"]
             assert uri.version_spec == scenario["version_spec"]

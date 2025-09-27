@@ -1,12 +1,9 @@
-#!/usr/bin/env python3
 """
 Model for representing schema values with proper type safety.
 
 This model replaces Any type usage in schema definitions by providing
 a structured representation of possible schema values.
 """
-
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -42,7 +39,7 @@ class ModelSchemaValue(BaseModel):
     )
 
     @classmethod
-    def from_value(cls, value: Any) -> "ModelSchemaValue":
+    def from_value(cls, value: object) -> "ModelSchemaValue":
         """
         Create ModelSchemaValue from a Python value.
 
@@ -123,7 +120,7 @@ class ModelSchemaValue(BaseModel):
             object_value=None,
         )
 
-    def to_value(self) -> Any:
+    def to_value(self) -> object:
         """
         Convert back to Python value.
 
@@ -143,3 +140,9 @@ class ModelSchemaValue(BaseModel):
         if self.value_type == "object":
             return {k: v.to_value() for k, v in (self.object_value or {}).items()}
         return None
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

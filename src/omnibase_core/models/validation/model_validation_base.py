@@ -73,7 +73,7 @@ class ModelValidationBase(BaseModel):
         try:
             # Dynamic import to avoid circular import issues
             enum_module = importlib.import_module(
-                "omnibase_core.enums.enum_core_error_code"
+                "omnibase_core.enums.enum_core_error_code",
             )
             # Get error code strings with fallbacks
             validation_error_code = enum_module.EnumCoreErrorCode.VALIDATION_ERROR.value
@@ -96,7 +96,7 @@ class ModelValidationBase(BaseModel):
                 model_fields = self.model_fields
                 if not model_fields:
                     self.add_validation_warning(
-                        "Model has no defined fields - this may indicate a configuration issue"
+                        "Model has no defined fields - this may indicate a configuration issue",
                     )
                 else:
                     # Check for fields that are required but None
@@ -119,7 +119,7 @@ class ModelValidationBase(BaseModel):
                             )
             except Exception as field_error:
                 self.add_validation_error(
-                    message=f"Failed to access model fields: {str(field_error)}",
+                    message=f"Failed to access model fields: {field_error!s}",
                     field="model_structure",
                     error_code=internal_error_code,
                 )
@@ -137,7 +137,7 @@ class ModelValidationBase(BaseModel):
                     )
             except Exception as serialize_error:
                 self.add_validation_error(
-                    message=f"Model serialization failed: {str(serialize_error)}",
+                    message=f"Model serialization failed: {serialize_error!s}",
                     field="model_integrity",
                     error_code=validation_error_code,
                 )
@@ -150,7 +150,8 @@ class ModelValidationBase(BaseModel):
                 json.dumps(self.model_dump(exclude={"validation"}), default=str)
             except (ValueError, TypeError, RecursionError) as json_error:
                 if "circular reference" in str(json_error).lower() or isinstance(
-                    json_error, RecursionError
+                    json_error,
+                    RecursionError,
                 ):
                     self.add_validation_error(
                         message="Model contains circular references that prevent serialization",
@@ -160,14 +161,14 @@ class ModelValidationBase(BaseModel):
                     )
                 else:
                     self.add_validation_warning(
-                        f"Model may have serialization issues: {str(json_error)}"
+                        f"Model may have serialization issues: {json_error!s}",
                     )
 
         except Exception as unexpected_error:
             # For base validation, we'll add the error to the validation container
             # rather than raising ONEX errors to avoid circular import issues
             self.add_validation_error(
-                message=f"Unexpected error during model validation: {str(unexpected_error)}",
+                message=f"Unexpected error during model validation: {unexpected_error!s}",
                 field="validation_system",
                 error_code=(
                     validation_error_code
@@ -191,6 +192,12 @@ class ModelValidationBase(BaseModel):
 
         # Return success status
         return self.is_valid()
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

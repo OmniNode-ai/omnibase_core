@@ -68,3 +68,9 @@ class ModelFallbackStrategy(BaseModel):
     def should_retry(self) -> bool:
         """Check if retries are enabled for this strategy."""
         return self.retry_attempts > 0
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }

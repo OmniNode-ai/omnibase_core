@@ -46,7 +46,8 @@ class ModelItemSummary(BaseModel):
     created_at: datetime | None = Field(default=None, description="Creation timestamp")
     updated_at: datetime | None = Field(default=None, description="Update timestamp")
     accessed_at: datetime | None = Field(
-        default=None, description="Last accessed timestamp"
+        default=None,
+        description="Last accessed timestamp",
     )
 
     # Organization
@@ -79,6 +80,12 @@ class ModelItemSummary(BaseModel):
             or self.numeric_properties
             or self.boolean_properties,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model

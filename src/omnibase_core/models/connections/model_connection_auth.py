@@ -7,7 +7,6 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, field_serializer
@@ -116,7 +115,7 @@ class ModelConnectionAuth(BaseModel):
         self.user_display_name = value
 
     @field_serializer("password", "api_key", "token")
-    def serialize_secret(self, value: Any) -> str:
+    def serialize_secret(self, value: SecretStr | None) -> str:
         """Serialize secrets safely."""
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
@@ -187,6 +186,12 @@ class ModelConnectionAuth(BaseModel):
             api_key=None,
             token=None,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

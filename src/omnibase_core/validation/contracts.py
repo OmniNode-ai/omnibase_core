@@ -37,9 +37,8 @@ def timeout_handler(signum: int, frame: object) -> None:
     raise TimeoutError("Validation timed out")
 
 
-def load_and_validate_yaml_model(content: str) -> "ModelYamlContract":
+def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
     """Load and validate YAML content with Pydantic model - recognized utility function."""
-    import yaml
 
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
@@ -83,6 +82,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     try:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
+
+        # Handle whitespace-only files as valid (empty content)
+        if not content.strip():
+            # Whitespace-only files are considered valid/empty
+            return errors
 
         # Use Pydantic model validation instead of manual YAML parsing
         try:

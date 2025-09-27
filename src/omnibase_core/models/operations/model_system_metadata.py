@@ -8,7 +8,6 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -56,6 +55,12 @@ class ModelSystemMetadata(BaseModel):
     environment_config: dict[str, str] = Field(
         default_factory=dict, description="Environment configuration"
     )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

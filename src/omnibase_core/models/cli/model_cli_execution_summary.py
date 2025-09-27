@@ -102,9 +102,17 @@ class ModelCliExecutionSummary(BaseModel):
     @property
     def target_node_name(self) -> str | None:
         """Get target node name with fallback to UUID-based name."""
-        if self.target_node_id is None:
-            return None
-        return self.target_node_display_name or f"node_{str(self.target_node_id)[:8]}"
+        if self.target_node_display_name:
+            return self.target_node_display_name
+        if self.target_node_id is not None:
+            return f"node_{str(self.target_node_id)[:8]}"
+        return None
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

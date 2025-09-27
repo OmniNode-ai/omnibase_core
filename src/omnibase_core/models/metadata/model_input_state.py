@@ -7,7 +7,7 @@ with structured validation for version parsing operations.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 
 class InputStateFieldsType(TypedDict, total=False):
@@ -24,7 +24,7 @@ class InputStateFieldsType(TypedDict, total=False):
 class InputStateSourceType(TypedDict, total=False):
     """Type-safe input state source structure."""
 
-    version: Any  # Dict with major/minor/patch or string - validated at runtime
+    version: object  # Dict with major/minor/patch or string - validated at runtime
     name: str
     description: str
     tags: list[str]
@@ -46,8 +46,8 @@ class ModelInputState(BaseModel):
     structured input state that handles version parsing requirements.
     """
 
-    # Version field (required for parsing) - use Any for internal storage
-    version: Any = Field(
+    # Version field (required for parsing) - use object for internal storage
+    version: object = Field(
         None,
         description="Version information as ModelSemVer or dict with major/minor/patch",
     )
@@ -58,7 +58,7 @@ class ModelInputState(BaseModel):
         description="Additional fields in the input state",
     )
 
-    def get_version_data(self) -> Any:
+    def get_version_data(self) -> object:
         """Get the version data for parsing."""
         return self.version
 
@@ -66,11 +66,17 @@ class ModelInputState(BaseModel):
         """Check if input state has version information."""
         return self.version is not None
 
-    def get_field(self, key: str) -> Any:
+    def get_field(self, key: str) -> object:
         """Get a field from the input state."""
         if key == "version":
             return self.version
         return self.additional_fields.get(key)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export the model
