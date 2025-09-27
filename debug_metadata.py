@@ -37,6 +37,12 @@ print(f"Tool value has unwrap: {hasattr(tool_value3, 'unwrap')}")
 
 
 def test_func():
+    """
+    Return a simple test value used by the metadata debugging script.
+    
+    Returns:
+        str: The literal string "test_result".
+    """
     return "test_result"
 
 

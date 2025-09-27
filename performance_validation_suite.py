@@ -56,6 +56,22 @@ class PerformanceBenchmarkSuite:
     """Comprehensive performance benchmarking for PR #36 optimizations"""
 
     def __init__(self, src_path: str = "src"):
+        """
+        Initialize the PerformanceBenchmarkSuite with a source path and default targets.
+        
+        Parameters:
+            src_path (str): Path to the package source tree to analyze and import (defaults to "src").
+        
+        Attributes:
+            src_path (Path): Resolved Path object for the provided source path.
+            results (List[BenchmarkResult]): Collected benchmark results.
+            baseline_data (dict): Storage for any baseline values used across benchmarks.
+            targets (dict): Default performance goals:
+                - "import_time_ms": maximum allowed cold import time in milliseconds (5.0).
+                - "memory_overhead_mb": maximum allowed memory overhead in megabytes (10.0).
+                - "validation_time_ms": maximum allowed validation time in milliseconds (100.0).
+                - "memory_growth_percent": maximum allowed total memory growth as a percentage (10.0).
+        """
         self.src_path = Path(src_path)
         self.results: List[BenchmarkResult] = []
         self.baseline_data = {}
@@ -70,7 +86,12 @@ class PerformanceBenchmarkSuite:
 
     @contextmanager
     def measure_time(self):
-        """Context manager for precise time measurement"""
+        """
+        Context manager that measures elapsed wall-clock time and records it on the instance.
+        
+        When used as a context manager, measures the elapsed time of the with-block and sets
+        self.elapsed_time to the elapsed duration in milliseconds.
+        """
         start_time = time.perf_counter()
         try:
             yield
@@ -81,7 +102,15 @@ class PerformanceBenchmarkSuite:
 
     @contextmanager
     def measure_memory(self):
-        """Context manager for memory usage measurement"""
+        """
+        Measure memory usage within a with-block and record the results on the instance.
+        
+        Use as a context manager: it starts tracemalloc and forces a garbage collection to establish a baseline, yields control to the with-block, and on exit computes and stores two attributes on self:
+        - memory_used: difference between current traced memory and baseline, in megabytes.
+        - memory_peak: difference between peak traced memory and baseline, in megabytes.
+        
+        Tracemalloc is stopped when the context exits.
+        """
         tracemalloc.start()
         gc.collect()  # Ensure clean baseline
         start_memory = tracemalloc.get_traced_memory()[0]
@@ -95,7 +124,19 @@ class PerformanceBenchmarkSuite:
             tracemalloc.stop()
 
     def benchmark_import_performance(self) -> BenchmarkResult:
-        """Benchmark 1: Import Performance with Lazy Loading"""
+        """
+        Measure import performance of omnibase_core across four scenarios: cold import, lazy-loading of validation tools, cached subsequent access, and minimal import without validation access.
+        
+        Calculates improvement of the cold import time against a hardcoded baseline (1856.0 ms) and returns per-scenario metrics, status flags, notes, and a timestamp.
+        
+        Returns:
+            BenchmarkResult: Result object containing metrics for:
+                - cold_import_time: cold import elapsed time (ms) with baseline and improvement set
+                - lazy_load_validation_time: time to trigger lazy loading of validation tools (ms)
+                - cached_access_time: time for subsequent cached accesses (ms)
+                - minimal_import_time: import time without accessing validation functions (ms)
+            The result also includes human-readable notes and a timestamp.
+        """
         print("🔍 Benchmarking Import Performance...")
         metrics = []
         notes = []
@@ -199,7 +240,19 @@ class PerformanceBenchmarkSuite:
         )
 
     def benchmark_memory_usage(self) -> BenchmarkResult:
-        """Benchmark 2: Memory Usage Optimization"""
+        """
+        Measure memory usage of importing and exercising omnibase_core components and produce memory-related metrics.
+        
+        Runs four tests (basic import, validation functions loading, contract model instantiation, and overall process memory growth), collects PerformanceMetric entries for each test, and records human-readable notes (including baseline/current memory and any import errors).
+        
+        Returns:
+            BenchmarkResult: A result object with category "Memory Usage", a list of metrics for:
+                - basic_import_memory (MB)
+                - validation_functions_memory (MB)
+                - contract_models_memory (MB)
+                - total_memory_growth (%)
+            Notes include baseline and current memory values, total growth, and any import failure messages; timestamp is set to the current time.
+        """
         print("🧠 Benchmarking Memory Usage...")
         metrics = []
         notes = []
@@ -321,7 +374,18 @@ class PerformanceBenchmarkSuite:
         )
 
     def benchmark_validation_performance(self) -> BenchmarkResult:
-        """Benchmark 3: Pydantic Validation Performance"""
+        """
+        Run a set of Pydantic model validation benchmarks and collect timing metrics.
+        
+        Performs three validation tests: repeated single-model instantiation, batch instantiation for 50 models, and repeated complex model instantiation; records per-test timing metrics, targets, and status, and returns a BenchmarkResult summarizing the metrics and notes.
+        
+        Returns:
+            BenchmarkResult: A result object with category "Validation Performance", a list of PerformanceMetric entries for:
+                - `single_model_validation`: average milliseconds per single model instantiation,
+                - `batch_validation_50_models`: total milliseconds to instantiate 50 models,
+                - `complex_model_validation`: average milliseconds per complex model instantiation,
+            plus human-readable notes and a timestamp.
+        """
         print("⚡ Benchmarking Validation Performance...")
         metrics = []
         notes = []
@@ -454,7 +518,19 @@ class PerformanceBenchmarkSuite:
         )
 
     def benchmark_import_chain_analysis(self) -> BenchmarkResult:
-        """Benchmark 4: Import Chain and Dependency Analysis"""
+        """
+        Analyze the project's import chain and record import-related metrics.
+        
+        Performs dependency analysis to estimate maximum import depth and total imported modules, measures import time for a set of representative modules, and detects any circular import patterns. Results are returned as a BenchmarkResult containing metrics and human-readable notes.
+        
+        Returns:
+            BenchmarkResult: A result object with category "Import Chain Analysis" and metrics including:
+                - `import_depth`: estimated maximum import depth (levels).
+                - `total_imports`: total number of imported modules (count).
+                - `average_module_import`: average import time for tested modules (ms).
+                - `circular_imports_detected`: number of detected circular import issues (count).
+            The `notes` field contains per-module timing and any detected circular import descriptions.
+        """
         print("📊 Analyzing Import Chain Performance...")
         metrics = []
         notes = []
@@ -553,7 +629,15 @@ class PerformanceBenchmarkSuite:
         )
 
     def _analyze_import_dependencies(self) -> Dict[str, Any]:
-        """Analyze import dependency structure"""
+        """
+        Estimate import dependency characteristics for the project by invoking a subprocess Python interpreter.
+        
+        Returns:
+            analysis (Dict[str, Any]): A dictionary with:
+                - total_imports (int): Number of modules reported by the subprocess (0 on failure or non-numeric output).
+                - max_depth (int): Estimated maximum import depth (heuristic; 3 by default, 0 on failure).
+                - analysis_method (str): String describing the method used ("module_count" or "failed").
+        """
         # This is a simplified analysis - could be enhanced with ast parsing
         try:
             result = subprocess.run(
@@ -579,7 +663,14 @@ class PerformanceBenchmarkSuite:
             return {"total_imports": 0, "max_depth": 0, "analysis_method": "failed"}
 
     def _detect_circular_imports(self) -> List[str]:
-        """Detect potential circular imports (simplified detection)"""
+        """
+        Detects potential circular import patterns within src/omnibase_core.
+        
+        Performs a lightweight/simplified check for circular-import symptoms and returns human-readable descriptions for any issues found. This check is not exhaustive and may miss complex cycles that require AST or runtime analysis.
+        
+        Returns:
+            List[str]: Descriptions of detected circular imports; empty list if none are found or if analysis is inconclusive.
+        """
         # This is a simplified implementation
         # A more comprehensive solution would use AST analysis
         circular_imports = []
@@ -597,7 +688,12 @@ class PerformanceBenchmarkSuite:
         return circular_imports
 
     def run_all_benchmarks(self) -> List[BenchmarkResult]:
-        """Run complete performance validation suite"""
+        """
+        Execute every benchmark in the suite and collect their results.
+        
+        Returns:
+            results (List[BenchmarkResult]): List of BenchmarkResult objects produced by each benchmark, in execution order.
+        """
         print("🚀 Starting Performance Validation Suite for PR #36")
         print("=" * 60)
 
@@ -612,7 +708,23 @@ class PerformanceBenchmarkSuite:
         return self.results
 
     def generate_report(self) -> Dict[str, Any]:
-        """Generate comprehensive performance report"""
+        """
+        Generate a structured performance validation report from the collected benchmark results.
+        
+        If no results are present, runs all benchmarks before assembling the report.
+        
+        Returns:
+            report (Dict[str, Any]): A nested dictionary under the key "performance_validation_report" containing:
+                - pr_number (int): Pull request number (36).
+                - test_timestamp (str): Timestamp of report generation in "YYYY-MM-DD HH:MM:SS" format.
+                - overall_status (str): "PASS" if no metrics have status "fail", otherwise "FAIL".
+                - pass_rate (str): Percentage of passed metrics formatted as a string with one decimal and a percent sign (e.g., "85.0%").
+                - summary (dict): Aggregate counts with keys "total_metrics", "passed", "failed", and "warnings".
+                - categories (dict): Per-category entries keyed by category name, each containing:
+                    - metrics (List[dict]): List of metric dictionaries (fields from PerformanceMetric).
+                    - notes (List[str]): Notes recorded for that category.
+                    - timestamp (str): Timestamp when the category was produced.
+        """
         if not self.results:
             self.run_all_benchmarks()
 
@@ -660,7 +772,15 @@ class PerformanceBenchmarkSuite:
         return report
 
     def print_summary(self):
-        """Print a human-readable summary of results"""
+        """
+        Prints a human-readable summary of collected benchmark results.
+        
+        If no results are present, prints a message and returns early. For each recorded
+        BenchmarkResult this prints the category header, each metric with its status,
+        value and unit, optional target and improvement, and any category notes. At the
+        end prints an overall PASS/FAILED line determined by whether any metric has
+        status "fail".
+        """
         if not self.results:
             print("❌ No benchmark results available. Run benchmarks first.")
             return
@@ -713,7 +833,14 @@ class PerformanceBenchmarkSuite:
 
 
 def main():
-    """Run the performance validation suite"""
+    """
+    Execute the performance benchmark suite, print a human-readable summary, save a detailed JSON report, and return an exit code.
+    
+    Runs all benchmarks provided by PerformanceBenchmarkSuite, prints a summary to stdout, generates a structured report and writes it to pr36_performance_validation_report.json, and determines the process exit code based on benchmark outcomes.
+    
+    Returns:
+        int: 0 if no metrics have status "fail", 1 if one or more metrics have status "fail".
+    """
     suite = PerformanceBenchmarkSuite()
 
     # Run benchmarks
