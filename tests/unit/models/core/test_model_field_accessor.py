@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.models.core import (
+from omnibase_core.models.core import (
     ModelCustomFieldsAccessor,
     ModelEnvironmentAccessor,
     ModelFieldAccessor,
@@ -32,10 +32,16 @@ class TestModelFieldAccessor:
 
         # Test setting and getting
         assert model.set_field("data.key1", "value1")
-        assert model.get_field("data.key1") == "value1"
+        assert model.get_field("data.key1").unwrap().to_value() == "value1"
 
         # Test default values
-        assert model.get_field("data.nonexistent", "default") == "default"
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        default_value = ModelSchemaValue.from_value("default")
+        assert (
+            model.get_field("data.nonexistent", default_value).unwrap().to_value()
+            == "default"
+        )
 
         # Test has_field
         assert model.has_field("data.key1")
@@ -55,13 +61,18 @@ class TestModelFieldAccessor:
         assert model.set_field("config.features.enabled", True)
 
         # Get nested values
-        assert model.get_field("config.database.host") == "localhost"
-        assert model.get_field("config.database.port") == 5432
-        assert model.get_field("config.features.enabled") is True
+        assert (
+            model.get_field("config.database.host").unwrap().to_value() == "localhost"
+        )
+        assert model.get_field("config.database.port").unwrap().to_value() == 5432
+        assert model.get_field("config.features.enabled").unwrap().to_value() is True
 
         # Test deeper nesting
         assert model.set_field("config.api.v1.endpoints.users", "/api/v1/users")
-        assert model.get_field("config.api.v1.endpoints.users") == "/api/v1/users"
+        assert (
+            model.get_field("config.api.v1.endpoints.users").unwrap().to_value()
+            == "/api/v1/users"
+        )
 
     def test_remove_field(self):
         """Test field removal."""
@@ -91,13 +102,13 @@ class TestModelFieldAccessor:
         model = TestModel()
 
         # Test attribute access
-        assert model.get_field("name") == "test_model"
+        assert model.get_field("name").unwrap().to_value() == "test_model"
         assert model.set_field("name", "updated_model")
-        assert model.get_field("name") == "updated_model"
+        assert model.get_field("name").unwrap().to_value() == "updated_model"
 
         # Test dict field access
         assert model.set_field("data.key", "value")
-        assert model.get_field("data.key") == "value"
+        assert model.get_field("data.key").unwrap().to_value() == "value"
 
 
 class TestModelTypedAccessor:
@@ -137,7 +148,7 @@ class TestModelTypedAccessor:
 
         # Valid type should work
         assert model.set_typed_field("data.text", "hello", str)
-        assert model.get_field("data.text") == "hello"
+        assert model.get_field("data.text").unwrap().to_value() == "hello"
 
         # Invalid type should fail
         assert not model.set_typed_field("data.text", 42, str)
@@ -258,11 +269,14 @@ class TestModelResultAccessor:
 
         # Test setting result values
         assert model.set_result_value("exit_code", 0)
-        assert model.get_field("results.exit_code") == 0
+        assert model.get_field("results.exit_code").unwrap().to_value() == 0
 
         # Test setting metadata values
         assert model.set_metadata_value("timestamp", "2024-01-01T12:00:00")
-        assert model.get_field("metadata.timestamp") == "2024-01-01T12:00:00"
+        assert (
+            model.get_field("metadata.timestamp").unwrap().to_value()
+            == "2024-01-01T12:00:00"
+        )
 
 
 class TestModelCustomFieldsAccessor:
@@ -327,8 +341,11 @@ class TestFieldAccessorIntegration:
 
         # Access using different methods
         assert cli_data.get_result_value("exit_code") == 0
-        assert cli_data.get_field("metadata.duration_ms") == 250.3
-        assert cli_data.get_field("files_created") == ["output.txt", "log.txt"]
+        assert cli_data.get_field("metadata.duration_ms").unwrap().to_value() == 250.3
+        assert cli_data.get_field("files_created").unwrap().to_value() == [
+            "output.txt",
+            "log.txt",
+        ]
 
     def test_environment_properties_pattern(self):
         """Test environment properties access pattern."""
@@ -375,6 +392,8 @@ class TestFieldAccessorIntegration:
 
         # Access using different methods
         assert metadata.get_custom_field("version") == "1.0.0"
-        assert metadata.get_field("custom_fields.build.number") == 42
+        assert (
+            metadata.get_field("custom_fields.build.number").unwrap().to_value() == 42
+        )
         assert metadata.has_custom_field("author")
         assert metadata.has_field("custom_fields.build.timestamp")

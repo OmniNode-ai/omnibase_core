@@ -83,6 +83,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
+        # Handle whitespace-only files as valid (empty content)
+        if not content.strip():
+            # Whitespace-only files are considered valid/empty
+            return errors
+
         # Use Pydantic model validation instead of manual YAML parsing
         try:
             # Use recognized YAML utility function for Pydantic validation

@@ -66,7 +66,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             if default is not None:
                 return ModelResult.ok(default)
             return ModelResult.err(
-                f"Config value '{key}' has unsupported type: {type(value)}"
+                f"Config value '{key}' has unsupported type: {type(value)}",
             )
         if default is not None:
             return ModelResult.ok(default)

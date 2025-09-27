@@ -9,12 +9,14 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.enums.enum_result_category import EnumResultCategory
-from src.omnibase_core.enums.enum_result_type import EnumResultType
-from src.omnibase_core.models.cli.model_cli_result_metadata import (
+from omnibase_core.enums.enum_data_classification import EnumDataClassification
+from omnibase_core.enums.enum_result_category import EnumResultCategory
+from omnibase_core.enums.enum_result_type import EnumResultType
+from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
+from omnibase_core.models.cli.model_cli_result_metadata import (
     ModelCliResultMetadata,
 )
-from src.omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class TestModelCliResultMetadata:
@@ -70,11 +72,13 @@ class TestModelCliResultMetadata:
         assert metadata.source_command == "test_command"
         assert metadata.source_node == "test_node"
         assert metadata.processed_at == timestamp
-        assert metadata.processor_version == "1.0.0"
+        assert metadata.processor_version.major == 1
+        assert metadata.processor_version.minor == 0
+        assert metadata.processor_version.patch == 0
         assert metadata.quality_score == 0.95
         assert metadata.confidence_level == 0.88
-        assert metadata.data_classification == "public"
-        assert metadata.retention_policy == "30_days"
+        assert metadata.data_classification == EnumDataClassification.PUBLIC
+        assert metadata.retention_policy == EnumRetentionPolicy.THIRTY_DAYS
         assert metadata.tags == ["test", "unit"]
         assert metadata.processing_time_ms == 125.5
 
@@ -243,7 +247,7 @@ class TestModelCliResultMetadata:
         metadata.set_custom_field("float_field", 3.14)
         metadata.set_custom_field("bool_field", True)
 
-        # Verify values
+        # Verify values - custom_metadata stores raw Python types
         assert metadata.custom_metadata["string_field"] == "test_value"
         assert metadata.custom_metadata["int_field"] == 42
         assert metadata.custom_metadata["float_field"] == 3.14
@@ -336,16 +340,19 @@ class TestModelCliResultMetadata:
             metadata_version=version,
             result_type=EnumResultType.INFO,
             tags=["unit", "fast"],
-            labels={"env": "test"},
             quality_score=0.95,
         )
+        metadata.add_label("env", "test")
 
         # Test model_dump
         data = metadata.model_dump()
 
         assert data["result_type"] == EnumResultType.INFO
         assert data["tags"] == ["unit", "fast"]
-        assert data["labels"] == {"env": "test"}
+        # Check that labels are stored correctly in the internal fields
+        assert len(data["label_ids"]) == 1
+        assert len(data["label_names"]) == 1
+        assert "env" in data["label_names"]
         assert data["quality_score"] == 0.95
 
         # Test excluding None values
@@ -440,7 +447,7 @@ class TestModelCliResultMetadata:
         # Test JSON serialization
         json_str = metadata.model_dump_json()
         assert isinstance(json_str, str)
-        assert '"result_type":"INFO"' in json_str
+        assert '"result_type":"info"' in json_str
         assert '"quality_score":0.89' in json_str
 
         # Test JSON deserialization

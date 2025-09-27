@@ -19,27 +19,27 @@ class EnumNodeType(str, Enum):
     """
 
     # Core ONEX node types
-    COMPUTE = "compute"
-    GATEWAY = "gateway"
-    ORCHESTRATOR = "orchestrator"
-    REDUCER = "reducer"
-    EFFECT = "effect"
-    VALIDATOR = "validator"
-    TRANSFORMER = "transformer"
-    AGGREGATOR = "aggregator"
+    COMPUTE = "COMPUTE"
+    GATEWAY = "GATEWAY"
+    ORCHESTRATOR = "ORCHESTRATOR"
+    REDUCER = "REDUCER"
+    EFFECT = "EFFECT"
+    VALIDATOR = "VALIDATOR"
+    TRANSFORMER = "TRANSFORMER"
+    AGGREGATOR = "AGGREGATOR"
 
     # Generic node types
-    FUNCTION = "function"
-    TOOL = "tool"
-    AGENT = "agent"
-    MODEL = "model"
-    PLUGIN = "plugin"
-    SCHEMA = "schema"
-    NODE = "node"
-    WORKFLOW = "workflow"
-    SERVICE = "service"
-    COMPUTE_GENERIC = "compute_generic"  # Generic compute node type
-    UNKNOWN = "unknown"
+    FUNCTION = "FUNCTION"
+    TOOL = "TOOL"
+    AGENT = "AGENT"
+    MODEL = "MODEL"
+    PLUGIN = "PLUGIN"
+    SCHEMA = "SCHEMA"
+    NODE = "NODE"
+    WORKFLOW = "WORKFLOW"
+    SERVICE = "SERVICE"
+    COMPUTE_GENERIC = "COMPUTE_GENERIC"  # Generic compute node type
+    UNKNOWN = "UNKNOWN"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.config.model_example import ModelExample
+from omnibase_core.models.config.model_example import ModelExample
 
 
 class TestModelExample:
@@ -50,7 +50,7 @@ class TestModelExample:
         """Test JSON deserialization."""
         json_data = {"name": "deserialize_test", "description": "Deserialization test"}
 
-        example = ModelExample(**json_data)
+        example = ModelExample.model_validate(json_data)
 
         assert example.name == "deserialize_test"
         assert example.description == "Deserialization test"
@@ -61,7 +61,7 @@ class TestModelExample:
 
         json_str = original.model_dump_json()
         json_data = json.loads(json_str)
-        deserialized = ModelExample(**json_data)
+        deserialized = ModelExample.model_validate(json_data)
 
         assert deserialized.name == original.name
         assert deserialized.description == original.description
@@ -82,9 +82,15 @@ class TestModelExampleEdgeCases:
 
     def test_empty_string_handling(self):
         """Test handling of empty strings."""
-        example = ModelExample(name="", description="")
+        # Empty name should fail validation due to min_length=1
+        with pytest.raises(
+            ValidationError, match="String should have at least 1 character"
+        ):
+            ModelExample(name="", description="")
 
-        assert example.name == ""
+        # Empty description is valid (no min_length constraint)
+        example = ModelExample(name="test", description="")
+        assert example.name == "test"
         assert example.description == ""
 
     def test_unicode_handling(self):

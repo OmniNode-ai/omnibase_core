@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -71,12 +72,13 @@ class TestModelYamlContract:
             "node_type": "INVALID_TYPE",
         }
 
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(OnexError) as exc_info:
             ModelYamlContract.model_validate(contract_data)
 
         # Use string representation for validation error checking
         error_string = str(exc_info.value)
         assert "node_type" in error_string
+        assert "INVALID_TYPE" in error_string
 
     def test_validate_yaml_content_classmethod(self):
         """Test the validate_yaml_content classmethod."""
@@ -95,7 +97,7 @@ class TestModelYamlContract:
         assert contract.description == "Effect contract"
 
     def test_extra_fields_allowed(self):
-        """Test that extra fields are allowed in contracts."""
+        """Test that extra fields are allowed in contracts but ignored per model config."""
         contract_data = {
             "contract_version": {"major": 1, "minor": 0, "patch": 0},
             "node_type": "COMPUTE",
@@ -108,6 +110,7 @@ class TestModelYamlContract:
 
         assert contract.contract_version.major == 1
         assert contract.node_type == EnumNodeType.COMPUTE
-        # Extra fields should be preserved
-        assert hasattr(contract, "custom_field")
-        assert hasattr(contract, "metadata")
+        assert contract.description == "Test contract"
+        # Extra fields are ignored per model config (extra="ignore")
+        assert not hasattr(contract, "custom_field")
+        assert not hasattr(contract, "metadata")

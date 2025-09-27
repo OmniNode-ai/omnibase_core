@@ -7,7 +7,9 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Any, Union
+
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
@@ -124,6 +126,61 @@ class ModelCliAdvancedParams(BaseModel):
         description="Custom parameters for specific node types",
     )
 
+    @field_validator("node_config_overrides", mode="before")
+    @classmethod
+    def validate_node_config_overrides(
+        cls, v: Union[dict[str, Any], dict[str, ModelCliValue]]
+    ) -> dict[str, ModelCliValue]:
+        """Convert raw values to ModelCliValue objects for node_config_overrides."""
+        if not isinstance(v, dict):
+            raise ValueError("node_config_overrides must be a dictionary")
+
+        result = {}
+        for key, value in v.items():
+            if isinstance(value, ModelCliValue):
+                result[key] = value
+            elif (
+                isinstance(value, dict)
+                and "value_type" in value
+                and "raw_value" in value
+            ):
+                # This is a serialized ModelCliValue, reconstruct it
+                result[key] = ModelCliValue.model_validate(value)
+            else:
+                # Convert raw value to ModelCliValue
+                result[key] = cls._convert_raw_to_cli_value(value)
+        return result
+
+    @field_validator("custom_parameters", mode="before")
+    @classmethod
+    def validate_custom_parameters(
+        cls, v: Union[dict[str, Any], dict[str, ModelCliValue]]
+    ) -> dict[str, ModelCliValue]:
+        """Convert raw values to ModelCliValue objects for custom_parameters."""
+        if not isinstance(v, dict):
+            raise ValueError("custom_parameters must be a dictionary")
+
+        result = {}
+        for key, value in v.items():
+            if isinstance(value, ModelCliValue):
+                result[key] = value
+            elif (
+                isinstance(value, dict)
+                and "value_type" in value
+                and "raw_value" in value
+            ):
+                # This is a serialized ModelCliValue, reconstruct it
+                result[key] = ModelCliValue.model_validate(value)
+            else:
+                # Convert raw value to ModelCliValue
+                result[key] = cls._convert_raw_to_cli_value(value)
+        return result
+
+    @staticmethod
+    def _convert_raw_to_cli_value(value: Any) -> ModelCliValue:
+        """Convert a raw value to a ModelCliValue object."""
+        return ModelCliValue.from_any(value)
+
     def set_timeout(self, seconds: float) -> None:
         """Set timeout with validation."""
         if seconds <= 0:
@@ -155,13 +212,13 @@ class ModelCliAdvancedParams(BaseModel):
         """Add an environment variable."""
         self.environment_variables[key] = value
 
-    def add_config_override(self, key: str, value: str) -> None:
-        """Add a configuration override. CLI configs are typically strings."""
-        self.node_config_overrides[key] = ModelCliValue.from_string(value)
+    def add_config_override(self, key: str, value: Any) -> None:
+        """Add a configuration override. Accepts any value type."""
+        self.node_config_overrides[key] = ModelCliValue.from_any(value)
 
-    def set_custom_parameter(self, key: str, value: str) -> None:
-        """Set a custom parameter. CLI parameters are typically strings."""
-        self.custom_parameters[key] = ModelCliValue.from_string(value)
+    def set_custom_parameter(self, key: str, value: Any) -> None:
+        """Set a custom parameter. Accepts any value type."""
+        self.custom_parameters[key] = ModelCliValue.from_any(value)
 
     def get_custom_parameter(self, key: str, default: str = "") -> str:
         """Get a custom parameter. CLI parameters are strings."""
@@ -189,7 +246,7 @@ class ModelCliAdvancedParams(BaseModel):
 
     model_config = {
         "extra": "ignore",
-        "use_enum_values": False,
+        "use_enum_values": True,
         "validate_assignment": True,
     }
 

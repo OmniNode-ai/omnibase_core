@@ -65,7 +65,7 @@ class TestModelCustomFieldsAccessorGeneric:
         data = {"name": "test", "value": 123, "active": True, "tags": ["a", "b"]}
 
         # Test BaseModel instantiation with generic type
-        fields = ModelCustomFieldsAccessor[dict[str, Any]](**data)
+        fields = ModelCustomFieldsAccessor[dict[str, Any]].model_validate(data)
 
         assert fields.get_string("name") == "test"
         assert fields.get_int("value") == 123
@@ -125,7 +125,7 @@ class TestModelCustomFieldsAccessorGeneric:
         assert data == expected
 
         # Test round-trip
-        restored = ModelCustomFieldsAccessor[Any](**data)
+        restored = ModelCustomFieldsAccessor[Any].model_validate(data)
         assert restored.model_dump(exclude_none=True) == expected
 
     def test_generic_pydantic_validation(self):

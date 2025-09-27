@@ -10,9 +10,10 @@ from typing import Any
 
 import pytest
 
-from src.omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
-from src.omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from src.omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
+from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
+from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
 
 
 class TestEnumTimeUnit:
@@ -152,7 +153,7 @@ class TestModelTimeBasedValidation:
 
         # Invalid warning threshold (greater than main value)
         with pytest.raises(
-            ValueError, match="Warning threshold must be less than main value"
+            OnexError, match="Warning threshold must be less than main value"
         ):
             ModelTimeBased(
                 value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=70
@@ -171,7 +172,7 @@ class TestModelTimeBasedValidation:
 
         # Invalid extension limit without extension allowed
         with pytest.raises(
-            ValueError, match="Extension limit requires allow_extension=True"
+            OnexError, match="Extension limit requires allow_extension=True"
         ):
             ModelTimeBased(
                 value=60,

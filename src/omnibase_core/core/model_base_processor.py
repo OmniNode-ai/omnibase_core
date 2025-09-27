@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel
 
 
-class BaseProcessor(ABC, BaseModel):
+class ServiceBaseProcessor(ABC, BaseModel):
     """Abstract base class for typed processors."""
 
     @abstractmethod
@@ -32,4 +32,4 @@ class BaseProcessor(ABC, BaseModel):
 
 
 # Export the model
-__all__ = ["BaseProcessor"]
+__all__ = ["ServiceBaseProcessor"]

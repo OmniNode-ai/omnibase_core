@@ -193,7 +193,7 @@ class ModelCliResult(BaseModel):
 
     def add_debug_info(self, key: str, value: object) -> None:
         """Add debug information with proper typing."""
-        if self.execution.config.is_debug_enabled:
+        if self.execution.is_debug_enabled:
             if self.debug_info is None:
                 self.debug_info = ModelCliDebugInfo()
             # Convert value to ModelSchemaValue for proper typing

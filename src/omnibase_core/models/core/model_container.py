@@ -8,8 +8,10 @@ repetitive patterns while maintaining type safety.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
@@ -146,6 +148,9 @@ class ModelContainer(BaseModel, Generic[T]):
 
         Returns:
             New container with transformed value
+
+        Raises:
+            OnexError: If the mapper function fails for any reason
         """
         try:
             new_value = mapper(self.value)
@@ -163,13 +168,13 @@ class ModelContainer(BaseModel, Generic[T]):
                 details=ModelErrorContext.with_context(
                     {
                         "container_type": ModelSchemaValue.from_value(
-                            self.container_type
+                            self.container_type,
                         ),
                         "original_value": ModelSchemaValue.from_value(str(self.value)),
                         "error": ModelSchemaValue.from_value(str(e)),
-                    }
+                    },
                 ),
-            )
+            ) from e
 
     def validate_with(
         self,
@@ -203,10 +208,10 @@ class ModelContainer(BaseModel, Generic[T]):
                 details=ModelErrorContext.with_context(
                     {
                         "container_type": ModelSchemaValue.from_value(
-                            self.container_type
+                            self.container_type,
                         ),
                         "value": ModelSchemaValue.from_value(str(self.value)),
-                    }
+                    },
                 ),
             )
         except Exception as e:
@@ -218,33 +223,43 @@ class ModelContainer(BaseModel, Generic[T]):
                 details=ModelErrorContext.with_context(
                     {
                         "container_type": ModelSchemaValue.from_value(
-                            self.container_type
+                            self.container_type,
                         ),
                         "value": ModelSchemaValue.from_value(str(self.value)),
                         "error": ModelSchemaValue.from_value(str(e)),
-                    }
+                    },
                 ),
-            )
+            ) from e
 
     def compare_value(self, other: object) -> bool:
         """
         Compare the contained value with another value or container.
 
+        Uses strict type comparison to ensure type safety and ONEX compliance.
+
         Args:
             other: Value or container to compare with
 
         Returns:
-            True if values are equal
+            True if values are equal and of the same type
         """
         if isinstance(other, ModelContainer):
-            return bool(self.value == other.value)
-        return bool(self.value == other)
+            # Compare both value and type for strict equality
+            return self.value == other.value and type(self.value) is type(other.value)
+        # Compare both value and type for strict equality
+        return self.value == other and type(self.value) is type(other)
 
     def __eq__(self, other: object) -> bool:
-        """Equality comparison based on contained value."""
+        """
+        Equality comparison based on contained value with strict type checking.
+
+        Uses strict type comparison to ensure type safety and ONEX compliance.
+        """
         if isinstance(other, ModelContainer):
-            return bool(self.value == other.value)
-        return bool(self.value == other)
+            # Compare both value and type for strict equality
+            return self.value == other.value and type(self.value) is type(other.value)
+        # Compare both value and type for strict equality
+        return self.value == other and type(self.value) is type(other)
 
     def __str__(self) -> str:
         """String representation."""

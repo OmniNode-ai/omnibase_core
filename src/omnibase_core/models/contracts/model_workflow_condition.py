@@ -11,22 +11,11 @@ from typing import Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-# Type alias for recursive context data structure
-# Using object for maximum flexibility while maintaining type safety
-ContextValue = Union[
-    str,
-    int,
-    float,
-    bool,
-    list[Union[str, int, float, bool]],
-    dict[
-        str,
-        Union[
-            str, int, float, bool, list[Union[str, int, float, bool]], dict[str, object]
-        ],
-    ],
-]
-
+from omnibase_core.core.type_constraints import (
+    ComplexContextValueType,
+    ContextValueType,
+    PrimitiveValueType,
+)
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -131,15 +120,7 @@ class ModelWorkflowCondition(BaseModel):
 
     def evaluate_condition(
         self,
-        context_data: dict[
-            str,
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool],
-        ],
+        context_data: dict[str, ContextValueType],
     ) -> bool:
         """
         Evaluate the condition against provided context data.
@@ -180,45 +161,22 @@ class ModelWorkflowCondition(BaseModel):
 
     def _extract_field_value(
         self,
-        context_data: dict[
-            str,
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool],
-        ],
+        context_data: dict[str, ContextValueType],
         field_path: str,
-    ) -> (
-        str
-        | int
-        | float
-        | bool
-        | list[str | int | float | bool]
-        | dict[str, str | int | float | bool]
-    ):
+    ) -> ContextValueType:
         """Extract field value supporting nested field paths with dot notation."""
-        current_value: ContextValue = cast(ContextValue, context_data)
+        current_value: ComplexContextValueType = cast(
+            ComplexContextValueType, context_data
+        )
 
         for field_part in field_path.split("."):
             if isinstance(current_value, dict) and field_part in current_value:
-                current_value = cast(ContextValue, current_value[field_part])
+                current_value = current_value[field_part]
             else:
                 raise KeyError(f"Field path '{field_path}' not found")
 
         # Cast return to match expected return type annotation
-        return cast(
-            Union[
-                str,
-                int,
-                float,
-                bool,
-                list[Union[str, int, float, bool]],
-                dict[str, Union[str, int, float, bool]],
-            ],
-            current_value,
-        )
+        return cast(ContextValueType, current_value)
 
     def _extract_container_value(
         self,
@@ -229,7 +187,7 @@ class ModelWorkflowCondition(BaseModel):
             ModelConditionValue[bool],
             ModelConditionValueList,
         ],
-    ) -> str | int | float | bool | list[str | int | float | bool]:
+    ) -> Union[PrimitiveValueType, list[PrimitiveValueType]]:
         """Extract the actual value from the type-safe container."""
         if isinstance(container, ModelConditionValueList):
             return container.values
@@ -239,15 +197,8 @@ class ModelWorkflowCondition(BaseModel):
 
     def _evaluate_operator(
         self,
-        actual_value: (
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool]
-        ),
-        expected_value: str | int | float | bool | list[str | int | float | bool],
+        actual_value: ContextValueType,
+        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
         operator: EnumConditionOperator,
     ) -> bool:
         """Evaluate the specific operator against actual and expected values."""
@@ -296,15 +247,8 @@ class ModelWorkflowCondition(BaseModel):
 
     def _validate_comparison_types(
         self,
-        actual_value: (
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool]
-        ),
-        expected_value: str | int | float | bool | list[str | int | float | bool],
+        actual_value: ContextValueType,
+        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
         operator: EnumConditionOperator,
     ) -> None:
         """Validate that values are comparable for comparison operators."""
@@ -328,15 +272,8 @@ class ModelWorkflowCondition(BaseModel):
 
     def _validate_contains_types(
         self,
-        actual_value: (
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool]
-        ),
-        expected_value: str | int | float | bool | list[str | int | float | bool],
+        actual_value: ContextValueType,
+        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
         operator: EnumConditionOperator,
     ) -> None:
         """Validate that types are compatible for contains/not_contains operators."""
@@ -351,15 +288,8 @@ class ModelWorkflowCondition(BaseModel):
 
     def _validate_in_types(
         self,
-        actual_value: (
-            str
-            | int
-            | float
-            | bool
-            | list[str | int | float | bool]
-            | dict[str, str | int | float | bool]
-        ),
-        expected_value: str | int | float | bool | list[str | int | float | bool],
+        actual_value: ContextValueType,
+        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
         operator: EnumConditionOperator,
     ) -> None:
         """Validate that types are compatible for in/not_in operators."""

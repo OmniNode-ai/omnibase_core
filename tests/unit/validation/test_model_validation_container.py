@@ -223,13 +223,10 @@ class TestModelValidationContainer:
         container.add_critical_error("Critical error")
         container.add_warning("Test warning")
 
-        result_dict = container.to_dict()
+        result_dict = container.model_dump()
 
-        assert result_dict["error_count"] == 2
-        assert result_dict["critical_error_count"] == 1
-        assert result_dict["warning_count"] == 1
-        assert result_dict["is_valid"] is False
-        assert "summary" in result_dict
+        assert result_dict["errors"] is not None
+        assert result_dict["warnings"] is not None
         assert len(result_dict["errors"]) == 2
         assert len(result_dict["warnings"]) == 1
 

@@ -187,9 +187,9 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
                     ModelSchemaValue,
                 )
 
-                typed_metadata: dict[str, ModelSchemaValue] = {}
+                typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
                 for key, value in metadata.items():
-                    if isinstance(value, ModelSchemaValue):
+                    if isinstance(value, (str, float, bool, ModelSchemaValue)):
                         typed_metadata[key] = value
                     else:
                         typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -231,9 +231,9 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
                     ModelSchemaValue,
                 )
 
-                typed_metadata: dict[str, ModelSchemaValue] = {}
+                typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
                 for key, value in metadata.items():
-                    if isinstance(value, ModelSchemaValue):
+                    if isinstance(value, (str, float, bool, ModelSchemaValue)):
                         typed_metadata[key] = value
                     else:
                         typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -267,14 +267,14 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
     def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add metadata entry."""
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-        self.metadata.set_custom_value(key, ModelSchemaValue.from_value(value))
+        self.metadata.set_custom_value(key, value)
 
     def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get metadata entry with optional default."""
         value = self.metadata.get_custom_value(key)
-        return cast(MetadataValueType, value if value is not None else default)
+        if value is not None:
+            return cast(MetadataValueType, value)
+        return default
 
     def mark_completed(self) -> None:
         """Mark execution as completed and calculate duration."""
@@ -380,9 +380,9 @@ def execution_ok(
             # Type validation: ensure dict has proper structure
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-            typed_metadata: dict[str, ModelSchemaValue] = {}
+            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
             for key, value in metadata.items():
-                if isinstance(value, ModelSchemaValue):
+                if isinstance(value, (str, float, bool, ModelSchemaValue)):
                     typed_metadata[key] = value
                 else:
                     typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -415,9 +415,9 @@ def execution_err(
             # Type validation: ensure dict has proper structure
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-            typed_metadata: dict[str, ModelSchemaValue] = {}
+            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
             for key, value in metadata.items():
-                if isinstance(value, ModelSchemaValue):
+                if isinstance(value, (str, float, bool, ModelSchemaValue)):
                     typed_metadata[key] = value
                 else:
                     typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -462,9 +462,9 @@ def try_execution(
             # Type validation: ensure dict has proper structure
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-            typed_metadata: dict[str, ModelSchemaValue] = {}
+            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
             for key, value in metadata.items():
-                if isinstance(value, ModelSchemaValue):
+                if isinstance(value, (str, float, bool, ModelSchemaValue)):
                     typed_metadata[key] = value
                 else:
                     typed_metadata[key] = ModelSchemaValue.from_value(value)

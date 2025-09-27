@@ -8,9 +8,10 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
@@ -55,7 +56,9 @@ class ModelCliResultMetadata(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When result was processed",
     )
-    processor_version: ModelSemVer | None = Field(None, description="Processor version")
+    processor_version: Union[ModelSemVer, str, None] = Field(
+        None, description="Processor version"
+    )
 
     # Quality metrics
     quality_score: float | None = Field(
@@ -72,11 +75,11 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Data classification
-    data_classification: EnumDataClassification = Field(
+    data_classification: Union[EnumDataClassification, str] = Field(
         default=EnumDataClassification.INTERNAL,
         description="Data classification level",
     )
-    retention_policy: EnumRetentionPolicy | None = Field(
+    retention_policy: Union[EnumRetentionPolicy, str, None] = Field(
         None,
         description="Data retention policy",
     )
@@ -113,10 +116,96 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Custom metadata fields for extensibility
-    custom_metadata: dict[str, ModelCliValue] = Field(
+    custom_metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Custom metadata fields",
     )
+
+    @field_validator("processor_version")
+    @classmethod
+    def validate_processor_version(
+        cls, v: Union[ModelSemVer, str, None]
+    ) -> ModelSemVer | None:
+        """Convert string processor version to ModelSemVer."""
+        if v is None:
+            return None
+        elif isinstance(v, str):
+            # Parse version string like "1.0.0"
+            parts = v.split(".")
+            if len(parts) >= 3:
+                return ModelSemVer(
+                    major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+                )
+            elif len(parts) == 2:
+                return ModelSemVer(major=int(parts[0]), minor=int(parts[1]), patch=0)
+            elif len(parts) == 1:
+                return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
+            else:
+                raise ValueError(f"Invalid version string: {v}")
+        elif isinstance(v, ModelSemVer):
+            return v
+        else:
+            # This should never happen with proper typing, but handle gracefully
+            raise ValueError(f"Invalid processor version type: {type(v)}")
+
+    @field_validator("data_classification")
+    @classmethod
+    def validate_data_classification(
+        cls, v: Union[EnumDataClassification, str]
+    ) -> EnumDataClassification:
+        """Convert string data classification to enum."""
+        if isinstance(v, EnumDataClassification):
+            return v
+        elif isinstance(v, str):
+            try:
+                return EnumDataClassification(v)
+            except ValueError:
+                # Try uppercase
+                try:
+                    return EnumDataClassification(v.upper())
+                except ValueError:
+                    raise ValueError(f"Invalid data classification: {v}")
+        else:
+            # This should never happen with proper typing, but handle gracefully
+            raise ValueError(f"Invalid data classification type: {type(v)}")
+
+    @field_validator("retention_policy")
+    @classmethod
+    def validate_retention_policy(
+        cls, v: Union[EnumRetentionPolicy, str, None]
+    ) -> EnumRetentionPolicy | None:
+        """Convert string retention policy to enum."""
+        if v is None:
+            return None
+        elif isinstance(v, EnumRetentionPolicy):
+            return v
+        elif isinstance(v, str):
+            try:
+                return EnumRetentionPolicy(v)
+            except ValueError:
+                # Try uppercase
+                try:
+                    return EnumRetentionPolicy(v.upper())
+                except ValueError:
+                    raise ValueError(f"Invalid retention policy: {v}")
+        else:
+            # This should never happen with proper typing, but handle gracefully
+            raise ValueError(f"Invalid retention policy type: {type(v)}")
+
+    @field_validator("custom_metadata")
+    @classmethod
+    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Validate custom metadata values and store as raw Python types."""
+        result = {}
+        for key, value in v.items():
+            if isinstance(value, ModelCliValue):
+                # Extract raw value from ModelCliValue
+                result[key] = value.to_python_value()
+            else:
+                # Validate by creating ModelCliValue but store raw value
+                ModelCliValue.from_any(value)  # This validates the value
+                result[key] = value
+        return result
 
     def add_tag(self, tag: str) -> None:
         """Add a tag to the result."""
@@ -159,20 +248,14 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Quality score must be between 0.0 and 1.0",
-            )
+            raise ValueError("Quality score must be between 0.0 and 1.0")
 
     def set_confidence_level(self, confidence: float) -> None:
         """Set the confidence level."""
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Confidence level must be between 0.0 and 1.0",
-            )
+            raise ValueError("Confidence level must be between 0.0 and 1.0")
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
         """Add resource usage information."""
@@ -187,24 +270,57 @@ class ModelCliResultMetadata(BaseModel):
         timestamp = datetime.now(UTC).isoformat()
         self.audit_trail.append(f"{timestamp}: {entry}")
 
-    def set_custom_field(self, key: str, value: str) -> None:
-        """Set a custom metadata field. CLI metadata is typically strings."""
-        self.custom_metadata[key] = ModelCliValue.from_string(value)
+    def set_custom_field(self, key: str, value: Any) -> None:
+        """Set a custom metadata field with automatic type conversion."""
+        # Validate the value by creating ModelCliValue but store raw value
+        ModelCliValue.from_any(value)  # This validates the value
+        self.custom_metadata[key] = value
 
-    def get_custom_field(self, key: str, default: str = "") -> str:
-        """Get a custom metadata field. CLI metadata is strings."""
-        cli_value = self.custom_metadata.get(key)
-        if cli_value is not None:
-            return str(cli_value.to_python_value())
-        return default
+    def get_custom_field(self, key: str, default: Any = None) -> Any:
+        """Get a custom metadata field with original type."""
+        return self.custom_metadata.get(key, default)
 
     def is_compliant(self) -> bool:
         """Check if all compliance flags are True."""
         return all(self.compliance_flags.values()) if self.compliance_flags else True
 
+    @classmethod
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelCliResultMetadata":
+        """Custom validation to handle 'labels' field."""
+        if isinstance(obj, dict) and "labels" in obj:
+            # Handle legacy 'labels' field by converting to label_ids/label_names
+            labels = obj.pop("labels")
+            if isinstance(labels, dict):
+                label_ids = {}
+                label_names = {}
+                for key, value in labels.items():
+                    uuid_id = uuid_from_string(key, "label")
+                    label_ids[uuid_id] = value
+                    label_names[key] = uuid_id
+                obj["label_ids"] = label_ids
+                obj["label_names"] = label_names
+
+        return super().model_validate(
+            obj,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
     model_config = {
         "extra": "ignore",
-        "use_enum_values": False,
+        "use_enum_values": True,
         "validate_assignment": True,
     }
 

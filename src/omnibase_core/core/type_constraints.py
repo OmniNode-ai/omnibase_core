@@ -56,11 +56,37 @@ ErrorType = TypeVar("ErrorType", str, Exception, BaseException)
 CollectionItemType = TypeVar("CollectionItemType", bound=BaseModel)
 DictValueType = TypeVar("DictValueType", str, int, bool, float, list[object])
 
+# Schema value types - standardized types for replacing hardcoded unions
+# These types replace patterns like str | int | float | bool throughout the codebase
+from typing import Union
+
+# Basic primitive types that can be schema values
+PrimitiveValueType = Union[str, int, float, bool]
+
+# Context value type that includes collections
+ContextValueType = Union[
+    str,
+    int,
+    float,
+    bool,
+    list[Union[str, int, float, bool]],
+    dict[str, Union[str, int, float, bool]],
+]
+
+# Complex nested context type for workflow conditions and similar use cases
+ComplexContextValueType = Union[
+    str,
+    int,
+    float,
+    bool,
+    list[Union[str, int, float, bool]],
+    dict[str, "ComplexContextValueType"],  # Recursive for nested structures
+]
+
 
 # Import abstract base classes from separate files (ONEX one-model-per-file)
 from .model_base_collection import BaseCollection
 from .model_base_factory import BaseFactory
-from .model_base_processor import BaseProcessor
 
 # Type guards for runtime checking
 
@@ -126,10 +152,12 @@ __all__ = [
     "ErrorType",
     "CollectionItemType",
     "DictValueType",
+    "PrimitiveValueType",
+    "ContextValueType",
+    "ComplexContextValueType",
     # Abstract base classes
     "BaseCollection",
     "BaseFactory",
-    "BaseProcessor",
     # Type guards
     "is_serializable",
     "is_identifiable",

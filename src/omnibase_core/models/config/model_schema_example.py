@@ -73,7 +73,7 @@ class ModelSchemaExample(BaseModel):
         Returns:
             Value of the requested type or default
         """
-        schema_value_result = self.example_data.get_custom_value(key)
+        schema_value_result = self.example_data.get_custom_value_wrapped(key)
         if schema_value_result.is_err():
             return default
 
@@ -93,11 +93,15 @@ class ModelSchemaExample(BaseModel):
 
         Args:
             key: The key to set
-            value: The value to store (will be wrapped in ModelSchemaValue)
+            value: The value to store (raw primitive type)
         """
-        # Convert primitive value to ModelSchemaValue
-        schema_value = ModelSchemaValue.from_value(value)
-        self.example_data.set_custom_value(key, schema_value)
+        # Pass raw value directly to set_custom_value (it handles type validation)
+        if isinstance(value, (str, int, float, bool)):
+            self.example_data.set_custom_value(key, value)
+        else:
+            raise TypeError(
+                f"Unsupported value type: {type(value)}. Must be str, int, float, or bool."
+            )
 
     def get_all_keys(self) -> list[str]:
         """Get all keys from example data."""
@@ -113,7 +117,7 @@ class ModelSchemaExample(BaseModel):
         Returns:
             Raw Python value or None if not found
         """
-        schema_value_result = self.example_data.get_custom_value(key)
+        schema_value_result = self.example_data.get_custom_value_wrapped(key)
         if schema_value_result.is_err():
             return None
         schema_value = schema_value_result.unwrap()
@@ -125,10 +129,15 @@ class ModelSchemaExample(BaseModel):
 
         Args:
             key: The key to set
-            value: The value to store (any type, will be wrapped in ModelSchemaValue)
+            value: The value to store (raw primitive type)
         """
-        schema_value = ModelSchemaValue.from_value(value)
-        self.example_data.set_custom_value(key, schema_value)
+        # Pass raw value directly to set_custom_value (it handles type validation)
+        if isinstance(value, (str, int, float, bool)):
+            self.example_data.set_custom_value(key, value)
+        else:
+            raise TypeError(
+                f"Unsupported value type: {type(value)}. Must be str, int, float, or bool."
+            )
 
     def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:
         """
@@ -138,7 +147,11 @@ class ModelSchemaExample(BaseModel):
             data: Dictionary of ModelSchemaValue objects to add to example data
         """
         for key, value in data.items():
-            self.example_data.set_custom_value(key, value)
+            # Extract raw value from ModelSchemaValue and pass to set_custom_value
+            raw_value = value.to_value()
+            if isinstance(raw_value, (str, int, float, bool)):
+                self.example_data.set_custom_value(key, raw_value)
+            # Skip values that aren't supported primitive types
 
     def get_example_data_as_dict(self) -> dict[str, ModelSchemaValue]:
         """
@@ -152,7 +165,7 @@ class ModelSchemaExample(BaseModel):
         """
         result = {}
         for key in self.get_all_keys():
-            schema_value_result = self.example_data.get_custom_value(key)
+            schema_value_result = self.example_data.get_custom_value_wrapped(key)
             if schema_value_result.is_ok():
                 result[key] = schema_value_result.unwrap()
         return result
@@ -182,8 +195,11 @@ class ModelSchemaExample(BaseModel):
         # Create custom properties from ModelSchemaValue data
         custom_props = ModelCustomProperties()
         for key, value in data.items():
-            # Value is already a ModelSchemaValue object
-            custom_props.set_custom_value(key, value)
+            # Extract raw value from ModelSchemaValue and pass to set_custom_value
+            raw_value = value.to_value()
+            if isinstance(raw_value, (str, int, float, bool)):
+                custom_props.set_custom_value(key, raw_value)
+            # Skip values that aren't supported primitive types
 
         return cls(
             example_data=custom_props,

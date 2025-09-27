@@ -11,9 +11,24 @@ import sys
 from pathlib import Path
 from typing import Iterator
 
-import timeout_utils
 import yaml
-from timeout_utils import timeout_context
+
+# Handle timeout_utils import for both direct execution and test imports
+try:
+    import timeout_utils
+    from timeout_utils import timeout_context
+except ImportError:
+    # Try relative import for when script is imported by tests
+    import sys
+    from pathlib import Path
+
+    # Add the script directory to Python path for timeout_utils import
+    script_dir = Path(__file__).parent
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
+
+    import timeout_utils
+    from timeout_utils import timeout_context
 
 # Constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
@@ -68,6 +83,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         return errors
     except IOError as e:
         errors.append(f"IO error reading file: {e}")
+        return errors
+
+    # Handle whitespace-only files as valid (empty content)
+    if not content_str.strip():
+        # Whitespace-only files are considered valid/empty
         return errors
 
     # Parse YAML with specific error handling

@@ -125,6 +125,21 @@ class NamingConventionValidator:
 
             self._validate_file_naming(file_path, category, rules)
 
+        # Also scan all Python files to catch violations regardless of file location
+        # This enables detection of violations in test fixtures and misplaced files
+        for file_path in self.repo_path.rglob("*.py"):
+            if file_path.name == "__init__.py":
+                continue
+            if "__pycache__" in str(file_path) or "/archived/" in str(file_path):
+                continue
+
+            # Skip files we've already processed to avoid duplicate violations
+            already_processed = file_path.name.startswith(rules["file_prefix"]) or (
+                rules["directory"] and rules["directory"] in str(file_path)
+            )
+            if not already_processed:
+                self._validate_all_classes_in_file(file_path, category, rules)
+
     def _validate_file_naming(
         self, file_path: Path, category: str, rules: dict[str, str]
     ):
@@ -175,6 +190,28 @@ class NamingConventionValidator:
                 if isinstance(node, ast.ClassDef):
                     # Check if this is a TypedDict class
                     if self._is_typeddict_class(node):
+                        self._check_class_naming(file_path, node, category, rules)
+
+        except (SyntaxError, UnicodeDecodeError) as e:
+            print(f"Warning: Could not parse {file_path}: {e}")
+
+    def _validate_all_classes_in_file(
+        self, file_path: Path, category: str, rules: dict[str, str]
+    ):
+        """Validate classes in any file that should match the category pattern."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            tree = ast.parse(content, filename=str(file_path))
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef):
+                    # Only check classes that should match this category's pattern
+                    # AND don't already match any other valid pattern
+                    if self._should_match_pattern(
+                        node.name, category
+                    ) and not self._matches_any_valid_pattern(node.name):
                         self._check_class_naming(file_path, node, category, rules)
 
         except (SyntaxError, UnicodeDecodeError) as e:
@@ -284,6 +321,14 @@ class NamingConventionValidator:
 
         # Check if class name contains category indicators
         return any(indicator in class_lower for indicator in indicators)
+
+    def _matches_any_valid_pattern(self, class_name: str) -> bool:
+        """Check if a class name matches any valid naming pattern."""
+        for category, rules in self.NAMING_PATTERNS.items():
+            pattern = rules["pattern"]
+            if re.match(pattern, class_name):
+                return True
+        return False
 
     def generate_report(self) -> str:
         """Generate naming convention report."""

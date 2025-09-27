@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from src.omnibase_core.models.infrastructure.model_result import (
+from omnibase_core.models.infrastructure.model_result import (
     ModelResult,
     collect_results,
     err,

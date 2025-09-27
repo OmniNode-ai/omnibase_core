@@ -6,7 +6,7 @@ Test coverage for parameter type enumeration and helper methods.
 
 import pytest
 
-from src.omnibase_core.enums import EnumParameterType
+from omnibase_core.enums import EnumParameterType
 
 
 class TestEnumParameterType:

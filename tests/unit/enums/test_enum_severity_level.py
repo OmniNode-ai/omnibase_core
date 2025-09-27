@@ -17,7 +17,7 @@ import json
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from src.omnibase_core.enums.enum_severity_level import EnumSeverityLevel
+from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 
 
 class TestEnumSeverityLevel:

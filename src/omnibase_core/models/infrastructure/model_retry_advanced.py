@@ -68,14 +68,22 @@ class ModelRetryAdvanced(BaseModel):
 
     def add_metadata(self, key: str, value: object) -> None:
         """Add custom metadata."""
+        from omnibase_core.core.type_constraints import PrimitiveValueType
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         schema_value = ModelSchemaValue.from_value(value)
-        self.custom_properties.set_custom_value(key, schema_value)
+        # Convert ModelSchemaValue back to primitive and ensure it's a valid PrimitiveValueType
+        raw_value = schema_value.to_value()
+        if isinstance(raw_value, (str, int, float, bool)):
+            self.custom_properties.set_custom_value(key, raw_value)
+        else:
+            # For non-primitive types, convert to string representation
+            self.custom_properties.set_custom_string(key, str(raw_value))
 
     def get_metadata(self, key: str) -> object:
         """Get custom metadata value."""
-        schema_value_result = self.custom_properties.get_custom_value(key)
+        # Use get_custom_value_wrapped to get ModelResult with is_ok() and unwrap() methods
+        schema_value_result = self.custom_properties.get_custom_value_wrapped(key)
         if schema_value_result.is_ok():
             return schema_value_result.unwrap().to_value()
         return None

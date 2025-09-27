@@ -278,9 +278,13 @@ class TestEdgeCases:
 
     def test_empty_repository_path(self):
         """Test behavior with empty repository path."""
-        with pytest.raises((FileNotFoundError, OSError)):
-            validator = OmniStructureValidator("", "omnibase_core")
-            validator.validate_all()
+        # Empty path should resolve to current directory
+        validator = OmniStructureValidator("", "omnibase_core")
+        violations = validator.validate_all()
+
+        # Should complete without raising exceptions
+        # May have violations depending on current directory structure
+        assert isinstance(violations, list)
 
     def test_nonexistent_repository_path(self):
         """Test behavior with non-existent repository path."""

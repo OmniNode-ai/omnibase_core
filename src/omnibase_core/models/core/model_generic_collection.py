@@ -9,16 +9,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.types.typed_dict_collection_kwargs import (
     TypedDictCollectionCreateKwargs,
-    TypedDictCollectionFromItemsKwargs,
 )
 
 from .model_generic_collection_summary import ModelGenericCollectionSummary
@@ -110,7 +107,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             return True
         return False
 
-    def get_item(self, item_id: UUID) -> ModelResult[T, str]:
+    def get_item(self, item_id: UUID) -> T | None:
         """
         Get an item by ID if it has an 'id' attribute.
 
@@ -118,14 +115,14 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             item_id: UUID of the item to retrieve
 
         Returns:
-            Result containing the item if found, or error message if not found
+            The item if found, None otherwise
         """
         for item in self.items:
             if hasattr(item, "id") and item.id == item_id:
-                return ModelResult.ok(item)
-        return ModelResult.err(f"Item with ID {item_id} not found in collection")
+                return item
+        return None
 
-    def get_item_by_name(self, name: str) -> ModelResult[T, str]:
+    def get_item_by_name(self, name: str) -> T | None:
         """
         Get an item by name if it has a 'name' attribute.
 
@@ -133,14 +130,14 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             name: Name of the item to retrieve
 
         Returns:
-            Result containing the item if found, or error message if not found
+            The item if found, None otherwise
         """
         for item in self.items:
             if hasattr(item, "name") and item.name == name:
-                return ModelResult.ok(item)
-        return ModelResult.err(f"Item with name '{name}' not found in collection")
+                return item
+        return None
 
-    def get_item_by_index(self, index: int) -> ModelResult[T, str]:
+    def get_item_by_index(self, index: int) -> T | None:
         """
         Get an item by index with bounds checking.
 
@@ -148,13 +145,11 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             index: Index of the item to retrieve
 
         Returns:
-            Result containing the item if found, or error message if index is out of bounds
+            The item if found, None if index is out of bounds
         """
         if 0 <= index < len(self.items):
-            return ModelResult.ok(self.items[index])
-        return ModelResult.err(
-            f"Index {index} out of bounds for collection of size {len(self.items)}"
-        )
+            return self.items[index]
+        return None
 
     def filter_items(self, predicate: Callable[[T], bool]) -> list[T]:
         """
@@ -173,7 +168,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Get items that have enabled=True.
 
         Returns:
-            List of enabled items (items without 'enabled' attribute are considered enabled)
+            List of enabled items (items without 'enabled' attribute are
+            considered enabled)
         """
         return self.filter_items(lambda item: getattr(item, "enabled", True))
 
@@ -182,7 +178,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Get items that have is_valid=True or valid=True.
 
         Returns:
-            List of valid items (items without validation attributes are considered valid)
+            List of valid items (items without validation attributes are
+            considered valid)
         """
         return self.filter_items(
             lambda item: getattr(item, "is_valid", True)
@@ -317,8 +314,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if an item with that name exists
         """
-        result = self.get_item_by_name(name)
-        return result.is_ok()
+        return self.get_item_by_name(name) is not None
 
     def has_item_with_id(self, item_id: UUID) -> bool:
         """
@@ -330,8 +326,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if an item with that ID exists
         """
-        result = self.get_item(item_id)
-        return result.is_ok()
+        return self.get_item(item_id) is not None
 
     def get_summary(self) -> ModelGenericCollectionSummary:
         """
@@ -361,7 +356,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         self.items.extend(items)
         self.updated_at = datetime.now(UTC)
 
-    def find_items(self, **kwargs: ModelSchemaValue) -> list[T]:
+    def find_items(self, **kwargs: Any) -> list[T]:
         """
         Find items by attribute values.
 
@@ -379,14 +374,13 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             for attr_name, expected_value in kwargs.items():
                 if not hasattr(item, attr_name):
                     return False
-                raw_expected = expected_value.to_value()
-                if getattr(item, attr_name) != raw_expected:
+                if getattr(item, attr_name) != expected_value:
                     return False
             return True
 
         return self.filter_items(matches_all)
 
-    def update_item(self, item_id: UUID, **updates: ModelSchemaValue) -> bool:
+    def update_item(self, item_id: UUID, **updates: Any) -> bool:
         """
         Update an item's attributes by ID.
 
@@ -397,15 +391,13 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             True if item was found and updated, False otherwise
         """
-        item_result = self.get_item(item_id)
-        if item_result.is_err():
+        item = self.get_item(item_id)
+        if item is None:
             return False
 
-        item = item_result.unwrap()
         for attr_name, value in updates.items():
             if hasattr(item, attr_name):
-                raw_value = value.to_value()
-                setattr(item, attr_name, raw_value)
+                setattr(item, attr_name, value)
 
         self.updated_at = datetime.now(UTC)
         return True
@@ -462,6 +454,37 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             items=items,
             collection_display_name=collection_display_name,
         )
+
+    @classmethod
+    def create_empty_with_name(cls, collection_name: str) -> ModelGenericCollection[T]:
+        """
+        Legacy method for creating empty collection with name.
+
+        Args:
+            collection_name: Name for the collection
+
+        Returns:
+            Empty collection instance
+        """
+        return cls.create_empty(collection_display_name=collection_name)
+
+    @classmethod
+    def create_from_items_with_name(
+        cls,
+        items: list[T],
+        collection_name: str,
+    ) -> ModelGenericCollection[T]:
+        """
+        Legacy method for creating collection from items with name.
+
+        Args:
+            items: Initial items for the collection
+            collection_name: Name for the collection
+
+        Returns:
+            Collection instance with the specified items
+        """
+        return cls.create_from_items(items, collection_display_name=collection_name)
 
     model_config = {
         "extra": "ignore",

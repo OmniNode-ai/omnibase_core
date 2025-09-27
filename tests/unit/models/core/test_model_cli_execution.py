@@ -361,7 +361,7 @@ class TestModelCliExecution:
 
         assert execution2.status == EnumExecutionStatus.FAILED
         assert execution2.end_time is not None
-        assert execution2.custom_context["failure_reason"] == "Connection timeout"
+        assert execution2.custom_context["failure_reason"].value == "Connection timeout"
 
     def test_mark_cancelled_method(self):
         """Test the mark_cancelled method."""
@@ -479,23 +479,23 @@ class TestModelCliExecution:
 
         summary = execution.get_summary()
 
-        assert summary["command_name"] == "deploy"
-        assert summary["target_node_name"] == "app_node"
-        assert summary["status"] == EnumExecutionStatus.COMPLETED
-        assert summary["start_time"] == start_time.isoformat()
-        assert summary["end_time"] == end_time.isoformat()
-        assert summary["elapsed_ms"] == 5000
-        assert summary["retry_count"] == 1
-        assert summary["is_dry_run"] is True
-        assert summary["is_test_execution"] is True
-        assert summary["progress_percentage"] == 100.0
-        assert summary["current_phase"] == EnumExecutionPhase.EXECUTION
-        assert "execution_id" in summary
+        assert summary.command_name == "deploy"
+        assert summary.target_node_name == "app_node"
+        assert summary.status == EnumExecutionStatus.COMPLETED
+        assert summary.start_time == start_time
+        assert summary.end_time == end_time
+        assert summary.elapsed_ms == 5000
+        assert summary.retry_count == 1
+        assert summary.is_dry_run is True
+        assert summary.is_test_execution is True
+        assert summary.progress_percentage == 100.0
+        assert summary.current_phase == EnumExecutionPhase.EXECUTION
+        assert summary.execution_id is not None
 
         # Test with no end_time
         execution.end_time = None
         summary = execution.get_summary()
-        assert summary["end_time"] is None
+        assert summary.end_time is None
 
     def test_factory_methods(self):
         """Test factory methods."""

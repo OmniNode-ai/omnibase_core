@@ -10,7 +10,7 @@ Restructured to reduce string field violations through logical grouping.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypedDict, TypeVar, Unpack
+from typing import Generic, TypeVar, Unpack
 
 from pydantic import BaseModel
 
@@ -20,10 +20,7 @@ from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types import (
-    TypedDictExecutionParams,
     TypedDictFactoryKwargs,
-    TypedDictMessageParams,
-    TypedDictMetadataParams,
 )
 
 T = TypeVar("T", bound=BaseModel)

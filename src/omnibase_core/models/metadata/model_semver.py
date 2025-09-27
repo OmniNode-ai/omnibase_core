@@ -65,14 +65,16 @@ class ModelSemVer(BaseModel):
         return ModelSemVer(major=self.major, minor=self.minor, patch=self.patch + 1)
 
     def __eq__(self, other: object) -> bool:
-        """Check equality with another ModelSemVer."""
-        if not isinstance(other, ModelSemVer):
-            return False
-        return (
-            self.major == other.major
-            and self.minor == other.minor
-            and self.patch == other.patch
-        )
+        """Check equality with another ModelSemVer or string version."""
+        if isinstance(other, ModelSemVer):
+            return (
+                self.major == other.major
+                and self.minor == other.minor
+                and self.patch == other.patch
+            )
+        elif isinstance(other, str):
+            return str(self) == other
+        return False
 
     def __lt__(self, other: object) -> bool:
         """Check if this version is less than another."""

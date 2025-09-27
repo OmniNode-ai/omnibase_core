@@ -199,9 +199,8 @@ class ModelTimeout(BaseModel):
             metadata[key] = ModelSchemaValue.from_value(python_value)
 
         # Create ModelCustomProperties from the Python values
-        # Convert to dict[str, ModelSchemaValue] first to satisfy type
-        # requirements
-        schema_value_metadata: dict[str, ModelSchemaValue] = {}
+        # Convert to proper union type to satisfy type requirements
+        schema_value_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
         for key, val in metadata.items():
             schema_value_metadata[key] = val
 
@@ -303,8 +302,8 @@ class ModelTimeout(BaseModel):
         """
         self.custom_metadata[key] = ModelSchemaValue.from_value(value)
         # Invalidate cached property when metadata changes
-        if hasattr(self, "_custom_properties"):
-            delattr(self, "_custom_properties")
+        if hasattr(self, "custom_properties"):
+            delattr(self, "custom_properties")
 
     def get_custom_metadata(self, key: str) -> object:
         """Get custom metadata value."""

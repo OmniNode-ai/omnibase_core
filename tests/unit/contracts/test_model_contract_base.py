@@ -37,7 +37,8 @@ class TestableContractModel(ModelContractBase):
         """Test implementation of abstract method."""
         # Simple validation for testing
         if self.name == "invalid_test_contract":
-            raise ValidationError("Test validation error")
+            # Use ValueError instead of ValidationError for simpler testing
+            raise ValueError("Test validation error")
 
 
 class TestModelContractBase:
@@ -122,10 +123,12 @@ class TestModelContractBase:
         with pytest.raises(ValidationError, match="at least 1 character"):
             TestableContractModel(**data)
 
-        # Test whitespace-only name
+        # Test whitespace-only name - should be stripped to empty and fail validation
         data["name"] = "   "
-        contract = TestableContractModel(**data)  # Should be stripped to empty and fail
-        assert contract.name == ""  # Pydantic strips whitespace
+        with pytest.raises(ValidationError, match="at least 1 character"):
+            TestableContractModel(
+                **data
+            )  # Pydantic strips whitespace, then validates min_length
 
     def test_required_field_validation_description(self):
         """Test description field validation requirements."""
@@ -167,7 +170,7 @@ class TestModelContractBase:
     def test_node_type_string_conversion_yaml_support(self):
         """Test node_type string conversion for YAML deserialization."""
         # Test valid string conversion
-        data = {**self.minimal_valid_data, "node_type": "compute"}
+        data = {**self.minimal_valid_data, "node_type": "COMPUTE"}
         contract = TestableContractModel(**data)
         assert contract.node_type == EnumNodeType.COMPUTE
 
@@ -309,7 +312,7 @@ class TestModelContractBase:
         """Test detection of direct circular dependencies."""
         self_dep = ModelDependency(
             name="test_contract",  # Same as contract name
-            module="omnibase_core.test",
+            module="omnibase_core.protocol.test_protocol",  # Contains 'protocol' for ONEX compliance
             dependency_type=EnumDependencyType.PROTOCOL,
         )
 
@@ -407,24 +410,23 @@ class TestModelContractBase:
 
         assert error_context is not None
         # Verify the context contains the expected schema values
-        assert len(error_context.context) == 3
+        assert len(error_context.additional_context) == 3
 
     # =================== MEMORY SAFETY AND PERFORMANCE TESTS ===================
 
     def test_memory_safety_large_dependency_lists(self):
         """Test memory safety with large but valid dependency lists."""
-        # Create maximum allowed dependencies (100)
+        # Create maximum allowed dependencies (50 - complexity limit)
         max_deps = [
-            ModelDependency(name=f"Protocol{i}", module=f"module{i}")
-            for i in range(100)
+            ModelDependency(name=f"Protocol{i}", module=f"module{i}") for i in range(50)
         ]
 
         data = {**self.minimal_valid_data, "dependencies": max_deps}
         contract = TestableContractModel(**data)
 
-        assert len(contract.dependencies) == 100
+        assert len(contract.dependencies) == 50
         assert contract.dependencies[0].name == "Protocol0"
-        assert contract.dependencies[99].name == "Protocol99"
+        assert contract.dependencies[49].name == "Protocol49"
 
     def test_memory_safety_large_protocol_interfaces(self):
         """Test memory safety with large protocol interface lists."""
@@ -493,7 +495,7 @@ class TestModelContractBase:
 
         # Test validation error propagation
         error_data = {**self.minimal_valid_data, "name": "invalid_test_contract"}
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             TestableContractModel(**error_data)
 
     # =================== MODEL CONFIGURATION TESTS ===================

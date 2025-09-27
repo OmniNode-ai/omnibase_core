@@ -7,10 +7,10 @@ enables plugin extensibility and contract-driven action registration.
 
 from __future__ import annotations
 
-# Removed Any import - using object for ONEX compliance
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 
@@ -27,19 +27,56 @@ class ModelCliAction(BaseModel):
         default_factory=uuid4,
         description="Globally unique action identifier",
     )
-    action_name_id: UUID = Field(..., description="UUID for action name")
-    action_display_name: str | None = Field(
-        None,
-        description="Human-readable action name",
+    action_name_id: UUID = Field(..., description="UUID for action name", exclude=True)
+    action_display_name: str = Field(
+        ..., description="Action name", alias="action_name"
     )
     node_id: UUID = Field(..., description="UUID-based node reference")
-    node_display_name: str | None = Field(None, description="Human-readable node name")
+    node_display_name: str = Field(..., description="Node name", alias="node_name")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
     category: EnumActionCategory | None = Field(
         None,
         description="Action category for grouping",
     )
+
+    @field_validator("action_display_name")
+    @classmethod
+    def validate_action_display_name(cls, v: str) -> str:
+        """Validate action display name pattern."""
+        # Pattern: lowercase letter, followed by lowercase letters, numbers, or underscores
+        import re
+
+        pattern = r"^[a-z][a-z0-9_]*$"
+        if not re.match(pattern, v):
+            raise ValueError(
+                "action_display_name must match pattern: start with lowercase letter and contain only lowercase letters, numbers, and underscores"
+            )
+
+        return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def compute_action_name_id(cls, values: dict[str, object]) -> dict[str, object]:
+        """Compute action_name_id from action_display_name if not provided."""
+        if isinstance(values, dict):
+            # Get action_name from either the direct field or the alias
+            action_name = values.get("action_display_name") or values.get("action_name")
+
+            # If action_name_id is not provided but action_name is, compute it
+            if (
+                "action_name_id" not in values
+                and action_name
+                and isinstance(action_name, str)
+            ):
+                import hashlib
+
+                action_hash = hashlib.sha256(action_name.encode()).hexdigest()
+                action_name_id = UUID(
+                    f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}"
+                )
+                values["action_name_id"] = action_name_id
+        return values
 
     @classmethod
     def from_contract_action(
@@ -53,10 +90,16 @@ class ModelCliAction(BaseModel):
         """Factory method for creating actions from contract data."""
         import hashlib
 
-        # Generate UUIDs from names
-        action_hash = hashlib.sha256(action_name.encode()).hexdigest()
-        action_name_id = UUID(
-            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}",
+        # Validate input types first using Pydantic validation
+        cls.model_validate(
+            {
+                "action_id": "00000000-0000-0000-0000-000000000000",
+                "action_name_id": "00000000-0000-0000-0000-000000000000",
+                "action_name": action_name,  # This will use the alias to validate action_display_name
+                "node_id": node_id,  # This will trigger validation
+                "node_name": node_name,  # This will use the alias to validate node_display_name
+                "description": description or "test",  # This will trigger validation
+            }
         )
 
         # Extract known fields with proper types from kwargs
@@ -69,30 +112,37 @@ class ModelCliAction(BaseModel):
             action_id = None  # Use default UUID generation
         if not isinstance(deprecated, bool):
             deprecated = False
-        if category is not None and not isinstance(category, EnumActionCategory):
-            category = None
+        # Keep category as-is to let Pydantic validate it
 
-        # Return instance with typed arguments
+        # Return instance with typed arguments - Pydantic will validate
+        # Use default description only if None, preserve empty strings
+        final_description = (
+            description
+            if description is not None
+            else f"{action_name} action for {node_name}"
+        )
+
+        # action_name_id will be computed automatically by the model validator
         if action_id is not None:
             return cls(
                 action_id=action_id,
-                action_name_id=action_name_id,
-                action_display_name=action_name,
+                action_name_id=uuid4(),  # Provide required field
+                action_name=action_name,  # Use alias
                 node_id=node_id,
-                node_display_name=node_name,
-                description=description or f"{action_name} action for {node_name}",
+                node_name=node_name,  # Use alias
+                description=final_description,
                 deprecated=deprecated,
-                category=category,
+                category=category if isinstance(category, EnumActionCategory) else None,
             )
         else:
             return cls(
-                action_name_id=action_name_id,
-                action_display_name=action_name,
+                action_name_id=uuid4(),  # Provide required field
+                action_name=action_name,  # Use alias
                 node_id=node_id,
-                node_display_name=node_name,
-                description=description or f"{action_name} action for {node_name}",
+                node_name=node_name,  # Use alias
+                description=final_description,
                 deprecated=deprecated,
-                category=category,
+                category=category if isinstance(category, EnumActionCategory) else None,
             )
 
     def get_qualified_name(self) -> str:
@@ -115,8 +165,14 @@ class ModelCliAction(BaseModel):
         """Check if this action has the specified action ID."""
         return self.action_id == action_id
 
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """Override model_dump to use aliases by default."""
+        kwargs.setdefault("by_alias", True)
+        return super().model_dump(**kwargs)
+
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
+        "populate_by_name": True,  # Allow both field name and alias
     }

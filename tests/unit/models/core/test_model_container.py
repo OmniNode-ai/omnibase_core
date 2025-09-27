@@ -12,7 +12,8 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.core.model_container import ModelContainer
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.core.model_container import ModelContainer
 
 
 class TestModelContainer:
@@ -309,7 +310,7 @@ class TestModelContainerSerialization:
             "validation_notes": "Deserialized successfully",
         }
 
-        container = ModelContainer[list[str]](**json_data)
+        container = ModelContainer[list[str]].model_validate(json_data)
 
         assert container.value == ["item1", "item2", "item3"]
         assert container.container_type == "list_container"
@@ -331,7 +332,7 @@ class TestModelContainerSerialization:
 
         # Deserialize
         json_data = json.loads(json_str)
-        deserialized = ModelContainer[float](**json_data)
+        deserialized = ModelContainer[float].model_validate(json_data)
 
         assert deserialized.value == original.value
         assert deserialized.container_type == original.container_type

@@ -9,11 +9,15 @@ Tests all aspects of the node type model including:
 - Edge cases and error conditions
 """
 
+from uuid import uuid4
+
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.enums.enum_return_type import EnumReturnType
-from src.omnibase_core.models.nodes.model_node_type import ModelNodeType
+from omnibase_core.enums.enum_config_category import EnumConfigCategory
+from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.enums.enum_type_name import EnumTypeName
+from omnibase_core.models.core.model_node_type import ModelNodeType
 
 
 class TestModelNodeType:
@@ -22,14 +26,14 @@ class TestModelNodeType:
     def test_model_instantiation_minimal_data(self):
         """Test that model can be instantiated with minimal required data."""
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test node description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
         )
 
-        assert node_type.type_name == "TEST_NODE"
+        assert node_type.type_name == EnumTypeName.CONTRACT_TO_MODEL
         assert node_type.description == "Test node description"
-        assert node_type.category == "testing"
+        assert node_type.category == EnumConfigCategory.TESTING
         assert node_type.dependencies == []
         assert node_type.version_compatibility == ">=1.0.0"
         assert node_type.execution_priority == 50
@@ -40,11 +44,14 @@ class TestModelNodeType:
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
+        uuid_a = uuid4()
+        uuid_b = uuid4()
+
         node_type = ModelNodeType(
-            type_name="CUSTOM_NODE",
+            type_name=EnumTypeName.VALIDATION_ENGINE,
             description="Custom node with all fields",
-            category="custom_category",
-            dependencies=["NODE_A", "NODE_B"],
+            category=EnumConfigCategory.VALIDATION,
+            dependencies=[uuid_a, uuid_b],
             version_compatibility=">=2.0.0",
             execution_priority=75,
             is_generator=True,
@@ -53,10 +60,10 @@ class TestModelNodeType:
             output_type=EnumReturnType.TEXT,
         )
 
-        assert node_type.type_name == "CUSTOM_NODE"
+        assert node_type.type_name == EnumTypeName.VALIDATION_ENGINE
         assert node_type.description == "Custom node with all fields"
-        assert node_type.category == "custom_category"
-        assert node_type.dependencies == ["NODE_A", "NODE_B"]
+        assert node_type.category == EnumConfigCategory.VALIDATION
+        assert node_type.dependencies == [uuid_a, uuid_b]
         assert node_type.version_compatibility == ">=2.0.0"
         assert node_type.execution_priority == 75
         assert node_type.is_generator is True
@@ -66,116 +73,128 @@ class TestModelNodeType:
 
     def test_required_fields_validation(self):
         """Test that required fields are properly validated."""
-        # Missing name
+        # Missing type_name
         with pytest.raises(ValidationError) as exc_info:
-            ModelNodeType(description="Test description", category="testing")
-        assert "name" in str(exc_info.value)
+            ModelNodeType(
+                description="Test description", category=EnumConfigCategory.TESTING
+            )
+        assert "type_name" in str(exc_info.value)
 
         # Missing description
         with pytest.raises(ValidationError) as exc_info:
-            ModelNodeType(type_name="TEST_NODE", category="testing")
+            ModelNodeType(
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
+                category=EnumConfigCategory.TESTING,
+            )
         assert "description" in str(exc_info.value)
 
         # Missing category
         with pytest.raises(ValidationError) as exc_info:
-            ModelNodeType(type_name="TEST_NODE", description="Test description")
+            ModelNodeType(
+                type_name=EnumTypeName.CONTRACT_TO_MODEL, description="Test description"
+            )
         assert "category" in str(exc_info.value)
 
     def test_name_pattern_validation(self):
-        """Test that name follows the required pattern."""
-        # Valid patterns
-        valid_names = ["A", "TEST_NODE", "CONTRACT_TO_MODEL", "NODE123", "A_B_C_123"]
+        """Test that type_name uses valid enum values."""
+        # Valid enum values
+        valid_names = [
+            EnumTypeName.CONTRACT_TO_MODEL,
+            EnumTypeName.VALIDATION_ENGINE,
+            EnumTypeName.TEMPLATE_ENGINE,
+        ]
 
         for name in valid_names:
             node_type = ModelNodeType(
-                name=name, description="Test description", category="testing"
+                type_name=name,
+                description="Test description",
+                category=EnumConfigCategory.TESTING,
             )
             assert node_type.type_name == name
 
-        # Invalid patterns
+        # Invalid enum values should raise ValidationError
         invalid_names = [
-            "lowercase",  # Starts with lowercase
-            "123NODE",  # Starts with number
-            "_UNDERSCORE",  # Starts with underscore
-            "node-name",  # Contains hyphen
-            "node.name",  # Contains dot
-            "node name",  # Contains space
+            "INVALID_NODE",  # Not in enum
+            "lowercase",  # Invalid format
+            "123NODE",  # Invalid format
             "",  # Empty string
-            "a",  # Lowercase letter
         ]
 
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
                 ModelNodeType(
-                    name=name, description="Test description", category="testing"
+                    type_name=name,
+                    description="Test description",
+                    category=EnumConfigCategory.TESTING,
                 )
-            assert "pattern" in str(
-                exc_info.value
-            ).lower() or "string_pattern_mismatch" in str(exc_info.value)
+            assert (
+                "type=enum" in str(exc_info.value)
+                or "enum" in str(exc_info.value).lower()
+            )
 
     def test_category_pattern_validation(self):
-        """Test that category follows the required pattern."""
-        # Valid patterns
+        """Test that category uses valid enum values."""
+        # Valid enum categories
         valid_categories = [
-            "a",
-            "test",
-            "generation",
-            "test_category",
-            "category123",
-            "a_b_c_123",
+            EnumConfigCategory.GENERATION,
+            EnumConfigCategory.VALIDATION,
+            EnumConfigCategory.TESTING,
+            EnumConfigCategory.TEMPLATE,
         ]
 
         for category in valid_categories:
             node_type = ModelNodeType(
-                name="TEST_NODE", description="Test description", category=category
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
+                description="Test description",
+                category=category,
             )
             assert node_type.category == category
 
-        # Invalid patterns
+        # Invalid categories should raise ValidationError
         invalid_categories = [
-            "Uppercase",  # Starts with uppercase
-            "123category",  # Starts with number
-            "_underscore",  # Starts with underscore
-            "cat-egory",  # Contains hyphen
-            "cat.egory",  # Contains dot
-            "cat egory",  # Contains space
+            "INVALID_CATEGORY",  # Not in enum
+            "Uppercase",  # Invalid format
+            "123category",  # Invalid format
             "",  # Empty string
         ]
 
         for category in invalid_categories:
             with pytest.raises(ValidationError) as exc_info:
                 ModelNodeType(
-                    name="TEST_NODE", description="Test description", category=category
+                    type_name=EnumTypeName.CONTRACT_TO_MODEL,
+                    description="Test description",
+                    category=category,
                 )
-            assert "pattern" in str(
-                exc_info.value
-            ).lower() or "string_pattern_mismatch" in str(exc_info.value)
+            assert (
+                "type=enum" in str(exc_info.value)
+                or "enum" in str(exc_info.value).lower()
+            )
 
     def test_execution_priority_validation(self):
         """Test that execution_priority is validated within range."""
         # Valid range
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             execution_priority=75,
         )
         assert node_type.execution_priority == 75
 
         # Minimum boundary
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             execution_priority=0,
         )
         assert node_type.execution_priority == 0
 
         # Maximum boundary
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             execution_priority=100,
         )
         assert node_type.execution_priority == 100
@@ -183,18 +202,18 @@ class TestModelNodeType:
         # Below minimum
         with pytest.raises(ValidationError):
             ModelNodeType(
-                name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
                 execution_priority=-1,
             )
 
         # Above maximum
         with pytest.raises(ValidationError):
             ModelNodeType(
-                name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
                 execution_priority=101,
             )
 

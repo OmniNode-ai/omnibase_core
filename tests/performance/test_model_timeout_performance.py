@@ -36,6 +36,7 @@ class TestModelTimeoutPerformance:
             timeout_seconds=30,
             warning_threshold_seconds=10,
             extension_limit_seconds=60,
+            allow_extension=True,
             custom_metadata={"key1": "value1", "key2": 42},
         )
 
@@ -74,7 +75,9 @@ class TestModelTimeoutPerformance:
 
     def test_extension_limit_caching(self):
         """Test that extension_limit_seconds caching improves performance."""
-        timeout = ModelTimeout(timeout_seconds=60, extension_limit_seconds=30)
+        timeout = ModelTimeout(
+            timeout_seconds=60, extension_limit_seconds=30, allow_extension=True
+        )
 
         # Test extension limit access
         def access_extension_limit():
@@ -129,6 +132,7 @@ class TestModelTimeoutPerformance:
             timeout_seconds=30,
             warning_threshold_seconds=10,
             extension_limit_seconds=60,
+            allow_extension=True,
             runtime_category=EnumRuntimeCategory.MODERATE,
             description="Test timeout",
             custom_metadata={"string_val": "test", "numeric_val": 42, "bool_val": True},
@@ -193,6 +197,7 @@ class TestModelTimeoutPerformance:
             timeout_seconds=30,
             warning_threshold_seconds=10,
             extension_limit_seconds=60,
+            allow_extension=True,
             custom_metadata={"key": "value"},
         )
 

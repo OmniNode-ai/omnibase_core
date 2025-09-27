@@ -21,17 +21,17 @@ def test_main_contract_models() -> List[Tuple[str, bool, str]]:
     results = []
 
     try:
-        from src.omnibase_core.enums import EnumNodeType
-        from src.omnibase_core.models.contracts.model_contract_compute import (
+        from omnibase_core.enums import EnumNodeType
+        from omnibase_core.models.contracts.model_contract_compute import (
             ModelContractCompute,
         )
-        from src.omnibase_core.models.contracts.model_contract_effect import (
+        from omnibase_core.models.contracts.model_contract_effect import (
             ModelContractEffect,
         )
-        from src.omnibase_core.models.contracts.model_contract_orchestrator import (
+        from omnibase_core.models.contracts.model_contract_orchestrator import (
             ModelContractOrchestrator,
         )
-        from src.omnibase_core.models.contracts.model_contract_reducer import (
+        from omnibase_core.models.contracts.model_contract_reducer import (
             ModelContractReducer,
         )
 
@@ -119,16 +119,16 @@ def test_working_subcontract_models() -> List[Tuple[str, bool, str]]:
     results = []
 
     try:
-        from src.omnibase_core.models.contracts.subcontracts.model_caching_subcontract import (
+        from omnibase_core.models.contracts.subcontracts.model_caching_subcontract import (
             ModelCachingSubcontract,
         )
-        from src.omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
+        from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
             ModelRoutingSubcontract,
         )
-        from src.omnibase_core.models.contracts.subcontracts.model_state_management_subcontract import (
+        from omnibase_core.models.contracts.subcontracts.model_state_management_subcontract import (
             ModelStateManagementSubcontract,
         )
-        from src.omnibase_core.models.contracts.subcontracts.model_workflow_coordination_subcontract import (
+        from omnibase_core.models.contracts.subcontracts.model_workflow_coordination_subcontract import (
             ModelWorkflowCoordinationSubcontract,
         )
 
@@ -170,14 +170,14 @@ def test_working_supporting_models() -> List[Tuple[str, bool, str]]:
     results = []
 
     try:
-        from src.omnibase_core.models.contracts.model_dependency import ModelDependency
-        from src.omnibase_core.models.contracts.model_filter_conditions import (
+        from omnibase_core.models.contracts.model_dependency import ModelDependency
+        from omnibase_core.models.contracts.model_filter_conditions import (
             ModelFilterConditions,
         )
-        from src.omnibase_core.models.contracts.model_trigger_mappings import (
+        from omnibase_core.models.contracts.model_trigger_mappings import (
             ModelTriggerMappings,
         )
-        from src.omnibase_core.models.contracts.model_workflow_conditions import (
+        from omnibase_core.models.contracts.model_workflow_conditions import (
             ModelWorkflowConditions,
         )
 
@@ -213,8 +213,8 @@ def test_field_validators() -> List[Tuple[str, bool, str]]:
     results = []
 
     try:
-        from src.omnibase_core.enums import EnumNodeType
-        from src.omnibase_core.models.contracts.model_contract_compute import (
+        from omnibase_core.enums import EnumNodeType
+        from omnibase_core.models.contracts.model_contract_compute import (
             ModelContractCompute,
         )
 

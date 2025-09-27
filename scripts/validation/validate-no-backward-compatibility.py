@@ -591,7 +591,9 @@ def main() -> int:
 
     # Validate arguments
     if not args.files and not args.directories:
-        parser.error("Must provide either files or directories to scan")
+        print(
+            "Error: Must provide either files or directories to scan", file=sys.stderr
+        )
         return 1
 
     detector = BackwardCompatibilityDetector()
