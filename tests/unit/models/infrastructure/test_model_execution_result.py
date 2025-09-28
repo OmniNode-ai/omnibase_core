@@ -11,8 +11,8 @@ from uuid import UUID
 
 import pytest
 
-from src.omnibase_core.models.infrastructure.model_duration import ModelDuration
-from src.omnibase_core.models.infrastructure.model_execution_result import (
+from omnibase_core.models.infrastructure.model_duration import ModelDuration
+from omnibase_core.models.infrastructure.model_execution_result import (
     ModelExecutionResult,
     execution_err,
     execution_ok,
@@ -66,7 +66,7 @@ class TestModelExecutionResult:
 
     def test_metadata_initialization(self) -> None:
         """Test creating result with initial metadata."""
-        from src.omnibase_core.models.core import ModelCustomProperties
+        from omnibase_core.models.core import ModelCustomProperties
 
         metadata = ModelCustomProperties()
         metadata.set_custom_string("tool", "test_tool")
@@ -125,11 +125,7 @@ class TestModelExecutionResult:
         assert result.is_completed()
         assert result.end_time is not None
         assert result.duration is not None
-        from src.omnibase_core.models.infrastructure.model_execution_result import (
-            ModelExecutionDuration,
-        )
-
-        assert isinstance(result.duration, ModelExecutionDuration)
+        assert isinstance(result.duration, ModelDuration)
         assert result.duration.total_milliseconds() >= 0
 
     def test_duration_calculations(self) -> None:

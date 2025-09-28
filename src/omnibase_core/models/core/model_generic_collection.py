@@ -9,11 +9,17 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Generic, TypedDict, TypeVar
+from typing import Any, Generic, TypedDict, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    Nameable,
+    Serializable,
+    Validatable,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 
@@ -27,7 +33,13 @@ T = TypeVar(
 
 
 class TypedDictCollectionCreateKwargs(TypedDict, total=False):
-    """Type-safe dictionary for collection creation parameters."""
+    """Type-safe dictionary for collection creation parameters.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
+    """
 
     collection_display_name: str
     collection_id: UUID

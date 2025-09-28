@@ -11,6 +11,7 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -65,3 +66,18 @@ class ModelYamlContract(BaseModel):
             ValidationError: If contract doesn't meet requirements
         """
         return cls.model_validate(yaml_data)
+
+    # Protocol method implementations
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)

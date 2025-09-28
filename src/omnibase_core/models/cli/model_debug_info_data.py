@@ -6,7 +6,7 @@ TypedDict for debug information to replace loose Any typing.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class TypedDictModelDebugInfoData(TypedDict, total=False):

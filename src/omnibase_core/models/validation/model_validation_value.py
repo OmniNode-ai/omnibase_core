@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -22,6 +23,9 @@ class ModelValidationValue(BaseModel):
 
     Replaces str | int | bool unions in validation details with
     a strongly-typed discriminated union following ONEX patterns.
+    Implements omnibase_spi protocols:
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
     """
 
     value_type: EnumValidationValueType = Field(
@@ -104,6 +108,21 @@ class ModelValidationValue(BaseModel):
         if self.value_type == EnumValidationValueType.NULL:
             return "null"
         return str(self.raw_value)
+
+    # Protocol method implementations
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

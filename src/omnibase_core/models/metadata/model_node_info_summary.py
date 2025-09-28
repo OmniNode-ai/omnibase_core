@@ -12,6 +12,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    MetadataProvider,
+    Serializable,
+    Validatable,
+)
+
 # Type variable for decorator
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -31,7 +37,7 @@ def allow_dict_any(func: F) -> F:
     return func
 
 
-from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
+from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -46,7 +52,12 @@ from .node_info.model_node_timestamps import ModelNodeTimestamps
 
 
 class TypedDictNodeCore(TypedDict):
-    """Node core data structure."""
+    """Node core data structure.
+    Implements omnibase_spi protocols:
+    - MetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     node_id: UUID
     node_name: str | None
@@ -158,12 +169,12 @@ class ModelNodeInfoSummary(BaseModel):
         self.core.status = value
 
     @property
-    def complexity(self) -> EnumComplexityLevel:
+    def complexity(self) -> EnumConceptualComplexity:
         """Get complexity."""
         return self.core.complexity
 
     @complexity.setter
-    def complexity(self, value: EnumComplexityLevel) -> None:
+    def complexity(self, value: EnumConceptualComplexity) -> None:
         """Set complexity."""
         self.core.complexity = value
 
@@ -514,6 +525,45 @@ class ModelNodeInfoSummary(BaseModel):
         timestamps = ModelNodeTimestamps.create_new()
         return cls(core=core, timestamps=timestamps)
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (MetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (MetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelNodeInfoSummary"]

@@ -21,6 +21,10 @@ from omnibase_core.models.intelligence.model_agent_debug_intelligence import (
     ModelSolutionApproach,
     ModelSolutionOutcome,
 )
+from omnibase_core.models.metadata.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +36,14 @@ class UtilityDebugIntelligenceCapture:
         self,
         agent_name: str,
         agent_type: EnumAgentType,
-        agent_version: str = "1.0.0",
+        agent_version: ModelSemVer = parse_semver_from_string("1.0.0"),
     ):
         """Initialize debug intelligence capture for an agent.
 
         Args:
             agent_name: Name of the agent
             agent_type: Type/category of the agent
-            agent_version: Version of the agent
+            agent_version: Semantic version of the agent
         """
         self.agent_name = agent_name
         self.agent_type = agent_type
@@ -127,7 +131,7 @@ class UtilityDebugIntelligenceCapture:
 
         # Enhanced RAG/database integration point
         # This provides the interface for future RAG system integration
-        similar_solutions = await self._query_knowledge_base(
+        similar_solutions = self._query_knowledge_base(
             query,
             offset,
             min_similarity_score,
@@ -485,6 +489,17 @@ class UtilityDebugIntelligenceCapture:
                 found_terms.append(term)
 
         return found_terms[:10]  # Limit to top 10 terms
+
+    def _query_knowledge_base(
+        self,
+        query: ModelDebugIntelligenceQuery,
+        offset: int = 0,
+        min_similarity_score: float = 0.5,
+    ) -> list[ModelDebugIntelligenceResult]:
+        """Query knowledge base for similar problems."""
+        # TODO: Replace with actual RAG/database query
+        # For now, delegate to similarity search simulation
+        return self._simulate_similarity_search(query, offset, min_similarity_score)
 
     def _simulate_similarity_search(
         self,

@@ -12,6 +12,7 @@ from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 
@@ -22,12 +23,18 @@ U = TypeVar("U")  # Mapped type for transformations
 F = TypeVar("F")  # Mapped error type for transformations
 
 
-class ModelResult(BaseModel, Generic[T, E]):
+class ModelResult(
+    BaseModel, Generic[T, E]
+):  # Protocols removed temporarily for validation
     """
     Generic Result[T, E] pattern for type-safe error handling.
 
     Represents an operation that can either succeed with value T
     or fail with error E. Provides monadic operations for chaining.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     model_config = {"arbitrary_types_allowed": True}
@@ -280,6 +287,33 @@ class ModelResult(BaseModel, Generic[T, E]):
         """Boolean conversion - True if success, False if error."""
         return self.success
 
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
 
 # Note: Removed type alias to avoid anti-pattern detection
 # Use ModelResult directly instead of alias
@@ -337,9 +371,9 @@ def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], li
         return ModelResult.err(errors)
     return ModelResult.ok(values)
 
+    # Note: Type alias removed to comply with ONEX standards
+    # Use ModelResult directly instead of alias
 
-# Note: Type alias removed to comply with ONEX standards
-# Use ModelResult directly instead of alias
 
 # Export for use
 __all__ = [

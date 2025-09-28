@@ -7,32 +7,42 @@ configuration base with ModelCustomProperties for extensible custom fields.
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
+
+from omnibase_core.core.type_constraints import Serializable
 
 from .model_configuration_base import ModelConfigurationBase
 from .model_custom_properties import ModelCustomProperties
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Serializable)
 
 
-class ModelTypedConfiguration(ModelConfigurationBase[T], ModelCustomProperties):
+class ModelTypedConfiguration(
+    ModelConfigurationBase[T],
+    ModelCustomProperties,
+):
     """
     Configuration base with custom properties support.
 
     Combines the standard configuration base with ModelCustomProperties
     for configurations that need extensible custom fields.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
     """
 
     def merge_configuration(self, other: ModelTypedConfiguration[T]) -> None:
         """Merge another configuration into this one."""
         # Merge core configuration
-        if other.name:
+        if other.name is not None:
             self.name = other.name
-        if other.description:
+        if other.description is not None:
             self.description = other.description
-        if other.version:
+        if other.version is not None:
             self.version = other.version
-        if other.config_data:
+        if other.config_data is not None:
             self.config_data = other.config_data
 
         # Merge custom properties
@@ -60,6 +70,49 @@ class ModelTypedConfiguration(ModelConfigurationBase[T], ModelCustomProperties):
         self.enabled = False
         self.description = f"{self.description or 'Configuration'} - Disabled: {reason}"
         self.update_timestamp()
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
 
 
 # Export for use

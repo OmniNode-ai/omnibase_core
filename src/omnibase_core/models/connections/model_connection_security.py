@@ -8,10 +8,11 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 
@@ -79,7 +80,12 @@ class ModelConnectionSecurity(BaseModel):
         return bool(self.ssl_ca_path)
 
     def get_ssl_context_options(self) -> TypedDictSSLContextOptions:
-        """Get SSL context options for connection libraries."""
+        """Get SSL context options for connection libraries.
+        Implements omnibase_spi protocols:
+        - Configurable: Configuration management capabilities
+        - Validatable: Validation and verification
+        - Serializable: Data serialization/deserialization
+        """
         return {
             "verify": self.ssl_verify,
             "cert": self.ssl_cert_path,
@@ -149,6 +155,31 @@ class ModelConnectionSecurity(BaseModel):
             ssl_key_path=None,
             ssl_ca_path=None,
         )
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

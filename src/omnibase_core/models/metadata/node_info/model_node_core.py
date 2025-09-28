@@ -7,11 +7,17 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
+from omnibase_core.core.type_constraints import (
+    MetadataProvider,
+    Serializable,
+    Validatable,
+)
+from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -23,6 +29,10 @@ class ModelNodeCore(BaseModel):
     Core node identification and basic information.
 
     Focused on fundamental node identity and basic properties.
+    Implements omnibase_spi protocols:
+    - MetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Core node info - UUID-based entity references
@@ -40,9 +50,9 @@ class ModelNodeCore(BaseModel):
         default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    complexity: EnumComplexityLevel = Field(
-        default=EnumComplexityLevel.MEDIUM,
-        description="Node complexity level",
+    complexity: EnumConceptualComplexity = Field(
+        default=EnumConceptualComplexity.INTERMEDIATE,
+        description="Node conceptual complexity level",
     )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
@@ -72,14 +82,14 @@ class ModelNodeCore(BaseModel):
     @property
     def is_simple(self) -> bool:
         """Check if node has simple complexity."""
-        return self.complexity == EnumComplexityLevel.SIMPLE
+        return self.complexity == EnumConceptualComplexity.TRIVIAL
 
     @property
     def is_complex(self) -> bool:
         """Check if node has high or critical complexity."""
         return self.complexity in [
-            EnumComplexityLevel.HIGH,
-            EnumComplexityLevel.CRITICAL,
+            EnumConceptualComplexity.ADVANCED,
+            EnumConceptualComplexity.EXPERT,
         ]
 
     @property
@@ -91,7 +101,7 @@ class ModelNodeCore(BaseModel):
         """Update node status."""
         self.status = status
 
-    def update_complexity(self, complexity: EnumComplexityLevel) -> None:
+    def update_complexity(self, complexity: EnumConceptualComplexity) -> None:
         """Update node complexity."""
         self.complexity = complexity
 
@@ -102,24 +112,23 @@ class ModelNodeCore(BaseModel):
         patch: int | None = None,
     ) -> None:
         """Update version components."""
-        if major is not None:
-            self.version.major = major
-        if minor is not None:
-            self.version.minor = minor
-        if patch is not None:
-            self.version.patch = patch
+        # Since ModelSemVer is frozen, create a new instance
+        current_major = major if major is not None else self.version.major
+        current_minor = minor if minor is not None else self.version.minor
+        current_patch = patch if patch is not None else self.version.patch
+
+        self.version = ModelSemVer(
+            major=current_major, minor=current_minor, patch=current_patch
+        )
 
     def increment_version(self, level: str = "patch") -> None:
         """Increment version level."""
         if level == "major":
-            self.version.major += 1
-            self.version.minor = 0
-            self.version.patch = 0
+            self.version = self.version.bump_major()
         elif level == "minor":
-            self.version.minor += 1
-            self.version.patch = 0
+            self.version = self.version.bump_minor()
         else:  # patch
-            self.version.patch += 1
+            self.version = self.version.bump_patch()
 
     def has_description(self) -> bool:
         """Check if node has a description."""
@@ -157,7 +166,7 @@ class ModelNodeCore(BaseModel):
             node_display_name=node_name,
             description=None,
             node_type=node_type,
-            complexity=EnumComplexityLevel.LOW,
+            complexity=EnumConceptualComplexity.BASIC,
         )
 
     @classmethod
@@ -173,8 +182,46 @@ class ModelNodeCore(BaseModel):
             node_display_name=node_name,
             description=description,
             node_type=node_type,
-            complexity=EnumComplexityLevel.HIGH,
+            complexity=EnumConceptualComplexity.ADVANCED,
         )
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (MetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (MetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

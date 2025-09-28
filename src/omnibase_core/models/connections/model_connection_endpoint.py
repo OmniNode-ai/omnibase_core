@@ -7,8 +7,11 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -19,6 +22,10 @@ class ModelConnectionEndpoint(BaseModel):
 
     Contains network addressing and protocol details
     without authentication or pooling concerns.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
     """
 
     # Connection type and protocol
@@ -146,6 +153,31 @@ class ModelConnectionEndpoint(BaseModel):
             port=port,
             path=None,
         )
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

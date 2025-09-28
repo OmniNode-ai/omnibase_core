@@ -10,12 +10,25 @@ from typing import TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    Nameable,
+    Serializable,
+    Validatable,
+)
+
 from .model_generic_factory import ModelGenericFactory
 
 
 # TypedDict for model capability factory specific kwargs
 class TypedDictModelCapabilityFactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for model capability factory parameters."""
+    """Typed dictionary for model capability factory parameters.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
+    """
 
     name: str
     value: str
@@ -85,7 +98,6 @@ class ModelCapabilityFactory(ModelGenericFactory[T]):
         return self._build_standard_capability(**kwargs)
 
 
-# Export model capability factory class and types
 __all__ = [
     "ModelCapabilityFactory",
     "TypedDictModelCapabilityFactoryKwargs",

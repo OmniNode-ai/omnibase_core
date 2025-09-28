@@ -7,7 +7,6 @@ Models for system infrastructure, execution, and operational concerns.
 from .model_cli_result_data import ModelCliResultData
 from .model_duration import ModelDuration
 from .model_environment_variables import ModelEnvironmentVariables
-from .model_execution_duration import ModelExecutionDuration
 from .model_execution_result import (
     ModelExecutionResult,
     execution_err,
@@ -31,7 +30,6 @@ __all__ = [
     "ModelCliResultData",
     "ModelDuration",
     "ModelEnvironmentVariables",
-    "ModelExecutionDuration",
     "ModelExecutionResult",
     "ModelExecutionSummary",
     "ModelMetric",

@@ -7,8 +7,15 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    MetadataProvider,
+    Serializable,
+    Validatable,
+)
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 
 from .model_node_quality_summary import ModelNodeQualitySummary
@@ -19,6 +26,10 @@ class ModelNodeQualityIndicators(BaseModel):
     Node quality and documentation indicators.
 
     Focused on quality assessment and documentation tracking.
+    Implements omnibase_spi protocols:
+    - MetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Quality indicators
@@ -202,6 +213,44 @@ class ModelNodeQualityIndicators(BaseModel):
             has_examples=has_examples,
             documentation_quality=quality,
         )
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (MetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (MetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

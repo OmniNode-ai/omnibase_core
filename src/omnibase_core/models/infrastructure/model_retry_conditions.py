@@ -7,7 +7,11 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
 
 
 class ModelRetryConditions(BaseModel):
@@ -16,6 +20,10 @@ class ModelRetryConditions(BaseModel):
 
     Contains rules for when retries should be attempted
     without configuration or execution tracking concerns.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     # Retry conditions
@@ -118,6 +126,33 @@ class ModelRetryConditions(BaseModel):
             retry_on_exceptions=["TimeoutError"],
             retry_on_status_codes=[503],  # Only service unavailable
         )
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

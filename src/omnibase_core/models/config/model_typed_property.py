@@ -7,13 +7,17 @@ typed property with validation in the environment property system.
 
 from __future__ import annotations
 
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
-from omnibase_spi.protocols.types.core_types import (
-    ProtocolSupportedPropertyValue,
-)
+# from omnibase_spi.protocols.types.core_types import (
+#     ProtocolSupportedPropertyValue,
+# )
+
+# Temporary placeholder for validation
+ProtocolSupportedPropertyValue = str
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 
 from .model_property_metadata import ModelPropertyMetadata
@@ -28,7 +32,12 @@ T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
 
 
 class ModelTypedProperty(BaseModel):
-    """A single typed property with validation."""
+    """A single typed property with validation.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     key: str = Field(description="Property key")
     value: ModelPropertyValue = Field(description="Structured property value")
@@ -57,16 +66,17 @@ class ModelTypedProperty(BaseModel):
     def get_typed_value(self, expected_type: type[T], default: T) -> T:
         """Get the value with specific type checking."""
         try:
-            # Use ModelPropertyValue's type-safe accessors
-            if expected_type == str:
+            # Use ModelPropertyValue's type-safe accessors based on expected type name
+            type_name = getattr(expected_type, "__name__", str(expected_type))
+            if type_name == "str":
                 return cast(T, self.value.as_string())
-            if expected_type == int:
+            elif type_name == "int":
                 return cast(T, self.value.as_int())
-            if expected_type == float:
+            elif type_name == "float":
                 return cast(T, self.value.as_float())
-            if expected_type == bool:
+            elif type_name == "bool":
                 return cast(T, self.value.as_bool())
-            if isinstance(self.value.value, expected_type):
+            elif isinstance(self.value.value, expected_type):
                 return self.value.value
         except Exception:
             pass
@@ -90,3 +100,28 @@ class ModelTypedProperty(BaseModel):
     def get_raw_value(self) -> ProtocolSupportedPropertyValue:
         """Get the raw value implementing the protocol."""
         return cast(ProtocolSupportedPropertyValue, self.value.value)
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

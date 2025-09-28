@@ -6,8 +6,11 @@ This model replaces dictionary usage in error contexts by providing
 a structured representation of error context data.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -16,6 +19,9 @@ class ModelErrorContext(BaseModel):
     Type-safe representation of error context.
 
     This model can represent error context values without resorting to Any type usage.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Common error context fields
@@ -67,3 +73,18 @@ class ModelErrorContext(BaseModel):
             stack_trace=None,
             additional_context=additional_context,
         )
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

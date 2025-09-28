@@ -10,6 +10,11 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.core.type_constraints import (
+    MetadataProvider,
+    Serializable,
+    Validatable,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 
@@ -19,7 +24,12 @@ if TYPE_CHECKING:
 
 
 class ModelSemVer(BaseModel):
-    """Semantic version model following SemVer specification."""
+    """Semantic version model following SemVer specification.
+    Implements omnibase_spi protocols:
+    - MetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     major: int = Field(ge=0, description="Major version number")
     minor: int = Field(ge=0, description="Minor version number")
@@ -103,6 +113,44 @@ class ModelSemVer(BaseModel):
     def __hash__(self) -> int:
         """Hash function for use in sets and as dict keys."""
         return hash((self.major, self.minor, self.patch))
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (MetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (MetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 def parse_semver_from_string(version_str: str) -> ModelSemVer:

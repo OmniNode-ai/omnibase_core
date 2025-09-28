@@ -7,17 +7,24 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cli_value import ModelCliValue
 
 
 class ModelCliResultData(BaseModel):
-    """CLI result data model with typed fields."""
+    """CLI result data model with typed fields.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    """
 
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
@@ -35,6 +42,33 @@ class ModelCliResultData(BaseModel):
     status_code: int = Field(description="Status code")
     warnings: list[str] = Field(description="Warning messages")
     metadata: ModelCustomProperties = Field(description="Execution metadata")
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

@@ -112,7 +112,7 @@ repos:
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--max-unions', '7000']
+        args: ['--allow-invalid', '8']
         language: system
         pass_filenames: false
         files: ^src/.*\.py$

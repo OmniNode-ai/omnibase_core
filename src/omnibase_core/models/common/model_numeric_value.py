@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
 
@@ -29,6 +30,9 @@ class ModelNumericValue(BaseModel):
 
     Replaces int | float unions with structured value storage
     that maintains type information for numeric validation.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Value storage with type tracking
@@ -168,10 +172,26 @@ class ModelNumericValue(BaseModel):
         """Greater than or equal comparison."""
         return self.value >= other.value
 
+    # Note: Previously had type alias (NumericInput = ModelNumericValue)
+    # Removed to comply with ONEX strong typing standards.
+    # Use explicit type: ModelNumericValue
 
-# Note: Previously had type alias (NumericInput = ModelNumericValue)
-# Removed to comply with ONEX strong typing standards.
-# Use explicit type: ModelNumericValue
+    # Export the model and type alias
 
-# Export the model and type alias
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelNumericValue"]

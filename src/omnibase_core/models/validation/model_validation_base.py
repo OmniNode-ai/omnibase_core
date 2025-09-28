@@ -7,7 +7,11 @@ methods that can be inherited by any model requiring validation.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Serializable
 
 from .model_validation_container import ModelValidationContainer
 
@@ -18,6 +22,9 @@ class ModelValidationBase(BaseModel):
 
     This provides a standard validation container and common validation
     methods that can be inherited by any model requiring validation.
+    Implements omnibase_spi protocols:
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
     """
 
     validation: ModelValidationContainer = Field(
@@ -25,9 +32,12 @@ class ModelValidationBase(BaseModel):
         description="Validation results container",
     )
 
-    def is_valid(self) -> bool:
-        """Check if model is valid (no validation errors)."""
-        return self.validation.is_valid()
+    def validate_instance(self) -> bool:
+        """Check if model is valid (no validation errors) (Validatable protocol)."""
+        try:
+            return self.validation.validate_instance()
+        except Exception:
+            return False
 
     def has_validation_errors(self) -> bool:
         """Check if there are validation errors."""
@@ -190,7 +200,13 @@ class ModelValidationBase(BaseModel):
         self.validate_model_data()
 
         # Return success status
-        return self.is_valid()
+        return self.validate_instance()
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

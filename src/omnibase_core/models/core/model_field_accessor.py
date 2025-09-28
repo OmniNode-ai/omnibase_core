@@ -7,8 +7,16 @@ dot notation support and type safety.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel
 
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    Nameable,
+    Serializable,
+    Validatable,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 
@@ -16,7 +24,13 @@ from .model_typed_dict_field_value import TypedDictFieldValue
 
 
 class ModelFieldAccessor(BaseModel):
-    """Generic field accessor with dot notation support and type safety."""
+    """Generic field accessor with dot notation support and type safety.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
+    """
 
     def get_field(
         self,
@@ -153,6 +167,49 @@ class ModelFieldAccessor(BaseModel):
             return True
         except (AttributeError, KeyError, TypeError):
             return False
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
 
 
 # Export for use

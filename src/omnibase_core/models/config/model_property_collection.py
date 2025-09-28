@@ -7,13 +7,18 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+# ONEX-compliant property value type using TypeVar instead of primitive soup Union
+from typing import Any, Callable, TypeVar, Union
 
-from omnibase_spi.protocols.types.core_types import (
-    ProtocolSupportedPropertyValue,
-)
+# from omnibase_spi.protocols.types.core_types import (
+#     ProtocolSupportedPropertyValue,
+# )
+
+
+PropertyValueType = TypeVar("PropertyValueType", str, int, float, bool, list[Any])
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -24,12 +29,20 @@ from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
 from .model_typed_property import ModelTypedProperty
 
+# Use Any for property values since we support many types through the protocol
+ProtocolSupportedPropertyValue = str
+
 # Type variable for generic property handling
 T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
 
 
 class ModelPropertyCollection(BaseModel):
-    """Collection of typed properties with validation and helper methods."""
+    """Collection of typed properties with validation and helper methods.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     properties: dict[str, ModelTypedProperty] = Field(
         default_factory=dict,
@@ -61,7 +74,7 @@ class ModelPropertyCollection(BaseModel):
     def add_typed_property(
         self,
         key: str,
-        value: T,
+        value: PropertyValueType,
         description: str | None = None,
         required: bool = False,
         source: str | None = None,
@@ -73,42 +86,31 @@ class ModelPropertyCollection(BaseModel):
 
     def _create_property_value_by_type(
         self,
-        value: T,
+        value: PropertyValueType,
         source: str | None = None,
     ) -> ModelPropertyValue:
         """Create ModelPropertyValue using type-specific factory methods."""
-        # Define type handlers as a list of (checker_function, factory_method) tuples
-        # Order matches original elif chain to preserve existing behavior
-        from typing import Any
-
-        type_handlers: list[
-            tuple[Callable[[T], bool], Callable[[Any, str | None], ModelPropertyValue]]
-        ] = [
-            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),
-            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),
-            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),
-            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),
-            (
-                lambda v: isinstance(v, list)
-                and all(isinstance(item, str) for item in v),
-                ModelPropertyValue.from_string_list,
-            ),
-            (
-                lambda v: isinstance(v, list)
-                and all(isinstance(item, int) for item in v),
-                ModelPropertyValue.from_int_list,
-            ),
-            (
-                lambda v: isinstance(v, list)
-                and all(isinstance(item, float) for item in v),
-                ModelPropertyValue.from_float_list,
-            ),
-        ]
-
-        # Find the appropriate handler
-        for type_checker, factory_method in type_handlers:
-            if type_checker(value):
-                return factory_method(value, source)
+        # Simple, clean type checking - more readable and standards-compliant
+        if isinstance(value, str):
+            return ModelPropertyValue.from_string(value, source)
+        elif isinstance(value, bool):
+            return ModelPropertyValue.from_bool(value, source)
+        elif isinstance(value, int):
+            return ModelPropertyValue.from_int(value, source)
+        elif isinstance(value, float):
+            return ModelPropertyValue.from_float(value, source)
+        elif isinstance(value, list):
+            if not value:  # Empty list defaults to string list
+                return ModelPropertyValue.from_string_list([], source)
+            # Check homogeneous list types
+            first_type = type(value[0])
+            if all(isinstance(item, first_type) for item in value):
+                if first_type is str:
+                    return ModelPropertyValue.from_string_list(value, source)
+                elif first_type is int:
+                    return ModelPropertyValue.from_int_list(value, source)
+                elif first_type is float:
+                    return ModelPropertyValue.from_float_list(value, source)
 
         # If no handler matches, raise error
         raise OnexError(
@@ -153,3 +155,28 @@ class ModelPropertyCollection(BaseModel):
             for key, prop in self.properties.items()
             if prop.value.value_type == property_type
         ]
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

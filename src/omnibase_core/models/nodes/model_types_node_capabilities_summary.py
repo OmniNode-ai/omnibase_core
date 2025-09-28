@@ -6,7 +6,7 @@ Replaces dict[str, Any] return type with structured typing.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class NodeCapabilitiesSummaryType(TypedDict):

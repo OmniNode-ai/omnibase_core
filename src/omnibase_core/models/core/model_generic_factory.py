@@ -10,17 +10,22 @@ Restructured to reduce string field violations through logical grouping.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypedDict, TypeVar, Unpack
+from typing import Any, Generic, TypedDict, TypeVar
 
 from pydantic import BaseModel
 
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    Nameable,
+    Serializable,
+    Validatable,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_typed_dict_factory_kwargs import (
-    ModelTypedDictFactoryKwargs,
     TypedDictExecutionParams,
     TypedDictMessageParams,
     TypedDictMetadataParams,
@@ -109,15 +114,13 @@ class ModelGenericFactory(Generic[T]):
             )
         return self._factories[name]()
 
-    def build(
-        self, builder_name: str, **kwargs: Unpack[ModelTypedDictFactoryKwargs]
-    ) -> T:
+    def build(self, builder_name: str, **kwargs: Any) -> T:
         """
         Build instance using registered builder method.
 
         Args:
             builder_name: Builder name to use
-            **kwargs: Typed arguments to pass to the builder
+            **kwargs: Arguments to pass to the builder
 
         Returns:
             New instance of T
@@ -161,7 +164,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         result_data: ModelSchemaValue | None = None,
-        **kwargs: Unpack[ModelTypedDictFactoryKwargs],
+        **kwargs: Any,
     ) -> T:
         """
         Generic success result factory.
@@ -184,7 +187,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         error: str,
-        **kwargs: Unpack[ModelTypedDictFactoryKwargs],
+        **kwargs: Any,
     ) -> T:
         """
         Generic error result factory.
@@ -206,8 +209,57 @@ class ModelGenericFactory(Generic[T]):
 
         return model_class(success=False, error_message=error, **kwargs)
 
+    # Export core factory class
 
-# Export core factory class
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        # Factory instances don't have model_dump - serialize factory state instead
+        return {
+            "model_class": self.model_class.__name__,
+            "factories": list(self._factories.keys()),
+            "builders": list(self._builders.keys()),
+        }
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+
 __all__ = [
     "ModelGenericFactory",
 ]

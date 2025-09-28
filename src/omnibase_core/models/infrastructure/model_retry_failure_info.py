@@ -8,8 +8,11 @@ with structured validation and proper type handling for retry execution failures
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
 
 
 class ModelRetryFailureInfo(BaseModel):
@@ -18,6 +21,10 @@ class ModelRetryFailureInfo(BaseModel):
 
     Replaces dict[str, str | int | None] with structured failure information
     that maintains type safety for retry execution debugging.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     # Failure details
@@ -68,6 +75,34 @@ class ModelRetryFailureInfo(BaseModel):
 
         return "; ".join(parts)
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+
 __all__ = ["ModelRetryFailureInfo"]

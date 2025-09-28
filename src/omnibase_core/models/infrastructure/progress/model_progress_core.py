@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
@@ -22,6 +23,10 @@ class ModelProgressCore(BaseModel):
     Core progress tracking with percentage, steps, and phase management.
 
     Focused on fundamental progress tracking without timing or milestone complexity.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     # Core progress tracking
@@ -69,7 +74,7 @@ class ModelProgressCore(BaseModel):
 
     @field_validator("current_step")
     @classmethod
-    def validate_current_step(cls, v: int, info: Any) -> int:
+    def validate_current_step(cls, v: int, info: ValidationInfo) -> int:
         """Validate current step doesn't exceed total steps."""
         if "total_steps" in info.data and info.data["total_steps"] is not None:
             total = info.data["total_steps"]
@@ -166,6 +171,35 @@ class ModelProgressCore(BaseModel):
             total_steps=total_steps,
             current_phase=phases[0] if phases else EnumExecutionPhase.INITIALIZATION,
         )
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        # Explicit typing to ensure MyPy recognizes the return type
+        result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
+        return result
 
 
 # Export for use

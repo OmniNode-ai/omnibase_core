@@ -8,12 +8,15 @@ import shutil
 from pathlib import Path
 from typing import cast
 
+from omnibase_core.models.validation.model_migration_conflict_union import (
+    ModelMigrationConflictUnion,
+)
+
 from .migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
     TypedDictMigrationStepDict,
 )
-from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_migration_plan import ModelMigrationPlan
 from .model_migration_result import ModelMigrationResult
 from .validation_utils import (

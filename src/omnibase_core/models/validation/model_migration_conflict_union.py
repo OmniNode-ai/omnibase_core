@@ -12,8 +12,7 @@ from typing import Any
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
-
-from .migration_types import (
+from omnibase_core.validation.migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
 )

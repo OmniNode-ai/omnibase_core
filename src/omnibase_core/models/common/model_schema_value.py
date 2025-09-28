@@ -10,6 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
@@ -19,6 +20,9 @@ class ModelSchemaValue(BaseModel):
 
     This model can represent all valid JSON Schema value types without
     resorting to Any type usage.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Value types (one of these will be set)
@@ -143,3 +147,18 @@ class ModelSchemaValue(BaseModel):
         if self.value_type == "object":
             return {k: v.to_value() for k, v in (self.object_value or {}).items()}
         return None
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

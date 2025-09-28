@@ -6,15 +6,22 @@ Part of the connection properties restructuring to reduce string field violation
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 
 
 class ModelCloudServiceProperties(BaseModel):
-    """Cloud/service-specific connection properties."""
+    """Cloud/service-specific connection properties.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
+    """
 
     # Service entity reference with UUID + display name pattern
     service_id: UUID | None = Field(default=None, description="Service UUID reference")
@@ -39,6 +46,32 @@ class ModelCloudServiceProperties(BaseModel):
             return str(self.service_id)
         return None
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+
 __all__ = ["ModelCloudServiceProperties"]

@@ -8,6 +8,8 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import Any
+
 # Import models from individual files following ONEX one-model-per-file architecture
 from .model_computation_input_data import ModelComputationInputData
 from .model_computation_output_data import ModelComputationOutputData

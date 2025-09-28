@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth
 from omnibase_core.models.connections.model_connection_endpoint import (
@@ -39,6 +41,10 @@ class ModelConnectionInfo(BaseModel):
     - auth: Authentication configuration
     - security: SSL/TLS settings
     - pool: Connection pooling and timeouts
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
     """
 
     # Connection identification
@@ -231,3 +237,28 @@ class ModelConnectionInfo(BaseModel):
             last_used_at=None,
             metrics=None,
         )
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)

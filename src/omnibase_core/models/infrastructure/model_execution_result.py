@@ -14,13 +14,14 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cli_result_data import ModelCliResultData
 from .model_cli_value import ModelCliValue
-from .model_execution_duration import ModelExecutionDuration
+from .model_duration import ModelDuration
 from .model_execution_summary import ModelExecutionSummary
 from .model_result import ModelResult
 
@@ -40,6 +41,10 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
     - Warning collection
     - Metadata storage
     - CLI execution result formatting
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     execution_id: UUID = Field(
@@ -54,7 +59,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
     end_time: datetime | None = Field(None, description="Execution end time")
 
-    duration: ModelExecutionDuration | None = Field(
+    duration: ModelDuration | None = Field(
         None,
         description="Execution duration",
     )
@@ -180,6 +185,99 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         )
         return instance  # type: ignore[return-value]
 
+    @classmethod
+    def create_cli_success_with_output_data(
+        cls,
+        output_data: Any = None,
+        tool_id: UUID | None = None,
+        tool_display_name: str | None = None,
+        execution_time_ms: float | None = None,
+        **kwargs: Any,
+    ) -> ModelExecutionResult[Any, str]:
+        """
+        Create successful CLI execution result with ModelCliExecutionResult compatibility.
+
+        This method provides full compatibility with ModelCliExecutionResult.create_success()
+        while leveraging the enhanced capabilities of ModelExecutionResult.
+
+        Args:
+            output_data: Tool execution output (any type)
+            tool_id: UUID of executed tool
+            tool_display_name: Human-readable name of executed tool
+            execution_time_ms: Execution duration
+            **kwargs: Additional fields
+
+        Returns:
+            Success result instance with CLI compatibility
+        """
+        metadata = kwargs.pop("metadata", ModelCustomProperties())
+        if not isinstance(metadata, ModelCustomProperties):
+            metadata = ModelCustomProperties.from_metadata(metadata)
+
+        if tool_display_name:
+            metadata.set_custom_string("tool_display_name", tool_display_name)
+        if tool_id:
+            metadata.set_custom_string("tool_id", str(tool_id))
+        if execution_time_ms is not None:
+            metadata.set_custom_number("execution_time_ms", float(execution_time_ms))
+
+        instance = cls(
+            success=True,
+            value=output_data,
+            error=None,
+            execution_id=kwargs.pop("execution_id", uuid4()),
+            metadata=metadata,
+            **kwargs,
+        )
+        return instance  # type: ignore[return-value]
+
+    @classmethod
+    def create_cli_error_with_output_data(
+        cls,
+        error_message: str,
+        tool_id: UUID | None = None,
+        tool_display_name: str | None = None,
+        status_code: int = 1,
+        output_data: Any = None,
+        **kwargs: Any,
+    ) -> ModelExecutionResult[Any, str]:
+        """
+        Create error CLI execution result with ModelCliExecutionResult compatibility.
+
+        This method provides full compatibility with ModelCliExecutionResult.create_error()
+        while leveraging the enhanced capabilities of ModelExecutionResult.
+
+        Args:
+            error_message: Description of the error
+            tool_id: UUID of tool that failed
+            tool_display_name: Human-readable name of tool that failed
+            status_code: Numeric error code
+            output_data: Any partial output data
+            **kwargs: Additional fields
+
+        Returns:
+            Error result instance with CLI compatibility
+        """
+        metadata = kwargs.pop("metadata", ModelCustomProperties())
+        if not isinstance(metadata, ModelCustomProperties):
+            metadata = ModelCustomProperties.from_metadata(metadata)
+
+        if tool_display_name:
+            metadata.set_custom_string("tool_display_name", tool_display_name)
+        if tool_id:
+            metadata.set_custom_string("tool_id", str(tool_id))
+        metadata.set_custom_number("status_code", float(status_code))
+
+        instance = cls(
+            success=False,
+            value=output_data,  # Allow partial output data on errors
+            error=error_message,
+            execution_id=kwargs.pop("execution_id", uuid4()),
+            metadata=metadata,
+            **kwargs,
+        )
+        return instance  # type: ignore[return-value]
+
     def add_warning(self, warning: str) -> None:
         """Add a warning message if not already present."""
         if warning not in self.warnings:
@@ -208,7 +306,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
         if self.duration is None:
             elapsed = self.end_time - self.start_time
-            self.duration = ModelExecutionDuration(
+            self.duration = ModelDuration(
                 milliseconds=int(elapsed.total_seconds() * 1000),
             )
 
@@ -285,6 +383,33 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         duration_info = f" (duration: {self.duration})" if self.duration else ""
         warning_info = f" ({len(self.warnings)} warnings)" if self.warnings else ""
         return f"{base_repr}{duration_info}{warning_info}"
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Convenience type aliases for common execution result patterns

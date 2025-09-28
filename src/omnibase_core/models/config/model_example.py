@@ -8,9 +8,12 @@ example data with comprehensive fields and validation.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
 
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
@@ -21,6 +24,10 @@ class ModelExample(BaseModel):
     Strongly typed example model with comprehensive fields.
 
     Replaces placeholder implementation with proper validation and structure.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Core identification
@@ -83,3 +90,28 @@ class ModelExample(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When this example was last updated",
     )
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

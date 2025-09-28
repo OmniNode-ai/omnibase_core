@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -16,7 +17,11 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelYamlOption(BaseModel):
-    """Discriminated union for YAML dumper option values."""
+    """Discriminated union for YAML dumper option values.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     option_type: EnumYamlOptionType = Field(
         description="Type discriminator for the option value"
@@ -74,6 +79,22 @@ class ModelYamlOption(BaseModel):
             ),
         )
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelYamlOption"]

@@ -6,8 +6,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from omnibase_core.models.validation.model_migration_conflict_union import (
+    ModelMigrationConflictUnion,
+)
+
 from .migration_types import TypedDictMigrationStepDict
-from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .validation_utils import ProtocolInfo
 
 

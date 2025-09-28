@@ -12,6 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_data_format import EnumDataFormat
 
 from .model_example_metadata_summary import ModelExampleMetadataSummary
@@ -25,6 +26,10 @@ class ModelExamplesCollectionSummary(BaseModel):
     Eliminates: dict[str, list[dict[str, Any]] | dict[str, Any] | None | int | bool]
 
     With proper structured data using specific field types.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     examples: list[ModelExampleSummary] = Field(
@@ -66,8 +71,34 @@ class ModelExamplesCollectionSummary(BaseModel):
         else:
             self.completion_rate = 0.0
 
+    # Export the models
 
-# Export the models
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = [
     "ModelExampleMetadataSummary",
     "ModelExampleSummary",

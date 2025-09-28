@@ -8,7 +8,7 @@ Follows ONEX strong typing principles.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal, NotRequired, TypedDict, TypeVar, Union
+from typing import Any, Literal, NotRequired, TypedDict, TypeVar
 from uuid import UUID
 
 
@@ -333,11 +333,14 @@ def convert_error_details_to_typed_dict(
         timestamp=_parse_datetime(error.get("timestamp")),
     )
 
-    if "stack_trace" in error:
+    if "stack_trace" in error and error["stack_trace"] is not None:
         result["stack_trace"] = str(error["stack_trace"])
 
     if "context" in error and isinstance(error["context"], dict):
-        result["context"] = {k: str(v) for k, v in error["context"].items()}
+        context_dict: dict[str, str] = {
+            k: str(v) for k, v in error["context"].items() if v is not None
+        }
+        result["context"] = context_dict
 
     return result
 

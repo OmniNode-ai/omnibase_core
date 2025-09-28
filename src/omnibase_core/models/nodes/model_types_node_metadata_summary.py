@@ -6,7 +6,7 @@ Replaces dict[str, Any] return type with structured typing.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 from uuid import UUID
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer

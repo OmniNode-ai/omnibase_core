@@ -8,10 +8,11 @@ aspects of ModelProgress with a single generic type-safe implementation.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
@@ -26,6 +27,10 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
     This generic model provides a unified interface for all time-based operations,
     supporting both integer and float values with flexible unit conversion.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     value: T = Field(..., description="The time-based value")
@@ -59,7 +64,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
     @field_validator("warning_threshold_value")
     @classmethod
-    def validate_warning_threshold(cls, v: T | None, info: Any) -> T | None:
+    def validate_warning_threshold(cls, v: T | None, info: ValidationInfo) -> T | None:
         """Validate warning threshold is less than main value."""
         if v is not None and "value" in info.data:
             main_value = info.data["value"]
@@ -70,7 +75,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
     @field_validator("extension_limit_value")
     @classmethod
-    def validate_extension_limit(cls, v: T | None, info: Any) -> T | None:
+    def validate_extension_limit(cls, v: T | None, info: ValidationInfo) -> T | None:
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
@@ -300,37 +305,39 @@ class ModelTimeBased(BaseModel, Generic[T]):
     @classmethod
     def from_milliseconds(cls, ms: int) -> ModelTimeBased[int]:
         """Create from milliseconds."""
-        return cls(value=ms, unit=EnumTimeUnit.MILLISECONDS)  # type: ignore[return-value]
+        return ModelTimeBased[int](value=ms, unit=EnumTimeUnit.MILLISECONDS)
 
     @classmethod
     def from_seconds(cls, seconds: float) -> ModelTimeBased[float]:
         """Create from seconds."""
-        return cls(value=seconds, unit=EnumTimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
+        return ModelTimeBased[float](value=seconds, unit=EnumTimeUnit.SECONDS)
 
     @classmethod
     def from_minutes(cls, minutes: float) -> ModelTimeBased[float]:
         """Create from minutes."""
-        return cls(value=minutes, unit=EnumTimeUnit.MINUTES)  # type: ignore[return-value,arg-type]
+        return ModelTimeBased[float](value=minutes, unit=EnumTimeUnit.MINUTES)
 
     @classmethod
     def from_hours(cls, hours: float) -> ModelTimeBased[float]:
         """Create from hours."""
-        return cls(value=hours, unit=EnumTimeUnit.HOURS)  # type: ignore[return-value,arg-type]
+        return ModelTimeBased[float](value=hours, unit=EnumTimeUnit.HOURS)
 
     @classmethod
     def from_days(cls, days: float) -> ModelTimeBased[float]:
         """Create from days."""
-        return cls(value=days, unit=EnumTimeUnit.DAYS)  # type: ignore[return-value,arg-type]
+        return ModelTimeBased[float](value=days, unit=EnumTimeUnit.DAYS)
 
     @classmethod
     def zero(cls) -> ModelTimeBased[int]:
         """Create zero duration."""
-        return cls(value=0, unit=EnumTimeUnit.MILLISECONDS)  # type: ignore[return-value]
+        return ModelTimeBased[int](value=0, unit=EnumTimeUnit.MILLISECONDS)
 
     @classmethod
     def from_timedelta(cls, delta: timedelta) -> ModelTimeBased[float]:
         """Create from timedelta object."""
-        return cls(value=delta.total_seconds(), unit=EnumTimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
+        return ModelTimeBased[float](
+            value=delta.total_seconds(), unit=EnumTimeUnit.SECONDS
+        )
 
     @classmethod
     def from_runtime_category(
@@ -357,6 +364,33 @@ class ModelTimeBased(BaseModel, Generic[T]):
             runtime_category=category,
             metadata=metadata,
         )  # type: ignore[return-value]
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

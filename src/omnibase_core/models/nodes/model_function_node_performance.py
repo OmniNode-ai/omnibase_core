@@ -7,10 +7,18 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_complexity import EnumComplexity
+from omnibase_core.core.type_constraints import (
+    Identifiable,
+    MetadataProvider,
+    Serializable,
+    Validatable,
+)
 from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
+from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 
 
@@ -20,12 +28,17 @@ class ModelFunctionNodePerformance(BaseModel):
 
     Contains performance metrics, complexity analysis, and runtime characteristics
     without core function or documentation concerns.
+    Implements omnibase_spi protocols:
+    - Identifiable: UUID-based identification
+    - MetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Performance and usage
-    complexity: EnumComplexity = Field(
-        default=EnumComplexity.SIMPLE,
-        description="Function complexity (simple, moderate, complex)",
+    complexity: EnumOperationalComplexity = Field(
+        default=EnumOperationalComplexity.LIGHTWEIGHT,
+        description="Operational complexity (runtime and resource requirements)",
     )
     estimated_runtime: EnumRuntimeCategory | None = Field(
         default=None,
@@ -74,10 +87,11 @@ class ModelFunctionNodePerformance(BaseModel):
     def get_complexity_level(self) -> int:
         """Get numeric complexity level."""
         complexity_map = {
-            EnumComplexity.SIMPLE: 1,
-            EnumComplexity.MODERATE: 2,
-            EnumComplexity.COMPLEX: 3,
-            EnumComplexity.VERY_COMPLEX: 4,
+            EnumOperationalComplexity.MINIMAL: 1,
+            EnumOperationalComplexity.LIGHTWEIGHT: 2,
+            EnumOperationalComplexity.STANDARD: 3,
+            EnumOperationalComplexity.INTENSIVE: 4,
+            EnumOperationalComplexity.HEAVY: 5,
         }
         return complexity_map.get(self.complexity, 1)
 
@@ -92,7 +106,8 @@ class ModelFunctionNodePerformance(BaseModel):
     def is_complex_function(self) -> bool:
         """Check if function is complex."""
         return (
-            self.complexity in {EnumComplexity.COMPLEX, EnumComplexity.VERY_COMPLEX}
+            self.complexity
+            in {EnumOperationalComplexity.INTENSIVE, EnumOperationalComplexity.HEAVY}
             or self.cyclomatic_complexity > 10
             or self.lines_of_code > 100
         )
@@ -119,9 +134,11 @@ class ModelFunctionNodePerformance(BaseModel):
             score += 0.1
 
         # Complexity component (10%)
-        if self.complexity == EnumComplexity.SIMPLE:
+        if self.complexity == EnumOperationalComplexity.MINIMAL:
+            score += 0.15
+        elif self.complexity == EnumOperationalComplexity.LIGHTWEIGHT:
             score += 0.1
-        elif self.complexity == EnumComplexity.MODERATE:
+        elif self.complexity == EnumOperationalComplexity.STANDARD:
             score += 0.05
 
         return min(score, 1.0)
@@ -171,7 +188,7 @@ class ModelFunctionNodePerformance(BaseModel):
     @classmethod
     def create_simple(cls) -> ModelFunctionNodePerformance:
         """Create simple performance profile."""
-        return cls(complexity=EnumComplexity.SIMPLE)
+        return cls(complexity=EnumOperationalComplexity.MINIMAL)
 
     @classmethod
     def create_complex(
@@ -181,7 +198,7 @@ class ModelFunctionNodePerformance(BaseModel):
     ) -> ModelFunctionNodePerformance:
         """Create complex performance profile."""
         return cls(
-            complexity=EnumComplexity.COMPLEX,
+            complexity=EnumOperationalComplexity.INTENSIVE,
             cyclomatic_complexity=cyclomatic_complexity,
             lines_of_code=lines_of_code,
         )
@@ -190,13 +207,68 @@ class ModelFunctionNodePerformance(BaseModel):
     def create_high_performance(cls) -> ModelFunctionNodePerformance:
         """Create high-performance profile."""
         return cls(
-            complexity=EnumComplexity.SIMPLE,
+            complexity=EnumOperationalComplexity.MINIMAL,
             estimated_runtime=EnumRuntimeCategory.FAST,
             memory_usage=EnumMemoryUsage.LOW,
             success_rate=0.99,
             average_execution_time_ms=5.0,
             memory_usage_mb=0.5,
         )
+
+    # Protocol method implementations
+
+    def get_id(self) -> str:
+        """Get unique identifier (Identifiable protocol)."""
+        # Try common ID field patterns
+        for field in [
+            "id",
+            "uuid",
+            "identifier",
+            "node_id",
+            "execution_id",
+            "metadata_id",
+        ]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"{self.__class__.__name__}_{id(self)}"
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (MetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (MetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

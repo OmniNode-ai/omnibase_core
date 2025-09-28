@@ -7,6 +7,9 @@ Enumeration definitions for ONEX architecture with strong typing support.
 from .enum_action_category import EnumActionCategory
 from .enum_artifact_type import EnumArtifactType
 from .enum_auth_type import EnumAuthType
+
+# Unified Status Hierarchy (v2)
+from .enum_base_status import EnumBaseStatus
 from .enum_category import EnumCategory
 from .enum_category_filter import EnumCategoryFilter
 from .enum_cell_type import EnumCellType
@@ -20,6 +23,7 @@ from .enum_color_scheme import EnumColorScheme
 from .enum_compensation_strategy import EnumCompensationStrategy
 from .enum_complexity import EnumComplexity
 from .enum_complexity_level import EnumComplexityLevel
+from .enum_conceptual_complexity import EnumConceptualComplexity
 from .enum_config_category import EnumConfigCategory
 from .enum_config_type import EnumConfigType
 from .enum_connection_state import EnumConnectionState
@@ -39,13 +43,17 @@ from .enum_example_category import EnumExampleCategory
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_order import EnumExecutionOrder
 from .enum_execution_phase import EnumExecutionPhase
-from .enum_execution_status import EnumExecutionStatus
+from .enum_execution_status_v2 import EnumExecutionStatusV2
+
+# Legacy enum removed - use EnumExecutionStatusV2 instead
 from .enum_fallback_strategy_type import EnumFallbackStrategyType
 from .enum_field_type import EnumFieldType
 from .enum_filter_type import EnumFilterType
 from .enum_flexible_value_type import EnumFlexibleValueType
+from .enum_function_lifecycle_status import EnumFunctionLifecycleStatus
 from .enum_function_status import EnumFunctionStatus
 from .enum_function_type import EnumFunctionType
+from .enum_general_status import EnumGeneralStatus
 from .enum_instance_type import EnumInstanceType
 from .enum_io_type import EnumIOType
 from .enum_item_type import EnumItemType
@@ -66,6 +74,7 @@ from .enum_node_union_type import EnumNodeUnionType
 from .enum_numeric_type import EnumNumericType
 from .enum_onex_status import EnumOnexStatus
 from .enum_operation_type import EnumOperationType
+from .enum_operational_complexity import EnumOperationalComplexity
 from .enum_output_format import EnumOutputFormat
 from .enum_output_mode import EnumOutputMode
 from .enum_output_type import EnumOutputType
@@ -81,10 +90,15 @@ from .enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from .enum_return_type import EnumReturnType
 from .enum_runtime_category import EnumRuntimeCategory
 from .enum_scenario_status import EnumScenarioStatus
+from .enum_scenario_status_v2 import EnumScenarioStatusV2
 from .enum_security_level import EnumSecurityLevel
 from .enum_severity_level import EnumSeverityLevel
 from .enum_status import EnumStatus
 from .enum_status_message import EnumStatusMessage
+from .enum_status_migration import (
+    ServiceStatusMigrationValidator,
+    ServiceStatusMigrator,
+)
 from .enum_stop_reason import EnumStopReason
 from .enum_table_alignment import EnumTableAlignment
 from .enum_time_period import EnumTimePeriod
@@ -114,6 +128,7 @@ __all__ = [
     "EnumCompensationStrategy",
     "EnumComplexity",
     "EnumComplexityLevel",
+    "EnumConceptualComplexity",
     "EnumConfigCategory",
     "EnumConfigType",
     "EnumConnectionState",
@@ -133,7 +148,7 @@ __all__ = [
     "EnumExecutionMode",
     "EnumExecutionOrder",
     "EnumExecutionPhase",
-    "EnumExecutionStatus",
+    # "EnumExecutionStatus",  # Legacy - use EnumExecutionStatusV2
     "EnumFallbackStrategyType",
     "EnumFieldType",
     "EnumFilterType",
@@ -159,6 +174,7 @@ __all__ = [
     "EnumNodeUnionType",
     "EnumNumericType",
     "EnumOnexStatus",
+    "EnumOperationalComplexity",
     "EnumOperationType",
     "EnumOutputFormat",
     "EnumOutputMode",
@@ -179,6 +195,14 @@ __all__ = [
     "EnumSeverityLevel",
     "EnumStatus",
     "EnumStatusMessage",
+    # Unified Status Hierarchy (v2)
+    "EnumBaseStatus",
+    "EnumExecutionStatusV2",
+    "EnumFunctionLifecycleStatus",
+    "EnumGeneralStatus",
+    "EnumScenarioStatusV2",
+    "ServiceStatusMigrator",
+    "ServiceStatusMigrationValidator",
     "EnumStopReason",
     "EnumTableAlignment",
     "EnumTimePeriod",
