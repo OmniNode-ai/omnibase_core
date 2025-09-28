@@ -96,8 +96,8 @@ from .enum_severity_level import EnumSeverityLevel
 from .enum_status import EnumStatus
 from .enum_status_message import EnumStatusMessage
 from .enum_status_migration import (
-    ServiceStatusMigrationValidator,
-    ServiceStatusMigrator,
+    EnumStatusMigrationValidator,
+    EnumStatusMigrator,
 )
 from .enum_stop_reason import EnumStopReason
 from .enum_table_alignment import EnumTableAlignment
@@ -201,8 +201,8 @@ __all__ = [
     "EnumFunctionLifecycleStatus",
     "EnumGeneralStatus",
     "EnumScenarioStatusV2",
-    "ServiceStatusMigrator",
-    "ServiceStatusMigrationValidator",
+    "EnumStatusMigrator",
+    "EnumStatusMigrationValidator",
     "EnumStopReason",
     "EnumTableAlignment",
     "EnumTimePeriod",

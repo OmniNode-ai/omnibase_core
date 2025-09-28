@@ -187,28 +187,28 @@ class TestEnumDebugLevel:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class DebugConfig(BaseModel):
+        class EnumDebugConfig(BaseModel):
             level: EnumDebugLevel
 
         # Test valid enum assignment
-        config = DebugConfig(level=EnumDebugLevel.WARN)
+        config = EnumDebugConfig(level=EnumDebugLevel.WARN)
         assert config.level == EnumDebugLevel.WARN
 
         # Test string assignment (should work due to str inheritance)
-        config = DebugConfig(level="error")
+        config = EnumDebugConfig(level="error")
         assert config.level == EnumDebugLevel.ERROR
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            DebugConfig(level="invalid_level")
+            EnumDebugConfig(level="invalid_level")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
 
-        class DebugConfig(BaseModel):
+        class EnumDebugConfig(BaseModel):
             level: EnumDebugLevel
 
-        config = DebugConfig(level=EnumDebugLevel.DEBUG)
+        config = EnumDebugConfig(level=EnumDebugLevel.DEBUG)
 
         # Test dict serialization
         config_dict = config.model_dump()

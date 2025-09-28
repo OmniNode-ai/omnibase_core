@@ -222,28 +222,28 @@ class TestEnumEnvironment:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class EnvironmentConfig(BaseModel):
+        class EnumEnvironmentConfig(BaseModel):
             environment: EnumEnvironment
 
         # Test valid enum assignment
-        config = EnvironmentConfig(environment=EnumEnvironment.PRODUCTION)
+        config = EnumEnvironmentConfig(environment=EnumEnvironment.PRODUCTION)
         assert config.environment == EnumEnvironment.PRODUCTION
 
         # Test string assignment (should work due to str inheritance)
-        config = EnvironmentConfig(environment="staging")
+        config = EnumEnvironmentConfig(environment="staging")
         assert config.environment == EnumEnvironment.STAGING
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            EnvironmentConfig(environment="invalid_environment")
+            EnumEnvironmentConfig(environment="invalid_environment")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
 
-        class EnvironmentConfig(BaseModel):
+        class EnumEnvironmentConfig(BaseModel):
             environment: EnumEnvironment
 
-        config = EnvironmentConfig(environment=EnumEnvironment.DEVELOPMENT)
+        config = EnumEnvironmentConfig(environment=EnumEnvironment.DEVELOPMENT)
 
         # Test dict serialization
         config_dict = config.model_dump()

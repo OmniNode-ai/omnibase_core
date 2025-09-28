@@ -8,7 +8,7 @@ collections of typed properties with validation and helper methods.
 from __future__ import annotations
 
 # ONEX-compliant property value type using TypeVar instead of primitive soup Union
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, Callable, TypeVar
 
 # from omnibase_spi.protocols.types.core_types import (
 #     ProtocolSupportedPropertyValue,

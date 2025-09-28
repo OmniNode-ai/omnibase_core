@@ -414,18 +414,58 @@ class UnionUsageChecker(ast.NodeVisitor):
     def visit_BinOp(self, node):
         """Visit binary operation nodes (e.g., str | int | float)."""
         if isinstance(node.op, ast.BitOr):
-            # Modern union syntax: str | int | float
-            union_types = self._extract_union_from_binop(node)
-            if len(union_types) >= 2:  # Only process if we have multiple types
-                self.union_count += 1
+            # Skip bitwise operations and set operations - only process type unions
+            if self._is_likely_type_union(node):
+                # Modern union syntax: str | int | float
+                union_types = self._extract_union_from_binop(node)
+                if len(union_types) >= 2:  # Only process if we have multiple types
+                    self.union_count += 1
 
-                # Create union pattern for analysis
-                union_pattern = UnionPattern(union_types, node.lineno, self.file_path)
-                self.union_patterns.append(union_pattern)
+                    # Create union pattern for analysis
+                    union_pattern = UnionPattern(
+                        union_types, node.lineno, self.file_path
+                    )
+                    self.union_patterns.append(union_pattern)
 
-                # Analyze the pattern with legitimacy validation
-                self._analyze_union_pattern(union_pattern)
+                    # Analyze the pattern with legitimacy validation
+                    self._analyze_union_pattern(union_pattern)
         self.generic_visit(node)
+
+    def _is_likely_type_union(self, node: ast.BinOp) -> bool:
+        """Check if a BinOp with | is likely a type union vs set/bitwise operation."""
+
+        def has_attribute_access(n):
+            """Check if node involves attribute access (like re.FLAG)."""
+            if isinstance(n, ast.Attribute):
+                return True
+            elif isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
+                return has_attribute_access(n.left) or has_attribute_access(n.right)
+            return False
+
+        def has_variable_reference(n):
+            """Check if node is a variable reference (like set1)."""
+            if isinstance(n, ast.Name):
+                # Simple heuristic: lowercase names are likely variables, not types
+                return n.id.islower() and not n.id in {
+                    "str",
+                    "int",
+                    "float",
+                    "bool",
+                    "bytes",
+                }
+            elif isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
+                return has_variable_reference(n.left) or has_variable_reference(n.right)
+            return False
+
+        # Skip if this looks like bitwise flags (re.FLAG | re.FLAG)
+        if has_attribute_access(node):
+            return False
+
+        # Skip if this looks like set operations (var1 | var2)
+        if has_variable_reference(node):
+            return False
+
+        return True
 
     def _extract_union_from_binop(self, node: ast.BinOp) -> list[str]:
         """Extract union types from modern union syntax (A | B | C)."""

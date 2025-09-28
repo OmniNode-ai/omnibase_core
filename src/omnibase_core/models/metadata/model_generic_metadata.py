@@ -4,7 +4,7 @@ Generic metadata model for flexible data storage.
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar, Union, cast, overload
+from typing import Any, Generic, TypeVar, cast, overload
 
 # ONEX-compliant metadata value type
 MetadataValueType = TypeVar("MetadataValueType", str, int, bool, float)

@@ -6,17 +6,17 @@ new unified status hierarchy.
 
 Usage:
     # Migrate enum values
-    migrator = ServiceStatusMigrator()
+    migrator = EnumStatusMigrator()
     new_status = migrator.migrate_execution_status(old_status)
 
     # Validate migration
-    validator = ServiceStatusMigrationValidator()
+    validator = EnumStatusMigrationValidator()
     issues = validator.validate_model_migration(model_class)
 """
 
 from __future__ import annotations
 
-from typing import Any, Type, TypedDict, Union
+from typing import Any, Protocol, Type, TypedDict, TypeVar
 
 from .enum_base_status import EnumBaseStatus
 from .enum_execution_status_v2 import EnumExecutionStatusV2
@@ -24,13 +24,19 @@ from .enum_function_lifecycle_status import EnumFunctionLifecycleStatus
 from .enum_general_status import EnumGeneralStatus
 from .enum_scenario_status_v2 import EnumScenarioStatusV2
 
-# Union types for migration (ONEX compliant - no unbound TypeVars)
-StatusEnumUnion = Union[
-    EnumGeneralStatus,
-    EnumExecutionStatusV2,
-    EnumScenarioStatusV2,
-    EnumFunctionLifecycleStatus,
-]
+
+class EnumStatusProtocol(Protocol):
+    """Protocol for status enums that can be migrated and converted to base status."""
+
+    value: str
+
+    def to_base_status(self) -> EnumBaseStatus:
+        """Convert this status to its base status equivalent."""
+        ...
+
+
+# TypeVar for type-safe enum migration (ONEX compliant)
+StatusEnumType = TypeVar("StatusEnumType", bound=EnumStatusProtocol)
 
 
 # TypedDict for validation result structure
@@ -115,7 +121,7 @@ LEGACY_METADATA_NODE_STATUS_VALUES = {
 }
 
 
-class ServiceStatusMigrator:
+class EnumStatusMigrator:
     """
     Migrates status values from old enums to new unified hierarchy.
     """
@@ -249,18 +255,24 @@ class ServiceStatusMigrator:
         """
         # Migrate to appropriate new enum and convert to base status directly
         if source_enum.lower() == "enumstatus":
-            return ServiceStatusMigrator.migrate_general_status(old_value).to_base_status()
+            return EnumStatusMigrator.migrate_general_status(old_value).to_base_status()
         elif source_enum.lower() == "enumexecutionstatus":
-            return ServiceStatusMigrator.migrate_execution_status(old_value).to_base_status()
+            return EnumStatusMigrator.migrate_execution_status(
+                old_value
+            ).to_base_status()
         elif source_enum.lower() == "enumscenariostatus":
-            return ServiceStatusMigrator.migrate_scenario_status(old_value).to_base_status()
+            return EnumStatusMigrator.migrate_scenario_status(
+                old_value
+            ).to_base_status()
         elif source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
-            return ServiceStatusMigrator.migrate_function_status(old_value).to_base_status()
+            return EnumStatusMigrator.migrate_function_status(
+                old_value
+            ).to_base_status()
         else:
             raise ValueError(f"Unknown source enum: {source_enum}")
 
 
-class ServiceStatusMigrationValidator:
+class EnumStatusMigrationValidator:
     """
     Validates status enum migrations and identifies potential issues.
     """
@@ -269,7 +281,7 @@ class ServiceStatusMigrationValidator:
     def validate_value_migration(
         old_value: str,
         old_enum_name: str,
-        expected_new_enum: Type[StatusEnumUnion],
+        expected_new_enum: Type[StatusEnumType],
     ) -> ValidationResult:
         """
         Validate that a value can be safely migrated.
@@ -295,13 +307,15 @@ class ServiceStatusMigrationValidator:
 
         try:
             # Attempt migration
-            migrator = ServiceStatusMigrator()
+            migrator = EnumStatusMigrator()
 
             if old_enum_name.lower() == "enumstatus":
                 general_migrated = migrator.migrate_general_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = general_migrated.value
-                result["base_status_equivalent"] = general_migrated.to_base_status().value
+                result["base_status_equivalent"] = (
+                    general_migrated.to_base_status().value
+                )
 
                 # Check for semantic changes
                 base_status = general_migrated.to_base_status()
@@ -314,7 +328,9 @@ class ServiceStatusMigrationValidator:
                 execution_migrated = migrator.migrate_execution_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = execution_migrated.value
-                result["base_status_equivalent"] = execution_migrated.to_base_status().value
+                result["base_status_equivalent"] = (
+                    execution_migrated.to_base_status().value
+                )
 
                 # Check for semantic changes
                 base_status = execution_migrated.to_base_status()
@@ -327,7 +343,9 @@ class ServiceStatusMigrationValidator:
                 scenario_migrated = migrator.migrate_scenario_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = scenario_migrated.value
-                result["base_status_equivalent"] = scenario_migrated.to_base_status().value
+                result["base_status_equivalent"] = (
+                    scenario_migrated.to_base_status().value
+                )
 
                 # Check for semantic changes
                 base_status = scenario_migrated.to_base_status()
@@ -343,7 +361,9 @@ class ServiceStatusMigrationValidator:
                 function_migrated = migrator.migrate_function_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = function_migrated.value
-                result["base_status_equivalent"] = function_migrated.to_base_status().value
+                result["base_status_equivalent"] = (
+                    function_migrated.to_base_status().value
+                )
 
                 # Check for semantic changes
                 base_status = function_migrated.to_base_status()
@@ -397,7 +417,7 @@ class ServiceStatusMigrationValidator:
         Returns:
             Detailed report on migration status and recommendations
         """
-        conflicts = ServiceStatusMigrationValidator.find_enum_conflicts()
+        conflicts = EnumStatusMigrationValidator.find_enum_conflicts()
 
         return {
             "summary": {
@@ -427,8 +447,8 @@ class ServiceStatusMigrationValidator:
 
 # Export for use
 __all__ = [
-    "ServiceStatusMigrator",
-    "ServiceStatusMigrationValidator",
+    "EnumStatusMigrator",
+    "EnumStatusMigrationValidator",
     "LEGACY_ENUM_STATUS_VALUES",
     "LEGACY_EXECUTION_STATUS_VALUES",
     "LEGACY_SCENARIO_STATUS_VALUES",

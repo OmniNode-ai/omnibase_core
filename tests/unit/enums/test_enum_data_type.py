@@ -167,28 +167,28 @@ class TestEnumDataType:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class DataConfig(BaseModel):
+        class EnumDataConfig(BaseModel):
             format: EnumDataType
 
         # Test valid enum assignment
-        config = DataConfig(format=EnumDataType.JSON)
+        config = EnumDataConfig(format=EnumDataType.JSON)
         assert config.format == EnumDataType.JSON
 
         # Test string assignment (should work due to str inheritance)
-        config = DataConfig(format="xml")
+        config = EnumDataConfig(format="xml")
         assert config.format == EnumDataType.XML
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            DataConfig(format="INVALID_FORMAT")
+            EnumDataConfig(format="INVALID_FORMAT")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
 
-        class DataConfig(BaseModel):
+        class EnumDataConfig(BaseModel):
             format: EnumDataType
 
-        config = DataConfig(format=EnumDataType.CSV)
+        config = EnumDataConfig(format=EnumDataType.CSV)
 
         # Test dict serialization
         config_dict = config.model_dump()

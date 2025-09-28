@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.core.type_constraints import (
     Configurable,
@@ -22,8 +22,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
-# Type variable for configuration data with proper constraints
-T = TypeVar("T", bound=Serializable)
+# Type variable for configuration data - using Any to avoid Pydantic schema generation issues
+T = TypeVar("T")
 
 
 class ModelConfigurationBase(BaseModel, Generic[T]):
@@ -42,6 +42,8 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     - Validatable: Validation and verification
     - Nameable: Name management interface
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Core metadata
     name: str | None = Field(default=None, description="Configuration name")
