@@ -15,6 +15,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from pathlib import Path
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -334,7 +335,7 @@ class ModelConfigurationSubcontract(BaseModel):
     def create_configuration_source(
         self,
         source_type: str,
-        source_path: Path | str | None = None,
+        source_path: object | None = None,
         priority: int = 100,
         *,
         required: bool = False,

@@ -7,13 +7,22 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 
 class ModelTestResult(BaseModel):
-    """Individual test result."""
+    """Individual test result.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    """
 
     # Entity reference with UUID
     test_id: UUID = Field(..., description="Unique identifier of the test")
@@ -24,11 +33,14 @@ class ModelTestResult(BaseModel):
         description="Test execution duration in milliseconds",
         ge=0,
     )
-    error_message: str | None = Field(
-        default=None,
+    error_message: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Error message if test failed",
     )
-    details: str | None = Field(default=None, description="Additional test details")
+    details: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
+        description="Additional test details",
+    )
 
     @classmethod
     def create_from_name(
@@ -59,8 +71,10 @@ class ModelTestResult(BaseModel):
             test_display_name=test_name,
             passed=passed,
             duration_ms=duration_ms,
-            error_message=error_message,
-            details=details,
+            error_message=ModelSchemaValue.from_value(
+                error_message if error_message else ""
+            ),
+            details=ModelSchemaValue.from_value(details if details else ""),
         )
 
     model_config = {
@@ -68,6 +82,33 @@ class ModelTestResult(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

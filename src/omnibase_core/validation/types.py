@@ -18,7 +18,7 @@ from pathlib import Path
 from .validation_utils import ValidationResult
 
 
-class UnionPattern:
+class ModelUnionPattern:
     """Represents a Union pattern for analysis."""
 
     def __init__(self, types: list[str], line: int, file_path: str):
@@ -31,7 +31,7 @@ class UnionPattern:
         return hash(tuple(self.types))
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, UnionPattern) and self.types == other.types
+        return isinstance(other, ModelUnionPattern) and self.types == other.types
 
     def get_signature(self) -> str:
         """Get a string signature for this union pattern."""
@@ -45,12 +45,12 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.union_count = 0
         self.issues: list[str] = []
         self.file_path = file_path
-        self.union_patterns: list[UnionPattern] = []
+        self.union_patterns: list[ModelUnionPattern] = []
 
         # Track problematic patterns
-        self.complex_unions: list[UnionPattern] = []
-        self.primitive_heavy_unions: list[UnionPattern] = []
-        self.generic_unions: list[UnionPattern] = []
+        self.complex_unions: list[ModelUnionPattern] = []
+        self.primitive_heavy_unions: list[ModelUnionPattern] = []
+        self.generic_unions: list[ModelUnionPattern] = []
 
         # Common problematic type combinations
         self.problematic_combinations = {
@@ -78,7 +78,7 @@ class UnionUsageChecker(ast.NodeVisitor):
             return f"{self._extract_type_name(node.value)}.{node.attr}"
         return "Unknown"
 
-    def _analyze_union_pattern(self, union_pattern: UnionPattern) -> None:
+    def _analyze_union_pattern(self, union_pattern: ModelUnionPattern) -> None:
         """Analyze a union pattern for potential issues."""
         types_set = frozenset(union_pattern.types)
 
@@ -129,7 +129,9 @@ class UnionUsageChecker(ast.NodeVisitor):
                 self.union_count += 1
 
                 # Create union pattern for analysis
-                union_pattern = UnionPattern(union_types, node.lineno, self.file_path)
+                union_pattern = ModelUnionPattern(
+                    union_types, node.lineno, self.file_path
+                )
                 self.union_patterns.append(union_pattern)
 
                 # Analyze the pattern
@@ -174,7 +176,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.union_count += 1
 
         # Create union pattern for analysis
-        union_pattern = UnionPattern(union_types, line_no, self.file_path)
+        union_pattern = ModelUnionPattern(union_types, line_no, self.file_path)
         self.union_patterns.append(union_pattern)
 
         # Analyze the pattern
@@ -189,7 +191,7 @@ class UnionUsageChecker(ast.NodeVisitor):
 
 def validate_union_usage_file(
     file_path: Path,
-) -> tuple[int, list[str], list[UnionPattern]]:
+) -> tuple[int, list[str], list[ModelUnionPattern]]:
     """Validate Union usage in a Python file."""
     try:
         with open(file_path, encoding="utf-8") as f:

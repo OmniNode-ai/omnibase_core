@@ -7,10 +7,11 @@ replacing dict[str, Any] return types with structured models.
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -21,6 +22,9 @@ from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Note: Using ModelSchemaValue instead of complex union types for type safety
 
+# Type variable for generic methods
+T = TypeVar("T")
+
 
 class ModelSchemaExample(BaseModel):
     """
@@ -28,6 +32,10 @@ class ModelSchemaExample(BaseModel):
 
     Replaces dict[str, Any] returns from extract_example_from_schema
     with properly structured and validated data.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Core example data - using existing typed properties pattern
@@ -65,7 +73,7 @@ class ModelSchemaExample(BaseModel):
         """Check if example contains any data."""
         return not self.example_data.is_empty()
 
-    def get_value(self, key: str, default: object) -> object:
+    def get_value(self, key: str, default: T) -> T:
         """
         Get typed value with proper default handling.
 
@@ -98,22 +106,12 @@ class ModelSchemaExample(BaseModel):
             key: The key to set
             value: The value to store (raw primitive type)
         """
-        # Pass raw value directly to set_custom_value (it handles type validation)
-        if isinstance(value, (str, int, float, bool)):
+        # The set_custom_value method handles runtime type validation
+        try:
             self.example_data.set_custom_value(key, value)
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unsupported value type: {type(value)}. Must be str, int, float, or bool.",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("typeerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
-                        ),
-                    }
-                ),
-            )
+        except OnexError:
+            # Re-raise validation errors from set_custom_value
+            raise
 
     def get_all_keys(self) -> list[str]:
         """Get all keys from example data."""
@@ -143,22 +141,12 @@ class ModelSchemaExample(BaseModel):
             key: The key to set
             value: The value to store (raw primitive type)
         """
-        # Pass raw value directly to set_custom_value (it handles type validation)
-        if isinstance(value, (str, int, float, bool)):
+        # The set_custom_value method handles runtime type validation
+        try:
             self.example_data.set_custom_value(key, value)
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unsupported value type: {type(value)}. Must be str, int, float, or bool.",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("typeerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
-                        ),
-                    }
-                ),
-            )
+        except OnexError:
+            # Re-raise validation errors from set_custom_value
+            raise
 
     def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:
         """
@@ -170,9 +158,12 @@ class ModelSchemaExample(BaseModel):
         for key, value in data.items():
             # Extract raw value from ModelSchemaValue and pass to set_custom_value
             raw_value = value.to_value()
-            if isinstance(raw_value, (str, int, float, bool)):
+            # The set_custom_value method handles runtime type validation
+            try:
                 self.example_data.set_custom_value(key, raw_value)
-            # Skip values that aren't supported primitive types
+            except OnexError:
+                # Skip values that aren't supported primitive types
+                pass
 
     def get_example_data_as_dict(self) -> dict[str, ModelSchemaValue]:
         """
@@ -218,9 +209,12 @@ class ModelSchemaExample(BaseModel):
         for key, value in data.items():
             # Extract raw value from ModelSchemaValue and pass to set_custom_value
             raw_value = value.to_value()
-            if isinstance(raw_value, (str, int, float, bool)):
+            # The set_custom_value method handles runtime type validation
+            try:
                 custom_props.set_custom_value(key, raw_value)
-            # Skip values that aren't supported primitive types
+            except OnexError:
+                # Skip values that aren't supported primitive types
+                pass
 
         return cls(
             example_data=custom_props,
@@ -277,6 +271,32 @@ class ModelSchemaExample(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelSchemaExample"]

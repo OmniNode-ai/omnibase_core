@@ -257,20 +257,20 @@ class TestEnumStatus:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class StatusModel(BaseModel):
+        class EnumStatusModel(BaseModel):
             status: EnumStatus
 
         # Test valid enum assignment
-        model = StatusModel(status=EnumStatus.ACTIVE)
+        model = EnumStatusModel(status=EnumStatus.ACTIVE)
         assert model.status == EnumStatus.ACTIVE
 
         # Test string assignment (should work due to str inheritance)
-        model = StatusModel(status="completed")
+        model = EnumStatusModel(status="completed")
         assert model.status == EnumStatus.COMPLETED
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            StatusModel(status="invalid_status")
+            EnumStatusModel(status="invalid_status")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""

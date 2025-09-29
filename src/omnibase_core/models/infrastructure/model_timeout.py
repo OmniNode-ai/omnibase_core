@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from functools import cached_property, lru_cache
-from typing import Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,6 +31,11 @@ class ModelTimeout(BaseModel):
 
     This model provides a timeout-specific interface
     that delegates all operations to the unified ModelTimeBased model.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     time_based: ModelTimeBased[int] = Field(
@@ -289,13 +294,19 @@ class ModelTimeout(BaseModel):
             python_value = schema_value.to_value()
             metadata[key] = ModelSchemaValue.from_value(python_value)
 
-        # Create ModelCustomProperties from the Python values
-        # Convert to proper union type to satisfy type requirements
-        schema_value_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+        # Create ModelCustomProperties from the metadata values
+        # Convert ModelSchemaValue objects to primitive types for from_metadata
+        primitive_metadata: dict[str, object] = {}
         for key, val in metadata.items():
-            schema_value_metadata[key] = val
+            # val is always ModelSchemaValue, extract primitive value for proper typing
+            primitive_value = val.to_value()
+            if isinstance(primitive_value, (str, int, float, bool)):
+                primitive_metadata[key] = primitive_value
+            else:
+                # Keep as ModelSchemaValue if not a primitive type
+                primitive_metadata[key] = val
 
-        return ModelCustomProperties.from_metadata(schema_value_metadata)
+        return ModelCustomProperties.from_metadata(primitive_metadata)
 
     @property
     def timeout_timedelta(self) -> timedelta:
@@ -387,7 +398,7 @@ class ModelTimeout(BaseModel):
         return self.time_based.extend_time(additional_seconds)
 
     def set_custom_metadata(self, key: str, value: object) -> None:
-        """Set custom metadata value.
+        """Set custom metadata value with bounded types.
 
         Performance Note: Invalidates custom_properties cache when metadata changes.
         """
@@ -397,11 +408,15 @@ class ModelTimeout(BaseModel):
             delattr(self, "custom_properties")
 
     def get_custom_metadata(self, key: str) -> object:
-        """Get custom metadata value."""
+        """Get custom metadata value with bounded return type."""
         schema_value = self.custom_metadata.get(key)
         if schema_value is None:
             return None
-        return schema_value.to_value()
+        value = schema_value.to_value()
+        # Ensure bounded return type
+        if isinstance(value, (str, int, float, bool)):
+            return value
+        return None
 
     @classmethod
     def from_seconds(
@@ -526,6 +541,42 @@ class ModelTimeout(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

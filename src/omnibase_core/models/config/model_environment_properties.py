@@ -7,9 +7,11 @@ Type-safe custom environment properties with access methods.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypeVar, cast, get_origin
+from typing import Any, TypeVar, cast, get_origin
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
 
 # Type variable for generic property handling
 T = TypeVar("T")
@@ -28,6 +30,10 @@ class ModelEnvironmentProperties(BaseModel):
 
     This model provides structured storage for custom environment properties
     with type safety and helper methods for property access.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     properties: dict[str, ModelPropertyValue] = Field(
@@ -193,6 +199,32 @@ class ModelEnvironmentProperties(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelEnvironmentProperties"]

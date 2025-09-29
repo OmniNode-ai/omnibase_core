@@ -13,11 +13,15 @@ if TYPE_CHECKING:
             ProtocolSupportedMetadataType,
         )
     except ImportError:
-        # Fallback type for development when SPI unavailable
-        ProtocolSupportedMetadataType = dict[str, object]
+        # Structured fallback type for development when SPI unavailable
+        from omnibase_core.core.type_constraints import BasicValueType
+
+        ProtocolSupportedMetadataType = BasicValueType
 else:
-    # Runtime fallback for missing omnibase_spi module
-    ProtocolSupportedMetadataType = dict[str, object]
+    # Runtime fallback using structured type constraints
+    from omnibase_core.core.type_constraints import BasicValueType
+
+    ProtocolSupportedMetadataType = BasicValueType
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 

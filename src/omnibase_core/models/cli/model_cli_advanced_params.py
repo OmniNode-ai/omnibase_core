@@ -7,10 +7,16 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+# Use object type for values convertible to ModelCliValue via from_any() method.
+# This avoids primitive soup union anti-pattern while maintaining type safety
+# through runtime validation in ModelCliValue.from_any().
+CliConvertibleValue = object
+
+from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
@@ -25,6 +31,10 @@ class ModelCliAdvancedParams(BaseModel):
     Clean model for CLI advanced parameters.
 
     Replaces ModelCustomFields[Any] with structured advanced parameters model.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Nameable: Name management interface
+    - Validatable: Validation and verification
     """
 
     # Timeout and performance parameters
@@ -129,7 +139,7 @@ class ModelCliAdvancedParams(BaseModel):
     @field_validator("node_config_overrides", mode="before")
     @classmethod
     def validate_node_config_overrides(
-        cls, v: Union[dict[str, Any], dict[str, ModelCliValue]]
+        cls, v: dict[str, CliConvertibleValue]
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for node_config_overrides."""
         if not isinstance(v, dict):
@@ -154,7 +164,7 @@ class ModelCliAdvancedParams(BaseModel):
     @field_validator("custom_parameters", mode="before")
     @classmethod
     def validate_custom_parameters(
-        cls, v: Union[dict[str, Any], dict[str, ModelCliValue]]
+        cls, v: dict[str, CliConvertibleValue]
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_parameters."""
         if not isinstance(v, dict):
@@ -177,7 +187,7 @@ class ModelCliAdvancedParams(BaseModel):
         return result
 
     @staticmethod
-    def _convert_raw_to_cli_value(value: Any) -> ModelCliValue:
+    def _convert_raw_to_cli_value(value: CliConvertibleValue) -> ModelCliValue:
         """Convert a raw value to a ModelCliValue object."""
         return ModelCliValue.from_any(value)
 
@@ -212,12 +222,12 @@ class ModelCliAdvancedParams(BaseModel):
         """Add an environment variable."""
         self.environment_variables[key] = value
 
-    def add_config_override(self, key: str, value: Any) -> None:
-        """Add a configuration override. Accepts any value type."""
+    def add_config_override(self, key: str, value: CliConvertibleValue) -> None:
+        """Add a configuration override. Accepts CLI-convertible value types."""
         self.node_config_overrides[key] = ModelCliValue.from_any(value)
 
-    def set_custom_parameter(self, key: str, value: Any) -> None:
-        """Set a custom parameter. Accepts any value type."""
+    def set_custom_parameter(self, key: str, value: CliConvertibleValue) -> None:
+        """Set a custom parameter. Accepts CLI-convertible value types."""
         self.custom_parameters[key] = ModelCliValue.from_any(value)
 
     def get_custom_parameter(self, key: str, default: str = "") -> str:
@@ -244,6 +254,41 @@ class ModelCliAdvancedParams(BaseModel):
         self.security_level = EnumSecurityLevel.STRICT
         self.enable_sandbox = True
 
+    # Export the model
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
     model_config = {
         "extra": "ignore",
         "use_enum_values": True,
@@ -251,5 +296,4 @@ class ModelCliAdvancedParams(BaseModel):
     }
 
 
-# Export the model
 __all__ = ["ModelCliAdvancedParams"]

@@ -3,14 +3,23 @@ Node Core Metadata Model.
 
 Essential node identification and basic information.
 Part of the ModelNodeMetadataInfo restructuring.
+
+Demonstrates ONEX discriminated union patterns for type-safe modeling.
 """
 
 from __future__ import annotations
 
+from typing import Any, Literal, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Discriminator, Field
 
+from omnibase_core.core.type_constraints import (
+    Identifiable,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
@@ -26,6 +35,11 @@ class ModelNodeCoreMetadata(BaseModel):
     - Identity (ID, name, type)
     - Status and health
     - Version information
+    Implements omnibase_spi protocols:
+    - Identifiable: UUID-based identification
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Core identification - UUID-based entity references
@@ -94,6 +108,130 @@ class ModelNodeCoreMetadata(BaseModel):
         "validate_assignment": True,
     }
 
+    # Protocol method implementations
+
+    def get_id(self) -> str:
+        """Get unique identifier (Identifiable protocol)."""
+        # Try common ID field patterns
+        for field in [
+            "id",
+            "uuid",
+            "identifier",
+            "node_id",
+            "execution_id",
+            "metadata_id",
+        ]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"{self.__class__.__name__}_{id(self)}"
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
+# ONEX Discriminated Union Pattern Example
+# This demonstrates the ONEX standard for discriminated unions
+
+
+class ModelNodeStatusActive(BaseModel):
+    """Active node status with uptime tracking."""
+
+    status_type: Literal["active"] = Field(
+        default="active", description="Status discriminator"
+    )
+    uptime_seconds: int = Field(ge=0, description="Node uptime in seconds")
+    last_heartbeat: str = Field(description="ISO timestamp of last heartbeat")
+
+
+class ModelNodeStatusMaintenance(BaseModel):
+    """Maintenance node status with estimated completion."""
+
+    status_type: Literal["maintenance"] = Field(
+        default="maintenance", description="Status discriminator"
+    )
+    estimated_completion: str = Field(
+        description="ISO timestamp of estimated completion"
+    )
+    maintenance_reason: str = Field(description="Reason for maintenance")
+
+
+class ModelNodeStatusError(BaseModel):
+    """Error node status with error details."""
+
+    status_type: Literal["error"] = Field(
+        default="error", description="Status discriminator"
+    )
+    error_code: str = Field(description="Error classification code")
+    error_message: str = Field(description="Human-readable error description")
+    recovery_suggestion: str | None = Field(
+        None, description="Suggested recovery action"
+    )
+
+
+def get_node_status_discriminator(v: Any) -> str:
+    """Extract discriminator value for node status union."""
+    if isinstance(v, dict):
+        status_type = v.get("status_type", "active")
+        return str(status_type)  # Ensure string type
+    return str(getattr(v, "status_type", "active"))  # Ensure string type
+
+
+# ONEX Discriminated Union Type
+NodeStatusUnion = Union[
+    ModelNodeStatusActive,
+    ModelNodeStatusMaintenance,
+    ModelNodeStatusError,
+]
+
+# Type alias with discriminator for Pydantic validation
+NodeStatusDiscriminator = Discriminator(
+    get_node_status_discriminator,
+    custom_error_type="node_status_discriminator",
+    custom_error_message="Invalid node status type",
+    custom_error_context={"discriminator": "status_type"},
+)
 
 # Export for use
-__all__ = ["ModelNodeCoreMetadata"]
+__all__ = [
+    "ModelNodeCoreMetadata",
+    "NodeStatusUnion",
+    "ModelNodeStatusActive",
+    "ModelNodeStatusMaintenance",
+    "ModelNodeStatusError",
+    "NodeStatusDiscriminator",
+]

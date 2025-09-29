@@ -8,7 +8,7 @@ ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

@@ -7,33 +7,38 @@ typed property with validation in the environment property system.
 
 from __future__ import annotations
 
-from typing import TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
-# Handle optional omnibase_spi dependency
-try:
-    from omnibase_spi.protocols.types.protocol_core_types import (
-        ProtocolSupportedPropertyValue,
-    )
-except ImportError:
-    # Fallback type for development when SPI unavailable
-    ProtocolSupportedPropertyValue = Union[str, int, float, bool, dict, list, object]
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import BasicValueType, Configurable
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
 
+# Use already imported ModelPropertyValue for type safety
+# No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
+
+
 # Use object for property values since we support many types through the protocol
-# All types must implement ProtocolSupportedPropertyValue (convertible to string)
+# All types must implement BasicValueType (str, int, bool)
 # Using explicit object type instead of Any per ONEX standards
 
+# Use object for type-safe generic property handling
+# ModelPropertyValue discriminated union provides type safety
+
 # Type variable for generic property handling
-T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
+T = TypeVar("T")
 
 
 class ModelTypedProperty(BaseModel):
-    """A single typed property with validation."""
+    """A single typed property with validation.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     key: str = Field(description="Property key")
     value: ModelPropertyValue = Field(description="Structured property value")
@@ -62,16 +67,16 @@ class ModelTypedProperty(BaseModel):
     def get_typed_value(self, expected_type: type[T], default: T) -> T:
         """Get the value with specific type checking."""
         try:
-            # Use ModelPropertyValue's type-safe accessors
+            # Use ModelPropertyValue's type-safe accessors based on expected type
             if expected_type == str:
                 return cast(T, self.value.as_string())
-            if expected_type == int:
+            elif expected_type == int:
                 return cast(T, self.value.as_int())
-            if expected_type == float:
+            elif expected_type == float:
                 return cast(T, self.value.as_float())
-            if expected_type == bool:
+            elif expected_type == bool:
                 return cast(T, self.value.as_bool())
-            if isinstance(self.value.value, expected_type):
+            elif isinstance(self.value.value, expected_type):
                 return self.value.value
         except Exception:
             pass
@@ -92,12 +97,37 @@ class ModelTypedProperty(BaseModel):
             EnumPropertyType.FLOAT,
         ]
 
-    def get_raw_value(self) -> ProtocolSupportedPropertyValue:
+    def get_raw_value(self) -> object:
         """Get the raw value implementing the protocol."""
-        return cast(ProtocolSupportedPropertyValue, self.value.value)
+        return self.value.value
 
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

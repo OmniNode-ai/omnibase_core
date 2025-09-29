@@ -6,9 +6,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from omnibase_core.models.validation.model_migration_conflict_union import (
+    ModelMigrationConflictUnion,
+)
+
 from .migration_types import TypedDictMigrationStepDict
-from .model_migration_conflict_union import ModelMigrationConflictUnion
-from .validation_utils import ProtocolInfo
+from .validation_utils import ModelProtocolInfo
 
 
 @dataclass
@@ -18,7 +21,7 @@ class ModelMigrationPlan:
     success: bool
     source_repository: str
     target_repository: str
-    protocols_to_migrate: list[ProtocolInfo]
+    protocols_to_migrate: list[ModelProtocolInfo]
     conflicts_detected: list[ModelMigrationConflictUnion]
     migration_steps: list[TypedDictMigrationStepDict]
     estimated_time_minutes: int

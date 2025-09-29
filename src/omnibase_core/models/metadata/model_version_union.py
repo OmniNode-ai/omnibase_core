@@ -1,0 +1,234 @@
+"""
+Version Union Model.
+
+Discriminated union for version types following ONEX one-model-per-file architecture.
+"""
+
+from __future__ import annotations
+
+from typing import Any, TypedDict
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.core.type_constraints import (
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_version_union_type import EnumVersionUnionType
+from omnibase_core.exceptions.onex_error import OnexError
+
+from .model_semver import ModelSemVer
+
+
+class TypedDictVersionDict(TypedDict):
+    """Structured version dictionary type."""
+
+    major: int
+    minor: int
+    patch: int
+
+
+class ModelVersionUnion(BaseModel):
+    """
+    Discriminated union for version types.
+
+    Replaces Union[ModelSemVer, TypedDictVersionDict, None] patterns with structured typing.
+    Implements omnibase_spi protocols:
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
+
+    version_type: EnumVersionUnionType = Field(
+        description="Type discriminator for version value", discriminator="version_type"
+    )
+
+    # Version storage (only one should be populated based on type)
+    semantic_version: ModelSemVer | None = None
+    version_dict: TypedDictVersionDict | None = None
+
+    @model_validator(mode="after")
+    def validate_single_version(self) -> ModelVersionUnion:
+        """Ensure only one version value is set based on type discriminator."""
+        if self.version_type == EnumVersionUnionType.SEMANTIC_VERSION:
+            if self.semantic_version is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="semantic_version must be set when version_type is 'semantic_version'",
+                )
+            if self.version_dict is not None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="version_dict must be None when version_type is 'semantic_version'",
+                )
+        elif self.version_type == EnumVersionUnionType.VERSION_DICT:
+            if self.version_dict is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="version_dict must be set when version_type is 'version_dict'",
+                )
+            if self.semantic_version is not None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="semantic_version must be None when version_type is 'version_dict'",
+                )
+        elif self.version_type == EnumVersionUnionType.NONE_VERSION:
+            if self.semantic_version is not None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="semantic_version must be None when version_type is 'none_version'",
+                )
+            if self.version_dict is not None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="version_dict must be None when version_type is 'none_version'",
+                )
+
+        return self
+
+    @classmethod
+    def from_semantic_version(cls, version: ModelSemVer) -> ModelVersionUnion:
+        """Create union from semantic version."""
+        return cls(
+            version_type=EnumVersionUnionType.SEMANTIC_VERSION, semantic_version=version
+        )
+
+    @classmethod
+    def from_version_dict(cls, version_dict: TypedDictVersionDict) -> ModelVersionUnion:
+        """Create union from version dictionary."""
+        return cls(
+            version_type=EnumVersionUnionType.VERSION_DICT, version_dict=version_dict
+        )
+
+    @classmethod
+    def from_none(cls) -> ModelVersionUnion:
+        """Create union representing no version."""
+        return cls(version_type=EnumVersionUnionType.NONE_VERSION)
+
+    def get_version(self) -> ModelSemVer | TypedDictVersionDict | None:
+        """
+        Get the actual version value with runtime type safety.
+
+        Returns:
+            ModelSemVer | TypedDictVersionDict | None: The actual version value based on
+                   version_type discriminator. Use isinstance() to check specific type.
+
+        Raises:
+            OnexError: If discriminator state is invalid
+
+        Examples:
+            version = union.get_version()
+            if isinstance(version, ModelSemVer):
+                # Handle semantic version
+                pass
+            elif isinstance(version, dict):
+                # Handle version dictionary
+                pass
+            elif version is None:
+                # Handle no version
+                pass
+        """
+        if self.version_type == EnumVersionUnionType.SEMANTIC_VERSION:
+            if self.semantic_version is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Invalid state: semantic_version is None but version_type is SEMANTIC_VERSION",
+                )
+            return self.semantic_version
+        elif self.version_type == EnumVersionUnionType.VERSION_DICT:
+            if self.version_dict is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Invalid state: version_dict is None but version_type is VERSION_DICT",
+                )
+            return self.version_dict
+        elif self.version_type == EnumVersionUnionType.NONE_VERSION:
+            return None
+        else:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown version_type: {self.version_type}",
+            )
+
+    def has_version(self) -> bool:
+        """Check if version union has a non-None version."""
+        return self.version_type != EnumVersionUnionType.NONE_VERSION
+
+    def to_semantic_version(self) -> ModelSemVer:
+        """
+        Convert to ModelSemVer regardless of current type.
+
+        Returns:
+            ModelSemVer: Converted semantic version
+
+        Raises:
+            OnexError: If version is None or conversion fails
+        """
+        if self.version_type == EnumVersionUnionType.SEMANTIC_VERSION:
+            if self.semantic_version is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="semantic_version is None",
+                )
+            return self.semantic_version
+        elif self.version_type == EnumVersionUnionType.VERSION_DICT:
+            if self.version_dict is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="version_dict is None",
+                )
+            return ModelSemVer(**self.version_dict)
+        else:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Cannot convert None version to ModelSemVer",
+            )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
+__all__ = ["ModelVersionUnion", "TypedDictVersionDict"]

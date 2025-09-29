@@ -7,18 +7,13 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar, Union
+from typing import Any, Callable, Literal, TypeVar
 
-# Handle optional omnibase_spi dependency
-try:
-    from omnibase_spi.protocols.types.protocol_core_types import (
-        ProtocolSupportedPropertyValue,
-    )
-except ImportError:
-    # Fallback type for development when SPI unavailable
-    ProtocolSupportedPropertyValue = Union[str, int, float, bool, dict, list, object]
 from pydantic import BaseModel, Field
 
+# Use already imported ModelPropertyValue for type safety
+# No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -26,15 +21,22 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_property_metadata import ModelPropertyMetadata
-from .model_property_value import ModelPropertyValue
+
+# Import PropertyValueType from the proper discriminated union model
+from .model_property_value import ModelPropertyValue, PropertyValueType
 from .model_typed_property import ModelTypedProperty
 
 # Type variable for generic property handling
-T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
+T = TypeVar("T", bound=PropertyValueType)
 
 
 class ModelPropertyCollection(BaseModel):
-    """Collection of typed properties with validation and helper methods."""
+    """Collection of typed properties with validation and helper methods.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     properties: dict[str, ModelTypedProperty] = Field(
         default_factory=dict,
@@ -66,7 +68,7 @@ class ModelPropertyCollection(BaseModel):
     def add_typed_property(
         self,
         key: str,
-        value: T,
+        value: PropertyValueType,
         description: str | None = None,
         required: bool = False,
         source: str | None = None,
@@ -78,7 +80,7 @@ class ModelPropertyCollection(BaseModel):
 
     def _create_property_value_by_type(
         self,
-        value: T,
+        value: PropertyValueType,
         source: str | None = None,
     ) -> ModelPropertyValue:
         """Create ModelPropertyValue using type-specific factory methods."""
@@ -164,3 +166,28 @@ class ModelPropertyCollection(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

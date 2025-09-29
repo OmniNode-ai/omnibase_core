@@ -8,13 +8,14 @@ the codebase.
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Serializable
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
-
-# Removed unused import: from typing import Any
-
 
 # Note: Previously had type alias (ValidationConvertibleValue = Any)
 # Removed to comply with ONEX strong typing standards.
@@ -28,6 +29,9 @@ class ModelValidationContainer(BaseModel):
     This model standardizes validation error collection across all domains,
     replacing scattered validation_errors lists and providing consistent
     validation reporting capabilities.
+    Implements omnibase_spi protocols:
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
     """
 
     errors: list[ModelValidationError] = Field(
@@ -66,12 +70,8 @@ class ModelValidationContainer(BaseModel):
         """Add a standard validation error with automatic conversion of raw details."""
         converted_details = None
         if raw_details:
-            from typing import cast
-
-            from .model_validation_value import InputValueType
-
             converted_details = {
-                key: ModelValidationValue.from_any(cast(InputValueType, value))
+                key: ModelValidationValue.from_any(value)
                 for key, value in raw_details.items()
             }
 
@@ -109,12 +109,8 @@ class ModelValidationContainer(BaseModel):
         """Add a critical validation error with automatic conversion of raw details."""
         converted_details = None
         if raw_details:
-            from typing import cast
-
-            from .model_validation_value import InputValueType
-
             converted_details = {
-                key: ModelValidationValue.from_any(cast(InputValueType, value))
+                key: ModelValidationValue.from_any(value)
                 for key, value in raw_details.items()
             }
 
@@ -216,9 +212,13 @@ class ModelValidationContainer(BaseModel):
         """Clear only warnings, keep errors."""
         self.warnings.clear()
 
-    def is_valid(self) -> bool:
-        """Check if validation passed (no errors)."""
-        return not self.has_errors()
+    def validate_instance(self) -> bool:
+        """Check if validation passed (no errors) (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist and no errors
+            return not self.has_errors()
+        except Exception:
+            return False
 
     def merge_from(self, other: ModelValidationContainer) -> None:
         """Merge validation results from another container."""
@@ -233,6 +233,12 @@ class ModelValidationContainer(BaseModel):
 
     # Use .model_dump() for serialization - no to_dict() method needed
     # Pydantic provides native serialization via .model_dump()
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

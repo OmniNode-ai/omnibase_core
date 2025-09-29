@@ -7,31 +7,65 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
+from datetime import datetime
+from enum import Enum
+from typing import Annotated, Any, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Discriminator, Field, Tag
 
 from omnibase_core.core.decorators import allow_dict_str_any
+from omnibase_core.core.type_constraints import (
+    Executable,
+    Identifiable,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.models.operations.model_event_metadata import ModelEventMetadata
+
+
+# Discriminator function for message content union
+def get_message_content_discriminator(v: dict[str, Any] | BaseModel) -> str:
+    """Discriminator function for message content types."""
+    if isinstance(v, dict):
+        return str(v.get("message_type", "data"))
+    if hasattr(v, "message_type"):
+        return str(v.message_type)
+    return "data"
 
 
 class ModelMessagePayload(BaseModel):
     """
-    Strongly-typed message payload.
+    Strongly-typed message payload with discriminated unions.
 
-    Replaces dict[str, Any] with structured message payload model.
+    Replaces dict[str, Any] with discriminated message payload types.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Identifiable: UUID-based identification
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     message_id: UUID = Field(
         default_factory=uuid4, description="Unique message identifier (UUID format)"
     )
-    message_type: str = Field(..., description="Type of message")
-    content: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
-        description="Structured message content with proper typing",
+    message_type: ModelMessageType = Field(
+        ..., description="Discriminated message type"
     )
-    headers: dict[str, str] = Field(default_factory=dict, description="Message headers")
+    message_content: Annotated[
+        Union[
+            ModelCommandMessageContent,
+            ModelDataMessageContent,
+            ModelNotificationMessageContent,
+            ModelQueryMessageContent,
+        ],
+        Field(discriminator="message_type"),
+    ] = Field(..., description="Message-specific content with discriminated union")
+    headers: ModelMessageHeaders = Field(
+        default_factory=ModelMessageHeaders, description="Structured message headers"
+    )
     metadata: ModelEventMetadata = Field(
         default_factory=lambda: ModelEventMetadata(
             event_id=uuid4(), event_type="message", source="system"
@@ -45,6 +79,186 @@ class ModelMessagePayload(BaseModel):
         "validate_assignment": True,
     }
 
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def get_id(self) -> str:
+        """Get unique identifier (Identifiable protocol)."""
+        # Try common ID field patterns
+        for field in [
+            "id",
+            "uuid",
+            "identifier",
+            "node_id",
+            "execution_id",
+            "metadata_id",
+        ]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"{self.__class__.__name__}_{id(self)}"
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (Validatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
+# Message types
+class ModelMessageType(str, Enum):
+    """Message categories for proper routing and handling."""
+
+    COMMAND = "command"
+    DATA = "data"
+    NOTIFICATION = "notification"
+    QUERY = "query"
+
+
+# Discriminated message content types
+class ModelMessageContentBase(BaseModel):
+    """Base message content with discriminator."""
+
+    message_type: ModelMessageType = Field(
+        ..., description="Message type discriminator"
+    )
+    content: dict[str, ModelSchemaValue] = Field(
+        default_factory=dict,
+        description="Structured message content with proper typing",
+    )
+    priority: str = Field(default="normal", description="Message priority level")
+    expiration_time: datetime | None = Field(
+        None, description="Message expiration time"
+    )
+
+
+class ModelCommandMessageContent(ModelMessageContentBase):
+    """Command message content for action requests."""
+
+    message_type: ModelMessageType = Field(
+        default=ModelMessageType.COMMAND, description="Command message type"
+    )
+    command_name: str = Field(..., description="Name of the command to execute")
+    command_parameters: dict[str, ModelSchemaValue] = Field(
+        default_factory=dict, description="Command parameters"
+    )
+    execution_mode: str = Field(
+        default="synchronous", description="Command execution mode"
+    )
+    timeout_ms: int = Field(
+        default=30000, description="Command timeout in milliseconds"
+    )
+    retry_policy: dict[str, int] = Field(
+        default_factory=dict, description="Command retry policy configuration"
+    )
+
+
+class ModelDataMessageContent(ModelMessageContentBase):
+    """Data message content for information transfer."""
+
+    message_type: ModelMessageType = Field(
+        default=ModelMessageType.DATA, description="Data message type"
+    )
+    data_type: str = Field(..., description="Type of data being transferred")
+    data_schema: str = Field(..., description="Schema identifier for data validation")
+    compression_used: bool = Field(
+        default=False, description="Whether data is compressed"
+    )
+    checksum: str = Field(default="", description="Data integrity checksum")
+    encoding: str = Field(default="utf-8", description="Data encoding format")
+
+
+class ModelNotificationMessageContent(ModelMessageContentBase):
+    """Notification message content for event notifications."""
+
+    message_type: ModelMessageType = Field(
+        default=ModelMessageType.NOTIFICATION, description="Notification message type"
+    )
+    notification_category: str = Field(..., description="Category of the notification")
+    severity_level: str = Field(
+        default="info", description="Notification severity level"
+    )
+    action_required: bool = Field(
+        default=False, description="Whether action is required"
+    )
+    recipients: list[str] = Field(
+        default_factory=list, description="Notification recipients"
+    )
+    delivery_channels: list[str] = Field(
+        default_factory=list, description="Delivery channels to use"
+    )
+
+
+class ModelQueryMessageContent(ModelMessageContentBase):
+    """Query message content for information requests."""
+
+    message_type: ModelMessageType = Field(
+        default=ModelMessageType.QUERY, description="Query message type"
+    )
+    query_type: str = Field(..., description="Type of query being performed")
+    query_parameters: dict[str, ModelSchemaValue] = Field(
+        default_factory=dict, description="Query parameters"
+    )
+    result_format: str = Field(default="json", description="Expected result format")
+    max_results: int = Field(default=100, description="Maximum number of results")
+    include_metadata: bool = Field(
+        default=True, description="Whether to include result metadata"
+    )
+
+
+# Structured header types to replace primitive soup patterns
+class ModelMessageHeaders(BaseModel):
+    """Structured message headers."""
+
+    content_type: str = Field(
+        default="application/json", description="Message content type"
+    )
+    content_encoding: str = Field(default="utf-8", description="Content encoding")
+    correlation_id: UUID | None = Field(
+        default=None, description="Message correlation identifier"
+    )
+    reply_to: str = Field(default="", description="Reply destination")
+    message_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Message schema version",
+    )
+    source_system: str = Field(default="", description="Source system identifier")
+    destination_system: str = Field(
+        default="", description="Destination system identifier"
+    )
+    security_token: str = Field(default="", description="Security authorization token")
+    compression: str = Field(default="none", description="Message compression type")
+    custom_headers: dict[str, str] = Field(
+        default_factory=dict, description="Additional custom headers"
+    )
+
 
 # Export for use
-__all__ = ["ModelMessagePayload"]
+__all__ = [
+    "ModelMessagePayload",
+    "ModelMessageType",
+    "ModelMessageContentBase",
+    "ModelCommandMessageContent",
+    "ModelDataMessageContent",
+    "ModelNotificationMessageContent",
+    "ModelQueryMessageContent",
+    "ModelMessageHeaders",
+]

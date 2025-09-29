@@ -12,7 +12,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 import re
 from functools import lru_cache
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 

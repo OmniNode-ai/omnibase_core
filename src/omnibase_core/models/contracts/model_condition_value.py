@@ -7,7 +7,7 @@ and enforces structured value handling for workflow conditions.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 

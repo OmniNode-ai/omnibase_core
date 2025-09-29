@@ -4,8 +4,9 @@ Progress Status Model - ONEX Standards Compliant.
 Model for overall workflow progress status in the ONEX workflow coordination system.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -30,7 +31,7 @@ class ModelProgressStatus(BaseModel):
         ..., description="Total number of stages in the workflow", ge=1
     )
 
-    estimated_completion: Optional[datetime] = Field(
+    estimated_completion: datetime | None = Field(
         default=None, description="Estimated completion time"
     )
 

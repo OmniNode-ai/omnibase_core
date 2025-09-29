@@ -8,7 +8,7 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class TypedDictDebugInfoData(TypedDict, total=False):

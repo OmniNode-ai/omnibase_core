@@ -6,7 +6,7 @@ requirements for CLI and tool interoperability.
 """
 
 from collections.abc import Callable
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 

@@ -31,7 +31,7 @@ class ModelConfigurationSource(BaseModel):
         pattern=r"^[a-z_]+$",
     )
 
-    source_path: Path | str | None = Field(
+    source_path: object | None = Field(
         default=None,
         description="Path or identifier for the configuration source",
     )

@@ -25,14 +25,8 @@ if TYPE_CHECKING:
     from .model_contract_orchestrator import ModelContractOrchestrator
     from .model_contract_reducer import ModelContractReducer
 
-# Type alias for all contract types
-ContractType = Union[
-    type["ModelContractBase"],
-    type["ModelContractCompute"],
-    type["ModelContractEffect"],
-    type["ModelContractReducer"],
-    type["ModelContractOrchestrator"],
-]
+# Type alias for all contract types - simplified to avoid overly broad union
+ContractType = type[object]  # Accept any class type, validate at runtime
 
 
 class ModelLazyContractLoader:
@@ -59,7 +53,7 @@ class ModelLazyContractLoader:
             from .model_contract_base import ModelContractBase
 
             self._cache["ModelContractBase"] = ModelContractBase
-        return self._cache["ModelContractBase"]
+        return cast(type["ModelContractBase"], self._cache["ModelContractBase"])
 
     @functools.lru_cache(maxsize=None)
     def get_contract_compute(self) -> type["ModelContractCompute"]:

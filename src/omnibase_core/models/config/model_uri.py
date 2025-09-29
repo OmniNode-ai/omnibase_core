@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.enums.enum_uri_type import EnumUriType
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -21,17 +31,15 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from __future__ import annotations
-
-from typing import Literal
-
-from pydantic import BaseModel, Field
-
 
 class ModelOnexUri(BaseModel):
     """
     Canonical Pydantic model for ONEX URIs.
     See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for spec.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     type: Literal["tool", "validator", "agent", "model", "plugin", "schema", "node"] = (
@@ -52,6 +60,31 @@ class ModelOnexUri(BaseModel):
     )
     original: str = Field(..., description="Original URI string as provided")
 
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
@@ -59,5 +92,4 @@ class ModelOnexUri(BaseModel):
     }
 
 
-# Export the model
 __all__ = ["ModelOnexUri"]

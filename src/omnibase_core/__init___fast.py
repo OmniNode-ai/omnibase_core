@@ -85,12 +85,12 @@ def get_validation_suite() -> (
         Complete validation functions
     """
     from .validation import (
+        ModelValidationSuite,
         ValidationResult,
-        ValidationSuite,
         validate_all,
     )
 
-    return ValidationResult, ValidationSuite, validate_all
+    return ValidationResult, ModelValidationSuite, validate_all
 
 
 def get_all_validation() -> dict[str, object]:
@@ -101,8 +101,8 @@ def get_all_validation() -> dict[str, object]:
         All validation tools
     """
     from .validation import (
+        ModelValidationSuite,
         ValidationResult,
-        ValidationSuite,
         validate_all,
         validate_architecture,
         validate_contracts,
@@ -112,7 +112,7 @@ def get_all_validation() -> dict[str, object]:
 
     return {
         "ValidationResult": ValidationResult,
-        "ValidationSuite": ValidationSuite,
+        "ModelValidationSuite": ModelValidationSuite,
         "validate_all": validate_all,
         "validate_architecture": validate_architecture,
         "validate_contracts": validate_contracts,

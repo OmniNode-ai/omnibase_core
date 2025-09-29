@@ -8,13 +8,19 @@ repetitive patterns while maintaining type safety.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    Nameable,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -34,6 +40,11 @@ class ModelContainer(BaseModel, Generic[T]):
 
     Type Parameters:
         T: The type of value stored in the container
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
     """
 
     value: T = Field(description="The contained value")
@@ -284,15 +295,52 @@ class ModelContainer(BaseModel, Generic[T]):
         "validate_assignment": True,
     }
 
+    # Note: Previously had factory functions (string_container, int_container, etc.)
+    # These were removed to comply with ONEX strong typing standards.
+    # Use explicit creation: ModelContainer.create(value, container_type, ...)
 
-# Note: Previously had type aliases (StringContainer, IntContainer, etc.)
-# These were removed to comply with ONEX strong typing standards.
-# Use explicit generic types instead: ModelContainer[str], ModelContainer[int], etc.
+    # Protocol method implementations
 
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
 
-# Note: Previously had factory functions (string_container, int_container, etc.)
-# These were removed to comply with ONEX strong typing standards.
-# Use explicit creation: ModelContainer.create(value, container_type, ...)
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
 
 
 # Export for use

@@ -7,6 +7,8 @@ for published events in the Event Registry system.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer

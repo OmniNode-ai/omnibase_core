@@ -6,10 +6,12 @@ serialization, and schema generation capabilities across all ONEX components.
 """
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 
@@ -20,6 +22,9 @@ class ModelOnexError(BaseModel):
 
     This model provides structured error information with validation,
     serialization, and schema generation capabilities.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     model_config = {
@@ -66,3 +71,18 @@ class ModelOnexError(BaseModel):
         description="Additional context information for the error",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

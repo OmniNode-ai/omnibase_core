@@ -14,7 +14,7 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator

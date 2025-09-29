@@ -10,7 +10,7 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Union, assert_never
+from typing import Any, assert_never
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -39,25 +39,17 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
 
+# Import centralized ValidationRulesInput type - simplified from overly broad union
+from omnibase_core.models.utils.model_validation_rules_converter import (
+    ModelValidationRulesInputValue,
+)
+
 # Import configuration models from individual files
 from .model_algorithm_config import ModelAlgorithmConfig
 from .model_caching_config import ModelCachingConfig
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
-
-# Type alias for validation rules input - includes all possible input types
-# Using ModelSchemaValue instead of Any for ONEX compliance
-ValidationRulesInput = Union[
-    None,
-    dict[str, ModelSchemaValue],
-    list[ModelSchemaValue],
-    "ModelValidationRules",
-    str,
-    int,
-    float,
-    bool,
-]
 
 
 class ModelContractCompute(ModelContractBase):
@@ -167,20 +159,32 @@ class ModelContractCompute(ModelContractBase):
     # Override parent node_type with architecture-specific type
     @field_validator("node_type", mode="before")
     @classmethod
-    def validate_node_type_architecture(
-        cls, v: Union[EnumNodeArchitectureType, EnumNodeType, str, object]
-    ) -> EnumNodeType:
+    def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
         """Validate and convert architecture type to base node type."""
         if isinstance(v, EnumNodeArchitectureType):
             return EnumNodeType(v.value)  # Both have "compute" value
         elif isinstance(v, EnumNodeType):
             return v
         elif isinstance(v, str):
-            return EnumNodeType(v)
+            try:
+                return EnumNodeType(v)
+            except ValueError:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Invalid string value for node_type: {v}",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation"
+                            ),
+                        }
+                    ),
+                )
         else:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Invalid node_type: {v}",
+                message=f"Invalid node_type type: {type(v).__name__}",
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -255,7 +259,7 @@ class ModelContractCompute(ModelContractBase):
     @classmethod
     def validate_validation_rules_flexible(
         cls,
-        v: ValidationRulesInput,
+        v: ModelValidationRulesInputValue,
     ) -> ModelValidationRules:
         """Validate and convert flexible validation rules format using shared utility."""
         # Local import to avoid circular import

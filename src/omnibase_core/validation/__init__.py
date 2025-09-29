@@ -27,10 +27,10 @@ Usage Examples:
 
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
-from .auditor_protocol import ProtocolAuditor
+from .auditor_protocol import ModelProtocolAuditor
 
 # Import CLI for module execution
-from .cli import ValidationSuite
+from .cli import ModelValidationSuite
 from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
@@ -43,7 +43,7 @@ from .exceptions import (
 )
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
-from .validation_utils import ProtocolInfo, ValidationResult
+from .validation_utils import ModelProtocolInfo, ValidationResult
 
 
 # Main validation functions (recommended interface)
@@ -92,7 +92,7 @@ def validate_all(
     """Run all validations and return results."""
     from pathlib import Path
 
-    suite = ValidationSuite()
+    suite = ModelValidationSuite()
     return suite.run_all_validations(Path(directory_path), **kwargs)
 
 
@@ -100,11 +100,11 @@ __all__ = [
     # Core classes and types
     "ConfigurationError",
     "InputValidationError",
-    "ProtocolAuditor",
-    "ProtocolInfo",
+    "ModelProtocolAuditor",
+    "ModelProtocolInfo",
     "ValidationFrameworkError",
     "ValidationResult",
-    "ValidationSuite",
+    "ModelValidationSuite",
     "validate_all",
     # Main validation functions (recommended)
     "validate_architecture",

@@ -1,0 +1,20 @@
+
+📈 Union Validation Results:
+   Total unions found: 946
+   Legitimate unions: 920
+   Invalid unions: 26
+
+❌ Union legitimacy issues found:
+   src/omnibase_core/models/contracts/model_contract_reducer.py: Line 189: Complex union pattern needs review - Union[ModelFSMSubcontract, None, dict]
+   src/omnibase_core/models/contracts/model_contract_reducer.py: Line 189: Suggestion - Consider using discriminated union or proper model
+   src/omnibase_core/models/contracts/model_lazy_imports.py: Line 29: Invalid union pattern: overly_broad - Union[type, type, type, type, type]
+   src/omnibase_core/models/contracts/model_lazy_imports.py: Line 29: Suggestion - Split into multiple functions with specific types
+   src/omnibase_core/models/contracts/model_lazy_imports.py: Line 29: Suggestion - Create discriminated union with proper discriminator field
+   src/omnibase_core/models/contracts/model_lazy_imports.py: Line 29: Suggestion - Use Protocol or TypeVar for generic behavior
+   src/omnibase_core/models/contracts/model_lazy_imports.py: Line 29: Union contains duplicate types Union[type, type, type, type, type] → Union[type]
+   src/omnibase_core/models/contracts/model_workflow_condition.py: Line 59: Invalid union pattern: overly_broad - Union[ModelConditionValue, ModelConditionValue, ModelConditionValue, ModelConditionValue, ModelConditionValueList]
+   src/omnibase_core/models/contracts/model_workflow_condition.py: Line 59: Suggestion - Split into multiple functions with specific types
+   src/omnibase_core/models/contracts/model_workflow_condition.py: Line 59: Suggestion - Create discriminated union with proper discriminator field
+   ... and 105 more issues
+
+❌ Too many invalid unions: 26 > 0 (allowed)

@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import random
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -32,6 +34,10 @@ class ModelRetryPolicy(BaseModel):
     - conditions: Retry trigger conditions and decision logic
     - execution: Execution tracking and state management
     - advanced: Circuit breaker and advanced features
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     # Composed sub-models for focused concerns
@@ -177,7 +183,7 @@ class ModelRetryPolicy(BaseModel):
         self.execution.record_attempt(
             success,
             error,
-            status_code,
+            status_code if status_code is not None else 0,
             execution_time_seconds,
         )
 
@@ -210,7 +216,9 @@ class ModelRetryPolicy(BaseModel):
                 self.execution.total_execution_time_seconds
             ),
             "last_error": ModelSchemaValue.from_value(
-                str(self.execution.last_error) if self.execution.last_error else None
+                str(self.execution.error_message.to_value())
+                if self.execution.error_message.to_value()
+                else None
             ),
             "last_status_code": ModelSchemaValue.from_value(
                 self.execution.last_status_code
@@ -317,6 +325,33 @@ class ModelRetryPolicy(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

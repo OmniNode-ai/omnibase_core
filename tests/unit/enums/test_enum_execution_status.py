@@ -174,28 +174,28 @@ class TestEnumExecutionStatus:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class ExecutionModel(BaseModel):
+        class EnumExecutionModel(BaseModel):
             status: EnumExecutionStatus
 
         # Test valid enum assignment
-        model = ExecutionModel(status=EnumExecutionStatus.COMPLETED)
+        model = EnumExecutionModel(status=EnumExecutionStatus.COMPLETED)
         assert model.status == EnumExecutionStatus.COMPLETED
 
         # Test string assignment (should work due to str inheritance)
-        model = ExecutionModel(status="running")
+        model = EnumExecutionModel(status="running")
         assert model.status == EnumExecutionStatus.RUNNING
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            ExecutionModel(status="invalid_status")
+            EnumExecutionModel(status="invalid_status")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
 
-        class ExecutionModel(BaseModel):
+        class EnumExecutionModel(BaseModel):
             status: EnumExecutionStatus
 
-        model = ExecutionModel(status=EnumExecutionStatus.FAILED)
+        model = EnumExecutionModel(status=EnumExecutionStatus.FAILED)
 
         # Test dict serialization
         model_dict = model.model_dump()

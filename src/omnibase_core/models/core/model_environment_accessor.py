@@ -6,7 +6,7 @@ Specialized accessor for environment properties with automatic type conversion.
 
 from __future__ import annotations
 
-from typing import TypeVar, cast, get_origin
+from typing import Any, TypeVar, cast, get_origin
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -17,7 +17,13 @@ T = TypeVar("T")
 
 
 class ModelEnvironmentAccessor(ModelFieldAccessor):
-    """Specialized accessor for environment properties with type coercion."""
+    """Specialized accessor for environment properties with type coercion.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
+    """
 
     def get_typed_value(self, path: str, expected_type: type[T], default: T) -> T:
         """Get a field value with specific type checking using generic type inference."""

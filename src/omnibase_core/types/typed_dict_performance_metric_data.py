@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class TypedDictPerformanceMetricData(TypedDict, total=False):

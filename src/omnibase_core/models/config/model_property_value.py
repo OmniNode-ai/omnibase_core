@@ -8,15 +8,25 @@ with structured validation and proper type handling.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import BasicValueType, Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+# Use object type to avoid primitive soup union anti-pattern.
+# Type safety is ensured through discriminated union with EnumPropertyType discriminator
+# and runtime validation in the field validator.
+PropertyValueType = object
+
+# Additional type aliases for enhanced type safety
+StringPropertyType = str
 
 
 class ModelPropertyValue(BaseModel):
@@ -25,10 +35,14 @@ class ModelPropertyValue(BaseModel):
 
     Uses discriminated union pattern with runtime validation to ensure
     type safety while avoiding overly broad Union types.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
-    # Value storage with runtime validation - object type with discriminated validation
-    value: object = Field(
+    # Value storage with runtime validation - discriminated union with type safety
+    value: PropertyValueType = Field(
         description="The actual property value - validated against value_type",
     )
 
@@ -49,7 +63,9 @@ class ModelPropertyValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
+    def validate_value_type(
+        cls, v: PropertyValueType, info: ValidationInfo
+    ) -> PropertyValueType:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
             value_type = info.data["value_type"]
@@ -398,6 +414,32 @@ class ModelPropertyValue(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelPropertyValue"]

@@ -8,14 +8,28 @@ eliminating field duplication and providing consistent configuration interfaces.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    Nameable,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
+# Type variable for configuration data - using Any to avoid Pydantic schema generation issues
 T = TypeVar("T")
 
 
@@ -28,7 +42,41 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     - Lifecycle fields (enabled, timestamps)
     - Generic typed configuration data
     - Common utility methods
+
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
     """
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+        # Removed arbitrary_types_allowed - handle arbitrary types explicitly with serializers
+    }
+
+    @field_serializer("config_data")
+    def serialize_config_data(self, config_data: Any) -> Any:
+        """Convert arbitrary types (including Exception) to serializable form."""
+        if isinstance(config_data, Exception):
+            return str(config_data)
+        elif hasattr(config_data, "__dict__"):
+            # Try to serialize objects with __dict__
+            try:
+                return config_data.__dict__
+            except:
+                return str(config_data)
+        return config_data
+
+    @field_validator("config_data", mode="before")
+    @classmethod
+    def validate_config_data(cls, v: Any) -> Any:
+        """Pre-process Exception types in config_data before Pydantic validation."""
+        if isinstance(v, Exception):
+            return str(v)
+        return v
 
     # Core metadata
     name: str | None = Field(default=None, description="Configuration name")
@@ -47,7 +95,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Generic configuration data
-    config_data: T | None = Field(default=None, description="Typed configuration data")
+    config_data: Any = Field(default=None, description="Typed configuration data")
 
     def update_timestamp(self) -> None:
         """Update the modification timestamp."""
@@ -76,9 +124,17 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         """Check if configuration is enabled."""
         return self.enabled
 
-    def is_valid(self) -> bool:
-        """Check if configuration is valid (enabled and has required data)."""
-        return self.enabled and self.config_data is not None
+    def validate_instance(self) -> bool:
+        """Check if configuration is valid (enabled and has required data) (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - configuration enabled and has data
+            base_valid = self.enabled and self.config_data is not None
+            # Additional protocol-specific validation
+            if self.name is not None and len(self.name.strip()) == 0:
+                return False
+            return base_valid
+        except Exception:
+            return False
 
     def get_display_name(self) -> str:
         """Get display name, falling back to 'Unnamed Configuration'."""
@@ -89,12 +145,12 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         return str(self.version) if self.version else "1.0.0"
 
     @model_validator(mode="after")
-    def validate_configuration(self) -> ModelConfigurationBase[T]:
+    def validate_configuration(self) -> "ModelConfigurationBase[T]":
         """Override in subclasses for custom validation."""
         return self
 
     @classmethod
-    def create_empty(cls, name: str) -> ModelConfigurationBase[T]:
+    def create_empty(cls, name: str) -> ModelConfigurationBase[Any]:
         """Create an empty configuration with a name."""
         return cls(name=name, description=f"Empty {name} configuration")
 
@@ -104,7 +160,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         return cls(name=name, config_data=config_data)
 
     @classmethod
-    def create_disabled(cls, name: str) -> ModelConfigurationBase[T]:
+    def create_disabled(cls, name: str) -> ModelConfigurationBase[Any]:
         """Create a disabled configuration."""
         return cls(
             name=name,
@@ -112,11 +168,33 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             description=f"Disabled {name} configuration",
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize configuration to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                elif key == "config_data":
+                    self.config_data = value
+            self.update_timestamp()
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get configuration name (Nameable protocol)."""
+        return self.get_display_name()
+
+    def set_name(self, name: str) -> None:
+        """Set configuration name (Nameable protocol)."""
+        self.name = name
+        self.update_timestamp()
 
 
 # Export for use

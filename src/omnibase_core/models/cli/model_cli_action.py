@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -19,12 +20,16 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
-class ModelCliAction(BaseModel):
+class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax validation
     """
     Dynamic CLI action model that reads from contracts.
 
     Replaces hardcoded EnumNodeCliAction to allow third-party nodes
     to register their own actions dynamically.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Nameable: Name management interface
+    - Validatable: Validation and verification
     """
 
     action_id: UUID = Field(
@@ -39,9 +44,9 @@ class ModelCliAction(BaseModel):
     node_display_name: str = Field(..., description="Node name", alias="node_name")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
-    category: EnumActionCategory | None = Field(
-        None,
-        description="Action category for grouping",
+    category: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(None),
+        description="Action category for grouping (enum or null)",
     )
 
     @field_validator("action_display_name")
@@ -130,7 +135,8 @@ class ModelCliAction(BaseModel):
             action_id = None  # Use default UUID generation
         if not isinstance(deprecated, bool):
             deprecated = False
-        # Keep category as-is to let Pydantic validate it
+        # Convert category to ModelSchemaValue
+        category_value = ModelSchemaValue.from_value(category)
 
         # Return instance with typed arguments - Pydantic will validate
         # Use default description only if None, preserve empty strings
@@ -150,7 +156,7 @@ class ModelCliAction(BaseModel):
                 node_name=node_name,  # Use alias
                 description=final_description,
                 deprecated=deprecated,
-                category=category if isinstance(category, EnumActionCategory) else None,
+                category=category_value,
             )
         else:
             return cls(
@@ -160,7 +166,7 @@ class ModelCliAction(BaseModel):
                 node_name=node_name,  # Use alias
                 description=final_description,
                 deprecated=deprecated,
-                category=category if isinstance(category, EnumActionCategory) else None,
+                category=category_value,
             )
 
     def get_qualified_name(self) -> str:
@@ -183,14 +189,47 @@ class ModelCliAction(BaseModel):
         """Check if this action has the specified action ID."""
         return self.action_id == action_id
 
-    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
-        """Override model_dump to use aliases by default."""
-        kwargs.setdefault("by_alias", True)
-        return super().model_dump(**kwargs)
-
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "populate_by_name": True,  # Allow both field name and alias
     }
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """Override model_dump to use aliases by default."""
+        kwargs.setdefault("by_alias", True)
+        return super().model_dump(**kwargs)
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

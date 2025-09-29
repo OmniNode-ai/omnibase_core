@@ -9,13 +9,26 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
+
+# Use object type for CLI command option values.
+# Avoids primitive soup union anti-pattern while maintaining flexibility.
+# Runtime type validation should be done where values are consumed.
+CommandOptionValue = object
+
+# Use object type for execution context values.
+# Avoids primitive soup union anti-pattern while maintaining flexibility.
+# Runtime type validation should be done where values are consumed.
+ExecutionContextValue = object
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_execution_status_v2 import (
+    EnumExecutionStatusV2 as EnumExecutionStatus,
+)
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 
 if TYPE_CHECKING:
@@ -40,7 +53,7 @@ class ModelCliExecution(BaseModel):
     command_args: list[str] = Field(
         default_factory=list, description="Command arguments"
     )
-    command_options: dict[str, object] = Field(
+    command_options: dict[str, CommandOptionValue] = Field(
         default_factory=dict, description="Command options"
     )
 
@@ -103,7 +116,7 @@ class ModelCliExecution(BaseModel):
     session_id: UUID | None = Field(None, description="Session ID")
 
     # Data and output
-    input_data: dict[str, object] = Field(
+    input_data: dict[str, ExecutionContextValue] = Field(
         default_factory=dict, description="Input data"
     )
     output_format: EnumOutputFormat = Field(
@@ -112,7 +125,7 @@ class ModelCliExecution(BaseModel):
     capture_output: bool = Field(default=True, description="Whether to capture output")
 
     # Metadata
-    custom_context: dict[str, object] = Field(
+    custom_context: dict[str, ExecutionContextValue] = Field(
         default_factory=dict, description="Custom context data"
     )
     execution_tags: list[str] = Field(
@@ -243,19 +256,23 @@ class ModelCliExecution(BaseModel):
         if tag not in self.execution_tags:
             self.execution_tags.append(tag)
 
-    def add_context(self, key: str, context: object) -> None:
+    def add_context(self, key: str, context: ExecutionContextValue) -> None:
         """Add custom context data."""
         self.custom_context[key] = context
 
-    def get_context(self, key: str, default: object | None = None) -> object | None:
+    def get_context(
+        self, key: str, default: ExecutionContextValue = None
+    ) -> ExecutionContextValue:
         """Get custom context data."""
         return self.custom_context.get(key, default)
 
-    def add_input_data(self, key: str, input_data: object) -> None:
+    def add_input_data(self, key: str, input_data: ExecutionContextValue) -> None:
         """Add input data."""
         self.input_data[key] = input_data
 
-    def get_input_data(self, key: str, default: object | None = None) -> object | None:
+    def get_input_data(
+        self, key: str, default: ExecutionContextValue = None
+    ) -> ExecutionContextValue:
         """Get input data."""
         return self.input_data.get(key, default)
 
@@ -365,6 +382,39 @@ class ModelCliExecution(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

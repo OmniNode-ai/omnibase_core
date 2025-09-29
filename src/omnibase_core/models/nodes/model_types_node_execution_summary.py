@@ -6,7 +6,7 @@ Replaces dict[str, int | bool | None] return type with structured typing.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class ModelNodeExecutionSummaryType(TypedDict):

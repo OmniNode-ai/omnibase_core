@@ -8,8 +8,12 @@ with structured validation and proper type handling for retry execution failures
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelRetryFailureInfo(BaseModel):
@@ -18,16 +22,20 @@ class ModelRetryFailureInfo(BaseModel):
 
     Replaces dict[str, str | int | None] with structured failure information
     that maintains type safety for retry execution debugging.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
-    # Failure details
-    error_message: str | None = Field(
-        None,
+    # Failure details - using ONEX types instead of union types
+    error_message: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Last error message encountered",
     )
 
-    last_status_code: int | None = Field(
-        None,
+    last_status_code: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(0),
         description="Last HTTP status code or error code",
     )
 
@@ -39,20 +47,26 @@ class ModelRetryFailureInfo(BaseModel):
     @classmethod
     def from_retry_execution(
         cls,
-        last_error: str | None,
-        last_status_code: int | None,
+        last_error: str,
+        last_status_code: int,
         attempts_made: int,
     ) -> ModelRetryFailureInfo:
         """Create failure info from retry execution data."""
         return cls(
-            error_message=last_error,
-            last_status_code=last_status_code,
+            error_message=ModelSchemaValue.from_value(last_error if last_error else ""),
+            last_status_code=ModelSchemaValue.from_value(
+                last_status_code if last_status_code else 0
+            ),
             attempts_made=attempts_made,
         )
 
     def has_error(self) -> bool:
         """Check if failure info contains error details."""
-        return self.error_message is not None or self.last_status_code is not None
+        error_msg_value = self.error_message.to_value()
+        status_code_value = self.last_status_code.to_value()
+        return (isinstance(error_msg_value, str) and error_msg_value != "") or (
+            isinstance(status_code_value, int) and status_code_value != 0
+        )
 
     def get_error_summary(self) -> str:
         """Get a summary of the error for logging."""
@@ -60,10 +74,13 @@ class ModelRetryFailureInfo(BaseModel):
             return "No errors recorded"
 
         parts = []
-        if self.error_message:
-            parts.append(f"Error: {self.error_message}")
-        if self.last_status_code:
-            parts.append(f"Status: {self.last_status_code}")
+        error_msg_value = self.error_message.to_value()
+        status_code_value = self.last_status_code.to_value()
+
+        if isinstance(error_msg_value, str) and error_msg_value:
+            parts.append(f"Error: {error_msg_value}")
+        if isinstance(status_code_value, int) and status_code_value != 0:
+            parts.append(f"Status: {status_code_value}")
         parts.append(f"Attempts: {self.attempts_made}")
 
         return "; ".join(parts)
@@ -74,6 +91,34 @@ class ModelRetryFailureInfo(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+
 __all__ = ["ModelRetryFailureInfo"]

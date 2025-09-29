@@ -6,7 +6,7 @@ Specialized TypedDict for result-type models with success/error patterns.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class TypedDictResultFactoryKwargs(TypedDict, total=False):

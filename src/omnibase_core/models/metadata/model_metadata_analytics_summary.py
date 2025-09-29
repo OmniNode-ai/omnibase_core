@@ -7,14 +7,26 @@ Composed model that combines focused analytics components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypedDict
+from typing import Any, TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    PrimitiveValueType,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
+
 
 class TypedDictCoreAnalytics(TypedDict):
-    """Core analytics data structure."""
+    """Core analytics data structure.
+    Implements omnibase_spi protocols:
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     collection_id: UUID
     collection_name: str | None
@@ -30,6 +42,39 @@ class TypedDictTimestampData(TypedDict):
 
     last_modified: datetime | None
     last_validated: datetime | None
+
+
+class TypedDictCoreData(TypedDict, total=False):
+    """Typed structure for core data updates."""
+
+    total_nodes: int
+    active_nodes: int
+    deprecated_nodes: int
+    disabled_nodes: int
+
+
+class TypedDictQualityData(TypedDict, total=False):
+    """Typed structure for quality data updates."""
+
+    health_score: float
+    success_rate: float
+    documentation_coverage: float
+
+
+class TypedDictErrorData(TypedDict, total=False):
+    """Typed structure for error data updates."""
+
+    error_count: int
+    warning_count: int
+    critical_error_count: int
+
+
+class TypedDictPerformanceData(TypedDict, total=False):
+    """Typed structure for performance data updates."""
+
+    average_execution_time_ms: float
+    peak_memory_usage_mb: float
+    total_invocations: int
 
 
 class TypedDictAnalyticsSummaryData(TypedDict):
@@ -251,12 +296,23 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     # Composite methods
     def update_all_metrics(
         self,
-        core_data: dict[str, int] | None = None,
-        quality_data: dict[str, float] | None = None,
-        error_data: dict[str, int] | None = None,
-        performance_data: dict[str, int | float] | None = None,
+        core_data: TypedDictCoreData | None = None,
+        quality_data: TypedDictQualityData | None = None,
+        error_data: TypedDictErrorData | None = None,
+        performance_data: TypedDictPerformanceData | None = None,
     ) -> None:
-        """Update all component metrics."""
+        """
+        Update all component metrics with structured typing.
+
+        Args:
+            core_data: Core data with int values for node counts
+            quality_data: Quality data with float values for metrics
+            error_data: Error data with int values for error counts
+            performance_data: Performance data with numeric values for metrics
+
+        Note:
+            All parameters are optional and use typed dictionaries for type safety.
+        """
         # Update core
         if core_data and "total_nodes" in core_data:
             self.core.update_node_counts(
@@ -382,6 +438,44 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

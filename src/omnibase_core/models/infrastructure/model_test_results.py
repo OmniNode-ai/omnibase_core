@@ -7,14 +7,22 @@ Strongly typed model for test execution results.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
 
 from .model_test_result import ModelTestResult
 
 
 class ModelTestResults(BaseModel):
-    """Collection of test results with summary."""
+    """Collection of test results with summary.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    """
 
     results: list[ModelTestResult] = Field(
         default_factory=list,
@@ -60,6 +68,33 @@ class ModelTestResults(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

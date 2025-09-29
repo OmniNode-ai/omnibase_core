@@ -14,9 +14,9 @@ from omnibase_core.core.contracts.model_contract_effect import ModelContractEffe
 def test_minimal_contract():
     """
     Validate that a minimal effect contract YAML can be parsed without causing infinite recursion.
-    
+
     Attempts to load a compact, valid effect contract YAML into ModelContractEffect. Useful to verify that parsing/loading does not raise a RecursionError when initializing basic ONEX nodes.
-    
+
     Returns:
         True if the contract loads successfully, False otherwise.
     """

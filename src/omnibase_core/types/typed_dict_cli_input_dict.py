@@ -6,7 +6,7 @@ Provides TypedDict for CLI input parameters with proper typing.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 from uuid import UUID
 
 

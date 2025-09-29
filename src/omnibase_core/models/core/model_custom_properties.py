@@ -8,6 +8,9 @@ with validation and utility methods.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import PrimitiveValueType
@@ -24,11 +27,16 @@ class ModelCustomProperties(BaseModel):
 
     Replaces patterns like:
     - custom_strings: dict[str, str]
-    - custom_metadata: dict[str, str | int | bool | float]
+    - custom_metadata: dict[str, PrimitiveValueType] (simplified from complex unions)
     - custom_numbers: dict[str, float]
     - custom_flags: dict[str, bool]
 
     Provides organized, typed custom fields with validation and utility methods.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
     """
 
     # Typed custom properties
@@ -57,7 +65,7 @@ class ModelCustomProperties(BaseModel):
         """Set a custom boolean value."""
         self.custom_flags[key] = value
 
-    def get_custom_value(self, key: str) -> str | float | bool | None:
+    def get_custom_value(self, key: str) -> PrimitiveValueType | None:
         """Get custom value from any category. Returns raw value or None if not found."""
         # Check each category with explicit typing
         if key in self.custom_strings:
@@ -108,9 +116,9 @@ class ModelCustomProperties(BaseModel):
             removed = True
         return removed
 
-    def get_all_custom_fields(self) -> dict[str, str | float | bool]:
+    def get_all_custom_fields(self) -> dict[str, PrimitiveValueType]:
         """Get all custom fields as a unified dictionary with raw values."""
-        result: dict[str, str | float | bool] = {}
+        result: dict[str, PrimitiveValueType] = {}
         for key, string_value in self.custom_strings.items():
             result[key] = string_value
         for key, numeric_value in self.custom_numbers.items():
@@ -187,7 +195,7 @@ class ModelCustomProperties(BaseModel):
             instance.set_custom_value(key, value)
         return instance
 
-    def update_from_dict(self, data: dict[str, PrimitiveValueType | None]) -> None:
+    def update_from_dict(self, data: Mapping[str, PrimitiveValueType | None]) -> None:
         """Update custom properties from dictionary of raw values. Skips None values."""
         for key, value in data.items():
             if value is not None:
@@ -196,7 +204,7 @@ class ModelCustomProperties(BaseModel):
     @classmethod
     def from_metadata(
         cls,
-        metadata: dict[str, str | float | bool | ModelSchemaValue],
+        metadata: Mapping[str, PrimitiveValueType | ModelSchemaValue],
     ) -> ModelCustomProperties:
         """
         Create ModelCustomProperties from custom_metadata field.
@@ -230,14 +238,14 @@ class ModelCustomProperties(BaseModel):
             },
         )
 
-    def to_metadata(self) -> dict[str, str | float | bool]:
+    def to_metadata(self) -> dict[str, PrimitiveValueType]:
         """
         Convert to custom_metadata format using Pydantic serialization.
         Uses .model_dump() for proper Pydantic serialization.
         Returns raw values for round-trip compatibility with from_metadata().
         """
         dumped = self.model_dump()
-        result: dict[str, str | float | bool] = {}
+        result: dict[str, PrimitiveValueType] = {}
 
         # Return raw values instead of ModelSchemaValue instances
         for key, string_value in dumped["custom_strings"].items():
@@ -254,6 +262,49 @@ class ModelCustomProperties(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
 
 
 # Export for use

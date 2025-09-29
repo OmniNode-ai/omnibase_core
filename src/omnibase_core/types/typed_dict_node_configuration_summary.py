@@ -6,7 +6,7 @@ Type-safe dictionary for node configuration summary.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class TypedDictNodeConfigurationSummary(TypedDict):

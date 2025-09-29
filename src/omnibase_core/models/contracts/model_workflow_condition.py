@@ -7,7 +7,7 @@ string-based condition support and enforces structured condition evaluation.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from typing import Union, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -15,7 +15,12 @@ from omnibase_core.core.type_constraints import (
     ComplexContextValueType,
     ContextValueType,
     PrimitiveValueType,
+    is_primitive_value,
+    validate_primitive_value,
 )
+
+# Type alias for condition value that can be single or list
+ConditionValueType = PrimitiveValueType | list[PrimitiveValueType]
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -56,13 +61,7 @@ class ModelWorkflowCondition(BaseModel):
         description="Operator to use for condition evaluation",
     )
 
-    expected_value: Union[
-        ModelConditionValue[str],
-        ModelConditionValue[int],
-        ModelConditionValue[float],
-        ModelConditionValue[bool],
-        ModelConditionValueList,
-    ] = Field(
+    expected_value: ModelConditionValue[Any] | ModelConditionValueList = Field(
         ...,
         description="Expected value for comparison (strongly typed container)",
     )
@@ -98,21 +97,9 @@ class ModelWorkflowCondition(BaseModel):
     @classmethod
     def validate_expected_value(
         cls,
-        v: Union[
-            ModelConditionValue[str],
-            ModelConditionValue[int],
-            ModelConditionValue[float],
-            ModelConditionValue[bool],
-            ModelConditionValueList,
-        ],
+        v: object,
         info: ValidationInfo | None = None,
-    ) -> Union[
-        ModelConditionValue[str],
-        ModelConditionValue[int],
-        ModelConditionValue[float],
-        ModelConditionValue[bool],
-        ModelConditionValueList,
-    ]:
+    ) -> object:
         """Validate expected value container is properly typed and compatible with operator."""
         # Validation is handled by the container types themselves
         # Additional operator compatibility checks can be added based on info.data
@@ -175,30 +162,29 @@ class ModelWorkflowCondition(BaseModel):
             else:
                 raise KeyError(f"Field path '{field_path}' not found")
 
-        # Cast return to match expected return type annotation
-        return cast(ContextValueType, current_value)
+        # Return the extracted value
+        return current_value
 
     def _extract_container_value(
         self,
-        container: Union[
-            ModelConditionValue[str],
-            ModelConditionValue[int],
-            ModelConditionValue[float],
-            ModelConditionValue[bool],
-            ModelConditionValueList,
-        ],
-    ) -> Union[PrimitiveValueType, list[PrimitiveValueType]]:
+        container: ModelConditionValue[Any] | ModelConditionValueList,
+    ) -> ConditionValueType:
         """Extract the actual value from the type-safe container."""
         if isinstance(container, ModelConditionValueList):
             return container.values
+        elif hasattr(container, "value"):
+            # ModelConditionValue generic container - type guard for .value attribute
+            return cast(ConditionValueType, container.value)
         else:
-            # ModelConditionValue generic container
-            return container.value
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid container type: {type(container).__name__}. Expected ModelConditionValue or ModelConditionValueList.",
+            )
 
     def _evaluate_operator(
         self,
         actual_value: ContextValueType,
-        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
+        expected_value: ConditionValueType,
         operator: EnumConditionOperator,
     ) -> bool:
         """Evaluate the specific operator against actual and expected values."""
@@ -248,10 +234,31 @@ class ModelWorkflowCondition(BaseModel):
     def _validate_comparison_types(
         self,
         actual_value: ContextValueType,
-        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
+        expected_value: ConditionValueType,
         operator: EnumConditionOperator,
     ) -> None:
         """Validate that values are comparable for comparison operators."""
+        # First validate that expected_value is a primitive (not a list) for comparison
+        if isinstance(expected_value, list):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot use {operator.value} operator with list type - use IN/NOT_IN operators instead",
+            )
+
+        # Ensure both values are primitive types using runtime validation
+        if not is_primitive_value(actual_value):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot compare non-primitive type {type(actual_value).__name__} using {operator.value} operator",
+            )
+
+        if not is_primitive_value(expected_value):
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot compare with non-primitive type {type(expected_value).__name__} using {operator.value} operator",
+            )
+
+        # Now we know both values are primitives, check type compatibility
         # Allow comparison between numeric types (int, float) and bool
         numeric_types = (int, float, bool)
 
@@ -273,12 +280,18 @@ class ModelWorkflowCondition(BaseModel):
     def _validate_contains_types(
         self,
         actual_value: ContextValueType,
-        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
+        expected_value: ConditionValueType,
         operator: EnumConditionOperator,
     ) -> None:
         """Validate that types are compatible for contains/not_contains operators."""
         # Contains operations require the actual_value to be a container type
         if isinstance(actual_value, (str, list, dict)):
+            # Ensure expected_value is a primitive for contains operations (not a list)
+            if isinstance(expected_value, list):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Cannot use {operator.value} operator with list as expected value - expected a single primitive value",
+                )
             return
         else:
             raise OnexError(
@@ -289,12 +302,18 @@ class ModelWorkflowCondition(BaseModel):
     def _validate_in_types(
         self,
         actual_value: ContextValueType,
-        expected_value: Union[PrimitiveValueType, list[PrimitiveValueType]],
+        expected_value: ConditionValueType,
         operator: EnumConditionOperator,
     ) -> None:
         """Validate that types are compatible for in/not_in operators."""
         # In operations require the expected_value to be a container type
         if isinstance(expected_value, (str, list)):
+            # Ensure actual_value is a primitive for in operations
+            if not is_primitive_value(actual_value):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Cannot use {operator.value} operator with non-primitive actual value {type(actual_value).__name__}",
+                )
             return
         else:
             raise OnexError(

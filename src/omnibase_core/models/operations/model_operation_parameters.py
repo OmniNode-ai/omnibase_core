@@ -8,6 +8,8 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import Any
+
 from .model_effect_parameters import ModelEffectParameters
 
 # Import models from individual files following ONEX one-model-per-file architecture

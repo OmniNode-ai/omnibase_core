@@ -7,17 +7,21 @@ that maintains type safety and provides utility methods for value checking.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import PrimitiveValueType
 
 
 class ModelConditionValueList(BaseModel):
     """Container for list of strongly-typed condition values."""
 
-    values: list[str | int | float | bool] = Field(
+    values: list[PrimitiveValueType] = Field(
         ..., description="List of condition values"
     )
 
-    def contains(self, item: str | int | float | bool) -> bool:
+    def contains(self, item: PrimitiveValueType) -> bool:
         """Check if the list contains the specified item."""
         return item in self.values
 

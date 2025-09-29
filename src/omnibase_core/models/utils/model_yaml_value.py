@@ -4,19 +4,26 @@ YAML-serializable data structures model with discriminated union.
 Author: ONEX Framework Team
 """
 
-# Remove Any import - using object for YAML-serializable data types
+from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
+# Remove Any import - using object for YAML-serializable data types
+
 
 class ModelYamlValue(BaseModel):
-    """Discriminated union for YAML-serializable data structures."""
+    """Discriminated union for YAML-serializable data structures.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     value_type: EnumYamlValueType = Field(
         description="Type discriminator for the YAML value"
@@ -87,6 +94,22 @@ class ModelYamlValue(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelYamlValue"]

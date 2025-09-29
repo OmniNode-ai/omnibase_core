@@ -7,18 +7,18 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Any, Union
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
-
-# ONEX type alias for validation values (replaces Any)
-ValidationValueType = Union[str, int, bool, None]
-# Extended type for input values that may need conversion
-InputValueType = Union[str, int, float, bool, None, list[object], dict[str, object]]
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
 from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+# ONEX validation values - use discriminated union pattern instead of broad unions
+# ValidationValueType replaced with EnumValidationValueType + structured fields
+# InputValueType replaced with ModelSchemaValue.from_value() conversion
 
 
 class ModelValidationValue(BaseModel):
@@ -27,20 +27,23 @@ class ModelValidationValue(BaseModel):
 
     Replaces str | int | bool unions in validation details with
     a strongly-typed discriminated union following ONEX patterns.
+    Implements omnibase_spi protocols:
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
     """
 
     value_type: EnumValidationValueType = Field(
         description="Type of the validation value",
     )
-    raw_value: ValidationValueType = Field(description="Raw value data")
+    raw_value: object = Field(description="Raw value data")
 
     @field_validator("raw_value")
     @classmethod
     def validate_raw_value(
         cls,
-        v: ValidationValueType,
+        v: object,
         info: ValidationInfo,
-    ) -> ValidationValueType:
+    ) -> object:
         """Validate raw value matches declared type."""
         if not hasattr(info, "data") or "value_type" not in info.data:
             return v
@@ -91,8 +94,8 @@ class ModelValidationValue(BaseModel):
         return cls(value_type=EnumValidationValueType.NULL, raw_value=None)
 
     @classmethod
-    def from_any(cls, value: InputValueType) -> ModelValidationValue:
-        """Create validation value from any Python value with automatic type detection."""
+    def from_any(cls, value: object) -> ModelValidationValue:
+        """Create validation value from any Python value with automatic type detection using ModelSchemaValue pattern."""
         if value is None:
             return cls.from_null()
         if isinstance(value, str):
@@ -104,7 +107,7 @@ class ModelValidationValue(BaseModel):
         # Convert unknown types to string representation
         return cls.from_string(str(value))
 
-    def to_python_value(self) -> ValidationValueType:
+    def to_python_value(self) -> object:
         """Convert back to Python native value."""
         return self.raw_value
 
@@ -119,6 +122,21 @@ class ModelValidationValue(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

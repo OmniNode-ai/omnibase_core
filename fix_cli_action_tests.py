@@ -12,9 +12,9 @@ from pathlib import Path
 def fix_cli_action_tests(file_path: str) -> None:
     """
     Update a CLI Action test file to use ONEX-compliant patterns.
-    
+
     Reads the file at `file_path`, transforms direct ModelCliAction constructor usages and related field references to the new factory/field names, and writes the modified content back to the same file.
-    
+
     Parameters:
         file_path (str): Path to the test file to modify; the file is updated in place.
     """
@@ -43,7 +43,7 @@ def fix_cli_action_tests(file_path: str) -> None:
     def replace_constructor(match):
         """
         Create the replacement text for a matched ModelCliAction constructor call by converting it into a ModelCliAction.from_contract_action factory invocation.
-        
+
         Parameters:
             match (re.Match): A regex match whose capture groups, in order, are:
                 1. action_id
@@ -54,7 +54,7 @@ def fix_cli_action_tests(file_path: str) -> None:
                 6. deprecated
                 7. category
             Any group may be empty; only non-empty optional groups (action_id, deprecated, category) are included as keyword parameters in the output.
-        
+
         Returns:
             str: A multiline string containing the factory call expression with the appropriate keyword arguments inserted.
         """
@@ -81,7 +81,8 @@ def fix_cli_action_tests(file_path: str) -> None:
         if category:
             params.append(f"category={category}")
 
-        return f"ModelCliAction.from_contract_action(\n            {',\n            '.join(params)},\n        )"
+        newline = "\n            "
+        return f"ModelCliAction.from_contract_action(\n            {newline.join(params)},\n        )"
 
     # Apply the constructor pattern replacement
     new_content = constructor_pattern.sub(replace_constructor, content)
@@ -107,10 +108,10 @@ def fix_cli_action_tests(file_path: str) -> None:
         # to ensure it properly rejects old-style parameters
         """
         Preserve a validation-test match unchanged by returning the captured test block.
-        
+
         Parameters:
             match (re.Match): Regex match whose group 1 contains the original validation-test code to keep.
-        
+
         Returns:
             str: The text captured in group 1 (the original validation-test block).
         """
@@ -132,7 +133,7 @@ def fix_cli_action_tests(file_path: str) -> None:
 def main():
     """
     Run the CLI Action tests fixer against the hard-coded test file.
-    
+
     Checks that the target test file exists, invokes `fix_cli_action_tests` on it, prints a success message on completion, and exits with a non-zero status if the file is missing or an error occurs during processing.
     """
     file_path = "/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/core/test_model_cli_action.py"

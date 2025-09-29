@@ -8,32 +8,87 @@ consistent ONEX compliance.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import TypedDict, Union
+from __future__ import annotations
 
+from typing import Any, TypedDict, cast
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_contract_data_type import EnumContractDataType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-# Type alias for contract data input - includes all possible contract data types
-# Using ModelSchemaValue and specific types instead of Any for ONEX compliance
-ContractData = Union[
-    dict[
-        str,
-        Union[
-            str,
-            int,
-            float,
-            bool,
-            list[object],
-            dict[str, object],
-            ModelSchemaValue,
-            None,
-        ],
-    ],
-    dict[str, ModelSchemaValue],
-    dict[str, object],
-]
+
+# ONEX-compliant discriminated union for contract data - replaces Union pattern
+class ModelContractData(BaseModel):
+    """
+    Discriminated union for contract data to replace Union patterns.
+
+    Replaces Union[dict[str, ModelSchemaValue], dict[str, object], None] with
+    ONEX-compliant discriminated union pattern.
+    """
+
+    data_type: EnumContractDataType = Field(
+        description="Contract data type discriminator"
+    )
+
+    # Data storage fields (only one should be populated based on data_type)
+    schema_values: dict[str, ModelSchemaValue] | None = None
+    raw_values: dict[str, object] | None = None
+
+    @classmethod
+    def from_schema_values(
+        cls, values: dict[str, ModelSchemaValue]
+    ) -> ModelContractData:
+        """Create contract data from schema values."""
+        return cls(data_type=EnumContractDataType.SCHEMA_VALUES, schema_values=values)
+
+    @classmethod
+    def from_raw_values(cls, values: dict[str, object]) -> ModelContractData:
+        """Create contract data from raw values."""
+        return cls(data_type=EnumContractDataType.RAW_VALUES, raw_values=values)
+
+    @classmethod
+    def from_none(cls) -> ModelContractData:
+        """Create empty contract data."""
+        return cls(data_type=EnumContractDataType.NONE)
+
+    @classmethod
+    def from_any(
+        cls, data: dict[str, ModelSchemaValue] | dict[str, object] | None
+    ) -> ModelContractData:
+        """Create contract data from any supported type with automatic detection."""
+        if data is None:
+            return cls.from_none()
+
+        # After None check, data is guaranteed to be a dict by type signature
+        # Check if dict contains ModelSchemaValue instances
+        if data and isinstance(next(iter(data.values())), ModelSchemaValue):
+            # Type narrowing: data is now dict[str, ModelSchemaValue]
+            schema_data = cast(dict[str, ModelSchemaValue], data)
+            return cls.from_schema_values(schema_data)
+
+        # Otherwise treat as dict[str, object]
+        raw_data = cast(dict[str, object], data)
+        return cls.from_raw_values(raw_data)
+
+    def to_schema_values(self) -> dict[str, ModelSchemaValue] | None:
+        """Convert to schema values format."""
+        if self.data_type == EnumContractDataType.SCHEMA_VALUES:
+            return self.schema_values
+        elif self.data_type == EnumContractDataType.RAW_VALUES and self.raw_values:
+            return {
+                k: ModelSchemaValue.from_value(v) for k, v in self.raw_values.items()
+            }
+        elif self.data_type == EnumContractDataType.NONE:
+            return None
+        return None
+
+    def is_empty(self) -> bool:
+        """Check if contract data is empty."""
+        return self.data_type == EnumContractDataType.NONE
 
 
 class NodeRuleStructure(TypedDict):
@@ -97,10 +152,41 @@ class ModelSubcontractConstraintValidator:
     }
 
     @staticmethod
+    def _normalize_contract_data(
+        data: object,
+    ) -> dict[str, ModelSchemaValue] | None:
+        """
+        Normalize contract data to use ModelSchemaValue for consistent processing.
+
+        Args:
+            data: Contract data in any supported format
+
+        Returns:
+            dict[str, ModelSchemaValue] | None: Normalized contract data
+        """
+        if data is None:
+            return None
+
+        # Handle ModelContractData instances
+        if isinstance(data, ModelContractData):
+            return data.to_schema_values()
+
+        # Handle dict types
+        if isinstance(data, dict):
+            # If it's already dict[str, ModelSchemaValue], return as-is
+            if data and isinstance(next(iter(data.values())), ModelSchemaValue):
+                return cast(dict[str, ModelSchemaValue], data)
+            # Convert dict[str, object] to dict[str, ModelSchemaValue]
+            return {k: ModelSchemaValue.from_value(v) for k, v in data.items()}
+
+        # Note: All type cases handled above; this is unreachable but kept for type safety
+        return None
+
+    @staticmethod
     def validate_node_subcontract_constraints(
         node_type: str,
-        contract_data: ContractData,
-        original_contract_data: ContractData | None = None,
+        contract_data: object,
+        original_contract_data: object = None,
     ) -> None:
         """
         Validate subcontract constraints for a specific node type.
@@ -120,6 +206,11 @@ class ModelSubcontractConstraintValidator:
             else contract_data
         )
 
+        # Normalize to consistent format for validation
+        normalized_data = ModelSubcontractConstraintValidator._normalize_contract_data(
+            data_to_validate
+        )
+
         violations = []
 
         # Get rules for this node type
@@ -132,10 +223,10 @@ class ModelSubcontractConstraintValidator:
             node_type.lower(), default_rules
         )
 
-        # Check forbidden subcontracts - only if data_to_validate is a dictionary
-        if isinstance(data_to_validate, dict):
+        # Check forbidden subcontracts - only if normalized_data exists
+        if normalized_data is not None:
             for forbidden_subcontract in node_rules["forbidden"]:
-                if forbidden_subcontract in data_to_validate:
+                if forbidden_subcontract in normalized_data:
                     violations.append(
                         node_rules["forbidden_messages"][forbidden_subcontract]
                     )
@@ -145,7 +236,7 @@ class ModelSubcontractConstraintValidator:
 
         # Check for missing recommended subcontracts
         ModelSubcontractConstraintValidator._validate_recommended_subcontracts(
-            data_to_validate, violations
+            normalized_data, violations
         )
 
         # Raise validation error if any violations found
@@ -165,19 +256,19 @@ class ModelSubcontractConstraintValidator:
 
     @staticmethod
     def _validate_recommended_subcontracts(
-        contract_data: ContractData,
+        normalized_data: dict[str, ModelSchemaValue] | None,
         violations: list[str],
     ) -> None:
         """
         Validate recommended subcontracts are present.
 
         Args:
-            contract_data: The contract data to validate
+            normalized_data: The normalized contract data to validate (ModelSchemaValue format)
             violations: List to append violations to
         """
         # All nodes should have event_type subcontracts for event-driven architecture
-        # Only check if contract_data is a dictionary
-        if isinstance(contract_data, dict) and "event_type" not in contract_data:
+        # Only check if normalized_data exists
+        if normalized_data is not None and "event_type" not in normalized_data:
             violations.append(
                 "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts"
             )

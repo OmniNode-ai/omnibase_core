@@ -34,7 +34,7 @@ class ValidatorInfo(TypedDict):
     args: list[str]
 
 
-class ValidationSuite:
+class ModelValidationSuite:
     """Unified validation suite for ONEX compliance."""
 
     def __init__(self) -> None:
@@ -227,7 +227,7 @@ def run_validation_cli() -> int:
     parser = create_parser()
     args = parser.parse_args()
 
-    suite = ValidationSuite()
+    suite = ModelValidationSuite()
 
     # Handle special commands
     if args.validation_type == "list":

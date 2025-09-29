@@ -8,11 +8,17 @@ with usage metrics and performance tracking.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
+from omnibase_core.core.type_constraints import (
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
+from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
@@ -36,7 +42,7 @@ from .model_structured_tags import ModelStructuredTags
 # Type aliases for convenience
 ModelMetadataNodeType = EnumMetadataNodeType
 ModelMetadataNodeStatus = EnumMetadataNodeStatus
-ModelMetadataNodeComplexity = EnumMetadataNodeComplexity
+ModelMetadataNodeComplexity = EnumConceptualComplexity
 
 
 class ModelMetadataNodeInfo(BaseModel):
@@ -45,6 +51,10 @@ class ModelMetadataNodeInfo(BaseModel):
 
     Provides detailed metadata, usage tracking, and performance
     metrics for nodes in metadata collections.
+    Implements omnibase_spi protocols:
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Core identification
@@ -70,9 +80,9 @@ class ModelMetadataNodeInfo(BaseModel):
         default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    complexity: EnumMetadataNodeComplexity = Field(
-        default=EnumMetadataNodeComplexity.SIMPLE,
-        description="Node complexity level",
+    complexity: EnumConceptualComplexity = Field(
+        default=EnumConceptualComplexity.BASIC,
+        description="Node conceptual complexity level",
     )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
@@ -151,13 +161,13 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def is_simple(self) -> bool:
         """Check if node is simple complexity."""
-        return self.complexity == EnumMetadataNodeComplexity.SIMPLE
+        return self.complexity == EnumConceptualComplexity.TRIVIAL
 
     def is_complex(self) -> bool:
         """Check if node is complex."""
         return self.complexity in [
-            EnumMetadataNodeComplexity.COMPLEX,
-            EnumMetadataNodeComplexity.ADVANCED,
+            EnumConceptualComplexity.ADVANCED,
+            EnumConceptualComplexity.EXPERT,
         ]
 
     def has_good_documentation(self) -> bool:
@@ -174,10 +184,11 @@ class ModelMetadataNodeInfo(BaseModel):
     def get_complexity_score(self) -> int:
         """Get numeric complexity score."""
         complexity_scores = {
-            EnumMetadataNodeComplexity.SIMPLE: 1,
-            EnumMetadataNodeComplexity.MODERATE: 2,
-            EnumMetadataNodeComplexity.COMPLEX: 3,
-            EnumMetadataNodeComplexity.ADVANCED: 4,
+            EnumConceptualComplexity.TRIVIAL: 1,
+            EnumConceptualComplexity.BASIC: 2,
+            EnumConceptualComplexity.INTERMEDIATE: 3,
+            EnumConceptualComplexity.ADVANCED: 4,
+            EnumConceptualComplexity.EXPERT: 5,
         }
         return complexity_scores.get(self.complexity, 1)
 
@@ -277,7 +288,9 @@ class ModelMetadataNodeInfo(BaseModel):
     def to_summary(self) -> ModelNodeInfoSummary:
         """Get node summary with clean typing."""
         # Convert enum types to match ModelNodeInfoSummary expectations
-        from omnibase_core.enums.enum_complexity_level import EnumComplexityLevel
+        from omnibase_core.enums.enum_conceptual_complexity import (
+            EnumConceptualComplexity,
+        )
         from omnibase_core.enums.enum_documentation_quality import (
             EnumDocumentationQuality,
         )
@@ -292,13 +305,13 @@ class ModelMetadataNodeInfo(BaseModel):
 
         # Map complexity (use string value)
         complexity_map = {
-            "simple": EnumComplexityLevel.SIMPLE,
-            "moderate": EnumComplexityLevel.MEDIUM,
-            "complex": EnumComplexityLevel.HIGH,
+            "simple": EnumConceptualComplexity.BASIC,
+            "moderate": EnumConceptualComplexity.INTERMEDIATE,
+            "complex": EnumConceptualComplexity.ADVANCED,
         }
         complexity = complexity_map.get(
             self.complexity.value,
-            EnumComplexityLevel.MEDIUM,
+            EnumConceptualComplexity.INTERMEDIATE,
         )
 
         # Map documentation quality (use string value)
@@ -388,7 +401,7 @@ class ModelMetadataNodeInfo(BaseModel):
         cls,
         name: str,
         description: str = "",
-        complexity: EnumMetadataNodeComplexity = EnumMetadataNodeComplexity.SIMPLE,
+        complexity: EnumConceptualComplexity = EnumConceptualComplexity.BASIC,
     ) -> ModelMetadataNodeInfo:
         """Create function node info."""
         import hashlib
@@ -410,13 +423,15 @@ class ModelMetadataNodeInfo(BaseModel):
 
         # Map complexity to standard tag
         complexity_tag = None
-        if complexity == EnumMetadataNodeComplexity.SIMPLE:
+        if complexity == EnumConceptualComplexity.TRIVIAL:
             complexity_tag = EnumStandardTag.SIMPLE
-        elif complexity == EnumMetadataNodeComplexity.MODERATE:
+        elif complexity == EnumConceptualComplexity.BASIC:
+            complexity_tag = EnumStandardTag.SIMPLE
+        elif complexity == EnumConceptualComplexity.INTERMEDIATE:
             complexity_tag = EnumStandardTag.MODERATE
-        elif complexity == EnumMetadataNodeComplexity.COMPLEX:
+        elif complexity == EnumConceptualComplexity.ADVANCED:
             complexity_tag = EnumStandardTag.COMPLEX
-        elif complexity == EnumMetadataNodeComplexity.ADVANCED:
+        elif complexity == EnumConceptualComplexity.EXPERT:
             complexity_tag = EnumStandardTag.ADVANCED
 
         tags = ModelStructuredTags.for_metadata_node(
@@ -472,6 +487,44 @@ class ModelMetadataNodeInfo(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

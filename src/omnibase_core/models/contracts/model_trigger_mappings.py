@@ -7,6 +7,7 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

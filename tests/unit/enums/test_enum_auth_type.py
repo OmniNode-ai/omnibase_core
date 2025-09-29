@@ -195,28 +195,28 @@ class TestEnumAuthType:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class AuthConfig(BaseModel):
+        class EnumAuthConfig(BaseModel):
             auth_type: EnumAuthType
 
         # Test valid enum assignment
-        config = AuthConfig(auth_type=EnumAuthType.BEARER)
+        config = EnumAuthConfig(auth_type=EnumAuthType.BEARER)
         assert config.auth_type == EnumAuthType.BEARER
 
         # Test string assignment (should work due to str inheritance)
-        config = AuthConfig(auth_type="oauth2")
+        config = EnumAuthConfig(auth_type="oauth2")
         assert config.auth_type == EnumAuthType.OAUTH2
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            AuthConfig(auth_type="invalid_auth_type")
+            EnumAuthConfig(auth_type="invalid_auth_type")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
 
-        class AuthConfig(BaseModel):
+        class EnumAuthConfig(BaseModel):
             auth_type: EnumAuthType
 
-        config = AuthConfig(auth_type=EnumAuthType.JWT)
+        config = EnumAuthConfig(auth_type=EnumAuthType.JWT)
 
         # Test dict serialization
         config_dict = config.model_dump()

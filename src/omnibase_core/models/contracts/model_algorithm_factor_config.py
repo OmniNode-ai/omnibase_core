@@ -7,6 +7,8 @@ calculation method, and parameters for each factor in a multi-factor algorithm.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 

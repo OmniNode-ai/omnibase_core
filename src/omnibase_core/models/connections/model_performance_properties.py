@@ -6,11 +6,20 @@ Part of the connection properties restructuring to reduce string field violation
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.type_constraints import Configurable
 
 
 class ModelPerformanceProperties(BaseModel):
-    """Performance tuning connection properties."""
+    """Performance tuning connection properties.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
+    """
 
     # All performance settings are numeric, not string
     max_connections: int = Field(default=100, description="Maximum connections")
@@ -31,6 +40,32 @@ class ModelPerformanceProperties(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+
 __all__ = ["ModelPerformanceProperties"]

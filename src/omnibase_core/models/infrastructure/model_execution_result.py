@@ -9,18 +9,19 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Generic, TypeVar, Union, cast
+from typing import Any, Generic, TypeVar, cast
 from uuid import UUID, uuid4
 
 from pydantic import Field
 
+from omnibase_core.core.type_constraints import Configurable, PrimitiveValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cli_result_data import ModelCliResultData
 from .model_cli_value import ModelCliValue
-from .model_execution_duration import ModelExecutionDuration
+from .model_duration import ModelDuration
 from .model_execution_summary import ModelExecutionSummary
 from .model_result import ModelResult
 
@@ -28,7 +29,7 @@ from .model_result import ModelResult
 T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type
 # Type variable for metadata value types
-MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
+MetadataValueType = TypeVar("MetadataValueType", str, int)
 
 
 class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
@@ -40,6 +41,10 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
     - Warning collection
     - Metadata storage
     - CLI execution result formatting
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     execution_id: UUID = Field(
@@ -54,7 +59,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
     end_time: datetime | None = Field(None, description="Execution end time")
 
-    duration: ModelExecutionDuration | None = Field(
+    duration: ModelDuration | None = Field(
         None,
         description="Execution duration",
     )
@@ -106,23 +111,19 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         typed_value = cast("T | None", value)
         typed_error = cast("E | None", error)
 
-        # Convert remaining data to the Union type expected by parent
-        from typing import Union
-
+        # Convert remaining data to proper types expected by parent
         from omnibase_core.models.core.model_custom_properties import (
             ModelCustomProperties,
         )
 
-        filtered_data: dict[
-            str, Union[str, int, float, bool, dict[str, object], list[object], None]
-        ] = {}
+        filtered_data: dict[str, object] = {}
         for key, val in data.items():
-            if isinstance(val, (str, int, float, bool, dict, list)) or val is None:
+            if val is None or isinstance(val, (str, dict, list)):
                 filtered_data[key] = val
             elif isinstance(val, ModelCustomProperties):
                 # Pass ModelCustomProperties directly as it's a Pydantic model
                 # The type annotation will be satisfied
-                filtered_data[key] = val  # type: ignore[assignment]
+                filtered_data[key] = val
             else:
                 # Convert other types to string representation for safety
                 filtered_data[key] = str(val)
@@ -187,9 +188,11 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
                     ModelSchemaValue,
                 )
 
-                typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+                typed_metadata: dict[str, PrimitiveValueType | ModelSchemaValue] = {}
                 for key, value in metadata.items():
-                    if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                    if isinstance(value, (str, int, float, bool)):
+                        typed_metadata[key] = value
+                    elif isinstance(value, ModelSchemaValue):
                         typed_metadata[key] = value
                     else:
                         typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -231,9 +234,11 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
                     ModelSchemaValue,
                 )
 
-                typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+                typed_metadata: dict[str, PrimitiveValueType | ModelSchemaValue] = {}
                 for key, value in metadata.items():
-                    if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                    if isinstance(value, (str, int, float, bool)):
+                        typed_metadata[key] = value
+                    elif isinstance(value, ModelSchemaValue):
                         typed_metadata[key] = value
                     else:
                         typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -255,6 +260,99 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         )
         return instance  # type: ignore[return-value]
 
+    @classmethod
+    def create_cli_success_with_output_data(
+        cls,
+        output_data: Any = None,
+        tool_id: UUID | None = None,
+        tool_display_name: str | None = None,
+        execution_time_ms: float | None = None,
+        **kwargs: Any,
+    ) -> ModelExecutionResult[Any, str]:
+        """
+        Create successful CLI execution result with ModelCliExecutionResult compatibility.
+
+        This method provides full compatibility with ModelCliExecutionResult.create_success()
+        while leveraging the enhanced capabilities of ModelExecutionResult.
+
+        Args:
+            output_data: Tool execution output (any type)
+            tool_id: UUID of executed tool
+            tool_display_name: Human-readable name of executed tool
+            execution_time_ms: Execution duration
+            **kwargs: Additional fields
+
+        Returns:
+            Success result instance with CLI compatibility
+        """
+        metadata = kwargs.pop("metadata", ModelCustomProperties())
+        if not isinstance(metadata, ModelCustomProperties):
+            metadata = ModelCustomProperties.from_metadata(metadata)
+
+        if tool_display_name:
+            metadata.set_custom_string("tool_display_name", tool_display_name)
+        if tool_id:
+            metadata.set_custom_string("tool_id", str(tool_id))
+        if execution_time_ms is not None:
+            metadata.set_custom_number("execution_time_ms", float(execution_time_ms))
+
+        instance = cls(
+            success=True,
+            value=output_data,
+            error=None,
+            execution_id=kwargs.pop("execution_id", uuid4()),
+            metadata=metadata,
+            **kwargs,
+        )
+        return instance  # type: ignore[return-value]
+
+    @classmethod
+    def create_cli_error_with_output_data(
+        cls,
+        error_message: str,
+        tool_id: UUID | None = None,
+        tool_display_name: str | None = None,
+        status_code: int = 1,
+        output_data: Any = None,
+        **kwargs: Any,
+    ) -> ModelExecutionResult[Any, str]:
+        """
+        Create error CLI execution result with ModelCliExecutionResult compatibility.
+
+        This method provides full compatibility with ModelCliExecutionResult.create_error()
+        while leveraging the enhanced capabilities of ModelExecutionResult.
+
+        Args:
+            error_message: Description of the error
+            tool_id: UUID of tool that failed
+            tool_display_name: Human-readable name of tool that failed
+            status_code: Numeric error code
+            output_data: Any partial output data
+            **kwargs: Additional fields
+
+        Returns:
+            Error result instance with CLI compatibility
+        """
+        metadata = kwargs.pop("metadata", ModelCustomProperties())
+        if not isinstance(metadata, ModelCustomProperties):
+            metadata = ModelCustomProperties.from_metadata(metadata)
+
+        if tool_display_name:
+            metadata.set_custom_string("tool_display_name", tool_display_name)
+        if tool_id:
+            metadata.set_custom_string("tool_id", str(tool_id))
+        metadata.set_custom_number("status_code", float(status_code))
+
+        instance = cls(
+            success=False,
+            value=output_data,  # Allow partial output data on errors
+            error=error_message,
+            execution_id=kwargs.pop("execution_id", uuid4()),
+            metadata=metadata,
+            **kwargs,
+        )
+        return instance  # type: ignore[return-value]
+
     def add_warning(self, warning: str) -> None:
         """Add a warning message if not already present."""
         if warning not in self.warnings:
@@ -267,7 +365,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
     def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add metadata entry."""
-        self.metadata.set_custom_value(key, value)
+        self.metadata.set_custom_value(key, str(value))
 
     def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get metadata entry with optional default."""
@@ -283,7 +381,7 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
         if self.duration is None:
             elapsed = self.end_time - self.start_time
-            self.duration = ModelExecutionDuration(
+            self.duration = ModelDuration(
                 milliseconds=int(elapsed.total_seconds() * 1000),
             )
 
@@ -314,10 +412,16 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
 
     def get_execution_summary(self) -> ModelExecutionSummary:
         """Get a summary of execution details."""
+        # Import ModelSchemaValue here to avoid circular imports
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        duration_ms_value = self.get_duration_ms()
         return ModelExecutionSummary(
             execution_id=self.execution_id,
             success=self.success,
-            duration_ms=self.get_duration_ms(),
+            duration_ms=ModelSchemaValue.from_value(
+                duration_ms_value if duration_ms_value is not None else 0
+            ),
             warning_count=len(self.warnings),
             has_metadata=not self.metadata.is_empty(),
             completed=self.is_completed(),
@@ -327,25 +431,39 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         """
         Convert to CLI result data format.
         """
+        # Import ModelSchemaValue here to avoid circular imports
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
         # Convert value to CLI value object for type safety
         cli_value: ModelCliValue | None = None
         if self.success and self.value is not None:
             cli_value = ModelCliValue.from_any(self.value)
 
+        # Convert error message to ModelSchemaValue
+        error_message = ModelSchemaValue.from_value("")
+        if not self.success and self.error is not None:
+            error_message = ModelSchemaValue.from_value(str(self.error))
+
+        # Convert tool display name to ModelSchemaValue
+        tool_display_name = ModelSchemaValue.from_value("")
+        tool_name_value = self.get_metadata("tool_name", "")
+        if tool_name_value:
+            tool_display_name = ModelSchemaValue.from_value(str(tool_name_value))
+
+        # Convert execution time to ModelSchemaValue
+        execution_time_ms_value = self.get_duration_ms()
+        execution_time_ms = ModelSchemaValue.from_value(
+            execution_time_ms_value if execution_time_ms_value is not None else 0
+        )
+
         return ModelCliResultData(
             success=self.success,
             execution_id=self.execution_id,
             output_data=cli_value,
-            error_message=(
-                str(self.error) if not self.success and self.error is not None else None
-            ),
+            error_message=error_message,
             tool_id=None,  # Default to None if no tool_id metadata available
-            tool_display_name=(
-                str(self.get_metadata("tool_name", ""))
-                if self.get_metadata("tool_name", "")
-                else None
-            ),
-            execution_time_ms=self.get_duration_ms(),
+            tool_display_name=tool_display_name,
+            execution_time_ms=execution_time_ms,
             status_code=int(
                 self.get_metadata("status_code", 0 if self.success else 1)
                 or (0 if self.success else 1),
@@ -360,6 +478,33 @@ class ModelExecutionResult(ModelResult[T, E], Generic[T, E]):
         duration_info = f" (duration: {self.duration})" if self.duration else ""
         warning_info = f" ({len(self.warnings)} warnings)" if self.warnings else ""
         return f"{base_repr}{duration_info}{warning_info}"
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Convenience type aliases for common execution result patterns
@@ -380,9 +525,11 @@ def execution_ok(
             # Type validation: ensure dict has proper structure
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+            typed_metadata: dict[str, PrimitiveValueType | ModelSchemaValue] = {}
             for key, value in metadata.items():
-                if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                if isinstance(value, (str, int, float, bool)):
+                    typed_metadata[key] = value
+                elif isinstance(value, ModelSchemaValue):
                     typed_metadata[key] = value
                 else:
                     typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -415,9 +562,11 @@ def execution_err(
             # Type validation: ensure dict has proper structure
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+            typed_metadata: dict[str, PrimitiveValueType | ModelSchemaValue] = {}
             for key, value in metadata.items():
-                if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                if isinstance(value, (str, int, float, bool)):
+                    typed_metadata[key] = value
+                elif isinstance(value, ModelSchemaValue):
                     typed_metadata[key] = value
                 else:
                     typed_metadata[key] = ModelSchemaValue.from_value(value)
@@ -462,9 +611,11 @@ def try_execution(
             # Type validation: ensure dict has proper structure
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-            typed_metadata: dict[str, str | float | bool | ModelSchemaValue] = {}
+            typed_metadata: dict[str, PrimitiveValueType | ModelSchemaValue] = {}
             for key, value in metadata.items():
-                if isinstance(value, (str, float, bool, ModelSchemaValue)):
+                if isinstance(value, (str, int, float, bool)):
+                    typed_metadata[key] = value
+                elif isinstance(value, ModelSchemaValue):
                     typed_metadata[key] = value
                 else:
                     typed_metadata[key] = ModelSchemaValue.from_value(value)

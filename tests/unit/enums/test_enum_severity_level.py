@@ -296,30 +296,30 @@ class TestEnumSeverityLevel:
     def test_pydantic_integration(self):
         """Test integration with Pydantic models."""
 
-        class LogMessage(BaseModel):
+        class EnumLogMessage(BaseModel):
             severity: EnumSeverityLevel
             message: str
 
         # Test valid enum assignment
-        log = LogMessage(severity=EnumSeverityLevel.ERROR, message="Test error")
+        log = EnumLogMessage(severity=EnumSeverityLevel.ERROR, message="Test error")
         assert log.severity == EnumSeverityLevel.ERROR
 
         # Test string assignment (should work due to str inheritance)
-        log = LogMessage(severity="warning", message="Test warning")
+        log = EnumLogMessage(severity="warning", message="Test warning")
         assert log.severity == EnumSeverityLevel.WARNING
 
         # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            LogMessage(severity="invalid_level", message="Test")
+            EnumLogMessage(severity="invalid_level", message="Test")
 
     def test_pydantic_serialization(self):
         """Test Pydantic model serialization."""
 
-        class LogMessage(BaseModel):
+        class EnumLogMessage(BaseModel):
             severity: EnumSeverityLevel
             message: str
 
-        log = LogMessage(severity=EnumSeverityLevel.ALERT, message="System alert")
+        log = EnumLogMessage(severity=EnumSeverityLevel.ALERT, message="System alert")
 
         # Test dict serialization
         log_dict = log.model_dump()

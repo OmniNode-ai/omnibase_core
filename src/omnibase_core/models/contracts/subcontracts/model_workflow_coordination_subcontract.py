@@ -14,6 +14,8 @@ providing clean separation between node logic and workflow coordination behavior
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer

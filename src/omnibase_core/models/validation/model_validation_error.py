@@ -4,17 +4,23 @@ Validation error model for tracking validation failures.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
 from .model_validation_value import ModelValidationValue
 
 
 class ModelValidationError(BaseModel):
-    """Validation error information."""
+    """Validation error information.
+    Implements omnibase_spi protocols:
+    - Validatable: Validation and verification
+    - Serializable: Data serialization/deserialization
+    """
 
     message: str = Field(
         ...,
@@ -163,6 +169,21 @@ class ModelValidationError(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

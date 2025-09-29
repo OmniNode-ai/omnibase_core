@@ -9,12 +9,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 # Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 
@@ -25,6 +27,10 @@ class ModelCliExecutionContext(BaseModel):
 
     Replaces dict[str, Any] for custom_context to provide
     type safety and validation for execution context data.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Nameable: Name management interface
+    - Validatable: Validation and verification
     """
 
     # Context identification
@@ -101,6 +107,39 @@ class ModelCliExecutionContext(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

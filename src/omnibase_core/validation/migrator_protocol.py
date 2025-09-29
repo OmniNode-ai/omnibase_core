@@ -8,16 +8,19 @@ import shutil
 from pathlib import Path
 from typing import cast
 
+from omnibase_core.models.validation.model_migration_conflict_union import (
+    ModelMigrationConflictUnion,
+)
+
 from .migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
     TypedDictMigrationStepDict,
 )
-from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_migration_plan import ModelMigrationPlan
 from .model_migration_result import ModelMigrationResult
 from .validation_utils import (
-    ProtocolInfo,
+    ModelProtocolInfo,
     ValidationResult,
     determine_repository_name,
     extract_protocols_from_directory,
@@ -43,7 +46,7 @@ class ProtocolMigrator:
 
     def create_migration_plan(
         self,
-        protocols: list[ProtocolInfo] | None = None,
+        protocols: list[ModelProtocolInfo] | None = None,
     ) -> ModelMigrationPlan:
         """
         Create a migration plan for moving protocols to omnibase_spi.
@@ -178,8 +181,8 @@ class ProtocolMigrator:
 
     def _detect_migration_conflicts(
         self,
-        source_protocols: list[ProtocolInfo],
-        spi_protocols: list[ProtocolInfo],
+        source_protocols: list[ModelProtocolInfo],
+        spi_protocols: list[ModelProtocolInfo],
     ) -> list[ModelMigrationConflictUnion]:
         """Detect conflicts between source protocols and existing SPI protocols."""
         conflicts: list[ModelMigrationConflictUnion] = []
@@ -227,7 +230,7 @@ class ProtocolMigrator:
 
     def _generate_migration_steps(
         self,
-        protocols: list[ProtocolInfo],
+        protocols: list[ModelProtocolInfo],
     ) -> list[TypedDictMigrationStepDict]:
         """Generate detailed migration steps."""
         steps = []
@@ -328,7 +331,7 @@ class ProtocolMigrator:
 
         protocol_file.write_text(content, encoding="utf-8")
 
-    def _find_import_references(self, protocol: ProtocolInfo) -> list[str]:
+    def _find_import_references(self, protocol: ModelProtocolInfo) -> list[str]:
         """Find files that import the given protocol."""
         references: list[str] = []
 
@@ -410,7 +413,7 @@ class ProtocolMigrator:
                     pass
 
         if plan.protocols_to_migrate and not plan.conflicts_detected:
-            by_category: dict[str, list[ProtocolInfo]] = {}
+            by_category: dict[str, list[ModelProtocolInfo]] = {}
             for protocol in plan.protocols_to_migrate:
                 category = suggest_spi_location(protocol)
                 if category not in by_category:

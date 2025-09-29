@@ -7,10 +7,12 @@ with structured discriminated union pattern for type safety.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -29,6 +31,9 @@ class ModelFlexibleValue(BaseModel):
 
     Replaces lazy Union[str, dict, list, int, etc.] patterns with
     structured type safety and proper validation.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     value_type: EnumFlexibleValueType = Field(
@@ -51,7 +56,7 @@ class ModelFlexibleValue(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_single_value(self) -> ModelFlexibleValue:
+    def validate_single_value(self) -> "ModelFlexibleValue":
         """Ensure only one value is set based on type discriminator."""
         values_map = {
             EnumFlexibleValueType.STRING: self.string_value,
@@ -337,6 +342,22 @@ class ModelFlexibleValue(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, object]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelFlexibleValue"]

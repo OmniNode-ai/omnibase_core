@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class ProtocolInfo:
+class ModelProtocolInfo:
     """Information about a discovered protocol."""
 
     name: str
@@ -23,4 +23,4 @@ class ProtocolInfo:
 
 
 # Export the model
-__all__ = ["ProtocolInfo"]
+__all__ = ["ModelProtocolInfo"]

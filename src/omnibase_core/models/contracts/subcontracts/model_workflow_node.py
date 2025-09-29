@@ -4,15 +4,15 @@ Workflow Node Model - ONEX Standards Compliant.
 Model for node definitions in workflow graphs for the ONEX workflow coordination system.
 """
 
-from typing import Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+# Type aliases for structured data - ZERO TOLERANCE for Any types
+from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
-ParameterValue = Union[str, int, float, bool, None]
+ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
 
 

@@ -9,13 +9,31 @@ Performance Target: Module import <5ms, contract loading <50ms total
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    TypedDict,
+    TypeVar,
+    Union,
+    cast,
+)
 
 # NO RUNTIME IMPORTS AT MODULE LEVEL
 # All imports moved to function level to eliminate cascade
 
 # Type variables for proper typing
 ContractType = TypeVar("ContractType", bound="ModelContractBase")
+
+
+class PerformanceMetrics(TypedDict):
+    """Type-safe structure for performance measurement results."""
+
+    module_load_time_ms: float
+    factory_access_time_ms: float
+    status: str
+
 
 if TYPE_CHECKING:
     # Type hints only - no runtime cost
@@ -183,8 +201,7 @@ def factory_stats() -> dict[str, object]:
 def create_compute_contract(**kwargs: Any) -> "ModelContractCompute":
     """Create ModelContractCompute instance with fast loading.
 
-    Note: Any type is required here for factory pattern that accepts
-    arbitrary keyword arguments which are validated by Pydantic at runtime.
+    Note: Any type allows arbitrary keyword arguments which are validated by Pydantic at runtime.
     """
     ComputeContract = compute()
     return ComputeContract(**kwargs)
@@ -193,8 +210,7 @@ def create_compute_contract(**kwargs: Any) -> "ModelContractCompute":
 def create_effect_contract(**kwargs: Any) -> "ModelContractEffect":
     """Create ModelContractEffect instance with fast loading.
 
-    Note: Any type is required here for factory pattern that accepts
-    arbitrary keyword arguments which are validated by Pydantic at runtime.
+    Note: Any type allows arbitrary keyword arguments which are validated by Pydantic at runtime.
     """
     EffectContract = effect()
     return EffectContract(**kwargs)
@@ -203,8 +219,7 @@ def create_effect_contract(**kwargs: Any) -> "ModelContractEffect":
 def create_base_contract(**kwargs: Any) -> "ModelContractBase":
     """Create ModelContractBase instance with fast loading.
 
-    Note: Any type is required here for factory pattern that accepts
-    arbitrary keyword arguments which are validated by Pydantic at runtime.
+    Note: Any type allows arbitrary keyword arguments which are validated by Pydantic at runtime.
     """
     BaseContract = base()
     return BaseContract(**kwargs)
@@ -239,7 +254,7 @@ class ModelPerformanceMonitor:
     """Monitor fast import performance."""
 
     @staticmethod
-    def measure_import_time() -> dict[str, Union[float, str]]:
+    def measure_import_time() -> PerformanceMetrics:
         """Measure import times for this module vs alternatives."""
         import time
 
@@ -278,5 +293,5 @@ __all__ = [
     # Utilities
     "factory_stats",
     "ModelFastContractFactory",
-    "PerformanceMonitor",
+    "ModelPerformanceMonitor",
 ]

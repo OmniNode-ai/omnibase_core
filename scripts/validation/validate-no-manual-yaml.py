@@ -200,6 +200,14 @@ class ManualYamlValidationDetector:
                         f"Pydantic models should handle validation",
                     )
 
+        # Pattern 4: Custom serialize() methods that duplicate Pydantic functionality
+        if isinstance(node, ast.FunctionDef):
+            if self._is_custom_serialize_method(node):
+                errors.append(
+                    f"Line {node.lineno}: Custom serialize() method detected - "
+                    f"use Pydantic's model_dump() instead",
+                )
+
     def _is_yaml_safe_load(self, node: ast.Call) -> bool:
         """Check if this is a yaml.safe_load() call."""
         if isinstance(node.func, ast.Attribute):

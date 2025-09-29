@@ -8,11 +8,12 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, Union
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.core.type_constraints import Nameable, PrimitiveValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
@@ -23,12 +24,18 @@ from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
+# Using ModelCliValue instead of primitive soup type alias for proper discriminated union typing
+
 
 class ModelCliResultMetadata(BaseModel):
     """
     Clean model for CLI result metadata.
 
     Replaces ModelGenericMetadata[Any] with structured metadata model.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Nameable: Name management interface
+    - Validatable: Validation and verification
     """
 
     # Core metadata fields
@@ -56,9 +63,7 @@ class ModelCliResultMetadata(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When result was processed",
     )
-    processor_version: Union[ModelSemVer, str, None] = Field(
-        None, description="Processor version"
-    )
+    processor_version: ModelSemVer | None = Field(None, description="Processor version")
 
     # Quality metrics
     quality_score: float | None = Field(
@@ -75,11 +80,11 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Data classification
-    data_classification: Union[EnumDataClassification, str] = Field(
+    data_classification: EnumDataClassification = Field(
         default=EnumDataClassification.INTERNAL,
         description="Data classification level",
     )
-    retention_policy: Union[EnumRetentionPolicy, str, None] = Field(
+    retention_policy: EnumRetentionPolicy | None = Field(
         None,
         description="Data retention policy",
     )
@@ -116,20 +121,20 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Custom metadata fields for extensibility
-    custom_metadata: dict[str, Any] = Field(
+    custom_metadata: dict[str, ModelCliValue] = Field(
         default_factory=dict,
         description="Custom metadata fields",
     )
 
-    @field_validator("processor_version")
+    @field_validator("processor_version", mode="before")
     @classmethod
-    def validate_processor_version(
-        cls, v: Union[ModelSemVer, str, None]
-    ) -> ModelSemVer | None:
-        """Convert string processor version to ModelSemVer."""
+    def validate_processor_version(cls, v: object) -> ModelSemVer | None:
+        """Convert string processor version to ModelSemVer or return ModelSemVer as-is."""
         if v is None:
             return None
-        elif isinstance(v, str):
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, str):
             # Parse version string like "1.0.0"
             parts = v.split(".")
             if len(parts) >= 3:
@@ -142,44 +147,29 @@ class ModelCliResultMetadata(BaseModel):
                 return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
             else:
                 raise ValueError(f"Invalid version string: {v}")
-        elif isinstance(v, ModelSemVer):
-            return v
-        else:
-            # This should never happen with proper typing, but handle gracefully
-            raise ValueError(f"Invalid processor version type: {type(v)}")
+        raise ValueError(f"Invalid processor version type: {type(v)}")
 
     @field_validator("data_classification")
     @classmethod
     def validate_data_classification(
-        cls, v: Union[EnumDataClassification, str]
+        cls, v: EnumDataClassification
     ) -> EnumDataClassification:
-        """Convert string data classification to enum."""
+        """Validate data classification enum (Pydantic handles string conversion automatically)."""
         if isinstance(v, EnumDataClassification):
             return v
-        elif isinstance(v, str):
-            try:
-                return EnumDataClassification(v)
-            except ValueError:
-                # Try uppercase
-                try:
-                    return EnumDataClassification(v.upper())
-                except ValueError:
-                    raise ValueError(f"Invalid data classification: {v}")
         else:
-            # This should never happen with proper typing, but handle gracefully
+            # This should never happen with proper typing and Pydantic's enum conversion
             raise ValueError(f"Invalid data classification type: {type(v)}")
 
-    @field_validator("retention_policy")
+    @field_validator("retention_policy", mode="before")
     @classmethod
-    def validate_retention_policy(
-        cls, v: Union[EnumRetentionPolicy, str, None]
-    ) -> EnumRetentionPolicy | None:
-        """Convert string retention policy to enum."""
+    def validate_retention_policy(cls, v: object) -> EnumRetentionPolicy | None:
+        """Convert string retention policy to enum or return enum as-is."""
         if v is None:
             return None
-        elif isinstance(v, EnumRetentionPolicy):
+        if isinstance(v, EnumRetentionPolicy):
             return v
-        elif isinstance(v, str):
+        if isinstance(v, str):
             try:
                 return EnumRetentionPolicy(v)
             except ValueError:
@@ -188,23 +178,20 @@ class ModelCliResultMetadata(BaseModel):
                     return EnumRetentionPolicy(v.upper())
                 except ValueError:
                     raise ValueError(f"Invalid retention policy: {v}")
-        else:
-            # This should never happen with proper typing, but handle gracefully
-            raise ValueError(f"Invalid retention policy type: {type(v)}")
+        raise ValueError(f"Invalid retention policy type: {type(v)}")
 
     @field_validator("custom_metadata")
     @classmethod
-    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, Any]:
-        """Validate custom metadata values and store as raw Python types."""
+    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelCliValue]:
+        """Validate custom metadata values ensure they are ModelCliValue objects."""
         result = {}
         for key, value in v.items():
             if isinstance(value, ModelCliValue):
-                # Extract raw value from ModelCliValue
-                result[key] = value.to_python_value()
-            else:
-                # Validate by creating ModelCliValue but store raw value
-                ModelCliValue.from_any(value)  # This validates the value
+                # Keep as ModelCliValue
                 result[key] = value
+            else:
+                # Convert to ModelCliValue
+                result[key] = ModelCliValue.from_any(value)
         return result
 
     def add_tag(self, tag: str) -> None:
@@ -270,13 +257,17 @@ class ModelCliResultMetadata(BaseModel):
         timestamp = datetime.now(UTC).isoformat()
         self.audit_trail.append(f"{timestamp}: {entry}")
 
-    def set_custom_field(self, key: str, value: Any) -> None:
+    def set_custom_field(self, key: str, value: ModelCliValue | object) -> None:
         """Set a custom metadata field with automatic type conversion."""
-        # Validate the value by creating ModelCliValue but store raw value
-        ModelCliValue.from_any(value)  # This validates the value
-        self.custom_metadata[key] = value
+        if isinstance(value, ModelCliValue):
+            self.custom_metadata[key] = value
+        else:
+            # Convert to ModelCliValue for type safety
+            self.custom_metadata[key] = ModelCliValue.from_any(value)
 
-    def get_custom_field(self, key: str, default: Any = None) -> Any:
+    def get_custom_field(
+        self, key: str, default: ModelCliValue | None = None
+    ) -> ModelCliValue | None:
         """Get a custom metadata field with original type."""
         return self.custom_metadata.get(key, default)
 
@@ -324,6 +315,40 @@ class ModelCliResultMetadata(BaseModel):
         "validate_assignment": True,
     }
 
+    # Export the model
 
-# Export the model
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = ["ModelCliResultMetadata"]

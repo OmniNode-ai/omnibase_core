@@ -39,7 +39,7 @@ Validation Tools:
 def __getattr__(name: str) -> object:
     if name in {
         "ValidationResult",
-        "ValidationSuite",
+        "ModelValidationSuite",
         "validate_all",
         "validate_architecture",
         "validate_contracts",
@@ -47,8 +47,8 @@ def __getattr__(name: str) -> object:
         "validate_union_usage",
     }:
         from .validation import (
+            ModelValidationSuite,
             ValidationResult,
-            ValidationSuite,
             validate_all,
             validate_architecture,
             validate_contracts,
@@ -69,5 +69,5 @@ __all__ = [
     "validate_patterns",
     "validate_all",
     "ValidationResult",
-    "ValidationSuite",
+    "ModelValidationSuite",
 ]

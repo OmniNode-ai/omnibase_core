@@ -10,21 +10,17 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Union, assert_never
+from typing import Any, assert_never
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
-ParameterValue = Union[str, int, float, bool, None]
+from omnibase_core.core.type_constraints import PrimitiveValueType
+
+ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
-
-# Type alias for validation rules input - includes all possible input types
-# Using ModelSchemaValue instead of Any for ONEX compliance
-ValidationRulesInput = Union[
-    None, dict[str, object], list[object], "ModelValidationRules", str, int, float, bool
-]
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -65,6 +61,11 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
 
+# Import centralized conversion utilities
+from omnibase_core.models.utils.model_validation_rules_converter import (
+    ModelValidationRulesInputValue,
+)
+
 
 class ModelContractEffect(ModelContractBase):
     """
@@ -81,17 +82,17 @@ class ModelContractEffect(ModelContractBase):
     # Both EnumNodeType.EFFECT and EnumNodeArchitectureType.EFFECT have value "effect"
     @field_validator("node_type", mode="before")
     @classmethod
-    def validate_node_type_architecture(
-        cls, v: Union[EnumNodeArchitectureType, EnumNodeType, str]
-    ) -> EnumNodeType:
-        """Validate and convert architecture type to base node type."""
+    def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
+        """Validate and convert architecture type to base node type.
+
+        Note: Pydantic automatically handles string-to-enum conversion,
+        so we only need to handle the enum types directly.
+        """
         if isinstance(v, EnumNodeArchitectureType):
             # Convert architecture type to base node type
             return EnumNodeType(v.value)  # Both have "effect" value
         elif isinstance(v, EnumNodeType):
             return v
-        elif isinstance(v, str):
-            return EnumNodeType(v)
         else:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -175,9 +176,7 @@ class ModelContractEffect(ModelContractBase):
     # Override validation_rules to support flexible formats
     @field_validator("validation_rules", mode="before")
     @classmethod
-    def validate_validation_rules_flexible(
-        cls, v: ValidationRulesInput
-    ) -> ModelValidationRules:
+    def validate_validation_rules_flexible(cls, v: object) -> ModelValidationRules:
         """Validate and convert flexible validation rules format using shared utility."""
         # Local import to avoid circular import
         from omnibase_core.models.utils.model_validation_rules_converter import (

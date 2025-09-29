@@ -7,17 +7,25 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cli_value import ModelCliValue
 
 
 class ModelCliResultData(BaseModel):
-    """CLI result data model with typed fields."""
+    """CLI result data model with typed fields.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    """
 
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
@@ -25,13 +33,20 @@ class ModelCliResultData(BaseModel):
         None,
         description="Output data if successful",
     )
-    error_message: str | None = Field(description="Error message if failed")
+    error_message: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
+        description="Error message if failed",
+    )
     # Entity reference with UUID
     tool_id: UUID | None = Field(description="Unique identifier of the tool")
-    tool_display_name: str | None = Field(
+    tool_display_name: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Human-readable tool name if available",
     )
-    execution_time_ms: int | None = Field(description="Execution time in milliseconds")
+    execution_time_ms: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(0),
+        description="Execution time in milliseconds",
+    )
     status_code: int = Field(description="Status code")
     warnings: list[str] = Field(description="Warning messages")
     metadata: ModelCustomProperties = Field(description="Execution metadata")
@@ -41,6 +56,33 @@ class ModelCliResultData(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

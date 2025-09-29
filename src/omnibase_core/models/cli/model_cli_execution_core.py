@@ -10,12 +10,16 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_execution_status_v2 import (
+    EnumExecutionStatusV2 as EnumExecutionStatus,
+)
 
 from .model_cli_command_option import ModelCliCommandOption
 
@@ -26,6 +30,10 @@ class ModelCliExecutionCore(BaseModel):
 
     Contains essential execution identification, command info, and timing.
     Focused model without configuration or metadata clutter.
+    Implements omnibase_spi protocols:
+    - Serializable: Data serialization/deserialization
+    - Nameable: Name management interface
+    - Validatable: Validation and verification
     """
 
     # Execution identification
@@ -36,7 +44,7 @@ class ModelCliExecutionCore(BaseModel):
 
     # Command information
     command_name_id: UUID = Field(..., description="UUID for command name")
-    command_display_name: str | None = Field(
+    command_display_name: Optional[str] = Field(
         None,
         description="Human-readable command name",
     )
@@ -50,15 +58,15 @@ class ModelCliExecutionCore(BaseModel):
     )
 
     # Target information
-    target_node_id: UUID | None = Field(
+    target_node_id: Optional[UUID] = Field(
         default=None,
         description="Target node UUID for precise identification",
     )
-    target_node_display_name: str | None = Field(
+    target_node_display_name: Optional[str] = Field(
         default=None,
         description="Target node display name if applicable",
     )
-    target_path: Path | None = Field(
+    target_path: Optional[Path] = Field(
         default=None,
         description="Target file or directory path",
     )
@@ -68,7 +76,7 @@ class ModelCliExecutionCore(BaseModel):
         default=EnumExecutionStatus.PENDING,
         description="Execution status",
     )
-    current_phase: EnumExecutionPhase | None = Field(
+    current_phase: Optional[EnumExecutionPhase] = Field(
         default=None,
         description="Current execution phase",
     )
@@ -78,7 +86,7 @@ class ModelCliExecutionCore(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="Execution start time",
     )
-    end_time: datetime | None = Field(default=None, description="Execution end time")
+    end_time: Optional[datetime] = Field(default=None, description="Execution end time")
 
     # Progress tracking
     progress_percentage: float = Field(
@@ -92,11 +100,11 @@ class ModelCliExecutionCore(BaseModel):
         """Get the command name."""
         return self.command_display_name or f"command_{str(self.command_name_id)[:8]}"
 
-    def get_target_node_id(self) -> UUID | None:
+    def get_target_node_id(self) -> Optional[UUID]:
         """Get the target node UUID."""
         return self.target_node_id
 
-    def get_target_node_name(self) -> str | None:
+    def get_target_node_name(self) -> Optional[str]:
         """Get the target node display name."""
         return self.target_node_display_name
 
@@ -168,8 +176,8 @@ class ModelCliExecutionCore(BaseModel):
     def create_simple(
         cls,
         command_name: str,
-        target_node_id: UUID | None = None,
-        target_node_name: str | None = None,
+        target_node_id: Optional[UUID] = None,
+        target_node_name: Optional[str] = None,
     ) -> ModelCliExecutionCore:
         """Create a simple execution core."""
         import hashlib
@@ -192,6 +200,39 @@ class ModelCliExecutionCore(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

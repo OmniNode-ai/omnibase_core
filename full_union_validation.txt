@@ -1,0 +1,6 @@
+usage: validate-union-usage.py [-h] [--strict] [--show-patterns]
+                               [--show-statistics] [--suggest-models]
+                               [--export-report EXPORT_REPORT]
+                               [--allow-invalid ALLOW_INVALID]
+                               [path]
+validate-union-usage.py: error: unrecognized arguments: --verbose

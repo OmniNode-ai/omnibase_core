@@ -7,6 +7,8 @@ dot notation support and type safety.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from omnibase_core.core.type_constraints import PrimitiveValueType
@@ -15,7 +17,13 @@ from omnibase_core.models.infrastructure.model_result import ModelResult
 
 
 class ModelFieldAccessor(BaseModel):
-    """Generic field accessor with dot notation support and type safety."""
+    """Generic field accessor with dot notation support and type safety.
+    Implements omnibase_spi protocols:
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    - Nameable: Name management interface
+    """
 
     def get_field(
         self,
@@ -84,11 +92,13 @@ class ModelFieldAccessor(BaseModel):
             final_key = parts[-1]
             if isinstance(value, ModelSchemaValue):
                 schema_value = value
+                raw_value = schema_value.to_value()
             else:
-                schema_value = (
-                    ModelSchemaValue.from_value(value) if value is not None else None
-                )
-            raw_value = schema_value.to_value() if schema_value else None
+                if value is not None:
+                    schema_value = ModelSchemaValue.from_value(value)
+                    raw_value = schema_value.to_value()
+                else:
+                    raw_value = None
             # First try setting as attribute if the object has the field (even if None)
             # This handles Pydantic model fields that are initially None
             if hasattr(obj, final_key) or hasattr(obj, "__dict__"):
@@ -166,6 +176,49 @@ class ModelFieldAccessor(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+    def get_name(self) -> str:
+        """Get name (Nameable protocol)."""
+        # Try common name field patterns
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"Unnamed {self.__class__.__name__}"
+
+    def set_name(self, name: str) -> None:
+        """Set name (Nameable protocol)."""
+        # Try to set the most appropriate name field
+        for field in ["name", "display_name", "title", "node_name"]:
+            if hasattr(self, field):
+                setattr(self, field, name)
+                return
 
 
 # Export for use

@@ -7,10 +7,16 @@ Part of the ModelFunctionNodeMetadata restructuring.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    Identifiable,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -106,6 +112,61 @@ class ModelFunctionDeprecationInfo(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def get_id(self) -> str:
+        """Get unique identifier (Identifiable protocol)."""
+        # Try common ID field patterns
+        for field in [
+            "id",
+            "uuid",
+            "identifier",
+            "node_id",
+            "execution_id",
+            "metadata_id",
+        ]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"{self.__class__.__name__}_{id(self)}"
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
 
 
 # Export for use

@@ -5,8 +5,11 @@ Generic metadata model for flexible data storage.
 from __future__ import annotations
 
 # Import proper type with fallback mechanism from metadata package
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
 from uuid import UUID
+
+# Import simplified type constraint from core
+from omnibase_core.core.type_constraints import BasicValueType
 
 if TYPE_CHECKING:
     from . import ProtocolSupportedMetadataType
@@ -16,6 +19,11 @@ else:
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.core.type_constraints import (
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -24,12 +32,36 @@ from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_semver import ModelSemVer, parse_semver_from_string
 
-# Simple TypeVar constraint for metadata types
-T = TypeVar("T", str, int, bool, float)
+# Use simplified BasicValueType from core constraints instead of redundant TypeVar
 
 
-class ModelGenericMetadata(BaseModel, Generic[T]):
-    """Generic metadata storage with flexible fields."""
+# TypedDict for protocol method parameters
+class TypedDictGenericMetadataDict(TypedDict, total=False):
+    """Typed structure for generic metadata dictionary in protocol methods."""
+
+    metadata_id: UUID | None
+    metadata_display_name: str | None
+    description: str | None
+    version: ModelSemVer | None
+    tags: list[str]
+    custom_fields: dict[str, object]
+
+
+class ModelGenericMetadata(BaseModel):
+    """
+    Generic metadata storage with flexible fields.
+
+    Implements omnibase_spi protocols:
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     metadata_id: UUID | None = Field(
         default=None,
@@ -97,7 +129,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         """Convenience setter for metadata_display_name."""
         self.metadata_display_name = value
 
-    def get_field(self, key: str, default: T | None = None) -> T | None:
+    def get_field(self, key: str, default: object = None) -> object:
         """Get a custom field value with type safety."""
         if self.custom_fields is None:
             return default
@@ -105,46 +137,40 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         if cli_value is None:
             return default
 
-        # Handle both ModelCliValue objects and raw values
+        # Handle ModelCliValue objects (custom_fields is typed as dict[str, ModelCliValue])
+        # If custom_fields validation worked correctly, cli_value should always be ModelCliValue
         if hasattr(cli_value, "to_python_value"):
-            return cast(T, cli_value.to_python_value())
-        elif (
-            isinstance(cli_value, dict)
-            and "raw_value" in cli_value
-            and "value_type" in cli_value
-        ):
-            # This looks like a serialized ModelCliValue that wasn't properly reconstructed
-            # Extract the actual raw value from the nested structure
-            raw_value_obj = cli_value["raw_value"]
-            if hasattr(raw_value_obj, "to_value"):
-                return cast(T, raw_value_obj.to_value())
-            else:
-                return cast(T, raw_value_obj)
+            return cli_value.to_python_value()
         else:
-            # Raw value - return as is
-            return cast(T, cli_value)
+            # Fallback for edge cases where validation didn't convert properly
+            # This branch should be rare if validation is working correctly
+            return cli_value
 
-    def set_field(self, key: str, value: T) -> None:
+    @overload
+    def set_field(self, key: str, value: str) -> None: ...
+
+    @overload
+    def set_field(self, key: str, value: bool) -> None: ...
+
+    @overload
+    def set_field(self, key: str, value: int) -> None: ...
+
+    @overload
+    def set_field(self, key: str, value: float) -> None: ...
+
+    @overload
+    def set_field(self, key: str, value: list[object]) -> None: ...
+
+    def set_field(self, key: str, value: object) -> None:
         """Set a custom field value with type validation."""
-        if not isinstance(value, (str, int, bool, float, list)):
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Value must be str, int, bool, float, or list, got {type(value)}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "key": ModelSchemaValue.from_value(key),
-                        "value_type": ModelSchemaValue.from_value(str(type(value))),
-                        "expected_types": ModelSchemaValue.from_value(
-                            "str, int, bool, float, list"
-                        ),
-                    }
-                ),
-            )
         if self.custom_fields is None:
             self.custom_fields = {}
+        # ModelCliValue.from_any() handles type validation and conversion
         self.custom_fields[key] = ModelCliValue.from_any(value)
 
-    def get_typed_field(self, key: str, field_type: type[T], default: T) -> T:
+    def get_typed_field(
+        self, key: str, field_type: type[object], default: object
+    ) -> object:
         """Get a custom field value with specific type checking."""
         if self.custom_fields is None:
             return default
@@ -156,7 +182,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             return python_value
         return default
 
-    def set_typed_field(self, key: str, value: T) -> None:
+    def set_typed_field(self, key: str, value: object) -> None:
         """Set a custom field value with runtime type validation."""
         if isinstance(value, ProtocolSupportedMetadataType):
             # Initialize custom_fields if needed
@@ -202,8 +228,85 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             return True
         return False
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    # Protocol method implementations
+
+    def get_metadata(self) -> TypedDictGenericMetadataDict:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata: TypedDictGenericMetadataDict = TypedDictGenericMetadataDict(
+            metadata_id=self.metadata_id,
+            metadata_display_name=self.metadata_display_name,
+            description=self.description,
+            version=self.version,
+            tags=self.tags,
+        )
+
+        # Include custom fields
+        if self.custom_fields:
+            custom_fields_dict: dict[str, object] = {
+                key: cli_value.to_python_value()
+                for key, cli_value in self.custom_fields.items()
+            }
+            metadata["custom_fields"] = custom_fields_dict
+
+        return metadata
+
+    def set_metadata(self, metadata: TypedDictGenericMetadataDict) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            if "metadata_display_name" in metadata:
+                self.metadata_display_name = metadata["metadata_display_name"]
+            if "description" in metadata:
+                self.description = metadata["description"]
+            if "tags" in metadata and isinstance(metadata["tags"], list):
+                self.tags = metadata["tags"]
+            if "custom_fields" in metadata:
+                custom_fields = metadata["custom_fields"]
+                if isinstance(custom_fields, dict):
+                    for key, value in custom_fields.items():
+                        if isinstance(value, (str, int, bool, float)):
+                            self.set_field(key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, BasicValueType]:
+        """Serialize metadata to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate metadata integrity (ProtocolValidatable protocol)."""
+        try:
+            # Validate metadata display name if present
+            if (
+                self.metadata_display_name is not None
+                and len(self.metadata_display_name.strip()) == 0
+            ):
+                return False
+
+            # Validate version if present
+            if self.version is not None:
+                try:
+                    # Basic version validation
+                    if (
+                        self.version.major < 0
+                        or self.version.minor < 0
+                        or self.version.patch < 0
+                    ):
+                        return False
+                except Exception:
+                    return False
+
+            # Validate custom fields if present
+            if self.custom_fields:
+                for key, cli_value in self.custom_fields.items():
+                    if not key or len(key.strip()) == 0:
+                        return False
+                    try:
+                        # Test that we can convert to python value
+                        cli_value.to_python_value()
+                    except Exception:
+                        return False
+
+            return True
+        except Exception:
+            return False

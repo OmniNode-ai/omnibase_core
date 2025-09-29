@@ -36,7 +36,7 @@ class ValidationMetadataType(TypedDict, total=False):
 
 
 from .exceptions import InputValidationError
-from .model_protocol_info import ProtocolInfo
+from .model_protocol_info import ModelProtocolInfo
 from .model_protocol_signature_extractor import ProtocolSignatureExtractor
 
 # Configure logger for this module
@@ -64,12 +64,12 @@ class DuplicationInfo:
     """Information about protocol duplications."""
 
     signature_hash: str
-    protocols: list[ProtocolInfo]
+    protocols: list[ModelProtocolInfo]
     duplication_type: str  # "exact", "name_conflict", "signature_match"
     recommendation: str
 
 
-def extract_protocol_signature(file_path: Path) -> ProtocolInfo | None:
+def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
     """Extract protocol signature from Python file."""
     try:
         with open(file_path, encoding="utf-8") as f:
@@ -86,7 +86,7 @@ def extract_protocol_signature(file_path: Path) -> ProtocolInfo | None:
         methods_str = "|".join(sorted(extractor.methods))
         signature_hash = hashlib.sha256(methods_str.encode()).hexdigest()
 
-        return ProtocolInfo(
+        return ModelProtocolInfo(
             name=extractor.class_name,
             file_path=str(file_path),
             repository=determine_repository_name(file_path),
@@ -133,7 +133,7 @@ def determine_repository_name(file_path: Path) -> str:
     return "unknown"
 
 
-def suggest_spi_location(protocol: ProtocolInfo) -> str:
+def suggest_spi_location(protocol: ModelProtocolInfo) -> str:
     """Suggest appropriate SPI directory for a protocol."""
     name_lower = protocol.name.lower()
 
@@ -311,7 +311,7 @@ def validate_file_path(file_path: Path, context: str = "file") -> Path:
     return resolved_path
 
 
-def extract_protocols_from_directory(directory: Path) -> list[ProtocolInfo]:
+def extract_protocols_from_directory(directory: Path) -> list[ModelProtocolInfo]:
     """Extract all protocols from a directory."""
     # Validate directory path first
     validated_directory = validate_directory_path(directory, "source directory")
@@ -338,7 +338,7 @@ def extract_protocols_from_directory(directory: Path) -> list[ProtocolInfo]:
 # Export all public functions, classes, and types
 __all__ = [
     "DuplicationInfo",
-    "ProtocolInfo",
+    "ModelProtocolInfo",
     "ValidationMetadataType",
     "ValidationResult",
     "determine_repository_name",

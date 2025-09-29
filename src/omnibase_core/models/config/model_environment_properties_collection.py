@@ -6,6 +6,8 @@ Type-safe collection of environment properties with metadata support.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
@@ -52,8 +54,32 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
     # Note: Removed to_dict() and from_dict() methods to comply with pure Pydantic architecture
     # Use model.properties directly or ModelEnvironmentPropertiesCollection(**data) for creation
 
+    # Protocol method implementations
 
-# Export the model
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
+
+
 __all__ = [
     "ModelEnvironmentPropertiesCollection",
     "ModelPropertyValue",

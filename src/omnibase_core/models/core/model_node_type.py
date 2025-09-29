@@ -8,6 +8,7 @@ descriptions, and categorization for each node type.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 # Removed unused Any import - using proper union types instead
 from uuid import UUID, uuid4
@@ -89,7 +90,7 @@ class ModelNodeType(BaseModel):
 
     @field_validator("type_name")
     @classmethod
-    def validate_type_name(cls, v: EnumTypeName | str | object) -> str:
+    def validate_type_name(cls, v: object) -> str:
         """Validate type_name pattern and convert enum to string."""
         # Handle enum values and convert to string
         validated_value: str
@@ -168,7 +169,7 @@ class ModelNodeType(BaseModel):
 
     @field_validator("category")
     @classmethod
-    def validate_category(cls, v: EnumConfigCategory | str | object) -> str:
+    def validate_category(cls, v: object) -> str:
         """Validate category pattern and convert enum to string."""
         # Handle enum values and convert to string
         validated_value: str

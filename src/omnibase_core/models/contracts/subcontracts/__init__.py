@@ -17,6 +17,8 @@ providing clean separation between node logic and subcontract functionality.
 ONEX Compliance: Strong typing with zero tolerance for Any types.
 """
 
+from typing import Any
+
 # Subcontract model imports (alphabetical order)
 from .model_aggregation_function import ModelAggregationFunction
 from .model_aggregation_performance import ModelAggregationPerformance

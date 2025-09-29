@@ -12,7 +12,7 @@ from pathlib import Path
 from .exceptions import ConfigurationError, InputValidationError
 from .validation_utils import (
     DuplicationInfo,
-    ProtocolInfo,
+    ModelProtocolInfo,
     determine_repository_name,
     extract_protocols_from_directory,
     validate_directory_path,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AuditResult:
+class ModelAuditResult:
     """Result of protocol audit operation."""
 
     success: bool
@@ -45,7 +45,7 @@ class AuditResult:
 
 
 @dataclass
-class DuplicationReport:
+class ModelDuplicationReport:
     """Report of protocol duplications between repositories."""
 
     success: bool
@@ -53,11 +53,11 @@ class DuplicationReport:
     target_repository: str
     exact_duplicates: list[DuplicationInfo]
     name_conflicts: list[DuplicationInfo]
-    migration_candidates: list[ProtocolInfo]
+    migration_candidates: list[ModelProtocolInfo]
     recommendations: list[str]
 
 
-class ProtocolAuditor:
+class ModelProtocolAuditor:
     """
     Centralized protocol auditing for omni* ecosystem.
 
@@ -79,11 +79,11 @@ class ProtocolAuditor:
 
         self.repository_name = determine_repository_name(self.repository_path)
         logger.info(
-            f"ProtocolAuditor initialized for repository '{self.repository_name}' "
+            f"ModelProtocolAuditor initialized for repository '{self.repository_name}' "
             f"at {self.repository_path}",
         )
 
-    def check_current_repository(self) -> AuditResult:
+    def check_current_repository(self) -> ModelAuditResult:
         """
         Audit protocols in current repository only.
 
@@ -97,7 +97,7 @@ class ProtocolAuditor:
         recommendations = []
 
         if not src_path.exists():
-            return AuditResult(
+            return ModelAuditResult(
                 success=True,
                 repository=self.repository_name,
                 protocols_found=0,
@@ -135,7 +135,7 @@ class ProtocolAuditor:
                 f"Consider migrating {len(protocols)} protocols to omnibase_spi",
             )
 
-        return AuditResult(
+        return ModelAuditResult(
             success=len(violations) == 0,
             repository=self.repository_name,
             protocols_found=len(protocols),
@@ -145,7 +145,9 @@ class ProtocolAuditor:
             recommendations=recommendations,
         )
 
-    def check_against_spi(self, spi_path: str = "../omnibase_spi") -> DuplicationReport:
+    def check_against_spi(
+        self, spi_path: str = "../omnibase_spi"
+    ) -> ModelDuplicationReport:
         """
         Check current repository protocols against omnibase_spi for duplicates.
 
@@ -206,7 +208,7 @@ class ProtocolAuditor:
                 f"Consider migrating {len(migration_candidates)} unique protocols to SPI",
             )
 
-        return DuplicationReport(
+        return ModelDuplicationReport(
             success=len(duplications["exact_duplicates"]) == 0
             and len(duplications["name_conflicts"]) == 0,
             source_repository=self.repository_name,
@@ -217,7 +219,7 @@ class ProtocolAuditor:
             recommendations=recommendations,
         )
 
-    def audit_ecosystem(self, omni_root: Path) -> dict[str, AuditResult]:
+    def audit_ecosystem(self, omni_root: Path) -> dict[str, ModelAuditResult]:
         """
         Comprehensive audit across all omni* repositories.
 
@@ -235,7 +237,7 @@ class ProtocolAuditor:
                 continue
 
             # Audit each repository
-            auditor = ProtocolAuditor(str(repo_path))
+            auditor = ModelProtocolAuditor(str(repo_path))
             result = auditor.check_current_repository()
             results[repo_name] = result
 
@@ -243,7 +245,7 @@ class ProtocolAuditor:
 
     def _find_local_duplicates(
         self,
-        protocols: list[ProtocolInfo],
+        protocols: list[ModelProtocolInfo],
     ) -> list[DuplicationInfo]:
         """Find duplicate protocols within the same repository."""
         duplicates = []
@@ -265,7 +267,9 @@ class ProtocolAuditor:
 
         return duplicates
 
-    def _check_naming_conventions(self, protocols: list[ProtocolInfo]) -> list[str]:
+    def _check_naming_conventions(
+        self, protocols: list[ModelProtocolInfo]
+    ) -> list[str]:
         """Check protocol naming conventions."""
         violations = []
 
@@ -290,7 +294,7 @@ class ProtocolAuditor:
 
         return violations
 
-    def _check_protocol_quality(self, protocols: list[ProtocolInfo]) -> list[str]:
+    def _check_protocol_quality(self, protocols: list[ModelProtocolInfo]) -> list[str]:
         """Check protocol implementation quality."""
         issues = []
 
@@ -311,8 +315,8 @@ class ProtocolAuditor:
 
     def _analyze_cross_repo_duplicates(
         self,
-        source_protocols: list[ProtocolInfo],
-        target_protocols: list[ProtocolInfo],
+        source_protocols: list[ModelProtocolInfo],
+        target_protocols: list[ModelProtocolInfo],
     ) -> dict[str, list[DuplicationInfo]]:
         """Analyze duplications between two sets of protocols."""
         exact_duplicates = []
@@ -352,8 +356,8 @@ class ProtocolAuditor:
 
     def _has_duplicate_in_spi(
         self,
-        protocol: ProtocolInfo,
-        spi_protocols: list[ProtocolInfo],
+        protocol: ModelProtocolInfo,
+        spi_protocols: list[ModelProtocolInfo],
     ) -> bool:
         """Check if protocol has a duplicate in SPI."""
         for spi_protocol in spi_protocols:
@@ -364,7 +368,7 @@ class ProtocolAuditor:
                 return True
         return False
 
-    def print_audit_summary(self, result: AuditResult) -> None:
+    def print_audit_summary(self, result: ModelAuditResult) -> None:
         """Print human-readable audit summary."""
 
         if result.violations:
@@ -375,7 +379,7 @@ class ProtocolAuditor:
             for _recommendation in result.recommendations:
                 pass
 
-    def print_duplication_report(self, report: DuplicationReport) -> None:
+    def print_duplication_report(self, report: ModelDuplicationReport) -> None:
         """Print human-readable duplication report."""
 
         if report.exact_duplicates:

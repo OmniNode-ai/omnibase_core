@@ -7,7 +7,7 @@ with proper Pydantic validation and type safety for saga pattern workflows.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from typing import Literal, Union
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -162,7 +162,7 @@ class ModelCompensationPlan(BaseModel):
 
     @field_validator("plan_id", mode="before")
     @classmethod
-    def validate_plan_id(cls, v: Union[UUID, str]) -> UUID:
+    def validate_plan_id(cls, v: UUID | str) -> UUID:
         """Validate plan ID format."""
         if isinstance(v, UUID):
             return v
@@ -254,7 +254,7 @@ class ModelCompensationPlan(BaseModel):
 
     @field_validator("depends_on_plans", mode="before")
     @classmethod
-    def validate_plan_dependencies(cls, v: list[Union[UUID, str]]) -> list[UUID]:
+    def validate_plan_dependencies(cls, v: list[UUID | str]) -> list[UUID]:
         """Validate plan dependency identifiers."""
         validated = []
         for plan_id in v:
@@ -290,7 +290,7 @@ class ModelCompensationPlan(BaseModel):
                             }
                         ),
                     )
-            # Note: else clause removed as it's unreachable due to type annotation Union[UUID, str]
+            # Note: else clause removed as it's unreachable due to type annotation UUID | str
 
         return validated
 

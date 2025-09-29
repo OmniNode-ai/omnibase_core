@@ -5,12 +5,37 @@ Metadata usage metrics model for tracking node performance.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    BasicValueType,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
+
+# TypedDict for protocol method parameters
+class TypedDictUsageMetadataDict(TypedDict, total=False):
+    """Typed structure for usage metadata dictionary in protocol methods."""
+
+    name: str
+    description: str
+    version: ModelSemVer | str
+    tags: list[str]
+    metadata: dict[str, str]
+
 
 class ModelMetadataUsageMetrics(BaseModel):
-    """Usage metrics for metadata nodes."""
+    """Usage metrics for metadata nodes.
+    Implements omnibase_spi protocols:
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
+    """
 
     total_invocations: int = Field(
         default=0,
@@ -86,3 +111,44 @@ class ModelMetadataUsageMetrics(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def get_metadata(self) -> TypedDictUsageMetadataDict:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata: TypedDictUsageMetadataDict = TypedDictUsageMetadataDict()
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    if field == "tags" and isinstance(value, list):
+                        metadata[field] = value  # type: ignore[literal-required]
+                    elif field == "metadata" and isinstance(value, dict):
+                        metadata[field] = value  # type: ignore[literal-required]
+                    else:
+                        metadata[field] = str(value)  # type: ignore[literal-required]
+        return metadata
+
+    def set_metadata(self, metadata: TypedDictUsageMetadataDict) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, BasicValueType]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False

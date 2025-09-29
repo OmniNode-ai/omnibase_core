@@ -7,13 +7,18 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from typing import Any
+
 # Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .model_metric import ModelMetric
 
@@ -25,6 +30,10 @@ class ModelMetricsData(BaseModel):
     Eliminates: dict[str, str | int | bool | float]
 
     With proper structured data using a single generic metric type.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     # Single list of universal metrics using discriminated union pattern
@@ -35,8 +44,8 @@ class ModelMetricsData(BaseModel):
 
     # Metadata
     collection_id: UUID | None = Field(None, description="UUID for metrics collection")
-    collection_display_name: str | None = Field(
-        None,
+    collection_display_name: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Human-readable name of the metrics collection",
     )
 
@@ -57,7 +66,7 @@ class ModelMetricsData(BaseModel):
         description: str | None = None,
         unit: str | None = None,
     ) -> None:
-        """Add a metric with automatic type detection using factory methods."""
+        """Add a metric with bounded type values."""
         metric = ModelMetric.from_any_value(
             key=key,
             value=value,
@@ -66,8 +75,8 @@ class ModelMetricsData(BaseModel):
         )
         self.metrics.append(metric)
 
-    def get_metric_by_key(self, key: str) -> object:
-        """Get metric value by key."""
+    def get_metric_by_key(self, key: str) -> ModelMetadataValue | None:
+        """Get metric value by key with bounded return type."""
         for metric in self.metrics:
             if metric.key == key:
                 return metric.value
@@ -93,7 +102,10 @@ class ModelMetricsData(BaseModel):
     @property
     def collection_name(self) -> str | None:
         """Access collection name."""
-        return self.collection_display_name
+        display_name_value = self.collection_display_name.to_value()
+        if isinstance(display_name_value, str) and display_name_value:
+            return display_name_value
+        return None
 
     @collection_name.setter
     def collection_name(self, value: str | None) -> None:
@@ -107,13 +119,42 @@ class ModelMetricsData(BaseModel):
             )
         else:
             self.collection_id = None
-        self.collection_display_name = value
+        self.collection_display_name = ModelSchemaValue.from_value(
+            value if value else ""
+        )
 
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: Any) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: Any) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

@@ -5,16 +5,16 @@ Model for workflow execution instances in the ONEX workflow coordination system.
 """
 
 from datetime import datetime
-from typing import Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+# Type aliases for structured data - ZERO TOLERANCE for Any types
+from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
-ParameterValue = Union[str, int, float, bool, None]
+ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
 
 

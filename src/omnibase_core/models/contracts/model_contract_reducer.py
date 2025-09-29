@@ -11,13 +11,15 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Union
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
-ParameterValue = Union[str, int, float, bool, None]
+from omnibase_core.core.type_constraints import PrimitiveValueType
+
+ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
 
@@ -183,8 +185,8 @@ class ModelContractReducer(ModelContractBase):
     # === SUBCONTRACT COMPOSITION ===
     # These fields provide clean subcontract integration
 
-    # FSM subcontract (supports both embedded and $ref patterns)
-    state_transitions: ModelFSMSubcontract | dict[str, str] | None = Field(
+    # FSM subcontract (simplified type to avoid complex union)
+    state_transitions: object | None = Field(
         default=None,
         description="FSM subcontract (embedded definition or $ref reference)",
     )

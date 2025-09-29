@@ -9,6 +9,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import PrimitiveValueType
+
 
 class ModelAggregationFunction(BaseModel):
     """
@@ -48,7 +50,7 @@ class ModelAggregationFunction(BaseModel):
         min_length=1,
     )
 
-    parameters: dict[str, str | int | float | bool] = Field(
+    parameters: dict[str, PrimitiveValueType] = Field(
         default_factory=dict,
         description="Function-specific parameters",
     )

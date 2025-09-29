@@ -7,13 +7,15 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import Configurable, PrimitiveValueType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
@@ -23,6 +25,10 @@ class ModelRetryAdvanced(BaseModel):
 
     Contains circuit breaker settings and metadata
     without basic retry configuration concerns.
+    Implements omnibase_spi protocols:
+    - Executable: Execution management capabilities
+    - Configurable: Configuration management capabilities
+    - Serializable: Data serialization/deserialization
     """
 
     # Advanced configuration
@@ -42,8 +48,8 @@ class ModelRetryAdvanced(BaseModel):
     )
 
     # Metadata
-    description: str | None = Field(
-        default=None,
+    description: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Human-readable policy description",
     )
     custom_properties: ModelCustomProperties = Field(
@@ -67,25 +73,27 @@ class ModelRetryAdvanced(BaseModel):
         return self.circuit_breaker_reset_timeout_seconds
 
     def add_metadata(self, key: str, value: object) -> None:
-        """Add custom metadata."""
-        from omnibase_core.core.type_constraints import PrimitiveValueType
+        """Add custom metadata with bounded type values."""
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         schema_value = ModelSchemaValue.from_value(value)
         # Convert ModelSchemaValue back to primitive and ensure it's a valid PrimitiveValueType
         raw_value = schema_value.to_value()
-        if isinstance(raw_value, (str, int, float, bool)):
+        if isinstance(raw_value, str):
             self.custom_properties.set_custom_value(key, raw_value)
         else:
             # For non-primitive types, convert to string representation
             self.custom_properties.set_custom_string(key, str(raw_value))
 
     def get_metadata(self, key: str) -> object:
-        """Get custom metadata value."""
+        """Get custom metadata value with bounded return type."""
         # Use get_custom_value_wrapped to get ModelResult with is_ok() and unwrap() methods
         schema_value_result = self.custom_properties.get_custom_value_wrapped(key)
         if schema_value_result.is_ok():
-            return schema_value_result.unwrap().to_value()
+            value = schema_value_result.unwrap().to_value()
+            # Ensure bounded return type
+            if isinstance(value, (str, int, float, bool)):
+                return value
         return None
 
     def remove_metadata(self, key: str) -> None:
@@ -110,7 +118,14 @@ class ModelRetryAdvanced(BaseModel):
             "circuit_breaker_enabled": str(self.circuit_breaker_enabled),
             "circuit_breaker_threshold": str(self.circuit_breaker_threshold),
             "reset_timeout_seconds": str(self.circuit_breaker_reset_timeout_seconds),
-            "has_description": str(bool(self.description)),
+            "has_description": str(
+                bool(
+                    self.description.to_value()
+                    if isinstance(self.description.to_value(), str)
+                    and self.description.to_value()
+                    else False
+                )
+            ),
             "metadata_count": str(self.get_metadata_count()),
         }
 
@@ -126,7 +141,7 @@ class ModelRetryAdvanced(BaseModel):
             circuit_breaker_enabled=True,
             circuit_breaker_threshold=threshold,
             circuit_breaker_reset_timeout_seconds=reset_timeout,
-            description=description,
+            description=ModelSchemaValue.from_value(description if description else ""),
         )
 
     @classmethod
@@ -137,7 +152,7 @@ class ModelRetryAdvanced(BaseModel):
         """Create simple advanced configuration."""
         return cls(
             circuit_breaker_enabled=False,
-            description=description,
+            description=ModelSchemaValue.from_value(description if description else ""),
         )
 
     model_config = {
@@ -145,6 +160,34 @@ class ModelRetryAdvanced(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    # Protocol method implementations
+
+    def execute(self, **kwargs: object) -> bool:
+        """Execute or update execution status (Executable protocol)."""
+        try:
+            # Update any relevant execution fields with runtime validation
+            for key, value in kwargs.items():
+                if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def configure(self, **kwargs: object) -> bool:
+        """Configure instance with provided parameters (Configurable protocol)."""
+        try:
+            # Configure with runtime validation for type safety
+            for key, value in kwargs.items():
+                if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, object]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
 
 
 # Export for use

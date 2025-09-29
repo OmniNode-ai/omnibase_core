@@ -4,17 +4,17 @@ Execution Result Model - ONEX Standards Compliant.
 Model for workflow execution results in the ONEX workflow coordination system.
 """
 
-from typing import Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+# Type aliases for structured data - ZERO TOLERANCE for Any types
+from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 
 from .model_workflow_metrics import ModelWorkflowMetrics
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
-ParameterValue = Union[str, int, float, bool, None]
+ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
 
 
@@ -33,7 +33,7 @@ class ModelExecutionResult(BaseModel):
         default_factory=dict, description="Result data from the workflow"
     )
 
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         default=None, description="Error message if workflow failed"
     )
 

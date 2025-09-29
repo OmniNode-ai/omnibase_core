@@ -7,6 +7,7 @@ Part of the Routing Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
