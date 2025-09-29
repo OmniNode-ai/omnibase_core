@@ -23,9 +23,10 @@ from omnibase_core.enums.enum_scenario_status_v2 import (
     EnumScenarioStatusV2,
 )
 from omnibase_core.enums.enum_status_migration import (
-    ServiceStatusMigrationValidator,
-    ServiceStatusMigrator,
+    EnumStatusMigrationValidator,
+    EnumStatusMigrator,
 )
+from omnibase_core.exceptions.onex_error import OnexError
 
 
 class TestBaseStatus:
@@ -276,7 +277,7 @@ class TestStatusMigration:
 
     def test_migration_validation(self):
         """Test status migration validation."""
-        migrator = ServiceStatusMigrator()
+        migrator = EnumStatusMigrator()
 
         # Test valid migrations
         assert migrator.migrate_general_status("active") == EnumGeneralStatus.ACTIVE
@@ -290,12 +291,12 @@ class TestStatusMigration:
         )
 
         # Test invalid migrations
-        with pytest.raises(ValueError):
+        with pytest.raises(OnexError):
             migrator.migrate_general_status("invalid_value")
 
     def test_migration_validator(self):
         """Test migration validation functionality."""
-        validator = ServiceStatusMigrationValidator()
+        validator = EnumStatusMigrationValidator()
 
         # Test valid value validation
         result = validator.validate_value_migration(
@@ -314,7 +315,7 @@ class TestStatusMigration:
 
     def test_migration_report(self):
         """Test migration report generation."""
-        validator = ServiceStatusMigrationValidator()
+        validator = EnumStatusMigrationValidator()
         report = validator.generate_migration_report()
 
         assert "summary" in report

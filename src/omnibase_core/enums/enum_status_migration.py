@@ -18,6 +18,9 @@ from __future__ import annotations
 
 from typing import Any, Protocol, Type, TypedDict, TypeVar
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+
 from .enum_base_status import EnumBaseStatus
 from .enum_execution_status_v2 import EnumExecutionStatusV2
 from .enum_function_lifecycle_status import EnumFunctionLifecycleStatus
@@ -138,16 +141,23 @@ class EnumStatusMigrator:
             Corresponding EnumGeneralStatus value
 
         Raises:
-            ValueError: If old_value cannot be migrated
+            OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_ENUM_STATUS_VALUES:
-            raise ValueError(f"Unknown legacy status value: {old_value}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown legacy status value: {old_value}",
+            )
 
         # Direct mapping for values that exist in both
         try:
             return EnumGeneralStatus(old_value)
-        except ValueError:
-            raise ValueError(f"Cannot migrate status value: {old_value}")
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                message=f"Cannot migrate status value: {old_value}",
+                cause=e,
+            )
 
     @staticmethod
     def migrate_execution_status(old_value: str) -> EnumExecutionStatusV2:
@@ -161,16 +171,23 @@ class EnumStatusMigrator:
             Corresponding EnumExecutionStatusV2 value
 
         Raises:
-            ValueError: If old_value cannot be migrated
+            OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_EXECUTION_STATUS_VALUES:
-            raise ValueError(f"Unknown legacy execution status value: {old_value}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown legacy execution status value: {old_value}",
+            )
 
         # Direct mapping for values that exist in both
         try:
             return EnumExecutionStatusV2(old_value)
-        except ValueError:
-            raise ValueError(f"Cannot migrate execution status value: {old_value}")
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                message=f"Cannot migrate execution status value: {old_value}",
+                cause=e,
+            )
 
     @staticmethod
     def migrate_scenario_status(old_value: str) -> EnumScenarioStatusV2:
@@ -184,16 +201,23 @@ class EnumStatusMigrator:
             Corresponding EnumScenarioStatusV2 value
 
         Raises:
-            ValueError: If old_value cannot be migrated
+            OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_SCENARIO_STATUS_VALUES:
-            raise ValueError(f"Unknown legacy scenario status value: {old_value}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown legacy scenario status value: {old_value}",
+            )
 
         # Direct mapping for values that exist in both
         try:
             return EnumScenarioStatusV2(old_value)
-        except ValueError:
-            raise ValueError(f"Cannot migrate scenario status value: {old_value}")
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                message=f"Cannot migrate scenario status value: {old_value}",
+                cause=e,
+            )
 
     @staticmethod
     def migrate_function_status(old_value: str) -> EnumFunctionLifecycleStatus:
@@ -207,16 +231,23 @@ class EnumStatusMigrator:
             Corresponding EnumFunctionLifecycleStatus value
 
         Raises:
-            ValueError: If old_value cannot be migrated
+            OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_FUNCTION_STATUS_VALUES:
-            raise ValueError(f"Unknown legacy function status value: {old_value}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown legacy function status value: {old_value}",
+            )
 
         # Direct mapping for values that exist in both
         try:
             return EnumFunctionLifecycleStatus(old_value)
-        except ValueError:
-            raise ValueError(f"Cannot migrate function status value: {old_value}")
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                message=f"Cannot migrate function status value: {old_value}",
+                cause=e,
+            )
 
     @staticmethod
     def migrate_metadata_node_status(old_value: str) -> EnumFunctionLifecycleStatus:
@@ -230,16 +261,23 @@ class EnumStatusMigrator:
             Corresponding EnumFunctionLifecycleStatus value
 
         Raises:
-            ValueError: If old_value cannot be migrated
+            OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_METADATA_NODE_STATUS_VALUES:
-            raise ValueError(f"Unknown legacy metadata node status value: {old_value}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown legacy metadata node status value: {old_value}",
+            )
 
         # Direct mapping for values that exist in both
         try:
             return EnumFunctionLifecycleStatus(old_value)
-        except ValueError:
-            raise ValueError(f"Cannot migrate metadata node status value: {old_value}")
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                message=f"Cannot migrate metadata node status value: {old_value}",
+                cause=e,
+            )
 
     @staticmethod
     def migrate_to_base_status(old_value: str, source_enum: str) -> EnumBaseStatus:
@@ -269,7 +307,10 @@ class EnumStatusMigrator:
                 old_value
             ).to_base_status()
         else:
-            raise ValueError(f"Unknown source enum: {source_enum}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown source enum: {source_enum}",
+            )
 
 
 class EnumStatusMigrationValidator:
@@ -281,7 +322,7 @@ class EnumStatusMigrationValidator:
     def validate_value_migration(
         old_value: str,
         old_enum_name: str,
-        expected_new_enum: Type[StatusEnumType],
+        expected_new_enum: type,
     ) -> ValidationResult:
         """
         Validate that a value can be safely migrated.
