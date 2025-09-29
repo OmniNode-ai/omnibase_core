@@ -13,6 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelTestResult(BaseModel):
@@ -32,24 +33,33 @@ class ModelTestResult(BaseModel):
         description="Test execution duration in milliseconds",
         ge=0,
     )
-    error_message: str | None = Field(
-        default=None,
+    error_message: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Error message if test failed",
     )
-    details: str | None = Field(default=None, description="Additional test details")
+    details: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
+        description="Additional test details",
+    )
 
     @classmethod
     def create_from_name(
         cls,
         test_name: str,
-        **kwargs: Any,
+        passed: bool,
+        duration_ms: int = 0,
+        error_message: str | None = None,
+        details: str | None = None,
     ) -> ModelTestResult:
         """
         Create test result from test name.
 
         Args:
             test_name: Test name (will be used as display_name)
-            **kwargs: Other test parameters
+            passed: Whether the test passed
+            duration_ms: Test execution duration in milliseconds
+            error_message: Error message if test failed
+            details: Additional test details
 
         Returns:
             Test result with generated UUID and display_name set
@@ -59,8 +69,19 @@ class ModelTestResult(BaseModel):
         return cls(
             test_id=uuid4(),
             test_display_name=test_name,
-            **kwargs,
+            passed=passed,
+            duration_ms=duration_ms,
+            error_message=ModelSchemaValue.from_value(
+                error_message if error_message else ""
+            ),
+            details=ModelSchemaValue.from_value(details if details else ""),
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

@@ -18,6 +18,8 @@ from omnibase_core.enums.enum_data_format import EnumDataFormat
 from .model_example_metadata_summary import ModelExampleMetadataSummary
 from .model_example_summary import ModelExampleSummary
 
+# Removed Any import for ONEX compliance
+
 
 class ModelExamplesCollectionSummary(BaseModel):
     """
@@ -64,12 +66,18 @@ class ModelExamplesCollectionSummary(BaseModel):
 
     last_updated: datetime | None = Field(None, description="Last update timestamp")
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
         """Calculate completion rate after initialization."""
         if self.example_count > 0:
             self.completion_rate = (self.valid_example_count / self.example_count) * 100
         else:
             self.completion_rate = 0.0
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Export the models
 
@@ -90,7 +98,7 @@ class ModelExamplesCollectionSummary(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

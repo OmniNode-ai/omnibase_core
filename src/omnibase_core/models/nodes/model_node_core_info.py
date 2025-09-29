@@ -16,9 +16,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
@@ -26,14 +26,8 @@ from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
-class TypedDictCoreSummary(TypedDict):
-    """Type-safe dictionary for node core summary.
-    Implements omnibase_spi protocols:
-    - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    """
+class ModelCoreSummary(TypedDict):
+    """Type-safe dictionary for node core summary."""
 
     node_id: UUID
     node_name: str
@@ -102,10 +96,10 @@ class ModelNodeCoreInfo(BaseModel):
         return bool(self.description)
 
     def has_author(self) -> bool:
-        """Check if node has an author."""
-        return bool(self.author)
+        """Check if node has any author identifier or display name."""
+        return bool(self.author_id or self.author_display_name)
 
-    def get_core_summary(self) -> TypedDictCoreSummary:
+    def get_core_summary(self) -> ModelCoreSummary:
         """Get core node information summary."""
         return {
             "node_id": self.node_id,
@@ -150,6 +144,12 @@ class ModelNodeCoreInfo(BaseModel):
         """Get author name."""
         return self.author_display_name
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -170,7 +170,7 @@ class ModelNodeCoreInfo(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -183,7 +183,7 @@ class ModelNodeCoreInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -197,7 +197,7 @@ class ModelNodeCoreInfo(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
@@ -207,4 +207,4 @@ class ModelNodeCoreInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeCoreInfo", "TypedDictCoreSummary"]
+__all__ = ["ModelNodeCoreInfo", "ModelCoreSummary"]

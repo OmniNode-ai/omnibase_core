@@ -13,9 +13,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 
 from .model_node_capabilities_summary import ModelNodeCapabilitiesSummary
@@ -32,7 +32,7 @@ class ModelNodeInformationSummary(BaseModel):
     With proper structured data using specific field types.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -47,6 +47,12 @@ class ModelNodeInformationSummary(BaseModel):
         description="Node configuration summary",
     )
     is_fully_configured: bool = Field(description="Whether node is fully configured")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Export the model
 
@@ -70,7 +76,7 @@ class ModelNodeInformationSummary(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -83,7 +89,7 @@ class ModelNodeInformationSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -97,7 +103,7 @@ class ModelNodeInformationSummary(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

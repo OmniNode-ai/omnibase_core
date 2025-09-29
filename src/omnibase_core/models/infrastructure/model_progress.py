@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .progress.model_progress_core import ModelProgressCore
@@ -54,7 +56,7 @@ class ModelProgress(BaseModel):
         description="Custom metrics and tagging",
     )
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         """Post-initialization to sync components."""
         self._sync_timing_with_core()
         self._sync_milestones_with_core()
@@ -195,7 +197,7 @@ class ModelProgress(BaseModel):
         return self.timing.get_completion_rate_per_minute(self.core.percentage)
 
     @property
-    def custom_metrics(self) -> Any:
+    def custom_metrics(self) -> ModelMetricsData:
         """Get custom metrics."""
         return self.metrics.custom_metrics
 
@@ -371,6 +373,12 @@ class ModelProgress(BaseModel):
         core = ModelProgressCore.create_phased(phases, total_steps or 1)
         milestone_component = ModelProgressMilestones.create_phased_milestones(phases)
         return cls(core=core, milestones=milestone_component)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

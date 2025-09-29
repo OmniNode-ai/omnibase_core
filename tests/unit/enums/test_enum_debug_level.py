@@ -16,7 +16,7 @@ import json
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from src.omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 
 
 class TestEnumDebugLevel:

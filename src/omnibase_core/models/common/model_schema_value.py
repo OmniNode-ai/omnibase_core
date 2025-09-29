@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Model for representing schema values with proper type safety.
 
@@ -46,7 +45,7 @@ class ModelSchemaValue(BaseModel):
     )
 
     @classmethod
-    def from_value(cls, value: Any) -> "ModelSchemaValue":
+    def from_value(cls, value: object) -> "ModelSchemaValue":
         """
         Create ModelSchemaValue from a Python value.
 
@@ -127,7 +126,7 @@ class ModelSchemaValue(BaseModel):
             object_value=None,
         )
 
-    def to_value(self) -> Any:
+    def to_value(self) -> object:
         """
         Convert back to Python value.
 
@@ -148,6 +147,12 @@ class ModelSchemaValue(BaseModel):
             return {k: v.to_value() for k, v in (self.object_value or {}).items()}
         return None
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
@@ -155,7 +160,7 @@ class ModelSchemaValue(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.models.core import ModelGenericCollection
+from omnibase_core.models.core import ModelGenericCollection
 
 
 class MockItem(BaseModel):

@@ -13,22 +13,16 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
-class TypedDictDeprecationSummary(TypedDict):
-    """Type-safe dictionary for deprecation summary.
-    Implements omnibase_spi protocols:
-    - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    """
+class ModelDeprecationSummary(TypedDict):
+    """Type-safe dictionary for deprecation summary."""
 
     is_deprecated: bool
     has_replacement: bool
@@ -84,7 +78,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
         return f"deprecated since {self.deprecated_since}"
 
-    def get_deprecation_summary(self) -> TypedDictDeprecationSummary:
+    def get_deprecation_summary(self) -> ModelDeprecationSummary:
         """Get deprecation information summary."""
         return {
             "is_deprecated": self.is_deprecated(),
@@ -113,6 +107,12 @@ class ModelFunctionDeprecationInfo(BaseModel):
             replacement=replacement,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -133,7 +133,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -146,7 +146,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -160,7 +160,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
@@ -170,4 +170,4 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFunctionDeprecationInfo", "TypedDictDeprecationSummary"]
+__all__ = ["ModelFunctionDeprecationInfo", "ModelDeprecationSummary"]

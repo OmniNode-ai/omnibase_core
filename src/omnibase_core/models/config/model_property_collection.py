@@ -7,17 +7,12 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-# ONEX-compliant property value type using TypeVar instead of primitive soup Union
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Literal, TypeVar
 
-# from omnibase_spi.protocols.types.core_types import (
-#     ProtocolSupportedPropertyValue,
-# )
-
-
-PropertyValueType = TypeVar("PropertyValueType", str, int, float, bool, list[Any])
 from pydantic import BaseModel, Field
 
+# Use already imported ModelPropertyValue for type safety
+# No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
 from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
@@ -26,14 +21,13 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_property_metadata import ModelPropertyMetadata
-from .model_property_value import ModelPropertyValue
+
+# Import PropertyValueType from the proper discriminated union model
+from .model_property_value import ModelPropertyValue, PropertyValueType
 from .model_typed_property import ModelTypedProperty
 
-# Use Any for property values since we support many types through the protocol
-ProtocolSupportedPropertyValue = str
-
 # Type variable for generic property handling
-T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
+T = TypeVar("T", bound=PropertyValueType)
 
 
 class ModelPropertyCollection(BaseModel):
@@ -90,27 +84,38 @@ class ModelPropertyCollection(BaseModel):
         source: str | None = None,
     ) -> ModelPropertyValue:
         """Create ModelPropertyValue using type-specific factory methods."""
-        # Simple, clean type checking - more readable and standards-compliant
-        if isinstance(value, str):
-            return ModelPropertyValue.from_string(value, source)
-        elif isinstance(value, bool):
-            return ModelPropertyValue.from_bool(value, source)
-        elif isinstance(value, int):
-            return ModelPropertyValue.from_int(value, source)
-        elif isinstance(value, float):
-            return ModelPropertyValue.from_float(value, source)
-        elif isinstance(value, list):
-            if not value:  # Empty list defaults to string list
-                return ModelPropertyValue.from_string_list([], source)
-            # Check homogeneous list types
-            first_type = type(value[0])
-            if all(isinstance(item, first_type) for item in value):
-                if first_type is str:
-                    return ModelPropertyValue.from_string_list(value, source)
-                elif first_type is int:
-                    return ModelPropertyValue.from_int_list(value, source)
-                elif first_type is float:
-                    return ModelPropertyValue.from_float_list(value, source)
+        # Define type handlers as a list of (checker_function, factory_method) tuples
+        # Order matches original elif chain to preserve existing behavior
+        # Use object instead of Any for type dispatch pattern
+        TypeChecker = Callable[[object], bool]
+        FactoryMethod = Callable[[object, str | None], ModelPropertyValue]
+
+        type_handlers: list[tuple[TypeChecker, FactoryMethod]] = [
+            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),  # type: ignore[list-item]
+            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),  # type: ignore[list-item]
+            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),  # type: ignore[list-item]
+            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),  # type: ignore[list-item]
+            (
+                lambda v: isinstance(v, list)
+                and all(isinstance(item, str) for item in v),
+                ModelPropertyValue.from_string_list,  # type: ignore[list-item]
+            ),
+            (
+                lambda v: isinstance(v, list)
+                and all(isinstance(item, int) for item in v),
+                ModelPropertyValue.from_int_list,  # type: ignore[list-item]
+            ),
+            (
+                lambda v: isinstance(v, list)
+                and all(isinstance(item, float) for item in v),
+                ModelPropertyValue.from_float_list,  # type: ignore[list-item]
+            ),
+        ]
+
+        # Find the appropriate handler
+        for type_checker, factory_method in type_handlers:
+            if type_checker(value):
+                return factory_method(value, source)
 
         # If no handler matches, raise error
         raise OnexError(
@@ -156,6 +161,12 @@ class ModelPropertyCollection(BaseModel):
             if prop.value.value_type == property_type
         ]
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -173,7 +184,7 @@ class ModelPropertyCollection(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

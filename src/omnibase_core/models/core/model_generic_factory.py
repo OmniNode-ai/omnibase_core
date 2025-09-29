@@ -10,25 +10,23 @@ Restructured to reduce string field violations through logical grouping.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, TypedDict, TypeVar
+from typing import Any, Generic, TypeVar, Unpack
 
 from pydantic import BaseModel
 
 from omnibase_core.core.type_constraints import (
     Configurable,
     Nameable,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_typed_dict_factory_kwargs import (
-    TypedDictExecutionParams,
-    TypedDictMessageParams,
-    TypedDictMetadataParams,
+from omnibase_core.types import (
+    TypedDictFactoryKwargs,
 )
 
 T = TypeVar("T", bound=BaseModel)
@@ -114,7 +112,7 @@ class ModelGenericFactory(Generic[T]):
             )
         return self._factories[name]()
 
-    def build(self, builder_name: str, **kwargs: Any) -> T:
+    def build(self, builder_name: str, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """
         Build instance using registered builder method.
 
@@ -164,7 +162,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         result_data: ModelSchemaValue | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """
         Generic success result factory.
@@ -187,7 +185,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: type[T],
         error: str,
-        **kwargs: Any,
+        **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """
         Generic error result factory.
@@ -233,7 +231,7 @@ class ModelGenericFactory(Generic[T]):
         }
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

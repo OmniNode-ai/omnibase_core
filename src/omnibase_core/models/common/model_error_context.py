@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Model for representing error context with proper type safety.
 
@@ -74,6 +73,12 @@ class ModelErrorContext(BaseModel):
             additional_context=additional_context,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
@@ -81,7 +86,7 @@ class ModelErrorContext(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

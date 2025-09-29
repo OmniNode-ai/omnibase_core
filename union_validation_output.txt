@@ -1,0 +1,20 @@
+
+📈 Union Validation Results:
+   Total unions found: 994
+   Legitimate unions: 934
+   Invalid unions: 60
+
+❌ Union legitimacy issues found:
+   src/omnibase_core/core/type_constraints.py: Line 107: Invalid union pattern: primitive_soup - Union[bool, float, int, str]
+   src/omnibase_core/core/type_constraints.py: Line 107: Suggestion - Replace with specific type (str, int, etc.) if only one type is actually needed
+   src/omnibase_core/core/type_constraints.py: Line 107: Suggestion - Use TypeVar for generic functions: T = TypeVar("T", str, int, float)
+   src/omnibase_core/core/type_constraints.py: Line 107: Suggestion - Create discriminated union with Literal discriminator
+   src/omnibase_core/core/type_constraints.py: Line 107: Suggestion - Consider using ModelSchemaValue with proper type field
+   src/omnibase_core/core/type_constraints.py: Line 110: Invalid union pattern: primitive_soup - Union[bool, dict, float, int, list, str]
+   src/omnibase_core/core/type_constraints.py: Line 110: Suggestion - Replace with specific type (str, int, etc.) if only one type is actually needed
+   src/omnibase_core/core/type_constraints.py: Line 110: Suggestion - Use TypeVar for generic functions: T = TypeVar("T", str, int, float)
+   src/omnibase_core/core/type_constraints.py: Line 110: Suggestion - Create discriminated union with Literal discriminator
+   src/omnibase_core/core/type_constraints.py: Line 110: Suggestion - Consider using ModelSchemaValue with proper type field
+   ... and 267 more issues
+
+❌ Too many invalid unions: 60 > 8 (allowed)

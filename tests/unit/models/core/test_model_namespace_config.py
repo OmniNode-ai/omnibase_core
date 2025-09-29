@@ -12,7 +12,7 @@ Tests all aspects of the namespace configuration model including:
 import pytest
 from pydantic import ValidationError
 
-from ..core.model_namespace_config import ModelNamespaceConfig
+from omnibase_core.models.config.model_namespace_config import ModelNamespaceConfig
 
 
 class TestModelNamespaceConfig:
@@ -23,18 +23,18 @@ class TestModelNamespaceConfig:
         config = ModelNamespaceConfig()
 
         assert config.enabled is True
-        assert config.strategy == "ONEX_DEFAULT"
+        assert config.strategy == "onex_default"
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
-        config = ModelNamespaceConfig(enabled=False, strategy="EXPLICIT")
+        config = ModelNamespaceConfig(enabled=False, strategy="explicit")
 
         assert config.enabled is False
-        assert config.strategy == "EXPLICIT"
+        assert config.strategy == "explicit"
 
     def test_all_valid_strategy_values(self):
         """Test model instantiation with all valid strategy literals."""
-        valid_strategies = ["ONEX_DEFAULT", "EXPLICIT", "AUTO"]
+        valid_strategies = ["onex_default", "explicit", "auto"]
 
         for strategy in valid_strategies:
             config = ModelNamespaceConfig(enabled=True, strategy=strategy)
@@ -46,9 +46,9 @@ class TestModelNamespaceConfig:
         invalid_strategies = [
             "invalid",
             "CUSTOM",
-            "onex_default",  # Case sensitive
-            "explicit",  # Case sensitive
-            "auto",  # Case sensitive
+            "ONEX_DEFAULT",  # Case sensitive - uppercase not allowed
+            "EXPLICIT",  # Case sensitive - uppercase not allowed
+            "AUTO",  # Case sensitive - uppercase not allowed
             "DEFAULT",
             "",
             "MANUAL",
@@ -106,26 +106,26 @@ class TestModelNamespaceConfig:
 
     def test_model_serialization(self):
         """Test model serialization to dict."""
-        config = ModelNamespaceConfig(enabled=False, strategy="AUTO")
+        config = ModelNamespaceConfig(enabled=False, strategy="auto")
 
         data = config.model_dump()
 
-        expected_data = {"enabled": False, "strategy": "AUTO"}
+        expected_data = {"enabled": False, "strategy": "auto"}
 
         assert data == expected_data
 
     def test_model_deserialization(self):
         """Test model deserialization from dict."""
-        data = {"enabled": True, "strategy": "EXPLICIT"}
+        data = {"enabled": True, "strategy": "explicit"}
 
         config = ModelNamespaceConfig.model_validate(data)
 
         assert config.enabled is True
-        assert config.strategy == "EXPLICIT"
+        assert config.strategy == "explicit"
 
     def test_model_json_serialization(self):
         """Test JSON serialization and deserialization."""
-        config = ModelNamespaceConfig(enabled=True, strategy="ONEX_DEFAULT")
+        config = ModelNamespaceConfig(enabled=True, strategy="onex_default")
 
         # Serialize to JSON
         json_str = config.model_dump_json()
@@ -139,11 +139,11 @@ class TestModelNamespaceConfig:
 
     def test_model_equality(self):
         """Test model equality comparison."""
-        config1 = ModelNamespaceConfig(enabled=True, strategy="AUTO")
+        config1 = ModelNamespaceConfig(enabled=True, strategy="auto")
 
-        config2 = ModelNamespaceConfig(enabled=True, strategy="AUTO")
+        config2 = ModelNamespaceConfig(enabled=True, strategy="auto")
 
-        config3 = ModelNamespaceConfig(enabled=False, strategy="AUTO")
+        config3 = ModelNamespaceConfig(enabled=False, strategy="auto")
 
         assert config1 == config2
         assert config1 != config3
@@ -153,26 +153,26 @@ class TestModelNamespaceConfig:
         # Test with no arguments
         config = ModelNamespaceConfig()
         assert config.enabled is True
-        assert config.strategy == "ONEX_DEFAULT"
+        assert config.strategy == "onex_default"
 
         # Test with partial arguments
         config = ModelNamespaceConfig(enabled=False)
         assert config.enabled is False
-        assert config.strategy == "ONEX_DEFAULT"
+        assert config.strategy == "onex_default"
 
-        config = ModelNamespaceConfig(strategy="EXPLICIT")
+        config = ModelNamespaceConfig(strategy="explicit")
         assert config.enabled is True
-        assert config.strategy == "EXPLICIT"
+        assert config.strategy == "explicit"
 
     def test_strategy_combinations(self):
         """Test different strategy and enabled combinations."""
         combinations = [
-            (True, "ONEX_DEFAULT"),
-            (True, "EXPLICIT"),
-            (True, "AUTO"),
-            (False, "ONEX_DEFAULT"),
-            (False, "EXPLICIT"),
-            (False, "AUTO"),
+            (True, "onex_default"),
+            (True, "explicit"),
+            (True, "auto"),
+            (False, "onex_default"),
+            (False, "explicit"),
+            (False, "auto"),
         ]
 
         for enabled, strategy in combinations:
@@ -182,7 +182,7 @@ class TestModelNamespaceConfig:
 
     def test_repr_and_str(self):
         """Test string representations of the model."""
-        config = ModelNamespaceConfig(enabled=True, strategy="AUTO")
+        config = ModelNamespaceConfig(enabled=True, strategy="auto")
 
         repr_str = repr(config)
         assert "ModelNamespaceConfig" in repr_str
@@ -242,8 +242,8 @@ class TestModelNamespaceConfigEdgeCases:
             "auto",
         ]
 
-        # Only exact case should work, test some invalid cases
-        invalid_cases = ["onex_default", "Onex_Default", "explicit", "auto"]
+        # Only exact lowercase case should work, test some invalid cases
+        invalid_cases = ["ONEX_DEFAULT", "Onex_Default", "EXPLICIT", "AUTO"]
 
         for strategy in invalid_cases:
             with pytest.raises(ValidationError):
@@ -274,8 +274,8 @@ class TestModelNamespaceConfigEdgeCases:
         original_configs = [
             ModelNamespaceConfig(),
             ModelNamespaceConfig(enabled=False),
-            ModelNamespaceConfig(strategy="EXPLICIT"),
-            ModelNamespaceConfig(enabled=False, strategy="AUTO"),
+            ModelNamespaceConfig(strategy="explicit"),
+            ModelNamespaceConfig(enabled=False, strategy="auto"),
         ]
 
         for original in original_configs:
@@ -297,17 +297,17 @@ class TestModelNamespaceConfigEdgeCases:
         updated_data = {"enabled": False}
         updated_config = config.model_copy(update=updated_data)
         assert updated_config.enabled is False
-        assert updated_config.strategy == "ONEX_DEFAULT"  # Should keep original
+        assert updated_config.strategy == "onex_default"  # Should keep original
 
         # Test updating only strategy
-        updated_data = {"strategy": "AUTO"}
+        updated_data = {"strategy": "auto"}
         updated_config = config.model_copy(update=updated_data)
         assert updated_config.enabled is True  # Should keep original
-        assert updated_config.strategy == "AUTO"
+        assert updated_config.strategy == "auto"
 
     def test_immutability_behavior(self):
         """Test that model behaves as expected regarding mutability."""
-        config = ModelNamespaceConfig(enabled=True, strategy="AUTO")
+        config = ModelNamespaceConfig(enabled=True, strategy="auto")
 
         # Test that we can't directly modify fields (if model is set up for immutability)
         # Note: Pydantic models are mutable by default, but we test current behavior
@@ -318,8 +318,8 @@ class TestModelNamespaceConfigEdgeCases:
         config.enabled = False
         assert config.enabled is False
 
-        config.strategy = "EXPLICIT"
-        assert config.strategy == "EXPLICIT"
+        config.strategy = "explicit"
+        assert config.strategy == "explicit"
 
     def test_validation_error_messages(self):
         """Test that validation errors provide useful messages."""
@@ -342,23 +342,23 @@ class TestModelNamespaceConfigEdgeCases:
         # Default ONEX configuration
         default_config = ModelNamespaceConfig()
         assert default_config.enabled is True
-        assert default_config.strategy == "ONEX_DEFAULT"
+        assert default_config.strategy == "onex_default"
 
         # Disabled namespace handling
         disabled_config = ModelNamespaceConfig(enabled=False)
         assert disabled_config.enabled is False
         # Strategy still matters even when disabled
-        assert disabled_config.strategy == "ONEX_DEFAULT"
+        assert disabled_config.strategy == "onex_default"
 
         # Explicit namespace management
-        explicit_config = ModelNamespaceConfig(enabled=True, strategy="EXPLICIT")
+        explicit_config = ModelNamespaceConfig(enabled=True, strategy="explicit")
         assert explicit_config.enabled is True
-        assert explicit_config.strategy == "EXPLICIT"
+        assert explicit_config.strategy == "explicit"
 
         # Auto namespace detection
-        auto_config = ModelNamespaceConfig(enabled=True, strategy="AUTO")
+        auto_config = ModelNamespaceConfig(enabled=True, strategy="auto")
         assert auto_config.enabled is True
-        assert auto_config.strategy == "AUTO"
+        assert auto_config.strategy == "auto"
 
 
 if __name__ == "__main__":

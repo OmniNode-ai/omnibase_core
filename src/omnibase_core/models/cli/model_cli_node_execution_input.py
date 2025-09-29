@@ -102,28 +102,11 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Request UUID for tracking and correlation",
     )
 
-    model_config = ConfigDict(
-        use_enum_values=True,  # Ensure proper enum serialization
-        json_schema_extra={
-            "example": {
-                "action": "list_nodes",
-                "node_id": None,
-                "node_display_name": None,
-                "target_node_id": None,
-                "target_node_display_name": None,
-                "include_metadata": True,
-                "include_health_info": True,
-                "health_filter": True,
-                "category_filter": None,
-                "timeout_seconds": 30.0,
-                "output_format": "default",
-                "verbose": False,
-                "advanced_params": {},
-                "execution_context": "550e8400-e29b-41d4-a716-446655440000",
-                "request_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-            },
-        },
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 
@@ -150,7 +133,7 @@ class ModelCliNodeExecutionInput(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

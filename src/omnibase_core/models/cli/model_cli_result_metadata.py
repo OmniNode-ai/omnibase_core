@@ -11,9 +11,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Nameable
+from omnibase_core.core.type_constraints import Nameable, PrimitiveValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
@@ -23,6 +23,8 @@ from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
+
+# Using ModelCliValue instead of primitive soup type alias for proper discriminated union typing
 
 
 class ModelCliResultMetadata(BaseModel):
@@ -124,6 +126,74 @@ class ModelCliResultMetadata(BaseModel):
         description="Custom metadata fields",
     )
 
+    @field_validator("processor_version", mode="before")
+    @classmethod
+    def validate_processor_version(cls, v: object) -> ModelSemVer | None:
+        """Convert string processor version to ModelSemVer or return ModelSemVer as-is."""
+        if v is None:
+            return None
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, str):
+            # Parse version string like "1.0.0"
+            parts = v.split(".")
+            if len(parts) >= 3:
+                return ModelSemVer(
+                    major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+                )
+            elif len(parts) == 2:
+                return ModelSemVer(major=int(parts[0]), minor=int(parts[1]), patch=0)
+            elif len(parts) == 1:
+                return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
+            else:
+                raise ValueError(f"Invalid version string: {v}")
+        raise ValueError(f"Invalid processor version type: {type(v)}")
+
+    @field_validator("data_classification")
+    @classmethod
+    def validate_data_classification(
+        cls, v: EnumDataClassification
+    ) -> EnumDataClassification:
+        """Validate data classification enum (Pydantic handles string conversion automatically)."""
+        if isinstance(v, EnumDataClassification):
+            return v
+        else:
+            # This should never happen with proper typing and Pydantic's enum conversion
+            raise ValueError(f"Invalid data classification type: {type(v)}")
+
+    @field_validator("retention_policy", mode="before")
+    @classmethod
+    def validate_retention_policy(cls, v: object) -> EnumRetentionPolicy | None:
+        """Convert string retention policy to enum or return enum as-is."""
+        if v is None:
+            return None
+        if isinstance(v, EnumRetentionPolicy):
+            return v
+        if isinstance(v, str):
+            try:
+                return EnumRetentionPolicy(v)
+            except ValueError:
+                # Try uppercase
+                try:
+                    return EnumRetentionPolicy(v.upper())
+                except ValueError:
+                    raise ValueError(f"Invalid retention policy: {v}")
+        raise ValueError(f"Invalid retention policy type: {type(v)}")
+
+    @field_validator("custom_metadata")
+    @classmethod
+    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelCliValue]:
+        """Validate custom metadata values ensure they are ModelCliValue objects."""
+        result = {}
+        for key, value in v.items():
+            if isinstance(value, ModelCliValue):
+                # Keep as ModelCliValue
+                result[key] = value
+            else:
+                # Convert to ModelCliValue
+                result[key] = ModelCliValue.from_any(value)
+        return result
+
     def add_tag(self, tag: str) -> None:
         """Add a tag to the result."""
         if tag not in self.tags:
@@ -165,20 +235,14 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Quality score must be between 0.0 and 1.0",
-            )
+            raise ValueError("Quality score must be between 0.0 and 1.0")
 
     def set_confidence_level(self, confidence: float) -> None:
         """Set the confidence level."""
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Confidence level must be between 0.0 and 1.0",
-            )
+            raise ValueError("Confidence level must be between 0.0 and 1.0")
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
         """Add resource usage information."""
@@ -193,20 +257,63 @@ class ModelCliResultMetadata(BaseModel):
         timestamp = datetime.now(UTC).isoformat()
         self.audit_trail.append(f"{timestamp}: {entry}")
 
-    def set_custom_field(self, key: str, value: str) -> None:
-        """Set a custom metadata field. CLI metadata is typically strings."""
-        self.custom_metadata[key] = ModelCliValue.from_string(value)
+    def set_custom_field(self, key: str, value: ModelCliValue | object) -> None:
+        """Set a custom metadata field with automatic type conversion."""
+        if isinstance(value, ModelCliValue):
+            self.custom_metadata[key] = value
+        else:
+            # Convert to ModelCliValue for type safety
+            self.custom_metadata[key] = ModelCliValue.from_any(value)
 
-    def get_custom_field(self, key: str, default: str = "") -> str:
-        """Get a custom metadata field. CLI metadata is strings."""
-        cli_value = self.custom_metadata.get(key)
-        if cli_value is not None:
-            return str(cli_value.to_python_value())
-        return default
+    def get_custom_field(
+        self, key: str, default: ModelCliValue | None = None
+    ) -> ModelCliValue | None:
+        """Get a custom metadata field with original type."""
+        return self.custom_metadata.get(key, default)
 
     def is_compliant(self) -> bool:
         """Check if all compliance flags are True."""
         return all(self.compliance_flags.values()) if self.compliance_flags else True
+
+    @classmethod
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelCliResultMetadata":
+        """Custom validation to handle 'labels' field."""
+        if isinstance(obj, dict) and "labels" in obj:
+            # Handle legacy 'labels' field by converting to label_ids/label_names
+            labels = obj.pop("labels")
+            if isinstance(labels, dict):
+                label_ids = {}
+                label_names = {}
+                for key, value in labels.items():
+                    uuid_id = uuid_from_string(key, "label")
+                    label_ids[uuid_id] = value
+                    label_names[key] = uuid_id
+                obj["label_ids"] = label_ids
+                obj["label_names"] = label_names
+
+        return super().model_validate(
+            obj,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": True,
+        "validate_assignment": True,
+    }
 
     # Export the model
 
@@ -235,7 +342,7 @@ class ModelCliResultMetadata(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

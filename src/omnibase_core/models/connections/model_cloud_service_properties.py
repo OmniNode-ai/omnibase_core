@@ -46,6 +46,12 @@ class ModelCloudServiceProperties(BaseModel):
             return str(self.service_id)
         return None
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
@@ -61,7 +67,7 @@ class ModelCloudServiceProperties(BaseModel):
             return False
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

@@ -11,16 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    Serializable,
-    Validatable,
-)
+from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
-
-from .model_typed_dict_field_value import TypedDictFieldValue
 
 
 class ModelFieldAccessor(BaseModel):
@@ -53,7 +46,7 @@ class ModelFieldAccessor(BaseModel):
                     if default is not None:
                         return ModelResult.ok(default)
                     return ModelResult.err(
-                        f"Field path '{path}' not found, stopped at part '{part}'"
+                        f"Field path '{path}' not found, stopped at part '{part}'",
                     )
             # Type checking for return value - convert to ModelSchemaValue
             if isinstance(obj, (str, int, float, bool, list)):
@@ -61,15 +54,17 @@ class ModelFieldAccessor(BaseModel):
             if default is not None:
                 return ModelResult.ok(default)
             return ModelResult.err(
-                f"Field at '{path}' has unsupported type: {type(obj)}"
+                f"Field at '{path}' has unsupported type: {type(obj)}",
             )
         except (AttributeError, KeyError, TypeError) as e:
             if default is not None:
                 return ModelResult.ok(default)
-            return ModelResult.err(f"Error accessing field '{path}': {str(e)}")
+            return ModelResult.err(f"Error accessing field '{path}': {e!s}")
 
-    def set_field(self, path: str, value: ModelSchemaValue) -> bool:
-        """Set field using dot notation."""
+    def set_field(
+        self, path: str, value: PrimitiveValueType | ModelSchemaValue
+    ) -> bool:
+        """Set field using dot notation. Accepts raw values or ModelSchemaValue."""
         try:
             parts = path.split(".")
             obj: object = self
@@ -93,9 +88,17 @@ class ModelFieldAccessor(BaseModel):
                 else:
                     return False
 
-            # Set the final value - convert ModelSchemaValue to raw value
+            # Set the final value - convert input to ModelSchemaValue first, then to raw value
             final_key = parts[-1]
-            raw_value = value.to_value() if value else None
+            if isinstance(value, ModelSchemaValue):
+                schema_value = value
+                raw_value = schema_value.to_value()
+            else:
+                if value is not None:
+                    schema_value = ModelSchemaValue.from_value(value)
+                    raw_value = schema_value.to_value()
+                else:
+                    raw_value = None
             # First try setting as attribute if the object has the field (even if None)
             # This handles Pydantic model fields that are initially None
             if hasattr(obj, final_key) or hasattr(obj, "__dict__"):
@@ -168,6 +171,12 @@ class ModelFieldAccessor(BaseModel):
         except (AttributeError, KeyError, TypeError):
             return False
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -185,7 +194,7 @@ class ModelFieldAccessor(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
@@ -213,4 +222,4 @@ class ModelFieldAccessor(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFieldAccessor", "TypedDictFieldValue"]
+__all__ = ["ModelFieldAccessor"]

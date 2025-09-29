@@ -60,6 +60,12 @@ class ModelConnectionMetrics(BaseModel):
         description="Number of connection timeouts",
     )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -73,7 +79,7 @@ class ModelConnectionMetrics(BaseModel):
             return False
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

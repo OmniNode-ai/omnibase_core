@@ -177,6 +177,12 @@ class ModelProgressMilestones(BaseModel):
 
         return cls(milestones=milestones)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:

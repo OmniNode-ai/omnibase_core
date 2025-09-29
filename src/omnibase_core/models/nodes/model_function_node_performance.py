@@ -13,9 +13,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
@@ -30,7 +30,7 @@ class ModelFunctionNodePerformance(BaseModel):
     without core function or documentation concerns.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -215,6 +215,12 @@ class ModelFunctionNodePerformance(BaseModel):
             memory_usage_mb=0.5,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -235,7 +241,7 @@ class ModelFunctionNodePerformance(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -248,7 +254,7 @@ class ModelFunctionNodePerformance(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -262,7 +268,7 @@ class ModelFunctionNodePerformance(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

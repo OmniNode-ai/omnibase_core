@@ -12,7 +12,7 @@ from uuid import UUID
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
-class NodeMetadataSummaryType(TypedDict):
+class ModelNodeMetadataSummaryType(TypedDict):
     """
     Typed dictionary for node metadata info summary.
 
@@ -40,4 +40,4 @@ class NodeMetadataSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["NodeMetadataSummaryType"]
+__all__ = ["ModelNodeMetadataSummaryType"]

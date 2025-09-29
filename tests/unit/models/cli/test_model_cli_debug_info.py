@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.cli.model_cli_debug_info import ModelCliDebugInfo
+from omnibase_core.models.cli.model_cli_debug_info import ModelCliDebugInfo
 
 
 class TestModelCliDebugInfo:
@@ -170,16 +170,21 @@ class TestModelCliDebugInfo:
         debug_info.set_custom_field("float_field", 3.14)
         debug_info.set_custom_field("bool_field", True)
 
-        # Verify values
-        assert debug_info.custom_debug_fields["string_field"] == "test_value"
-        assert debug_info.custom_debug_fields["int_field"] == 42
-        assert debug_info.custom_debug_fields["float_field"] == 3.14
-        assert debug_info.custom_debug_fields["bool_field"] is True
+        # Verify values through ModelCliValue interface
+        assert (
+            debug_info.custom_debug_fields["string_field"].to_python_value()
+            == "test_value"
+        )
+        assert debug_info.custom_debug_fields["int_field"].to_python_value() == 42
+        assert debug_info.custom_debug_fields["float_field"].to_python_value() == 3.14
+        assert debug_info.custom_debug_fields["bool_field"].to_python_value() is True
 
-        # Test get_custom_field
+        # Test get_custom_field (returns string representations)
         assert debug_info.get_custom_field("string_field") == "test_value"
-        assert debug_info.get_custom_field("int_field") == 42
-        assert debug_info.get_custom_field("nonexistent") is None
+        assert debug_info.get_custom_field("int_field") == "42"
+        assert debug_info.get_custom_field("float_field") == "3.14"
+        assert debug_info.get_custom_field("bool_field") == "True"
+        assert debug_info.get_custom_field("nonexistent") == ""
         assert debug_info.get_custom_field("nonexistent", "default") == "default"
 
     def test_complex_debug_scenario(self):
@@ -294,7 +299,9 @@ class TestModelCliDebugInfo:
         assert debug_info.stack_traces == ["Test stack trace"]
         assert debug_info.verbose_mode is True
         assert debug_info.trace_mode is False
-        assert debug_info.custom_debug_fields == {"error_code": 500}
+        # custom_debug_fields should now contain ModelCliValue objects
+        assert "error_code" in debug_info.custom_debug_fields
+        assert debug_info.custom_debug_fields["error_code"].to_python_value() == 500
 
     def test_model_round_trip(self):
         """Test serialization -> deserialization round trip."""
@@ -397,10 +404,10 @@ class TestModelCliDebugInfo:
         debug_info.set_custom_field("bool_val", True)
         debug_info.set_custom_field("float_val", 3.14159)
 
-        assert debug_info.custom_debug_fields["str_val"] == "string"
-        assert debug_info.custom_debug_fields["int_val"] == 42
-        assert debug_info.custom_debug_fields["bool_val"] is True
-        assert debug_info.custom_debug_fields["float_val"] == 3.14159
+        assert debug_info.custom_debug_fields["str_val"].to_python_value() == "string"
+        assert debug_info.custom_debug_fields["int_val"].to_python_value() == 42
+        assert debug_info.custom_debug_fields["bool_val"].to_python_value() is True
+        assert debug_info.custom_debug_fields["float_val"].to_python_value() == 3.14159
 
     def test_timestamp_handling(self):
         """Test timestamp handling and timezone awareness."""

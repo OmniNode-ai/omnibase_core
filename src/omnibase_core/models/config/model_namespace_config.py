@@ -23,6 +23,12 @@ class ModelNamespaceConfig(BaseModel):
     enabled: bool = True
     strategy: EnumNamespaceStrategy = EnumNamespaceStrategy.ONEX_DEFAULT
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -40,7 +46,7 @@ class ModelNamespaceConfig(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

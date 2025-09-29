@@ -121,7 +121,7 @@ class ModelConnectionAuth(BaseModel):
         self.user_display_name = value
 
     @field_serializer("password", "api_key", "token")
-    def serialize_secret(self, value: Any) -> str:
+    def serialize_secret(self, value: SecretStr | None) -> str:
         """Serialize secrets safely."""
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
@@ -193,6 +193,12 @@ class ModelConnectionAuth(BaseModel):
             token=None,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -206,7 +212,7 @@ class ModelConnectionAuth(BaseModel):
             return False
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

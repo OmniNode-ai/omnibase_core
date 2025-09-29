@@ -12,9 +12,9 @@ from typing import Any
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -22,7 +22,7 @@ from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-# Use Any for internal storage with field validator ensuring proper types
+# Use object for internal storage with field validator ensuring proper types
 # This avoids primitive union violations while maintaining type safety through validation
 
 
@@ -33,13 +33,13 @@ class ModelMetadataValue(BaseModel):
     Replaces Union[str, int, float, bool] with structured value storage
     that maintains type information for metadata fields.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
 
-    # Value storage with type tracking - uses Any with validator for type safety
-    value: Any = Field(
+    # Value storage with type tracking - uses object with validator for type safety
+    value: object = Field(
         description="The actual metadata value",
     )
 
@@ -60,9 +60,9 @@ class ModelMetadataValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
         """Validate that value matches its declared type."""
-        if hasattr(info, "data") and "value_type" in info.data:
+        if info.data is not None and "value_type" in info.data:
             value_type = info.data["value_type"]
 
             # Type validation based on declared type
@@ -161,7 +161,7 @@ class ModelMetadataValue(BaseModel):
         )
 
     @classmethod
-    def from_any(cls, value: Any, source: str | None = None) -> ModelMetadataValue:
+    def from_any(cls, value: object, source: str | None = None) -> ModelMetadataValue:
         """Create metadata value from any supported type."""
         if isinstance(value, str):
             return cls.from_string(value, source)
@@ -194,11 +194,40 @@ class ModelMetadataValue(BaseModel):
     def as_int(self) -> int:
         """Get value as integer."""
         if self.value_type == EnumCliValueType.INTEGER:
+            if not isinstance(self.value, (int, float, str)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Expected numeric or string type, got {type(self.value)}",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_types": ModelSchemaValue.from_value(
+                                "int, float, str"
+                            ),
+                            "actual_type": ModelSchemaValue.from_value(
+                                str(type(self.value))
+                            ),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
             return int(self.value)
         if isinstance(self.value, (int, float)):
             return int(self.value)
         if isinstance(self.value, str):
-            return int(self.value)
+            try:
+                return int(self.value)
+            except ValueError:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Cannot convert string '{self.value}' to int",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "source_type": ModelSchemaValue.from_value("str"),
+                            "target_type": ModelSchemaValue.from_value("int"),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to int",
@@ -214,9 +243,40 @@ class ModelMetadataValue(BaseModel):
     def as_float(self) -> float:
         """Get value as float."""
         if self.value_type in (EnumCliValueType.FLOAT, EnumCliValueType.INTEGER):
+            if not isinstance(self.value, (int, float, str)):
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Expected numeric or string type, got {type(self.value)}",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "expected_types": ModelSchemaValue.from_value(
+                                "int, float, str"
+                            ),
+                            "actual_type": ModelSchemaValue.from_value(
+                                str(type(self.value))
+                            ),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
+            return float(self.value)
+        if isinstance(self.value, (int, float)):
             return float(self.value)
         if isinstance(self.value, str):
-            return float(self.value)
+            try:
+                return float(self.value)
+            except ValueError:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Cannot convert string '{self.value}' to float",
+                    details=ModelErrorContext.with_context(
+                        {
+                            "source_type": ModelSchemaValue.from_value("str"),
+                            "target_type": ModelSchemaValue.from_value("float"),
+                            "value": ModelSchemaValue.from_value(str(self.value)),
+                        },
+                    ),
+                )
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to float",
@@ -237,17 +297,23 @@ class ModelMetadataValue(BaseModel):
             return self.value.lower() in ("true", "1", "yes", "on")
         return bool(self.value)
 
-    def to_python_value(self) -> Any:
+    def to_python_value(self) -> object:
         """Get the underlying Python value."""
         return self.value
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Export the model
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
-        metadata = {}
+    def get_metadata(self) -> dict[str, object]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata: dict[str, object] = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
             if hasattr(self, field):
@@ -258,22 +324,25 @@ class ModelMetadataValue(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+    def set_metadata(self, metadata: dict[str, object]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
+            # Set metadata with runtime validation for type safety
             for key, value in metadata.items():
-                if hasattr(self, key):
+                if hasattr(self, key) and isinstance(
+                    value, (str, int, float, bool, dict, list)
+                ):
                     setattr(self, key, value)
             return True
         except Exception:
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

@@ -6,7 +6,7 @@ Test coverage for category filter enumeration and helper methods.
 
 import pytest
 
-from src.omnibase_core.enums import EnumCategoryFilter
+from omnibase_core.enums import EnumCategoryFilter
 
 
 class TestEnumCategoryFilter:

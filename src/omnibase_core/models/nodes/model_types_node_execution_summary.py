@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any, TypedDict
 
 
-class NodeExecutionSummaryType(TypedDict):
+class ModelNodeExecutionSummaryType(TypedDict):
     """
     Typed dictionary for node execution settings summary.
 
@@ -27,4 +27,4 @@ class NodeExecutionSummaryType(TypedDict):
 
 
 # Export for use
-__all__ = ["NodeExecutionSummaryType"]
+__all__ = ["ModelNodeExecutionSummaryType"]

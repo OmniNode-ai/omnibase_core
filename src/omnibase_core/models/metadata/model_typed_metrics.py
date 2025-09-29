@@ -13,18 +13,19 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
+    SimpleValueType,
 )
 
-T = TypeVar("T", str, int, float, bool)
+# Use consolidated SimpleValueType instead of redundant TypeVar
 
 
-class ModelTypedMetrics(BaseModel, Generic[T]):
+class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
     """Generic metrics model replacing type-specific variants.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -34,7 +35,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         default="",
         description="Human-readable metric name",
     )
-    value: T = Field(..., description="Typed metric value")
+    value: SimpleValueType = Field(..., description="Typed metric value")
     unit: str = Field(default="", description="Unit of measurement")
     description: str = Field(default="", description="Metric description")
 
@@ -45,7 +46,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: str,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[str]:
         """Create a string metric."""
         import hashlib
@@ -61,7 +61,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
     @classmethod
@@ -71,7 +70,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: int,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
         import hashlib
@@ -87,7 +85,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
     @classmethod
@@ -97,7 +94,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: float,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
         import hashlib
@@ -113,7 +109,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
 
     @classmethod
@@ -123,7 +118,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         value: bool,
         unit: str = "",
         description: str = "",
-        **kwargs: Any,
     ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""
         import hashlib
@@ -139,15 +133,20 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             value=value,
             unit=unit,
             description=description,
-            **kwargs,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Export the model
 
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -160,7 +159,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -174,7 +173,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

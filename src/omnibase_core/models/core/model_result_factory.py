@@ -6,38 +6,15 @@ Specialized factory for result-type models with success/error patterns.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict, TypeVar, Unpack
+from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    Serializable,
-    Validatable,
+from omnibase_core.types.typed_dict_result_factory_kwargs import (
+    TypedDictResultFactoryKwargs,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_generic_factory import ModelGenericFactory
-
-
-# TypedDict for result factory specific kwargs
-class TypedDictResultFactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for result factory parameters.
-    Implements omnibase_spi protocols:
-    - Configurable: Configuration management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    - Nameable: Name management interface
-    """
-
-    success: bool
-    exit_code: int
-    error_message: str
-    data: ModelSchemaValue
-    output_text: str
-    warnings: list[str]
-
 
 T = TypeVar("T", bound=BaseModel)
 

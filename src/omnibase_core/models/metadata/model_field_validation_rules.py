@@ -11,9 +11,9 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
@@ -21,7 +21,7 @@ from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 class ModelFieldValidationRules(BaseModel):
     """Validation rules for metadata fields.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -127,12 +127,18 @@ class ModelFieldValidationRules(BaseModel):
         """Get maximum value as ModelNumericValue."""
         return self.max_value
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -145,7 +151,7 @@ class ModelFieldValidationRules(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -159,7 +165,7 @@ class ModelFieldValidationRules(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

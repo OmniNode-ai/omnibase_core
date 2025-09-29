@@ -10,17 +10,19 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from src.omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from src.omnibase_core.enums.enum_execution_status import EnumExecutionStatus
-from src.omnibase_core.models.cli.model_cli_command_option import ModelCliCommandOption
-from src.omnibase_core.models.cli.model_cli_execution import ModelCliExecution
-from src.omnibase_core.models.cli.model_cli_execution_context import (
+from omnibase_core.enums.enum_context_source import EnumContextSource
+from omnibase_core.enums.enum_context_type import EnumContextType
+from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.models.cli.model_cli_command_option import ModelCliCommandOption
+from omnibase_core.models.cli.model_cli_execution import ModelCliExecution
+from omnibase_core.models.cli.model_cli_execution_context import (
     ModelCliExecutionContext,
 )
-from src.omnibase_core.models.cli.model_cli_execution_input_data import (
+from omnibase_core.models.cli.model_cli_execution_input_data import (
     ModelCliExecutionInputData,
 )
-from src.omnibase_core.models.cli.model_cli_execution_summary import (
+from omnibase_core.models.cli.model_cli_execution_summary import (
     ModelCliExecutionSummary,
 )
 
@@ -30,12 +32,13 @@ class TestModelCliExecutionTyping:
 
     def test_command_options_typed_properly(self):
         """Test that command options use proper typing instead of dict[str, Any]."""
-        execution = ModelCliExecution(command_name="test-command")
+        execution = ModelCliExecution.create_simple(command_name="test-command")
 
-        # Create a properly typed command option
-        option = ModelCliCommandOption(
-            name="--verbose",
+        # Create a properly typed command option using factory method
+        option = ModelCliCommandOption.from_boolean(
+            option_id=uuid4(),
             value=True,
+            option_display_name="--verbose",
             is_flag=True,
             description="Enable verbose output",
         )
@@ -45,18 +48,17 @@ class TestModelCliExecutionTyping:
 
         # Verify proper typing
         assert isinstance(execution.command_options["verbose"], ModelCliCommandOption)
-        assert execution.command_options["verbose"].name == "--verbose"
+        assert execution.command_options["verbose"].option_display_name == "--verbose"
         assert execution.command_options["verbose"].value is True
 
     def test_input_data_typed_properly(self):
         """Test that input data uses proper typing instead of dict[str, Any]."""
-        execution = ModelCliExecution(command_name="test-command")
+        execution = ModelCliExecution.create_simple(command_name="test-command")
 
-        # Create properly typed input data
-        input_data = ModelCliExecutionInputData(
+        # Create properly typed input data using factory method
+        input_data = ModelCliExecutionInputData.from_path(
             key="file_path",
             value=Path("/test/path"),
-            data_type="path",
             description="Input file path",
         )
 
@@ -71,13 +73,13 @@ class TestModelCliExecutionTyping:
 
     def test_custom_context_typed_properly(self):
         """Test that custom context uses proper typing instead of dict[str, Any]."""
-        execution = ModelCliExecution(command_name="test-command")
+        execution = ModelCliExecution.create_simple(command_name="test-command")
 
         # Create properly typed context
         context = ModelCliExecutionContext(
             key="user_id",
             value=uuid4(),
-            context_type="identity",
+            context_type=EnumContextType.USER,
             description="User identifier",
         )
 
@@ -92,21 +94,21 @@ class TestModelCliExecutionTyping:
 
     def test_execution_summary_returns_typed_model(self):
         """Test that get_summary returns proper model instead of dict[str, Any]."""
-        execution = ModelCliExecution(
-            command_name="test-command",
-            target_node_name="test-node",
-            status=EnumExecutionStatus.SUCCESS,
-            current_phase=EnumExecutionPhase.EXECUTION,
-            progress_percentage=100.0,
+        execution = ModelCliExecution.create_simple(
+            command_name="test-command", target_node_name="test-node"
         )
+        # Set additional state through methods
+        execution.status = EnumExecutionStatus.SUCCESS
+        execution.current_phase = EnumExecutionPhase.EXECUTION
+        execution.progress_percentage = 100.0
 
         # Get summary - should return typed model
         summary = execution.get_summary()
 
         # Verify it's a proper model, not dict[str, Any]
         assert isinstance(summary, ModelCliExecutionSummary)
-        assert summary.command_name == "test-command"
-        assert summary.target_node_name == "test-node"
+        assert summary.command_display_name == "test-command"
+        assert summary.target_node_display_name == "test-node"
         assert summary.status == EnumExecutionStatus.SUCCESS
         assert summary.progress_percentage == 100.0
 
@@ -117,7 +119,7 @@ class TestModelCliExecutionTyping:
 
     def test_mark_failed_uses_typed_context(self):
         """Test that mark_failed creates properly typed context."""
-        execution = ModelCliExecution(command_name="test-command")
+        execution = ModelCliExecution.create_simple(command_name="test-command")
 
         # Mark as failed with reason
         execution.mark_failed("Test failure reason")
@@ -127,8 +129,8 @@ class TestModelCliExecutionTyping:
         assert isinstance(failure_context, ModelCliExecutionContext)
         assert failure_context.key == "failure_reason"
         assert failure_context.value == "Test failure reason"
-        assert failure_context.context_type == "error"
-        assert failure_context.source == "system"
+        assert failure_context.context_type == EnumContextType.SYSTEM
+        assert failure_context.source == EnumContextSource.SYSTEM
 
 
 class TestNewModelValidation:
@@ -136,23 +138,43 @@ class TestNewModelValidation:
 
     def test_command_option_validation(self):
         """Test ModelCliCommandOption validation."""
+        from omnibase_core.enums.enum_cli_option_value_type import (
+            EnumCliOptionValueType,
+        )
+
         # Valid option
         option = ModelCliCommandOption(
-            name="--count", value=5, description="Number of items"
+            option_id=uuid4(),
+            option_display_name="--count",
+            value=5,
+            value_type=EnumCliOptionValueType.INTEGER,
+            description="Number of items",
         )
-        assert option.name == "--count"
+        assert option.option_display_name == "--count"
         assert option.value == 5
         assert not option.is_flag
 
         # Flag option
-        flag = ModelCliCommandOption(name="--verbose", value=True, is_flag=True)
+        flag = ModelCliCommandOption(
+            option_id=uuid4(),
+            option_display_name="--verbose",
+            value=True,
+            value_type=EnumCliOptionValueType.BOOLEAN,
+            is_flag=True,
+        )
         assert flag.is_boolean_flag() is True
 
     def test_input_data_validation(self):
         """Test ModelCliExecutionInputData validation."""
+        from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
+        from omnibase_core.enums.enum_data_type import EnumDataType
+
         # Path value
         input_data = ModelCliExecutionInputData(
-            key="config_path", value=Path("/config/app.yaml"), data_type="path"
+            key="config_path",
+            value=Path("/config/app.yaml"),
+            value_type=EnumCliInputValueType.PATH,
+            data_type=EnumDataType.YAML,
         )
         assert input_data.is_path_value() is True
         assert str(input_data.value) == "/config/app.yaml"
@@ -160,7 +182,10 @@ class TestNewModelValidation:
         # UUID value
         test_uuid = uuid4()
         uuid_data = ModelCliExecutionInputData(
-            key="session_id", value=test_uuid, data_type="uuid"
+            key="session_id",
+            value=test_uuid,
+            value_type=EnumCliInputValueType.UUID,
+            data_type=EnumDataType.TEXT,
         )
         assert uuid_data.is_uuid_value() is True
 
@@ -169,7 +194,7 @@ class TestNewModelValidation:
         # Datetime value
         now = datetime.now(UTC)
         context = ModelCliExecutionContext(
-            key="created_at", value=now, context_type="timestamp"
+            key="created_at", value=now, context_type=EnumContextType.SYSTEM
         )
         assert context.is_datetime_value() is True
         assert context.value == now
@@ -187,7 +212,8 @@ class TestNewModelValidation:
 
         summary = ModelCliExecutionSummary(
             execution_id=test_id,
-            command_name="test-cmd",
+            command_id=uuid4(),
+            command_display_name="test-cmd",
             status=EnumExecutionStatus.SUCCESS,
             start_time=start_time,
             elapsed_ms=1500,

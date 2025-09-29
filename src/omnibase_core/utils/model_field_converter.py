@@ -98,7 +98,7 @@ class ModelFieldConverterRegistry:
 
     def __init__(self) -> None:
         """Initialize empty converter registry."""
-        self._converters: dict[str, FieldConverter[Any]] = {}
+        self._converters: dict[str, FieldConverter[object]] = {}
 
     def register_boolean_field(
         self,
@@ -128,17 +128,19 @@ class ModelFieldConverterRegistry:
     ) -> None:
         """Register an integer field converter."""
 
-        def str_to_int(value: str) -> int:
+        def str_to_int(value: str) -> object:
             return int(value)
 
-        def validate_int(value: int) -> bool:
+        def validate_int(value: object) -> bool:
+            if not isinstance(value, int):
+                return False
             if min_value is not None and value < min_value:
                 return False
             if max_value is not None and value > max_value:
                 return False
             return True
 
-        self._converters[field_name] = FieldConverter(
+        self._converters[field_name] = FieldConverter[object](
             field_name=field_name,
             converter=str_to_int,
             default_value=default,
@@ -214,19 +216,19 @@ class ModelFieldConverterRegistry:
     def register_custom_field(
         self,
         field_name: str,
-        converter: Callable[[str], T],
-        default: T | None = None,
-        validator: Callable[[T], bool] | None = None,
+        converter: Callable[[str], object],
+        default: object | None = None,
+        validator: Callable[[object], bool] | None = None,
     ) -> None:
         """Register a custom field converter."""
-        self._converters[field_name] = FieldConverter(
+        self._converters[field_name] = FieldConverter[object](
             field_name=field_name,
             converter=converter,
             default_value=default,
             validator=validator,
         )
 
-    def convert_field(self, field_name: str, value: str) -> Any:
+    def convert_field(self, field_name: str, value: str) -> object:
         """
         Convert a field value using registered converter.
 

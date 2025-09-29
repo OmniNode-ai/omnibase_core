@@ -7,25 +7,15 @@ Part of the ModelNodeConfiguration restructuring.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    MetadataProvider,
-    Serializable,
-    Validatable,
+from omnibase_core.types.typed_dict_node_resource_constraint_kwargs import (
+    TypedDictNodeResourceConstraintKwargs,
 )
 
-from .model_types_node_resource_summary import TypedDictNodeResourceSummaryType
-
-
-class TypedDictNodeResourceConstraintKwargs(TypedDict, total=False):
-    """TypedDict for create_constrained method kwargs."""
-
-    max_memory_mb: int
-    max_cpu_percent: float
+from .model_types_node_resource_summary import ModelNodeResourceSummaryType
 
 
 class ModelNodeResourceLimits(BaseModel):
@@ -38,7 +28,7 @@ class ModelNodeResourceLimits(BaseModel):
 
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -68,7 +58,7 @@ class ModelNodeResourceLimits(BaseModel):
         """Check if any resource limits are configured."""
         return self.has_memory_limit() or self.has_cpu_limit()
 
-    def get_resource_summary(self) -> TypedDictNodeResourceSummaryType:
+    def get_resource_summary(self) -> ModelNodeResourceSummaryType:
         """Get resource limits summary."""
         return {
             "max_memory_mb": self.max_memory_mb,
@@ -105,6 +95,12 @@ class ModelNodeResourceLimits(BaseModel):
             kwargs["max_cpu_percent"] = cpu_percent
         return cls(**kwargs)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -125,7 +121,7 @@ class ModelNodeResourceLimits(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -138,7 +134,7 @@ class ModelNodeResourceLimits(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -152,7 +148,7 @@ class ModelNodeResourceLimits(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
@@ -162,4 +158,4 @@ class ModelNodeResourceLimits(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeResourceLimits", "TypedDictNodeResourceConstraintKwargs"]
+__all__ = ["ModelNodeResourceLimits"]

@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 class ModelSemVer(BaseModel):
     """Semantic version model following SemVer specification.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -35,7 +35,11 @@ class ModelSemVer(BaseModel):
     minor: int = Field(ge=0, description="Minor version number")
     patch: int = Field(ge=0, description="Patch version number")
 
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     @field_validator("major", "minor", "patch")
     @classmethod
@@ -71,14 +75,16 @@ class ModelSemVer(BaseModel):
         return ModelSemVer(major=self.major, minor=self.minor, patch=self.patch + 1)
 
     def __eq__(self, other: object) -> bool:
-        """Check equality with another ModelSemVer."""
-        if not isinstance(other, ModelSemVer):
-            return False
-        return (
-            self.major == other.major
-            and self.minor == other.minor
-            and self.patch == other.patch
-        )
+        """Check equality with another ModelSemVer or string version."""
+        if isinstance(other, ModelSemVer):
+            return (
+                self.major == other.major
+                and self.minor == other.minor
+                and self.patch == other.patch
+            )
+        elif isinstance(other, str):
+            return str(self) == other
+        return False
 
     def __lt__(self, other: object) -> bool:
         """Check if this version is less than another."""
@@ -117,7 +123,7 @@ class ModelSemVer(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -130,7 +136,7 @@ class ModelSemVer(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -144,7 +150,7 @@ class ModelSemVer(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
@@ -174,12 +180,13 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
         >>> assert version.major == 1 and version.minor == 2 and version.patch == 3
     """
     import re
+    from typing import Match
 
     # Basic SemVer regex pattern for major.minor.patch
     pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
 
-    match = re.match(pattern, version_str)
-    if not match:
+    match: Match[str] | None = re.match(pattern, version_str)
+    if match is None:
         msg = f"Invalid semantic version format: {version_str}"
         raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
 
@@ -194,7 +201,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
 
 
 def parse_input_state_version(
-    input_state: Any,
+    input_state: object,
 ) -> ModelSemVer:
     """
     Parse a version from an input state dict, requiring structured dictionary format.

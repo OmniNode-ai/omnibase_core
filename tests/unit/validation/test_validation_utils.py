@@ -165,8 +165,8 @@ class TestProtocol(Protocol
             result = extract_protocol_signature(nonexistent_path)
 
             assert result is None
-            mock_logger.error.assert_called_once()
-            call_args = mock_logger.error.call_args[0][0]
+            mock_logger.exception.assert_called_once()
+            call_args = mock_logger.exception.call_args[0][0]
             assert "error reading file" in call_args.lower()
 
     def test_extract_from_binary_file(self):
@@ -182,8 +182,8 @@ class TestProtocol(Protocol
                 result = extract_protocol_signature(temp_path)
 
                 assert result is None
-                mock_logger.error.assert_called_once()
-                call_args = mock_logger.error.call_args[0][0]
+                mock_logger.exception.assert_called_once()
+                call_args = mock_logger.exception.call_args[0][0]
                 assert "encoding error" in call_args.lower()
 
         finally:

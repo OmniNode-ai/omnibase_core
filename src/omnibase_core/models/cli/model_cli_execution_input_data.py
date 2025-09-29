@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+
+# Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -41,7 +43,7 @@ class ModelCliExecutionInputData(BaseModel):
         ...,
         description="Type discriminator for the input value",
     )
-    value: Any = Field(
+    value: object = Field(
         ...,
         description="Input data value - validated against value_type discriminator",
     )
@@ -60,7 +62,7 @@ class ModelCliExecutionInputData(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_matches_type(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_value_matches_type(cls, v: object, info: ValidationInfo) -> object:
         """Validate value matches declared value_type."""
         if "value_type" not in info.data:
             return v
@@ -115,7 +117,7 @@ class ModelCliExecutionInputData(BaseModel):
             return ",".join(str(v) for v in self.value)
         return str(self.value)
 
-    def get_typed_value(self) -> Any:
+    def get_typed_value(self) -> object:
         """Get the properly typed value."""
         return self.value
 
@@ -129,38 +131,107 @@ class ModelCliExecutionInputData(BaseModel):
 
     @classmethod
     def from_string(
-        cls, key: str, value: str, **kwargs: Any
+        cls, key: str, value: str, **kwargs: object
     ) -> ModelCliExecutionInputData:
         """Create input data from string value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.STRING,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
 
     @classmethod
     def from_integer(
-        cls, key: str, value: int, **kwargs: Any
+        cls, key: str, value: int, **kwargs: object
     ) -> ModelCliExecutionInputData:
         """Create input data from integer value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.INTEGER,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
 
     @classmethod
     def from_float(
-        cls, key: str, value: float, **kwargs: Any
+        cls, key: str, value: float, **kwargs: object
     ) -> ModelCliExecutionInputData:
         """Create input data from float value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.FLOAT,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
 
     @classmethod
@@ -168,38 +239,107 @@ class ModelCliExecutionInputData(BaseModel):
         cls,
         key: str,
         value: bool,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from boolean value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.BOOLEAN,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
 
     @classmethod
     def from_path(
-        cls, key: str, value: Path, **kwargs: Any
+        cls, key: str, value: Path, **kwargs: object
     ) -> ModelCliExecutionInputData:
         """Create input data from Path value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.PATH,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
 
     @classmethod
     def from_uuid(
-        cls, key: str, value: UUID, **kwargs: Any
+        cls, key: str, value: UUID, **kwargs: object
     ) -> ModelCliExecutionInputData:
         """Create input data from UUID value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.UUID,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
 
     @classmethod
@@ -207,15 +347,44 @@ class ModelCliExecutionInputData(BaseModel):
         cls,
         key: str,
         value: list[str],
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from string list value."""
+        # Extract known fields with proper types from kwargs
+        data_type = kwargs.get("data_type", EnumDataType.TEXT)
+        is_sensitive = kwargs.get("is_sensitive", False)
+        is_required = kwargs.get("is_required", False)
+        description = kwargs.get("description", "")
+        validation_pattern = kwargs.get("validation_pattern", "")
+
+        # Type validation for extracted kwargs
+        if not isinstance(data_type, EnumDataType):
+            data_type = EnumDataType.TEXT
+        if not isinstance(is_sensitive, bool):
+            is_sensitive = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(validation_pattern, str):
+            validation_pattern = ""
+
         return cls(
             key=key,
             value_type=EnumCliInputValueType.STRING_LIST,
             value=value,
-            **kwargs,
+            data_type=data_type,
+            is_sensitive=is_sensitive,
+            is_required=is_required,
+            description=description,
+            validation_pattern=validation_pattern,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 
@@ -242,7 +411,7 @@ class ModelCliExecutionInputData(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

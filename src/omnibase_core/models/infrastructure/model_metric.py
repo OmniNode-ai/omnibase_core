@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Import metadata value for type-safe metric handling
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
@@ -32,11 +33,14 @@ class ModelMetric(BaseModel):
 
     key: str = Field(..., description="Metric key")
     value: ModelMetadataValue = Field(..., description="Strongly-typed metric value")
-    unit: str | None = Field(
-        None,
+    unit: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Unit of measurement (for numeric metrics)",
     )
-    description: str | None = Field(None, description="Metric description")
+    description: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(""),
+        description="Metric description",
+    )
 
     @property
     def typed_value(self) -> ModelMetadataValue:
@@ -54,8 +58,8 @@ class ModelMetric(BaseModel):
         return cls(
             key=key,
             value=ModelMetadataValue.from_string(value),
-            unit=None,
-            description=description,
+            unit=ModelSchemaValue.from_value(""),
+            description=ModelSchemaValue.from_value(description if description else ""),
         )
 
     @classmethod
@@ -81,8 +85,8 @@ class ModelMetric(BaseModel):
         return cls(
             key=key,
             value=metadata_value,
-            unit=unit,
-            description=description,
+            unit=ModelSchemaValue.from_value(unit if unit else ""),
+            description=ModelSchemaValue.from_value(description if description else ""),
         )
 
     @classmethod
@@ -96,8 +100,8 @@ class ModelMetric(BaseModel):
         return cls(
             key=key,
             value=ModelMetadataValue.from_bool(value),
-            unit=None,
-            description=description,
+            unit=ModelSchemaValue.from_value(""),
+            description=ModelSchemaValue.from_value(description if description else ""),
         )
 
     @classmethod
@@ -115,11 +119,11 @@ class ModelMetric(BaseModel):
     def from_any_value(
         cls,
         key: str,
-        value: Any,
+        value: object,
         unit: str | None = None,
         description: str | None = None,
     ) -> ModelMetric:
-        """Create metric from any supported type with automatic type detection."""
+        """Create metric from bounded type values with automatic type detection."""
         if isinstance(value, str):
             return cls.create_string_metric(key, value, description)
         if isinstance(value, bool):  # Check bool before int (bool is subclass of int)
@@ -129,8 +133,14 @@ class ModelMetric(BaseModel):
         if isinstance(value, (int, float)):
             numeric_value = ModelNumericValue.from_numeric(value)
             return cls.create_numeric_metric(key, numeric_value, unit, description)
-        # Convert unsupported types to string representation
-        return cls.create_string_metric(key, str(value), description)
+        # This should not be reached with the bounded type signature
+        raise ValueError(f"Unsupported metric value type: {type(value)}")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

@@ -11,9 +11,13 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.models.core import (
+from omnibase_core.models.core import (
     ModelConfigurationBase,
     ModelTypedConfiguration,
+)
+from omnibase_core.models.metadata.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
 )
 
 
@@ -73,10 +77,25 @@ class TestModelConfigurationBase:
         data = SampleConfigData(endpoint="http://localhost", port=9000)
         config = ModelConfigurationBase.create_with_data("test", data)
 
-        assert config.get_config_value("endpoint") == "http://localhost"
-        assert config.get_config_value("port") == 9000
-        assert config.get_config_value("ssl_enabled") is False
-        assert config.get_config_value("nonexistent", "default") == "default"
+        endpoint_result = config.get_config_value("endpoint")
+        assert endpoint_result.is_ok()
+        assert endpoint_result.unwrap().string_value == "http://localhost"
+
+        port_result = config.get_config_value("port")
+        assert port_result.is_ok()
+        assert port_result.unwrap().number_value == 9000
+
+        ssl_result = config.get_config_value("ssl_enabled")
+        assert ssl_result.is_ok()
+        assert ssl_result.unwrap().boolean_value is False
+
+        # Test with default value
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        default_val = ModelSchemaValue.from_value("default")
+        default_result = config.get_config_value("nonexistent", default_val)
+        assert default_result.is_ok()
+        assert default_result.unwrap().string_value == "default"
 
     def test_utility_methods(self):
         """Test utility methods."""
@@ -90,7 +109,7 @@ class TestModelConfigurationBase:
         config.enabled = False
         assert config.is_enabled() is False
 
-        config.version = "2.0.0"
+        config.version = parse_semver_from_string("2.0.0")
         assert config.get_version_or_default() == "2.0.0"
 
     def test_timestamp_update(self):
@@ -127,7 +146,9 @@ class TestModelTypedConfiguration:
 
         assert config.is_empty() is False
         assert config.get_field_count() == 3
-        assert config.get_custom_value("env") == "production"
+        env_result = config.get_custom_value_wrapped("env")
+        assert env_result.is_ok()
+        assert env_result.unwrap().string_value == "production"
 
     def test_configuration_merging(self):
         """Test configuration merging."""
@@ -150,9 +171,17 @@ class TestModelTypedConfiguration:
         assert config1.config_data.ssl_enabled is True
 
         # Check merged custom properties
-        assert config1.get_custom_value("env") == "production"  # Overridden
-        assert config1.get_custom_value("timeout") == 30.0  # Preserved
-        assert config1.get_custom_value("debug") is False  # Added
+        env_result = config1.get_custom_value_wrapped("env")
+        assert env_result.is_ok()
+        assert env_result.unwrap().string_value == "production"  # Overridden
+
+        timeout_result = config1.get_custom_value_wrapped("timeout")
+        assert timeout_result.is_ok()
+        assert timeout_result.unwrap().number_value == 30.0  # Preserved
+
+        debug_result = config1.get_custom_value_wrapped("debug")
+        assert debug_result.is_ok()
+        assert debug_result.unwrap().boolean_value is False  # Added
 
         # Check timestamp was updated
         assert config1.updated_at > original_updated
@@ -168,12 +197,20 @@ class TestModelTypedConfiguration:
         # Verify it's a deep copy
         assert copy.name == original.name
         assert copy.config_data.endpoint == original.config_data.endpoint
-        assert copy.get_custom_value("env") == "test"
+        env_result = copy.get_custom_value_wrapped("env")
+        assert env_result.is_ok()
+        assert env_result.unwrap().string_value == "test"
 
         # Verify changes don't affect original
         copy.set_custom_string("env", "modified")
-        assert original.get_custom_value("env") == "test"
-        assert copy.get_custom_value("env") == "modified"
+
+        original_env_result = original.get_custom_value_wrapped("env")
+        assert original_env_result.is_ok()
+        assert original_env_result.unwrap().string_value == "test"
+
+        copy_env_result = copy.get_custom_value_wrapped("env")
+        assert copy_env_result.is_ok()
+        assert copy_env_result.unwrap().string_value == "modified"
 
     def test_validate_and_enable(self):
         """Test validation and enabling."""
@@ -243,4 +280,6 @@ class TestConfigurationIntegration:
 
         # Test custom properties
         config.set_custom_string("region", "us-east-1")
-        assert config.get_custom_value("region") == "us-east-1"
+        region_result = config.get_custom_value_wrapped("region")
+        assert region_result.is_ok()
+        assert region_result.unwrap().string_value == "us-east-1"

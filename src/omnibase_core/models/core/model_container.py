@@ -8,16 +8,18 @@ repetitive patterns while maintaining type safety.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Configurable,
     Nameable,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -157,6 +159,9 @@ class ModelContainer(BaseModel, Generic[T]):
 
         Returns:
             New container with transformed value
+
+        Raises:
+            OnexError: If the mapper function fails for any reason
         """
         try:
             new_value = mapper(self.value)
@@ -174,13 +179,13 @@ class ModelContainer(BaseModel, Generic[T]):
                 details=ModelErrorContext.with_context(
                     {
                         "container_type": ModelSchemaValue.from_value(
-                            self.container_type
+                            self.container_type,
                         ),
                         "original_value": ModelSchemaValue.from_value(str(self.value)),
                         "error": ModelSchemaValue.from_value(str(e)),
-                    }
+                    },
                 ),
-            )
+            ) from e
 
     def validate_with(
         self,
@@ -214,10 +219,10 @@ class ModelContainer(BaseModel, Generic[T]):
                 details=ModelErrorContext.with_context(
                     {
                         "container_type": ModelSchemaValue.from_value(
-                            self.container_type
+                            self.container_type,
                         ),
                         "value": ModelSchemaValue.from_value(str(self.value)),
-                    }
+                    },
                 ),
             )
         except Exception as e:
@@ -229,33 +234,43 @@ class ModelContainer(BaseModel, Generic[T]):
                 details=ModelErrorContext.with_context(
                     {
                         "container_type": ModelSchemaValue.from_value(
-                            self.container_type
+                            self.container_type,
                         ),
                         "value": ModelSchemaValue.from_value(str(self.value)),
                         "error": ModelSchemaValue.from_value(str(e)),
-                    }
+                    },
                 ),
-            )
+            ) from e
 
     def compare_value(self, other: object) -> bool:
         """
         Compare the contained value with another value or container.
 
+        Uses strict type comparison to ensure type safety and ONEX compliance.
+
         Args:
             other: Value or container to compare with
 
         Returns:
-            True if values are equal
+            True if values are equal and of the same type
         """
         if isinstance(other, ModelContainer):
-            return bool(self.value == other.value)
-        return bool(self.value == other)
+            # Compare both value and type for strict equality
+            return self.value == other.value and type(self.value) is type(other.value)
+        # Compare both value and type for strict equality
+        return self.value == other and type(self.value) is type(other)
 
     def __eq__(self, other: object) -> bool:
-        """Equality comparison based on contained value."""
+        """
+        Equality comparison based on contained value with strict type checking.
+
+        Uses strict type comparison to ensure type safety and ONEX compliance.
+        """
         if isinstance(other, ModelContainer):
-            return bool(self.value == other.value)
-        return bool(self.value == other)
+            # Compare both value and type for strict equality
+            return self.value == other.value and type(self.value) is type(other.value)
+        # Compare both value and type for strict equality
+        return self.value == other and type(self.value) is type(other)
 
     def __str__(self) -> str:
         """String representation."""
@@ -274,9 +289,11 @@ class ModelContainer(BaseModel, Generic[T]):
             ")"
         )
 
-    # Note: Previously had type aliases (StringContainer, IntContainer, etc.)
-    # These were removed to comply with ONEX strong typing standards.
-    # Use explicit generic types instead: ModelContainer[str], ModelContainer[int], etc.
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Note: Previously had factory functions (string_container, int_container, etc.)
     # These were removed to comply with ONEX strong typing standards.
@@ -299,7 +316,7 @@ class ModelContainer(BaseModel, Generic[T]):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

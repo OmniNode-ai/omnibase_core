@@ -17,8 +17,8 @@ from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.type_constraints import (
     Executable,
     Identifiable,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
@@ -76,6 +76,12 @@ class ModelExecutionMetadata(BaseModel):
     error_count: int = Field(default=0, description="Number of errors encountered")
     warning_count: int = Field(default=0, description="Number of warnings encountered")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Input validation for proper enum types
     @field_validator("status", mode="before")
     @classmethod
@@ -131,7 +137,7 @@ class ModelExecutionMetadata(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate execution metadata integrity (Validatable protocol)."""
+        """Validate execution metadata integrity (ProtocolValidatable protocol)."""
         try:
             # Validate required fields
             if not self.execution_id:

@@ -8,7 +8,7 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--formatter, retain_line_breaks=true]
-        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/)
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/)
 
   # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -16,7 +16,9 @@ repos:
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
+        exclude: ^\.github/workflows/
       - id: end-of-file-fixer
+        exclude: ^\.github/workflows/
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1000]
@@ -28,7 +30,7 @@ repos:
       - id: black
         name: Black Python Formatter
         args: [--line-length, "88", --target-version, py311]
-        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/).*$
 
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
@@ -36,19 +38,19 @@ repos:
       - id: isort
         name: isort Import Sorter
         args: [--profile, black, --line-length, "88"]
-        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/).*$
 
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
-      # MyPy Type Checking
+      # MyPy Type Checking - Re-enabled after fixing compatibility issues
       - id: mypy-poetry
         name: MyPy Type Checking (via Poetry)
         entry: poetry run mypy
         language: system
         types: [python]
-        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=skip, --config-file=mypy.ini]
-        files: ^src/omnibase_core/(core|model|enums|exceptions|decorators).*\.py$
+        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
+        files: ^src/omnibase_core/(core|models|enums|exceptions|types).*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
@@ -77,7 +79,17 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        exclude: ^tests/fixtures/validation/
+        exclude: ^(tests/fixtures/validation/|archived/|archive/)
+        stages: [pre-commit]
+
+      - id: validate-archived-imports
+        name: ONEX Archived Path Import Prevention
+        entry: poetry run python scripts/validation/validate-archived-imports.py
+        args: ['src/']
+        language: system
+        pass_filenames: false
+        files: ^.*\.py$
+        exclude: ^(archived/|archive/|tests/fixtures/validation/).*$
         stages: [pre-commit]
 
       - id: validate-no-backward-compatibility

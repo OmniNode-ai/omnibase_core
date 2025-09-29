@@ -16,8 +16,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.core.type_constraints import (
     Configurable,
     Nameable,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 
 
@@ -48,6 +48,12 @@ class ModelGenericCollectionSummary(BaseModel):
     updated_at: datetime = Field(description="When the collection was last modified")
     has_items: bool = Field(description="Whether the collection contains any items")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -65,7 +71,7 @@ class ModelGenericCollectionSummary(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

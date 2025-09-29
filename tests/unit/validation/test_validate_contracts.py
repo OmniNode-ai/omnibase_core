@@ -397,13 +397,11 @@ node_type: 'compute'"""
         yaml_file = temp_repo / "test.yaml"
         yaml_file.write_text("test: value")
 
-        with patch("pathlib.Path.stat", side_effect=OSError("OS Error")):
+        # Patch the open call to trigger the OS error handling path
+        with patch("builtins.open", side_effect=OSError("OS Error")):
             errors = validate_yaml_file(yaml_file)
             assert len(errors) >= 1
-            assert any(
-                "os error" in error.lower() or "cannot check" in error.lower()
-                for error in errors
-            )
+            assert any("os error reading file" in error.lower() for error in errors)
 
 
 class TestMainFunction:
@@ -483,7 +481,7 @@ invalid: [yaml, structure
         """Test main function with argument parsing errors."""
         with patch("sys.argv", ["validate-contracts.py", "--invalid-flag"]):
             result = main()
-            assert result == 1
+            assert result == 2  # argparse returns 2 for argument parsing errors
 
     def test_main_with_archived_files_filtering(self, temp_repo):
         """Test that archived files are properly filtered out."""
@@ -541,9 +539,9 @@ class TestTimeoutHandling:
             subdir.mkdir()
             (subdir / f"file_{i}.yaml").write_text("test: value")
 
-        # Simulate timeout during file discovery
+        # Simulate timeout during file discovery using the actual method used (os.walk)
         with patch("signal.alarm") as mock_alarm:
-            with patch("pathlib.Path.rglob", side_effect=TimeoutError("Timeout")):
+            with patch("os.walk", side_effect=TimeoutError("Timeout")):
                 with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
                     result = main()
                     assert result == 1
@@ -556,8 +554,9 @@ class TestErrorRecovery:
         """Test handling of keyboard interrupt."""
         (temp_repo / "test.yaml").write_text("test: value")
 
-        with patch(
-            "validate_contracts.validate_yaml_file", side_effect=KeyboardInterrupt()
+        # Patch the function in the validate module directly
+        with patch.object(
+            validate_module, "validate_yaml_file", side_effect=KeyboardInterrupt()
         ):
             with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
                 result = main()
@@ -567,8 +566,10 @@ class TestErrorRecovery:
         """Test handling of unexpected exceptions."""
         (temp_repo / "test.yaml").write_text("test: value")
 
-        with patch(
-            "validate_contracts.validate_yaml_file",
+        # Patch the function in the validate module directly
+        with patch.object(
+            validate_module,
+            "validate_yaml_file",
             side_effect=RuntimeError("Unexpected error"),
         ):
             with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
@@ -595,7 +596,10 @@ node_type: 'compute'"""
                 raise RuntimeError("Simulated error")
             return original_validate(file_path)
 
-        with patch("validate_contracts.validate_yaml_file", side_effect=mock_validate):
+        # Patch the function in the validate module directly
+        with patch.object(
+            validate_module, "validate_yaml_file", side_effect=mock_validate
+        ):
             with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
                 result = main()
                 # Should process what it can and report issues

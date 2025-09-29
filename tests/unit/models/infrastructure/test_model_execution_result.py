@@ -11,7 +11,7 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.models.infrastructure.model_duration import ModelDuration
+# Removed unused ModelDuration import
 from omnibase_core.models.infrastructure.model_execution_result import (
     ModelExecutionResult,
     execution_err,
@@ -73,8 +73,8 @@ class TestModelExecutionResult:
         metadata.set_custom_string("version", "1.0")
         result = ModelExecutionResult.ok("value", metadata=metadata)
 
-        assert result.get_metadata("tool") == "test_tool"
-        assert result.get_metadata("version") == "1.0"
+        assert result.get_metadata("tool", None) == "test_tool"
+        assert result.get_metadata("version", None) == "1.0"
 
     def test_add_warning(self) -> None:
         """Test adding warnings to execution result."""
@@ -107,9 +107,9 @@ class TestModelExecutionResult:
         result.add_metadata("key1", "value1")
         result.add_metadata("key2", 42)
 
-        assert result.get_metadata("key1") == "value1"
-        assert result.get_metadata("key2") == 42
-        assert result.get_metadata("nonexistent") is None
+        assert result.get_metadata("key1", None) == "value1"
+        assert result.get_metadata("key2", None) == 42
+        assert result.get_metadata("nonexistent", None) is None
         assert result.get_metadata("nonexistent", "default") == "default"
 
     def test_mark_completed(self) -> None:
@@ -125,7 +125,11 @@ class TestModelExecutionResult:
         assert result.is_completed()
         assert result.end_time is not None
         assert result.duration is not None
-        assert isinstance(result.duration, ModelDuration)
+        from omnibase_core.models.infrastructure.model_execution_result import (
+            ModelExecutionDuration,
+        )
+
+        assert isinstance(result.duration, ModelExecutionDuration)
         assert result.duration.total_milliseconds() >= 0
 
     def test_duration_calculations(self) -> None:
@@ -178,9 +182,9 @@ class TestModelExecutionResult:
 
         assert cli_result.success is True
         assert cli_result.execution_id == result.execution_id
-        assert cli_result.output_data == "test_output"
+        assert cli_result.output_data.raw_value == "test_output"
         assert cli_result.error_message is None
-        assert cli_result.tool_name == "test_tool"
+        assert cli_result.tool_display_name == "test_tool"
         assert cli_result.execution_time_ms is not None
         assert cli_result.status_code == 0
         assert cli_result.warnings == ["Test warning"]
@@ -197,7 +201,7 @@ class TestModelExecutionResult:
         assert cli_result.success is False
         assert cli_result.output_data is None
         assert cli_result.error_message == "test_error"
-        assert cli_result.tool_name == "test_tool"
+        assert cli_result.tool_display_name == "test_tool"
         assert cli_result.status_code == 1
 
     def test_create_cli_success(self) -> None:
@@ -211,7 +215,7 @@ class TestModelExecutionResult:
         assert result.is_ok()
         assert result.value == output_data
         assert result.execution_id == cli_id
-        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.get_metadata("tool_name", None) == "test_tool"
 
     def test_create_cli_failure(self) -> None:
         """Test CLI failure factory method."""
@@ -226,8 +230,8 @@ class TestModelExecutionResult:
         assert result.is_err()
         assert result.error == "Command failed"
         assert result.execution_id == failure_id
-        assert result.get_metadata("tool_name") == "test_tool"
-        assert result.get_metadata("status_code") == 2.0
+        assert result.get_metadata("tool_name", None) == "test_tool"
+        assert result.get_metadata("status_code", None) == 2.0
 
     def test_inherited_result_methods(self) -> None:
         """Test that Result[T, E] methods still work correctly."""
@@ -243,10 +247,12 @@ class TestModelExecutionResult:
 
         assert error_result.unwrap_or("default") == "default"
 
-        with pytest.raises(ValueError, match="Called unwrap\\(\\) on error result"):
+        from omnibase_core.exceptions.onex_error import OnexError
+
+        with pytest.raises(OnexError, match="Called unwrap\\(\\) on error result"):
             error_result.unwrap()
 
-        with pytest.raises(ValueError, match="Custom message"):
+        with pytest.raises(OnexError, match="Custom message"):
             error_result.expect("Custom message")
 
     def test_map_operations(self) -> None:
@@ -302,7 +308,7 @@ class TestConvenienceFactories:
 
         assert result.is_ok()
         assert result.value == "success"
-        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.get_metadata("tool_name", None) == "test_tool"
 
     def test_execution_err(self) -> None:
         """Test execution_err factory function."""
@@ -310,8 +316,8 @@ class TestConvenienceFactories:
 
         assert result.is_err()
         assert result.error == "error"
-        assert result.get_metadata("tool_name") == "test_tool"
-        assert result.get_metadata("status_code") == 2.0
+        assert result.get_metadata("tool_name", None) == "test_tool"
+        assert result.get_metadata("status_code", None) == 2.0
 
     def test_try_execution_success(self) -> None:
         """Test try_execution with successful function."""
@@ -323,7 +329,7 @@ class TestConvenienceFactories:
 
         assert result.is_ok()
         assert result.value == "success_result"
-        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.get_metadata("tool_name", None) == "test_tool"
         assert result.is_completed()
 
     def test_try_execution_failure(self) -> None:
@@ -336,7 +342,7 @@ class TestConvenienceFactories:
 
         assert result.is_err()
         assert result.error == "Function failed"
-        assert result.get_metadata("tool_name") == "test_tool"
+        assert result.get_metadata("tool_name", None) == "test_tool"
         assert result.is_completed()
 
 
@@ -388,22 +394,24 @@ class TestBackwardsCompatibility:
             {"output": "data"}, tool_name="tool1"
         )
         assert success_result.is_ok()
-        assert success_result.get_metadata("tool_name") == "tool1"
+        assert success_result.get_metadata("tool_name", None) == "tool1"
 
         # Test create_cli_failure
         error_result = ModelExecutionResult.create_cli_failure(
             "Command failed", tool_name="tool1", status_code=1
         )
         assert error_result.is_err()
-        assert error_result.get_metadata("tool_name") == "tool1"
-        assert error_result.get_metadata("status_code") == 1.0
+        assert error_result.get_metadata("tool_name", None) == "tool1"
+        assert error_result.get_metadata("status_code", None) == 1.0
 
     def test_validation_error_handling(self) -> None:
         """Test proper validation error handling."""
         # Should still validate that success results have values
-        with pytest.raises(ValueError, match="Success result must have a value"):
+        from omnibase_core.exceptions.onex_error import OnexError
+
+        with pytest.raises(OnexError, match="Success result must have a value"):
             ModelExecutionResult(success=True, value=None, error=None)
 
         # Should still validate that error results have errors
-        with pytest.raises(ValueError, match="Error result must have an error"):
+        with pytest.raises(OnexError, match="Error result must have an error"):
             ModelExecutionResult(success=False, value=None, error=None)

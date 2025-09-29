@@ -16,9 +16,10 @@ from omnibase_core.core.type_constraints import Configurable
 # Type variable for generic property handling
 T = TypeVar("T")
 
+from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
+
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
-    TypedDictPropertyMetadata,
 )
 from .model_property_value import ModelPropertyValue
 
@@ -192,6 +193,12 @@ class ModelEnvironmentProperties(BaseModel):
         """Create empty properties instance."""
         return cls()
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
@@ -211,7 +218,7 @@ class ModelEnvironmentProperties(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

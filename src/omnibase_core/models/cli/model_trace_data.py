@@ -33,6 +33,12 @@ class ModelTraceData(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict, description="Trace tags")
     logs: list[str] = Field(default_factory=list, description="Trace log entries")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
@@ -58,7 +64,7 @@ class ModelTraceData(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

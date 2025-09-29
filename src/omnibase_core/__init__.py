@@ -31,16 +31,35 @@ Validation Tools:
         python -m omnibase_core.validation all
 """
 
-# Import validation functions at package level for easy access
-from .validation import (
-    ValidationResult,
-    ValidationSuite,
-    validate_all,
-    validate_architecture,
-    validate_contracts,
-    validate_patterns,
-    validate_union_usage,
-)
+# No typing imports needed for lazy loading
+
+
+# Lazy import validation functions to avoid import penalty
+# Import validation functions only when accessed to improve startup performance
+def __getattr__(name: str) -> object:
+    if name in {
+        "ValidationResult",
+        "ModelValidationSuite",
+        "validate_all",
+        "validate_architecture",
+        "validate_contracts",
+        "validate_patterns",
+        "validate_union_usage",
+    }:
+        from .validation import (
+            ModelValidationSuite,
+            ValidationResult,
+            validate_all,
+            validate_architecture,
+            validate_contracts,
+            validate_patterns,
+            validate_union_usage,
+        )
+
+        # Return the requested attribute from validation module
+        return locals()[name]
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 __all__ = [
     # Validation tools (main exports for other repositories)
@@ -50,5 +69,5 @@ __all__ = [
     "validate_patterns",
     "validate_all",
     "ValidationResult",
-    "ValidationSuite",
+    "ModelValidationSuite",
 ]

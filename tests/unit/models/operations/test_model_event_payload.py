@@ -12,7 +12,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from src.omnibase_core.models.operations.model_event_payload import ModelEventPayload
+from omnibase_core.models.operations.model_event_payload import ModelEventPayload
 
 
 class TestModelEventPayload:
@@ -68,8 +68,8 @@ class TestModelEventPayload:
             routing_info=routing_info,
         )
 
-        assert payload.event_data["user_id"].value == 12345
-        assert payload.event_data["action"].value == "user_login"
+        assert payload.event_data["user_id"].to_value() == 12345
+        assert payload.event_data["action"].to_value() == "user_login"
         assert payload.context["session_id"] == "abc123"
         assert payload.attributes["severity"] == "info"
         assert payload.source_info["service"] == "auth-service"
@@ -92,13 +92,17 @@ class TestModelEventPayload:
         )
         payload.event_data["none_value"] = ModelSchemaValue.from_value(None)
 
-        assert payload.event_data["string_value"].value == "test_string"
-        assert payload.event_data["int_value"].value == 42
-        assert payload.event_data["float_value"].value == 3.14159
-        assert payload.event_data["bool_value"].value is True
-        assert payload.event_data["list_value"].value == ["item1", "item2", "item3"]
-        assert payload.event_data["dict_value"].value == {"nested": "data"}
-        assert payload.event_data["none_value"].value is None
+        assert payload.event_data["string_value"].to_value() == "test_string"
+        assert payload.event_data["int_value"].to_value() == 42
+        assert payload.event_data["float_value"].to_value() == 3.14159
+        assert payload.event_data["bool_value"].to_value() is True
+        assert payload.event_data["list_value"].to_value() == [
+            "item1",
+            "item2",
+            "item3",
+        ]
+        assert payload.event_data["dict_value"].to_value() == {"nested": "data"}
+        assert payload.event_data["none_value"].to_value() is None
 
     def test_context_information_management(self):
         """Test context information handling."""
@@ -190,8 +194,8 @@ class TestModelEventPayloadSerialization:
         assert "routing_info" in serialized
 
         # Check event_data serialization (ModelSchemaValue objects)
-        assert serialized["event_data"]["user_id"]["value"] == 12345
-        assert serialized["event_data"]["action"]["value"] == "profile_update"
+        assert serialized["event_data"]["user_id"]["number_value"]["value"] == 12345.0
+        assert serialized["event_data"]["action"]["string_value"] == "profile_update"
 
         # Check other fields (simple strings)
         assert serialized["context"]["session_id"] == "sess_123"
@@ -204,18 +208,27 @@ class TestModelEventPayloadSerialization:
         json_data = {
             "event_data": {
                 "operation": {
-                    "value": "delete_user",
-                    "value_type": "str",
-                    "source": "user_input",
-                    "validation_status": "validated",
-                    "metadata": {},
+                    "string_value": "delete_user",
+                    "number_value": None,
+                    "boolean_value": None,
+                    "null_value": None,
+                    "array_value": None,
+                    "object_value": None,
+                    "value_type": "string",
                 },
                 "target_id": {
-                    "value": 67890,
-                    "value_type": "int",
-                    "source": "database",
-                    "validation_status": "validated",
-                    "metadata": {},
+                    "string_value": None,
+                    "number_value": {
+                        "value": 67890.0,
+                        "value_type": "float",
+                        "is_validated": True,
+                        "source": None,
+                    },
+                    "boolean_value": None,
+                    "null_value": None,
+                    "array_value": None,
+                    "object_value": None,
+                    "value_type": "number",
                 },
             },
             "context": {"admin_user": "admin@company.com", "reason": "account_cleanup"},
@@ -227,11 +240,11 @@ class TestModelEventPayloadSerialization:
             },
         }
 
-        payload = ModelEventPayload(**json_data)
+        payload = ModelEventPayload.model_validate(json_data)
 
         # Verify event data
-        assert payload.event_data["operation"].value == "delete_user"
-        assert payload.event_data["target_id"].value == 67890
+        assert payload.event_data["operation"].to_value() == "delete_user"
+        assert payload.event_data["target_id"].to_value() == 67890
 
         # Verify other sections
         assert payload.context["admin_user"] == "admin@company.com"
@@ -258,12 +271,16 @@ class TestModelEventPayloadSerialization:
 
         # Parse JSON and create new instance
         json_data = json.loads(json_str)
-        deserialized = ModelEventPayload(**json_data)
+        deserialized = ModelEventPayload.model_validate(json_data)
 
         # Verify all fields match
-        assert deserialized.event_data["metric_name"].value == "response_time"
-        assert deserialized.event_data["metric_value"].value == 150.75
-        assert deserialized.event_data["tags"].value == ["performance", "api", "prod"]
+        assert deserialized.event_data["metric_name"].to_value() == "response_time"
+        assert deserialized.event_data["metric_value"].to_value() == 150.75
+        assert deserialized.event_data["tags"].to_value() == [
+            "performance",
+            "api",
+            "prod",
+        ]
         assert deserialized.context["environment"] == "production"
         assert deserialized.attributes["alert_threshold"] == "200"
         assert deserialized.source_info["collector"] == "prometheus"
@@ -376,8 +393,8 @@ class TestModelEventPayloadUsagePatterns:
         )
 
         # Verify authentication event structure
-        assert auth_payload.event_data["user_id"].value == "user_12345"
-        assert auth_payload.event_data["success"].value is True
+        assert auth_payload.event_data["user_id"].to_value() == "user_12345"
+        assert auth_payload.event_data["success"].to_value() is True
         assert auth_payload.context["ip_address"] == "192.168.1.100"
         assert auth_payload.attributes["event_type"] == "authentication"
         assert auth_payload.source_info["service"] == "authentication-service"
@@ -422,8 +439,10 @@ class TestModelEventPayloadUsagePatterns:
         )
 
         # Verify error event structure
-        assert error_payload.event_data["error_code"].value == "DB_CONNECTION_TIMEOUT"
-        assert error_payload.event_data["duration_ms"].value == 30000
+        assert (
+            error_payload.event_data["error_code"].to_value() == "DB_CONNECTION_TIMEOUT"
+        )
+        assert error_payload.event_data["duration_ms"].to_value() == 30000
         assert error_payload.attributes["severity"] == "high"
         assert error_payload.attributes["alert_required"] == "true"
         assert error_payload.routing_info["oncall_notification"] == "enabled"
@@ -464,9 +483,13 @@ class TestModelEventPayloadUsagePatterns:
         )
 
         # Verify metrics event structure
-        assert metrics_payload.event_data["metric_name"].value == "daily_active_users"
-        assert metrics_payload.event_data["metric_value"].value == 15420
-        assert metrics_payload.event_data["dimensions"].value["region"] == "us-west"
+        assert (
+            metrics_payload.event_data["metric_name"].to_value() == "daily_active_users"
+        )
+        assert metrics_payload.event_data["metric_value"].to_value() == 15420
+        assert (
+            metrics_payload.event_data["dimensions"].to_value()["region"] == "us-west"
+        )
         assert metrics_payload.attributes["retention_days"] == "365"
         assert metrics_payload.routing_info["metrics_store"] == "timeseries_db"
 
@@ -501,9 +524,9 @@ class TestModelEventPayloadUsagePatterns:
         payload.routing_info["priority"] = "high"
 
         # Verify final enriched payload
-        assert payload.event_data["base_event"].value == "order_created"
-        assert payload.event_data["validation_result"].value == "passed"
-        assert payload.event_data["customer_tier"].value == "premium"
+        assert payload.event_data["base_event"].to_value() == "order_created"
+        assert payload.event_data["validation_result"].to_value() == "passed"
+        assert payload.event_data["customer_tier"].to_value() == "premium"
         assert payload.context["processing_stage"] == "routing"
         assert payload.attributes["validation_status"] == "completed"
         assert payload.routing_info["priority"] == "high"

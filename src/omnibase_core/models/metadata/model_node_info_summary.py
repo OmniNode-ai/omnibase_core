@@ -7,36 +7,17 @@ Composed model that combines focused node information components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Callable, TypedDict, TypeVar
+from typing import Any, Callable, Mapping, TypedDict, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    PrimitiveValueType,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
-
-# Type variable for decorator
-F = TypeVar("F", bound=Callable[..., Any])
-
-
-def allow_dict_any(func: F) -> F:
-    """
-    Decorator to allow dict[str, Any] usage in specific functions.
-
-    This should only be used when:
-    1. Converting untyped external data to typed internal models
-    2. Complex conversion functions where intermediate dicts need flexibility
-    3. Legacy integration where gradual typing is being applied
-
-    Justification: This method accepts flexible parameter data dictionaries
-    that get validated and converted by component-specific update methods.
-    """
-    return func
-
-
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -50,17 +31,19 @@ from .node_info.model_node_performance_metrics import ModelNodePerformanceMetric
 from .node_info.model_node_quality_indicators import ModelNodeQualityIndicators
 from .node_info.model_node_timestamps import ModelNodeTimestamps
 
+# REMOVED: Decorator no longer needed since we use structured TypedDict types
+
 
 class TypedDictNodeCore(TypedDict):
     """Node core data structure.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
 
     node_id: UUID
-    node_name: str | None
+    node_display_name: str | None
     description: str | None
     node_type: str
     status: str
@@ -70,14 +53,64 @@ class TypedDictNodeCore(TypedDict):
     is_complex: bool
 
 
+class TypedDictNodeCoreUpdateData(TypedDict, total=False):
+    """Typed structure for core node data updates."""
+
+    node_display_name: str
+    description: str
+    node_type: EnumNodeType
+    status: EnumMetadataNodeStatus
+    complexity: EnumConceptualComplexity
+
+
+class TypedDictTimestampUpdateData(TypedDict, total=False):
+    """Typed structure for timestamp data updates."""
+
+    created_at: datetime
+    updated_at: datetime
+    last_accessed: datetime
+    deprecated_at: datetime
+
+
+class TypedDictCategorizationUpdateData(TypedDict, total=False):
+    """Typed structure for categorization data updates."""
+
+    technical_tags: list[str]
+    business_tags: list[str]
+    domain_tags: list[str]
+    complexity_tags: list[str]
+
+
+class TypedDictQualityUpdateData(TypedDict, total=False):
+    """Typed structure for quality data updates."""
+
+    quality_score: float
+    documentation_quality: EnumDocumentationQuality
+    test_coverage: float
+    maintainability_index: float
+
+
+class TypedDictPerformanceUpdateData(TypedDict, total=False):
+    """Typed structure for performance data updates."""
+
+    average_execution_time_ms: float
+    memory_usage_mb: float
+    cpu_usage_percent: float
+    throughput_ops_per_sec: float
+
+
 class TypedDictNodeInfoSummaryData(TypedDict):
     """Typed structure for node info summary serialization."""
 
     core: TypedDictNodeCore
-    timestamps: Any  # From component method call
-    categorization: Any  # From component method call
-    quality: Any  # From component method call
-    performance: Any  # From component method call
+    timestamps: dict[str, Any]  # From component method call - returns lifecycle summary
+    categorization: dict[
+        str, Any
+    ]  # From component method call - returns categorization summary
+    quality: dict[str, Any]  # From component method call - returns quality summary
+    performance: dict[
+        str, Any
+    ]  # From component method call - returns performance summary
 
 
 class ModelNodeInfoSummary(BaseModel):
@@ -344,7 +377,7 @@ class ModelNodeInfoSummary(BaseModel):
         return {
             "core": {
                 "node_id": self.core.node_id,
-                "node_name": self.core.node_name,
+                "node_display_name": self.core.node_display_name,
                 "description": self.core.description,
                 "node_type": self.core.node_type.value,
                 "status": self.core.status.value,
@@ -355,30 +388,52 @@ class ModelNodeInfoSummary(BaseModel):
             },
             "timestamps": self.timestamps.get_lifecycle_summary(),
             "categorization": self.categorization.get_categorization_summary(),
-            "quality": self.quality.get_quality_summary(),
-            "performance": self.performance.get_performance_summary(),
+            "quality": self.quality.get_quality_summary().model_dump(),
+            "performance": self.performance.get_performance_summary().model_dump(),
         }
 
-    @allow_dict_any
     def update_all_metrics(
         self,
-        core_data: dict[str, Any] | None = None,
-        timestamp_data: dict[str, datetime | None] | None = None,
-        categorization_data: dict[str, list[str]] | None = None,
-        quality_data: dict[str, Any] | None = None,
-        performance_data: dict[str, int | float] | None = None,
+        core_data: TypedDictNodeCoreUpdateData | None = None,
+        timestamp_data: TypedDictTimestampUpdateData | None = None,
+        categorization_data: TypedDictCategorizationUpdateData | None = None,
+        quality_data: TypedDictQualityUpdateData | None = None,
+        performance_data: TypedDictPerformanceUpdateData | None = None,
     ) -> None:
-        """Update all component metrics."""
+        """
+        Update all component metrics with structured typing.
+
+        Args:
+            core_data: Core node data with string and enum values
+            timestamp_data: Timestamp data with datetime values
+            categorization_data: Categorization data with string lists
+            quality_data: Quality data with float and enum values
+            performance_data: Performance data with numeric values
+
+        Note:
+            All parameters are optional and use typed dictionaries for type safety.
+        """
+
         # Update core data
         if core_data:
             if "node_display_name" in core_data:
-                self.core.node_display_name = core_data["node_display_name"]
+                value = core_data["node_display_name"]
+                self.core.node_display_name = str(value) if value is not None else None
             if "description" in core_data:
-                self.core.description = core_data["description"]
+                value = core_data["description"]
+                self.core.description = str(value) if value is not None else None
             if "status" in core_data:
-                self.core.update_status(core_data["status"])
+                from omnibase_core.enums.enum_metadata_node_status import (
+                    EnumMetadataNodeStatus,
+                )
+
+                value = core_data["status"]
+                if isinstance(value, EnumMetadataNodeStatus):
+                    self.core.update_status(value)
             if "complexity" in core_data:
-                self.core.update_complexity(core_data["complexity"])
+                value = core_data["complexity"]
+                if isinstance(value, EnumConceptualComplexity):
+                    self.core.update_complexity(value)
 
         # Update timestamps
         if timestamp_data:
@@ -386,17 +441,17 @@ class ModelNodeInfoSummary(BaseModel):
                 self.timestamps.update_created_timestamp(timestamp_data["created_at"])
             if "updated_at" in timestamp_data:
                 self.timestamps.update_modified_timestamp(timestamp_data["updated_at"])
-            if "last_validated" in timestamp_data:
+            if "last_accessed" in timestamp_data:
                 self.timestamps.update_validation_timestamp(
-                    timestamp_data["last_validated"]
+                    timestamp_data["last_accessed"]
                 )
 
         # Update categorization
         if categorization_data:
-            if "tags" in categorization_data:
-                self.categorization.add_tags(categorization_data["tags"])
-            if "categories" in categorization_data:
-                self.categorization.add_categories(categorization_data["categories"])
+            if "technical_tags" in categorization_data:
+                self.categorization.add_tags(categorization_data["technical_tags"])
+            if "business_tags" in categorization_data:
+                self.categorization.add_tags(categorization_data["business_tags"])
 
         # Update quality
         if quality_data:
@@ -408,12 +463,35 @@ class ModelNodeInfoSummary(BaseModel):
                     "has_examples",
                 ]
             ):
+                # Extract and validate documentation status parameters
+                has_doc_value = quality_data.get(
+                    "has_documentation", self.quality.has_documentation
+                )
+                doc_quality_value = quality_data.get("documentation_quality")
+                has_examples_value = quality_data.get("has_examples")
+
+                # Type check and convert values
+                has_doc = (
+                    bool(has_doc_value)
+                    if has_doc_value is not None
+                    else self.quality.has_documentation
+                )
+
+                doc_quality = None
+                if doc_quality_value is not None:
+                    from omnibase_core.enums.enum_documentation_quality import (
+                        EnumDocumentationQuality,
+                    )
+
+                    if isinstance(doc_quality_value, EnumDocumentationQuality):
+                        doc_quality = doc_quality_value
+
+                has_examples = None
+                if has_examples_value is not None:
+                    has_examples = bool(has_examples_value)
+
                 self.quality.update_documentation_status(
-                    quality_data.get(
-                        "has_documentation", self.quality.has_documentation
-                    ),
-                    quality_data.get("documentation_quality"),
-                    quality_data.get("has_examples"),
+                    has_doc, doc_quality, has_examples
                 )
 
         # Update performance
@@ -422,14 +500,32 @@ class ModelNodeInfoSummary(BaseModel):
                 key in performance_data
                 for key in ["usage_count", "success_rate", "error_rate"]
             ):
+                usage_value = performance_data.get(
+                    "usage_count", self.performance.usage_count
+                )
+                success_value = performance_data.get(
+                    "success_rate", self.performance.success_rate
+                )
+                error_value = performance_data.get(
+                    "error_rate", self.performance.error_rate
+                )
+
                 self.performance.update_usage_metrics(
-                    int(
-                        performance_data.get(
-                            "usage_count", self.performance.usage_count
-                        )
+                    (
+                        int(usage_value)
+                        if isinstance(usage_value, (int, str))
+                        else self.performance.usage_count
                     ),
-                    performance_data.get("success_rate", self.performance.success_rate),
-                    performance_data.get("error_rate", self.performance.error_rate),
+                    (
+                        float(success_value)
+                        if isinstance(success_value, (int, float, str))
+                        else self.performance.success_rate
+                    ),
+                    (
+                        float(error_value)
+                        if isinstance(error_value, (int, float, str))
+                        else self.performance.error_rate
+                    ),
                 )
             if any(
                 key in performance_data
@@ -525,12 +621,18 @@ class ModelNodeInfoSummary(BaseModel):
         timestamps = ModelNodeTimestamps.create_new()
         return cls(core=core, timestamps=timestamps)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -543,7 +645,7 @@ class ModelNodeInfoSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -557,7 +659,7 @@ class ModelNodeInfoSummary(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

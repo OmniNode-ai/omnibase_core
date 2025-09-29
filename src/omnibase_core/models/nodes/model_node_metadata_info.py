@@ -10,17 +10,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-# from omnibase_spi.protocols.types.core_types import ProtocolNodeInfoLike
-
-# Temporary placeholder for validation
-ProtocolNodeInfoLike = dict
+# Import SPI protocol directly - no fallback pattern per ONEX standards
+from omnibase_spi.protocols.types.protocol_core_types import ProtocolNodeInfoLike
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -32,7 +30,7 @@ from omnibase_core.models.metadata.model_semver import ModelSemVer
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_performance_metrics import ModelNodePerformanceMetrics
-from .model_types_node_metadata_summary import NodeMetadataSummaryType
+from .model_types_node_metadata_summary import ModelNodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -42,7 +40,7 @@ class ModelNodeMetadataInfo(BaseModel):
     Restructured to use focused sub-models for better organization.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -307,7 +305,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Update last accessed timestamp."""
         self.performance.update_accessed_time()
 
-    def get_summary(self) -> NodeMetadataSummaryType:
+    def get_summary(self) -> ModelNodeMetadataSummaryType:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
         core_summary = self.core.get_status_summary()
@@ -370,7 +368,7 @@ class ModelNodeMetadataInfo(BaseModel):
         try:
             core.health = EnumNodeHealthStatus(health_str)
         except ValueError:
-            core.health = EnumNodeHealthStatus.HEALTHY
+            core.health = EnumNodeHealthStatus.UNKNOWN
 
         organization = ModelNodeOrganizationMetadata(
             description=getattr(node_info, "description", None),
@@ -382,6 +380,12 @@ class ModelNodeMetadataInfo(BaseModel):
             performance=ModelNodePerformanceMetrics.create_new(),
             organization=organization,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 
@@ -403,7 +407,7 @@ class ModelNodeMetadataInfo(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -416,7 +420,7 @@ class ModelNodeMetadataInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -430,7 +434,7 @@ class ModelNodeMetadataInfo(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

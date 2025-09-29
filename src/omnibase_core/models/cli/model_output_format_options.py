@@ -15,11 +15,15 @@ from pydantic import BaseModel, Field
 from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
-# Decorator to allow dict[str, Any] usage with justification
-F = TypeVar("F", bound=Callable[..., Any])
+# Removed Any import - using object for ONEX compliance
 
-# Generic type for custom option values
-T = TypeVar("T", str, int, bool)
+
+# Decorator to allow dict[str, Any] usage with justification
+F = TypeVar("F", bound=Callable[..., object])
+
+# Type alias for CLI option values - simplified to avoid primitive soup
+CliOptionValueType = object
+T = TypeVar("T", str, int, bool)  # Keep for generic methods
 
 
 def allow_dict_any(func: F) -> F:
@@ -279,6 +283,12 @@ class ModelOutputFormatOptions(BaseModel):
 
         return cls(**kwargs_dict)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
@@ -304,7 +314,7 @@ class ModelOutputFormatOptions(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

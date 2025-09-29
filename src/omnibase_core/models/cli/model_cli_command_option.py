@@ -8,6 +8,8 @@ Replaces dict[str, Any] for command options with structured typing.
 from __future__ import annotations
 
 from typing import Any
+
+# Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -36,7 +38,7 @@ class ModelCliCommandOption(BaseModel):
         None,
         description="Human-readable option name (e.g., '--verbose', '-v')",
     )
-    value: Any = Field(
+    value: object = Field(
         ...,
         description="Option value - validated against value_type discriminator",
     )
@@ -62,7 +64,7 @@ class ModelCliCommandOption(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
             value_type = info.data["value_type"]
@@ -117,7 +119,7 @@ class ModelCliCommandOption(BaseModel):
             return ",".join(str(v) for v in self.value)
         return str(self.value)
 
-    def get_typed_value(self) -> Any:
+    def get_typed_value(self) -> object:
         """Get the properly typed value."""
         return self.value
 
@@ -135,14 +137,43 @@ class ModelCliCommandOption(BaseModel):
         cls,
         option_id: UUID,
         value: str,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliCommandOption:
         """Create command option from string value."""
+        # Extract known fields with proper types from kwargs
+        option_display_name = kwargs.get("option_display_name", None)
+        is_flag = kwargs.get("is_flag", False)
+        is_required = kwargs.get("is_required", False)
+        is_multiple = kwargs.get("is_multiple", False)
+        description = kwargs.get("description", "")
+        valid_choices = kwargs.get("valid_choices", [])
+
+        # Type validation for extracted kwargs
+        if option_display_name is not None and not isinstance(option_display_name, str):
+            option_display_name = None
+        if not isinstance(is_flag, bool):
+            is_flag = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(is_multiple, bool):
+            is_multiple = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(valid_choices, list) or not all(
+            isinstance(choice, str) for choice in valid_choices
+        ):
+            valid_choices = []
+
         return cls(
             option_id=option_id,
+            option_display_name=option_display_name,
             value_type=EnumCliOptionValueType.STRING,
             value=value,
-            **kwargs,
+            is_flag=is_flag,
+            is_required=is_required,
+            is_multiple=is_multiple,
+            description=description,
+            valid_choices=valid_choices,
         )
 
     @classmethod
@@ -150,14 +181,43 @@ class ModelCliCommandOption(BaseModel):
         cls,
         option_id: UUID,
         value: int,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliCommandOption:
         """Create command option from integer value."""
+        # Extract known fields with proper types from kwargs
+        option_display_name = kwargs.get("option_display_name", None)
+        is_flag = kwargs.get("is_flag", False)
+        is_required = kwargs.get("is_required", False)
+        is_multiple = kwargs.get("is_multiple", False)
+        description = kwargs.get("description", "")
+        valid_choices = kwargs.get("valid_choices", [])
+
+        # Type validation for extracted kwargs
+        if option_display_name is not None and not isinstance(option_display_name, str):
+            option_display_name = None
+        if not isinstance(is_flag, bool):
+            is_flag = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(is_multiple, bool):
+            is_multiple = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(valid_choices, list) or not all(
+            isinstance(choice, str) for choice in valid_choices
+        ):
+            valid_choices = []
+
         return cls(
             option_id=option_id,
+            option_display_name=option_display_name,
             value_type=EnumCliOptionValueType.INTEGER,
             value=value,
-            **kwargs,
+            is_flag=is_flag,
+            is_required=is_required,
+            is_multiple=is_multiple,
+            description=description,
+            valid_choices=valid_choices,
         )
 
     @classmethod
@@ -165,14 +225,43 @@ class ModelCliCommandOption(BaseModel):
         cls,
         option_id: UUID,
         value: float,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliCommandOption:
         """Create command option from float value."""
+        # Extract known fields with proper types from kwargs
+        option_display_name = kwargs.get("option_display_name", None)
+        is_flag = kwargs.get("is_flag", False)
+        is_required = kwargs.get("is_required", False)
+        is_multiple = kwargs.get("is_multiple", False)
+        description = kwargs.get("description", "")
+        valid_choices = kwargs.get("valid_choices", [])
+
+        # Type validation for extracted kwargs
+        if option_display_name is not None and not isinstance(option_display_name, str):
+            option_display_name = None
+        if not isinstance(is_flag, bool):
+            is_flag = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(is_multiple, bool):
+            is_multiple = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(valid_choices, list) or not all(
+            isinstance(choice, str) for choice in valid_choices
+        ):
+            valid_choices = []
+
         return cls(
             option_id=option_id,
+            option_display_name=option_display_name,
             value_type=EnumCliOptionValueType.FLOAT,
             value=value,
-            **kwargs,
+            is_flag=is_flag,
+            is_required=is_required,
+            is_multiple=is_multiple,
+            description=description,
+            valid_choices=valid_choices,
         )
 
     @classmethod
@@ -180,26 +269,84 @@ class ModelCliCommandOption(BaseModel):
         cls,
         option_id: UUID,
         value: bool,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliCommandOption:
         """Create command option from boolean value."""
+        # Extract known fields with proper types from kwargs
+        option_display_name = kwargs.get("option_display_name", None)
+        is_flag = kwargs.get("is_flag", False)
+        is_required = kwargs.get("is_required", False)
+        is_multiple = kwargs.get("is_multiple", False)
+        description = kwargs.get("description", "")
+        valid_choices = kwargs.get("valid_choices", [])
+
+        # Type validation for extracted kwargs
+        if option_display_name is not None and not isinstance(option_display_name, str):
+            option_display_name = None
+        if not isinstance(is_flag, bool):
+            is_flag = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(is_multiple, bool):
+            is_multiple = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(valid_choices, list) or not all(
+            isinstance(choice, str) for choice in valid_choices
+        ):
+            valid_choices = []
+
         return cls(
             option_id=option_id,
+            option_display_name=option_display_name,
             value_type=EnumCliOptionValueType.BOOLEAN,
             value=value,
-            **kwargs,
+            is_flag=is_flag,
+            is_required=is_required,
+            is_multiple=is_multiple,
+            description=description,
+            valid_choices=valid_choices,
         )
 
     @classmethod
     def from_uuid(
-        cls, option_id: UUID, value: UUID, **kwargs: Any
+        cls, option_id: UUID, value: UUID, **kwargs: object
     ) -> ModelCliCommandOption:
         """Create command option from UUID value."""
+        # Extract known fields with proper types from kwargs
+        option_display_name = kwargs.get("option_display_name", None)
+        is_flag = kwargs.get("is_flag", False)
+        is_required = kwargs.get("is_required", False)
+        is_multiple = kwargs.get("is_multiple", False)
+        description = kwargs.get("description", "")
+        valid_choices = kwargs.get("valid_choices", [])
+
+        # Type validation for extracted kwargs
+        if option_display_name is not None and not isinstance(option_display_name, str):
+            option_display_name = None
+        if not isinstance(is_flag, bool):
+            is_flag = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(is_multiple, bool):
+            is_multiple = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(valid_choices, list) or not all(
+            isinstance(choice, str) for choice in valid_choices
+        ):
+            valid_choices = []
+
         return cls(
             option_id=option_id,
+            option_display_name=option_display_name,
             value_type=EnumCliOptionValueType.UUID,
             value=value,
-            **kwargs,
+            is_flag=is_flag,
+            is_required=is_required,
+            is_multiple=is_multiple,
+            description=description,
+            valid_choices=valid_choices,
         )
 
     @classmethod
@@ -207,15 +354,50 @@ class ModelCliCommandOption(BaseModel):
         cls,
         option_id: UUID,
         value: list[str],
-        **kwargs: Any,
+        **kwargs: object,
     ) -> ModelCliCommandOption:
         """Create command option from string list value."""
+        # Extract known fields with proper types from kwargs
+        option_display_name = kwargs.get("option_display_name", None)
+        is_flag = kwargs.get("is_flag", False)
+        is_required = kwargs.get("is_required", False)
+        is_multiple = kwargs.get("is_multiple", False)
+        description = kwargs.get("description", "")
+        valid_choices = kwargs.get("valid_choices", [])
+
+        # Type validation for extracted kwargs
+        if option_display_name is not None and not isinstance(option_display_name, str):
+            option_display_name = None
+        if not isinstance(is_flag, bool):
+            is_flag = False
+        if not isinstance(is_required, bool):
+            is_required = False
+        if not isinstance(is_multiple, bool):
+            is_multiple = False
+        if not isinstance(description, str):
+            description = ""
+        if not isinstance(valid_choices, list) or not all(
+            isinstance(choice, str) for choice in valid_choices
+        ):
+            valid_choices = []
+
         return cls(
             option_id=option_id,
+            option_display_name=option_display_name,
             value_type=EnumCliOptionValueType.STRING_LIST,
             value=value,
-            **kwargs,
+            is_flag=is_flag,
+            is_required=is_required,
+            is_multiple=is_multiple,
+            description=description,
+            valid_choices=valid_choices,
         )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 
@@ -242,7 +424,7 @@ class ModelCliCommandOption(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

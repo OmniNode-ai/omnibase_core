@@ -11,9 +11,9 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
@@ -29,7 +29,7 @@ class ModelNodeUnion(BaseModel):
 
     Replaces ModelFunctionNode | ModelFunctionNodeData union with structured typing.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -84,25 +84,59 @@ class ModelNodeUnion(BaseModel):
             node_type=EnumNodeUnionType.FUNCTION_NODE_DATA, function_node_data=node_data
         )
 
-    def get_node(self) -> Any:
-        """Get the actual node value.
+    def get_node(self) -> ModelFunctionNode | ModelFunctionNodeData:
+        """
+        Get the actual node value with runtime type safety.
 
         Returns:
-            ModelFunctionNode or ModelFunctionNodeData based on node_type discriminator.
+            ModelFunctionNode | ModelFunctionNodeData: Either ModelFunctionNode or
+                          ModelFunctionNodeData based on node_type discriminator.
+                          Use isinstance() to check specific type.
+
+        Raises:
+            OnexError: If discriminator state is invalid
+
+        Examples:
+            node = union.get_node()
+            if isinstance(node, ModelFunctionNode):
+                # Handle function node
+                pass
+            elif isinstance(node, ModelFunctionNodeData):
+                # Handle function node data
+                pass
         """
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
-            assert self.function_node is not None  # Guaranteed by validator
+            if self.function_node is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Invalid state: function_node is None but node_type is FUNCTION_NODE",
+                )
             return self.function_node
-        else:
-            assert self.function_node_data is not None  # Guaranteed by validator
+        elif self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
+            if self.function_node_data is None:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Invalid state: function_node_data is None but node_type is FUNCTION_NODE_DATA",
+                )
             return self.function_node_data
+        else:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown node_type: {self.node_type}",
+            )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Export the model
 
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -115,7 +149,7 @@ class ModelNodeUnion(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -129,7 +163,7 @@ class ModelNodeUnion(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

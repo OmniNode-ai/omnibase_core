@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Canonical Pydantic model for ONEX error serialization and validation.
 
@@ -28,19 +27,11 @@ class ModelOnexError(BaseModel):
     - Validatable: Validation and verification
     """
 
-    model_config = ConfigDict(
-        use_enum_values=True,  # Ensure proper enum serialization
-        json_schema_extra={
-            "example": {
-                "message": "File not found: config.yaml",
-                "error_code": "ONEX_CORE_021_FILE_NOT_FOUND",
-                "status": "error",
-                "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
-                "timestamp": "2025-05-25T22:30:00Z",
-                "context": {"file_path": "/path/to/config.yaml"},
-            },
-        },
-    )
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     message: str = Field(
         ...,
@@ -88,7 +79,7 @@ class ModelOnexError(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

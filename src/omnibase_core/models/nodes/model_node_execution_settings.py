@@ -11,14 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    MetadataProvider,
-    Serializable,
-    Validatable,
-)
-
-from .model_types_node_execution_summary import NodeExecutionSummaryType
+from .model_types_node_execution_summary import ModelNodeExecutionSummaryType
 
 
 class ModelNodeExecutionSettings(BaseModel):
@@ -31,7 +24,7 @@ class ModelNodeExecutionSettings(BaseModel):
     - Execution mode flags
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -47,7 +40,7 @@ class ModelNodeExecutionSettings(BaseModel):
         description="Enable parallel execution",
     )
 
-    def get_execution_summary(self) -> NodeExecutionSummaryType:
+    def get_execution_summary(self) -> ModelNodeExecutionSummaryType:
         """Get execution settings summary."""
         return {
             "max_retries": self.max_retries,
@@ -82,6 +75,12 @@ class ModelNodeExecutionSettings(BaseModel):
             timeout_seconds=300,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -102,7 +101,7 @@ class ModelNodeExecutionSettings(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -115,7 +114,7 @@ class ModelNodeExecutionSettings(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -129,7 +128,7 @@ class ModelNodeExecutionSettings(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

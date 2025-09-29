@@ -20,7 +20,7 @@ from .migration_types import (
 from .model_migration_plan import ModelMigrationPlan
 from .model_migration_result import ModelMigrationResult
 from .validation_utils import (
-    ProtocolInfo,
+    ModelProtocolInfo,
     ValidationResult,
     determine_repository_name,
     extract_protocols_from_directory,
@@ -46,7 +46,7 @@ class ProtocolMigrator:
 
     def create_migration_plan(
         self,
-        protocols: list[ProtocolInfo] | None = None,
+        protocols: list[ModelProtocolInfo] | None = None,
     ) -> ModelMigrationPlan:
         """
         Create a migration plan for moving protocols to omnibase_spi.
@@ -181,8 +181,8 @@ class ProtocolMigrator:
 
     def _detect_migration_conflicts(
         self,
-        source_protocols: list[ProtocolInfo],
-        spi_protocols: list[ProtocolInfo],
+        source_protocols: list[ModelProtocolInfo],
+        spi_protocols: list[ModelProtocolInfo],
     ) -> list[ModelMigrationConflictUnion]:
         """Detect conflicts between source protocols and existing SPI protocols."""
         conflicts: list[ModelMigrationConflictUnion] = []
@@ -206,8 +206,8 @@ class ProtocolMigrator:
                                 source_signature=source_protocol.signature_hash,
                                 spi_signature=spi_protocol.signature_hash,
                                 recommendation="Rename one of the protocols or merge if appropriate",
-                            )
-                        )
+                            ),
+                        ),
                     )
 
             # Check for exact signature duplicates
@@ -222,15 +222,15 @@ class ProtocolMigrator:
                             spi_file=spi_protocol.file_path,
                             signature_hash=source_protocol.signature_hash,
                             recommendation=f"Skip migration - use existing SPI version: {spi_protocol.name}",
-                        )
-                    )
+                        ),
+                    ),
                 )
 
         return conflicts
 
     def _generate_migration_steps(
         self,
-        protocols: list[ProtocolInfo],
+        protocols: list[ModelProtocolInfo],
     ) -> list[TypedDictMigrationStepDict]:
         """Generate detailed migration steps."""
         steps = []
@@ -331,7 +331,7 @@ class ProtocolMigrator:
 
         protocol_file.write_text(content, encoding="utf-8")
 
-    def _find_import_references(self, protocol: ProtocolInfo) -> list[str]:
+    def _find_import_references(self, protocol: ModelProtocolInfo) -> list[str]:
         """Find files that import the given protocol."""
         references: list[str] = []
 
@@ -384,7 +384,7 @@ class ProtocolMigrator:
             return ValidationResult(
                 success=False,
                 errors=[
-                    "Rollback not available - migration was not executed or was a dry run"
+                    "Rollback not available - migration was not executed or was a dry run",
                 ],
             )
 
@@ -413,7 +413,7 @@ class ProtocolMigrator:
                     pass
 
         if plan.protocols_to_migrate and not plan.conflicts_detected:
-            by_category: dict[str, list[ProtocolInfo]] = {}
+            by_category: dict[str, list[ModelProtocolInfo]] = {}
             for protocol in plan.protocols_to_migrate:
                 category = suggest_spi_location(protocol)
                 if category not in by_category:

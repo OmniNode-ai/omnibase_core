@@ -150,6 +150,12 @@ class ModelProgressTiming(BaseModel):
             last_update_time=start_time,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:

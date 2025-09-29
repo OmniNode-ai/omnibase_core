@@ -33,7 +33,7 @@ class Identifiable(Protocol):
     def id(self) -> str: ...
 
 
-class MetadataProvider(Protocol):
+class ProtocolMetadataProvider(Protocol):
     """Protocol for objects that provide metadata."""
 
     @property
@@ -54,7 +54,7 @@ class Serializable(Protocol):
     def serialize(self) -> dict[str, Any]: ...
 
 
-class Validatable(Protocol):
+class ProtocolValidatable(Protocol):
     """Protocol for validatable objects."""
 
     def validate_instance(self) -> bool: ...
@@ -75,7 +75,7 @@ IdentifiableType = TypeVar("IdentifiableType", bound=Identifiable)
 NameableType = TypeVar("NameableType", bound=Nameable)
 
 # For validatable objects
-ValidatableType = TypeVar("ValidatableType", bound=Validatable)
+ValidatableType = TypeVar("ValidatableType", bound=ProtocolValidatable)
 
 # For configurable objects
 ConfigurableType = TypeVar("ConfigurableType", bound=Configurable)
@@ -84,41 +84,61 @@ ConfigurableType = TypeVar("ConfigurableType", bound=Configurable)
 ExecutableType = TypeVar("ExecutableType", bound=Executable)
 
 # For objects with metadata
-MetadataType = TypeVar("MetadataType", bound=MetadataProvider)
+MetadataType = TypeVar("MetadataType", bound=ProtocolMetadataProvider)
 
-# Constrained type variables for specific value types
-StringType = TypeVar("StringType", bound=str)
-NumberType = TypeVar("NumberType", int, float)
-PrimitiveType = TypeVar("PrimitiveType", str, int, bool, float)
+# Simplified type variables for specific value types
+# Replace overly generic TypeVars with more specific bounded types
+NumericType = TypeVar("NumericType", int, float)  # More specific than NumberType
+BasicValueType = TypeVar("BasicValueType", str, int, bool)  # Simplified primitive type
 
-# Result and error types with constraints
+# Result and error types with simplified constraints
 SuccessType = TypeVar("SuccessType")
-ErrorType = TypeVar("ErrorType", str, Exception, BaseException)
+# Simplified error type - use Exception as base for better type safety
+ErrorType = TypeVar("ErrorType", bound=Exception)
 
-# Collection types with constraints
+# Collection types with simplified constraints
 CollectionItemType = TypeVar("CollectionItemType", bound=BaseModel)
-DictValueType = TypeVar("DictValueType", str, int, bool, float, list[Any])
+# Simplified dict value type - use more specific constraints
+SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
+
+# Schema value types - standardized types for replacing hardcoded unions
+# These types replace patterns like str | int | float | bool throughout the codebase
+from typing import Union
+
+# ONEX-compliant type definitions (avoiding primitive soup anti-pattern)
+# Use object with runtime validation instead of primitive soup unions
+
+# Standard primitive value type - use object with runtime validation
+# Instead of primitive soup Union[str, int, float, bool]
+PrimitiveValueType = object  # Runtime validation required - see type guards below
+
+# Context values - use object with runtime validation instead of open unions
+# Instead of primitive soup Union[str, int, float, bool, list, dict]
+ContextValueType = object  # Runtime validation required - see type guards below
+
+# Complex context - use object with runtime validation
+# Encourage structured models over generic fallbacks
+ComplexContextValueType = object  # Runtime validation required - see type guards below
 
 
 # Import abstract base classes from separate files (ONEX one-model-per-file)
 from .model_base_collection import BaseCollection
 from .model_base_factory import BaseFactory
-from .model_base_processor import BaseProcessor
 
 # Type guards for runtime checking
 
 
-def is_serializable(obj: Any) -> bool:
+def is_serializable(obj: object) -> bool:
     """Check if object implements Serializable protocol."""
     return hasattr(obj, "serialize") and callable(getattr(obj, "serialize"))
 
 
-def is_identifiable(obj: Any) -> bool:
+def is_identifiable(obj: object) -> bool:
     """Check if object implements Identifiable protocol."""
     return hasattr(obj, "id")
 
 
-def is_nameable(obj: Any) -> bool:
+def is_nameable(obj: object) -> bool:
     """Check if object implements Nameable protocol."""
     return (
         hasattr(obj, "get_name")
@@ -128,26 +148,69 @@ def is_nameable(obj: Any) -> bool:
     )
 
 
-def is_validatable(obj: Any) -> bool:
-    """Check if object implements Validatable protocol."""
+def is_validatable(obj: object) -> bool:
+    """Check if object implements ProtocolValidatable protocol."""
     return hasattr(obj, "validate_instance") and callable(
         getattr(obj, "validate_instance")
     )
 
 
-def is_configurable(obj: Any) -> bool:
+def is_configurable(obj: object) -> bool:
     """Check if object implements Configurable protocol."""
     return hasattr(obj, "configure") and callable(getattr(obj, "configure"))
 
 
-def is_executable(obj: Any) -> bool:
+def is_executable(obj: object) -> bool:
     """Check if object implements Executable protocol."""
     return hasattr(obj, "execute") and callable(getattr(obj, "execute"))
 
 
-def is_metadata_provider(obj: Any) -> bool:
-    """Check if object implements MetadataProvider protocol."""
+def is_metadata_provider(obj: object) -> bool:
+    """Check if object implements ProtocolMetadataProvider protocol."""
     return hasattr(obj, "metadata")
+
+
+# Type guards for ONEX-compliant primitive value validation
+# These replace primitive soup unions with runtime validation
+
+
+def is_primitive_value(obj: object) -> bool:
+    """Check if object is a valid primitive value (str, int, float, bool)."""
+    return isinstance(obj, (str, int, float, bool))
+
+
+def is_context_value(obj: object) -> bool:
+    """Check if object is a valid context value (primitive, list, or dict)."""
+    if isinstance(obj, (str, int, float, bool)):
+        return True
+    if isinstance(obj, list):
+        return True
+    if isinstance(obj, dict):
+        return all(isinstance(key, str) for key in obj.keys())
+    return False
+
+
+def is_complex_context_value(obj: object) -> bool:
+    """Check if object is a valid complex context value."""
+    return is_context_value(obj)  # Same validation as context value
+
+
+def validate_primitive_value(obj: object) -> bool:
+    """Validate and ensure object is a primitive value."""
+    if not is_primitive_value(obj):
+        raise TypeError(
+            f"Expected primitive value (str, int, float, bool), got {type(obj).__name__}"
+        )
+    return True
+
+
+def validate_context_value(obj: object) -> bool:
+    """Validate and ensure object is a valid context value."""
+    if not is_context_value(obj):
+        raise TypeError(
+            f"Expected context value (primitive, list, or dict), got {type(obj).__name__}"
+        )
+    return True
 
 
 # Export all types and utilities
@@ -156,10 +219,10 @@ __all__ = [
     "Serializable",
     "Identifiable",
     "Nameable",
-    "Validatable",
+    "ProtocolValidatable",
     "Configurable",
     "Executable",
-    "MetadataProvider",
+    "ProtocolMetadataProvider",
     # Type variables
     "ModelType",
     "SerializableType",
@@ -169,17 +232,20 @@ __all__ = [
     "ConfigurableType",
     "ExecutableType",
     "MetadataType",
-    "StringType",
-    "NumberType",
-    "PrimitiveType",
+    # Simplified type variables
+    "NumericType",
+    "BasicValueType",
     "SuccessType",
     "ErrorType",
     "CollectionItemType",
-    "DictValueType",
+    "SimpleValueType",
+    # Type aliases
+    "PrimitiveValueType",
+    "ContextValueType",
+    "ComplexContextValueType",
     # Abstract base classes
     "BaseCollection",
     "BaseFactory",
-    "BaseProcessor",
     # Type guards
     "is_serializable",
     "is_identifiable",
@@ -188,4 +254,10 @@ __all__ = [
     "is_configurable",
     "is_executable",
     "is_metadata_provider",
+    # ONEX-compliant type validation guards
+    "is_primitive_value",
+    "is_context_value",
+    "is_complex_context_value",
+    "validate_primitive_value",
+    "validate_context_value",
 ]

@@ -15,7 +15,7 @@ import json
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from src.omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.enums.enum_data_type import EnumDataType
 
 
 class TestEnumDataType:

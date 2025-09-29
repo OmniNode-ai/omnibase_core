@@ -15,7 +15,7 @@ import json
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from src.omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 
 
 class TestEnumExecutionStatus:

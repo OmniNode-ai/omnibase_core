@@ -8,7 +8,7 @@ aspects of ModelProgress with a single generic type-safe implementation.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -82,7 +82,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         """Post-initialization to set runtime category if not provided."""
         if self.runtime_category is None:
             seconds = self.to_seconds()
@@ -364,6 +364,12 @@ class ModelTimeBased(BaseModel, Generic[T]):
             runtime_category=category,
             metadata=metadata,
         )  # type: ignore[return-value]
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

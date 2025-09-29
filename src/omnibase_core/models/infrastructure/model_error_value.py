@@ -27,13 +27,21 @@ class ModelErrorValue(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     error_type: EnumErrorValueType = Field(
         description="Type discriminator for error value"
     )
 
     # Error value storage (only one should be populated)
     string_error: str | None = None
-    exception_error: Any | None = None  # Use Any for Exception storage
+    exception_class: str | None = None  # Exception class name
+    exception_message: str | None = None  # Exception message
+    exception_traceback: str | None = None  # Exception traceback if available
 
     @model_validator(mode="after")
     def validate_single_error(self) -> "ModelErrorValue":
@@ -44,16 +52,18 @@ class ModelErrorValue(BaseModel):
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be set when error_type is 'string'",
                 )
-            if self.exception_error is not None:
+            if any(
+                [self.exception_class, self.exception_message, self.exception_traceback]
+            ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="exception_error must be None when error_type is 'string'",
+                    message="exception fields must be None when error_type is 'string'",
                 )
         elif self.error_type == EnumErrorValueType.EXCEPTION:
-            if self.exception_error is None:
+            if self.exception_class is None or self.exception_message is None:
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="exception_error must be set when error_type is 'exception'",
+                    message="exception_class and exception_message must be set when error_type is 'exception'",
                 )
             if self.string_error is not None:
                 raise OnexError(
@@ -61,10 +71,17 @@ class ModelErrorValue(BaseModel):
                     message="string_error must be None when error_type is 'exception'",
                 )
         elif self.error_type == EnumErrorValueType.NONE:
-            if self.string_error is not None or self.exception_error is not None:
+            if any(
+                [
+                    self.string_error,
+                    self.exception_class,
+                    self.exception_message,
+                    self.exception_traceback,
+                ]
+            ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Both error values must be None when error_type is 'none'",
+                    message="All error values must be None when error_type is 'none'",
                 )
 
         return self
@@ -77,21 +94,71 @@ class ModelErrorValue(BaseModel):
     @classmethod
     def from_exception(cls, error: Exception) -> "ModelErrorValue":
         """Create error value from exception."""
-        return cls(error_type=EnumErrorValueType.EXCEPTION, exception_error=error)
+        import traceback
+
+        return cls(
+            error_type=EnumErrorValueType.EXCEPTION,
+            exception_class=type(error).__name__,
+            exception_message=str(error),
+            exception_traceback=(
+                traceback.format_exc()
+                if hasattr(error, "__traceback__") and error.__traceback__
+                else None
+            ),
+        )
 
     @classmethod
     def from_none(cls) -> "ModelErrorValue":
         """Create empty error value."""
         return cls(error_type=EnumErrorValueType.NONE)
 
-    def get_error(self) -> str | Exception | None:
-        """Get the actual error value."""
+    def get_error(self) -> str | None:
+        """Get the actual error value as a string representation."""
         if self.error_type == EnumErrorValueType.STRING:
             return self.string_error
         elif self.error_type == EnumErrorValueType.EXCEPTION:
-            return self.exception_error
+            return f"{self.exception_class}: {self.exception_message}"
         else:
             return None
+
+    def get_exception_info(self) -> dict[str, str | None]:
+        """Get structured exception information."""
+        if self.error_type == EnumErrorValueType.EXCEPTION:
+            return {
+                "class": self.exception_class,
+                "message": self.exception_message,
+                "traceback": self.exception_traceback,
+            }
+        return {}
+
+    def recreate_exception(self) -> Exception | None:
+        """Attempt to recreate the original exception (best effort)."""
+        if self.error_type != EnumErrorValueType.EXCEPTION:
+            return None
+
+        if not self.exception_class or not self.exception_message:
+            return None
+
+        # Try to recreate common exception types
+        try:
+            exception_classes: dict[str, type[Exception]] = {
+                "ValueError": ValueError,
+                "TypeError": TypeError,
+                "KeyError": KeyError,
+                "IndexError": IndexError,
+                "AttributeError": AttributeError,
+                "FileNotFoundError": FileNotFoundError,
+                "RuntimeError": RuntimeError,
+            }
+
+            if self.exception_class in exception_classes:
+                return exception_classes[self.exception_class](self.exception_message)
+            else:
+                # Fall back to generic RuntimeError with original class info
+                return RuntimeError(f"{self.exception_class}: {self.exception_message}")
+        except Exception:
+            # If recreation fails, return a generic runtime error
+            return RuntimeError(f"{self.exception_class}: {self.exception_message}")
 
     # Export the model
 

@@ -8,11 +8,11 @@ Follows ONEX strong typing principles.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal, NotRequired, TypedDict, TypeVar
+from typing import Any, Literal, NotRequired, TypedDict, TypeVar, Union
 from uuid import UUID
 
 
-def _parse_datetime(value: Any) -> datetime:
+def _parse_datetime(value: object) -> datetime:
     """Parse a datetime value from various input types."""
     if isinstance(value, datetime):
         return value
@@ -349,5 +349,5 @@ def convert_error_details_to_typed_dict(
 # Import the ONEX-compliant value representation
 # Use ModelSchemaValue directly in type annotations instead of alias
 
-# ONEX-compliant input value type for legacy data conversion
+# ONEX-compliant input value type for structured data
 # All inputs come as strings or None initially and are converted to proper types

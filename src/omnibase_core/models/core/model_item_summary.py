@@ -16,8 +16,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.core.type_constraints import (
     Configurable,
     Nameable,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_item_type import EnumItemType
 from omnibase_core.utils.uuid_utilities import uuid_from_string
@@ -27,7 +27,7 @@ class ModelItemSummary(BaseModel):
     """
     Clean, strongly-typed model replacing collection item dict return types.
 
-    Eliminates: dict[str, str | int | float | bool | None | list | dict]
+    Eliminates: dict[str, primitive_soup_unions] (replaced with PrimitiveValueType)
 
     With proper structured data using specific field types.
     Implements omnibase_spi protocols:
@@ -58,7 +58,8 @@ class ModelItemSummary(BaseModel):
     created_at: datetime | None = Field(default=None, description="Creation timestamp")
     updated_at: datetime | None = Field(default=None, description="Update timestamp")
     accessed_at: datetime | None = Field(
-        default=None, description="Last accessed timestamp"
+        default=None,
+        description="Last accessed timestamp",
     )
 
     # Organization
@@ -92,6 +93,12 @@ class ModelItemSummary(BaseModel):
             or self.boolean_properties,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
@@ -111,7 +118,7 @@ class ModelItemSummary(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

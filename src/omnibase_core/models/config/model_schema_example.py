@@ -11,13 +11,19 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.core.type_constraints import PrimitiveValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Note: Using ModelSchemaValue instead of complex union types for type safety
+
+# Type variable for generic methods
+T = TypeVar("T")
 
 
 class ModelSchemaExample(BaseModel):
@@ -67,7 +73,7 @@ class ModelSchemaExample(BaseModel):
         """Check if example contains any data."""
         return not self.example_data.is_empty()
 
-    def get_value(self, key: str, default: Any) -> Any:
+    def get_value(self, key: str, default: T) -> T:
         """
         Get typed value with proper default handling.
 
@@ -78,7 +84,7 @@ class ModelSchemaExample(BaseModel):
         Returns:
             Value of the requested type or default
         """
-        schema_value_result = self.example_data.get_custom_value(key)
+        schema_value_result = self.example_data.get_custom_value_wrapped(key)
         if schema_value_result.is_err():
             return default
 
@@ -92,23 +98,26 @@ class ModelSchemaExample(BaseModel):
 
         return default
 
-    def set_value(self, key: str, value: Any) -> None:
+    def set_value(self, key: str, value: object) -> None:
         """
         Set typed value in example data.
 
         Args:
             key: The key to set
-            value: The value to store (will be wrapped in ModelSchemaValue)
+            value: The value to store (raw primitive type)
         """
-        # Convert primitive value to ModelSchemaValue
-        schema_value = ModelSchemaValue.from_value(value)
-        self.example_data.set_custom_value(key, schema_value)
+        # The set_custom_value method handles runtime type validation
+        try:
+            self.example_data.set_custom_value(key, value)
+        except OnexError:
+            # Re-raise validation errors from set_custom_value
+            raise
 
     def get_all_keys(self) -> list[str]:
         """Get all keys from example data."""
         return list(self.example_data.get_all_custom_fields().keys())
 
-    def get_raw_value(self, key: str) -> Any:
+    def get_raw_value(self, key: str) -> object:
         """
         Get raw value without type checking.
 
@@ -118,22 +127,26 @@ class ModelSchemaExample(BaseModel):
         Returns:
             Raw Python value or None if not found
         """
-        schema_value_result = self.example_data.get_custom_value(key)
+        schema_value_result = self.example_data.get_custom_value_wrapped(key)
         if schema_value_result.is_err():
             return None
         schema_value = schema_value_result.unwrap()
         return schema_value.to_value()
 
-    def set_raw_value(self, key: str, value: Any) -> None:
+    def set_raw_value(self, key: str, value: object) -> None:
         """
         Set raw value (any type) in example data.
 
         Args:
             key: The key to set
-            value: The value to store (any type, will be wrapped in ModelSchemaValue)
+            value: The value to store (raw primitive type)
         """
-        schema_value = ModelSchemaValue.from_value(value)
-        self.example_data.set_custom_value(key, schema_value)
+        # The set_custom_value method handles runtime type validation
+        try:
+            self.example_data.set_custom_value(key, value)
+        except OnexError:
+            # Re-raise validation errors from set_custom_value
+            raise
 
     def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:
         """
@@ -143,7 +156,14 @@ class ModelSchemaExample(BaseModel):
             data: Dictionary of ModelSchemaValue objects to add to example data
         """
         for key, value in data.items():
-            self.example_data.set_custom_value(key, value)
+            # Extract raw value from ModelSchemaValue and pass to set_custom_value
+            raw_value = value.to_value()
+            # The set_custom_value method handles runtime type validation
+            try:
+                self.example_data.set_custom_value(key, raw_value)
+            except OnexError:
+                # Skip values that aren't supported primitive types
+                pass
 
     def get_example_data_as_dict(self) -> dict[str, ModelSchemaValue]:
         """
@@ -157,7 +177,7 @@ class ModelSchemaExample(BaseModel):
         """
         result = {}
         for key in self.get_all_keys():
-            schema_value_result = self.example_data.get_custom_value(key)
+            schema_value_result = self.example_data.get_custom_value_wrapped(key)
             if schema_value_result.is_ok():
                 result[key] = schema_value_result.unwrap()
         return result
@@ -187,8 +207,14 @@ class ModelSchemaExample(BaseModel):
         # Create custom properties from ModelSchemaValue data
         custom_props = ModelCustomProperties()
         for key, value in data.items():
-            # Value is already a ModelSchemaValue object
-            custom_props.set_custom_value(key, value)
+            # Extract raw value from ModelSchemaValue and pass to set_custom_value
+            raw_value = value.to_value()
+            # The set_custom_value method handles runtime type validation
+            try:
+                custom_props.set_custom_value(key, raw_value)
+            except OnexError:
+                # Skip values that aren't supported primitive types
+                pass
 
         return cls(
             example_data=custom_props,
@@ -239,6 +265,12 @@ class ModelSchemaExample(BaseModel):
         self.is_validated = True
         return True
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
@@ -258,7 +290,7 @@ class ModelSchemaExample(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

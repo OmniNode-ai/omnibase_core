@@ -8,7 +8,7 @@ the codebase.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
@@ -213,7 +213,7 @@ class ModelValidationContainer(BaseModel):
         self.warnings.clear()
 
     def validate_instance(self) -> bool:
-        """Check if validation passed (no errors) (Validatable protocol)."""
+        """Check if validation passed (no errors) (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist and no errors
             return not self.has_errors()
@@ -224,6 +224,12 @@ class ModelValidationContainer(BaseModel):
         """Merge validation results from another container."""
         self.extend_errors(other.errors)
         self.extend_warnings(other.warnings)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Use .model_dump() for serialization - no to_dict() method needed
     # Pydantic provides native serialization via .model_dump()

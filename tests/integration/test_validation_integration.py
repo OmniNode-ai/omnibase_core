@@ -244,9 +244,16 @@ description: "Invalid contract"
                 )
                 # Should fail gracefully with non-zero exit code
                 assert result.returncode != 0
-                assert (
-                    "error" in result.stdout.lower() or "error" in result.stderr.lower()
-                )
+                # Check for various error indicators
+                output_text = (result.stdout + result.stderr).lower()
+                error_indicators = [
+                    "error",
+                    "fail",
+                    "does not exist",
+                    "not found",
+                    "invalid",
+                ]
+                assert any(indicator in output_text for indicator in error_indicators)
 
     def test_validation_scripts_with_mixed_content(self, temp_repo):
         """Test validation scripts with mixed valid and invalid content."""

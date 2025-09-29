@@ -6,20 +6,14 @@ Specialized factory for validation error models with severity patterns.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    Serializable,
-    Validatable,
-)
-from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.types import TypedDictFactoryKwargs
 
 from .model_generic_factory import ModelGenericFactory
-from .model_typed_dict_factory_kwargs import ModelTypedDictFactoryKwargs
 
 # Type variable for validation error models with appropriate constraints
 T = TypeVar("T", bound=BaseModel)
@@ -48,9 +42,9 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         self.register_builder("critical", self._build_critical)
         self.register_builder("info", self._build_info)
 
-    def _build_error(self, **kwargs: Any) -> T:
+    def _build_error(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a standard error with ERROR severity."""
-        severity: EnumSeverityLevel = EnumSeverityLevel.ERROR
+        severity: EnumValidationSeverity = EnumValidationSeverity.ERROR
 
         # Remove processed fields to avoid duplication
         filtered_kwargs: dict[str, Any] = {
@@ -63,9 +57,9 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_warning(self, **kwargs: Any) -> T:
+    def _build_warning(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a warning with WARNING severity."""
-        severity: EnumSeverityLevel = EnumSeverityLevel.WARNING
+        severity: EnumValidationSeverity = EnumValidationSeverity.WARNING
 
         # Remove processed fields to avoid duplication
         filtered_kwargs: dict[str, Any] = {
@@ -78,9 +72,9 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_critical(self, **kwargs: Any) -> T:
+    def _build_critical(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a critical error with CRITICAL severity."""
-        severity: EnumSeverityLevel = EnumSeverityLevel.CRITICAL
+        severity: EnumValidationSeverity = EnumValidationSeverity.CRITICAL
 
         # Remove processed fields to avoid duplication
         filtered_kwargs: dict[str, Any] = {
@@ -93,9 +87,9 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_info(self, **kwargs: Any) -> T:
+    def _build_info(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build an info message with INFO severity."""
-        severity: EnumSeverityLevel = EnumSeverityLevel.INFO
+        severity: EnumValidationSeverity = EnumValidationSeverity.INFO
 
         # Remove processed fields to avoid duplication
         filtered_kwargs: dict[str, Any] = {
@@ -132,7 +126,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         }
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

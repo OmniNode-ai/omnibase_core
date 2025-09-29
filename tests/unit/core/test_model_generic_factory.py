@@ -6,6 +6,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.core import (
     ModelCapabilityFactory,
     ModelGenericFactory,
@@ -92,7 +93,9 @@ class TestModelGenericFactory:
         """Test error when using unknown factory."""
         factory = ModelGenericFactory(TestResultModel)
 
-        with pytest.raises(ValueError, match="Unknown factory: unknown"):
+        with pytest.raises(
+            OnexError, match="Unknown factory: unknown for TestResultModel"
+        ):
             factory.create("unknown")
 
     def test_build_success(self):
@@ -112,13 +115,15 @@ class TestModelGenericFactory:
         """Test error when using unknown builder."""
         factory = ModelGenericFactory(TestResultModel)
 
-        with pytest.raises(ValueError, match="Unknown builder: unknown"):
+        with pytest.raises(
+            OnexError, match="Unknown builder: unknown for TestResultModel"
+        ):
             factory.build("unknown", success=True)
 
     def test_create_success_result_utility(self):
         """Test the generic success result utility method."""
         result = ModelGenericFactory.create_success_result(
-            TestResultModel, data="test_data", exit_code=0
+            TestResultModel, "test_data", exit_code=0
         )
 
         assert result.success is True

@@ -14,13 +14,15 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_category import EnumCategory
 
-from .model_types_function_relationships_summary import FunctionRelationshipsSummaryType
+from .model_types_function_relationships_summary import (
+    ModelFunctionRelationshipsSummaryType,
+)
 
 
 class ModelFunctionRelationships(BaseModel):
@@ -32,7 +34,7 @@ class ModelFunctionRelationships(BaseModel):
     - Categorization and tagging
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -97,7 +99,7 @@ class ModelFunctionRelationships(BaseModel):
 
     def get_relationships_summary(
         self,
-    ) -> FunctionRelationshipsSummaryType:
+    ) -> ModelFunctionRelationshipsSummaryType:
         """Get relationships summary."""
         return {
             "dependencies_count": len(self.dependencies),
@@ -108,7 +110,9 @@ class ModelFunctionRelationships(BaseModel):
             "has_related_functions": self.has_related_functions(),
             "has_tags": self.has_tags(),
             "has_categories": self.has_categories(),
-            "primary_category": self.categories[0] if self.categories else "None",
+            "primary_category": (
+                self.categories[0].value if self.categories else "None"
+            ),
         }
 
     @classmethod
@@ -135,6 +139,12 @@ class ModelFunctionRelationships(BaseModel):
             related_functions=related_functions or [],
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -155,7 +165,7 @@ class ModelFunctionRelationships(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -168,7 +178,7 @@ class ModelFunctionRelationships(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -182,7 +192,7 @@ class ModelFunctionRelationships(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

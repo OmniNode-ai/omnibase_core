@@ -7,7 +7,7 @@ Tests the generic custom properties pattern that replaces repetitive custom fiel
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.core import ModelCustomProperties
+from omnibase_core.models.core import ModelCustomProperties
 
 
 class TestModelCustomProperties:

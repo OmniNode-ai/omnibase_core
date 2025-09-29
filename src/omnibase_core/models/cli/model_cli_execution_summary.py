@@ -108,11 +108,19 @@ class ModelCliExecutionSummary(BaseModel):
         return self.command_display_name or f"command_{str(self.command_id)[:8]}"
 
     @property
-    def target_node_name(self) -> str | None:
+    def target_node_name(self) -> str:
         """Get target node name with fallback to UUID-based name."""
-        if self.target_node_id is None:
-            return None
-        return self.target_node_display_name or f"node_{str(self.target_node_id)[:8]}"
+        if self.target_node_display_name:
+            return self.target_node_display_name
+        if self.target_node_id is not None:
+            return f"node_{str(self.target_node_id)[:8]}"
+        return "unknown_node"
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 
@@ -139,7 +147,7 @@ class ModelCliExecutionSummary(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

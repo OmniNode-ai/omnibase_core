@@ -13,9 +13,9 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -30,7 +30,7 @@ class ModelNodeCore(BaseModel):
 
     Focused on fundamental node identity and basic properties.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -112,23 +112,34 @@ class ModelNodeCore(BaseModel):
         patch: int | None = None,
     ) -> None:
         """Update version components."""
-        # Since ModelSemVer is frozen, create a new instance
-        current_major = major if major is not None else self.version.major
-        current_minor = minor if minor is not None else self.version.minor
-        current_patch = patch if patch is not None else self.version.patch
+        current_major = self.version.major if major is None else major
+        current_minor = self.version.minor if minor is None else minor
+        current_patch = self.version.patch if patch is None else patch
 
-        self.version = ModelSemVer(
-            major=current_major, minor=current_minor, patch=current_patch
+        # Create a new ModelSemVer since it's frozen
+        object.__setattr__(
+            self,
+            "version",
+            ModelSemVer(major=current_major, minor=current_minor, patch=current_patch),
         )
 
     def increment_version(self, level: str = "patch") -> None:
         """Increment version level."""
         if level == "major":
-            self.version = self.version.bump_major()
+            new_version = ModelSemVer(major=self.version.major + 1, minor=0, patch=0)
         elif level == "minor":
-            self.version = self.version.bump_minor()
+            new_version = ModelSemVer(
+                major=self.version.major, minor=self.version.minor + 1, patch=0
+            )
         else:  # patch
-            self.version = self.version.bump_patch()
+            new_version = ModelSemVer(
+                major=self.version.major,
+                minor=self.version.minor,
+                patch=self.version.patch + 1,
+            )
+
+        # Create a new ModelSemVer since it's frozen
+        object.__setattr__(self, "version", new_version)
 
     def has_description(self) -> bool:
         """Check if node has a description."""
@@ -185,10 +196,16 @@ class ModelNodeCore(BaseModel):
             complexity=EnumConceptualComplexity.ADVANCED,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -201,7 +218,7 @@ class ModelNodeCore(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -215,7 +232,7 @@ class ModelNodeCore(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

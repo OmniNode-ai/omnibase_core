@@ -8,11 +8,18 @@ This script tests the critical P0 bug fix to ensure ONEX nodes can now initializ
 import tempfile
 from pathlib import Path
 
-from src.omnibase_core.core.contracts.model_contract_effect import ModelContractEffect
+from omnibase_core.core.contracts.model_contract_effect import ModelContractEffect
 
 
 def test_minimal_contract():
-    """Test minimal contract YAML loading (previously caused infinite recursion)."""
+    """
+    Validate that a minimal effect contract YAML can be parsed without causing infinite recursion.
+
+    Attempts to load a compact, valid effect contract YAML into ModelContractEffect. Useful to verify that parsing/loading does not raise a RecursionError when initializing basic ONEX nodes.
+
+    Returns:
+        True if the contract loads successfully, False otherwise.
+    """
 
     minimal_yaml = """
 name: test_effect_node

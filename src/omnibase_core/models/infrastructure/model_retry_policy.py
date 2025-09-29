@@ -183,7 +183,7 @@ class ModelRetryPolicy(BaseModel):
         self.execution.record_attempt(
             success,
             error,
-            status_code,
+            status_code if status_code is not None else 0,
             execution_time_seconds,
         )
 
@@ -216,7 +216,9 @@ class ModelRetryPolicy(BaseModel):
                 self.execution.total_execution_time_seconds
             ),
             "last_error": ModelSchemaValue.from_value(
-                str(self.execution.last_error) if self.execution.last_error else None
+                str(self.execution.error_message.to_value())
+                if self.execution.error_message.to_value()
+                else None
             ),
             "last_status_code": ModelSchemaValue.from_value(
                 self.execution.last_status_code
@@ -317,6 +319,12 @@ class ModelRetryPolicy(BaseModel):
             reset_timeout,
         )
         return cls(config=config, advanced=advanced)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

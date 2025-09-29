@@ -63,6 +63,12 @@ class ModelTestResults(BaseModel):
             self.failed_tests += 1
         self.total_duration_ms += test_result.duration_ms
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:

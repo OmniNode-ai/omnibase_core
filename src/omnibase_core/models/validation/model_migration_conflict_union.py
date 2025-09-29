@@ -7,8 +7,6 @@ with ONEX-compliant discriminated union pattern.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
@@ -29,7 +27,7 @@ class ModelMigrationConflictUnion(BaseModel):
     """
 
     conflict_type: EnumMigrationConflictType = Field(
-        description="Type discriminator for conflict union"
+        description="Type discriminator for conflict union",
     )
 
     # Common fields present in both conflict types
@@ -40,34 +38,41 @@ class ModelMigrationConflictUnion(BaseModel):
 
     # Fields specific to name conflicts
     source_signature: str | None = Field(
-        default=None, description="Source protocol signature hash (name conflicts only)"
+        default=None,
+        description="Source protocol signature hash (name conflicts only)",
     )
     spi_signature: str | None = Field(
-        default=None, description="SPI protocol signature hash (name conflicts only)"
+        default=None,
+        description="SPI protocol signature hash (name conflicts only)",
     )
 
     # Fields specific to duplicate conflicts
     signature_hash: str | None = Field(
-        default=None, description="Common signature hash (duplicate conflicts only)"
+        default=None,
+        description="Common signature hash (duplicate conflicts only)",
     )
 
     @field_validator("source_signature", "spi_signature")
     @classmethod
     def validate_name_conflict_fields(
-        cls, v: str | None, info: ValidationInfo
+        cls,
+        v: str | None,
+        info: ValidationInfo,
     ) -> str | None:
         """Ensure name conflict fields are present when conflict_type is name_conflict."""
         conflict_type = info.data.get("conflict_type")
         if conflict_type == EnumMigrationConflictType.NAME_CONFLICT and v is None:
             raise ValueError(
-                "source_signature and spi_signature required for name conflicts"
+                "source_signature and spi_signature required for name conflicts",
             )
         return v
 
     @field_validator("signature_hash")
     @classmethod
     def validate_duplicate_conflict_fields(
-        cls, v: str | None, info: ValidationInfo
+        cls,
+        v: str | None,
+        info: ValidationInfo,
     ) -> str | None:
         """Ensure duplicate conflict fields are present when conflict_type is exact_duplicate."""
         conflict_type = info.data.get("conflict_type")
@@ -77,7 +82,8 @@ class ModelMigrationConflictUnion(BaseModel):
 
     @classmethod
     def from_name_conflict(
-        cls, conflict_dict: TypedDictMigrationNameConflictDict
+        cls,
+        conflict_dict: TypedDictMigrationNameConflictDict,
     ) -> ModelMigrationConflictUnion:
         """Create union instance from name conflict TypedDict."""
         return cls(
@@ -92,7 +98,8 @@ class ModelMigrationConflictUnion(BaseModel):
 
     @classmethod
     def from_duplicate_conflict(
-        cls, conflict_dict: TypedDictMigrationDuplicateConflictDict
+        cls,
+        conflict_dict: TypedDictMigrationDuplicateConflictDict,
     ) -> ModelMigrationConflictUnion:
         """Create union instance from duplicate conflict TypedDict."""
         return cls(
@@ -126,12 +133,12 @@ class ModelMigrationConflictUnion(BaseModel):
         """Convert to duplicate conflict TypedDict format."""
         if self.conflict_type != EnumMigrationConflictType.EXACT_DUPLICATE:
             raise ValueError(
-                "Cannot convert to duplicate conflict: wrong conflict type"
+                "Cannot convert to duplicate conflict: wrong conflict type",
             )
 
         if self.signature_hash is None:
             raise ValueError(
-                "Missing required fields for duplicate conflict conversion"
+                "Missing required fields for duplicate conflict conversion",
             )
 
         return TypedDictMigrationDuplicateConflictDict(
@@ -150,6 +157,12 @@ class ModelMigrationConflictUnion(BaseModel):
     def is_duplicate_conflict(self) -> bool:
         """Check if this is an exact duplicate conflict."""
         return self.conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for ONEX compliance

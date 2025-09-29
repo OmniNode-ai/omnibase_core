@@ -14,81 +14,86 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.enums.enum_action_category import EnumActionCategory
-from src.omnibase_core.models.cli.model_cli_action import ModelCliAction
+from omnibase_core.enums.enum_action_category import EnumActionCategory
+from omnibase_core.models.cli.model_cli_action import ModelCliAction
 
 
 class TestModelCliAction:
     """Test cases for ModelCliAction."""
 
     def test_model_instantiation_valid_data(self):
-        """Test that model can be instantiated with valid data."""
+        """Test that model can be instantiated with valid data using factory method."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="test_node",
             description="Deploy the test node",
         )
 
-        assert action.action_name == "deploy"
+        assert action.action_display_name == "deploy"
         assert action.node_id == node_id
-        assert action.node_name == "test_node"
+        assert action.node_display_name == "test_node"
         assert action.description == "Deploy the test node"
         assert action.deprecated is False  # Default value
         assert action.category is None  # Default value
         assert isinstance(action.action_id, UUID)  # Auto-generated
+        assert isinstance(action.action_name_id, UUID)  # Generated from action_name
 
     def test_model_instantiation_with_all_fields(self):
-        """Test model instantiation with all fields provided."""
+        """Test model instantiation with all fields provided using factory method."""
         node_id = uuid4()
         action_id = uuid4()
-        action = ModelCliAction(
-            action_id=action_id,
+        action = ModelCliAction.from_contract_action(
             action_name="configure",
             node_id=node_id,
             node_name="config_node",
             description="Configure the node settings",
+            action_id=action_id,
             deprecated=True,
             category=EnumActionCategory.CONFIGURATION,
         )
 
         assert action.action_id == action_id
-        assert action.action_name == "configure"
+        assert action.action_display_name == "configure"
         assert action.node_id == node_id
-        assert action.node_name == "config_node"
+        assert action.node_display_name == "config_node"
         assert action.description == "Configure the node settings"
         assert action.deprecated is True
         assert action.category == EnumActionCategory.CONFIGURATION
+        assert isinstance(action.action_name_id, UUID)  # Generated from action_name
 
     def test_required_fields_validation(self):
-        """Test that required fields are properly validated."""
+        """Test that required fields are properly validated for direct constructor."""
         node_id = uuid4()
+        action_name_id = uuid4()
 
-        # Missing action_name
+        # Missing action_name_id (required field)
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                node_id=node_id, node_name="test_node", description="Test description"
+                node_id=node_id,
+                node_display_name="test_node",
+                description="Test description",
             )
-        assert "action_name" in str(exc_info.value)
+        assert "action_name_id" in str(exc_info.value)
 
         # Missing node_id
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                action_name="test_action",
-                node_name="test_node",
+                action_name_id=action_name_id,
+                node_display_name="test_node",
                 description="Test description",
             )
         assert "node_id" in str(exc_info.value)
 
-        # Missing node_name
+        # Missing description
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                action_name="test_action",
+                action_name_id=action_name_id,
                 node_id=node_id,
-                description="Test description",
+                node_display_name="test_node",
             )
-        assert "node_name" in str(exc_info.value)
+        assert "description" in str(exc_info.value)
 
         # Missing description
         with pytest.raises(ValidationError) as exc_info:
@@ -111,13 +116,13 @@ class TestModelCliAction:
 
         node_id = uuid4()
         for name in valid_names:
-            action = ModelCliAction(
+            action = ModelCliAction.from_contract_action(
                 action_name=name,
                 node_id=node_id,
                 node_name="test_node",
                 description="Test description",
             )
-            assert action.action_name == name
+            assert action.action_display_name == name
 
         # Invalid patterns
         invalid_names = [
@@ -133,7 +138,7 @@ class TestModelCliAction:
         node_id = uuid4()
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
-                ModelCliAction(
+                ModelCliAction.from_contract_action(
                     action_name=name,
                     node_id=node_id,
                     node_name="test_node",
@@ -149,7 +154,7 @@ class TestModelCliAction:
 
         # Test non-string action_name
         with pytest.raises(ValidationError):
-            ModelCliAction(
+            ModelCliAction.from_contract_action(
                 action_name=123,
                 node_id=node_id,
                 node_name="test_node",
@@ -158,7 +163,7 @@ class TestModelCliAction:
 
         # Test invalid node_id type
         with pytest.raises(ValidationError):
-            ModelCliAction(
+            ModelCliAction.from_contract_action(
                 action_name="test_action",
                 node_id="not-a-uuid",
                 node_name="test_node",
@@ -167,7 +172,7 @@ class TestModelCliAction:
 
         # Test non-string node_name
         with pytest.raises(ValidationError):
-            ModelCliAction(
+            ModelCliAction.from_contract_action(
                 action_name="test_action",
                 node_id=node_id,
                 node_name=123,
@@ -176,7 +181,7 @@ class TestModelCliAction:
 
         # Test non-string description
         with pytest.raises(ValidationError):
-            ModelCliAction(
+            ModelCliAction.from_contract_action(
                 action_name="test_action",
                 node_id=node_id,
                 node_name="test_node",
@@ -201,9 +206,9 @@ class TestModelCliAction:
             action_name="deploy", node_id=node_id, node_name="test_node"
         )
 
-        assert action.action_name == "deploy"
+        assert action.action_display_name == "deploy"
         assert action.node_id == node_id
-        assert action.node_name == "test_node"
+        assert action.node_display_name == "test_node"
         assert action.description == "deploy action for test_node"  # Auto-generated
         assert action.deprecated is False
         assert action.category is None
@@ -218,9 +223,9 @@ class TestModelCliAction:
             description="Custom configuration action",
         )
 
-        assert action.action_name == "configure"
+        assert action.action_display_name == "configure"
         assert action.node_id == node_id2
-        assert action.node_name == "config_node"
+        assert action.node_display_name == "config_node"
         assert action.description == "Custom configuration action"
 
         # Test with additional kwargs
@@ -233,9 +238,9 @@ class TestModelCliAction:
             category=EnumActionCategory.SYSTEM,
         )
 
-        assert action.action_name == "migrate"
+        assert action.action_display_name == "migrate"
         assert action.node_id == node_id3
-        assert action.node_name == "migration_node"
+        assert action.node_display_name == "migration_node"
         assert action.description == "migrate action for migration_node"
         assert action.deprecated is True
         assert action.category == EnumActionCategory.SYSTEM
@@ -243,7 +248,7 @@ class TestModelCliAction:
     def test_get_qualified_name_method(self):
         """Test the get_qualified_name method."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
@@ -257,12 +262,12 @@ class TestModelCliAction:
         """Test the get_globally_unique_id method."""
         node_id = uuid4()
         action_id = uuid4()
-        action = ModelCliAction(
-            action_id=action_id,
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
             description="Deploy application",
+            action_id=action_id,
         )
 
         unique_id = action.get_globally_unique_id()
@@ -271,7 +276,7 @@ class TestModelCliAction:
     def test_matches_method(self):
         """Test the matches method."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
@@ -291,7 +296,7 @@ class TestModelCliAction:
         """Test the matches_node_id method."""
         node_id = uuid4()
         other_node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
@@ -309,12 +314,12 @@ class TestModelCliAction:
         node_id = uuid4()
         action_id = uuid4()
         other_action_id = uuid4()
-        action = ModelCliAction(
-            action_id=action_id,
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
             description="Deploy application",
+            action_id=action_id,
         )
 
         # Test positive match
@@ -327,12 +332,12 @@ class TestModelCliAction:
         """Test model serialization to dict."""
         node_id = uuid4()
         action_id = uuid4()
-        action = ModelCliAction(
-            action_id=action_id,
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node",
             description="Test description",
+            action_id=action_id,
             deprecated=True,
             category=EnumActionCategory.VALIDATION,
         )
@@ -368,9 +373,9 @@ class TestModelCliAction:
         action = ModelCliAction.model_validate(data)
 
         assert action.action_id == action_id
-        assert action.action_name == "restore"
+        assert action.action_display_name == "restore"
         assert action.node_id == node_id
-        assert action.node_name == "backup_node"
+        assert action.node_display_name == "backup_node"
         assert action.description == "Restore from backup"
         assert action.deprecated is False
         assert action.category == EnumActionCategory.SYSTEM
@@ -378,7 +383,7 @@ class TestModelCliAction:
     def test_model_json_serialization(self):
         """Test JSON serialization and deserialization."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="backup",
             node_id=node_id,
             node_name="data_node",
@@ -393,9 +398,9 @@ class TestModelCliAction:
         action_from_json = ModelCliAction.model_validate_json(json_str)
 
         assert action_from_json.action_id == action.action_id
-        assert action_from_json.action_name == action.action_name
+        assert action_from_json.action_display_name == action.action_display_name
         assert action_from_json.node_id == action.node_id
-        assert action_from_json.node_name == action.node_name
+        assert action_from_json.node_display_name == action.node_display_name
         assert action_from_json.description == action.description
         assert action_from_json.deprecated == action.deprecated
         assert action_from_json.category == action.category
@@ -405,23 +410,23 @@ class TestModelCliAction:
         node_id = uuid4()
         action_id = uuid4()
 
-        action1 = ModelCliAction(
-            action_id=action_id,
+        action1 = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
             description="Deploy application",
+            action_id=action_id,
         )
 
-        action2 = ModelCliAction(
-            action_id=action_id,
+        action2 = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
             description="Deploy application",
+            action_id=action_id,
         )
 
-        action3 = ModelCliAction(
+        action3 = ModelCliAction.from_contract_action(
             action_name="configure",
             node_id=node_id,
             node_name="app_node",
@@ -434,7 +439,7 @@ class TestModelCliAction:
     def test_model_repr(self):
         """Test model string representation."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
@@ -449,7 +454,7 @@ class TestModelCliAction:
     def test_optional_fields_defaults(self):
         """Test that optional fields have correct defaults."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node",
@@ -465,7 +470,7 @@ class TestModelCliAction:
         node_id = uuid4()
 
         # Test with None (default)
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node",
@@ -474,7 +479,7 @@ class TestModelCliAction:
         assert action.category is None
 
         # Test with enum value
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node",
@@ -485,7 +490,7 @@ class TestModelCliAction:
 
         # Test with invalid string should fail
         with pytest.raises(ValidationError):
-            ModelCliAction(
+            ModelCliAction.from_contract_action(
                 action_name="test_action",
                 node_id=node_id,
                 node_name="test_node",
@@ -503,7 +508,7 @@ class TestModelCliActionEdgeCases:
 
         # Empty action_name should fail pattern validation
         with pytest.raises(ValidationError):
-            ModelCliAction(
+            ModelCliAction.from_contract_action(
                 action_name="",
                 node_id=node_id,
                 node_name="test_node",
@@ -511,16 +516,16 @@ class TestModelCliActionEdgeCases:
             )
 
         # Empty node_name is currently allowed by the model
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="",
             description="Test description",
         )
-        assert action.node_name == ""
+        assert action.node_display_name == ""
 
         # Empty description is currently allowed by the model
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node",
@@ -532,27 +537,27 @@ class TestModelCliActionEdgeCases:
         """Test handling of whitespace in fields."""
         # Test that leading/trailing whitespace is preserved
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name=" test_node ",
             description=" Test description ",
         )
 
-        assert action.node_name == " test_node "
+        assert action.node_display_name == " test_node "
         assert action.description == " Test description "
 
     def test_unicode_characters(self):
         """Test handling of unicode characters."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node_ñ",
             description="Test description with émojis 🚀",
         )
 
-        assert action.node_name == "test_node_ñ"
+        assert action.node_display_name == "test_node_ñ"
         assert action.description == "Test description with émojis 🚀"
 
     def test_very_long_strings(self):
@@ -560,33 +565,33 @@ class TestModelCliActionEdgeCases:
         long_string = "a" * 1000
         node_id = uuid4()
 
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name=long_string,
             description=long_string,
         )
 
-        assert len(action.node_name) == 1000
+        assert len(action.node_display_name) == 1000
         assert len(action.description) == 1000
 
     def test_special_characters_in_allowed_fields(self):
         """Test special characters in fields that allow them."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="node-with-special@chars!",
             description="Description with all sorts of characters: @#$%^&*()[]{}|\\:;\"'<>?,./",
         )
 
-        assert "special@chars!" in action.node_name
+        assert "special@chars!" in action.node_display_name
         assert "@#$%^&*()" in action.description
 
     def test_none_values_for_optional_fields(self):
         """Test explicit None values for optional fields."""
         node_id = uuid4()
-        action = ModelCliAction(
+        action = ModelCliAction.from_contract_action(
             action_name="test_action",
             node_id=node_id,
             node_name="test_node",

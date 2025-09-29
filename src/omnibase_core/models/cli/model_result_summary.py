@@ -36,6 +36,12 @@ class ModelResultSummary(BaseModel):
     warning_count: int = Field(description="Number of warnings")
     critical_error_count: int = Field(description="Number of critical errors")
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
@@ -61,7 +67,7 @@ class ModelResultSummary(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

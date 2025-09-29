@@ -7,14 +7,18 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Union
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
 from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+# ONEX validation values - use discriminated union pattern instead of broad unions
+# ValidationValueType replaced with EnumValidationValueType + structured fields
+# InputValueType replaced with ModelSchemaValue.from_value() conversion
 
 
 class ModelValidationValue(BaseModel):
@@ -31,11 +35,15 @@ class ModelValidationValue(BaseModel):
     value_type: EnumValidationValueType = Field(
         description="Type of the validation value",
     )
-    raw_value: Any = Field(description="Raw value data")
+    raw_value: object = Field(description="Raw value data")
 
     @field_validator("raw_value")
     @classmethod
-    def validate_raw_value(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_raw_value(
+        cls,
+        v: object,
+        info: ValidationInfo,
+    ) -> object:
         """Validate raw value matches declared type."""
         if not hasattr(info, "data") or "value_type" not in info.data:
             return v
@@ -86,8 +94,8 @@ class ModelValidationValue(BaseModel):
         return cls(value_type=EnumValidationValueType.NULL, raw_value=None)
 
     @classmethod
-    def from_any(cls, value: Any) -> ModelValidationValue:
-        """Create validation value from any Python value with automatic type detection."""
+    def from_any(cls, value: object) -> ModelValidationValue:
+        """Create validation value from any Python value with automatic type detection using ModelSchemaValue pattern."""
         if value is None:
             return cls.from_null()
         if isinstance(value, str):
@@ -99,7 +107,7 @@ class ModelValidationValue(BaseModel):
         # Convert unknown types to string representation
         return cls.from_string(str(value))
 
-    def to_python_value(self) -> Any:
+    def to_python_value(self) -> object:
         """Convert back to Python native value."""
         return self.raw_value
 
@@ -109,10 +117,16 @@ class ModelValidationValue(BaseModel):
             return "null"
         return str(self.raw_value)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

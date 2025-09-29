@@ -113,7 +113,11 @@ class ModelConnectionInfo(BaseModel):
         """Get SSL flag from security."""
         return self.security.use_ssl
 
-    model_config = ConfigDict()
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     def get_connection_string(self) -> str:
         """Generate connection string."""
@@ -251,7 +255,7 @@ class ModelConnectionInfo(BaseModel):
             return False
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

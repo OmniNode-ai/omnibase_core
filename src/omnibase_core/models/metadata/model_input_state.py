@@ -24,7 +24,7 @@ class InputStateFieldsType(TypedDict, total=False):
 class InputStateSourceType(TypedDict, total=False):
     """Type-safe input state source structure."""
 
-    version: Any  # Dict with major/minor/patch or string - validated at runtime
+    version: object | None  # Use object with runtime type checking instead of Any
     name: str
     description: str
     tags: list[str]
@@ -36,12 +36,13 @@ class InputStateSourceType(TypedDict, total=False):
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 
 from .model_semver import ModelSemVer
+from .model_version_union import ModelVersionUnion
 
 
 class ModelInputState(BaseModel):
@@ -52,15 +53,15 @@ class ModelInputState(BaseModel):
     structured input state that handles version parsing requirements.
 
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
 
-    # Version field (required for parsing) - use Any for internal storage
-    version: Any = Field(
+    # Version field (required for parsing) - structured discriminated union
+    version: ModelVersionUnion | None = Field(
         None,
-        description="Version information as ModelSemVer or dict with major/minor/patch",
+        description="Version information as discriminated union or None",
     )
 
     # Additional fields that might be present in input state
@@ -69,26 +70,34 @@ class ModelInputState(BaseModel):
         description="Additional fields in the input state",
     )
 
-    def get_version_data(self) -> Any:
-        """Get the version data for parsing."""
-        return self.version
+    def get_version_data(self) -> object:
+        """Get the version data for parsing. Use isinstance() to check specific type."""
+        if self.version is None:
+            return None
+        return self.version.get_version()
 
     def has_version(self) -> bool:
         """Check if input state has version information."""
-        return self.version is not None
+        return self.version is not None and self.version.has_version()
 
-    def get_field(self, key: str) -> Any:
+    def get_field(self, key: str) -> object | None:
         """Get a field from the input state."""
         if key == "version":
-            return self.version
+            return self.get_version_data()
         return self.additional_fields.get(key)
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Export the model
 
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -101,7 +110,7 @@ class ModelInputState(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -115,7 +124,7 @@ class ModelInputState(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

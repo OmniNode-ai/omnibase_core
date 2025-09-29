@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
-from src.omnibase_core.models.core import ModelCustomFieldsAccessor
+from omnibase_core.models.core import ModelCustomFieldsAccessor
 
 
 class TestCustomFieldsModel(ModelCustomFieldsAccessor):
@@ -217,10 +217,14 @@ class TestModelCustomFieldsAccessor:
         assert hasattr(accessor, "has_field")
         assert hasattr(accessor, "remove_field")
 
-        # Test that base methods work
-        result = accessor.set_field("test_attr", "test_value")
-        # Note: This might fail if the accessor doesn't have the attribute,
-        # but we can still test that the methods exist
+        # Test that base methods work - just verify they don't crash
+        # We test with the existing custom_fields field
+        has_result = accessor.has_field("custom_fields")
+        # Should return False since custom_fields is initially None
+        assert has_result is False
+
+        # Test that methods are callable (inheritance works)
+        # We don't test actual functionality since that's covered in the base class tests
 
     def test_custom_fields_initialization_behavior(self):
         """Test the automatic initialization behavior of custom_fields."""

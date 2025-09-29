@@ -66,7 +66,12 @@
       "Bash(/dev/null)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/ --no-error-summary)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/cli/model_output_format_options.py --no-error-summary)",
-      "mcp__serena__think_about_task_adherence"
+      "mcp__serena__think_about_task_adherence",
+      "mcp__serena__check_onboarding_performed",
+      "Bash(PYTHONPATH=src poetry run python -c \"\ntry:\n    from omnibase_core.models.contracts import (\n        ModelContractBase,\n        ModelContractCompute, \n        ModelContractEffect,\n        ModelContractOrchestrator,\n        ModelContractReducer,\n        ModelDependency,\n        ModelWorkflowDependency,\n        ModelCompensationPlan,\n        ModelFilterConditions,\n        ModelTriggerMappings,\n        ModelWorkflowConditions,\n        ModelWorkflowStep\n    )\n    print(''✅ All contract model imports successful!'')\n    print(f''✅ Found {len([ModelContractBase, ModelContractCompute, ModelContractEffect, ModelContractOrchestrator, ModelContractReducer])} contract models'')\n    print(f''✅ Found {len([ModelDependency, ModelWorkflowDependency])} dependency models'') \n    print(f''✅ Found {len([ModelCompensationPlan, ModelFilterConditions, ModelTriggerMappings, ModelWorkflowConditions, ModelWorkflowStep])} orchestrator support models'')\nexcept ImportError as e:\n    print(f''❌ Import error: {e}'')\n    exit(1)\n\")",
+      "Bash(tee:*)",
+      "mcp__zen__debug",
+      "Bash(git rev-parse:*)"
     ],
     "deny": [],
     "ask": []

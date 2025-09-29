@@ -60,7 +60,7 @@ class ModelYamlOption(BaseModel):
             string_value=value,
         )
 
-    def to_value(self) -> Any:
+    def to_value(self) -> object:
         """Convert back to Python value."""
         if self.option_type == EnumYamlOptionType.BOOLEAN:
             return self.boolean_value
@@ -79,6 +79,12 @@ class ModelYamlOption(BaseModel):
             ),
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
@@ -88,7 +94,7 @@ class ModelYamlOption(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

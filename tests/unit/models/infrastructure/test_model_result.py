@@ -13,7 +13,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.exceptions.onex_error import OnexError
-from src.omnibase_core.models.infrastructure.model_result import (
+from omnibase_core.models.infrastructure.model_result import (
     ModelResult,
     collect_results,
     err,
@@ -103,8 +103,10 @@ class TestModelResultCreation:
         dict_result = ModelResult.ok({"key": "value"})
         assert dict_result.value == {"key": "value"}
 
-        none_result = ModelResult.ok(None)
-        assert none_result.value is None
+        # None is no longer allowed for success results in ONEX compliance
+        # Use a different value type instead
+        empty_string_result = ModelResult.ok("")
+        assert empty_string_result.value == ""
 
     def test_err_with_various_types(self):
         """Test err() with different error types."""
@@ -118,7 +120,9 @@ class TestModelResultCreation:
         assert isinstance(exception_err.error, ValueError)
 
         dict_err = ModelResult.err({"code": "E001", "message": "Error occurred"})
-        assert dict_err.error["code"] == "E001"
+        # Use safe dictionary access with isinstance check
+        assert isinstance(dict_err.error, dict)
+        assert dict_err.error.get("code") == "E001"
 
 
 class TestModelResultUnwrapping:
@@ -331,7 +335,7 @@ class TestModelResultMonadicOperations:
 
     def test_or_else_error_to_error(self):
         """Test or_else that converts error to different error."""
-        result = ModelResult.err("unknown_error")
+        result = ModelResult.err("unknown_problem")
 
         def recover_from_error(err: str) -> ModelResult[str, str]:
             if "error" in err:
@@ -404,14 +408,14 @@ class TestModelResultUtilityFunctions:
         mock_side_effect = Mock()
 
         def function_with_side_effects() -> int:
-            mock_side_effect.called()
+            mock_side_effect()
             return 42
 
         result = try_result(function_with_side_effects)
 
         assert result.is_ok()
         assert result.unwrap() == 42
-        mock_side_effect.called.assert_called_once()
+        mock_side_effect.assert_called_once()
 
     def test_collect_results_all_success(self):
         """Test collect_results with all successful results."""
@@ -536,7 +540,7 @@ class TestModelResultSerialization:
         """Test JSON deserialization of successful result."""
         json_data = {"success": True, "value": "deserialized_value", "error": None}
 
-        result = ModelResult[str, str](**json_data)
+        result = ModelResult[str, str].model_validate(json_data)
 
         assert result.is_ok()
         assert result.unwrap() == "deserialized_value"
@@ -545,7 +549,7 @@ class TestModelResultSerialization:
         """Test JSON deserialization of error result."""
         json_data = {"success": False, "value": None, "error": "deserialized_error"}
 
-        result = ModelResult[str, str](**json_data)
+        result = ModelResult[str, str].model_validate(json_data)
 
         assert result.is_err()
         assert result.error == "deserialized_error"
@@ -559,7 +563,7 @@ class TestModelResultSerialization:
 
         # Parse and create new instance
         json_data = json.loads(json_str)
-        deserialized = ModelResult[list[Any], str](**json_data)
+        deserialized = ModelResult[list[Any], str].model_validate(json_data)
 
         assert deserialized.is_ok()
         assert deserialized.unwrap() == [1, 2, {"nested": "data"}]

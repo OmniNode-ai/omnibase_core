@@ -83,7 +83,7 @@ class ModelProgressCore(BaseModel):
                 raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         """Post-initialization to update calculated fields."""
         self._update_percentage_from_steps()
 
@@ -200,6 +200,12 @@ class ModelProgressCore(BaseModel):
         # Explicit typing to ensure MyPy recognizes the return type
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
 
 # Export for use

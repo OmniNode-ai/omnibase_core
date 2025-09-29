@@ -13,6 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelExecutionSummary(BaseModel):
@@ -25,10 +26,19 @@ class ModelExecutionSummary(BaseModel):
 
     execution_id: UUID = Field(description="Execution identifier")
     success: bool = Field(description="Whether execution was successful")
-    duration_ms: int | None = Field(description="Duration in milliseconds")
+    duration_ms: ModelSchemaValue = Field(
+        default_factory=lambda: ModelSchemaValue.from_value(0),
+        description="Duration in milliseconds",
+    )
     warning_count: int = Field(description="Number of warnings")
     has_metadata: bool = Field(description="Whether metadata exists")
     completed: bool = Field(description="Whether execution is completed")
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

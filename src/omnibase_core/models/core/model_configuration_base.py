@@ -10,13 +10,20 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.core.type_constraints import (
     Configurable,
     Nameable,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
@@ -43,7 +50,33 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     - Nameable: Name management interface
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+        # Removed arbitrary_types_allowed - handle arbitrary types explicitly with serializers
+    }
+
+    @field_serializer("config_data")
+    def serialize_config_data(self, config_data: Any) -> Any:
+        """Convert arbitrary types (including Exception) to serializable form."""
+        if isinstance(config_data, Exception):
+            return str(config_data)
+        elif hasattr(config_data, "__dict__"):
+            # Try to serialize objects with __dict__
+            try:
+                return config_data.__dict__
+            except:
+                return str(config_data)
+        return config_data
+
+    @field_validator("config_data", mode="before")
+    @classmethod
+    def validate_config_data(cls, v: Any) -> Any:
+        """Pre-process Exception types in config_data before Pydantic validation."""
+        if isinstance(v, Exception):
+            return str(v)
+        return v
 
     # Core metadata
     name: str | None = Field(default=None, description="Configuration name")
@@ -62,7 +95,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Generic configuration data
-    config_data: T | None = Field(default=None, description="Typed configuration data")
+    config_data: Any = Field(default=None, description="Typed configuration data")
 
     def update_timestamp(self) -> None:
         """Update the modification timestamp."""
@@ -81,7 +114,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             if default is not None:
                 return ModelResult.ok(default)
             return ModelResult.err(
-                f"Config value '{key}' has unsupported type: {type(value)}"
+                f"Config value '{key}' has unsupported type: {type(value)}",
             )
         if default is not None:
             return ModelResult.ok(default)
@@ -92,7 +125,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         return self.enabled
 
     def validate_instance(self) -> bool:
-        """Check if configuration is valid (enabled and has required data) (Validatable protocol)."""
+        """Check if configuration is valid (enabled and has required data) (ProtocolValidatable protocol)."""
         try:
             # Basic validation - configuration enabled and has data
             base_valid = self.enabled and self.config_data is not None

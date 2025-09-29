@@ -15,6 +15,8 @@ from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
+# Remove Any import - using object for YAML-serializable data types
+
 
 class ModelYamlValue(BaseModel):
     """Discriminated union for YAML-serializable data structures.
@@ -64,7 +66,7 @@ class ModelYamlValue(BaseModel):
             list_value=list_value,
         )
 
-    def to_serializable(self) -> Any:
+    def to_serializable(self) -> object:
         """Convert back to serializable data structure."""
         if self.value_type == EnumYamlValueType.SCHEMA_VALUE:
             return self.schema_value
@@ -86,6 +88,12 @@ class ModelYamlValue(BaseModel):
             ),
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
@@ -95,7 +103,7 @@ class ModelYamlValue(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

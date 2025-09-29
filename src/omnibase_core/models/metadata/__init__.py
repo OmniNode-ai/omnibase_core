@@ -4,15 +4,24 @@ Metadata Management Models
 Models for metadata collection, analytics, and field information.
 """
 
-# FIXME: ProtocolSupportedMetadataType not available in omnibase_spi
-# from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
-# Temporarily using Protocol metadata as replacement
-# from omnibase_spi.protocols.types import (
-#     ProtocolMetadata as ProtocolSupportedMetadataType,
-# )
+from typing import TYPE_CHECKING
 
-# Temporary placeholder for validation
-ProtocolSupportedMetadataType = type("ProtocolSupportedMetadataType", (), {})
+if TYPE_CHECKING:
+    # Use proper protocol type during type checking when available
+    try:
+        from omnibase_spi.protocols.types.protocol_core_types import (
+            ProtocolSupportedMetadataType,
+        )
+    except ImportError:
+        # Structured fallback type for development when SPI unavailable
+        from omnibase_core.core.type_constraints import BasicValueType
+
+        ProtocolSupportedMetadataType = BasicValueType
+else:
+    # Runtime fallback using structured type constraints
+    from omnibase_core.core.type_constraints import BasicValueType
+
+    ProtocolSupportedMetadataType = BasicValueType
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 

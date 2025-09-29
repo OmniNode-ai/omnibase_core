@@ -13,9 +13,10 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    PrimitiveValueType,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
@@ -36,13 +37,13 @@ class ModelFunctionNodeData(BaseModel):
     """
     Clean, strongly-typed model replacing the horrible FunctionNodeData union type.
 
-    Eliminates: dict[str, str | int | bool | float | list[str] | dict[str, int] |
-                     dict[str, str] | dict[str, str | int | bool | float] | None]
+    Eliminates: Primitive soup union patterns with structured types using
+                PrimitiveValueType and component-based architecture
 
     With proper structured data using specific field types.
     Now uses structured types to reduce string field reliance.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -105,22 +106,34 @@ class ModelFunctionNodeData(BaseModel):
         description="Nested configuration objects",
     )
 
-    def add_string_property(self, name: str, value: str, **kwargs: Any) -> None:
+    def add_string_property(
+        self, name: str, value: str, unit: str = "", description: str = ""
+    ) -> None:
         """Add a string property."""
         self.string_properties.append(
-            ModelTypedMetrics.string_metric(name=name, value=value, **kwargs),
+            ModelTypedMetrics.string_metric(
+                name=name, value=value, unit=unit, description=description
+            ),
         )
 
-    def add_numeric_property(self, name: str, value: float, **kwargs: Any) -> None:
+    def add_numeric_property(
+        self, name: str, value: float, unit: str = "", description: str = ""
+    ) -> None:
         """Add a numeric property."""
         # Use float_metric for numeric values (int converted to float automatically)
-        metric = ModelTypedMetrics.float_metric(name=name, value=value, **kwargs)
+        metric = ModelTypedMetrics.float_metric(
+            name=name, value=value, unit=unit, description=description
+        )
         self.numeric_properties.append(metric)
 
-    def add_boolean_property(self, name: str, value: bool, **kwargs: Any) -> None:
+    def add_boolean_property(
+        self, name: str, value: bool, unit: str = "", description: str = ""
+    ) -> None:
         """Add a boolean property."""
         self.boolean_properties.append(
-            ModelTypedMetrics.boolean_metric(name=name, value=value, **kwargs),
+            ModelTypedMetrics.boolean_metric(
+                name=name, value=value, unit=unit, description=description
+            ),
         )
 
     def add_configuration(
@@ -204,12 +217,18 @@ class ModelFunctionNodeData(BaseModel):
         """Check if tag is present."""
         return self.tags.has_tag(tag)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Export the model
 
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -222,7 +241,7 @@ class ModelFunctionNodeData(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -236,7 +255,7 @@ class ModelFunctionNodeData(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

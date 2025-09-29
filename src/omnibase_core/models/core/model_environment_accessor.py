@@ -43,30 +43,29 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
             # Type-specific coercion logic based on expected type
             if expected_type == str:
                 return cast(T, str(raw_value))
-            elif expected_type == int:
+            if expected_type == int:
                 if isinstance(raw_value, (int, float)) or (
                     isinstance(raw_value, str) and raw_value.isdigit()
                 ):
                     return cast(T, int(raw_value))
             elif expected_type == float:
-                if isinstance(raw_value, (int, float)):
-                    return cast(T, float(raw_value))
-                elif isinstance(raw_value, str):
+                if isinstance(raw_value, (int, float)) or isinstance(raw_value, str):
                     return cast(T, float(raw_value))
             elif expected_type == bool:
                 if isinstance(raw_value, bool):
                     return cast(T, raw_value)
-                elif isinstance(raw_value, str):
+                if isinstance(raw_value, str):
                     return cast(
-                        T, raw_value.lower() in ["true", "yes", "1", "on", "enabled"]
+                        T,
+                        raw_value.lower() in ["true", "yes", "1", "on", "enabled"],
                     )
-                elif isinstance(raw_value, (int, float)):
+                if isinstance(raw_value, (int, float)):
                     return cast(T, bool(raw_value))
             elif expected_type == list or get_origin(expected_type) is list:
                 # Handle list types
                 if isinstance(raw_value, list):
                     return cast(T, [str(item) for item in raw_value])
-                elif isinstance(raw_value, str):
+                if isinstance(raw_value, str):
                     # Support comma-separated values
                     return cast(
                         T,
@@ -79,48 +78,24 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
 
         return default
 
-    # Protocol method implementations
+    # Convenience methods for common type coercions
+    def get_string(self, path: str, default: str = "") -> str:
+        """Get field value as string with default."""
+        return self.get_typed_value(path, str, default)
 
-    def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+    def get_int(self, path: str, default: int = 0) -> int:
+        """Get field value as integer with default."""
+        return self.get_typed_value(path, int, default)
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+    def get_bool(self, path: str, default: bool = False) -> bool:
+        """Get field value as boolean with default."""
+        return self.get_typed_value(path, bool, default)
 
-    def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
-
-    def get_name(self) -> str:
-        """Get name (Nameable protocol)."""
-        # Try common name field patterns
-        for field in ["name", "display_name", "title", "node_name"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    return str(value)
-        return f"Unnamed {self.__class__.__name__}"
-
-    def set_name(self, name: str) -> None:
-        """Set name (Nameable protocol)."""
-        # Try to set the most appropriate name field
-        for field in ["name", "display_name", "title", "node_name"]:
-            if hasattr(self, field):
-                setattr(self, field, name)
-                return
+    def get_list(self, path: str, default: list[str] | None = None) -> list[str]:
+        """Get field value as list of strings with default."""
+        if default is None:
+            default = []
+        return self.get_typed_value(path, list, default)
 
 
 # Export for use

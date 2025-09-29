@@ -13,6 +13,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import Configurable
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
@@ -32,7 +33,7 @@ class ModelProgressMetrics(BaseModel):
     custom_metrics: ModelMetricsData = Field(
         default_factory=lambda: ModelMetricsData(
             collection_id=None,
-            collection_display_name="progress_metrics",
+            collection_display_name=ModelSchemaValue.from_value("progress_metrics"),
         ),
         description="Custom progress metrics with clean typing",
     )
@@ -190,6 +191,12 @@ class ModelProgressMetrics(BaseModel):
         for key, value in initial_metrics.items():
             instance.add_custom_metric(key, value)
         return instance
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Protocol method implementations
 

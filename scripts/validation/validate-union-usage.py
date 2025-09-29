@@ -120,10 +120,25 @@ class UnionLegitimacyValidator:
         has_type_field = any("type" in t.lower() and '"' in t for t in pattern.types)
         has_kind_field = any("kind" in t.lower() and '"' in t for t in pattern.types)
 
+        # Check for Field(discriminator=) pattern in file content (modern Pydantic approach)
+        has_field_discriminator = False
+        if file_content:
+            # Look for Field(discriminator="field_name") pattern near the union
+            import re
+
+            # Pattern to match Field(..., discriminator="...") with flexible parameter order
+            # Matches: Field(discriminator="...") or Field(..., discriminator="...") or Field(..., discriminator='...')
+            discriminator_pattern = (
+                r'Field\s*\([^)]*discriminator\s*=\s*["\'][^"\']+["\']'
+            )
+            has_field_discriminator = bool(
+                re.search(discriminator_pattern, file_content)
+            )
+
         # Must have discriminator indicators and reasonable type count
-        return (has_literal or has_type_field or has_kind_field) and len(
-            pattern.types
-        ) <= 5
+        return (
+            has_literal or has_type_field or has_kind_field or has_field_discriminator
+        ) and len(pattern.types) <= 5
 
     def _is_model_schema_value_pattern(
         self, pattern: "UnionPattern", file_content: str = None

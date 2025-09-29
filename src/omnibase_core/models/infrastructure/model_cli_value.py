@@ -11,7 +11,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Configurable, Validatable
+from omnibase_core.core.type_constraints import (
+    Configurable,
+    PrimitiveValueType,
+    ProtocolValidatable,
+)
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -39,11 +43,11 @@ class ModelCliValue(BaseModel):
     """
 
     value_type: EnumCliValueType = Field(description="Type of the CLI value")
-    raw_value: Any = Field(description="Raw value data")
+    raw_value: object = Field(description="Raw value data")
 
     @field_validator("raw_value")
     @classmethod
-    def validate_raw_value(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_raw_value(cls, v: object, info: ValidationInfo) -> object:
         """Validate raw value matches declared type."""
         if "value_type" not in info.data:
             return v
@@ -109,7 +113,7 @@ class ModelCliValue(BaseModel):
         return cls(value_type=EnumCliValueType.BOOLEAN, raw_value=value)
 
     @classmethod
-    def from_list(cls, value: list[Any]) -> ModelCliValue:
+    def from_list(cls, value: list[object]) -> ModelCliValue:
         """Create CLI value from list."""
         return cls(value_type=EnumCliValueType.LIST, raw_value=value)
 
@@ -124,7 +128,7 @@ class ModelCliValue(BaseModel):
         return cls(value_type=EnumCliValueType.NULL, raw_value=None)
 
     @classmethod
-    def from_any(cls, value: Any) -> ModelCliValue:
+    def from_any(cls, value: object) -> ModelCliValue:
         """Create CLI value from any Python value with automatic type detection."""
         if value is None:
             return cls.from_null()
@@ -146,7 +150,7 @@ class ModelCliValue(BaseModel):
         # Convert unknown types to string representation
         return cls.from_string(str(value))
 
-    def to_python_value(self) -> Any:
+    def to_python_value(self) -> object:
         """Convert back to Python native value."""
         return self.raw_value
 
@@ -170,37 +174,42 @@ class ModelCliValue(BaseModel):
             return "null"
         return str(self.raw_value)
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
-            # Update any relevant execution fields
+            # Update any relevant execution fields with runtime validation
             for key, value in kwargs.items():
-                if hasattr(self, key):
+                if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
         except Exception:
             return False
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
+            # Configure with runtime validation for type safety
             for key, value in kwargs.items():
-                if hasattr(self, key):
+                if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
         except Exception:
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
-        # Explicit typing to ensure MyPy recognizes the return type
-        result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
-        return result
+        return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

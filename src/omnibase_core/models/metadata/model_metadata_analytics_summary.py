@@ -13,16 +13,17 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    MetadataProvider,
+    PrimitiveValueType,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 
 
 class TypedDictCoreAnalytics(TypedDict):
     """Core analytics data structure.
     Implements omnibase_spi protocols:
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -43,24 +44,59 @@ class TypedDictTimestampData(TypedDict):
     last_validated: datetime | None
 
 
+class TypedDictCoreData(TypedDict, total=False):
+    """Typed structure for core data updates."""
+
+    total_nodes: int
+    active_nodes: int
+    deprecated_nodes: int
+    disabled_nodes: int
+
+
+class TypedDictQualityData(TypedDict, total=False):
+    """Typed structure for quality data updates."""
+
+    health_score: float
+    success_rate: float
+    documentation_coverage: float
+
+
+class TypedDictErrorData(TypedDict, total=False):
+    """Typed structure for error data updates."""
+
+    error_count: int
+    warning_count: int
+    critical_error_count: int
+
+
+class TypedDictPerformanceData(TypedDict, total=False):
+    """Typed structure for performance data updates."""
+
+    average_execution_time_ms: float
+    peak_memory_usage_mb: float
+    total_invocations: int
+
+
 class TypedDictAnalyticsSummaryData(TypedDict):
     """Typed structure for analytics summary serialization."""
 
     core: TypedDictCoreAnalytics
-    quality: Any  # From component method call - returns list[str]
-    errors: Any  # From component method call - returns ModelAnalyticsErrorSummary
-    performance: (
-        Any  # From component method call - returns ModelAnalyticsPerformanceSummary
-    )
+    quality: list[str]  # From component method call - returns list[str]
+    errors: ModelAnalyticsErrorSummary  # From component method call - returns ModelAnalyticsErrorSummary
+    performance: ModelAnalyticsPerformanceSummary  # From component method call - returns ModelAnalyticsPerformanceSummary
     timestamps: TypedDictTimestampData
 
 
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .analytics.model_analytics_core import ModelAnalyticsCore
+from .analytics.model_analytics_error_summary import ModelAnalyticsErrorSummary
 from .analytics.model_analytics_error_tracking import ModelAnalyticsErrorTracking
 from .analytics.model_analytics_performance_metrics import (
     ModelAnalyticsPerformanceMetrics,
+)
+from .analytics.model_analytics_performance_summary import (
+    ModelAnalyticsPerformanceSummary,
 )
 from .analytics.model_analytics_quality_metrics import ModelAnalyticsQualityMetrics
 
@@ -260,12 +296,23 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     # Composite methods
     def update_all_metrics(
         self,
-        core_data: dict[str, int] | None = None,
-        quality_data: dict[str, float] | None = None,
-        error_data: dict[str, int] | None = None,
-        performance_data: dict[str, int | float] | None = None,
+        core_data: TypedDictCoreData | None = None,
+        quality_data: TypedDictQualityData | None = None,
+        error_data: TypedDictErrorData | None = None,
+        performance_data: TypedDictPerformanceData | None = None,
     ) -> None:
-        """Update all component metrics."""
+        """
+        Update all component metrics with structured typing.
+
+        Args:
+            core_data: Core data with int values for node counts
+            quality_data: Quality data with float values for metrics
+            error_data: Error data with int values for error counts
+            performance_data: Performance data with numeric values for metrics
+
+        Note:
+            All parameters are optional and use typed dictionaries for type safety.
+        """
         # Update core
         if core_data and "total_nodes" in core_data:
             self.core.update_node_counts(
@@ -386,10 +433,16 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             last_validated=None,
         )
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -402,7 +455,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -416,7 +469,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

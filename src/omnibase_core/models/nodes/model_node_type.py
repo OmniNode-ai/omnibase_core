@@ -14,9 +14,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     Identifiable,
-    MetadataProvider,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
     Serializable,
-    Validatable,
 )
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -33,7 +33,7 @@ class ModelNodeType(BaseModel):
     about each node type.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
-    - MetadataProvider: Metadata management capabilities
+    - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """
@@ -459,9 +459,9 @@ class ModelNodeType(BaseModel):
             "BACKEND_SELECTION": cls.BACKEND_SELECTION,
             "NODE_MANAGER_RUNNER": cls.NODE_MANAGER_RUNNER,
             "MAINTENANCE": cls.MAINTENANCE,
-            "node_logger_emit_log_event": cls.LOGGER_EMIT_LOG_EVENT,
+            "NODE_LOGGER_EMIT_LOG_EVENT": cls.LOGGER_EMIT_LOG_EVENT,
             "LOGGING_UTILS": cls.LOGGING_UTILS,
-            "scenario_runner": cls.SCENARIO_RUNNER,
+            "SCENARIO_RUNNER": cls.SCENARIO_RUNNER,
         }
 
         factory = factory_map.get(name)
@@ -502,6 +502,12 @@ class ModelNodeType(BaseModel):
             return self.type_name == other
         return False
 
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -522,7 +528,7 @@ class ModelNodeType(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (MetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -535,7 +541,7 @@ class ModelNodeType(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (MetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -549,7 +555,7 @@ class ModelNodeType(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (Validatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
