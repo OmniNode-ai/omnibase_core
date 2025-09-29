@@ -10,34 +10,43 @@ ARCHITECTURAL PRINCIPLE: Strong Typing Only
 - NO "convenience" conversion methods - use proper types from the start
 """
 
-from typing import Any, Union
+from __future__ import annotations
 
 # JSON-serializable value types (most common replacement for Any)
-JsonSerializable = Union[str, int, float, bool, list[Any], dict[str, Any], None]
+# Uses PEP 695 type statement for recursive type alias
+type JsonSerializable = str | int | float | bool | list[JsonSerializable] | dict[
+    str, JsonSerializable
+] | None
 
 # Property/metadata values (for generic containers)
-PropertyValue = Union[str, int, float, bool, list[str], dict[str, str]]
+PropertyValue = str | int | float | bool | list[str] | dict[str, str]
 
 # Environment variable values
-EnvValue = Union[str, int, float, bool, None]
+EnvValue = str | int | float | bool | None
 
 # Metadata/result values (allows nested structures)
-MetadataValue = Union[str, int, float, bool, list[str], dict[str, str], None]
+MetadataValue = str | int | float | bool | list[str] | dict[str, str] | None
 
 # Validation field values (for validation errors)
-ValidationValue = Union[str, int, float, bool, list[Any], dict[str, Any], None]
+# Uses PEP 695 type statement for recursive type alias
+type ValidationValue = str | int | float | bool | list[ValidationValue] | dict[
+    str, ValidationValue
+] | None
 
 # Configuration values (for config models)
-ConfigValue = Union[str, int, float, bool, list[str], dict[str, str], None]
+ConfigValue = str | int | float | bool | list[str] | dict[str, str] | None
 
 # CLI/argument values (for command line processing)
-CliValue = Union[str, int, float, bool, list[str]]
+CliValue = str | int | float | bool | list[str]
 
 # Tool/service parameter values (same as PropertyValue for consistency)
 ParameterValue = PropertyValue
 
 # Result/output values (for result models)
-ResultValue = Union[str, int, float, bool, list[Any], dict[str, Any], None]
+# Uses PEP 695 type statement for recursive type alias
+type ResultValue = str | int | float | bool | list[ResultValue] | dict[
+    str, ResultValue
+] | None
 
 # ONEX Type Safety Guidelines:
 #
@@ -53,10 +62,12 @@ ResultValue = Union[str, int, float, bool, list[Any], dict[str, Any], None]
 # ❌ field: Any = Field(...)
 # ❌ **kwargs: Any
 # ❌ def method(value: Any) -> Any:
-# ❌ Union[str, int, Any]  # Any defeats the purpose
+# ❌ str | int | Any  # Any defeats the purpose
+# ❌ from typing import Union, Any  # Use modern syntax
 #
 # Prefer these patterns:
 # ✅ field: JsonSerializable = Field(...)
 # ✅ **kwargs: str  # or specific type
 # ✅ def method(value: PropertyValue) -> PropertyValue:
-# ✅ Union[str, int, float, bool]  # specific alternatives only
+# ✅ str | int | float | bool  # specific alternatives only
+# ✅ type JsonSerializable = ... | list[JsonSerializable]  # PEP 695 recursive type aliases

@@ -11,7 +11,7 @@ class ModelUnifiedSummaryDetails(BaseModel):
     """
 
     key: str | None = None
-    value: MetadataValue = None
+    value: MetadataValue | None = None
     # Add more fields as needed for protocol
 
     model_config = {"arbitrary_types_allowed": True}

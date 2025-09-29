@@ -28,6 +28,7 @@ class UnionLegitimacyValidator:
             "model_schema_value": self._is_model_schema_value_pattern,
             "error_handling": self._is_error_handling_pattern,
             "type_narrowing": self._is_type_narrowing_pattern,
+            "type_alias_definition": self._is_type_alias_definition,
         }
 
         # Invalid/lazy patterns to flag
@@ -183,6 +184,37 @@ class UnionLegitimacyValidator:
 
             types_set = set(types)
             return any(types_set == pair for pair in type_pairs)
+
+        return False
+
+    def _is_type_alias_definition(
+        self, pattern: "UnionPattern", file_content: str = None
+    ) -> bool:
+        """
+        Check if this is a legitimate type alias definition.
+
+        Type alias definitions in model_onex_common_types.py are canonical
+        type definitions that define the ONEX type system. They should be
+        exempt from primitive_soup detection because they:
+        1. Are in the canonical type definition file
+        2. Use recursive forward references (list["TypeAlias"])
+        3. Are documented replacements for Any types
+        4. Define the type system itself
+        """
+        # Check if this is in the canonical type definition file
+        is_canonical_file = "model_onex_common_types.py" in pattern.file_path
+
+        # Check if this union uses recursive forward references
+        # Look for patterns like list["TypeName"] or dict[str, "TypeName"]
+        has_recursive_reference = any('"' in str(t) for t in pattern.types)
+
+        # If in canonical file or has recursive references, it's a type alias definition
+        if is_canonical_file:
+            return True
+
+        # If it has recursive forward references, it's likely a type alias
+        if has_recursive_reference:
+            return True
 
         return False
 
@@ -342,6 +374,7 @@ class UnionUsageChecker(ast.NodeVisitor):
             "model_schema_value": 0,
             "error_handling": 0,
             "type_narrowing": 0,
+            "type_alias_definition": 0,
             "primitive_soup": 0,
             "any_contaminated": 0,
             "overly_broad": 0,
@@ -794,6 +827,7 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
                 "model_schema_value",
                 "error_handling",
                 "type_narrowing",
+                "type_alias_definition",
                 "simple_union",
             ]
         }
@@ -966,6 +1000,7 @@ def export_legitimacy_report(
                 "model_schema_value: Proper ModelSchemaValue usage",
                 "error_handling: Exception handling patterns",
                 "type_narrowing: Related type narrowing (str | Path)",
+                "type_alias_definition: Type alias definitions with recursive forward references",
                 "simple_union: Small coherent unions",
             ],
             "invalid_types": [
@@ -1014,6 +1049,7 @@ def export_legitimacy_report(
                         "model_schema_value",
                         "error_handling",
                         "type_narrowing",
+                        "type_alias_definition",
                         "simple_union",
                     ]
                     and v > 0

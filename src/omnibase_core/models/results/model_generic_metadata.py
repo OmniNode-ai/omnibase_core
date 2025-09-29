@@ -2,8 +2,10 @@
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -58,7 +60,7 @@ class ModelGenericMetadata(BaseModel):
     def from_dict(
         cls,
         data: dict[str, Any] | None,
-    ) -> Optional["ModelGenericMetadata"]:
+    ) -> "ModelGenericMetadata" | None:
         """Create from dictionary for easy migration."""
         if data is None:
             return None

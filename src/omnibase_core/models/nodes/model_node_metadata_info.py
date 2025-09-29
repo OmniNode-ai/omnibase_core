@@ -6,7 +6,6 @@ Simple model for node metadata information used in CLI output.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
