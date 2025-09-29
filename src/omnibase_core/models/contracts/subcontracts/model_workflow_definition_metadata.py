@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
-class ModelWorkflowMetadata(BaseModel):
+class ModelWorkflowDefinitionMetadata(BaseModel):
     """Metadata for a workflow definition."""
 
     name: str = Field(..., description="Name of the workflow")

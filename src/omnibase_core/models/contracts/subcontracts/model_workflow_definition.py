@@ -8,13 +8,13 @@ from pydantic import BaseModel, Field
 
 from .model_coordination_rules import ModelCoordinationRules
 from .model_execution_graph import ModelExecutionGraph
-from .model_workflow_metadata import ModelWorkflowMetadata
+from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 
 
 class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
 
-    workflow_metadata: ModelWorkflowMetadata = Field(
+    workflow_metadata: ModelWorkflowDefinitionMetadata = Field(
         ..., description="Workflow metadata"
     )
 

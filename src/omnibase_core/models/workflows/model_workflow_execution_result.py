@@ -1,25 +1,35 @@
 """
-Execution Result Model - ONEX Standards Compliant.
+Simple Workflow Execution Result Model - ONEX Standards Compliant.
 
-Model for workflow execution results in the ONEX workflow coordination system.
+Domain-specific result model for workflow execution in the ONEX coordination system.
+Replaces the generic ModelExecutionResult with a focused workflow-specific model.
+
+ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
+from omnibase_core.models.contracts.subcontracts.model_workflow_metrics import (
+    ModelWorkflowMetrics,
+)
 
-from .model_workflow_metrics import ModelWorkflowMetrics
-
-ParameterValue = PrimitiveValueType
-StructuredData = dict[str, ParameterValue]
+# Type aliases for structured data
+StructuredData = dict[str, PrimitiveValueType]
 
 
-class ModelExecutionResult(BaseModel):
-    """Result of workflow execution."""
+class ModelWorkflowExecutionResult(BaseModel):
+    """
+    Simple workflow execution result for ONEX coordination.
+
+    Provides workflow-specific execution results with coordination metrics
+    and performance tracking.
+
+    ZERO TOLERANCE: No Any types allowed.
+    """
 
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
@@ -46,3 +56,6 @@ class ModelExecutionResult(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+
+__all__ = ["ModelWorkflowExecutionResult"]

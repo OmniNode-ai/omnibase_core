@@ -22,7 +22,7 @@ from omnibase_core.core.type_constraints import (
 )
 
 
-class ModelWorkflowMetadata(BaseModel):
+class ModelWorkflowInstanceMetadata(BaseModel):
     """
     Strongly-typed workflow metadata.
 
@@ -114,4 +114,4 @@ class ModelWorkflowMetadata(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelWorkflowMetadata"]
+__all__ = ["ModelWorkflowInstanceMetadata"]

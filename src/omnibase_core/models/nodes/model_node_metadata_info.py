@@ -26,10 +26,10 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
 
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
-from .model_node_performance_metrics import ModelNodePerformanceMetrics
 from .model_types_node_metadata_summary import ModelNodeMetadataSummaryType
 
 
@@ -177,44 +177,14 @@ class ModelNodeMetadataInfo(BaseModel):
         return self.performance.usage_count
 
     @property
-    def error_count(self) -> int:
-        """Error count (delegated to performance)."""
-        return self.performance.error_count
+    def error_rate(self) -> float:
+        """Error rate (delegated to performance)."""
+        return self.performance.error_rate
 
     @property
     def success_rate(self) -> float:
         """Success rate (delegated to performance)."""
         return self.performance.success_rate
-
-    @property
-    def created_at(self) -> datetime | None:
-        """Creation timestamp (delegated to performance)."""
-        return self.performance.created_at
-
-    @created_at.setter
-    def created_at(self, value: datetime | None) -> None:
-        """Set creation timestamp."""
-        self.performance.created_at = value
-
-    @property
-    def updated_at(self) -> datetime | None:
-        """Update timestamp (delegated to performance)."""
-        return self.performance.updated_at
-
-    @updated_at.setter
-    def updated_at(self, value: datetime | None) -> None:
-        """Set update timestamp."""
-        self.performance.updated_at = value
-
-    @property
-    def last_accessed(self) -> datetime | None:
-        """Last access timestamp (delegated to performance)."""
-        return self.performance.last_accessed
-
-    @last_accessed.setter
-    def last_accessed(self, value: datetime | None) -> None:
-        """Set last access timestamp."""
-        self.performance.last_accessed = value
 
     @property
     def custom_metadata(self) -> dict[str, ModelMetadataValue]:
@@ -263,15 +233,15 @@ class ModelNodeMetadataInfo(BaseModel):
 
     def has_errors(self) -> bool:
         """Check if node has errors."""
-        return self.performance.has_errors()
+        return self.performance.error_rate > 0.0
 
     def get_success_rate(self) -> float:
         """Get success rate."""
-        return self.performance.get_success_rate()
+        return self.performance.success_rate
 
     def is_high_usage(self) -> bool:
         """Check if node has high usage (>100 uses)."""
-        return self.performance.is_high_usage()
+        return self.performance.is_high_usage
 
     def add_tag(self, tag: str) -> None:
         """Add a tag if not already present."""
@@ -293,17 +263,16 @@ class ModelNodeMetadataInfo(BaseModel):
         """Add a category if not already present."""
         self.organization.add_category(category)
 
-    def increment_usage(self) -> None:
-        """Increment usage count."""
-        self.performance.increment_usage()
-
-    def increment_errors(self) -> None:
-        """Increment error count and update success rate."""
-        self.performance.increment_errors()
-
-    def update_accessed_time(self) -> None:
-        """Update last accessed timestamp."""
-        self.performance.update_accessed_time()
+    def add_execution_sample(
+        self,
+        execution_time_ms: float,
+        success: bool,
+        memory_usage_mb: float = 0.0,
+    ) -> None:
+        """Add execution sample to performance metrics."""
+        self.performance.add_execution_sample(
+            execution_time_ms, success, memory_usage_mb
+        )
 
     def get_summary(self) -> ModelNodeMetadataSummaryType:
         """Get node metadata summary."""
@@ -320,7 +289,7 @@ class ModelNodeMetadataInfo(BaseModel):
             "health": self.health,
             "version": self.core.version,
             "usage_count": self.usage_count,
-            "error_count": self.error_count,
+            "error_rate": self.error_rate,
             "success_rate": self.success_rate,
             "capabilities": self.capabilities,
             "tags": self.tags,
@@ -329,7 +298,7 @@ class ModelNodeMetadataInfo(BaseModel):
             "has_errors": self.has_errors(),
             "capabilities_count": int(org_summary["capabilities_count"]),
             "tags_count": int(org_summary["tags_count"]),
-            "is_high_usage": performance_summary["is_high_usage"],
+            "is_high_usage": self.performance.is_high_usage,
         }
 
     @classmethod
@@ -347,7 +316,7 @@ class ModelNodeMetadataInfo(BaseModel):
         )
         return cls(
             core=core,
-            performance=ModelNodePerformanceMetrics.create_new(),
+            performance=ModelNodePerformanceMetrics.create_unused(),
             organization=ModelNodeOrganizationMetadata(),
         )
 
@@ -377,7 +346,7 @@ class ModelNodeMetadataInfo(BaseModel):
 
         return cls(
             core=core,
-            performance=ModelNodePerformanceMetrics.create_new(),
+            performance=ModelNodePerformanceMetrics.create_unused(),
             organization=organization,
         )
 
