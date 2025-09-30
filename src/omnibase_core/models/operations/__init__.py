@@ -14,7 +14,7 @@ from .model_metadata_structures import (
     ModelEventMetadata,
     ModelExecutionMetadata,
     ModelSystemMetadata,
-    ModelWorkflowMetadata,
+    ModelWorkflowInstanceMetadata,
 )
 from .model_operation_parameters import (
     ModelEffectParameters,
@@ -32,7 +32,7 @@ __all__ = [
     "ModelComputationInputData",
     "ModelComputationOutputData",
     "ModelExecutionMetadata",
-    "ModelWorkflowMetadata",
+    "ModelWorkflowInstanceMetadata",
     "ModelEventMetadata",
     "ModelSystemMetadata",
     "ModelOperationParameters",

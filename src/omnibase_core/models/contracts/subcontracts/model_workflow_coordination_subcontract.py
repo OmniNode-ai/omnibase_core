@@ -24,14 +24,13 @@ from omnibase_core.models.metadata.model_semver import ModelSemVer
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
 from .model_execution_graph import ModelExecutionGraph
-from .model_execution_result import ModelExecutionResult
 from .model_node_assignment import ModelNodeAssignment
 from .model_node_progress import ModelNodeProgress
 from .model_progress_status import ModelProgressStatus
 from .model_synchronization_point import ModelSynchronizationPoint
 from .model_workflow_definition import ModelWorkflowDefinition
+from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 from .model_workflow_instance import ModelWorkflowInstance
-from .model_workflow_metadata import ModelWorkflowMetadata
 from .model_workflow_metrics import ModelWorkflowMetrics
 from .model_workflow_node import ModelWorkflowNode
 

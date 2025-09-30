@@ -27,7 +27,7 @@ class ModelNodeMetadataSummaryType(TypedDict):
     health: str
     version: ModelSemVer | None
     usage_count: int
-    error_count: int
+    error_rate: float
     success_rate: float
     capabilities: list[str]
     tags: list[str]

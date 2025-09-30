@@ -15,6 +15,7 @@ from . import (
     infrastructure,
     metadata,
     nodes,
+    results,
     validation,
 )
 
@@ -27,6 +28,7 @@ from .common import (
 )
 from .infrastructure import err, ok
 from .model_yaml_dump_options import ModelYamlDumpOptions
+from .results import ModelOnexResult
 from .validation import ModelValidationError
 
 __all__ = [
@@ -40,11 +42,13 @@ __all__ = [
     "infrastructure",
     "metadata",
     "nodes",
+    "results",
     "validation",
     # Commonly used models
     "ModelErrorContext",
     "ModelNumericValue",
     "ModelOnexError",
+    "ModelOnexResult",
     "ModelSchemaValue",
     "ModelYamlDumpOptions",
     "ok",

@@ -15,12 +15,12 @@ from .model_event_metadata import ModelEventMetadata
 # Import models from individual files following ONEX one-model-per-file architecture
 from .model_execution_metadata import ModelExecutionMetadata
 from .model_system_metadata import ModelSystemMetadata
-from .model_workflow_metadata import ModelWorkflowMetadata
+from .model_workflow_instance_metadata import ModelWorkflowInstanceMetadata
 
 # Export all models
 __all__ = [
     "ModelExecutionMetadata",
-    "ModelWorkflowMetadata",
+    "ModelWorkflowInstanceMetadata",
     "ModelEventMetadata",
     "ModelSystemMetadata",
 ]

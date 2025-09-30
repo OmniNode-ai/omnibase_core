@@ -41,7 +41,6 @@ from .model_event_routing import ModelEventRouting
 from .model_event_transformation import ModelEventTransformation
 from .model_event_type_subcontract import ModelEventTypeSubcontract
 from .model_execution_graph import ModelExecutionGraph
-from .model_execution_result import ModelExecutionResult
 from .model_fsm_operation import ModelFSMOperation
 from .model_fsm_state_definition import ModelFSMStateDefinition
 from .model_fsm_state_transition import ModelFSMStateTransition
@@ -68,8 +67,8 @@ from .model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
 )
 from .model_workflow_definition import ModelWorkflowDefinition
+from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 from .model_workflow_instance import ModelWorkflowInstance
-from .model_workflow_metadata import ModelWorkflowMetadata
 from .model_workflow_metrics import ModelWorkflowMetrics
 from .model_workflow_node import ModelWorkflowNode
 
@@ -122,14 +121,13 @@ __all__ = [
     "ModelCoordinationResult",
     "ModelCoordinationRules",
     "ModelExecutionGraph",
-    "ModelExecutionResult",
     "ModelNodeAssignment",
     "ModelNodeProgress",
     "ModelProgressStatus",
     "ModelSynchronizationPoint",
     "ModelWorkflowDefinition",
     "ModelWorkflowInstance",
-    "ModelWorkflowMetadata",
+    "ModelWorkflowDefinitionMetadata",
     "ModelWorkflowMetrics",
     "ModelWorkflowNode",
 ]
