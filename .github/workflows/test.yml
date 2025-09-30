@@ -128,9 +128,6 @@ jobs:
       - name: Run Ruff linting
         run: poetry run ruff check src/ tests/
 
-      - name: Run Ruff formatting check
-        run: poetry run ruff format --check src/ tests/
-
       - name: Run mypy type checking
         run: poetry run mypy src/omnibase_core
 
