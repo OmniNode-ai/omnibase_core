@@ -14,10 +14,18 @@ from __future__ import annotations
 
 # JSON-serializable value types (most common replacement for Any)
 # Uses PEP 695 type statement for recursive type alias
-type JsonSerializable = str | int | float | bool | list[JsonSerializable] | dict[
-    str,
-    JsonSerializable,
-] | None
+type JsonSerializable = (
+    str
+    | int
+    | float
+    | bool
+    | list[JsonSerializable]
+    | dict[
+        str,
+        JsonSerializable,
+    ]
+    | None
+)
 
 # Property/metadata values (for generic containers)
 PropertyValue = str | int | float | bool | list[str] | dict[str, str]
@@ -30,10 +38,18 @@ MetadataValue = str | int | float | bool | list[str] | dict[str, str] | None
 
 # Validation field values (for validation errors)
 # Uses PEP 695 type statement for recursive type alias
-type ValidationValue = str | int | float | bool | list[ValidationValue] | dict[
-    str,
-    ValidationValue,
-] | None
+type ValidationValue = (
+    str
+    | int
+    | float
+    | bool
+    | list[ValidationValue]
+    | dict[
+        str,
+        ValidationValue,
+    ]
+    | None
+)
 
 # Configuration values (for config models)
 ConfigValue = str | int | float | bool | list[str] | dict[str, str] | None
@@ -46,10 +62,18 @@ ParameterValue = PropertyValue
 
 # Result/output values (for result models)
 # Uses PEP 695 type statement for recursive type alias
-type ResultValue = str | int | float | bool | list[ResultValue] | dict[
-    str,
-    ResultValue,
-] | None
+type ResultValue = (
+    str
+    | int
+    | float
+    | bool
+    | list[ResultValue]
+    | dict[
+        str,
+        ResultValue,
+    ]
+    | None
+)
 
 # ONEX Type Safety Guidelines:
 #

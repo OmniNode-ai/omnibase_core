@@ -162,6 +162,7 @@ ignore = [
     "E711",      # None comparison (technical debt)
     "E722",      # Bare except (technical debt)
     "PLR1722",   # Sys exit alias (technical debt)
+    "ISC001",    # Implicit string concatenation (conflicts with formatter)
 ]
 
 [tool.mypy]

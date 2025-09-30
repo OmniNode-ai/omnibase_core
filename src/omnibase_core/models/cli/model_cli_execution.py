@@ -175,7 +175,6 @@ class ModelCliExecution(BaseModel):
         if not self.end_time:
             # Use timezone-aware datetime if start_time is timezone-aware
             if self.start_time.tzinfo is not None:
-
                 current_time = datetime.now(UTC)
             else:
                 current_time = datetime.now()

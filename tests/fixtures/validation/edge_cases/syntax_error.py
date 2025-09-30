@@ -2,7 +2,6 @@
 """File with syntax errors for testing edge cases."""
 
 
-
 class ModelUserData:
     """Model with syntax errors."""
 

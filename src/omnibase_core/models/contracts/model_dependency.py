@@ -260,7 +260,6 @@ class ModelDependency(BaseModel):
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         if not cls._MODULE_PATTERN.match(module_path):
-
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid module path format: {module_path}. Must be valid Python module path.",

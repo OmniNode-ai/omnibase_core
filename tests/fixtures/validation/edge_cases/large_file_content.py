@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Large file for performance testing."""
 
-
 from pydantic import BaseModel
 
 
