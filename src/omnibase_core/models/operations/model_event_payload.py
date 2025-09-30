@@ -7,7 +7,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Union
+from typing import Annotated, Any, Literal, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -119,7 +119,7 @@ class ModelEventDataBase(BaseModel):
 class ModelSystemEventData(ModelEventDataBase):
     """System-level event data."""
 
-    event_type: EnumEventType = Field(
+    event_type: Literal[EnumEventType.SYSTEM] = Field(
         default=EnumEventType.SYSTEM, description="System event type"
     )
     system_component: str = Field(
@@ -137,7 +137,7 @@ class ModelSystemEventData(ModelEventDataBase):
 class ModelUserEventData(ModelEventDataBase):
     """User-initiated event data."""
 
-    event_type: EnumEventType = Field(
+    event_type: Literal[EnumEventType.USER] = Field(
         default=EnumEventType.USER, description="User event type"
     )
     user_action: str = Field(..., description="User action that triggered the event")
@@ -155,7 +155,7 @@ class ModelUserEventData(ModelEventDataBase):
 class ModelWorkflowEventData(ModelEventDataBase):
     """Workflow execution event data."""
 
-    event_type: EnumEventType = Field(
+    event_type: Literal[EnumEventType.WORKFLOW] = Field(
         default=EnumEventType.WORKFLOW, description="Workflow event type"
     )
     workflow_stage: str = Field(..., description="Current workflow stage")
@@ -171,7 +171,7 @@ class ModelWorkflowEventData(ModelEventDataBase):
 class ModelErrorEventData(ModelEventDataBase):
     """Error event data."""
 
-    event_type: EnumEventType = Field(
+    event_type: Literal[EnumEventType.ERROR] = Field(
         default=EnumEventType.ERROR, description="Error event type"
     )
     error_type: str = Field(..., description="Type of error")

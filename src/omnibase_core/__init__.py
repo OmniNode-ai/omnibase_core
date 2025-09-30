@@ -46,15 +46,13 @@ def __getattr__(name: str) -> object:
         "validate_patterns",
         "validate_union_usage",
     }:
-        from .validation import (
-            ModelValidationSuite,
-            ValidationResult,
-            validate_all,
-            validate_architecture,
-            validate_contracts,
-            validate_patterns,
-            validate_union_usage,
-        )
+        from .validation import ModelValidationSuite  # noqa: F401
+        from .validation import ValidationResult  # noqa: F401
+        from .validation import validate_all  # noqa: F401
+        from .validation import validate_architecture  # noqa: F401
+        from .validation import validate_contracts  # noqa: F401
+        from .validation import validate_patterns  # noqa: F401
+        from .validation import validate_union_usage  # noqa: F401
 
         # Return the requested attribute from validation module
         return locals()[name]

@@ -8,7 +8,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -56,7 +56,7 @@ class ModelComputationOutputBase(BaseModel):
 class ModelNumericComputationOutput(ModelComputationOutputBase):
     """Numeric computation output data."""
 
-    computation_type: ModelComputationType = Field(
+    computation_type: Literal[ModelComputationType.NUMERIC] = Field(
         default=ModelComputationType.NUMERIC, description="Numeric computation type"
     )
     numeric_results: dict[str, float] = Field(
@@ -75,7 +75,7 @@ class ModelNumericComputationOutput(ModelComputationOutputBase):
 class ModelTextComputationOutput(ModelComputationOutputBase):
     """Text computation output data."""
 
-    computation_type: ModelComputationType = Field(
+    computation_type: Literal[ModelComputationType.TEXT] = Field(
         default=ModelComputationType.TEXT, description="Text computation type"
     )
     text_results: dict[str, str] = Field(
@@ -95,7 +95,7 @@ class ModelTextComputationOutput(ModelComputationOutputBase):
 class ModelBinaryComputationOutput(ModelComputationOutputBase):
     """Binary data computation output."""
 
-    computation_type: ModelComputationType = Field(
+    computation_type: Literal[ModelComputationType.BINARY] = Field(
         default=ModelComputationType.BINARY, description="Binary computation type"
     )
     binary_results: dict[str, bytes] = Field(
@@ -115,7 +115,7 @@ class ModelBinaryComputationOutput(ModelComputationOutputBase):
 class ModelStructuredComputationOutput(ModelComputationOutputBase):
     """Structured data computation output."""
 
-    computation_type: ModelComputationType = Field(
+    computation_type: Literal[ModelComputationType.STRUCTURED] = Field(
         default=ModelComputationType.STRUCTURED,
         description="Structured computation type",
     )

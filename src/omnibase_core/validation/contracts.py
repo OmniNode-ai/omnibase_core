@@ -44,7 +44,7 @@ def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
 
     # Parse YAML and validate with Pydantic model directly
     # Note: yaml.safe_load is required here for parsing before Pydantic validation
-    parsed_yaml = yaml.safe_load(content)  # noqa: ONEX_YAML_PARSE_REQUIRED
+    parsed_yaml = yaml.safe_load(content)
     return ModelYamlContract.model_validate(parsed_yaml)
 
 
