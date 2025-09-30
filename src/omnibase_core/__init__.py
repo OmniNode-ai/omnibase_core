@@ -46,7 +46,7 @@ def __getattr__(name: str) -> object:
         "validate_patterns",
         "validate_union_usage",
     }:
-        from .validation import (  # noqa: F401
+        from .validation import (
             ModelValidationSuite,
             ValidationResult,
             validate_all,
