@@ -38,7 +38,7 @@ jobs:
 
       - name: Configure git for private dependencies
         run: |
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - name: Load cached venv
         id: cached-poetry-dependencies
@@ -107,7 +107,7 @@ jobs:
 
       - name: Configure git for private dependencies
         run: |
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - name: Load cached venv
         id: cached-poetry-dependencies
