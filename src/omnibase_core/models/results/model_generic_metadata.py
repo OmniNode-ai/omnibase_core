@@ -56,16 +56,6 @@ class ModelGenericMetadata(BaseModel):
         extra="allow",
     )  # Allow additional fields for current standards
 
-    @classmethod
-    def from_dict(
-        cls,
-        data: dict[str, Any] | None,
-    ) -> "ModelGenericMetadata" | None:
-        """Create from dictionary for easy migration."""
-        if data is None:
-            return None
-        return cls(**data)
-
     @field_serializer("created_at", "updated_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):

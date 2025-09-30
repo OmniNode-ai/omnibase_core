@@ -40,7 +40,7 @@ class UnionLegitimacyValidator:
         }
 
     def validate_union_legitimacy(
-        self, union_pattern: "UnionPattern", file_content: str = None
+        self, union_pattern: "UnionPattern", file_content: str | None = None
     ) -> dict[str, Any]:
         """
         Validate if a union pattern is legitimate according to ONEX standards.
@@ -84,13 +84,13 @@ class UnionLegitimacyValidator:
         return result
 
     def _is_optional_pattern(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this is a legitimate Optional[T] pattern (T | None)."""
         return len(pattern.types) == 2 and "None" in pattern.types
 
     def _is_result_pattern(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this is a Result[T, E] monadic error handling pattern."""
         # Look for Result[T, E] patterns or Result-like discriminated unions
@@ -111,7 +111,7 @@ class UnionLegitimacyValidator:
         return has_success_variant and has_error_variant and len(types) == 2
 
     def _is_discriminated_union(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this is a properly discriminated union with Literal discriminators."""
         # Look for Literal types in the union
@@ -142,7 +142,7 @@ class UnionLegitimacyValidator:
         ) and len(pattern.types) <= 5
 
     def _is_model_schema_value_pattern(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this uses proper ModelSchemaValue patterns instead of Any."""
         # Look for ModelSchemaValue or strongly typed schema patterns
@@ -155,7 +155,7 @@ class UnionLegitimacyValidator:
         return (has_model_schema or has_schema_pattern) and not has_any
 
     def _is_error_handling_pattern(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this is a legitimate error handling pattern."""
         types = pattern.types
@@ -167,7 +167,7 @@ class UnionLegitimacyValidator:
         return has_exception and has_success_type and len(types) <= 3
 
     def _is_type_narrowing_pattern(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this is a legitimate type narrowing pattern."""
         types = pattern.types
@@ -188,7 +188,7 @@ class UnionLegitimacyValidator:
         return False
 
     def _is_type_alias_definition(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """
         Check if this is a legitimate type alias definition.
@@ -219,7 +219,7 @@ class UnionLegitimacyValidator:
         return False
 
     def _is_primitive_soup(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this is a lazy 'primitive soup' union."""
         primitive_types = {"str", "int", "bool", "float", "bytes"}
@@ -230,13 +230,13 @@ class UnionLegitimacyValidator:
         return primitive_count >= 3 and len(pattern.types) >= 3
 
     def _is_any_contaminated(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this union contains Any types (anti-pattern)."""
         return "Any" in pattern.types or any("Any" in t for t in pattern.types)
 
     def _is_overly_broad(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if this union is overly broad without semantic meaning."""
         # 5+ different types usually indicates lack of proper modeling
@@ -253,7 +253,7 @@ class UnionLegitimacyValidator:
         return has_primitives and has_complex and len(pattern.types) >= 4
 
     def _is_semantic_mismatch(
-        self, pattern: "UnionPattern", file_content: str = None
+        self, pattern: "UnionPattern", file_content: str | None = None
     ) -> bool:
         """Check if union types have semantic mismatch."""
         # Common anti-patterns
@@ -351,7 +351,7 @@ class UnionPattern:
 class UnionUsageChecker(ast.NodeVisitor):
     """Enhanced checker for Union type usage patterns with legitimacy validation."""
 
-    def __init__(self, file_path: str, file_content: str = None):
+    def __init__(self, file_path: str, file_content: str | None = None):
         self.union_count = 0
         self.legitimate_union_count = 0
         self.invalid_union_count = 0
@@ -390,15 +390,43 @@ class UnionUsageChecker(ast.NodeVisitor):
         elif isinstance(node, ast.Constant):
             if node.value is None:
                 return "None"
+            # Preserve string constants as quoted names for forward references
+            # This allows has_recursive_reference check to detect patterns like list["JsonSerializable"]
+            if isinstance(node.value, str):
+                return f'"{node.value}"'
             return type(node.value).__name__
         elif isinstance(node, ast.Subscript):
             # Handle list[str], dict[str, int], etc.
             if isinstance(node.value, ast.Name):
-                return node.value.id
+                base_type = node.value.id
+
+                # Check if subscript contains forward-reference strings
+                # This allows detection of recursive patterns like list["MyType"]
+                forward_ref = self._extract_forward_ref_from_subscript(node.slice)
+                if forward_ref:
+                    # Include forward reference in type name for recursive detection
+                    return f'{base_type}["{forward_ref}"]'
+
+                return base_type
         elif isinstance(node, ast.Attribute):
             # Handle module.Type patterns
             return f"{self._extract_type_name(node.value)}.{node.attr}"
         return "Unknown"
+
+    def _extract_forward_ref_from_subscript(self, slice_node: ast.AST) -> str | None:
+        """Extract forward-reference string from subscript slice."""
+        if isinstance(slice_node, ast.Constant) and isinstance(slice_node.value, str):
+            # Direct forward reference: list["MyType"]
+            return slice_node.value
+        elif isinstance(slice_node, ast.Tuple):
+            # Multiple subscripts: dict[str, "MyType"]
+            for elt in slice_node.elts:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                    return elt.value
+        elif isinstance(slice_node, ast.Subscript):
+            # Nested subscripts: list[list["MyType"]]
+            return self._extract_forward_ref_from_subscript(slice_node.slice)
+        return None
 
     def _analyze_union_pattern(self, union_pattern: UnionPattern) -> None:
         """Analyze a union pattern using legitimacy validation."""

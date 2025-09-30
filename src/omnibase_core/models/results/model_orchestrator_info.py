@@ -100,43 +100,6 @@ class ModelOrchestratorInfo(BaseModel):
 
     model_config = ConfigDict()
 
-    @classmethod
-    def from_dict(
-        cls,
-        data: dict[str, Any] | None,
-    ) -> "ModelOrchestratorInfo | None":
-        """Create from dictionary for easy migration."""
-        if data is None:
-            return None
-
-        from uuid import UUID, uuid4
-
-        from omnibase_core.models.metadata.model_semver import (
-            ModelSemVer,
-            parse_semver_from_string,
-        )
-
-        # Handle legacy format - convert strings to proper types
-        if "orchestrator_id" not in data:
-            data["orchestrator_id"] = uuid4()
-        elif isinstance(data["orchestrator_id"], str):
-            try:
-                data["orchestrator_id"] = UUID(data["orchestrator_id"])
-            except ValueError:
-                data["orchestrator_id"] = uuid4()
-
-        if "orchestrator_type" not in data:
-            data["orchestrator_type"] = data.get("type", "custom")
-
-        if "orchestrator_version" not in data:
-            data["orchestrator_version"] = parse_semver_from_string("0.0.0")
-        elif isinstance(data["orchestrator_version"], str):
-            data["orchestrator_version"] = parse_semver_from_string(
-                data["orchestrator_version"]
-            )
-
-        return cls(**data)
-
     def get_resource_summary(self) -> str:
         """Get resource allocation summary."""
         parts = []
