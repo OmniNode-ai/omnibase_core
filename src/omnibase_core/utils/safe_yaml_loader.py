@@ -151,8 +151,8 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_yaml_content_as_model"
-                    )
+                        "load_yaml_content_as_model",
+                    ),
                 },
             ),
             cause=ve,
@@ -164,8 +164,8 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_yaml_content_as_model"
-                    )
+                        "load_yaml_content_as_model",
+                    ),
                 },
             ),
             cause=e,
@@ -177,8 +177,8 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_yaml_content_as_model"
-                    )
+                        "load_yaml_content_as_model",
+                    ),
                 },
             ),
             cause=e,

@@ -80,30 +80,30 @@ class EnumRuntimeCategory(str, Enum):
         return (min_mins, max_mins)
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> EnumRuntimeCategory:  # noqa: C901, PLR0911
+    def from_seconds(cls, seconds: float) -> EnumRuntimeCategory:
         """Determine category from duration in seconds."""
         # Runtime threshold classification - architectural design for runtime categories
-        if seconds < 0.1:  # noqa: PLR2004
+        if seconds < 0.1:
             return cls.INSTANT
         if seconds < 1:
             return cls.VERY_FAST
-        if seconds < 5:  # noqa: PLR2004
+        if seconds < 5:
             return cls.FAST
-        if seconds < 15:  # noqa: PLR2004
+        if seconds < 15:
             return cls.QUICK
-        if seconds < 60:  # noqa: PLR2004
+        if seconds < 60:
             return cls.MODERATE
-        if seconds < 300:  # noqa: PLR2004
+        if seconds < 300:
             return cls.STANDARD
-        if seconds < 900:  # noqa: PLR2004
+        if seconds < 900:
             return cls.LONG
-        if seconds < 1800:  # noqa: PLR2004
+        if seconds < 1800:
             return cls.EXTENDED
-        if seconds < 3600:  # noqa: PLR2004
+        if seconds < 3600:
             return cls.VERY_LONG
-        if seconds < 10800:  # noqa: PLR2004
+        if seconds < 10800:
             return cls.BATCH
-        if seconds < 28800:  # noqa: PLR2004
+        if seconds < 28800:
             return cls.MARATHON
         return cls.OVERNIGHT
 

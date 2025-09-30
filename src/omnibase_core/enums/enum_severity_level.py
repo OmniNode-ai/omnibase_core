@@ -89,15 +89,15 @@ class EnumSeverityLevel(str, Enum):
 
     def is_error_level(self) -> bool:
         """Check if this is an error-level severity."""
-        return self.numeric_level >= 50  # noqa: PLR2004
+        return self.numeric_level >= 50
 
     def is_warning_level(self) -> bool:
         """Check if this is a warning-level severity."""
-        return self.numeric_level >= 40  # noqa: PLR2004
+        return self.numeric_level >= 40
 
     def is_info_level(self) -> bool:
         """Check if this is an info-level severity."""
-        return self.numeric_level >= 30  # noqa: PLR2004
+        return self.numeric_level >= 30
 
 
 # Export for use

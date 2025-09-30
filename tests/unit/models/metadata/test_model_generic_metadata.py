@@ -112,7 +112,7 @@ class TestModelGenericMetadataFieldOperations:
         assert metadata.custom_fields["rate"].to_python_value() == 3.14159
 
     @pytest.mark.skip(
-        reason="Validation not implemented - dict types are currently allowed"
+        reason="Validation not implemented - dict types are currently allowed",
     )
     def test_set_field_invalid_type_fails(self):
         """Test that setting invalid type fails."""
@@ -195,7 +195,7 @@ class TestModelGenericMetadataFieldOperations:
         assert metadata.get_field("float_field", 0.0) == 3.14
 
     @pytest.mark.skip(
-        reason="Validation not implemented - custom types are currently allowed"
+        reason="Validation not implemented - custom types are currently allowed",
     )
     def test_set_typed_field_unsupported_type_fails(self):
         """Test that setting unsupported type fails."""

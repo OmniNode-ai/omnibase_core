@@ -327,7 +327,7 @@ class EnumStatusMigrationValidator:
     """
 
     @staticmethod
-    def validate_value_migration(  # noqa: C901
+    def validate_value_migration(
         old_value: str,
         old_enum_name: str,
         expected_new_enum: type,

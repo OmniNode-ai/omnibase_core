@@ -120,8 +120,8 @@ ComplexContextValueType = object  # Runtime validation required - see type guard
 
 
 # Import abstract base classes from separate files (ONEX one-model-per-file)
-from .model_base_collection import BaseCollection  # noqa: E402
-from .model_base_factory import BaseFactory  # noqa: E402
+from .model_base_collection import BaseCollection
+from .model_base_factory import BaseFactory
 
 # Type guards for runtime checking
 

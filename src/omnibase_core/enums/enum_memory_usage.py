@@ -74,28 +74,28 @@ class EnumMemoryUsage(str, Enum):
         return (min_gb, max_gb)
 
     @classmethod
-    def from_mb(cls, mb: float) -> EnumMemoryUsage:  # noqa: PLR0911, C901
+    def from_mb(cls, mb: float) -> EnumMemoryUsage:
         """Determine category from memory usage in MB."""
         # Memory threshold classification - architectural design for memory categories
-        if mb < 10:  # noqa: PLR2004
+        if mb < 10:
             return cls.MINIMAL
-        if mb < 50:  # noqa: PLR2004
+        if mb < 50:
             return cls.TINY
-        if mb < 100:  # noqa: PLR2004
+        if mb < 100:
             return cls.SMALL
-        if mb < 250:  # noqa: PLR2004
+        if mb < 250:
             return cls.LOW
-        if mb < 500:  # noqa: PLR2004
+        if mb < 500:
             return cls.MODERATE
-        if mb < 1024:  # noqa: PLR2004
+        if mb < 1024:
             return cls.MEDIUM
-        if mb < 2048:  # noqa: PLR2004
+        if mb < 2048:
             return cls.HIGH
-        if mb < 4096:  # noqa: PLR2004
+        if mb < 4096:
             return cls.LARGE
-        if mb < 8192:  # noqa: PLR2004
+        if mb < 8192:
             return cls.VERY_HIGH
-        if mb < 16384:  # noqa: PLR2004
+        if mb < 16384:
             return cls.EXTREME
         return cls.MASSIVE
 

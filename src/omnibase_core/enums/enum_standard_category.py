@@ -167,7 +167,7 @@ class EnumStandardCategory(str, Enum):
         return aliases.get(normalized)
 
     @property
-    def hierarchy_level(self) -> str:  # noqa: PLR0911
+    def hierarchy_level(self) -> str:
         """Get the hierarchy level this category belongs to."""
         if self in self.get_architecture_categories():
             return "architecture"

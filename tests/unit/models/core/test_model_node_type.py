@@ -594,7 +594,9 @@ class TestModelNodeTypeEdgeCases:
 
         # Empty description should be valid (no min_length constraint)
         node_type = ModelNodeType(
-            type_name="TEST_NODE", description="", category="testing"
+            type_name="TEST_NODE",
+            description="",
+            category="testing",
         )
         assert node_type.description == ""
 
