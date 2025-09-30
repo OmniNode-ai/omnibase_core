@@ -138,10 +138,6 @@ class ModelTest{i:04d}(BaseModel):
         ), f"Peak memory usage was {peak_memory:.1f}MB (should be < 500MB)"
         assert is_valid is True, "Large file should pass naming validation"
 
-        print(
-            f"Large file performance: {processing_time:.2f}s, {peak_memory:.1f}MB peak memory"
-        )
-
     def test_large_file_backward_compatibility_validation(
         self, temp_repo, memory_monitor
     ):
@@ -206,10 +202,6 @@ class ModelProcessor{i:03d}(BaseModel):
         ), f"Large file compatibility check took {processing_time:.2f}s"
         assert peak_memory < 200, f"Peak memory usage was {peak_memory:.1f}MB"
         assert is_valid is True, "Large file should pass compatibility validation"
-
-        print(
-            f"Large file compatibility check: {processing_time:.2f}s, {peak_memory:.1f}MB peak"
-        )
 
     def test_very_large_yaml_file_validation(self, temp_repo, memory_monitor):
         """Test YAML validation performance with large files."""
@@ -293,10 +285,6 @@ outputs:
         assert peak_memory < 100, f"Peak memory usage was {peak_memory:.1f}MB"
         assert len(errors) == 0, f"Large YAML should be valid, got errors: {errors}"
 
-        print(
-            f"Large YAML validation: {processing_time:.2f}s, {peak_memory:.1f}MB peak"
-        )
-
 
 class TestManyFilesPerformance:
     """Test performance with many files."""
@@ -356,11 +344,6 @@ class ModelBatch{i:03d}(BaseModel):
             files_per_second > 2
         ), f"Processing rate was {files_per_second:.1f} files/s (should be > 2)"
         assert is_valid is True, "All model files should pass validation"
-
-        print(
-            f"Many files validation: {num_files} files in {processing_time:.2f}s "
-            f"({files_per_second:.1f} files/s), {peak_memory:.1f}MB peak"
-        )
 
     def test_many_yaml_files_validation(self, temp_repo, memory_monitor):
         """Test YAML validation performance with many files."""
@@ -428,11 +411,6 @@ configuration:
             total_errors == 0
         ), f"All YAML files should be valid, got {total_errors} errors"
 
-        print(
-            f"Many YAML files validation: {num_files} files in {processing_time:.2f}s "
-            f"({files_per_second:.1f} files/s), {peak_memory:.1f}MB peak"
-        )
-
     def test_deep_directory_structure_performance(self, temp_repo, memory_monitor):
         """Test performance with deeply nested directory structures."""
         # Create deep directory structure
@@ -476,10 +454,6 @@ class ModelLevel{level}Item{i}(BaseModel):
             processing_time < 45.0
         ), f"Deep structure validation took {processing_time:.2f}s"
         assert peak_memory < 200, f"Peak memory usage was {peak_memory:.1f}MB"
-
-        print(
-            f"Deep structure validation: {processing_time:.2f}s, {peak_memory:.1f}MB peak"
-        )
 
 
 class TestMemoryOptimization:
@@ -528,7 +502,6 @@ class ModelMemoryTest{i:03d}(BaseModel):
         assert (
             memory_growth < 50
         ), f"Memory grew by {memory_growth:.1f}MB (should be < 50MB)"
-        print(f"Memory growth over 20 files: {memory_growth:.1f}MB")
 
     def test_large_file_memory_limit(self, temp_repo):
         """Test that very large files are rejected to prevent memory issues."""
@@ -547,7 +520,6 @@ class ModelMemoryTest{i:03d}(BaseModel):
                 # Should reject the file
                 assert result is False
                 assert any("too large" in error.lower() for error in detector.errors)
-                print("Large file correctly rejected")
             else:
                 pytest.skip("Could not create file large enough to test size limit")
 
@@ -644,11 +616,6 @@ class ModelConcurrent{i:03d}(BaseModel):
             efficiency > 1.5
         ), f"Concurrent efficiency was {efficiency:.1f}x (should be > 1.5x)"
 
-        print(
-            f"Concurrent validation: {total_files} files in {wall_time:.2f}s "
-            f"(efficiency: {efficiency:.1f}x), {peak_memory:.1f}MB peak"
-        )
-
 
 class TestScalabilityLimits:
     """Test scalability limits and boundaries."""
@@ -693,11 +660,6 @@ class ModelScale{i:04d}(BaseModel):
         ), f"Processing rate was {files_per_second:.1f} files/s"
         assert success is True, "All files should pass validation"
 
-        print(
-            f"Scale test: {len(python_files)} files in {processing_time:.2f}s "
-            f"({files_per_second:.1f} files/s), {peak_memory:.1f}MB peak"
-        )
-
     def test_file_size_progression_performance(self, temp_repo, memory_monitor):
         """Test performance with progressively larger files."""
         models_dir = temp_repo / "src" / "omnibase_core" / "models"
@@ -740,8 +702,6 @@ class ModelSize{size_factor}_{i:03d}(BaseModel):
             assert (
                 scaling_factor < size_factor**1.5
             ), f"Processing time scaling is too poor: {scaling_factor:.1f}x for {size_factor}x size"
-
-        print(f"Size progression times: {[f'{t:.3f}s' for t in processing_times]}")
 
 
 @pytest.mark.slow
