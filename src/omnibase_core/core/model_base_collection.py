@@ -1,16 +1,19 @@
 """
 Base Collection Model.
 
-Abstract base class for typed collections following ONEX one-model-per-file architecture.
+Abstract base class for typed collections following ONEX one-model-per-file
+architecture.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 # Generic type variable for the items this collection contains
 T = TypeVar("T")

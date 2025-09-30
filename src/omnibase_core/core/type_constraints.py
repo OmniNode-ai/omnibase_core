@@ -120,8 +120,8 @@ ComplexContextValueType = object  # Runtime validation required - see type guard
 
 
 # Import abstract base classes from separate files (ONEX one-model-per-file)
-from .model_base_collection import BaseCollection
-from .model_base_factory import BaseFactory
+from .model_base_collection import BaseCollection  # noqa: E402
+from .model_base_factory import BaseFactory  # noqa: E402
 
 # Type guards for runtime checking
 
@@ -174,17 +174,17 @@ def is_metadata_provider(obj: object) -> bool:
 
 def is_primitive_value(obj: object) -> bool:
     """Check if object is a valid primitive value (str, int, float, bool)."""
-    return isinstance(obj, (str, int, float, bool))
+    return isinstance(obj, str | int | float | bool)
 
 
 def is_context_value(obj: object) -> bool:
     """Check if object is a valid context value (primitive, list, or dict)."""
-    if isinstance(obj, (str, int, float, bool)):
+    if isinstance(obj, str | int | float | bool):
         return True
     if isinstance(obj, list):
         return True
     if isinstance(obj, dict):
-        return all(isinstance(key, str) for key in obj.keys())
+        return all(isinstance(key, str) for key in obj)
     return False
 
 
@@ -196,8 +196,10 @@ def is_complex_context_value(obj: object) -> bool:
 def validate_primitive_value(obj: object) -> bool:
     """Validate and ensure object is a primitive value."""
     if not is_primitive_value(obj):
+        obj_type = type(obj).__name__
+        msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
         raise TypeError(
-            f"Expected primitive value (str, int, float, bool), got {type(obj).__name__}",
+            msg,
         )
     return True
 
@@ -205,57 +207,59 @@ def validate_primitive_value(obj: object) -> bool:
 def validate_context_value(obj: object) -> bool:
     """Validate and ensure object is a valid context value."""
     if not is_context_value(obj):
+        obj_type = type(obj).__name__
+        msg = f"Expected context value (primitive, list, or dict), got {obj_type}"
         raise TypeError(
-            f"Expected context value (primitive, list, or dict), got {type(obj).__name__}",
+            msg,
         )
     return True
 
 
 # Export all types and utilities
 __all__ = [
-    # Protocols
-    "Serializable",
-    "Identifiable",
-    "Nameable",
-    "ProtocolValidatable",
-    "Configurable",
-    "Executable",
-    "ProtocolMetadataProvider",
-    # Type variables
-    "ModelType",
-    "SerializableType",
-    "IdentifiableType",
-    "NameableType",
-    "ValidatableType",
-    "ConfigurableType",
-    "ExecutableType",
-    "MetadataType",
-    # Simplified type variables
-    "NumericType",
-    "BasicValueType",
-    "SuccessType",
-    "ErrorType",
-    "CollectionItemType",
-    "SimpleValueType",
-    # Type aliases
-    "PrimitiveValueType",
-    "ContextValueType",
-    "ComplexContextValueType",
     # Abstract base classes
     "BaseCollection",
     "BaseFactory",
-    # Type guards
-    "is_serializable",
-    "is_identifiable",
-    "is_nameable",
-    "is_validatable",
+    "BasicValueType",
+    "CollectionItemType",
+    "ComplexContextValueType",
+    "Configurable",
+    "ConfigurableType",
+    "ContextValueType",
+    "ErrorType",
+    "Executable",
+    "ExecutableType",
+    "Identifiable",
+    "IdentifiableType",
+    "MetadataType",
+    # Type variables
+    "ModelType",
+    "Nameable",
+    "NameableType",
+    # Simplified type variables
+    "NumericType",
+    # Type aliases
+    "PrimitiveValueType",
+    "ProtocolMetadataProvider",
+    "ProtocolValidatable",
+    # Protocols
+    "Serializable",
+    "SerializableType",
+    "SimpleValueType",
+    "SuccessType",
+    "ValidatableType",
+    "is_complex_context_value",
     "is_configurable",
+    "is_context_value",
     "is_executable",
+    "is_identifiable",
     "is_metadata_provider",
+    "is_nameable",
     # ONEX-compliant type validation guards
     "is_primitive_value",
-    "is_context_value",
-    "is_complex_context_value",
-    "validate_primitive_value",
+    # Type guards
+    "is_serializable",
+    "is_validatable",
     "validate_context_value",
+    "validate_primitive_value",
 ]

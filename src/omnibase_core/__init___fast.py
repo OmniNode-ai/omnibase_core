@@ -1,7 +1,8 @@
 """
 Omnibase Core - ONEX Four-Node Architecture Implementation (OPTIMIZED)
 
-PERFORMANCE FIX: This version removes package-level imports that cause 453ms+ import penalty.
+PERFORMANCE FIX: This version removes package-level imports that cause
+453ms+ import penalty.
 
 Main module for the omnibase_core package following ONEX standards.
 
@@ -123,8 +124,8 @@ def get_all_validation() -> dict[str, object]:
 
 
 __all__ = [
+    "get_all_validation",
+    "get_validation_suite",
     # Lazy loading functions
     "get_validation_tools",
-    "get_validation_suite",
-    "get_all_validation",
 ]
