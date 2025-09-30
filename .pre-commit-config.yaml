@@ -108,7 +108,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|tests/fixtures/validation/)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
       # ONEX Python Pattern Validation (SHARED HOOKS)
@@ -146,6 +146,15 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
+        stages: [pre-commit]
+
+      - id: check-stub-implementations
+        name: ONEX Stub Implementation Detector
+        entry: poetry run python scripts/validation/check_stub_implementations.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
         stages: [pre-commit]
 
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues

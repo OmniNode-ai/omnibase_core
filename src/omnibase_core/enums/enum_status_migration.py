@@ -157,7 +157,7 @@ class EnumStatusMigrator:
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate status value: {old_value}",
                 cause=e,
-            )
+            ) from e
 
     @staticmethod
     def migrate_execution_status(old_value: str) -> EnumExecutionStatusV2:
@@ -187,7 +187,7 @@ class EnumStatusMigrator:
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate execution status value: {old_value}",
                 cause=e,
-            )
+            ) from e
 
     @staticmethod
     def migrate_scenario_status(old_value: str) -> EnumScenarioStatusV2:
@@ -217,7 +217,7 @@ class EnumStatusMigrator:
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate scenario status value: {old_value}",
                 cause=e,
-            )
+            ) from e
 
     @staticmethod
     def migrate_function_status(old_value: str) -> EnumFunctionLifecycleStatus:
@@ -247,7 +247,7 @@ class EnumStatusMigrator:
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate function status value: {old_value}",
                 cause=e,
-            )
+            ) from e
 
     @staticmethod
     def migrate_metadata_node_status(old_value: str) -> EnumFunctionLifecycleStatus:
@@ -277,7 +277,7 @@ class EnumStatusMigrator:
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate metadata node status value: {old_value}",
                 cause=e,
-            )
+            ) from e
 
     @staticmethod
     def migrate_to_base_status(old_value: str, source_enum: str) -> EnumBaseStatus:
@@ -294,23 +294,22 @@ class EnumStatusMigrator:
         # Migrate to appropriate new enum and convert to base status directly
         if source_enum.lower() == "enumstatus":
             return EnumStatusMigrator.migrate_general_status(old_value).to_base_status()
-        elif source_enum.lower() == "enumexecutionstatus":
+        if source_enum.lower() == "enumexecutionstatus":
             return EnumStatusMigrator.migrate_execution_status(
                 old_value
             ).to_base_status()
-        elif source_enum.lower() == "enumscenariostatus":
+        if source_enum.lower() == "enumscenariostatus":
             return EnumStatusMigrator.migrate_scenario_status(
                 old_value
             ).to_base_status()
-        elif source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
+        if source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
             return EnumStatusMigrator.migrate_function_status(
                 old_value
             ).to_base_status()
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unknown source enum: {source_enum}",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unknown source enum: {source_enum}",
+        )
 
 
 class EnumStatusMigrationValidator:
