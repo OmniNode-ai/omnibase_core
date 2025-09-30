@@ -139,7 +139,8 @@ class EnumCollectionFormat(str, Enum):
             cls.TOML: "application/toml",
             cls.CSV: "text/csv",
             cls.TSV: "text/tab-separated-values",
-            cls.EXCEL: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            # Excel MIME type
+            cls.EXCEL: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
             cls.TEXT: "text/plain",
             cls.PLAIN: "text/plain",
             cls.MARKDOWN: "text/markdown",

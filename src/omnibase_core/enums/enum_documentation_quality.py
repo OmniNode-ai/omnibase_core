@@ -112,23 +112,24 @@ class EnumDocumentationQuality(str, Enum):
         return suggestions.get(quality, "Review and assess documentation needs")
 
     @classmethod
-    def from_score(cls, score: int) -> EnumDocumentationQuality:
+    def from_score(cls, score: int) -> EnumDocumentationQuality:  # noqa: PLR0911
         """Convert numeric score (0-10) to quality level."""
+        # Threshold-based quality mapping - architectural design for clear boundaries
         if score <= 0:
             return cls.NONE
         if score <= 1:
             return cls.POOR
-        if score <= 2:
+        if score <= 2:  # noqa: PLR2004
             return cls.MINIMAL
-        if score <= 3:
+        if score <= 3:  # noqa: PLR2004
             return cls.BASIC
-        if score <= 4:
+        if score <= 4:  # noqa: PLR2004
             return cls.ADEQUATE
-        if score <= 6:
+        if score <= 6:  # noqa: PLR2004
             return cls.GOOD
-        if score <= 8:
+        if score <= 8:  # noqa: PLR2004
             return cls.COMPREHENSIVE
-        if score <= 9:
+        if score <= 9:  # noqa: PLR2004
             return cls.EXCELLENT
         return cls.OUTSTANDING
 

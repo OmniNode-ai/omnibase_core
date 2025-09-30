@@ -432,24 +432,23 @@ class TestModelGenericCollection:
         collection.sort_by_priority()
         assert collection.updated_at > updated_at_after_extend
 
-    def test_backward_compatibility(self):
-        """Test backward compatibility with collection_name."""
-        # Test legacy property access
+    def test_collection_display_name_access(self):
+        """Test collection_display_name property access."""
+        # Test property access
         collection = ModelGenericCollection[MockItem](
             collection_display_name="test_collection",
         )
 
-        # Legacy getter should work
-        assert collection.collection_name == "test_collection"
+        # Property getter should work
+        assert collection.collection_display_name == "test_collection"
 
-        # Legacy setter should work
-        collection.collection_name = "updated_name"
+        # Property setter should work
+        collection.collection_display_name = "updated_name"
         assert collection.collection_display_name == "updated_name"
-        assert collection.collection_name == "updated_name"
 
-        # Test legacy class methods
+        # Test class factory methods
         empty_collection = ModelGenericCollection.create_empty_with_name("legacy_empty")
-        assert empty_collection.collection_name == "legacy_empty"
+        assert empty_collection.collection_display_name == "legacy_empty"
         assert empty_collection.collection_display_name == "legacy_empty"
 
         items = [MockItem(name=f"item{i}") for i in range(2)]

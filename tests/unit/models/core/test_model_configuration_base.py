@@ -99,7 +99,7 @@ class TestModelConfigurationBase:
         config = ModelConfigurationBase[SampleConfigData](name="test")
 
         assert config.is_enabled() is True
-        assert config.is_valid() is False  # No config_data
+        assert config.validate_instance() is False  # No config_data
         assert config.get_display_name() == "test"
         assert config.get_version_or_default() == "1.0.0"
 

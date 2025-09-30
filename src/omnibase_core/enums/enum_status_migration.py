@@ -19,13 +19,19 @@ from __future__ import annotations
 from typing import Any, Protocol, TypedDict, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
 
 from .enum_base_status import EnumBaseStatus
 from .enum_execution_status_v2 import EnumExecutionStatusV2
 from .enum_function_lifecycle_status import EnumFunctionLifecycleStatus
 from .enum_general_status import EnumGeneralStatus
 from .enum_scenario_status_v2 import EnumScenarioStatusV2
+
+
+def _get_onex_error() -> type:
+    """Get OnexError class at runtime to avoid circular import."""
+    from omnibase_core.exceptions.onex_error import OnexError
+
+    return OnexError
 
 
 class EnumStatusProtocol(Protocol):
@@ -144,7 +150,7 @@ class EnumStatusMigrator:
             OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_ENUM_STATUS_VALUES:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown legacy status value: {old_value}",
             )
@@ -153,11 +159,11 @@ class EnumStatusMigrator:
         try:
             return EnumGeneralStatus(old_value)
         except ValueError as e:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate status value: {old_value}",
                 cause=e,
-            ) from e
+            )
 
     @staticmethod
     def migrate_execution_status(old_value: str) -> EnumExecutionStatusV2:
@@ -174,7 +180,7 @@ class EnumStatusMigrator:
             OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_EXECUTION_STATUS_VALUES:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown legacy execution status value: {old_value}",
             )
@@ -183,11 +189,11 @@ class EnumStatusMigrator:
         try:
             return EnumExecutionStatusV2(old_value)
         except ValueError as e:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate execution status value: {old_value}",
                 cause=e,
-            ) from e
+            )
 
     @staticmethod
     def migrate_scenario_status(old_value: str) -> EnumScenarioStatusV2:
@@ -204,7 +210,7 @@ class EnumStatusMigrator:
             OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_SCENARIO_STATUS_VALUES:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown legacy scenario status value: {old_value}",
             )
@@ -213,11 +219,11 @@ class EnumStatusMigrator:
         try:
             return EnumScenarioStatusV2(old_value)
         except ValueError as e:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate scenario status value: {old_value}",
                 cause=e,
-            ) from e
+            )
 
     @staticmethod
     def migrate_function_status(old_value: str) -> EnumFunctionLifecycleStatus:
@@ -234,7 +240,7 @@ class EnumStatusMigrator:
             OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_FUNCTION_STATUS_VALUES:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown legacy function status value: {old_value}",
             )
@@ -243,11 +249,11 @@ class EnumStatusMigrator:
         try:
             return EnumFunctionLifecycleStatus(old_value)
         except ValueError as e:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate function status value: {old_value}",
                 cause=e,
-            ) from e
+            )
 
     @staticmethod
     def migrate_metadata_node_status(old_value: str) -> EnumFunctionLifecycleStatus:
@@ -264,7 +270,7 @@ class EnumStatusMigrator:
             OnexError: If old_value cannot be migrated
         """
         if old_value not in LEGACY_METADATA_NODE_STATUS_VALUES:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown legacy metadata node status value: {old_value}",
             )
@@ -273,11 +279,11 @@ class EnumStatusMigrator:
         try:
             return EnumFunctionLifecycleStatus(old_value)
         except ValueError as e:
-            raise OnexError(
+            raise _get_onex_error()(
                 code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Cannot migrate metadata node status value: {old_value}",
                 cause=e,
-            ) from e
+            )
 
     @staticmethod
     def migrate_to_base_status(old_value: str, source_enum: str) -> EnumBaseStatus:
@@ -294,22 +300,23 @@ class EnumStatusMigrator:
         # Migrate to appropriate new enum and convert to base status directly
         if source_enum.lower() == "enumstatus":
             return EnumStatusMigrator.migrate_general_status(old_value).to_base_status()
-        if source_enum.lower() == "enumexecutionstatus":
+        elif source_enum.lower() == "enumexecutionstatus":
             return EnumStatusMigrator.migrate_execution_status(
-                old_value,
+                old_value
             ).to_base_status()
-        if source_enum.lower() == "enumscenariostatus":
+        elif source_enum.lower() == "enumscenariostatus":
             return EnumStatusMigrator.migrate_scenario_status(
-                old_value,
+                old_value
             ).to_base_status()
-        if source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
+        elif source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
             return EnumStatusMigrator.migrate_function_status(
-                old_value,
+                old_value
             ).to_base_status()
-        raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"Unknown source enum: {source_enum}",
-        )
+        else:
+            raise _get_onex_error()(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown source enum: {source_enum}",
+            )
 
 
 class EnumStatusMigrationValidator:
@@ -361,7 +368,7 @@ class EnumStatusMigrationValidator:
                 base_status = general_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}",
+                        f"Base status mapping changed: {old_value} -> {base_status.value}"
                     )
 
             elif old_enum_name.lower() == "enumexecutionstatus":
@@ -376,7 +383,7 @@ class EnumStatusMigrationValidator:
                 base_status = execution_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}",
+                        f"Base status mapping changed: {old_value} -> {base_status.value}"
                     )
 
             elif old_enum_name.lower() == "enumscenariostatus":
@@ -391,7 +398,7 @@ class EnumStatusMigrationValidator:
                 base_status = scenario_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}",
+                        f"Base status mapping changed: {old_value} -> {base_status.value}"
                     )
 
             elif old_enum_name.lower() in [
@@ -409,7 +416,7 @@ class EnumStatusMigrationValidator:
                 base_status = function_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}",
+                        f"Base status mapping changed: {old_value} -> {base_status.value}"
                     )
 
             else:
@@ -487,11 +494,11 @@ class EnumStatusMigrationValidator:
 
 # Export for use
 __all__ = [
+    "EnumStatusMigrator",
+    "EnumStatusMigrationValidator",
     "LEGACY_ENUM_STATUS_VALUES",
     "LEGACY_EXECUTION_STATUS_VALUES",
+    "LEGACY_SCENARIO_STATUS_VALUES",
     "LEGACY_FUNCTION_STATUS_VALUES",
     "LEGACY_METADATA_NODE_STATUS_VALUES",
-    "LEGACY_SCENARIO_STATUS_VALUES",
-    "EnumStatusMigrationValidator",
-    "EnumStatusMigrator",
 ]

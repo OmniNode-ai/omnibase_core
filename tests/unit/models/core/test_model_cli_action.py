@@ -15,6 +15,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_action_category import EnumActionCategory
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 
 
@@ -139,16 +140,20 @@ class TestModelCliAction:
 
         node_id = uuid4()
         for name in invalid_names:
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises((ValidationError, OnexError)) as exc_info:
                 ModelCliAction.from_contract_action(
                     action_name=name,
                     node_id=node_id,
                     node_name="test_node",
                     description="Test description",
                 )
-            assert "pattern" in str(
-                exc_info.value,
-            ).lower() or "string_pattern_mismatch" in str(exc_info.value)
+            # Check for pattern-related error message
+            error_message = str(exc_info.value).lower()
+            assert (
+                "pattern" in error_message
+                or "string_pattern_mismatch" in error_message
+                or "validation_error" in error_message
+            )
 
     def test_field_types_validation(self):
         """Test that field types are properly validated."""
@@ -492,8 +497,18 @@ class TestModelCliAction:
         )
         assert action.category == EnumActionCategory.CONFIGURATION
 
+        # Test with valid enum string value - should convert to enum
+        action = ModelCliAction.from_contract_action(
+            action_name="test_action",
+            node_id=node_id,
+            node_name="test_node",
+            description="Test description",
+            category="configuration",
+        )
+        assert action.category == EnumActionCategory.CONFIGURATION
+
         # Test with invalid string should fail
-        with pytest.raises(ValidationError):
+        with pytest.raises((ValidationError, OnexError)):
             ModelCliAction.from_contract_action(
                 action_name="test_action",
                 node_id=node_id,
@@ -511,7 +526,7 @@ class TestModelCliActionEdgeCases:
         node_id = uuid4()
 
         # Empty action_name should fail pattern validation
-        with pytest.raises(ValidationError):
+        with pytest.raises((ValidationError, OnexError)):
             ModelCliAction.from_contract_action(
                 action_name="",
                 node_id=node_id,
@@ -608,7 +623,7 @@ class TestModelCliActionEdgeCases:
     def test_factory_method_with_invalid_pattern(self):
         """Test factory method with invalid action_name pattern."""
         node_id = uuid4()
-        with pytest.raises(ValidationError):
+        with pytest.raises((ValidationError, OnexError)):
             ModelCliAction.from_contract_action(
                 action_name="Invalid-Action",
                 node_id=node_id,

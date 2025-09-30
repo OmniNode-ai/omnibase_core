@@ -251,17 +251,27 @@ class TestModelCliResultMetadata:
         metadata.set_custom_field("float_field", 3.14)
         metadata.set_custom_field("bool_field", True)
 
-        # Verify values - custom_metadata stores raw Python types
-        assert metadata.custom_metadata["string_field"] == "test_value"
-        assert metadata.custom_metadata["int_field"] == 42
-        assert metadata.custom_metadata["float_field"] == 3.14
-        assert metadata.custom_metadata["bool_field"] is True
+        # Verify values - custom_metadata stores ModelCliValue wrappers
+        # Access raw_value to get the unwrapped Python value
+        assert metadata.custom_metadata["string_field"].raw_value == "test_value"
+        assert metadata.custom_metadata["int_field"].raw_value == 42
+        assert metadata.custom_metadata["float_field"].raw_value == 3.14
+        assert metadata.custom_metadata["bool_field"].raw_value is True
 
-        # Test get_custom_field
-        assert metadata.get_custom_field("string_field") == "test_value"
-        assert metadata.get_custom_field("int_field") == 42
+        # Test get_custom_field - returns ModelCliValue wrapper
+        string_field = metadata.get_custom_field("string_field")
+        assert string_field is not None
+        assert string_field.raw_value == "test_value"
+
+        int_field = metadata.get_custom_field("int_field")
+        assert int_field is not None
+        assert int_field.raw_value == 42
+
         assert metadata.get_custom_field("nonexistent") is None
-        assert metadata.get_custom_field("nonexistent", "default") == "default"
+
+        # Test with default value
+        default_field = metadata.get_custom_field("nonexistent", "default")
+        assert default_field == "default"
 
     def test_complex_metadata_scenario(self):
         """Test complex metadata scenario with all features."""
@@ -398,7 +408,9 @@ class TestModelCliResultMetadata:
         assert metadata.resource_usage == {"memory": 128.0}
         assert metadata.compliance_flags == {"test_coverage": True}
         assert metadata.audit_trail == ["Test started"]
-        assert metadata.custom_metadata == {"test_id": "12345"}
+        # custom_metadata stores ModelCliValue wrappers, check raw_value
+        assert "test_id" in metadata.custom_metadata
+        assert metadata.custom_metadata["test_id"].raw_value == "12345"
 
     def test_model_round_trip(self):
         """Test serialization -> deserialization round trip."""
@@ -438,7 +450,12 @@ class TestModelCliResultMetadata:
         assert restored.labels == original.labels
         assert restored.resource_usage == original.resource_usage
         assert restored.compliance_flags == original.compliance_flags
-        assert restored.custom_metadata == original.custom_metadata
+        # Compare custom_metadata values through raw_value
+        assert "iteration" in restored.custom_metadata
+        assert (
+            restored.custom_metadata["iteration"].raw_value
+            == original.custom_metadata["iteration"].raw_value
+        )
 
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""

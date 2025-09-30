@@ -10,7 +10,12 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -34,7 +39,11 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         default_factory=uuid4,
         description="Globally unique action identifier",
     )
-    action_name_id: UUID = Field(..., description="UUID for action name", exclude=True)
+    action_name_id: UUID = Field(
+        default_factory=uuid4,
+        description="UUID for action name",
+        exclude=True,
+    )
     action_display_name: str = Field(
         ...,
         description="Action name",
@@ -44,23 +53,85 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     node_display_name: str = Field(..., description="Node name", alias="node_name")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
-    category: ModelSchemaValue = Field(
-        default_factory=lambda: ModelSchemaValue.from_value(None),
+    category: object = Field(
+        default=None,
         description="Action category for grouping (enum or null)",
     )
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def unwrap_category(cls, v: object) -> object:
+        """Unwrap ModelSchemaValue if passed and validate enum."""
+        if isinstance(v, ModelSchemaValue):
+            v = v.to_value()
+
+        # If not None, validate it's a valid enum member
+        if v is not None:
+            from omnibase_core.enums.enum_action_category import EnumActionCategory
+
+            # Allow enum members directly
+            if isinstance(v, EnumActionCategory):
+                return v
+
+            # Try to convert string to enum
+            if isinstance(v, str):
+                try:
+                    return EnumActionCategory(v)
+                except ValueError:
+                    valid_values = [e.value for e in EnumActionCategory]
+                    message = (
+                        f"Invalid category value: {v}. "
+                        f"Must be one of {valid_values}"
+                    )
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=message,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value(
+                                    "valueerror",
+                                ),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation",
+                                ),
+                            },
+                        ),
+                    ) from None
+
+            # Invalid type
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Category must be None or EnumActionCategory, got {type(v)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("typeerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
+                        ),
+                    },
+                ),
+            )
+
+        return v
 
     @field_validator("action_display_name")
     @classmethod
     def validate_action_display_name(cls, v: str) -> str:
         """Validate action display name pattern."""
-        # Pattern: lowercase letter, followed by lowercase letters, numbers, or underscores
+        # Pattern: lowercase letter, followed by lowercase letters,
+        # numbers, or underscores
         import re
 
         pattern = r"^[a-z][a-z0-9_]*$"
         if not re.match(pattern, v):
+            message = (  # type: ignore[unreachable]
+                "action_display_name must match pattern: start with "
+                "lowercase letter and contain only lowercase letters, "
+                "numbers, and underscores"
+            )
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="action_display_name must match pattern: start with lowercase letter and contain only lowercase letters, numbers, and underscores",
+                message=message,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -106,18 +177,17 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         **kwargs: object,
     ) -> ModelCliAction:
         """Factory method for creating actions from contract data."""
-
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
         # Validate input types first using Pydantic validation
         cls.model_validate(
             {
                 "action_id": "00000000-0000-0000-0000-000000000000",
                 "action_name_id": "00000000-0000-0000-0000-000000000000",
-                "action_name": action_name,  # This will use the alias to validate action_display_name
+                # Use alias to validate action_display_name
+                "action_name": action_name,
                 "node_id": node_id,  # This will trigger validation
-                "node_name": node_name,  # This will use the alias to validate node_display_name
-                "description": description or "test",  # This will trigger validation
+                # Use alias to validate node_display_name
+                "node_name": node_name,
+                "description": description or "test",  # Trigger validation
             },
         )
 
@@ -131,8 +201,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
             action_id = None  # Use default UUID generation
         if not isinstance(deprecated, bool):
             deprecated = False
-        # Convert category to ModelSchemaValue
-        category_value = ModelSchemaValue.from_value(category)
+        # category is now stored directly without ModelSchemaValue wrapping
 
         # Return instance with typed arguments - Pydantic will validate
         # Use default description only if None, preserve empty strings
@@ -143,25 +212,25 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         )
 
         # action_name_id will be computed automatically by the model validator
+        # Don't pass action_name_id manually - let the validator compute it
+        # from action_name hash
         if action_id is not None:
             return cls(
                 action_id=action_id,
-                action_name_id=uuid4(),  # Provide required field
                 action_name=action_name,  # Use alias
                 node_id=node_id,
                 node_name=node_name,  # Use alias
                 description=final_description,
                 deprecated=deprecated,
-                category=category_value,
+                category=category,
             )
         return cls(
-            action_name_id=uuid4(),  # Provide required field
             action_name=action_name,  # Use alias
             node_id=node_id,
             node_name=node_name,  # Use alias
             description=final_description,
             deprecated=deprecated,
-            category=category_value,
+            category=category,
         )
 
     def get_qualified_name(self) -> str:

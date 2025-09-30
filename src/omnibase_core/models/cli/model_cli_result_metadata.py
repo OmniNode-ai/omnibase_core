@@ -147,18 +147,6 @@ class ModelCliResultMetadata(BaseModel):
             raise ValueError(f"Invalid version string: {v}")
         raise ValueError(f"Invalid processor version type: {type(v)}")
 
-    @field_validator("data_classification")
-    @classmethod
-    def validate_data_classification(
-        cls,
-        v: EnumDataClassification,
-    ) -> EnumDataClassification:
-        """Validate data classification enum (Pydantic handles string conversion automatically)."""
-        if isinstance(v, EnumDataClassification):
-            return v
-        # This should never happen with proper typing and Pydantic's enum conversion
-        raise ValueError(f"Invalid data classification type: {type(v)}")
-
     @field_validator("retention_policy", mode="before")
     @classmethod
     def validate_retention_policy(cls, v: object) -> EnumRetentionPolicy | None:
@@ -178,7 +166,7 @@ class ModelCliResultMetadata(BaseModel):
                     raise ValueError(f"Invalid retention policy: {v}")
         raise ValueError(f"Invalid retention policy type: {type(v)}")
 
-    @field_validator("custom_metadata")
+    @field_validator("custom_metadata", mode="before")
     @classmethod
     def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelCliValue]:
         """Validate custom metadata values ensure they are ModelCliValue objects."""
@@ -187,6 +175,13 @@ class ModelCliResultMetadata(BaseModel):
             if isinstance(value, ModelCliValue):
                 # Keep as ModelCliValue
                 result[key] = value
+            elif (
+                isinstance(value, dict)
+                and "value_type" in value
+                and "raw_value" in value
+            ):
+                # Reconstruct ModelCliValue from serialized form
+                result[key] = ModelCliValue.model_validate(value)
             else:
                 # Convert to ModelCliValue
                 result[key] = ModelCliValue.from_any(value)

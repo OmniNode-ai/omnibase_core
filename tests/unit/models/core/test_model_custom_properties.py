@@ -6,6 +6,7 @@ Tests the generic custom properties pattern that replaces repetitive custom fiel
 
 import pytest
 
+from omnibase_core.exceptions import OnexError
 from omnibase_core.models.core import ModelCustomProperties
 
 
@@ -124,7 +125,7 @@ class TestModelCustomProperties:
         """Test error handling for unsupported types."""
         props = ModelCustomProperties()
 
-        with pytest.raises(TypeError, match="Unsupported custom value type"):
+        with pytest.raises(OnexError, match="Unsupported custom value type"):
             props.set_custom_value("invalid", [1, 2, 3])
 
     def test_update_from_dict(self):
