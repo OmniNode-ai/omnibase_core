@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.patterns import ModelNodeType
 
 
@@ -114,7 +115,7 @@ class TestModelNodeType:
             )
             assert node_type.type_name == name
 
-        # Invalid enum values should raise ValidationError
+        # Invalid enum values should raise OnexError (custom validation)
         invalid_names = [
             "INVALID_NODE",  # Not in enum
             "lowercase",  # Invalid format
@@ -123,14 +124,14 @@ class TestModelNodeType:
         ]
 
         for name in invalid_names:
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(OnexError) as exc_info:
                 ModelNodeType(
                     type_name=name,
                     description="Test description",
                     category=EnumConfigCategory.TESTING,
                 )
             assert (
-                "type=enum" in str(exc_info.value)
+                "validation_error" in str(exc_info.value).lower()
                 or "enum" in str(exc_info.value).lower()
             )
 
@@ -152,7 +153,7 @@ class TestModelNodeType:
             )
             assert node_type.category == category
 
-        # Invalid categories should raise ValidationError
+        # Invalid categories should raise OnexError (custom validation)
         invalid_categories = [
             "INVALID_CATEGORY",  # Not in enum
             "Uppercase",  # Invalid format
@@ -161,14 +162,14 @@ class TestModelNodeType:
         ]
 
         for category in invalid_categories:
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(OnexError) as exc_info:
                 ModelNodeType(
                     type_name=EnumTypeName.CONTRACT_TO_MODEL,
                     description="Test description",
                     category=category,
                 )
             assert (
-                "type=enum" in str(exc_info.value)
+                "validation_error" in str(exc_info.value).lower()
                 or "enum" in str(exc_info.value).lower()
             )
 
@@ -221,7 +222,7 @@ class TestModelNodeType:
 
     def test_field_types_validation(self):
         """Test that field types are properly validated."""
-        # Test non-string name
+        # Test non-string type_name - Pydantic's built-in validation catches this first
         with pytest.raises(ValidationError):
             ModelNodeType(
                 type_name=123,
@@ -233,18 +234,18 @@ class TestModelNodeType:
         with pytest.raises(ValidationError):
             ModelNodeType(type_name="TEST_NODE", description=123, category="testing")
 
-        # Test non-string category
+        # Test non-string category - Pydantic's built-in validation catches this first
         with pytest.raises(ValidationError):
             ModelNodeType(
-                name="TEST_NODE",
+                type_name="TEST_NODE",
                 description="Test description",
                 category=123,
             )
 
-        # Test non-list dependencies
-        with pytest.raises(ValidationError):
+        # Test non-list dependencies - Custom validator catches this
+        with pytest.raises(OnexError):
             ModelNodeType(
-                name="TEST_NODE",
+                type_name="TEST_NODE",
                 description="Test description",
                 category="testing",
                 dependencies="not_a_list",
@@ -370,15 +371,15 @@ class TestModelNodeType:
     def test_factory_method_logger_emit_log_event(self):
         """Test the LOGGER_EMIT_LOG_EVENT factory method."""
         # This factory method uses a name that doesn't match the pattern
-        # So it should raise ValidationError
-        with pytest.raises(ValidationError):
+        # So it should raise OnexError (custom validation)
+        with pytest.raises(OnexError):
             ModelNodeType.LOGGER_EMIT_LOG_EVENT()
 
     def test_factory_method_scenario_runner(self):
         """Test the SCENARIO_RUNNER factory method."""
         # This factory method uses a name that doesn't match the pattern
-        # So it should raise ValidationError
-        with pytest.raises(ValidationError):
+        # So it should raise OnexError (custom validation)
+        with pytest.raises(OnexError):
             ModelNodeType.SCENARIO_RUNNER()
 
     def test_from_string_method_known_types(self):
@@ -411,7 +412,7 @@ class TestModelNodeType:
         assert str(node_type) == "CONTRACT_TO_MODEL"
 
         custom_node = ModelNodeType(
-            name="CUSTOM_NODE",
+            type_name="CUSTOM_NODE",
             description="Custom description",
             category="custom",
         )
@@ -558,14 +559,14 @@ class TestModelNodeType:
             assert node_type.description != ""
             assert node_type.category != ""
 
-        # Names that don't match the pattern but are in factory map - should raise ValidationError
+        # Names that don't match the pattern but are in factory map - should raise OnexError
         invalid_pattern_names = [
             "node_logger_emit_log_event",
             "scenario_runner",
         ]
 
         for name in invalid_pattern_names:
-            with pytest.raises(ValidationError):
+            with pytest.raises(OnexError):
                 ModelNodeType.from_string(name)
 
         # Names not in factory map should create generic nodes (but must follow name pattern)
@@ -584,7 +585,7 @@ class TestModelNodeTypeEdgeCases:
     def test_empty_string_fields(self):
         """Test behavior with empty string fields."""
         # Empty name should fail pattern validation
-        with pytest.raises(ValidationError):
+        with pytest.raises(OnexError):
             ModelNodeType(
                 type_name="",
                 description="Test description",
@@ -592,11 +593,13 @@ class TestModelNodeTypeEdgeCases:
             )
 
         # Empty description should be valid (no min_length constraint)
-        node_type = ModelNodeType(name="TEST_NODE", description="", category="testing")
+        node_type = ModelNodeType(
+            type_name="TEST_NODE", description="", category="testing"
+        )
         assert node_type.description == ""
 
         # Empty category should fail pattern validation
-        with pytest.raises(ValidationError):
+        with pytest.raises(OnexError):
             ModelNodeType(
                 type_name="TEST_NODE",
                 description="Test description",
@@ -614,17 +617,17 @@ class TestModelNodeTypeEdgeCases:
         assert node_type.description == "  Description with spaces  "
 
         # Whitespace in name should fail pattern validation
-        with pytest.raises(ValidationError):
+        with pytest.raises(OnexError):
             ModelNodeType(
-                name=" TEST_NODE ",
+                type_name=" TEST_NODE ",
                 description="Test description",
                 category="testing",
             )
 
         # Whitespace in category should fail pattern validation
-        with pytest.raises(ValidationError):
+        with pytest.raises(OnexError):
             ModelNodeType(
-                name="TEST_NODE",
+                type_name="TEST_NODE",
                 description="Test description",
                 category=" testing ",
             )
@@ -731,7 +734,7 @@ class TestModelNodeTypeEdgeCases:
 
         for constraint in version_constraints:
             node_type = ModelNodeType(
-                name="TEST_NODE",
+                type_name="TEST_NODE",
                 description="Test description",
                 category="testing",
                 version_compatibility=constraint,

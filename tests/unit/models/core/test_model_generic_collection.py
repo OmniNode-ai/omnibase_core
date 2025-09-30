@@ -456,19 +456,19 @@ class TestModelGenericCollection:
             items,
             "legacy_collection",
         )
-        assert legacy_collection.collection_name == "legacy_collection"
+        assert legacy_collection.collection_display_name == "legacy_collection"
         assert legacy_collection.collection_display_name == "legacy_collection"
         assert legacy_collection.item_count() == 2
 
-        # Test summary backward compatibility
+        # Test summary access
         summary = legacy_collection.get_summary()
-        assert summary.collection_name == "legacy_collection"
+        assert summary.collection_display_name == "legacy_collection"
         assert summary.collection_display_name == "legacy_collection"
 
         # Test summary setter
-        summary.collection_name = "updated_summary"
+        summary.collection_display_name = "updated_summary"
         assert summary.collection_display_name == "updated_summary"
-        assert summary.collection_name == "updated_summary"
+        assert summary.collection_display_name == "updated_summary"
 
     def test_collection_id_uniqueness(self):
         """Test that collection IDs are unique."""
