@@ -7,19 +7,14 @@ with structured validation and proper type handling.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
 
 # Import all dependencies only when needed to break circular imports
-if TYPE_CHECKING:
-    from omnibase_core.exceptions.onex_error import OnexError
-    from omnibase_core.models.common.model_error_context import ModelErrorContext
-    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Forward reference for type alias - will be properly defined after the class
 
@@ -110,8 +105,7 @@ class ModelNumericValue(BaseModel):
         # Detect the original type and use appropriate method
         if isinstance(value, int):
             return cls.from_int(value, source)
-        else:
-            return cls.from_float(value, source)
+        return cls.from_float(value, source)
 
     def as_int(self) -> int:
         """Get value as integer."""
@@ -141,7 +135,7 @@ class ModelNumericValue(BaseModel):
         """Get the value respecting the original type flag."""
         if self.value_type == EnumNumericType.INTEGER:
             return float(
-                int(self.value)
+                int(self.value),
             )  # Ensure integer precision but return as float
         return self.value
 

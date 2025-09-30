@@ -5,7 +5,7 @@ Generic metadata model for flexible data storage.
 from __future__ import annotations
 
 # Import proper type with fallback mechanism from metadata package
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
+from typing import TYPE_CHECKING, TypedDict, overload
 from uuid import UUID
 
 # Import simplified type constraint from core
@@ -19,11 +19,6 @@ else:
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -141,10 +136,9 @@ class ModelGenericMetadata(BaseModel):
         # If custom_fields validation worked correctly, cli_value should always be ModelCliValue
         if hasattr(cli_value, "to_python_value"):
             return cli_value.to_python_value()
-        else:
-            # Fallback for edge cases where validation didn't convert properly
-            # This branch should be rare if validation is working correctly
-            return cli_value
+        # Fallback for edge cases where validation didn't convert properly
+        # This branch should be rare if validation is working correctly
+        return cli_value
 
     @overload
     def set_field(self, key: str, value: str) -> None: ...
@@ -169,7 +163,10 @@ class ModelGenericMetadata(BaseModel):
         self.custom_fields[key] = ModelCliValue.from_any(value)
 
     def get_typed_field(
-        self, key: str, field_type: type[object], default: object
+        self,
+        key: str,
+        field_type: type[object],
+        default: object,
     ) -> object:
         """Get a custom field value with specific type checking."""
         if self.custom_fields is None:
@@ -207,9 +204,9 @@ class ModelGenericMetadata(BaseModel):
                         "key": ModelSchemaValue.from_value(key),
                         "value_type": ModelSchemaValue.from_value(str(type(value))),
                         "supported_interface": ModelSchemaValue.from_value(
-                            "ProtocolSupportedMetadataType"
+                            "ProtocolSupportedMetadataType",
                         ),
-                    }
+                    },
                 ),
             )
 

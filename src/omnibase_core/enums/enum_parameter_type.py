@@ -7,7 +7,6 @@ Strongly typed parameter type values for ONEX architecture parameter validation.
 from __future__ import annotations
 
 from enum import Enum, unique
-from typing import Any
 
 
 @unique

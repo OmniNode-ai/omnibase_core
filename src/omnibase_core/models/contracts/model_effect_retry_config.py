@@ -79,9 +79,9 @@ class ModelEffectRetryConfig(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
         return v

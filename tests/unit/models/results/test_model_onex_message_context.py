@@ -9,9 +9,6 @@ Tests cover:
 - Type safety verification
 """
 
-import pytest
-from pydantic import ValidationError
-
 from omnibase_core.models.results.model_onex_message_context import (
     ModelOnexMessageContext,
 )
@@ -224,7 +221,8 @@ class TestModelOnexMessageContextComplexScenarios:
     def test_context_with_error_location(self):
         """Test context holding error location information."""
         context = ModelOnexMessageContext(
-            key="line_content", value="def foo()  # Missing colon"
+            key="line_content",
+            value="def foo()  # Missing colon",
         )
 
         assert context.key == "line_content"

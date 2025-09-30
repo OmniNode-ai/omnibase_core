@@ -8,12 +8,11 @@ with structured validation and proper type handling.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import BasicValueType, Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -64,7 +63,9 @@ class ModelPropertyValue(BaseModel):
     @field_validator("value")
     @classmethod
     def validate_value_type(
-        cls, v: PropertyValueType, info: ValidationInfo
+        cls,
+        v: PropertyValueType,
+        info: ValidationInfo,
     ) -> PropertyValueType:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
@@ -295,7 +296,7 @@ class ModelPropertyValue(BaseModel):
                     {
                         "input_value": ModelSchemaValue.from_value(value),
                         "error": ModelSchemaValue.from_value(str(e)),
-                    }
+                    },
                 ),
             ) from e
 
@@ -316,7 +317,8 @@ class ModelPropertyValue(BaseModel):
         """Get value as integer."""
         if self.value_type == EnumPropertyType.INTEGER:
             assert isinstance(
-                self.value, (int, float, str)
+                self.value,
+                (int, float, str),
             ), f"Expected numeric or string type, got {type(self.value)}"
             return int(self.value)
         if isinstance(self.value, (int, float)):
@@ -339,7 +341,8 @@ class ModelPropertyValue(BaseModel):
         """Get value as float."""
         if self.value_type in (EnumPropertyType.FLOAT, EnumPropertyType.INTEGER):
             assert isinstance(
-                self.value, (int, float, str)
+                self.value,
+                (int, float, str),
             ), f"Expected numeric or string type, got {type(self.value)}"
             return float(self.value)
         if isinstance(self.value, str):
@@ -372,7 +375,8 @@ class ModelPropertyValue(BaseModel):
             EnumPropertyType.FLOAT_LIST,
         ):
             assert isinstance(
-                self.value, list
+                self.value,
+                list,
             ), f"Expected list type, got {type(self.value)}"
             return list(self.value)
         raise OnexError(
@@ -393,7 +397,8 @@ class ModelPropertyValue(BaseModel):
             if isinstance(self.value, UUID):
                 return self.value
             assert isinstance(
-                self.value, str
+                self.value,
+                str,
             ), f"Expected string type for UUID conversion, got {type(self.value)}"
             return UUID(self.value)
         raise OnexError(

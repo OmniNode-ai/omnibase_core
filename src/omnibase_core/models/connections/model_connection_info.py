@@ -12,9 +12,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth
 from omnibase_core.models.connections.model_connection_endpoint import (

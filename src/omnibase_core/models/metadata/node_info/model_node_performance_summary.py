@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelNodePerformanceSummary(BaseModel):
     """
@@ -36,10 +30,10 @@ class ModelNodePerformanceSummary(BaseModel):
 
     # Performance metrics
     average_execution_time_ms: float = Field(
-        description="Average execution time in milliseconds"
+        description="Average execution time in milliseconds",
     )
     average_execution_time_seconds: float = Field(
-        description="Average execution time in seconds"
+        description="Average execution time in seconds",
     )
     memory_usage_mb: float = Field(description="Memory usage in MB")
 
@@ -53,13 +47,14 @@ class ModelNodePerformanceSummary(BaseModel):
 
     # Boolean indicators
     has_performance_issues: bool = Field(
-        description="Whether node has performance issues"
+        description="Whether node has performance issues",
     )
     is_reliable: bool = Field(description="Whether node is reliable")
 
     # Improvement suggestions
     improvement_suggestions: list[str] = Field(
-        default_factory=list, description="List of performance improvement suggestions"
+        default_factory=list,
+        description="List of performance improvement suggestions",
     )
 
     @property
@@ -76,12 +71,11 @@ class ModelNodePerformanceSummary(BaseModel):
         """Get overall health status based on multiple indicators."""
         if self.is_reliable and not self.has_performance_issues:
             return "Excellent"
-        elif self.is_reliable and self.has_performance_issues:
+        if self.is_reliable and self.has_performance_issues:
             return "Good"
-        elif not self.is_reliable and not self.has_performance_issues:
+        if not self.is_reliable and not self.has_performance_issues:
             return "Fair"
-        else:
-            return "Poor"
+        return "Poor"
 
     def get_priority_improvements(self) -> list[str]:
         """Get the most critical improvement suggestions."""

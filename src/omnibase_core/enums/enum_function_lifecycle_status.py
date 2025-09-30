@@ -74,7 +74,8 @@ class EnumFunctionLifecycleStatus(str, Enum):
 
     @classmethod
     def from_base_status(
-        cls, base_status: EnumBaseStatus
+        cls,
+        base_status: EnumBaseStatus,
     ) -> EnumFunctionLifecycleStatus:
         """Create lifecycle status from base status."""
         # Direct mapping for base values

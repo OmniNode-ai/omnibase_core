@@ -229,7 +229,8 @@ class TestModelCliExecution:
         """Test the get_target_node_name method."""
         # With target node
         execution = ModelCliExecution(
-            command_name="deploy", target_node_name="app_node"
+            command_name="deploy",
+            target_node_name="app_node",
         )
         assert execution.get_target_node_name() == "app_node"
 
@@ -599,11 +600,15 @@ class TestModelCliExecution:
         start_time = datetime.now(UTC)
 
         execution1 = ModelCliExecution(
-            execution_id=execution_id, command_name="deploy", start_time=start_time
+            execution_id=execution_id,
+            command_name="deploy",
+            start_time=start_time,
         )
 
         execution2 = ModelCliExecution(
-            execution_id=execution_id, command_name="deploy", start_time=start_time
+            execution_id=execution_id,
+            command_name="deploy",
+            start_time=start_time,
         )
 
         execution3 = ModelCliExecution(
@@ -665,7 +670,9 @@ class TestModelCliExecutionEdgeCases:
 
         # Large retry counts
         execution = ModelCliExecution(
-            command_name="test", max_retries=999999999, retry_count=999999999
+            command_name="test",
+            max_retries=999999999,
+            retry_count=999999999,
         )
         assert execution.max_retries == 999999999
         assert execution.retry_count == 999999999
@@ -745,7 +752,9 @@ class TestModelCliExecutionEdgeCases:
 
         # Max retries = retry count initially
         execution2 = ModelCliExecution(
-            command_name="test", max_retries=2, retry_count=2
+            command_name="test",
+            max_retries=2,
+            retry_count=2,
         )
         assert execution2.increment_retry() is False
         assert execution2.retry_count == 3

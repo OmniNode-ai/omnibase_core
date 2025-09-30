@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Large file for performance testing."""
 
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -31,7 +30,7 @@ class ModelLargeData(BaseModel):
     field_0020: str
 
 
-def process_large_data(data: Dict[str, str]) -> Dict[str, str]:
+def process_large_data(data: dict[str, str]) -> dict[str, str]:
     """Function that processes large amounts of data."""
     result = {}
 

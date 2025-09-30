@@ -98,7 +98,9 @@ class TestModelCliAction:
         # Missing description
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                action_name="test_action", node_id=node_id, node_name="test_node"
+                action_name="test_action",
+                node_id=node_id,
+                node_name="test_node",
             )
         assert "description" in str(exc_info.value)
 
@@ -145,7 +147,7 @@ class TestModelCliAction:
                     description="Test description",
                 )
             assert "pattern" in str(
-                exc_info.value
+                exc_info.value,
             ).lower() or "string_pattern_mismatch" in str(exc_info.value)
 
     def test_field_types_validation(self):
@@ -203,7 +205,9 @@ class TestModelCliAction:
         # Test with minimal parameters
         node_id = uuid4()
         action = ModelCliAction.from_contract_action(
-            action_name="deploy", node_id=node_id, node_name="test_node"
+            action_name="deploy",
+            node_id=node_id,
+            node_name="test_node",
         )
 
         assert action.action_display_name == "deploy"
@@ -606,7 +610,9 @@ class TestModelCliActionEdgeCases:
         node_id = uuid4()
         with pytest.raises(ValidationError):
             ModelCliAction.from_contract_action(
-                action_name="Invalid-Action", node_id=node_id, node_name="test_node"
+                action_name="Invalid-Action",
+                node_id=node_id,
+                node_name="test_node",
             )
 
 

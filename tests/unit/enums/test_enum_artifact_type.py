@@ -115,7 +115,7 @@ class TestEnumArtifactType:
 
         # Test that strings work with member values
         tool_member = EnumArtifactType.TOOL
-        assert "tool" == tool_member.value
+        assert tool_member.value == "tool"
 
     def test_enum_hash_consistency(self):
         """Test that enum members are hashable and consistent."""

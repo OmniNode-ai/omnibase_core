@@ -8,11 +8,9 @@ the codebase.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.core.type_constraints import Serializable
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue

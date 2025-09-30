@@ -7,14 +7,13 @@ error handling, and audit operations.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from omnibase_core.validation import (
     ConfigurationError,
-    InputValidationError,
-    ProtocolAuditor,
+    ModelProtocolAuditor,
 )
 
 
@@ -27,9 +26,9 @@ class TestProtocolAuditorInitialization:
             temp_path = Path(temp_dir)
 
             with patch(
-                "omnibase_core.validation.auditor_protocol.logger"
+                "omnibase_core.validation.auditor_protocol.logger",
             ) as mock_logger:
-                auditor = ProtocolAuditor(str(temp_path))
+                auditor = ModelProtocolAuditor(str(temp_path))
 
                 assert auditor.repository_path == temp_path.resolve()
                 assert auditor.repository_name is not None
@@ -45,9 +44,10 @@ class TestProtocolAuditorInitialization:
         nonexistent_path = "/nonexistent/repository"
 
         with pytest.raises(
-            ConfigurationError, match="Invalid repository configuration"
+            ConfigurationError,
+            match="Invalid repository configuration",
         ):
-            ProtocolAuditor(nonexistent_path)
+            ModelProtocolAuditor(nonexistent_path)
 
     def test_init_with_file_instead_of_directory(self):
         """Test initialization fails when file is passed instead of directory."""
@@ -55,14 +55,15 @@ class TestProtocolAuditorInitialization:
             temp_path = temp_file.name
 
             with pytest.raises(
-                ConfigurationError, match="Invalid repository configuration"
+                ConfigurationError,
+                match="Invalid repository configuration",
             ):
-                ProtocolAuditor(temp_path)
+                ModelProtocolAuditor(temp_path)
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory (default)."""
         # This should work since we're running from a valid directory
-        auditor = ProtocolAuditor()
+        auditor = ModelProtocolAuditor()
 
         assert auditor.repository_path.exists()
         assert auditor.repository_path.is_dir()
@@ -71,7 +72,7 @@ class TestProtocolAuditorInitialization:
         """Test initialization with relative path."""
         # Use current directory's parent as a relative path
         with patch("omnibase_core.validation.auditor_protocol.logger"):
-            auditor = ProtocolAuditor(".")
+            auditor = ModelProtocolAuditor(".")
 
             assert auditor.repository_path.is_absolute()
             assert auditor.repository_path.exists()
@@ -83,11 +84,12 @@ class TestProtocolAuditorValidation:
     def test_check_against_spi_with_invalid_path(self):
         """Test check_against_spi fails with invalid SPI path."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
             invalid_spi_path = "/nonexistent/spi/path"
 
             with pytest.raises(
-                ConfigurationError, match="Invalid SPI path configuration"
+                ConfigurationError,
+                match="Invalid SPI path configuration",
             ):
                 auditor.check_against_spi(invalid_spi_path)
 
@@ -95,10 +97,10 @@ class TestProtocolAuditorValidation:
         """Test check_against_spi handles missing protocols directory gracefully."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.TemporaryDirectory() as spi_dir:
-                auditor = ProtocolAuditor(temp_dir)
+                auditor = ModelProtocolAuditor(temp_dir)
 
                 with patch(
-                    "omnibase_core.validation.auditor_protocol.logger"
+                    "omnibase_core.validation.auditor_protocol.logger",
                 ) as mock_logger:
                     # This should not raise an exception, just log a warning
                     result = auditor.check_against_spi(spi_dir)
@@ -114,7 +116,11 @@ class TestProtocolAuditorFunctional:
     """Functional tests for ProtocolAuditor operations."""
 
     def create_protocol_file(
-        self, directory: Path, filename: str, protocol_name: str, methods: list
+        self,
+        directory: Path,
+        filename: str,
+        protocol_name: str,
+        methods: list,
     ):
         """Helper to create a protocol file for testing."""
         protocol_code = f"""
@@ -135,7 +141,7 @@ class {protocol_name}(Protocol):
     def test_check_current_repository_empty(self):
         """Test auditing empty repository."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             assert result is not None
@@ -157,7 +163,7 @@ class {protocol_name}(Protocol):
                 ["method_one", "method_two"],
             )
 
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             assert result is not None
@@ -173,13 +179,19 @@ class {protocol_name}(Protocol):
 
             # Create two identical protocol files
             self.create_protocol_file(
-                src_path, "protocol_a.py", "DuplicateProtocol", ["identical_method"]
+                src_path,
+                "protocol_a.py",
+                "DuplicateProtocol",
+                ["identical_method"],
             )
             self.create_protocol_file(
-                src_path, "protocol_b.py", "DuplicateProtocol", ["identical_method"]
+                src_path,
+                "protocol_b.py",
+                "DuplicateProtocol",
+                ["identical_method"],
             )
 
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             assert result is not None
@@ -198,7 +210,7 @@ class {protocol_name}(Protocol):
             src_dir = Path(temp_dir) / "src"
             src_dir.mkdir()
 
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
 
             # Should raise the extraction exception since we don't handle it gracefully yet
             with pytest.raises(Exception, match="Extraction failed"):
@@ -212,9 +224,9 @@ class TestProtocolAuditorLogging:
         """Test that auditor initialization is logged."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch(
-                "omnibase_core.validation.auditor_protocol.logger"
+                "omnibase_core.validation.auditor_protocol.logger",
             ) as mock_logger:
-                auditor = ProtocolAuditor(temp_dir)
+                auditor = ModelProtocolAuditor(temp_dir)
 
                 mock_logger.info.assert_called_once()
                 call_args = mock_logger.info.call_args[0][0]
@@ -226,10 +238,10 @@ class TestProtocolAuditorLogging:
         """Test that SPI path validation issues are logged."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.TemporaryDirectory() as spi_dir:
-                auditor = ProtocolAuditor(temp_dir)
+                auditor = ModelProtocolAuditor(temp_dir)
 
                 with patch(
-                    "omnibase_core.validation.auditor_protocol.logger"
+                    "omnibase_core.validation.auditor_protocol.logger",
                 ) as mock_logger:
                     auditor.check_against_spi(spi_dir)
 
@@ -249,11 +261,11 @@ class TestProtocolAuditorEdgeCases:
             src_dir = Path(temp_dir) / "src"
             src_dir.mkdir()
 
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
 
             # Mock extract_protocols_from_directory to raise a permission error
             with patch(
-                "omnibase_core.validation.auditor_protocol.extract_protocols_from_directory"
+                "omnibase_core.validation.auditor_protocol.extract_protocols_from_directory",
             ) as mock_extract:
                 mock_extract.side_effect = PermissionError("Permission denied")
 
@@ -264,7 +276,7 @@ class TestProtocolAuditorEdgeCases:
         """Test auditing repository with unusual structure."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Don't create src directory - unusual but valid
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             # Should complete successfully with no protocols found
@@ -280,7 +292,7 @@ class TestProtocolAuditorEdgeCases:
             omni_repo = temp_path / "omnitest_repo"
             omni_repo.mkdir()
 
-            auditor = ProtocolAuditor(str(omni_repo))
+            auditor = ModelProtocolAuditor(str(omni_repo))
 
             # Repository name should be determined from path
             assert (
@@ -295,7 +307,7 @@ class TestConfigurationErrorHandling:
     def test_configuration_error_chaining(self):
         """Test that configuration errors properly chain underlying exceptions."""
         with pytest.raises(ConfigurationError) as exc_info:
-            ProtocolAuditor("/definitely/nonexistent/path")
+            ModelProtocolAuditor("/definitely/nonexistent/path")
 
         # Should contain information about the underlying validation error
         assert "Invalid repository configuration" in str(exc_info.value)
@@ -303,7 +315,7 @@ class TestConfigurationErrorHandling:
     def test_spi_configuration_error_chaining(self):
         """Test that SPI configuration errors properly chain underlying exceptions."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            auditor = ProtocolAuditor(temp_dir)
+            auditor = ModelProtocolAuditor(temp_dir)
 
             with pytest.raises(ConfigurationError) as exc_info:
                 auditor.check_against_spi("/definitely/nonexistent/spi/path")

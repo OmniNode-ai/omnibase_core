@@ -10,19 +10,19 @@ Tests all aspects of the NamingConventionValidator including:
 - Exception patterns that should be ignored
 """
 
-import ast
 import shutil
 
 # Import the validation module
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation")
+    0,
+    str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation"),
 )
 from validate_naming import NamingConventionValidator, NamingViolation, main
 
@@ -580,7 +580,7 @@ class TestReportGeneration:
                 expected_pattern="^Model.*$",
                 description="Test",
                 severity="error",
-            )
+            ),
         ]
 
         report = naming_validator.generate_report()

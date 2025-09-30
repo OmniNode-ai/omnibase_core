@@ -15,12 +15,13 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation")
+    0,
+    str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation"),
 )
 from validate_structure import (
     OmniStructureValidator,
@@ -417,7 +418,8 @@ class TestMainFunction:
     def test_main_with_valid_arguments(self, temp_repo):
         """Test main function with valid arguments."""
         with patch(
-            "sys.argv", ["validate_structure.py", str(temp_repo), "omnibase_core"]
+            "sys.argv",
+            ["validate_structure.py", str(temp_repo), "omnibase_core"],
         ):
             try:
                 result = main()
@@ -430,7 +432,7 @@ class TestMainFunction:
         """Test main function with JSON output format."""
         # Create a violation to ensure JSON output
         (temp_repo / "src" / "omnibase_core" / "model").mkdir(
-            parents=True
+            parents=True,
         )  # Forbidden directory
 
         with patch(

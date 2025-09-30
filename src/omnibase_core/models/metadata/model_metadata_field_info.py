@@ -11,11 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_field_type import EnumFieldType
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.utils.uuid_utilities import uuid_from_string

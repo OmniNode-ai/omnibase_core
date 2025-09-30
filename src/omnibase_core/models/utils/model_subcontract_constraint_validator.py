@@ -10,7 +10,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict, cast
+from typing import TypedDict, cast
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class ModelContractData(BaseModel):
     """
 
     data_type: EnumContractDataType = Field(
-        description="Contract data type discriminator"
+        description="Contract data type discriminator",
     )
 
     # Data storage fields (only one should be populated based on data_type)
@@ -40,7 +40,8 @@ class ModelContractData(BaseModel):
 
     @classmethod
     def from_schema_values(
-        cls, values: dict[str, ModelSchemaValue]
+        cls,
+        values: dict[str, ModelSchemaValue],
     ) -> ModelContractData:
         """Create contract data from schema values."""
         return cls(data_type=EnumContractDataType.SCHEMA_VALUES, schema_values=values)
@@ -57,7 +58,8 @@ class ModelContractData(BaseModel):
 
     @classmethod
     def from_any(
-        cls, data: dict[str, ModelSchemaValue] | dict[str, object] | None
+        cls,
+        data: dict[str, ModelSchemaValue] | dict[str, object] | None,
     ) -> ModelContractData:
         """Create contract data from any supported type with automatic detection."""
         if data is None:
@@ -78,11 +80,11 @@ class ModelContractData(BaseModel):
         """Convert to schema values format."""
         if self.data_type == EnumContractDataType.SCHEMA_VALUES:
             return self.schema_values
-        elif self.data_type == EnumContractDataType.RAW_VALUES and self.raw_values:
+        if self.data_type == EnumContractDataType.RAW_VALUES and self.raw_values:
             return {
                 k: ModelSchemaValue.from_value(v) for k, v in self.raw_values.items()
             }
-        elif self.data_type == EnumContractDataType.NONE:
+        if self.data_type == EnumContractDataType.NONE:
             return None
         return None
 
@@ -140,7 +142,7 @@ class ModelSubcontractConstraintValidator:
         },
         "orchestrator": {
             "forbidden": [
-                "state_management"  # Orchestrators coordinate, don't manage state directly
+                "state_management",  # Orchestrators coordinate, don't manage state directly
             ],
             "forbidden_messages": {
                 "state_management": "❌ SUBCONTRACT VIOLATION: ORCHESTRATOR nodes should delegate state_management to REDUCER nodes",
@@ -208,7 +210,7 @@ class ModelSubcontractConstraintValidator:
 
         # Normalize to consistent format for validation
         normalized_data = ModelSubcontractConstraintValidator._normalize_contract_data(
-            data_to_validate
+            data_to_validate,
         )
 
         violations = []
@@ -220,7 +222,8 @@ class ModelSubcontractConstraintValidator:
             "forbidden_suggestions": {},
         }
         node_rules = ModelSubcontractConstraintValidator.NODE_SUBCONTRACT_RULES.get(
-            node_type.lower(), default_rules
+            node_type.lower(),
+            default_rules,
         )
 
         # Check forbidden subcontracts - only if normalized_data exists
@@ -228,15 +231,16 @@ class ModelSubcontractConstraintValidator:
             for forbidden_subcontract in node_rules["forbidden"]:
                 if forbidden_subcontract in normalized_data:
                     violations.append(
-                        node_rules["forbidden_messages"][forbidden_subcontract]
+                        node_rules["forbidden_messages"][forbidden_subcontract],
                     )
                     violations.append(
-                        node_rules["forbidden_suggestions"][forbidden_subcontract]
+                        node_rules["forbidden_suggestions"][forbidden_subcontract],
                     )
 
         # Check for missing recommended subcontracts
         ModelSubcontractConstraintValidator._validate_recommended_subcontracts(
-            normalized_data, violations
+            normalized_data,
+            violations,
         )
 
         # Raise validation error if any violations found
@@ -248,9 +252,9 @@ class ModelSubcontractConstraintValidator:
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -270,10 +274,10 @@ class ModelSubcontractConstraintValidator:
         # Only check if normalized_data exists
         if normalized_data is not None and "event_type" not in normalized_data:
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts"
+                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
             )
             violations.append(
-                "   💡 Add event_type configuration for event-driven architecture"
+                "   💡 Add event_type configuration for event-driven architecture",
             )
 
     @staticmethod

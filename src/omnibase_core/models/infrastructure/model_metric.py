@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -79,7 +78,7 @@ class ModelMetric(BaseModel):
         else:
             # Default to float conversion for unsupported numeric types
             metadata_value = ModelMetadataValue.from_float(
-                float(value.to_python_value())
+                float(value.to_python_value()),
             )
 
         return cls(

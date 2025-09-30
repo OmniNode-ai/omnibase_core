@@ -7,13 +7,13 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Literal, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -126,9 +126,9 @@ class ModelPropertyCollection(BaseModel):
                     "value_type": ModelSchemaValue.from_value(str(type(value))),
                     "source": ModelSchemaValue.from_value(str(source)),
                     "supported_types": ModelSchemaValue.from_value(
-                        "str, int, bool, float, dict"
+                        "str, int, bool, float, dict",
                     ),
-                }
+                },
             ),
         )
 

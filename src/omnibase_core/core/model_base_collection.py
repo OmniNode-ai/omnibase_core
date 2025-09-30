@@ -7,7 +7,8 @@ Abstract base class for typed collections following ONEX one-model-per-file arch
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterator, TypeVar
+from collections.abc import Iterator
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 

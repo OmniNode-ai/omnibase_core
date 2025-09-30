@@ -29,32 +29,32 @@ class EnumOutputMode(str, Enum):
         return self.value
 
     @classmethod
-    def returns_full_content(cls, output_mode: "EnumOutputMode") -> bool:
+    def returns_full_content(cls, output_mode: EnumOutputMode) -> bool:
         """Check if the output mode returns full content."""
         return output_mode == cls.CONTENT
 
     @classmethod
-    def returns_file_paths(cls, output_mode: "EnumOutputMode") -> bool:
+    def returns_file_paths(cls, output_mode: EnumOutputMode) -> bool:
         """Check if the output mode returns file paths."""
         return output_mode == cls.FILES_WITH_MATCHES
 
     @classmethod
-    def returns_statistics(cls, output_mode: "EnumOutputMode") -> bool:
+    def returns_statistics(cls, output_mode: EnumOutputMode) -> bool:
         """Check if the output mode returns statistical information."""
         return output_mode == cls.COUNT
 
     @classmethod
-    def is_minimal_output(cls, output_mode: "EnumOutputMode") -> bool:
+    def is_minimal_output(cls, output_mode: EnumOutputMode) -> bool:
         """Check if the output mode provides minimal information."""
         return output_mode in {cls.FILES_WITH_MATCHES, cls.COUNT}
 
     @classmethod
-    def is_verbose_output(cls, output_mode: "EnumOutputMode") -> bool:
+    def is_verbose_output(cls, output_mode: EnumOutputMode) -> bool:
         """Check if the output mode provides detailed information."""
         return output_mode == cls.CONTENT
 
     @classmethod
-    def get_output_description(cls, output_mode: "EnumOutputMode") -> str:
+    def get_output_description(cls, output_mode: EnumOutputMode) -> str:
         """Get a human-readable description of the output mode."""
         descriptions = {
             cls.CONTENT: "Return matching lines with full content",
@@ -64,7 +64,7 @@ class EnumOutputMode(str, Enum):
         return descriptions.get(output_mode, "Unknown output mode")
 
     @classmethod
-    def get_typical_use_case(cls, output_mode: "EnumOutputMode") -> str:
+    def get_typical_use_case(cls, output_mode: EnumOutputMode) -> str:
         """Get typical use case for each output mode."""
         use_cases = {
             cls.CONTENT: "Viewing actual matching content for analysis",
@@ -74,7 +74,7 @@ class EnumOutputMode(str, Enum):
         return use_cases.get(output_mode, "Unknown use case")
 
     @classmethod
-    def supports_context_lines(cls, output_mode: "EnumOutputMode") -> bool:
+    def supports_context_lines(cls, output_mode: EnumOutputMode) -> bool:
         """Check if the output mode supports context lines."""
         return output_mode == cls.CONTENT
 

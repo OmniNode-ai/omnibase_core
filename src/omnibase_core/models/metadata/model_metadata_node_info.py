@@ -13,11 +13,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
@@ -198,16 +193,14 @@ class ModelMetadataNodeInfo(BaseModel):
         standard_tag = EnumStandardTag.from_string(tag)
         if standard_tag:
             return self.tags.add_standard_tag(standard_tag)
-        else:
-            return self.tags.add_custom_tag(tag)
+        return self.tags.add_custom_tag(tag)
 
     def remove_tag(self, tag: str) -> bool:
         """Remove a tag."""
         standard_tag = EnumStandardTag.from_string(tag)
         if standard_tag:
             return self.tags.remove_standard_tag(standard_tag)
-        else:
-            return self.tags.remove_custom_tag(tag)
+        return self.tags.remove_custom_tag(tag)
 
     def add_category(self, category: str) -> bool:
         """Add a category (as secondary category)."""
@@ -384,7 +377,8 @@ class ModelMetadataNodeInfo(BaseModel):
 
         display_name = ModelStructuredDisplayName.for_metadata_node(name)
         structured_description = ModelStructuredDescription.for_metadata_node(
-            name, functionality=description
+            name,
+            functionality=description,
         )
         tags = ModelStructuredTags.for_metadata_node()
 
@@ -413,7 +407,8 @@ class ModelMetadataNodeInfo(BaseModel):
         )
 
         display_name = ModelStructuredDisplayName.for_metadata_node(
-            name, category=EnumStandardCategory.BUSINESS_LOGIC
+            name,
+            category=EnumStandardCategory.BUSINESS_LOGIC,
         )
         structured_description = ModelStructuredDescription.for_metadata_node(
             name,
@@ -423,9 +418,10 @@ class ModelMetadataNodeInfo(BaseModel):
 
         # Map complexity to standard tag
         complexity_tag = None
-        if complexity == EnumConceptualComplexity.TRIVIAL:
-            complexity_tag = EnumStandardTag.SIMPLE
-        elif complexity == EnumConceptualComplexity.BASIC:
+        if (
+            complexity == EnumConceptualComplexity.TRIVIAL
+            or complexity == EnumConceptualComplexity.BASIC
+        ):
             complexity_tag = EnumStandardTag.SIMPLE
         elif complexity == EnumConceptualComplexity.INTERMEDIATE:
             complexity_tag = EnumStandardTag.MODERATE
@@ -435,7 +431,8 @@ class ModelMetadataNodeInfo(BaseModel):
             complexity_tag = EnumStandardTag.ADVANCED
 
         tags = ModelStructuredTags.for_metadata_node(
-            complexity=complexity_tag, domain=EnumStandardTag.API
+            complexity=complexity_tag,
+            domain=EnumStandardTag.API,
         )
 
         return cls(
@@ -463,13 +460,17 @@ class ModelMetadataNodeInfo(BaseModel):
         )
 
         display_name = ModelStructuredDisplayName.for_metadata_node(
-            name, category=EnumStandardCategory.DOCUMENTATION
+            name,
+            category=EnumStandardCategory.DOCUMENTATION,
         )
         structured_description = ModelStructuredDescription.for_metadata_node(
-            name, functionality=description, category=EnumStandardCategory.DOCUMENTATION
+            name,
+            functionality=description,
+            category=EnumStandardCategory.DOCUMENTATION,
         )
         tags = ModelStructuredTags.for_metadata_node(
-            complexity=EnumStandardTag.SIMPLE, domain=EnumStandardTag.DOCUMENTED
+            complexity=EnumStandardTag.SIMPLE,
+            domain=EnumStandardTag.DOCUMENTED,
         )
 
         return cls(

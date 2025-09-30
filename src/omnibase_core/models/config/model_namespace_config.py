@@ -8,7 +8,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_namespace_strategy import EnumNamespaceStrategy
 
 

@@ -32,32 +32,32 @@ class EnumExecutionOrder(str, Enum):
         return self.value
 
     @classmethod
-    def is_sequential(cls, order: "EnumExecutionOrder") -> bool:
+    def is_sequential(cls, order: EnumExecutionOrder) -> bool:
         """Check if the execution order is sequential."""
         return order in SEQUENTIAL_ORDERS
 
     @classmethod
-    def is_concurrent(cls, order: "EnumExecutionOrder") -> bool:
+    def is_concurrent(cls, order: EnumExecutionOrder) -> bool:
         """Check if the execution order allows concurrency."""
         return order in CONCURRENT_ORDERS
 
     @classmethod
-    def preserves_dependency_order(cls, order: "EnumExecutionOrder") -> bool:
+    def preserves_dependency_order(cls, order: EnumExecutionOrder) -> bool:
         """Check if the execution order preserves dependency relationships."""
         return order in SEQUENTIAL_ORDERS
 
     @classmethod
-    def requires_synchronization(cls, order: "EnumExecutionOrder") -> bool:
+    def requires_synchronization(cls, order: EnumExecutionOrder) -> bool:
         """Check if the execution order requires synchronization mechanisms."""
         return order == cls.PARALLEL
 
     @classmethod
-    def is_rollback_friendly(cls, order: "EnumExecutionOrder") -> bool:
+    def is_rollback_friendly(cls, order: EnumExecutionOrder) -> bool:
         """Check if the execution order is suitable for rollback operations."""
         return order == cls.REVERSE
 
     @classmethod
-    def get_order_description(cls, order: "EnumExecutionOrder") -> str:
+    def get_order_description(cls, order: EnumExecutionOrder) -> str:
         """Get a human-readable description of the execution order."""
         descriptions = {
             cls.REVERSE: "Execute actions in reverse dependency order",
@@ -67,7 +67,7 @@ class EnumExecutionOrder(str, Enum):
         return descriptions.get(order, "Unknown execution order")
 
     @classmethod
-    def get_typical_use_case(cls, order: "EnumExecutionOrder") -> str:
+    def get_typical_use_case(cls, order: EnumExecutionOrder) -> str:
         """Get typical use case for each execution order."""
         use_cases = {
             cls.REVERSE: "Compensation actions, cleanup operations",
@@ -77,7 +77,7 @@ class EnumExecutionOrder(str, Enum):
         return use_cases.get(order, "Unknown use case")
 
     @classmethod
-    def get_performance_characteristics(cls, order: "EnumExecutionOrder") -> str:
+    def get_performance_characteristics(cls, order: EnumExecutionOrder) -> str:
         """Get performance characteristics of the execution order."""
         characteristics = {
             cls.REVERSE: "Sequential, deterministic, rollback-safe",
@@ -89,11 +89,11 @@ class EnumExecutionOrder(str, Enum):
 
 # Classification sets - defined outside enum to avoid MyPy issues
 SEQUENTIAL_ORDERS: frozenset[EnumExecutionOrder] = frozenset(
-    [EnumExecutionOrder.REVERSE, EnumExecutionOrder.FORWARD]
+    [EnumExecutionOrder.REVERSE, EnumExecutionOrder.FORWARD],
 )
 CONCURRENT_ORDERS: frozenset[EnumExecutionOrder] = frozenset(
-    [EnumExecutionOrder.PARALLEL]
+    [EnumExecutionOrder.PARALLEL],
 )
 
 # Export for use
-__all__ = ["EnumExecutionOrder", "SEQUENTIAL_ORDERS", "CONCURRENT_ORDERS"]
+__all__ = ["CONCURRENT_ORDERS", "SEQUENTIAL_ORDERS", "EnumExecutionOrder"]

@@ -7,11 +7,11 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from datetime import datetime
-from typing import Any, Literal
+from datetime import UTC, datetime
+from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -197,13 +197,15 @@ class ModelFilterConditions(BaseModel):
             # Ensure datetime is timezone-aware or convert to UTC
             if v.tzinfo is None:
                 # If naive datetime, treat as UTC
-                from datetime import timezone
 
-                v = v.replace(tzinfo=timezone.utc)
+                v = v.replace(tzinfo=UTC)
         return v
 
     @field_validator(
-        "allowed_sources", "blocked_sources", "allowed_types", "blocked_types"
+        "allowed_sources",
+        "blocked_sources",
+        "allowed_types",
+        "blocked_types",
     )
     @classmethod
     def validate_source_type_lists(cls, v: list[str]) -> list[str]:

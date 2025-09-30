@@ -9,14 +9,8 @@ from __future__ import annotations
 
 from typing import Any, Literal, Union
 
-from pydantic import BaseModel, Discriminator, Field, Tag
+from pydantic import BaseModel, Discriminator, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
@@ -24,7 +18,8 @@ class ModelNodeConfigurationStringValue(BaseModel):
     """String configuration value with discriminated union support."""
 
     value_type: Literal["string"] = Field(
-        default="string", description="Type discriminator for string values"
+        default="string",
+        description="Type discriminator for string values",
     )
     value: str = Field(..., description="String configuration value")
 
@@ -48,7 +43,8 @@ class ModelNodeConfigurationNumericValue(BaseModel):
     """Numeric configuration value with discriminated union support."""
 
     value_type: Literal["numeric"] = Field(
-        default="numeric", description="Type discriminator for numeric values"
+        default="numeric",
+        description="Type discriminator for numeric values",
     )
     value: ModelNumericValue = Field(..., description="Numeric configuration value")
 
@@ -134,13 +130,13 @@ def from_value(value: object) -> ModelNodeConfigurationValue:
 
 
 __all__ = [
-    "ModelNodeConfigurationValue",
-    "ModelNodeConfigurationStringValue",
     "ModelNodeConfigurationNumericValue",
+    "ModelNodeConfigurationStringValue",
+    "ModelNodeConfigurationValue",
     "ModelNodeConfigurationValueUnion",
-    "from_string",
-    "from_int",
     "from_float",
+    "from_int",
     "from_numeric",
+    "from_string",
     "from_value",
 ]

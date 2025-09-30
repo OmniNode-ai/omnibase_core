@@ -6,8 +6,7 @@ Tests the specialized accessor for managing custom fields with automatic initial
 
 from typing import Any
 
-import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field
 
 from omnibase_core.models.core import ModelCustomFieldsAccessor
 

@@ -5,7 +5,6 @@ Tests the generic custom properties pattern that replaces repetitive custom fiel
 """
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.models.core import ModelCustomProperties
 
@@ -235,7 +234,7 @@ class TestModelCustomProperties:
                 "service": "api",
                 "version": 1.2,
                 "active": True,
-            }
+            },
         )
 
         # Modify individual values

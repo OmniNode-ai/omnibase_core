@@ -7,8 +7,6 @@ and handler configuration for event subscriptions.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import PrimitiveValueType

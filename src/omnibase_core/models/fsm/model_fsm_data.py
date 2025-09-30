@@ -7,8 +7,6 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from .model_fsm_data_primary import ModelFsmData
 from .model_fsm_state import ModelFsmState
 
@@ -16,4 +14,4 @@ from .model_fsm_state import ModelFsmState
 from .model_fsm_transition import ModelFsmTransition
 
 # Export all models
-__all__ = ["ModelFsmTransition", "ModelFsmState", "ModelFsmData"]
+__all__ = ["ModelFsmData", "ModelFsmState", "ModelFsmTransition"]

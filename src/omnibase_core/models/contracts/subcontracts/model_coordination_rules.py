@@ -13,11 +13,13 @@ class ModelCoordinationRules(BaseModel):
     """Rules for workflow coordination."""
 
     synchronization_points: list[str] = Field(
-        default_factory=list, description="Named synchronization points in the workflow"
+        default_factory=list,
+        description="Named synchronization points in the workflow",
     )
 
     parallel_execution_allowed: bool = Field(
-        default=True, description="Whether parallel execution is allowed"
+        default=True,
+        description="Whether parallel execution is allowed",
     )
 
     failure_recovery_strategy: EnumFailureRecoveryStrategy = Field(

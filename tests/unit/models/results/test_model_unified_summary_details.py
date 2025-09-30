@@ -9,9 +9,6 @@ Tests cover:
 - Type safety verification
 """
 
-import pytest
-from pydantic import ValidationError
-
 from omnibase_core.models.results.model_unified_summary_details import (
     ModelUnifiedSummaryDetails,
 )

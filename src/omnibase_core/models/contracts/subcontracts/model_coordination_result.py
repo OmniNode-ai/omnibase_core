@@ -16,19 +16,24 @@ class ModelCoordinationResult(BaseModel):
     """Result of node coordination operation."""
 
     coordination_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for this coordination"
+        default_factory=uuid4,
+        description="Unique identifier for this coordination",
     )
 
     workflow_id: UUID = Field(
-        default_factory=uuid4, description="Workflow this coordination belongs to"
+        default_factory=uuid4,
+        description="Workflow this coordination belongs to",
     )
 
     nodes_coordinated: list[ModelNodeAssignment] = Field(
-        default_factory=list, description="List of nodes that were coordinated"
+        default_factory=list,
+        description="List of nodes that were coordinated",
     )
 
     coordination_overhead_ms: int = Field(
-        ..., description="Time spent on coordination overhead in milliseconds", ge=0
+        ...,
+        description="Time spent on coordination overhead in milliseconds",
+        ge=0,
     )
 
     synchronization_points: list[ModelSynchronizationPoint] = Field(

@@ -24,7 +24,12 @@ class TestModelUnifiedSummaryBasicInstantiation:
     def test_minimal_instantiation_with_required_fields(self):
         """Test creating summary with required count fields."""
         summary = ModelUnifiedSummary(
-            total=10, passed=8, failed=2, skipped=0, fixed=0, warnings=0
+            total=10,
+            passed=8,
+            failed=2,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.total == 10
@@ -83,25 +88,45 @@ class TestModelUnifiedSummaryFieldValidation:
         # Negative total
         with pytest.raises(ValidationError):
             ModelUnifiedSummary(
-                total=-1, passed=0, failed=0, skipped=0, fixed=0, warnings=0
+                total=-1,
+                passed=0,
+                failed=0,
+                skipped=0,
+                fixed=0,
+                warnings=0,
             )
 
         # Negative passed
         with pytest.raises(ValidationError):
             ModelUnifiedSummary(
-                total=10, passed=-1, failed=0, skipped=0, fixed=0, warnings=0
+                total=10,
+                passed=-1,
+                failed=0,
+                skipped=0,
+                fixed=0,
+                warnings=0,
             )
 
         # Negative failed
         with pytest.raises(ValidationError):
             ModelUnifiedSummary(
-                total=10, passed=0, failed=-1, skipped=0, fixed=0, warnings=0
+                total=10,
+                passed=0,
+                failed=-1,
+                skipped=0,
+                fixed=0,
+                warnings=0,
             )
 
     def test_zero_values_accepted(self):
         """Test that zero values are valid."""
         summary = ModelUnifiedSummary(
-            total=0, passed=0, failed=0, skipped=0, fixed=0, warnings=0
+            total=0,
+            passed=0,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.total == 0
@@ -115,7 +140,12 @@ class TestModelUnifiedSummaryCountFields:
     def test_total_field(self):
         """Test total field."""
         summary = ModelUnifiedSummary(
-            total=100, passed=80, failed=15, skipped=5, fixed=10, warnings=3
+            total=100,
+            passed=80,
+            failed=15,
+            skipped=5,
+            fixed=10,
+            warnings=3,
         )
 
         assert summary.total == 100
@@ -124,7 +154,12 @@ class TestModelUnifiedSummaryCountFields:
     def test_passed_field(self):
         """Test passed field."""
         summary = ModelUnifiedSummary(
-            total=10, passed=8, failed=2, skipped=0, fixed=0, warnings=0
+            total=10,
+            passed=8,
+            failed=2,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.passed == 8
@@ -132,7 +167,12 @@ class TestModelUnifiedSummaryCountFields:
     def test_failed_field(self):
         """Test failed field."""
         summary = ModelUnifiedSummary(
-            total=10, passed=5, failed=5, skipped=0, fixed=0, warnings=0
+            total=10,
+            passed=5,
+            failed=5,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.failed == 5
@@ -140,7 +180,12 @@ class TestModelUnifiedSummaryCountFields:
     def test_skipped_field(self):
         """Test skipped field."""
         summary = ModelUnifiedSummary(
-            total=10, passed=5, failed=3, skipped=2, fixed=0, warnings=0
+            total=10,
+            passed=5,
+            failed=3,
+            skipped=2,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.skipped == 2
@@ -148,7 +193,12 @@ class TestModelUnifiedSummaryCountFields:
     def test_fixed_field(self):
         """Test fixed field."""
         summary = ModelUnifiedSummary(
-            total=10, passed=8, failed=2, skipped=0, fixed=5, warnings=0
+            total=10,
+            passed=8,
+            failed=2,
+            skipped=0,
+            fixed=5,
+            warnings=0,
         )
 
         assert summary.fixed == 5
@@ -156,7 +206,12 @@ class TestModelUnifiedSummaryCountFields:
     def test_warnings_field(self):
         """Test warnings field."""
         summary = ModelUnifiedSummary(
-            total=10, passed=7, failed=0, skipped=0, fixed=0, warnings=3
+            total=10,
+            passed=7,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=3,
         )
 
         assert summary.warnings == 3
@@ -169,7 +224,13 @@ class TestModelUnifiedSummaryNotesField:
         """Test notes field with list of strings."""
         notes = ["First note", "Second note", "Third note"]
         summary = ModelUnifiedSummary(
-            total=10, passed=10, failed=0, skipped=0, fixed=0, warnings=0, notes=notes
+            total=10,
+            passed=10,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
+            notes=notes,
         )
 
         assert len(summary.notes) == 3
@@ -179,7 +240,12 @@ class TestModelUnifiedSummaryNotesField:
     def test_notes_field_optional(self):
         """Test that notes field is optional."""
         summary = ModelUnifiedSummary(
-            total=10, passed=10, failed=0, skipped=0, fixed=0, warnings=0
+            total=10,
+            passed=10,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.notes is None
@@ -221,7 +287,12 @@ class TestModelUnifiedSummaryDetailsField:
     def test_details_field_optional(self):
         """Test that details field is optional."""
         summary = ModelUnifiedSummary(
-            total=10, passed=10, failed=0, skipped=0, fixed=0, warnings=0
+            total=10,
+            passed=10,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.details is None
@@ -233,7 +304,12 @@ class TestModelUnifiedSummarySerialization:
     def test_model_dump_basic(self):
         """Test model_dump() produces correct dictionary."""
         summary = ModelUnifiedSummary(
-            total=100, passed=80, failed=15, skipped=5, fixed=10, warnings=3
+            total=100,
+            passed=80,
+            failed=15,
+            skipped=5,
+            fixed=10,
+            warnings=3,
         )
 
         dumped = summary.model_dump()
@@ -248,7 +324,12 @@ class TestModelUnifiedSummarySerialization:
     def test_model_dump_exclude_none(self):
         """Test model_dump(exclude_none=True) removes None fields."""
         summary = ModelUnifiedSummary(
-            total=10, passed=10, failed=0, skipped=0, fixed=0, warnings=0
+            total=10,
+            passed=10,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         dumped = summary.model_dump(exclude_none=True)
@@ -288,7 +369,12 @@ class TestModelUnifiedSummaryComplexScenarios:
     def test_perfect_pass_scenario(self):
         """Test summary for 100% pass rate."""
         summary = ModelUnifiedSummary(
-            total=100, passed=100, failed=0, skipped=0, fixed=0, warnings=0
+            total=100,
+            passed=100,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.total == 100
@@ -349,7 +435,12 @@ class TestModelUnifiedSummaryEdgeCases:
     def test_all_zeros(self):
         """Test summary with all zero values."""
         summary = ModelUnifiedSummary(
-            total=0, passed=0, failed=0, skipped=0, fixed=0, warnings=0
+            total=0,
+            passed=0,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.total == 0
@@ -359,7 +450,12 @@ class TestModelUnifiedSummaryEdgeCases:
     def test_fixed_greater_than_failed(self):
         """Test that fixed can be greater than failed (fixed across runs)."""
         summary = ModelUnifiedSummary(
-            total=100, passed=90, failed=10, skipped=0, fixed=20, warnings=0
+            total=100,
+            passed=90,
+            failed=10,
+            skipped=0,
+            fixed=20,
+            warnings=0,
         )
 
         assert summary.fixed > summary.failed
@@ -367,7 +463,12 @@ class TestModelUnifiedSummaryEdgeCases:
     def test_warnings_with_no_failures(self):
         """Test warnings present even with no failures."""
         summary = ModelUnifiedSummary(
-            total=100, passed=100, failed=0, skipped=0, fixed=0, warnings=15
+            total=100,
+            passed=100,
+            failed=0,
+            skipped=0,
+            fixed=0,
+            warnings=15,
         )
 
         assert summary.failed == 0
@@ -395,7 +496,12 @@ class TestModelUnifiedSummaryCalculations:
     def test_passed_plus_failed_plus_skipped_equals_total(self):
         """Test that passed + failed + skipped can equal total."""
         summary = ModelUnifiedSummary(
-            total=100, passed=70, failed=20, skipped=10, fixed=0, warnings=0
+            total=100,
+            passed=70,
+            failed=20,
+            skipped=10,
+            fixed=0,
+            warnings=0,
         )
 
         assert summary.passed + summary.failed + summary.skipped == summary.total
@@ -403,7 +509,12 @@ class TestModelUnifiedSummaryCalculations:
     def test_pass_rate_calculation(self):
         """Test calculating pass rate from summary."""
         summary = ModelUnifiedSummary(
-            total=100, passed=80, failed=20, skipped=0, fixed=0, warnings=0
+            total=100,
+            passed=80,
+            failed=20,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         if summary.total > 0:
@@ -413,7 +524,12 @@ class TestModelUnifiedSummaryCalculations:
     def test_failure_rate_calculation(self):
         """Test calculating failure rate from summary."""
         summary = ModelUnifiedSummary(
-            total=100, passed=75, failed=25, skipped=0, fixed=0, warnings=0
+            total=100,
+            passed=75,
+            failed=25,
+            skipped=0,
+            fixed=0,
+            warnings=0,
         )
 
         if summary.total > 0:

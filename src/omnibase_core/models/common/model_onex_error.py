@@ -9,9 +9,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 

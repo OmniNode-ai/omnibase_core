@@ -9,7 +9,6 @@ import json
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_generic_metadata import (
@@ -382,7 +381,7 @@ class TestModelGenericMetadataSerialization:
             "version": {"major": 2, "minor": 1, "patch": 0},
             "tags": ["deserialized", "test"],
             "custom_fields": {
-                "field1": {"value_type": "string", "raw_value": "test_value"}
+                "field1": {"value_type": "string", "raw_value": "test_value"},
             },
         }
 
@@ -521,7 +520,8 @@ class TestModelGenericMetadataComplexScenarios:
         """Test metadata inheritance/overlay pattern."""
         # Base metadata (like defaults)
         base_metadata = ModelGenericMetadata[str](
-            name="Base Service Config", tags=["service", "base"]
+            name="Base Service Config",
+            tags=["service", "base"],
         )
         base_metadata.set_field("log_level", "info")
         base_metadata.set_field("timeout", 30)

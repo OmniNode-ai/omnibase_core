@@ -7,11 +7,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
-
-from omnibase_core.core.type_constraints import Executable
 
 
 class ModelFsmTransition(BaseModel):
@@ -27,10 +23,12 @@ class ModelFsmTransition(BaseModel):
     to_state: str = Field(..., description="Target state of transition")
     trigger: str = Field(..., description="Event that triggers the transition")
     conditions: list[str] = Field(
-        default_factory=list, description="Conditions for transition"
+        default_factory=list,
+        description="Conditions for transition",
     )
     actions: list[str] = Field(
-        default_factory=list, description="Actions to execute on transition"
+        default_factory=list,
+        description="Actions to execute on transition",
     )
 
     model_config = {

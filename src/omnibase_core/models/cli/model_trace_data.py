@@ -13,8 +13,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
-
 
 class ModelTraceData(BaseModel):
     """Restrictive model for trace data.

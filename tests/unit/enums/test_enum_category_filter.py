@@ -4,8 +4,6 @@ Unit tests for EnumCategoryFilter.
 Test coverage for category filter enumeration and helper methods.
 """
 
-import pytest
-
 from omnibase_core.enums import EnumCategoryFilter
 
 

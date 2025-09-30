@@ -12,13 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    PrimitiveValueType,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class TypedDictCoreAnalytics(TypedDict):
     """Core analytics data structure.
@@ -86,8 +79,6 @@ class TypedDictAnalyticsSummaryData(TypedDict):
     performance: ModelAnalyticsPerformanceSummary  # From component method call - returns ModelAnalyticsPerformanceSummary
     timestamps: TypedDictTimestampData
 
-
-from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .analytics.model_analytics_core import ModelAnalyticsCore
 from .analytics.model_analytics_error_summary import ModelAnalyticsErrorSummary
@@ -331,7 +322,8 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                 quality_data.get("health_score", self.quality.health_score),
                 quality_data.get("success_rate", self.quality.success_rate),
                 quality_data.get(
-                    "documentation_coverage", self.quality.documentation_coverage
+                    "documentation_coverage",
+                    self.quality.documentation_coverage,
                 ),
             )
 
@@ -344,7 +336,8 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                 error_data.get("error_count", self.errors.error_count),
                 error_data.get("warning_count", self.errors.warning_count),
                 error_data.get(
-                    "critical_error_count", self.errors.critical_error_count
+                    "critical_error_count",
+                    self.errors.critical_error_count,
                 ),
             )
 
@@ -363,12 +356,14 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                     self.performance.average_execution_time_ms,
                 ),
                 performance_data.get(
-                    "peak_memory_usage_mb", self.performance.peak_memory_usage_mb
+                    "peak_memory_usage_mb",
+                    self.performance.peak_memory_usage_mb,
                 ),
                 int(
                     performance_data.get(
-                        "total_invocations", self.performance.total_invocations
-                    )
+                        "total_invocations",
+                        self.performance.total_invocations,
+                    ),
                 ),
             )
 

@@ -7,8 +7,6 @@ Part of the State Management Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_state_management import (

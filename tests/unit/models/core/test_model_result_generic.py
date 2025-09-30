@@ -72,7 +72,8 @@ class TestResultGeneric:
         # Failed unwrap should raise
         failure = ModelResult.err("error")
         with pytest.raises(
-            Exception, match="Called unwrap\\(\\) on error result: error"
+            Exception,
+            match="Called unwrap\\(\\) on error result: error",
         ):
             failure.unwrap()
 
@@ -150,8 +151,7 @@ class TestResultGeneric:
         def divide_by_two(x: int) -> ModelResult[int, str]:
             if x % 2 == 0:
                 return ModelResult.ok(x // 2)
-            else:
-                return ModelResult.err("Not divisible by 2")
+            return ModelResult.err("Not divisible by 2")
 
         # Chain on success
         success = ModelResult.ok(10)
@@ -177,8 +177,7 @@ class TestResultGeneric:
         def recover_from_error(e: str) -> ModelResult[str, str]:
             if "recoverable" in e:
                 return ModelResult.ok("recovered")
-            else:
-                return ModelResult.err(f"unrecoverable: {e}")
+            return ModelResult.err(f"unrecoverable: {e}")
 
         # or_else on success should preserve success
         success = ModelResult.ok("value")
@@ -253,10 +252,10 @@ class TestResultGeneric:
 
         # ModelResult[dict[str, str], str] - Dictionary success, string error
         data_success: ModelResult[dict[str, str], str] = ModelResult.ok(
-            {"key": "value"}
+            {"key": "value"},
         )
         data_failure: ModelResult[dict[str, str], str] = ModelResult.err(
-            "invalid format"
+            "invalid format",
         )
 
         assert data_success.unwrap() == {"key": "value"}
@@ -391,8 +390,7 @@ class TestResultGenericComplexTypes:
         def validate_config(config: dict[str, int]) -> ModelResult[dict[str, int], str]:
             if all(v > 0 for v in config.values()):
                 return ModelResult.ok(config)
-            else:
-                return ModelResult.err("All values must be positive")
+            return ModelResult.err("All values must be positive")
 
         # Successful chain
         input_data = {"timeout": "30", "retries": "3"}
@@ -471,11 +469,10 @@ class TestResultGenericEdgeCases:
         def factorial(n: int) -> ModelResult[int, str]:
             if n < 0:
                 return ModelResult.err("Negative numbers not supported")
-            elif n == 0 or n == 1:
+            if n == 0 or n == 1:
                 return ModelResult.ok(1)
-            else:
-                prev_result = factorial(n - 1)
-                return prev_result.map(lambda x: x * n)
+            prev_result = factorial(n - 1)
+            return prev_result.map(lambda x: x * n)
 
         # Successful recursion
         result = factorial(5)

@@ -46,7 +46,8 @@ class TestModelGenericMetadataBasicInstantiation:
     def test_instantiation_with_user_fields(self):
         """Test creating metadata with creator/updater fields."""
         metadata = ModelGenericMetadata(
-            created_by="user@example.com", updated_by="admin@example.com"
+            created_by="user@example.com",
+            updated_by="admin@example.com",
         )
 
         assert metadata.created_by == "user@example.com"
@@ -192,7 +193,7 @@ class TestModelGenericMetadataExtendedData:
         model2 = CustomModel(name="model2", value=200)
 
         metadata = ModelGenericMetadata(
-            extended_data={"model1": model1, "model2": model2}
+            extended_data={"model1": model1, "model2": model2},
         )
 
         assert metadata.extended_data["model1"].name == "model1"
@@ -242,7 +243,8 @@ class TestModelGenericMetadataExtraFieldsAllowed:
     def test_can_add_extra_fields(self):
         """Test that additional fields can be added due to extra='allow'."""
         metadata = ModelGenericMetadata(
-            created_by="user", custom_extra_field="extra_value"
+            created_by="user",
+            custom_extra_field="extra_value",
         )
 
         # Extra field should be accessible
@@ -357,7 +359,9 @@ class TestModelGenericMetadataComplexScenarios:
         # Initial creation
         created = datetime(2025, 1, 1, 10, 0, 0)
         metadata = ModelGenericMetadata(
-            created_at=created, created_by="user@example.com", tags=["draft"]
+            created_at=created,
+            created_by="user@example.com",
+            tags=["draft"],
         )
 
         # Simulate update

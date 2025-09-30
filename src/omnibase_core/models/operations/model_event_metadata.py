@@ -13,14 +13,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelEventMetadata(BaseModel):
     """
@@ -35,11 +27,13 @@ class ModelEventMetadata(BaseModel):
     """
 
     event_id: UUID = Field(
-        default_factory=uuid4, description="Unique event identifier (UUID format)"
+        default_factory=uuid4,
+        description="Unique event identifier (UUID format)",
     )
     event_type: str = Field(..., description="Type of event")
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Event timestamp"
+        default_factory=datetime.now,
+        description="Event timestamp",
     )
     source: str = Field(..., description="Event source identifier")
 
@@ -50,19 +44,23 @@ class ModelEventMetadata(BaseModel):
 
     # Event routing
     target_handlers: dict[str, str] = Field(
-        default_factory=dict, description="Target event handlers"
+        default_factory=dict,
+        description="Target event handlers",
     )
     routing_key: str = Field(default="", description="Event routing key")
 
     # Context information
     user_id: UUID | None = Field(
-        default=None, description="User identifier (UUID format)"
+        default=None,
+        description="User identifier (UUID format)",
     )
     session_id: UUID | None = Field(
-        default=None, description="Session identifier (UUID format)"
+        default=None,
+        description="Session identifier (UUID format)",
     )
     request_id: UUID | None = Field(
-        default=None, description="Request identifier (UUID format)"
+        default=None,
+        description="Request identifier (UUID format)",
     )
 
     model_config = {

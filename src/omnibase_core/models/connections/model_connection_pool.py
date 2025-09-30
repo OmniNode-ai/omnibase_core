@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 

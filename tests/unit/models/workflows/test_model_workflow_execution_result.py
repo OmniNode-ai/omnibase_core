@@ -880,11 +880,11 @@ class TestZeroToleranceCompliance:
 
 __all__ = [
     "TestBasicCreationAndValidation",
-    "TestWorkflowStatusEnumHandling",
     "TestCoordinationMetricsIntegration",
-    "TestExecutionTimingAndResultData",
     "TestErrorHandlingScenarios",
-    "TestWorkflowSpecificFeatures",
+    "TestExecutionTimingAndResultData",
     "TestModelConfiguration",
+    "TestWorkflowSpecificFeatures",
+    "TestWorkflowStatusEnumHandling",
     "TestZeroToleranceCompliance",
 ]

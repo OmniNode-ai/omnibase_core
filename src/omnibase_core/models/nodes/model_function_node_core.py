@@ -13,12 +13,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_function_type import EnumFunctionType
 from omnibase_core.enums.enum_parameter_type import EnumParameterType

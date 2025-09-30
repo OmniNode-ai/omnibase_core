@@ -6,7 +6,7 @@ Type-safe dictionary definitions for collection creation parameters.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 

@@ -12,11 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -129,7 +124,9 @@ class ModelNodeCore(BaseModel):
             new_version = ModelSemVer(major=self.version.major + 1, minor=0, patch=0)
         elif level == "minor":
             new_version = ModelSemVer(
-                major=self.version.major, minor=self.version.minor + 1, patch=0
+                major=self.version.major,
+                minor=self.version.minor + 1,
+                patch=0,
             )
         else:  # patch
             new_version = ModelSemVer(

@@ -6,7 +6,6 @@ Tests various stub patterns and exclusion scenarios to ensure
 accurate detection and proper handling of legitimate cases.
 """
 
-import tempfile
 from pathlib import Path
 
 import pytest

@@ -11,12 +11,6 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -170,4 +164,4 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFunctionDeprecationInfo", "ModelDeprecationSummary"]
+__all__ = ["ModelDeprecationSummary", "ModelFunctionDeprecationInfo"]

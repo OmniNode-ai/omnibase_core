@@ -13,7 +13,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 

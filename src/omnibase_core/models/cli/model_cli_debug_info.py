@@ -90,7 +90,8 @@ class ModelCliDebugInfo(BaseModel):
     @field_validator("custom_debug_fields", mode="before")
     @classmethod
     def validate_custom_debug_fields(
-        cls, v: dict[str, Any]
+        cls,
+        v: dict[str, Any],
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
@@ -101,9 +102,9 @@ class ModelCliDebugInfo(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 

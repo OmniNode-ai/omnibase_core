@@ -10,7 +10,6 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.infrastructure.model_result import (
@@ -259,8 +258,7 @@ class TestModelResultMonadicOperations:
         def double_if_positive(x: int) -> ModelResult[int, str]:
             if x > 0:
                 return ModelResult.ok(x * 2)
-            else:
-                return ModelResult.err("Value must be positive")
+            return ModelResult.err("Value must be positive")
 
         chained = result.and_then(double_if_positive)
 
@@ -274,8 +272,7 @@ class TestModelResultMonadicOperations:
         def double_if_positive(x: int) -> ModelResult[int, str]:
             if x > 0:
                 return ModelResult.ok(x * 2)
-            else:
-                return ModelResult.err("Value must be positive")
+            return ModelResult.err("Value must be positive")
 
         chained = result.and_then(double_if_positive)
 
@@ -325,8 +322,7 @@ class TestModelResultMonadicOperations:
         def recover_from_error(err: str) -> ModelResult[str, str]:
             if "error" in err:
                 return ModelResult.ok("recovered_value")
-            else:
-                return ModelResult.err("unrecoverable")
+            return ModelResult.err("unrecoverable")
 
         recovered = result.or_else(recover_from_error)
 
@@ -340,8 +336,7 @@ class TestModelResultMonadicOperations:
         def recover_from_error(err: str) -> ModelResult[str, str]:
             if "error" in err:
                 return ModelResult.ok("recovered_value")
-            else:
-                return ModelResult.err("unrecoverable")
+            return ModelResult.err("unrecoverable")
 
         failed_recovery = result.or_else(recover_from_error)
 
@@ -584,8 +579,7 @@ class TestModelResultComplexScenarios:
         def validate_positive(num: int) -> ModelResult[int, str]:
             if num > 0:
                 return ModelResult.ok(num)
-            else:
-                return ModelResult.err(f"Number {num} must be positive")
+            return ModelResult.err(f"Number {num} must be positive")
 
         def calculate_square(num: int) -> ModelResult[int, str]:
             return ModelResult.ok(num * num)
@@ -625,8 +619,7 @@ class TestModelResultComplexScenarios:
         def fallback_operation(error: str) -> ModelResult[str, str]:
             if "network" in error:
                 return ModelResult.ok("used_cache")
-            else:
-                return ModelResult.err("unrecoverable_error")
+            return ModelResult.err("unrecoverable_error")
 
         def final_fallback(error: str) -> ModelResult[str, str]:
             return ModelResult.ok("default_value")
@@ -654,8 +647,7 @@ class TestModelResultComplexScenarios:
         def process_item(item: int) -> ModelResult[int, str]:
             if item % 2 == 0:
                 return ModelResult.ok(item * 2)
-            else:
-                return ModelResult.err(f"Odd number {item} not allowed")
+            return ModelResult.err(f"Odd number {item} not allowed")
 
         # All success
         items = [2, 4, 6, 8]
@@ -707,7 +699,7 @@ class TestModelResultComplexScenarios:
                 return ModelResult.err(errors)
 
             return ModelResult.ok(
-                {"host": host_result.unwrap(), "port": port_result.unwrap()}
+                {"host": host_result.unwrap(), "port": port_result.unwrap()},
             )
 
         # Valid configuration

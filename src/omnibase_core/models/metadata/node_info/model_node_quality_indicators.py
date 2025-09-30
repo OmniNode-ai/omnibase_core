@@ -11,11 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 
 from .model_node_quality_summary import ModelNodeQualitySummary
@@ -97,14 +92,13 @@ class ModelNodeQualityIndicators(BaseModel):
         score = self.get_quality_score()
         if score >= 90.0:
             return "Excellent"
-        elif score >= 75.0:
+        if score >= 75.0:
             return "Good"
-        elif score >= 60.0:
+        if score >= 60.0:
             return "Fair"
-        elif score >= 40.0:
+        if score >= 40.0:
             return "Poor"
-        else:
-            return "Needs Improvement"
+        return "Needs Improvement"
 
     def update_documentation_status(
         self,
@@ -127,7 +121,8 @@ class ModelNodeQualityIndicators(BaseModel):
             self.has_documentation = True
 
     def add_documentation(
-        self, quality: EnumDocumentationQuality = EnumDocumentationQuality.ADEQUATE
+        self,
+        quality: EnumDocumentationQuality = EnumDocumentationQuality.ADEQUATE,
     ) -> None:
         """Mark node as having documentation."""
         self.has_documentation = True

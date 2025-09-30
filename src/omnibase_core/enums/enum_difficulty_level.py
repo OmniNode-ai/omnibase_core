@@ -54,7 +54,8 @@ class EnumDifficultyLevel(str, Enum):
 
     @classmethod
     def get_recommended_prerequisites(
-        cls, difficulty: EnumDifficultyLevel
+        cls,
+        difficulty: EnumDifficultyLevel,
     ) -> list[str]:
         """Get recommended prerequisites for difficulty level."""
         prerequisites: dict[EnumDifficultyLevel, list[str]] = {

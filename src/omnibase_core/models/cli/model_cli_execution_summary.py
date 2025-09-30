@@ -13,7 +13,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,

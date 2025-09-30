@@ -14,25 +14,11 @@ providing clean separation between node logic and workflow coordination behavior
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Import all individual model components
-from .model_coordination_result import ModelCoordinationResult
-from .model_coordination_rules import ModelCoordinationRules
-from .model_execution_graph import ModelExecutionGraph
-from .model_node_assignment import ModelNodeAssignment
-from .model_node_progress import ModelNodeProgress
-from .model_progress_status import ModelProgressStatus
-from .model_synchronization_point import ModelSynchronizationPoint
-from .model_workflow_definition import ModelWorkflowDefinition
-from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
-from .model_workflow_instance import ModelWorkflowInstance
-from .model_workflow_metrics import ModelWorkflowMetrics
-from .model_workflow_node import ModelWorkflowNode
 
 
 class ModelWorkflowCoordinationSubcontract(BaseModel):
@@ -62,7 +48,10 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
 
     # Configuration
     max_concurrent_workflows: int = Field(
-        default=10, description="Maximum number of concurrent workflows", ge=1, le=100
+        default=10,
+        description="Maximum number of concurrent workflows",
+        ge=1,
+        le=100,
     )
 
     default_workflow_timeout_ms: int = Field(
@@ -87,15 +76,18 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     auto_retry_enabled: bool = Field(
-        default=True, description="Whether automatic retry is enabled"
+        default=True,
+        description="Whether automatic retry is enabled",
     )
 
     parallel_execution_enabled: bool = Field(
-        default=True, description="Whether parallel execution is enabled"
+        default=True,
+        description="Whether parallel execution is enabled",
     )
 
     workflow_persistence_enabled: bool = Field(
-        default=True, description="Whether workflow state persistence is enabled"
+        default=True,
+        description="Whether workflow state persistence is enabled",
     )
 
     # Failure recovery configuration
@@ -114,7 +106,8 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     exponential_backoff: bool = Field(
-        default=True, description="Whether to use exponential backoff for retries"
+        default=True,
+        description="Whether to use exponential backoff for retries",
     )
 
     model_config = {

@@ -133,13 +133,18 @@ class TestModelOnexResultRecursiveComposition:
     def test_nested_child_results_multiple_levels(self):
         """Test nested child results (multiple levels of recursion)."""
         grandchild = ModelOnexResult(
-            status=EnumOnexStatus.SUCCESS, tool_name="grandchild"
+            status=EnumOnexStatus.SUCCESS,
+            tool_name="grandchild",
         )
         child = ModelOnexResult(
-            status=EnumOnexStatus.SUCCESS, tool_name="child", child_results=[grandchild]
+            status=EnumOnexStatus.SUCCESS,
+            tool_name="child",
+            child_results=[grandchild],
         )
         parent = ModelOnexResult(
-            status=EnumOnexStatus.SUCCESS, tool_name="parent", child_results=[child]
+            status=EnumOnexStatus.SUCCESS,
+            tool_name="parent",
+            child_results=[child],
         )
 
         assert parent.tool_name == "parent"
@@ -160,7 +165,12 @@ class TestModelOnexResultComplexFields:
     def test_summary_field_integration(self):
         """Test summary field with ModelUnifiedSummary."""
         summary = ModelUnifiedSummary(
-            total=10, passed=8, failed=2, skipped=0, fixed=0, warnings=1
+            total=10,
+            passed=8,
+            failed=2,
+            skipped=0,
+            fixed=0,
+            warnings=1,
         )
         result = ModelOnexResult(status=EnumOnexStatus.SUCCESS, summary=summary)
 
@@ -275,7 +285,9 @@ class TestModelOnexResultUUIDs:
         parent_id = uuid4()
 
         result = ModelOnexResult(
-            status=EnumOnexStatus.SUCCESS, batch_id=batch_id, parent_id=parent_id
+            status=EnumOnexStatus.SUCCESS,
+            batch_id=batch_id,
+            parent_id=parent_id,
         )
 
         assert result.batch_id == batch_id
@@ -288,10 +300,12 @@ class TestModelOnexResultBooleanFields:
     def test_auto_fix_applied_boolean(self):
         """Test auto_fix_applied boolean field."""
         result_fixed = ModelOnexResult(
-            status=EnumOnexStatus.SUCCESS, auto_fix_applied=True
+            status=EnumOnexStatus.SUCCESS,
+            auto_fix_applied=True,
         )
         result_not_fixed = ModelOnexResult(
-            status=EnumOnexStatus.WARNING, auto_fix_applied=False
+            status=EnumOnexStatus.WARNING,
+            auto_fix_applied=False,
         )
 
         assert result_fixed.auto_fix_applied is True

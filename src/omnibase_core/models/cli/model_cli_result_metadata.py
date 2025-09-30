@@ -11,15 +11,12 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.type_constraints import Nameable, PrimitiveValueType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
-from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
@@ -139,27 +136,28 @@ class ModelCliResultMetadata(BaseModel):
             parts = v.split(".")
             if len(parts) >= 3:
                 return ModelSemVer(
-                    major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+                    major=int(parts[0]),
+                    minor=int(parts[1]),
+                    patch=int(parts[2]),
                 )
-            elif len(parts) == 2:
+            if len(parts) == 2:
                 return ModelSemVer(major=int(parts[0]), minor=int(parts[1]), patch=0)
-            elif len(parts) == 1:
+            if len(parts) == 1:
                 return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
-            else:
-                raise ValueError(f"Invalid version string: {v}")
+            raise ValueError(f"Invalid version string: {v}")
         raise ValueError(f"Invalid processor version type: {type(v)}")
 
     @field_validator("data_classification")
     @classmethod
     def validate_data_classification(
-        cls, v: EnumDataClassification
+        cls,
+        v: EnumDataClassification,
     ) -> EnumDataClassification:
         """Validate data classification enum (Pydantic handles string conversion automatically)."""
         if isinstance(v, EnumDataClassification):
             return v
-        else:
-            # This should never happen with proper typing and Pydantic's enum conversion
-            raise ValueError(f"Invalid data classification type: {type(v)}")
+        # This should never happen with proper typing and Pydantic's enum conversion
+        raise ValueError(f"Invalid data classification type: {type(v)}")
 
     @field_validator("retention_policy", mode="before")
     @classmethod
@@ -266,7 +264,9 @@ class ModelCliResultMetadata(BaseModel):
             self.custom_metadata[key] = ModelCliValue.from_any(value)
 
     def get_custom_field(
-        self, key: str, default: ModelCliValue | None = None
+        self,
+        key: str,
+        default: ModelCliValue | None = None,
     ) -> ModelCliValue | None:
         """Get a custom metadata field with original type."""
         return self.custom_metadata.get(key, default)
@@ -285,7 +285,7 @@ class ModelCliResultMetadata(BaseModel):
         context: Any | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
-    ) -> "ModelCliResultMetadata":
+    ) -> ModelCliResultMetadata:
         """Custom validation to handle 'labels' field."""
         if isinstance(obj, dict) and "labels" in obj:
             # Handle legacy 'labels' field by converting to label_ids/label_names

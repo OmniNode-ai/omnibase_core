@@ -258,7 +258,9 @@ class TestModelUnifiedVersionComplexScenarios:
         schema = ModelSemVer(major=1, minor=0, patch=0)
 
         version = ModelUnifiedVersion(
-            protocol_version=protocol, tool_version=tool, schema_version=schema
+            protocol_version=protocol,
+            tool_version=tool,
+            schema_version=schema,
         )
 
         # Protocol is v2.0.0
@@ -287,10 +289,10 @@ class TestModelUnifiedVersionVersionComparison:
     def test_comparing_protocol_versions(self):
         """Test comparing different protocol versions."""
         v1 = ModelUnifiedVersion(
-            protocol_version=ModelSemVer(major=1, minor=0, patch=0)
+            protocol_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         v2 = ModelUnifiedVersion(
-            protocol_version=ModelSemVer(major=2, minor=0, patch=0)
+            protocol_version=ModelSemVer(major=2, minor=0, patch=0),
         )
 
         assert v2.protocol_version > v1.protocol_version

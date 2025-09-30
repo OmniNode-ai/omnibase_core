@@ -28,7 +28,8 @@ class ModelToolExecutionResult(BaseModel):
     """
 
     execution_id: UUID = Field(
-        default_factory=uuid4, description="Unique execution identifier"
+        default_factory=uuid4,
+        description="Unique execution identifier",
     )
 
     tool_name: str = Field(..., description="Name of the executed tool")
@@ -36,15 +37,19 @@ class ModelToolExecutionResult(BaseModel):
     success: bool = Field(..., description="Whether the tool execution succeeded")
 
     output: StructuredData = Field(
-        default_factory=dict, description="Tool execution output data"
+        default_factory=dict,
+        description="Tool execution output data",
     )
 
     error: str | None = Field(
-        default=None, description="Error message if tool execution failed"
+        default=None,
+        description="Error message if tool execution failed",
     )
 
     execution_time_ms: int = Field(
-        default=0, description="Execution duration in milliseconds", ge=0
+        default=0,
+        description="Execution duration in milliseconds",
+        ge=0,
     )
 
     status_code: int = Field(default=0, description="Tool execution status code")

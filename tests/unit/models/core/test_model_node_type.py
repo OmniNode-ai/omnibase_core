@@ -76,7 +76,8 @@ class TestModelNodeType:
         # Missing type_name
         with pytest.raises(ValidationError) as exc_info:
             ModelNodeType(
-                description="Test description", category=EnumConfigCategory.TESTING
+                description="Test description",
+                category=EnumConfigCategory.TESTING,
             )
         assert "type_name" in str(exc_info.value)
 
@@ -91,7 +92,8 @@ class TestModelNodeType:
         # Missing category
         with pytest.raises(ValidationError) as exc_info:
             ModelNodeType(
-                type_name=EnumTypeName.CONTRACT_TO_MODEL, description="Test description"
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
+                description="Test description",
             )
         assert "category" in str(exc_info.value)
 
@@ -222,7 +224,9 @@ class TestModelNodeType:
         # Test non-string name
         with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name=123, description="Test description", category="testing"
+                type_name=123,
+                description="Test description",
+                category="testing",
             )
 
         # Test non-string description
@@ -232,7 +236,9 @@ class TestModelNodeType:
         # Test non-string category
         with pytest.raises(ValidationError):
             ModelNodeType(
-                name="TEST_NODE", description="Test description", category=123
+                name="TEST_NODE",
+                description="Test description",
+                category=123,
             )
 
         # Test non-list dependencies
@@ -405,7 +411,9 @@ class TestModelNodeType:
         assert str(node_type) == "CONTRACT_TO_MODEL"
 
         custom_node = ModelNodeType(
-            name="CUSTOM_NODE", description="Custom description", category="custom"
+            name="CUSTOM_NODE",
+            description="Custom description",
+            category="custom",
         )
         assert str(custom_node) == "CUSTOM_NODE"
 
@@ -578,7 +586,9 @@ class TestModelNodeTypeEdgeCases:
         # Empty name should fail pattern validation
         with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name="", description="Test description", category="testing"
+                type_name="",
+                description="Test description",
+                category="testing",
             )
 
         # Empty description should be valid (no min_length constraint)
@@ -588,7 +598,9 @@ class TestModelNodeTypeEdgeCases:
         # Empty category should fail pattern validation
         with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name="TEST_NODE", description="Test description", category=""
+                type_name="TEST_NODE",
+                description="Test description",
+                category="",
             )
 
     def test_whitespace_handling(self):
@@ -604,13 +616,17 @@ class TestModelNodeTypeEdgeCases:
         # Whitespace in name should fail pattern validation
         with pytest.raises(ValidationError):
             ModelNodeType(
-                name=" TEST_NODE ", description="Test description", category="testing"
+                name=" TEST_NODE ",
+                description="Test description",
+                category="testing",
             )
 
         # Whitespace in category should fail pattern validation
         with pytest.raises(ValidationError):
             ModelNodeType(
-                name="TEST_NODE", description="Test description", category=" testing "
+                name="TEST_NODE",
+                description="Test description",
+                category=" testing ",
             )
 
     def test_unicode_characters(self):

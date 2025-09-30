@@ -11,10 +11,9 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.core.type_constraints import PrimitiveValueType
@@ -32,7 +31,6 @@ from omnibase_core.models.contracts.model_conflict_resolution_config import (
     ModelConflictResolutionConfig,
 )
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
-from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.contracts.model_memory_management_config import (
     ModelMemoryManagementConfig,
 )
@@ -254,9 +252,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -273,9 +271,9 @@ class ModelContractReducer(ModelContractBase):
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
 
@@ -289,9 +287,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -308,9 +306,9 @@ class ModelContractReducer(ModelContractBase):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
 
@@ -371,9 +369,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -397,9 +395,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -414,9 +412,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -433,9 +431,9 @@ class ModelContractReducer(ModelContractBase):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
                 if not operation.supports_rollback:
@@ -447,9 +445,9 @@ class ModelContractReducer(ModelContractBase):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
 
@@ -509,9 +507,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e
         except yaml.YAMLError as e:
@@ -522,9 +520,9 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e
         except Exception as e:
@@ -535,8 +533,8 @@ class ModelContractReducer(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e

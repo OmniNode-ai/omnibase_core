@@ -12,12 +12,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    PrimitiveValueType,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -107,32 +101,53 @@ class ModelFunctionNodeData(BaseModel):
     )
 
     def add_string_property(
-        self, name: str, value: str, unit: str = "", description: str = ""
+        self,
+        name: str,
+        value: str,
+        unit: str = "",
+        description: str = "",
     ) -> None:
         """Add a string property."""
         self.string_properties.append(
             ModelTypedMetrics.string_metric(
-                name=name, value=value, unit=unit, description=description
+                name=name,
+                value=value,
+                unit=unit,
+                description=description,
             ),
         )
 
     def add_numeric_property(
-        self, name: str, value: float, unit: str = "", description: str = ""
+        self,
+        name: str,
+        value: float,
+        unit: str = "",
+        description: str = "",
     ) -> None:
         """Add a numeric property."""
         # Use float_metric for numeric values (int converted to float automatically)
         metric = ModelTypedMetrics.float_metric(
-            name=name, value=value, unit=unit, description=description
+            name=name,
+            value=value,
+            unit=unit,
+            description=description,
         )
         self.numeric_properties.append(metric)
 
     def add_boolean_property(
-        self, name: str, value: bool, unit: str = "", description: str = ""
+        self,
+        name: str,
+        value: bool,
+        unit: str = "",
+        description: str = "",
     ) -> None:
         """Add a boolean property."""
         self.boolean_properties.append(
             ModelTypedMetrics.boolean_metric(
-                name=name, value=value, unit=unit, description=description
+                name=name,
+                value=value,
+                unit=unit,
+                description=description,
             ),
         )
 
@@ -164,7 +179,8 @@ class ModelFunctionNodeData(BaseModel):
     ) -> ModelFunctionNodeData:
         """Create a function node with structured components."""
         display_name = ModelStructuredDisplayName.for_function_node(
-            name, category=function_category
+            name,
+            category=function_category,
         )
 
         description = ModelStructuredDescription.for_function_node(
@@ -202,16 +218,14 @@ class ModelFunctionNodeData(BaseModel):
         standard_tag = EnumStandardTag.from_string(tag)
         if standard_tag:
             return self.tags.add_standard_tag(standard_tag)
-        else:
-            return self.tags.add_custom_tag(tag)
+        return self.tags.add_custom_tag(tag)
 
     def remove_tag(self, tag: str) -> bool:
         """Remove a tag."""
         standard_tag = EnumStandardTag.from_string(tag)
         if standard_tag:
             return self.tags.remove_standard_tag(standard_tag)
-        else:
-            return self.tags.remove_custom_tag(tag)
+        return self.tags.remove_custom_tag(tag)
 
     def has_tag(self, tag: str) -> bool:
         """Check if tag is present."""

@@ -6,7 +6,7 @@ Specialized accessor for handling CLI execution results and metadata.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -43,7 +43,9 @@ class ModelResultAccessor(ModelFieldAccessor):
         return default
 
     def set_result_value(
-        self, key: str, value: PrimitiveValueType | ModelSchemaValue
+        self,
+        key: str,
+        value: PrimitiveValueType | ModelSchemaValue,
     ) -> bool:
         """Set result value in results field. Accepts raw values or ModelSchemaValue."""
         if isinstance(value, ModelSchemaValue):
@@ -53,7 +55,9 @@ class ModelResultAccessor(ModelFieldAccessor):
         return self.set_field(f"results.{key}", schema_value)
 
     def set_metadata_value(
-        self, key: str, value: PrimitiveValueType | ModelSchemaValue
+        self,
+        key: str,
+        value: PrimitiveValueType | ModelSchemaValue,
     ) -> bool:
         """Set metadata value in metadata field. Accepts raw values or ModelSchemaValue."""
         if isinstance(value, ModelSchemaValue):
@@ -87,7 +91,8 @@ class ModelResultAccessor(ModelFieldAccessor):
                 try:
                     # Only include serializable values
                     if isinstance(
-                        value, (str, int, float, bool, list, dict, type(None))
+                        value,
+                        (str, int, float, bool, list, dict, type(None)),
                     ):
                         result[key] = value
                     else:

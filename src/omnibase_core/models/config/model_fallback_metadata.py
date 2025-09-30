@@ -11,8 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
-
 
 class ModelFallbackMetadata(BaseModel):
     """Strongly-typed metadata model for fallback strategy configuration.

@@ -5,7 +5,6 @@ This module provides well-defined protocols, type variables with proper bounds,
 and type constraints to replace overly broad generic usage patterns.
 """
 
-from abc import ABC, abstractmethod
 from typing import Any, Protocol, TypeVar
 
 from pydantic import BaseModel
@@ -103,7 +102,6 @@ SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
 
 # Schema value types - standardized types for replacing hardcoded unions
 # These types replace patterns like str | int | float | bool throughout the codebase
-from typing import Union
 
 # ONEX-compliant type definitions (avoiding primitive soup anti-pattern)
 # Use object with runtime validation instead of primitive soup unions
@@ -130,7 +128,7 @@ from .model_base_factory import BaseFactory
 
 def is_serializable(obj: object) -> bool:
     """Check if object implements Serializable protocol."""
-    return hasattr(obj, "serialize") and callable(getattr(obj, "serialize"))
+    return hasattr(obj, "serialize") and callable(obj.serialize)
 
 
 def is_identifiable(obj: object) -> bool:
@@ -142,27 +140,27 @@ def is_nameable(obj: object) -> bool:
     """Check if object implements Nameable protocol."""
     return (
         hasattr(obj, "get_name")
-        and callable(getattr(obj, "get_name"))
+        and callable(obj.get_name)
         and hasattr(obj, "set_name")
-        and callable(getattr(obj, "set_name"))
+        and callable(obj.set_name)
     )
 
 
 def is_validatable(obj: object) -> bool:
     """Check if object implements ProtocolValidatable protocol."""
     return hasattr(obj, "validate_instance") and callable(
-        getattr(obj, "validate_instance")
+        obj.validate_instance,
     )
 
 
 def is_configurable(obj: object) -> bool:
     """Check if object implements Configurable protocol."""
-    return hasattr(obj, "configure") and callable(getattr(obj, "configure"))
+    return hasattr(obj, "configure") and callable(obj.configure)
 
 
 def is_executable(obj: object) -> bool:
     """Check if object implements Executable protocol."""
-    return hasattr(obj, "execute") and callable(getattr(obj, "execute"))
+    return hasattr(obj, "execute") and callable(obj.execute)
 
 
 def is_metadata_provider(obj: object) -> bool:
@@ -199,7 +197,7 @@ def validate_primitive_value(obj: object) -> bool:
     """Validate and ensure object is a primitive value."""
     if not is_primitive_value(obj):
         raise TypeError(
-            f"Expected primitive value (str, int, float, bool), got {type(obj).__name__}"
+            f"Expected primitive value (str, int, float, bool), got {type(obj).__name__}",
         )
     return True
 
@@ -208,7 +206,7 @@ def validate_context_value(obj: object) -> bool:
     """Validate and ensure object is a valid context value."""
     if not is_context_value(obj):
         raise TypeError(
-            f"Expected context value (primitive, list, or dict), got {type(obj).__name__}"
+            f"Expected context value (primitive, list, or dict), got {type(obj).__name__}",
         )
     return True
 

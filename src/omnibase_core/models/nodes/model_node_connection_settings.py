@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_protocol_type import EnumProtocolType
 
 from .model_types_node_connection_summary import ModelNodeConnectionSummaryType

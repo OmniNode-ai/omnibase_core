@@ -12,7 +12,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, cast
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -173,7 +173,8 @@ class ModelContractBase(BaseModel, ABC):
     @field_validator("dependencies", mode="before")
     @classmethod
     def validate_dependencies_model_dependency_only(
-        cls, v: object
+        cls,
+        v: object,
     ) -> list[ModelDependency]:
         """Validate dependencies with optimized batch processing.
 
@@ -216,7 +217,7 @@ class ModelContractBase(BaseModel, ABC):
                         "input_type": type(v).__name__,
                         "expected_type": "list",
                         "example": '[{"name": "ProtocolEventBus", "module": "omnibase_core.protocol"}]',
-                    }
+                    },
                 ),
             )
 
@@ -232,13 +233,14 @@ class ModelContractBase(BaseModel, ABC):
                         "max_allowed": max_dependencies,
                         "memory_safety": "Prevents memory exhaustion with large dependency lists",
                         "suggestion": "Consider using pagination or breaking into smaller contracts",
-                    }
+                    },
                 ),
             )
 
     @classmethod
     def _validate_dependencies_batch_processing(
-        cls, v: list[object]
+        cls,
+        v: list[object],
     ) -> list[ModelDependency]:
         """Process dependencies list with batch validation.
 
@@ -253,7 +255,8 @@ class ModelContractBase(BaseModel, ABC):
 
     @classmethod
     def _validate_dependency_batch(
-        cls, dependencies: list[object]
+        cls,
+        dependencies: list[object],
     ) -> list[ModelDependency]:
         """
         Optimized batch validation for dependency lists.
@@ -272,7 +275,8 @@ class ModelContractBase(BaseModel, ABC):
 
     @classmethod
     def _categorize_dependencies_by_type(
-        cls, dependencies: list[object]
+        cls,
+        dependencies: list[object],
     ) -> dict[str, list[tuple[int, object]]]:
         """Categorize dependencies by type for efficient batch processing.
 
@@ -304,7 +308,8 @@ class ModelContractBase(BaseModel, ABC):
 
     @classmethod
     def _process_categorized_dependencies(
-        cls, categorized: dict[str, list[tuple[int, object]]]
+        cls,
+        categorized: dict[str, list[tuple[int, object]]],
     ) -> list[ModelDependency]:
         """Process categorized dependencies and return validated list.
 
@@ -329,7 +334,8 @@ class ModelContractBase(BaseModel, ABC):
         if categorized["dict_deps"]:
             # Cast to expected type - we know dict_deps contains dicts
             dict_deps = cast(
-                list[tuple[int, dict[str, object]]], categorized["dict_deps"]
+                list[tuple[int, dict[str, object]]],
+                categorized["dict_deps"],
             )
             result_deps.extend(cls._batch_convert_dict_dependencies(dict_deps))
 
@@ -337,7 +343,9 @@ class ModelContractBase(BaseModel, ABC):
 
     @classmethod
     def _raise_batch_validation_errors(
-        cls, string_deps: list[tuple[int, str]], invalid_deps: list[tuple[int, object]]
+        cls,
+        string_deps: list[tuple[int, str]],
+        invalid_deps: list[tuple[int, object]],
     ) -> None:
         """Raise comprehensive batch validation errors."""
         error_details = []
@@ -350,7 +358,7 @@ class ModelContractBase(BaseModel, ABC):
                     "type": "string_dependency",
                     "value": str(item)[:50] + ("..." if len(str(item)) > 50 else ""),
                     "error": "String dependencies not allowed - security risk",
-                }
+                },
             )
 
         # Collect all invalid type errors
@@ -363,7 +371,7 @@ class ModelContractBase(BaseModel, ABC):
                     "type": "invalid_type",
                     "value": item_str[:50] + ("..." if len(item_str) > 50 else ""),
                     "error": f"Invalid type {type(item_obj).__name__} not allowed",
-                }
+                },
             )
 
         # Single comprehensive error with all validation issues
@@ -380,13 +388,14 @@ class ModelContractBase(BaseModel, ABC):
                         "name": "ProtocolEventBus",
                         "module": "omnibase_core.protocol",
                     },
-                }
+                },
             ),
         )
 
     @classmethod
     def _batch_convert_dict_dependencies(
-        cls, dict_deps: list[tuple[int, dict[str, object]]]
+        cls,
+        dict_deps: list[tuple[int, dict[str, object]]],
     ) -> list[ModelDependency]:
         """Batch convert dict dependencies to ModelDependency instances."""
         result_deps = []
@@ -405,7 +414,8 @@ class ModelContractBase(BaseModel, ABC):
                     else None
                 )
                 dependency_type = item_dict.get(
-                    "dependency_type", EnumDependencyType.PROTOCOL
+                    "dependency_type",
+                    EnumDependencyType.PROTOCOL,
                 )
                 if isinstance(dependency_type, str):
                     dependency_type = EnumDependencyType(dependency_type)
@@ -432,7 +442,7 @@ class ModelContractBase(BaseModel, ABC):
                         version=version,
                         required=required,
                         description=description,
-                    )
+                    ),
                 )
             except Exception as e:
                 conversion_errors.append(
@@ -441,7 +451,7 @@ class ModelContractBase(BaseModel, ABC):
                         "data": str(item)[:100]
                         + ("..." if len(str(item)) > 100 else ""),
                         "error": str(e)[:100] + ("..." if len(str(e)) > 100 else ""),
-                    }
+                    },
                 )
 
         # Report all conversion errors at once if any occurred
@@ -458,7 +468,7 @@ class ModelContractBase(BaseModel, ABC):
                             "name": "ProtocolEventBus",
                             "module": "omnibase_core.protocol",
                         },
-                    }
+                    },
                 ),
             )
 
@@ -474,7 +484,7 @@ class ModelContractBase(BaseModel, ABC):
         """
         if isinstance(v, EnumNodeType):
             return v
-        elif isinstance(v, str):
+        if isinstance(v, str):
             # YAML DESERIALIZATION EXCEPTION: Allow string-to-enum conversion for contract loading
             # This maintains zero tolerance for runtime while enabling YAML contract deserialization
             try:
@@ -488,7 +498,7 @@ class ModelContractBase(BaseModel, ABC):
                             "invalid_value": v,
                             "valid_enum_values": [e.value for e in EnumNodeType],
                             "yaml_deserialization": "String conversion allowed only for YAML loading",
-                        }
+                        },
                     ),
                 )
         else:
@@ -501,7 +511,7 @@ class ModelContractBase(BaseModel, ABC):
                         "received_type": str(type(v)),
                         "expected_types": ["EnumNodeType", "str (YAML only)"],
                         "valid_enum_values": [e.value for e in EnumNodeType],
-                    }
+                    },
                 ),
             )
 
@@ -568,7 +578,7 @@ class ModelContractBase(BaseModel, ABC):
                             "dependency_type": dependency.dependency_type.value,
                             "validation_type": "direct_circular_dependency",
                             "suggested_fix": "Remove self-referencing dependency or use a different dependency name",
-                        }
+                        },
                     ),
                 )
 
@@ -584,7 +594,7 @@ class ModelContractBase(BaseModel, ABC):
                             "dependency_type": dependency.dependency_type.value,
                             "validation_type": "duplicate_dependency",
                             "suggested_fix": "Remove duplicate dependency or use different names for different versions",
-                        }
+                        },
                     ),
                 )
 
@@ -604,7 +614,7 @@ class ModelContractBase(BaseModel, ABC):
                             "validation_type": "module_circular_dependency",
                             "warning": "This may indicate a circular dependency through module references",
                             "suggested_fix": "Verify that the module does not depend back on this contract",
-                        }
+                        },
                     ),
                 )
 
@@ -621,7 +631,7 @@ class ModelContractBase(BaseModel, ABC):
                         "max_recommended": max_dependencies,
                         "validation_type": "complexity_limit",
                         "architectural_guidance": "Consider breaking complex contracts into smaller, more focused contracts",
-                    }
+                    },
                 ),
             )
 

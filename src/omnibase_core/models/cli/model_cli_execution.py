@@ -7,7 +7,7 @@ and state tracking for comprehensive command execution management.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -24,7 +24,6 @@ ExecutionContextValue = object
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
@@ -47,14 +46,17 @@ class ModelCliExecution(BaseModel):
 
     # Core execution fields
     execution_id: UUID = Field(
-        default_factory=uuid4, description="Unique execution identifier"
+        default_factory=uuid4,
+        description="Unique execution identifier",
     )
     command_name: str = Field(..., description="Command name")
     command_args: list[str] = Field(
-        default_factory=list, description="Command arguments"
+        default_factory=list,
+        description="Command arguments",
     )
     command_options: dict[str, CommandOptionValue] = Field(
-        default_factory=dict, description="Command options"
+        default_factory=dict,
+        description="Command options",
     )
 
     # Target and path information
@@ -62,39 +64,50 @@ class ModelCliExecution(BaseModel):
     target_path: Path | None = Field(None, description="Target path")
     working_directory: Path | None = Field(None, description="Working directory")
     environment_vars: dict[str, str] = Field(
-        default_factory=dict, description="Environment variables"
+        default_factory=dict,
+        description="Environment variables",
     )
 
     # Execution flags
     is_dry_run: bool = Field(default=False, description="Whether this is a dry run")
     is_test_execution: bool = Field(
-        default=False, description="Whether this is a test execution"
+        default=False,
+        description="Whether this is a test execution",
     )
     is_debug_enabled: bool = Field(
-        default=False, description="Whether debug is enabled"
+        default=False,
+        description="Whether debug is enabled",
     )
     is_trace_enabled: bool = Field(
-        default=False, description="Whether trace is enabled"
+        default=False,
+        description="Whether trace is enabled",
     )
     is_verbose: bool = Field(
-        default=False, description="Whether verbose output is enabled"
+        default=False,
+        description="Whether verbose output is enabled",
     )
 
     # Timing information
     start_time: datetime = Field(
-        default_factory=datetime.now, description="Execution start time"
+        default_factory=datetime.now,
+        description="Execution start time",
     )
     end_time: datetime | None = Field(None, description="Execution end time")
 
     # Status and progress
     status: EnumExecutionStatus = Field(
-        default=EnumExecutionStatus.PENDING, description="Execution status"
+        default=EnumExecutionStatus.PENDING,
+        description="Execution status",
     )
     current_phase: EnumExecutionPhase | None = Field(
-        default=EnumExecutionPhase.INITIALIZATION, description="Current execution phase"
+        default=EnumExecutionPhase.INITIALIZATION,
+        description="Current execution phase",
     )
     progress_percentage: float = Field(
-        default=0.0, ge=0.0, le=100.0, description="Progress percentage"
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="Progress percentage",
     )
 
     # Resource limits
@@ -117,19 +130,23 @@ class ModelCliExecution(BaseModel):
 
     # Data and output
     input_data: dict[str, ExecutionContextValue] = Field(
-        default_factory=dict, description="Input data"
+        default_factory=dict,
+        description="Input data",
     )
     output_format: EnumOutputFormat = Field(
-        default=EnumOutputFormat.TEXT, description="Output format"
+        default=EnumOutputFormat.TEXT,
+        description="Output format",
     )
     capture_output: bool = Field(default=True, description="Whether to capture output")
 
     # Metadata
     custom_context: dict[str, ExecutionContextValue] = Field(
-        default_factory=dict, description="Custom context data"
+        default_factory=dict,
+        description="Custom context data",
     )
     execution_tags: list[str] = Field(
-        default_factory=list, description="Execution tags"
+        default_factory=list,
+        description="Execution tags",
     )
 
     # Additional fields from tests
@@ -158,9 +175,8 @@ class ModelCliExecution(BaseModel):
         if not self.end_time:
             # Use timezone-aware datetime if start_time is timezone-aware
             if self.start_time.tzinfo is not None:
-                from datetime import timezone
 
-                current_time = datetime.now(timezone.utc)
+                current_time = datetime.now(UTC)
             else:
                 current_time = datetime.now()
             elapsed = current_time - self.start_time
@@ -261,7 +277,9 @@ class ModelCliExecution(BaseModel):
         self.custom_context[key] = context
 
     def get_context(
-        self, key: str, default: ExecutionContextValue = None
+        self,
+        key: str,
+        default: ExecutionContextValue = None,
     ) -> ExecutionContextValue:
         """Get custom context data."""
         return self.custom_context.get(key, default)
@@ -271,12 +289,14 @@ class ModelCliExecution(BaseModel):
         self.input_data[key] = input_data
 
     def get_input_data(
-        self, key: str, default: ExecutionContextValue = None
+        self,
+        key: str,
+        default: ExecutionContextValue = None,
     ) -> ExecutionContextValue:
         """Get input data."""
         return self.input_data.get(key, default)
 
-    def get_summary(self) -> "ModelCliExecutionSummary":
+    def get_summary(self) -> ModelCliExecutionSummary:
         """Get execution summary."""
         # Generate a command ID from the command name (or use a real UUID if available)
         import hashlib
@@ -287,7 +307,7 @@ class ModelCliExecution(BaseModel):
 
         command_hash = hashlib.sha256(self.command_name.encode()).hexdigest()
         command_id = UUID(
-            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}"
+            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}",
         )
 
         return ModelCliExecutionSummary(
@@ -311,7 +331,7 @@ class ModelCliExecution(BaseModel):
         cls,
         command_name: str,
         target_node_name: str | None = None,
-    ) -> "ModelCliExecution":
+    ) -> ModelCliExecution:
         """Create a simple execution context."""
         return cls(
             command_name=command_name,
@@ -334,7 +354,7 @@ class ModelCliExecution(BaseModel):
         cls,
         command_name: str,
         target_node_name: str | None = None,
-    ) -> "ModelCliExecution":
+    ) -> ModelCliExecution:
         """Create a dry run execution context."""
         return cls(
             command_name=command_name,
@@ -358,7 +378,7 @@ class ModelCliExecution(BaseModel):
         cls,
         command_name: str,
         target_node_name: str | None = None,
-    ) -> "ModelCliExecution":
+    ) -> ModelCliExecution:
         """Create a test execution context."""
         return cls(
             command_name=command_name,

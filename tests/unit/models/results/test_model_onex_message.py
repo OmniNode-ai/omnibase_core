@@ -111,7 +111,10 @@ class TestModelOnexMessageFileLocationFields:
     def test_column_field(self):
         """Test column field with column number."""
         message = ModelOnexMessage(
-            summary="Error at position", file="src/main.py", line=42, column=15
+            summary="Error at position",
+            file="src/main.py",
+            line=42,
+            column=15,
         )
 
         assert message.file == "src/main.py"
@@ -216,7 +219,9 @@ class TestModelOnexMessageFixableField:
     def test_fixable_field_true(self):
         """Test fixable field when issue can be auto-fixed."""
         message = ModelOnexMessage(
-            summary="Formatting issue", fixable=True, remediation="Run formatter"
+            summary="Formatting issue",
+            fixable=True,
+            remediation="Run formatter",
         )
 
         assert message.fixable is True

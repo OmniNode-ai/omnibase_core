@@ -11,7 +11,6 @@ from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import BasicValueType, Configurable
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 
 from .model_property_metadata import ModelPropertyMetadata
@@ -70,13 +69,13 @@ class ModelTypedProperty(BaseModel):
             # Use ModelPropertyValue's type-safe accessors based on expected type
             if expected_type == str:
                 return cast(T, self.value.as_string())
-            elif expected_type == int:
+            if expected_type == int:
                 return cast(T, self.value.as_int())
-            elif expected_type == float:
+            if expected_type == float:
                 return cast(T, self.value.as_float())
-            elif expected_type == bool:
+            if expected_type == bool:
                 return cast(T, self.value.as_bool())
-            elif isinstance(self.value.value, expected_type):
+            if isinstance(self.value.value, expected_type):
                 return self.value.value
         except Exception:
             pass

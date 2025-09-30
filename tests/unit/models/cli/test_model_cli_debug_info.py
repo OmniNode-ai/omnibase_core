@@ -4,10 +4,7 @@ Test suite for ModelCliDebugInfo.
 Tests the clean, strongly-typed replacement for dict[str, Any] in CLI debug info.
 """
 
-from datetime import UTC, datetime, timedelta
-
-import pytest
-from pydantic import ValidationError
+from datetime import UTC, datetime
 
 from omnibase_core.models.cli.model_cli_debug_info import ModelCliDebugInfo
 
@@ -190,7 +187,9 @@ class TestModelCliDebugInfo:
     def test_complex_debug_scenario(self):
         """Test complex debugging scenario with all features."""
         debug_info = ModelCliDebugInfo(
-            debug_level="debug", verbose_mode=True, trace_mode=True
+            debug_level="debug",
+            verbose_mode=True,
+            trace_mode=True,
         )
 
         # Add debug messages
@@ -246,7 +245,9 @@ class TestModelCliDebugInfo:
 
         # Test trace mode
         trace_debug = ModelCliDebugInfo(
-            debug_level="debug", verbose_mode=True, trace_mode=True
+            debug_level="debug",
+            verbose_mode=True,
+            trace_mode=True,
         )
         assert trace_debug.trace_mode is True
 
@@ -420,6 +421,6 @@ class TestModelCliDebugInfo:
         # Test default timestamp is recent
         debug_info_default = ModelCliDebugInfo()
         time_diff = abs(
-            (datetime.now(UTC) - debug_info_default.timestamp).total_seconds()
+            (datetime.now(UTC) - debug_info_default.timestamp).total_seconds(),
         )
         assert time_diff < 2.0  # Should be within 2 seconds

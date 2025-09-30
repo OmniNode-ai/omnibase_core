@@ -12,7 +12,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_data_format import EnumDataFormat
 
 from .model_example_metadata_summary import ModelExampleMetadataSummary

@@ -67,7 +67,9 @@ class TestModelOnexUri:
         # Missing namespace
         with pytest.raises(ValidationError) as exc_info:
             ModelOnexUri(
-                type="tool", version_spec="1.0.0", original="tool://test@1.0.0"
+                type="tool",
+                version_spec="1.0.0",
+                original="tool://test@1.0.0",
             )
         assert "namespace" in str(exc_info.value)
 
@@ -83,7 +85,9 @@ class TestModelOnexUri:
         # Missing original
         with pytest.raises(ValidationError) as exc_info:
             ModelOnexUri(
-                type="tool", namespace="test://namespace", version_spec="1.0.0"
+                type="tool",
+                namespace="test://namespace",
+                version_spec="1.0.0",
             )
         assert "original" in str(exc_info.value)
 
@@ -377,7 +381,10 @@ class TestModelOnexUriEdgeCases:
 
         # Empty namespace should be valid (no specific constraints)
         uri = ModelOnexUri(
-            type="tool", namespace="", version_spec="1.0.0", original="tool://@1.0.0"
+            type="tool",
+            namespace="",
+            version_spec="1.0.0",
+            original="tool://@1.0.0",
         )
         assert uri.namespace == ""
 
@@ -392,7 +399,10 @@ class TestModelOnexUriEdgeCases:
 
         # Empty original should be valid (no specific constraints)
         uri = ModelOnexUri(
-            type="tool", namespace="test://namespace", version_spec="1.0.0", original=""
+            type="tool",
+            namespace="test://namespace",
+            version_spec="1.0.0",
+            original="",
         )
         assert uri.original == ""
 
@@ -479,7 +489,10 @@ class TestModelOnexUriEdgeCases:
         for uri_type in valid_types:
             # Test with minimal other fields
             uri = ModelOnexUri(
-                type=uri_type, namespace="a", version_spec="1", original="x"
+                type=uri_type,
+                namespace="a",
+                version_spec="1",
+                original="x",
             )
             assert uri.type == uri_type
 
@@ -505,7 +518,10 @@ class TestModelOnexUriEdgeCases:
 
         with pytest.raises(ValidationError):
             ModelOnexUri(
-                type="tool", namespace=None, version_spec="1.0.0", original="test"
+                type="tool",
+                namespace=None,
+                version_spec="1.0.0",
+                original="test",
             )
 
         with pytest.raises(ValidationError):

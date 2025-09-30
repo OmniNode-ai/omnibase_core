@@ -32,7 +32,8 @@ class EnumOperationalComplexity(str, Enum):
 
     @classmethod
     def get_estimated_runtime_seconds(
-        cls, complexity: EnumOperationalComplexity
+        cls,
+        complexity: EnumOperationalComplexity,
     ) -> float:
         """Get estimated runtime in seconds based on operational complexity."""
         runtime_map = {

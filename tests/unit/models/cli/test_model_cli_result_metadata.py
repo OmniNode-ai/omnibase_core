@@ -142,12 +142,14 @@ class TestModelCliResultMetadata:
 
         # Invalid scores should raise ValueError
         with pytest.raises(
-            ValueError, match="Quality score must be between 0.0 and 1.0"
+            ValueError,
+            match="Quality score must be between 0.0 and 1.0",
         ):
             metadata.set_quality_score(-0.1)
 
         with pytest.raises(
-            ValueError, match="Quality score must be between 0.0 and 1.0"
+            ValueError,
+            match="Quality score must be between 0.0 and 1.0",
         ):
             metadata.set_quality_score(1.1)
 
@@ -167,12 +169,14 @@ class TestModelCliResultMetadata:
 
         # Invalid confidence levels should raise ValueError
         with pytest.raises(
-            ValueError, match="Confidence level must be between 0.0 and 1.0"
+            ValueError,
+            match="Confidence level must be between 0.0 and 1.0",
         ):
             metadata.set_confidence_level(-0.01)
 
         with pytest.raises(
-            ValueError, match="Confidence level must be between 0.0 and 1.0"
+            ValueError,
+            match="Confidence level must be between 0.0 and 1.0",
         ):
             metadata.set_confidence_level(1.01)
 

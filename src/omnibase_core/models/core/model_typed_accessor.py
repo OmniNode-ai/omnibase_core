@@ -67,7 +67,8 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
                 try:
                     # Only include serializable values
                     if isinstance(
-                        value, (str, int, float, bool, list, dict, type(None))
+                        value,
+                        (str, int, float, bool, list, dict, type(None)),
                     ):
                         result[key] = value
                     else:

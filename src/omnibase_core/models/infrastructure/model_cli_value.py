@@ -7,15 +7,8 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    PrimitiveValueType,
-    ProtocolValidatable,
-)
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError

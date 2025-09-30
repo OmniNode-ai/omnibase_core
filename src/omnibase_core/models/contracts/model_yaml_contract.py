@@ -10,7 +10,7 @@ Pydantic model for validating YAML contract files providing:
 This replaces manual YAML field validation with proper Pydantic validation.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -103,12 +103,12 @@ class ModelYamlContract(BaseModel):
                     {
                         "provided_value": ModelSchemaValue.from_value(value),
                         "valid_options": ModelSchemaValue.from_value(
-                            [e.value for e in EnumNodeType]
+                            [e.value for e in EnumNodeType],
                         ),
                         "enum_names": ModelSchemaValue.from_value(
-                            [e.name for e in EnumNodeType]
+                            [e.name for e in EnumNodeType],
                         ),
-                    }
+                    },
                 )
 
                 raise OnexError(
@@ -126,7 +126,7 @@ class ModelYamlContract(BaseModel):
                 "provided_type": ModelSchemaValue.from_value(type(value).__name__),
                 "provided_value": ModelSchemaValue.from_value(str(value)),
                 "expected_types": ModelSchemaValue.from_value(["EnumNodeType", "str"]),
-            }
+            },
         )
 
         raise OnexError(

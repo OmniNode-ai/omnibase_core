@@ -110,7 +110,7 @@ class TestEnumCliStatus:
 
         # Test that strings work with member values
         success_member = EnumCliStatus.SUCCESS
-        assert "success" == success_member.value
+        assert success_member.value == "success"
 
     def test_enum_hash_consistency(self):
         """Test that enum members are hashable and consistent."""

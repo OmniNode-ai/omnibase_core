@@ -5,9 +5,7 @@ Tests the refactored connection properties model with UUID references
 and backward compatibility factory methods.
 """
 
-from uuid import UUID, uuid4
-
-import pytest
+from uuid import uuid4
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.connections.model_custom_connection_properties import (
@@ -81,7 +79,8 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_string(self):
         """Test creating service connection with string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service", instance_type="t3.medium"
+            service_name="test_service",
+            instance_type="t3.medium",
         )
 
         assert props.service_display_name == "test_service"
@@ -90,7 +89,8 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_generic_string(self):
         """Test creating service connection with generic string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service", instance_type="large"
+            service_name="test_service",
+            instance_type="large",
         )
 
         assert props.service_display_name == "test_service"
@@ -99,7 +99,8 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_unknown_string(self):
         """Test creating service connection with unknown string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service", instance_type="custom_unknown_type"
+            service_name="test_service",
+            instance_type="custom_unknown_type",
         )
 
         assert props.service_display_name == "test_service"

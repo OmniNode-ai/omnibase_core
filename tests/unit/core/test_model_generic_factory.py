@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.exceptions.onex_error import OnexError
@@ -94,7 +94,8 @@ class TestModelGenericFactory:
         factory = ModelGenericFactory(TestResultModel)
 
         with pytest.raises(
-            OnexError, match="Unknown factory: unknown for TestResultModel"
+            OnexError,
+            match="Unknown factory: unknown for TestResultModel",
         ):
             factory.create("unknown")
 
@@ -116,14 +117,17 @@ class TestModelGenericFactory:
         factory = ModelGenericFactory(TestResultModel)
 
         with pytest.raises(
-            OnexError, match="Unknown builder: unknown for TestResultModel"
+            OnexError,
+            match="Unknown builder: unknown for TestResultModel",
         ):
             factory.build("unknown", success=True)
 
     def test_create_success_result_utility(self):
         """Test the generic success result utility method."""
         result = ModelGenericFactory.create_success_result(
-            TestResultModel, "test_data", exit_code=0
+            TestResultModel,
+            "test_data",
+            exit_code=0,
         )
 
         assert result.success is True
@@ -133,7 +137,9 @@ class TestModelGenericFactory:
     def test_create_error_result_utility(self):
         """Test the generic error result utility method."""
         result = ModelGenericFactory.create_error_result(
-            TestResultModel, error="test error", exit_code=1
+            TestResultModel,
+            error="test error",
+            exit_code=1,
         )
 
         assert result.success is False
@@ -196,7 +202,9 @@ class TestModelCapabilityFactory:
         """Test building standard capability."""
         factory = ModelCapabilityFactory(TestCapabilityModel)
         result = factory.build(
-            "standard", name="TEST_CAPABILITY", description="Test capability"
+            "standard",
+            name="TEST_CAPABILITY",
+            description="Test capability",
         )
 
         assert result.name == "TEST_CAPABILITY"
@@ -209,7 +217,9 @@ class TestModelCapabilityFactory:
         """Test building deprecated capability."""
         factory = ModelCapabilityFactory(TestCapabilityModel)
         result = factory.build(
-            "deprecated", name="OLD_CAPABILITY", description="Old capability"
+            "deprecated",
+            name="OLD_CAPABILITY",
+            description="Old capability",
         )
 
         assert result.name == "OLD_CAPABILITY"
@@ -219,7 +229,9 @@ class TestModelCapabilityFactory:
         """Test building experimental capability."""
         factory = ModelCapabilityFactory(TestCapabilityModel)
         result = factory.build(
-            "experimental", name="NEW_CAPABILITY", description="New capability"
+            "experimental",
+            name="NEW_CAPABILITY",
+            description="New capability",
         )
 
         assert result.name == "NEW_CAPABILITY"

@@ -8,7 +8,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -24,7 +23,7 @@ class ModelYamlOption(BaseModel):
     """
 
     option_type: EnumYamlOptionType = Field(
-        description="Type discriminator for the option value"
+        description="Type discriminator for the option value",
     )
     boolean_value: bool | None = Field(None, description="Boolean option value")
     integer_value: int | None = Field(None, description="Integer option value")
@@ -64,9 +63,9 @@ class ModelYamlOption(BaseModel):
         """Convert back to Python value."""
         if self.option_type == EnumYamlOptionType.BOOLEAN:
             return self.boolean_value
-        elif self.option_type == EnumYamlOptionType.INTEGER:
+        if self.option_type == EnumYamlOptionType.INTEGER:
             return self.integer_value
-        elif self.option_type == EnumYamlOptionType.STRING:
+        if self.option_type == EnumYamlOptionType.STRING:
             return self.string_value
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -75,7 +74,7 @@ class ModelYamlOption(BaseModel):
                 {
                     "option_type": ModelSchemaValue.from_value(str(self.option_type)),
                     "method": ModelSchemaValue.from_value("to_value"),
-                }
+                },
             ),
         )
 

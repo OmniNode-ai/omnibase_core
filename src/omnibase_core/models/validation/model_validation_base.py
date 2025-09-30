@@ -11,8 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
-
 from .model_validation_container import ModelValidationContainer
 
 

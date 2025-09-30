@@ -7,17 +7,10 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParameterType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -32,7 +25,7 @@ class ModelOperationParameterValue(BaseModel):
     """
 
     parameter_type: EnumOperationParameterType = Field(
-        description="Parameter type discriminator"
+        description="Parameter type discriminator",
     )
     name: str = Field(..., description="Parameter name")
     description: str = Field(default="", description="Parameter description")
@@ -59,7 +52,11 @@ class ModelOperationParameterValue(BaseModel):
     schema_type: str | None = Field(None, description="Schema type for nested values")
 
     @field_validator(
-        "string_value", "numeric_value", "boolean_value", "list_value", "nested_value"
+        "string_value",
+        "numeric_value",
+        "boolean_value",
+        "list_value",
+        "nested_value",
     )
     @classmethod
     def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
@@ -86,17 +83,20 @@ class ModelOperationParameterValue(BaseModel):
             and parameter_type != EnumOperationParameterType.NESTED
         ):
             raise ValueError(f"Value required for parameter type {parameter_type}")
-        elif expected_field != field_name and v is not None:
+        if expected_field != field_name and v is not None:
             raise ValueError(
-                f"Unexpected value in {field_name} for parameter type {parameter_type}"
+                f"Unexpected value in {field_name} for parameter type {parameter_type}",
             )
 
         return v
 
     @classmethod
     def from_string(
-        cls, name: str, value: str, **kwargs: Any
-    ) -> "ModelOperationParameterValue":
+        cls,
+        name: str,
+        value: str,
+        **kwargs: Any,
+    ) -> ModelOperationParameterValue:
         """Create string parameter."""
         return cls(
             parameter_type=EnumOperationParameterType.STRING,
@@ -107,8 +107,11 @@ class ModelOperationParameterValue(BaseModel):
 
     @classmethod
     def from_numeric(
-        cls, name: str, value: float, **kwargs: Any
-    ) -> "ModelOperationParameterValue":
+        cls,
+        name: str,
+        value: float,
+        **kwargs: Any,
+    ) -> ModelOperationParameterValue:
         """Create numeric parameter."""
         return cls(
             parameter_type=EnumOperationParameterType.NUMERIC,
@@ -119,8 +122,11 @@ class ModelOperationParameterValue(BaseModel):
 
     @classmethod
     def from_boolean(
-        cls, name: str, value: bool, **kwargs: Any
-    ) -> "ModelOperationParameterValue":
+        cls,
+        name: str,
+        value: bool,
+        **kwargs: Any,
+    ) -> ModelOperationParameterValue:
         """Create boolean parameter."""
         return cls(
             parameter_type=EnumOperationParameterType.BOOLEAN,
@@ -131,8 +137,11 @@ class ModelOperationParameterValue(BaseModel):
 
     @classmethod
     def from_list(
-        cls, name: str, value: list[str], **kwargs: Any
-    ) -> "ModelOperationParameterValue":
+        cls,
+        name: str,
+        value: list[str],
+        **kwargs: Any,
+    ) -> ModelOperationParameterValue:
         """Create list parameter."""
         return cls(
             parameter_type=EnumOperationParameterType.LIST,
@@ -143,8 +152,11 @@ class ModelOperationParameterValue(BaseModel):
 
     @classmethod
     def from_nested(
-        cls, name: str, value: ModelSchemaValue, **kwargs: Any
-    ) -> "ModelOperationParameterValue":
+        cls,
+        name: str,
+        value: ModelSchemaValue,
+        **kwargs: Any,
+    ) -> ModelOperationParameterValue:
         """Create nested parameter."""
         return cls(
             parameter_type=EnumOperationParameterType.NESTED,
@@ -157,17 +169,16 @@ class ModelOperationParameterValue(BaseModel):
         """Get the actual parameter value."""
         if self.parameter_type == EnumOperationParameterType.STRING:
             return self.string_value
-        elif self.parameter_type == EnumOperationParameterType.NUMERIC:
+        if self.parameter_type == EnumOperationParameterType.NUMERIC:
             return self.numeric_value
-        elif self.parameter_type == EnumOperationParameterType.BOOLEAN:
+        if self.parameter_type == EnumOperationParameterType.BOOLEAN:
             return self.boolean_value
-        elif self.parameter_type == EnumOperationParameterType.LIST:
+        if self.parameter_type == EnumOperationParameterType.LIST:
             return self.list_value
-        elif self.parameter_type == EnumOperationParameterType.NESTED:
+        if self.parameter_type == EnumOperationParameterType.NESTED:
             return self.nested_value
-        else:
-            # Exhaustive case handling - this should never be reached
-            raise ValueError(f"Unknown parameter type: {self.parameter_type}")
+        # Exhaustive case handling - this should never be reached
+        raise ValueError(f"Unknown parameter type: {self.parameter_type}")
 
 
 class ModelOperationParameters(BaseModel):
@@ -239,4 +250,4 @@ class ModelOperationParameters(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelOperationParameters", "ModelOperationParameterValue"]
+__all__ = ["ModelOperationParameterValue", "ModelOperationParameters"]

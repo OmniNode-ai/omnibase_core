@@ -5,10 +5,8 @@ Verifies the generic configuration base classes provide
 standardized configuration patterns and utilities.
 """
 
-from datetime import UTC, datetime
-from typing import Optional
+from datetime import datetime
 
-import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core import (
@@ -16,7 +14,6 @@ from omnibase_core.models.core import (
     ModelTypedConfiguration,
 )
 from omnibase_core.models.metadata.model_semver import (
-    ModelSemVer,
     parse_semver_from_string,
 )
 
@@ -65,7 +62,7 @@ class TestModelConfigurationBase:
     def test_disabled_configuration(self):
         """Test disabled configuration creation."""
         config = ModelConfigurationBase[SampleConfigData].create_disabled(
-            "disabled_test"
+            "disabled_test",
         )
 
         assert config.name == "disabled_test"
@@ -228,7 +225,8 @@ class TestModelTypedConfiguration:
     def test_disable_with_reason(self):
         """Test disabling with reason."""
         config = ModelTypedConfiguration[SampleConfigData](
-            name="test", description="Original description"
+            name="test",
+            description="Original description",
         )
 
         config.disable_with_reason("Service unavailable")

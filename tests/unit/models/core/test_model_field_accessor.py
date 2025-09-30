@@ -7,8 +7,7 @@ type safety, and backward compatibility with existing field access patterns.
 
 from typing import Any
 
-import pytest
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from omnibase_core.models.core import (
     ModelCustomFieldsAccessor,

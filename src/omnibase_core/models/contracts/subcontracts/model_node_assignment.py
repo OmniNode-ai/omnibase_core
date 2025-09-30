@@ -16,21 +16,26 @@ class ModelNodeAssignment(BaseModel):
     """Node assignment for workflow execution."""
 
     node_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the node"
+        default_factory=uuid4,
+        description="Unique identifier for the node",
     )
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
     assignment_status: EnumAssignmentStatus = Field(
-        ..., description="Current status of the assignment"
+        ...,
+        description="Current status of the assignment",
     )
 
     execution_time_ms: int = Field(
-        default=0, description="Time spent executing on this node in milliseconds", ge=0
+        default=0,
+        description="Time spent executing on this node in milliseconds",
+        ge=0,
     )
 
     resource_usage: dict[str, float] = Field(
-        default_factory=dict, description="Resource usage metrics for this node"
+        default_factory=dict,
+        description="Resource usage metrics for this node",
     )
 
     model_config = {

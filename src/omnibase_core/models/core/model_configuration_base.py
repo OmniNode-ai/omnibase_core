@@ -12,19 +12,12 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import (
     BaseModel,
-    ConfigDict,
     Field,
     field_serializer,
     field_validator,
     model_validator,
 )
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -62,7 +55,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         """Convert arbitrary types (including Exception) to serializable form."""
         if isinstance(config_data, Exception):
             return str(config_data)
-        elif hasattr(config_data, "__dict__"):
+        if hasattr(config_data, "__dict__"):
             # Try to serialize objects with __dict__
             try:
                 return config_data.__dict__
@@ -145,7 +138,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         return str(self.version) if self.version else "1.0.0"
 
     @model_validator(mode="after")
-    def validate_configuration(self) -> "ModelConfigurationBase[T]":
+    def validate_configuration(self) -> ModelConfigurationBase[T]:
         """Override in subclasses for custom validation."""
         return self
 

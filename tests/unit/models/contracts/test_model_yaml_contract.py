@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class TestModelYamlContract:

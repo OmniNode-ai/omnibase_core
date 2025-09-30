@@ -149,7 +149,9 @@ class TestModelGenericMetadataGeneric:
         """Test Pydantic validation with generic types."""
         # Test valid data
         metadata = ModelGenericMetadata[str](
-            name="valid_metadata", tags=["tag1", "tag2"], custom_fields={"key": "value"}
+            name="valid_metadata",
+            tags=["tag1", "tag2"],
+            custom_fields={"key": "value"},
         )
 
         assert metadata.name == "valid_metadata"
@@ -159,7 +161,9 @@ class TestModelGenericMetadataGeneric:
     def test_generic_json_serialization(self):
         """Test JSON serialization with generic types."""
         metadata = ModelGenericMetadata[str](
-            name="json_test", description="JSON serialization test", version="1.0.0"
+            name="json_test",
+            description="JSON serialization test",
+            version="1.0.0",
         )
 
         # Add custom fields (basic types only)

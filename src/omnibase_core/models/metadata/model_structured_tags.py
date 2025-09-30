@@ -12,11 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -202,16 +197,15 @@ class ModelStructuredTags(BaseModel):
         """Get tags for a specific category."""
         if category == "functional":
             return [tag.value for tag in self.functional_tags]
-        elif category == "complexity":
+        if category == "complexity":
             return [tag.value for tag in self.complexity_tags]
-        elif category == "domain":
+        if category == "domain":
             return [tag.value for tag in self.domain_classification_tags]
-        elif category == "quality":
+        if category == "quality":
             return [tag.value for tag in self.quality_tags]
-        elif category in self.domain_tags:
+        if category in self.domain_tags:
             return self.domain_tags[category].copy()
-        else:
-            return []
+        return []
 
     def validate_tags(self) -> bool:
         """Validate all tags and mark as validated."""

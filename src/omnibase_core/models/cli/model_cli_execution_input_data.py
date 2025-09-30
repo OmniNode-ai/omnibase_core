@@ -15,7 +15,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
@@ -131,7 +130,10 @@ class ModelCliExecutionInputData(BaseModel):
 
     @classmethod
     def from_string(
-        cls, key: str, value: str, **kwargs: object
+        cls,
+        key: str,
+        value: str,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from string value."""
         # Extract known fields with proper types from kwargs
@@ -166,7 +168,10 @@ class ModelCliExecutionInputData(BaseModel):
 
     @classmethod
     def from_integer(
-        cls, key: str, value: int, **kwargs: object
+        cls,
+        key: str,
+        value: int,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from integer value."""
         # Extract known fields with proper types from kwargs
@@ -201,7 +206,10 @@ class ModelCliExecutionInputData(BaseModel):
 
     @classmethod
     def from_float(
-        cls, key: str, value: float, **kwargs: object
+        cls,
+        key: str,
+        value: float,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from float value."""
         # Extract known fields with proper types from kwargs
@@ -274,7 +282,10 @@ class ModelCliExecutionInputData(BaseModel):
 
     @classmethod
     def from_path(
-        cls, key: str, value: Path, **kwargs: object
+        cls,
+        key: str,
+        value: Path,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from Path value."""
         # Extract known fields with proper types from kwargs
@@ -309,7 +320,10 @@ class ModelCliExecutionInputData(BaseModel):
 
     @classmethod
     def from_uuid(
-        cls, key: str, value: UUID, **kwargs: object
+        cls,
+        key: str,
+        value: UUID,
+        **kwargs: object,
     ) -> ModelCliExecutionInputData:
         """Create input data from UUID value."""
         # Extract known fields with proper types from kwargs

@@ -4,8 +4,6 @@ Unit tests for EnumReturnType.
 Test coverage for return type enumeration and helper methods.
 """
 
-import pytest
-
 from omnibase_core.enums import EnumReturnType
 
 

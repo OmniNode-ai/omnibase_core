@@ -40,7 +40,8 @@ import-time penalties. This reduces package import time from 453ms to <5ms.
 # NO PACKAGE-LEVEL IMPORTS - This is the key fix!
 # All validation imports moved to lazy functions to eliminate import cascade
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .validation.validation_utils import ValidationResult
@@ -73,11 +74,11 @@ def get_validation_tools() -> tuple[
     )
 
 
-def get_validation_suite() -> (
-    tuple[
-        type["ValidationResult"], type, Callable[[str], dict[str, "ValidationResult"]]
-    ]
-):
+def get_validation_suite() -> tuple[
+    type["ValidationResult"],
+    type,
+    Callable[[str], dict[str, "ValidationResult"]],
+]:
     """
     Lazy load complete validation suite.
 

@@ -18,13 +18,13 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import patch
 
 import psutil
 import pytest
 
 sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation")
+    0,
+    str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation"),
 )
 
 try:
@@ -139,7 +139,9 @@ class ModelTest{i:04d}(BaseModel):
         assert is_valid is True, "Large file should pass naming validation"
 
     def test_large_file_backward_compatibility_validation(
-        self, temp_repo, memory_monitor
+        self,
+        temp_repo,
+        memory_monitor,
     ):
         """Test backward compatibility validation performance with large files."""
         # Create large file with mixed content
@@ -611,7 +613,7 @@ class ModelConcurrent{i:03d}(BaseModel):
 
         assert wall_time < 30.0, f"Concurrent validation took {wall_time:.2f}s"
         assert peak_memory < 300, f"Peak memory usage was {peak_memory:.1f}MB"
-        assert total_errors == 0, f"All files should pass validation"
+        assert total_errors == 0, "All files should pass validation"
         assert (
             efficiency > 1.5
         ), f"Concurrent efficiency was {efficiency:.1f}x (should be > 1.5x)"

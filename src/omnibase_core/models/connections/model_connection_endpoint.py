@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 

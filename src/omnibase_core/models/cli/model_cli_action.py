@@ -12,8 +12,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from omnibase_core.core.type_constraints import Nameable
-from omnibase_core.enums.enum_action_category import EnumActionCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -38,7 +36,9 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     )
     action_name_id: UUID = Field(..., description="UUID for action name", exclude=True)
     action_display_name: str = Field(
-        ..., description="Action name", alias="action_name"
+        ...,
+        description="Action name",
+        alias="action_name",
     )
     node_id: UUID = Field(..., description="UUID-based node reference")
     node_display_name: str = Field(..., description="Node name", alias="node_name")
@@ -65,9 +65,9 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -91,7 +91,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
                 action_hash = hashlib.sha256(action_name.encode()).hexdigest()
                 action_name_id = UUID(
-                    f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}"
+                    f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}",
                 )
                 values["action_name_id"] = action_name_id
         return values
@@ -106,11 +106,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         **kwargs: object,
     ) -> ModelCliAction:
         """Factory method for creating actions from contract data."""
-        import hashlib
 
-        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.exceptions.onex_error import OnexError
-        from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         # Validate input types first using Pydantic validation
@@ -122,13 +118,13 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 "node_id": node_id,  # This will trigger validation
                 "node_name": node_name,  # This will use the alias to validate node_display_name
                 "description": description or "test",  # This will trigger validation
-            }
+            },
         )
 
         # Extract known fields with proper types from kwargs
-        action_id = kwargs.get("action_id", None)
+        action_id = kwargs.get("action_id")
         deprecated = kwargs.get("deprecated", False)
-        category = kwargs.get("category", None)
+        category = kwargs.get("category")
 
         # Type validation for extracted kwargs
         if action_id is not None and not isinstance(action_id, UUID):
@@ -158,16 +154,15 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 deprecated=deprecated,
                 category=category_value,
             )
-        else:
-            return cls(
-                action_name_id=uuid4(),  # Provide required field
-                action_name=action_name,  # Use alias
-                node_id=node_id,
-                node_name=node_name,  # Use alias
-                description=final_description,
-                deprecated=deprecated,
-                category=category_value,
-            )
+        return cls(
+            action_name_id=uuid4(),  # Provide required field
+            action_name=action_name,  # Use alias
+            node_id=node_id,
+            node_name=node_name,  # Use alias
+            description=final_description,
+            deprecated=deprecated,
+            category=category_value,
+        )
 
     def get_qualified_name(self) -> str:
         """Get fully qualified action name."""

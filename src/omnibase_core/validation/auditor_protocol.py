@@ -146,7 +146,8 @@ class ModelProtocolAuditor:
         )
 
     def check_against_spi(
-        self, spi_path: str = "../omnibase_spi"
+        self,
+        spi_path: str = "../omnibase_spi",
     ) -> ModelDuplicationReport:
         """
         Check current repository protocols against omnibase_spi for duplicates.
@@ -268,7 +269,8 @@ class ModelProtocolAuditor:
         return duplicates
 
     def _check_naming_conventions(
-        self, protocols: list[ModelProtocolInfo]
+        self,
+        protocols: list[ModelProtocolInfo],
     ) -> list[str]:
         """Check protocol naming conventions."""
         violations = []

@@ -12,13 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -30,13 +23,16 @@ class ModelWorkflowExecutionContext(BaseModel):
     """Structured workflow execution context."""
 
     execution_id: str = Field(
-        default="", description="Unique workflow execution identifier"
+        default="",
+        description="Unique workflow execution identifier",
     )
     parent_execution_id: UUID | None = Field(
-        default=None, description="Parent workflow execution identifier"
+        default=None,
+        description="Parent workflow execution identifier",
     )
     correlation_id: UUID | None = Field(
-        default=None, description="Correlation identifier"
+        default=None,
+        description="Correlation identifier",
     )
     tenant_id: UUID | None = Field(default=None, description="Tenant identifier")
     user_id: UUID | None = Field(default=None, description="User identifier")
@@ -50,17 +46,20 @@ class ModelWorkflowInputParameters(BaseModel):
     """Structured workflow input parameters."""
 
     execution_mode: str = Field(
-        default="synchronous", description="Workflow execution mode"
+        default="synchronous",
+        description="Workflow execution mode",
     )
     retry_policy: str = Field(default="default", description="Retry policy name")
     timeout_seconds: int = Field(default=300, description="Workflow timeout in seconds")
     priority: str = Field(default="normal", description="Execution priority")
     debug_mode: bool = Field(default=False, description="Whether debug mode is enabled")
     validation_level: str = Field(
-        default="strict", description="Input validation level"
+        default="strict",
+        description="Input validation level",
     )
     custom_parameters: dict[str, str] = Field(
-        default_factory=dict, description="Additional custom parameters"
+        default_factory=dict,
+        description="Additional custom parameters",
     )
 
 
@@ -68,25 +67,32 @@ class ModelWorkflowConfiguration(BaseModel):
     """Structured workflow configuration settings."""
 
     checkpoint_enabled: bool = Field(
-        default=True, description="Enable workflow checkpointing"
+        default=True,
+        description="Enable workflow checkpointing",
     )
     checkpoint_interval: int = Field(
-        default=10, description="Checkpoint interval in steps"
+        default=10,
+        description="Checkpoint interval in steps",
     )
     error_handling_strategy: str = Field(
-        default="stop_on_error", description="Error handling strategy"
+        default="stop_on_error",
+        description="Error handling strategy",
     )
     monitoring_enabled: bool = Field(
-        default=True, description="Enable workflow monitoring"
+        default=True,
+        description="Enable workflow monitoring",
     )
     metrics_collection: bool = Field(
-        default=True, description="Enable metrics collection"
+        default=True,
+        description="Enable metrics collection",
     )
     notification_settings: dict[str, str] = Field(
-        default_factory=dict, description="Notification configuration"
+        default_factory=dict,
+        description="Notification configuration",
     )
     resource_limits: dict[str, str] = Field(
-        default_factory=dict, description="Resource limit configuration"
+        default_factory=dict,
+        description="Resource limit configuration",
     )
 
 
@@ -94,19 +100,24 @@ class ModelConditionalWorkflowContext(BaseModel):
     """Structured context for conditional workflow evaluation."""
 
     variable_scope: str = Field(
-        default="local", description="Variable scope for condition"
+        default="local",
+        description="Variable scope for condition",
     )
     evaluation_mode: str = Field(
-        default="strict", description="Condition evaluation mode"
+        default="strict",
+        description="Condition evaluation mode",
     )
     context_variables: dict[str, str] = Field(
-        default_factory=dict, description="Context variables for evaluation"
+        default_factory=dict,
+        description="Context variables for evaluation",
     )
     external_dependencies: list[str] = Field(
-        default_factory=list, description="External dependencies for condition"
+        default_factory=list,
+        description="External dependencies for condition",
     )
     cache_results: bool = Field(
-        default=True, description="Whether to cache evaluation results"
+        default=True,
+        description="Whether to cache evaluation results",
     )
 
 
@@ -116,13 +127,16 @@ class ModelLoopWorkflowContext(BaseModel):
     iteration_counter: int = Field(default=0, description="Current iteration counter")
     loop_variable: str = Field(default="", description="Primary loop variable name")
     accumulator_variables: dict[str, str] = Field(
-        default_factory=dict, description="Variables accumulated across iterations"
+        default_factory=dict,
+        description="Variables accumulated across iterations",
     )
     break_conditions: list[str] = Field(
-        default_factory=list, description="Additional break conditions"
+        default_factory=list,
+        description="Additional break conditions",
     )
     performance_tracking: bool = Field(
-        default=True, description="Track performance metrics per iteration"
+        default=True,
+        description="Track performance metrics per iteration",
     )
 
 
@@ -131,7 +145,8 @@ class ModelWorkflowDataBase(BaseModel):
     """Base workflow data with discriminator."""
 
     workflow_type: EnumWorkflowType = Field(
-        ..., description="Workflow type discriminator"
+        ...,
+        description="Workflow type discriminator",
     )
     input_parameters: ModelWorkflowInputParameters = Field(
         default_factory=ModelWorkflowInputParameters,
@@ -147,19 +162,24 @@ class ModelSequentialWorkflowData(ModelWorkflowDataBase):
     """Sequential workflow execution data."""
 
     workflow_type: Literal[EnumWorkflowType.SEQUENTIAL] = Field(
-        default=EnumWorkflowType.SEQUENTIAL, description="Sequential workflow type"
+        default=EnumWorkflowType.SEQUENTIAL,
+        description="Sequential workflow type",
     )
     step_sequence: list[str] = Field(
-        ..., description="Ordered sequence of workflow steps"
+        ...,
+        description="Ordered sequence of workflow steps",
     )
     continue_on_error: bool = Field(
-        default=False, description="Whether to continue on step failure"
+        default=False,
+        description="Whether to continue on step failure",
     )
     checkpoint_interval: int = Field(
-        default=1, description="Number of steps between checkpoints"
+        default=1,
+        description="Number of steps between checkpoints",
     )
     rollback_strategy: str = Field(
-        default="stop", description="Rollback strategy on failure"
+        default="stop",
+        description="Rollback strategy on failure",
     )
 
 
@@ -167,19 +187,24 @@ class ModelParallelWorkflowData(ModelWorkflowDataBase):
     """Parallel workflow execution data."""
 
     workflow_type: Literal[EnumWorkflowType.PARALLEL] = Field(
-        default=EnumWorkflowType.PARALLEL, description="Parallel workflow type"
+        default=EnumWorkflowType.PARALLEL,
+        description="Parallel workflow type",
     )
     parallel_branches: list[list[str]] = Field(
-        ..., description="Parallel execution branches"
+        ...,
+        description="Parallel execution branches",
     )
     synchronization_points: list[str] = Field(
-        default_factory=list, description="Points where parallel branches synchronize"
+        default_factory=list,
+        description="Points where parallel branches synchronize",
     )
     max_concurrency: int = Field(
-        default=4, description="Maximum number of parallel executions"
+        default=4,
+        description="Maximum number of parallel executions",
     )
     failure_strategy: str = Field(
-        default="fail_fast", description="Strategy when parallel branch fails"
+        default="fail_fast",
+        description="Strategy when parallel branch fails",
     )
 
 
@@ -187,14 +212,17 @@ class ModelConditionalWorkflowData(ModelWorkflowDataBase):
     """Conditional workflow execution data."""
 
     workflow_type: Literal[EnumWorkflowType.CONDITIONAL] = Field(
-        default=EnumWorkflowType.CONDITIONAL, description="Conditional workflow type"
+        default=EnumWorkflowType.CONDITIONAL,
+        description="Conditional workflow type",
     )
     condition_expression: str = Field(..., description="Boolean condition expression")
     true_branch: list[str] = Field(
-        ..., description="Steps to execute when condition is true"
+        ...,
+        description="Steps to execute when condition is true",
     )
     false_branch: list[str] = Field(
-        default_factory=list, description="Steps to execute when condition is false"
+        default_factory=list,
+        description="Steps to execute when condition is false",
     )
     condition_context: ModelConditionalWorkflowContext = Field(
         default_factory=ModelConditionalWorkflowContext,
@@ -206,21 +234,25 @@ class ModelLoopWorkflowData(ModelWorkflowDataBase):
     """Loop workflow execution data."""
 
     workflow_type: Literal[EnumWorkflowType.LOOP] = Field(
-        default=EnumWorkflowType.LOOP, description="Loop workflow type"
+        default=EnumWorkflowType.LOOP,
+        description="Loop workflow type",
     )
     loop_body: list[str] = Field(
-        ..., description="Steps to execute in each loop iteration"
+        ...,
+        description="Steps to execute in each loop iteration",
     )
     loop_condition: str = Field(..., description="Loop continuation condition")
     max_iterations: int = Field(
-        default=100, description="Maximum number of loop iterations"
+        default=100,
+        description="Maximum number of loop iterations",
     )
     iteration_context: ModelLoopWorkflowContext = Field(
         default_factory=ModelLoopWorkflowContext,
         description="Structured context variables updated each iteration",
     )
     break_on_error: bool = Field(
-        default=True, description="Whether to break loop on error"
+        default=True,
+        description="Whether to break loop on error",
     )
 
 
@@ -238,7 +270,8 @@ class ModelWorkflowPayload(BaseModel):
     """
 
     workflow_type: EnumWorkflowType = Field(
-        ..., description="Discriminated workflow type"
+        ...,
+        description="Discriminated workflow type",
     )
     workflow_data: (
         ModelSequentialWorkflowData
@@ -255,7 +288,8 @@ class ModelWorkflowPayload(BaseModel):
         description="Structured workflow execution context",
     )
     state_data: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict, description="Workflow state data with proper typing"
+        default_factory=dict,
+        description="Workflow state data with proper typing",
     )
 
     model_config = {

@@ -10,7 +10,9 @@ class ModelOrchestratorMetrics(BaseModel):
 
     active_workflows: int = Field(0, ge=0, description="Number of active workflows")
     completed_workflows: int = Field(
-        0, ge=0, description="Number of completed workflows"
+        0,
+        ge=0,
+        description="Number of completed workflows",
     )
     failed_workflows: int = Field(0, ge=0, description="Number of failed workflows")
     avg_execution_time_seconds: float | None = Field(

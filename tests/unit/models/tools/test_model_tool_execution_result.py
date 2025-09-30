@@ -118,7 +118,9 @@ class TestSuccessScenarios:
             "flag": True,
         }
         result = ModelToolExecutionResult(
-            tool_name="complex_tool", success=True, output=complex_output
+            tool_name="complex_tool",
+            success=True,
+            output=complex_output,
         )
 
         assert result.success is True
@@ -261,7 +263,9 @@ class TestToolSpecificFields:
 
         for code in codes:
             result = ModelToolExecutionResult(
-                tool_name="test_tool", success=(code == 0), status_code=code
+                tool_name="test_tool",
+                success=(code == 0),
+                status_code=code,
             )
             assert result.status_code == code
 
@@ -285,14 +289,18 @@ class TestExecutionTiming:
 
         for time_ms in times:
             result = ModelToolExecutionResult(
-                tool_name="test_tool", success=True, execution_time_ms=time_ms
+                tool_name="test_tool",
+                success=True,
+                execution_time_ms=time_ms,
             )
             assert result.execution_time_ms == time_ms
 
     def test_execution_time_zero_valid(self) -> None:
         """Test that zero execution time is valid (instant execution)."""
         result = ModelToolExecutionResult(
-            tool_name="instant_tool", success=True, execution_time_ms=0
+            tool_name="instant_tool",
+            success=True,
+            execution_time_ms=0,
         )
         assert result.execution_time_ms == 0
 
@@ -300,7 +308,9 @@ class TestExecutionTiming:
         """Test that negative execution time is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelToolExecutionResult(
-                tool_name="test_tool", success=True, execution_time_ms=-100
+                tool_name="test_tool",
+                success=True,
+                execution_time_ms=-100,
             )
 
         assert "execution_time_ms" in str(exc_info.value)
@@ -364,7 +374,9 @@ class TestStructuredDataHandling:
             "none_value": None,
         }
         result = ModelToolExecutionResult(
-            tool_name="mixed_tool", success=True, output=mixed_output
+            tool_name="mixed_tool",
+            success=True,
+            output=mixed_output,
         )
 
         assert result.output["string_value"] == "text"
@@ -376,7 +388,9 @@ class TestStructuredDataHandling:
     def test_empty_output_dictionary(self) -> None:
         """Test that empty output dictionary is valid."""
         result = ModelToolExecutionResult(
-            tool_name="empty_tool", success=True, output={}
+            tool_name="empty_tool",
+            success=True,
+            output={},
         )
 
         assert result.output == {}
@@ -414,10 +428,14 @@ class TestFieldValidation:
     def test_error_field_string_or_none(self) -> None:
         """Test that error field accepts string or None."""
         result_with_error = ModelToolExecutionResult(
-            tool_name="test_tool", success=False, error="Error message"
+            tool_name="test_tool",
+            success=False,
+            error="Error message",
         )
         result_without_error = ModelToolExecutionResult(
-            tool_name="test_tool", success=True, error=None
+            tool_name="test_tool",
+            success=True,
+            error=None,
         )
 
         assert result_with_error.error == "Error message"
@@ -426,7 +444,9 @@ class TestFieldValidation:
     def test_validate_assignment(self) -> None:
         """Test that field assignments are validated (validate_assignment=True)."""
         result = ModelToolExecutionResult(
-            tool_name="test_tool", success=True, execution_time_ms=100
+            tool_name="test_tool",
+            success=True,
+            execution_time_ms=100,
         )
 
         # Valid assignment
@@ -452,7 +472,9 @@ class TestEdgeCases:
         """Test with very long error message."""
         long_error = "Error: " + ("x" * 10000)
         result = ModelToolExecutionResult(
-            tool_name="test_tool", success=False, error=long_error
+            tool_name="test_tool",
+            success=False,
+            error=long_error,
         )
         assert len(result.error) > 10000
 
@@ -460,7 +482,9 @@ class TestEdgeCases:
         """Test with large execution time (hours/days in milliseconds)."""
         one_day_ms = 24 * 60 * 60 * 1000
         result = ModelToolExecutionResult(
-            tool_name="long_tool", success=True, execution_time_ms=one_day_ms
+            tool_name="long_tool",
+            success=True,
+            execution_time_ms=one_day_ms,
         )
         assert result.execution_time_ms == one_day_ms
 
@@ -468,7 +492,9 @@ class TestEdgeCases:
         """Test with large output dictionary."""
         large_output = {f"key_{i}": i for i in range(1000)}
         result = ModelToolExecutionResult(
-            tool_name="large_tool", success=True, output=large_output
+            tool_name="large_tool",
+            success=True,
+            output=large_output,
         )
         assert len(result.output) == 1000
         assert result.output["key_999"] == 999
@@ -553,7 +579,9 @@ class TestModelConfiguration:
     def test_model_immutability_via_validation(self) -> None:
         """Test that field validation applies on assignment."""
         result = ModelToolExecutionResult(
-            tool_name="test_tool", success=True, execution_time_ms=100
+            tool_name="test_tool",
+            success=True,
+            execution_time_ms=100,
         )
 
         # Should allow valid updates
@@ -575,7 +603,7 @@ class TestModelConfiguration:
 
         # Create copy with updates
         copied = original.model_copy(
-            update={"tool_name": "copied_tool", "execution_time_ms": 200}
+            update={"tool_name": "copied_tool", "execution_time_ms": 200},
         )
 
         assert copied.tool_name == "copied_tool"

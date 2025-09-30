@@ -6,7 +6,6 @@ serialization, and ONEX strong typing compliance.
 """
 
 import json
-from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -85,10 +84,10 @@ class TestModelEventPayload:
         payload.event_data["float_value"] = ModelSchemaValue.from_value(3.14159)
         payload.event_data["bool_value"] = ModelSchemaValue.from_value(True)
         payload.event_data["list_value"] = ModelSchemaValue.from_value(
-            ["item1", "item2", "item3"]
+            ["item1", "item2", "item3"],
         )
         payload.event_data["dict_value"] = ModelSchemaValue.from_value(
-            {"nested": "data"}
+            {"nested": "data"},
         )
         payload.event_data["none_value"] = ModelSchemaValue.from_value(None)
 
@@ -312,8 +311,8 @@ class TestModelEventPayloadValidation:
             # event_data should be dict[str, ModelSchemaValue], not dict[str, str]
             ModelEventPayload(
                 event_data={
-                    "key": "raw_string_not_schema_value"
-                }  # Should be ModelSchemaValue
+                    "key": "raw_string_not_schema_value",
+                },  # Should be ModelSchemaValue
             )
 
     def test_invalid_context_type(self):
@@ -327,7 +326,7 @@ class TestModelEventPayloadValidation:
         with pytest.raises(ValidationError):
             # attributes should be dict[str, str]
             ModelEventPayload(
-                attributes={"key": ["list", "not", "string"]}  # Should be string
+                attributes={"key": ["list", "not", "string"]},  # Should be string
             )
 
     def test_field_type_validation(self):
@@ -364,7 +363,7 @@ class TestModelEventPayloadUsagePatterns:
                         "client_id": "mobile_app_v2",
                         "client_version": "2.1.0",
                         "platform": "ios",
-                    }
+                    },
                 ),
             },
             context={
@@ -406,10 +405,10 @@ class TestModelEventPayloadUsagePatterns:
             event_data={
                 "error_code": ModelSchemaValue.from_value("DB_CONNECTION_TIMEOUT"),
                 "error_message": ModelSchemaValue.from_value(
-                    "Database connection timed out after 30 seconds"
+                    "Database connection timed out after 30 seconds",
                 ),
                 "stack_trace": ModelSchemaValue.from_value(
-                    "Error at line 42 in database.py"
+                    "Error at line 42 in database.py",
                 ),
                 "affected_operation": ModelSchemaValue.from_value("user_profile_fetch"),
                 "duration_ms": ModelSchemaValue.from_value(30000),
@@ -456,7 +455,7 @@ class TestModelEventPayloadUsagePatterns:
                 "metric_value": ModelSchemaValue.from_value(15420),
                 "measurement_time": ModelSchemaValue.from_value("2024-01-01T23:59:59Z"),
                 "dimensions": ModelSchemaValue.from_value(
-                    {"region": "us-west", "platform": "web", "user_segment": "premium"}
+                    {"region": "us-west", "platform": "web", "user_segment": "premium"},
                 ),
             },
             context={
@@ -514,7 +513,7 @@ class TestModelEventPayloadUsagePatterns:
         # Stage 3: Add enrichment data
         payload.event_data["customer_tier"] = ModelSchemaValue.from_value("premium")
         payload.event_data["fulfillment_center"] = ModelSchemaValue.from_value(
-            "west_coast"
+            "west_coast",
         )
         payload.context["processing_stage"] = "routing"
 

@@ -8,8 +8,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
-import pytest
-
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
@@ -95,7 +93,8 @@ class TestModelCliExecutionTyping:
     def test_execution_summary_returns_typed_model(self):
         """Test that get_summary returns proper model instead of dict[str, Any]."""
         execution = ModelCliExecution.create_simple(
-            command_name="test-command", target_node_name="test-node"
+            command_name="test-command",
+            target_node_name="test-node",
         )
         # Set additional state through methods
         execution.status = EnumExecutionStatus.SUCCESS
@@ -194,7 +193,9 @@ class TestNewModelValidation:
         # Datetime value
         now = datetime.now(UTC)
         context = ModelCliExecutionContext(
-            key="created_at", value=now, context_type=EnumContextType.SYSTEM
+            key="created_at",
+            value=now,
+            context_type=EnumContextType.SYSTEM,
         )
         assert context.is_datetime_value() is True
         assert context.value == now

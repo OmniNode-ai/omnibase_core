@@ -16,7 +16,6 @@ from pydantic import BaseModel, Field, field_validator
 # through runtime validation in ModelCliValue.from_any().
 CliConvertibleValue = object
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
@@ -139,7 +138,8 @@ class ModelCliAdvancedParams(BaseModel):
     @field_validator("node_config_overrides", mode="before")
     @classmethod
     def validate_node_config_overrides(
-        cls, v: dict[str, CliConvertibleValue]
+        cls,
+        v: dict[str, CliConvertibleValue],
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for node_config_overrides."""
         if not isinstance(v, dict):
@@ -164,7 +164,8 @@ class ModelCliAdvancedParams(BaseModel):
     @field_validator("custom_parameters", mode="before")
     @classmethod
     def validate_custom_parameters(
-        cls, v: dict[str, CliConvertibleValue]
+        cls,
+        v: dict[str, CliConvertibleValue],
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_parameters."""
         if not isinstance(v, dict):

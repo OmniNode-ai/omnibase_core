@@ -22,7 +22,9 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
     description: str = Field(..., description="Description of the workflow")
 
     timeout_ms: int = Field(
-        default=600000, description="Workflow timeout in milliseconds", ge=1000
+        default=600000,
+        description="Workflow timeout in milliseconds",
+        ge=1000,
     )
 
     model_config = {

@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 from .model_analytics_performance_summary import ModelAnalyticsPerformanceSummary
 
 
@@ -66,25 +60,23 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
         """Get descriptive performance level."""
         if self.average_execution_time_ms <= 50.0:
             return "Excellent"
-        elif self.average_execution_time_ms <= 100.0:
+        if self.average_execution_time_ms <= 100.0:
             return "Good"
-        elif self.average_execution_time_ms <= 250.0:
+        if self.average_execution_time_ms <= 250.0:
             return "Fair"
-        elif self.average_execution_time_ms <= 500.0:
+        if self.average_execution_time_ms <= 500.0:
             return "Poor"
-        else:
-            return "Critical"
+        return "Critical"
 
     def get_memory_usage_level(self) -> str:
         """Get descriptive memory usage level."""
         if self.peak_memory_usage_mb <= 50.0:
             return "Low"
-        elif self.peak_memory_usage_mb <= 100.0:
+        if self.peak_memory_usage_mb <= 100.0:
             return "Moderate"
-        elif self.peak_memory_usage_mb <= 250.0:
+        if self.peak_memory_usage_mb <= 250.0:
             return "High"
-        else:
-            return "Very High"
+        return "Very High"
 
     def calculate_throughput_per_second(self, time_window_seconds: float) -> float:
         """Calculate throughput (invocations per second)."""
@@ -151,8 +143,7 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
             self.average_execution_time_ms = total_time / (self.total_invocations + 1)
 
         # Update peak memory usage
-        if memory_usage_mb > self.peak_memory_usage_mb:
-            self.peak_memory_usage_mb = memory_usage_mb
+        self.peak_memory_usage_mb = max(memory_usage_mb, self.peak_memory_usage_mb)
 
         self.total_invocations += 1
 

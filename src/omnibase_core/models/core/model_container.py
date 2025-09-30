@@ -15,12 +15,6 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext

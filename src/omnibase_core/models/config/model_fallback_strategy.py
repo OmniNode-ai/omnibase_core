@@ -14,7 +14,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
 
 from .model_fallback_metadata import ModelFallbackMetadata

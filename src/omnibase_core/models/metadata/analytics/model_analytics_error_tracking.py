@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 from .model_analytics_error_summary import ModelAnalyticsErrorSummary
 
 
@@ -68,16 +62,15 @@ class ModelAnalyticsErrorTracking(BaseModel):
         """Get descriptive error severity level."""
         if self.critical_error_count > 0:
             return "Critical"
-        elif self.error_count > 10:
+        if self.error_count > 10:
             return "High"
-        elif self.error_count > 5:
+        if self.error_count > 5:
             return "Medium"
-        elif self.error_count > 0:
+        if self.error_count > 0:
             return "Low"
-        elif self.warning_count > 0:
+        if self.warning_count > 0:
             return "Warnings Only"
-        else:
-            return "Clean"
+        return "Clean"
 
     def calculate_error_rate(self, total_invocations: int) -> float:
         """Calculate error rate percentage."""
@@ -92,7 +85,9 @@ class ModelAnalyticsErrorTracking(BaseModel):
         return (self.critical_error_count / total_invocations) * 100.0
 
     def is_error_rate_acceptable(
-        self, total_invocations: int, threshold: float = 5.0
+        self,
+        total_invocations: int,
+        threshold: float = 5.0,
     ) -> bool:
         """Check if error rate is below acceptable threshold."""
         return self.calculate_error_rate(total_invocations) <= threshold
@@ -146,7 +141,8 @@ class ModelAnalyticsErrorTracking(BaseModel):
         }
 
     def get_error_summary(
-        self, total_invocations: int = 0
+        self,
+        total_invocations: int = 0,
     ) -> ModelAnalyticsErrorSummary:
         """Get comprehensive error summary."""
         return ModelAnalyticsErrorSummary.create_summary(
@@ -156,7 +152,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
             critical_error_count=self.critical_error_count,
             error_rate_percentage=self.calculate_error_rate(total_invocations),
             critical_error_rate_percentage=self.calculate_critical_error_rate(
-                total_invocations
+                total_invocations,
             ),
             severity_level=self.get_error_severity_level(),
             has_critical_issues=self.has_critical_errors,

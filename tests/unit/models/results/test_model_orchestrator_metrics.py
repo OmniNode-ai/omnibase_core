@@ -33,7 +33,9 @@ class TestModelOrchestratorMetricsBasicInstantiation:
     def test_instantiation_with_workflow_counts(self):
         """Test creating metrics with workflow counts."""
         metrics = ModelOrchestratorMetrics(
-            active_workflows=5, completed_workflows=100, failed_workflows=3
+            active_workflows=5,
+            completed_workflows=100,
+            failed_workflows=3,
         )
 
         assert metrics.active_workflows == 5
@@ -63,7 +65,9 @@ class TestModelOrchestratorMetricsFieldValidation:
     def test_workflow_counts_must_be_integers(self):
         """Test that workflow count fields must be integers."""
         metrics = ModelOrchestratorMetrics(
-            active_workflows=5, completed_workflows=10, failed_workflows=2
+            active_workflows=5,
+            completed_workflows=10,
+            failed_workflows=2,
         )
 
         assert isinstance(metrics.active_workflows, int)
@@ -150,7 +154,9 @@ class TestModelOrchestratorMetricsGetTotalWorkflows:
     def test_get_total_workflows_with_values(self):
         """Test get_total_workflows() calculation."""
         metrics = ModelOrchestratorMetrics(
-            active_workflows=5, completed_workflows=100, failed_workflows=3
+            active_workflows=5,
+            completed_workflows=100,
+            failed_workflows=3,
         )
 
         total = metrics.get_total_workflows()
@@ -176,7 +182,9 @@ class TestModelOrchestratorMetricsGetTotalWorkflows:
     def test_get_total_workflows_return_type(self):
         """Test that get_total_workflows() returns integer."""
         metrics = ModelOrchestratorMetrics(
-            active_workflows=1, completed_workflows=2, failed_workflows=3
+            active_workflows=1,
+            completed_workflows=2,
+            failed_workflows=3,
         )
 
         total = metrics.get_total_workflows()
@@ -354,7 +362,9 @@ class TestModelOrchestratorMetricsEdgeCases:
     def test_very_large_workflow_counts(self):
         """Test with very large workflow counts."""
         metrics = ModelOrchestratorMetrics(
-            active_workflows=1000000, completed_workflows=9999999, failed_workflows=1
+            active_workflows=1000000,
+            completed_workflows=9999999,
+            failed_workflows=1,
         )
 
         assert metrics.get_total_workflows() == 11000000

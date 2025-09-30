@@ -6,7 +6,6 @@ serialization, and ONEX compliance following testing standards.
 """
 
 import json
-from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -84,7 +83,8 @@ class TestModelExampleEdgeCases:
         """Test handling of empty strings."""
         # Empty name should fail validation due to min_length=1
         with pytest.raises(
-            ValidationError, match="String should have at least 1 character"
+            ValidationError,
+            match="String should have at least 1 character",
         ):
             ModelExample(name="", description="")
 
@@ -96,7 +96,8 @@ class TestModelExampleEdgeCases:
     def test_unicode_handling(self):
         """Test Unicode string handling."""
         example = ModelExample(
-            name="测试示例", description="Unicode description with émojis 🎉"
+            name="测试示例",
+            description="Unicode description with émojis 🎉",
         )
 
         assert example.name == "测试示例"

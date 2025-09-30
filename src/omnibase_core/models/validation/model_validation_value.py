@@ -7,14 +7,13 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
 from omnibase_core.exceptions.onex_error import OnexError
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # ONEX validation values - use discriminated union pattern instead of broad unions
 # ValidationValueType replaced with EnumValidationValueType + structured fields

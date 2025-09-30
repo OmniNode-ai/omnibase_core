@@ -16,7 +16,7 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Type, TypedDict, TypeVar
+from typing import Any, Protocol, TypedDict, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -296,15 +296,15 @@ class EnumStatusMigrator:
             return EnumStatusMigrator.migrate_general_status(old_value).to_base_status()
         if source_enum.lower() == "enumexecutionstatus":
             return EnumStatusMigrator.migrate_execution_status(
-                old_value
+                old_value,
             ).to_base_status()
         if source_enum.lower() == "enumscenariostatus":
             return EnumStatusMigrator.migrate_scenario_status(
-                old_value
+                old_value,
             ).to_base_status()
         if source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
             return EnumStatusMigrator.migrate_function_status(
-                old_value
+                old_value,
             ).to_base_status()
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -361,7 +361,7 @@ class EnumStatusMigrationValidator:
                 base_status = general_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}"
+                        f"Base status mapping changed: {old_value} -> {base_status.value}",
                     )
 
             elif old_enum_name.lower() == "enumexecutionstatus":
@@ -376,7 +376,7 @@ class EnumStatusMigrationValidator:
                 base_status = execution_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}"
+                        f"Base status mapping changed: {old_value} -> {base_status.value}",
                     )
 
             elif old_enum_name.lower() == "enumscenariostatus":
@@ -391,7 +391,7 @@ class EnumStatusMigrationValidator:
                 base_status = scenario_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}"
+                        f"Base status mapping changed: {old_value} -> {base_status.value}",
                     )
 
             elif old_enum_name.lower() in [
@@ -409,7 +409,7 @@ class EnumStatusMigrationValidator:
                 base_status = function_migrated.to_base_status()
                 if base_status.value != old_value:
                     result["warnings"].append(
-                        f"Base status mapping changed: {old_value} -> {base_status.value}"
+                        f"Base status mapping changed: {old_value} -> {base_status.value}",
                     )
 
             else:
@@ -487,11 +487,11 @@ class EnumStatusMigrationValidator:
 
 # Export for use
 __all__ = [
-    "EnumStatusMigrator",
-    "EnumStatusMigrationValidator",
     "LEGACY_ENUM_STATUS_VALUES",
     "LEGACY_EXECUTION_STATUS_VALUES",
-    "LEGACY_SCENARIO_STATUS_VALUES",
     "LEGACY_FUNCTION_STATUS_VALUES",
     "LEGACY_METADATA_NODE_STATUS_VALUES",
+    "LEGACY_SCENARIO_STATUS_VALUES",
+    "EnumStatusMigrationValidator",
+    "EnumStatusMigrator",
 ]

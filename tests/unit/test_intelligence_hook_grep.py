@@ -70,8 +70,8 @@ def _install_stub_modules():
     server_pkg = sys.modules.setdefault("server", ModuleType("server"))
     models_pkg = sys.modules.setdefault("server.models", ModuleType("server.models"))
     sys.modules["server.models.intelligence_models"] = models_mod
-    setattr(models_pkg, "intelligence_models", models_mod)
-    setattr(server_pkg, "models", models_pkg)
+    models_pkg.intelligence_models = models_mod
+    server_pkg.models = models_pkg
 
     # Stub server.config.archon_config
     config_mod = ModuleType("server.config.archon_config")
@@ -95,8 +95,8 @@ def _install_stub_modules():
 
     config_pkg = sys.modules.setdefault("server.config", ModuleType("server.config"))
     sys.modules["server.config.archon_config"] = config_mod
-    setattr(config_pkg, "archon_config", config_mod)
-    setattr(server_pkg, "config", config_pkg)
+    config_pkg.archon_config = config_mod
+    server_pkg.config = config_pkg
 
 
 def test_find_matching_commits_builds_or_grep_and_lookback_days(tmp_path: Path):

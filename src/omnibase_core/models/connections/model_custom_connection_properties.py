@@ -12,7 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
@@ -82,25 +81,29 @@ class ModelCustomConnectionProperties(BaseModel):
         kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
         message_queue = kwargs_dict.pop("message_queue", None)
         if message_queue is not None and not isinstance(
-            message_queue, ModelMessageQueueProperties
+            message_queue,
+            ModelMessageQueueProperties,
         ):
             message_queue = ModelMessageQueueProperties()
 
         cloud_service = kwargs_dict.pop("cloud_service", None)
         if cloud_service is not None and not isinstance(
-            cloud_service, ModelCloudServiceProperties
+            cloud_service,
+            ModelCloudServiceProperties,
         ):
             cloud_service = ModelCloudServiceProperties()
 
         performance = kwargs_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceProperties
+            performance,
+            ModelPerformanceProperties,
         ):
             performance = ModelPerformanceProperties()
 
         custom_properties = kwargs_dict.pop("custom_properties", None)
         if custom_properties is not None and not isinstance(
-            custom_properties, ModelCustomProperties
+            custom_properties,
+            ModelCustomProperties,
         ):
             custom_properties = ModelCustomProperties()
 
@@ -138,19 +141,22 @@ class ModelCustomConnectionProperties(BaseModel):
 
         cloud_service = kwargs_dict.pop("cloud_service", None)
         if cloud_service is not None and not isinstance(
-            cloud_service, ModelCloudServiceProperties
+            cloud_service,
+            ModelCloudServiceProperties,
         ):
             cloud_service = ModelCloudServiceProperties()
 
         performance = kwargs_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceProperties
+            performance,
+            ModelPerformanceProperties,
         ):
             performance = ModelPerformanceProperties()
 
         custom_properties = kwargs_dict.pop("custom_properties", None)
         if custom_properties is not None and not isinstance(
-            custom_properties, ModelCustomProperties
+            custom_properties,
+            ModelCustomProperties,
         ):
             custom_properties = ModelCustomProperties()
 
@@ -214,19 +220,22 @@ class ModelCustomConnectionProperties(BaseModel):
 
         message_queue = kwargs_dict.pop("message_queue", None)
         if message_queue is not None and not isinstance(
-            message_queue, ModelMessageQueueProperties
+            message_queue,
+            ModelMessageQueueProperties,
         ):
             message_queue = ModelMessageQueueProperties()
 
         performance = kwargs_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceProperties
+            performance,
+            ModelPerformanceProperties,
         ):
             performance = ModelPerformanceProperties()
 
         custom_properties = kwargs_dict.pop("custom_properties", None)
         if custom_properties is not None and not isinstance(
-            custom_properties, ModelCustomProperties
+            custom_properties,
+            ModelCustomProperties,
         ):
             custom_properties = ModelCustomProperties()
 

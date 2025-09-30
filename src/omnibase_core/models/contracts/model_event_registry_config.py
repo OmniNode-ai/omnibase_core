@@ -7,8 +7,6 @@ and registry integration for event management.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 

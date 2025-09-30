@@ -30,32 +30,32 @@ class EnumWorkflowType(str, Enum):
         return self.value
 
     @classmethod
-    def requires_branching(cls, workflow_type: "EnumWorkflowType") -> bool:
+    def requires_branching(cls, workflow_type: EnumWorkflowType) -> bool:
         """Check if the workflow type requires branching logic."""
         return workflow_type in {cls.CONDITIONAL, cls.PARALLEL}
 
     @classmethod
-    def supports_iteration(cls, workflow_type: "EnumWorkflowType") -> bool:
+    def supports_iteration(cls, workflow_type: EnumWorkflowType) -> bool:
         """Check if the workflow type supports iteration."""
         return workflow_type == cls.LOOP
 
     @classmethod
-    def is_linear(cls, workflow_type: "EnumWorkflowType") -> bool:
+    def is_linear(cls, workflow_type: EnumWorkflowType) -> bool:
         """Check if the workflow type executes linearly."""
         return workflow_type == cls.SEQUENTIAL
 
     @classmethod
-    def requires_synchronization(cls, workflow_type: "EnumWorkflowType") -> bool:
+    def requires_synchronization(cls, workflow_type: EnumWorkflowType) -> bool:
         """Check if the workflow type requires synchronization points."""
         return workflow_type in {cls.PARALLEL, cls.LOOP}
 
     @classmethod
-    def supports_parallelism(cls, workflow_type: "EnumWorkflowType") -> bool:
+    def supports_parallelism(cls, workflow_type: EnumWorkflowType) -> bool:
         """Check if the workflow type supports parallel execution."""
         return workflow_type == cls.PARALLEL
 
     @classmethod
-    def get_execution_description(cls, workflow_type: "EnumWorkflowType") -> str:
+    def get_execution_description(cls, workflow_type: EnumWorkflowType) -> str:
         """Get a human-readable description of the workflow type."""
         descriptions = {
             cls.SEQUENTIAL: "Sequential execution of workflow steps",

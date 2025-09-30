@@ -137,21 +137,20 @@ class EnumStandardTag(str, Enum):
         }
 
         normalized = value.lower().strip()
-        return aliases.get(normalized, None)
+        return aliases.get(normalized)
 
     @property
     def category(self) -> str:
         """Get the category this tag belongs to."""
         if self in self.get_functional_tags():
             return "functional"
-        elif self in self.get_complexity_tags():
+        if self in self.get_complexity_tags():
             return "complexity"
-        elif self in self.get_domain_tags():
+        if self in self.get_domain_tags():
             return "domain"
-        elif self in self.get_quality_tags():
+        if self in self.get_quality_tags():
             return "quality"
-        else:
-            return "other"
+        return "other"
 
 
 # Export for use

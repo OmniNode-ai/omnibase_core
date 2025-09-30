@@ -8,12 +8,11 @@ descriptions, and categorization for each node type.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 # Removed unused Any import - using proper union types instead
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -108,9 +107,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )  # Match test expectation
 
@@ -123,9 +122,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )  # Match test expectation
 
@@ -138,9 +137,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -158,9 +157,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )  # Match test expectation
 
@@ -187,9 +186,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )  # Match test expectation
 
@@ -202,9 +201,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )  # Match test expectation
 
@@ -226,9 +225,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )  # Match test expectation
 
@@ -238,7 +237,8 @@ class ModelNodeType(BaseModel):
     @field_validator("dependencies", mode="before")
     @classmethod
     def validate_dependencies(
-        cls, v: list[str | UUID] | tuple[str | UUID, ...] | object
+        cls,
+        v: list[str | UUID] | tuple[str | UUID, ...] | object,
     ) -> list[str | UUID]:
         """Validate dependencies, preserving string types unless they're valid UUIDs."""
         if not v:
@@ -253,9 +253,9 @@ class ModelNodeType(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 

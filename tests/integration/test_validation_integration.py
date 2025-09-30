@@ -9,12 +9,10 @@ Tests the integration of all validation scripts including:
 - CI/CD integration scenarios
 """
 
-import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -39,7 +37,7 @@ def temp_repo():
         """
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-"""
+""",
     )
     (repo_path / "README.md").write_text("# Test Repository")
     (repo_path / ".gitignore").write_text("__pycache__/\n*.pyc")
@@ -55,17 +53,21 @@ def git_repo(temp_repo):
     """Initialize the temp repository as a git repository."""
     subprocess.run(["git", "init"], cwd=temp_repo, check=True, capture_output=True)
     subprocess.run(
-        ["git", "config", "user.email", "test@example.com"], cwd=temp_repo, check=True
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=temp_repo,
+        check=True,
     )
     subprocess.run(
-        ["git", "config", "user.name", "Test User"], cwd=temp_repo, check=True
+        ["git", "config", "user.name", "Test User"],
+        cwd=temp_repo,
+        check=True,
     )
 
     # Add all files
     subprocess.run(["git", "add", "."], cwd=temp_repo, check=True)
     subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=temp_repo, check=True)
 
-    yield temp_repo
+    return temp_repo
 
 
 class TestValidationIntegration:
@@ -125,6 +127,7 @@ description: "User data processing contract"
                 ["python", str(structure_script), str(temp_repo), "omnibase_core"],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             # Should pass or have only warnings
             assert result.returncode in [
@@ -139,6 +142,7 @@ description: "User data processing contract"
                 ["python", str(naming_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode == 0
 
@@ -149,6 +153,7 @@ description: "User data processing contract"
                 ["python", str(compat_script), "--dir", str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode == 0
 
@@ -159,6 +164,7 @@ description: "User data processing contract"
                 ["python", str(contract_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode == 0
 
@@ -181,7 +187,7 @@ class UserAuth(BaseModel):  # Should be ModelUserAuth
         return self.__dict__
 '''
         (models_dir / "user_auth.py").write_text(
-            bad_model_content
+            bad_model_content,
         )  # Wrong filename too
 
         # Create invalid contract
@@ -202,6 +208,7 @@ description: "Invalid contract"
                 ["python", str(naming_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             if result.returncode != 0:
                 violations_detected += 1
@@ -213,6 +220,7 @@ description: "Invalid contract"
                 ["python", str(compat_script), "--dir", str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             if result.returncode != 0:
                 violations_detected += 1
@@ -224,6 +232,7 @@ description: "Invalid contract"
                 ["python", str(contract_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             if result.returncode != 0:
                 violations_detected += 1
@@ -241,6 +250,7 @@ description: "Invalid contract"
                     ["python", str(script_path), "/nonexistent/path"],
                     capture_output=True,
                     text=True,
+                    check=False,
                 )
                 # Should fail gracefully with non-zero exit code
                 assert result.returncode != 0
@@ -321,6 +331,7 @@ description: "Invalid contract"
                 ["python", str(compat_script), "--dir", str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode != 0  # Should detect backward compatibility issues
 
@@ -330,6 +341,7 @@ description: "Invalid contract"
                 ["python", str(contract_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode != 0  # Should detect contract issues
 
@@ -368,6 +380,7 @@ class ModelLegacy(BaseModel):
                 ["python", str(compat_script), str(problematic_file)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
 
             # Should fail validation (blocking commit)
@@ -423,6 +436,7 @@ class ModelProblem(BaseModel):
                 ["python", str(compat_script)] + files_to_validate,
                 capture_output=True,
                 text=True,
+                check=False,
             )
 
             # Should fail due to problematic file
@@ -442,6 +456,7 @@ class ModelProblem(BaseModel):
                 ["python", str(compat_script), str(readme_file)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
 
             # Should handle gracefully
@@ -466,7 +481,7 @@ from pydantic import BaseModel
 class ModelUser(BaseModel):
     """User model."""
     user_id: str
-'''
+''',
         )
 
         # Enums
@@ -480,7 +495,7 @@ class EnumStatus(str, Enum):
     """Status enumeration."""
     ACTIVE = "active"
     INACTIVE = "inactive"
-'''
+''',
         )
 
         # Contracts
@@ -494,7 +509,7 @@ contract_version:
   patch: 0
 node_type: "compute"
 description: "Data processor"
-"""
+""",
         )
 
         # Test comprehensive validation (CI scenario)
@@ -507,6 +522,7 @@ description: "Data processor"
                 ["python", str(structure_script), str(temp_repo), "omnibase_core"],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             validation_results["structure"] = result.returncode
 
@@ -517,6 +533,7 @@ description: "Data processor"
                 ["python", str(naming_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             validation_results["naming"] = result.returncode
 
@@ -527,6 +544,7 @@ description: "Data processor"
                 ["python", str(compat_script), "--dir", str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             validation_results["compatibility"] = result.returncode
 
@@ -537,6 +555,7 @@ description: "Data processor"
                 ["python", str(contract_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             validation_results["contracts"] = result.returncode
 
@@ -563,7 +582,7 @@ from pydantic import BaseModel
 class ModelTest{i}(BaseModel):
     """Test model {i}."""
     test_id: str
-'''
+''',
             )
 
         def run_validator(script_name, args):
@@ -574,7 +593,10 @@ class ModelTest{i}(BaseModel):
 
             start_time = time.time()
             result = subprocess.run(
-                ["python", str(script_path)] + args, capture_output=True, text=True
+                ["python", str(script_path)] + args,
+                capture_output=True,
+                text=True,
+                check=False,
             )
             end_time = time.time()
 
@@ -626,7 +648,7 @@ class ModelBatch{i:02d}(BaseModel):
     """Batch model {i}."""
     batch_id: str
     item_count: int = {i}
-'''
+''',
             )
 
         # Create many enum files
@@ -642,7 +664,7 @@ class EnumType{i:02d}(str, Enum):
     """Type enumeration {i}."""
     TYPE_A = "type_a_{i}"
     TYPE_B = "type_b_{i}"
-'''
+''',
             )
 
         # Time the validation
@@ -655,6 +677,7 @@ class EnumType{i:02d}(str, Enum):
                 ["python", str(naming_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode == 0
 
@@ -696,6 +719,7 @@ class ModelLarge{i:03d}(BaseModel):
                 ["python", str(naming_script), str(temp_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode == 0
 
@@ -721,7 +745,7 @@ class ModelFeature(BaseModel):
     feature_id: str
     name: str
     enabled: bool = False
-'''
+''',
         )
 
         # Create new contract
@@ -744,12 +768,14 @@ inputs:
 outputs:
   - name: "processed_feature"
     type: "object"
-"""
+""",
         )
 
         # 2. Stage files
         subprocess.run(
-            ["git", "add", str(new_model), str(new_contract)], cwd=git_repo, check=True
+            ["git", "add", str(new_model), str(new_contract)],
+            cwd=git_repo,
+            check=True,
         )
 
         # 3. Run pre-commit validation
@@ -762,6 +788,7 @@ outputs:
                 ["python", str(naming_script), str(git_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             if result.returncode != 0:
                 validation_passed = False
@@ -773,6 +800,7 @@ outputs:
                 ["python", str(compat_script), str(new_model)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             if result.returncode != 0:
                 validation_passed = False
@@ -784,6 +812,7 @@ outputs:
                 ["python", str(contract_script), str(git_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             if result.returncode != 0:
                 validation_passed = False
@@ -796,6 +825,7 @@ outputs:
             ["git", "commit", "-m", "Add new feature model and contract"],
             cwd=git_repo,
             capture_output=True,
+            check=False,
         )
         assert result.returncode == 0
 
@@ -816,13 +846,15 @@ class ModelUser(BaseModel):
     """User model."""
     user_id: str
     name: str
-'''
+''',
         )
 
         # Commit initial version
         subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
         subprocess.run(
-            ["git", "commit", "-m", "Add initial user model"], cwd=git_repo, check=True
+            ["git", "commit", "-m", "Add initial user model"],
+            cwd=git_repo,
+            check=True,
         )
 
         # Refactor model (add new field)
@@ -846,6 +878,7 @@ class ModelUser(BaseModel):
                 ["python", str(naming_script), str(git_repo)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert result.returncode == 0  # Should still pass
 
@@ -855,6 +888,7 @@ class ModelUser(BaseModel):
                 ["python", str(compat_script), str(original_model)],
                 capture_output=True,
                 text=True,
+                check=False,
             )
             assert (
                 result.returncode == 0

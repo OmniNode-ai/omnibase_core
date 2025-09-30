@@ -7,14 +7,13 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable, PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
@@ -120,11 +119,13 @@ class ModelRetryAdvanced(BaseModel):
             "reset_timeout_seconds": str(self.circuit_breaker_reset_timeout_seconds),
             "has_description": str(
                 bool(
-                    self.description.to_value()
-                    if isinstance(self.description.to_value(), str)
-                    and self.description.to_value()
-                    else False
-                )
+                    (
+                        self.description.to_value()
+                        if isinstance(self.description.to_value(), str)
+                        and self.description.to_value()
+                        else False
+                    ),
+                ),
             ),
             "metadata_count": str(self.get_metadata_count()),
         }

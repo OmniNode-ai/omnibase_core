@@ -7,9 +7,7 @@ PR review comments actually provide measurable performance improvements.
 """
 
 import time
-from datetime import datetime
 from statistics import mean
-from unittest.mock import patch
 
 import pytest
 
@@ -76,7 +74,9 @@ class TestModelTimeoutPerformance:
     def test_extension_limit_caching(self):
         """Test that extension_limit_seconds caching improves performance."""
         timeout = ModelTimeout(
-            timeout_seconds=60, extension_limit_seconds=30, allow_extension=True
+            timeout_seconds=60,
+            extension_limit_seconds=30,
+            allow_extension=True,
         )
 
         # Test extension limit access
@@ -97,7 +97,8 @@ class TestModelTimeoutPerformance:
         # Test the cached class method
         def create_from_category():
             return ModelTimeout.from_runtime_category(
-                EnumRuntimeCategory.MODERATE, use_max_estimate=True
+                EnumRuntimeCategory.MODERATE,
+                use_max_estimate=True,
             )
 
         # Time the operation
@@ -233,7 +234,8 @@ class TestModelTimeoutPerformance:
         timeouts = []
         for i in range(100):
             timeout = ModelTimeout(
-                timeout_seconds=30 + i, custom_metadata={f"key_{i}": f"value_{i}"}
+                timeout_seconds=30 + i,
+                custom_metadata={f"key_{i}": f"value_{i}"},
             )
             # Access cached properties to populate caches
             _ = timeout.custom_properties

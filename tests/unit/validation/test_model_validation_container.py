@@ -5,11 +5,6 @@ Comprehensive test coverage for the validation error aggregation system
 that standardizes validation across all domains.
 """
 
-from typing import Optional
-
-import pytest
-
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
 )
@@ -44,7 +39,9 @@ class TestModelValidationContainer:
         assert not container.is_valid()
 
         container.add_error(
-            "Another error", field="test_field", error_code="TEST_ERROR"
+            "Another error",
+            field="test_field",
+            error_code="TEST_ERROR",
         )
         assert container.get_error_count() == 2
 

@@ -6,7 +6,7 @@ Replaces dict[str, Any] return type with structured typing.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 
 class ModelFunctionRelationshipsSummaryType(TypedDict):

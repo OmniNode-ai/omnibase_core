@@ -62,7 +62,9 @@ class ModelFieldAccessor(BaseModel):
             return ModelResult.err(f"Error accessing field '{path}': {e!s}")
 
     def set_field(
-        self, path: str, value: PrimitiveValueType | ModelSchemaValue
+        self,
+        path: str,
+        value: PrimitiveValueType | ModelSchemaValue,
     ) -> bool:
         """Set field using dot notation. Accepts raw values or ModelSchemaValue."""
         try:
@@ -93,12 +95,11 @@ class ModelFieldAccessor(BaseModel):
             if isinstance(value, ModelSchemaValue):
                 schema_value = value
                 raw_value = schema_value.to_value()
+            elif value is not None:
+                schema_value = ModelSchemaValue.from_value(value)
+                raw_value = schema_value.to_value()
             else:
-                if value is not None:
-                    schema_value = ModelSchemaValue.from_value(value)
-                    raw_value = schema_value.to_value()
-                else:
-                    raw_value = None
+                raw_value = None
             # First try setting as attribute if the object has the field (even if None)
             # This handles Pydantic model fields that are initially None
             if hasattr(obj, final_key) or hasattr(obj, "__dict__"):

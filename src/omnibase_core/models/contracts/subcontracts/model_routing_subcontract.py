@@ -17,7 +17,6 @@ for ONEX microservices ecosystem.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -245,12 +244,12 @@ class ModelRoutingSubcontract(BaseModel):
                                 "pattern": ModelSchemaValue.from_value(pattern),
                                 "priority": ModelSchemaValue.from_value(route.priority),
                                 "route_name": ModelSchemaValue.from_value(
-                                    route.route_name
+                                    route.route_name,
                                 ),
                                 "validation_type": ModelSchemaValue.from_value(
-                                    "route_priority_uniqueness"
+                                    "route_priority_uniqueness",
                                 ),
-                            }
+                            },
                         ),
                     )
                 priorities_seen.add(route.priority)
@@ -271,9 +270,9 @@ class ModelRoutingSubcontract(BaseModel):
                         "sampling_rate": ModelSchemaValue.from_value(v),
                         "max_recommended": ModelSchemaValue.from_value(0.5),
                         "validation_type": ModelSchemaValue.from_value(
-                            "sampling_rate_threshold"
+                            "sampling_rate_threshold",
                         ),
-                    }
+                    },
                 ),
             )
         return v
