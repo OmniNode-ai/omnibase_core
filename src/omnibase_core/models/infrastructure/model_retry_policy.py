@@ -15,7 +15,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -202,32 +201,34 @@ class ModelRetryPolicy(BaseModel):
             "max_retries": ModelSchemaValue.from_value(self.max_retries),
             "current_attempt": ModelSchemaValue.from_value(self.current_attempt),
             "retry_attempts_made": ModelSchemaValue.from_value(
-                self.retry_attempts_made
+                self.retry_attempts_made,
             ),
             "has_retries_remaining": ModelSchemaValue.from_value(
-                self.has_retries_remaining
+                self.has_retries_remaining,
             ),
             "is_exhausted": ModelSchemaValue.from_value(self.is_exhausted),
             "success_rate": ModelSchemaValue.from_value(self.success_rate),
             "successful_attempt": ModelSchemaValue.from_value(
-                self.execution.successful_attempt
+                self.execution.successful_attempt,
             ),
             "total_execution_time_seconds": ModelSchemaValue.from_value(
-                self.execution.total_execution_time_seconds
+                self.execution.total_execution_time_seconds,
             ),
             "last_error": ModelSchemaValue.from_value(
-                str(self.execution.error_message.to_value())
-                if self.execution.error_message.to_value()
-                else None
+                (
+                    str(self.execution.error_message.to_value())
+                    if self.execution.error_message.to_value()
+                    else None
+                ),
             ),
             "last_status_code": ModelSchemaValue.from_value(
-                self.execution.last_status_code
+                self.execution.last_status_code,
             ),
             "backoff_strategy": ModelSchemaValue.from_value(
-                self.backoff_strategy.value
+                self.backoff_strategy.value,
             ),
             "next_delay_seconds": ModelSchemaValue.from_value(
-                self.calculate_next_delay() if self.has_retries_remaining else None
+                self.calculate_next_delay() if self.has_retries_remaining else None,
             ),
         }
 

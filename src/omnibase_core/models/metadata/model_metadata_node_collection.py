@@ -10,15 +10,8 @@ from typing import Any
 
 from pydantic import Field, RootModel
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer
-from .model_node_union import ModelNodeUnion
 
 
 class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):

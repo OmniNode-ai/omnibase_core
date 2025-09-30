@@ -15,7 +15,6 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from pathlib import Path
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -429,7 +428,8 @@ class ModelConfigurationSubcontract(BaseModel):
         return len(self.configuration_sources) < original_length
 
     def get_configuration_source_by_id(
-        self, source_id: UUID
+        self,
+        source_id: UUID,
     ) -> ModelConfigurationSource | None:
         """
         Get a configuration source by its UUID.
@@ -446,7 +446,8 @@ class ModelConfigurationSubcontract(BaseModel):
         return None
 
     def get_configuration_sources_by_type(
-        self, source_type: str
+        self,
+        source_type: str,
     ) -> list[ModelConfigurationSource]:
         """
         Get all configuration sources of a specific type.

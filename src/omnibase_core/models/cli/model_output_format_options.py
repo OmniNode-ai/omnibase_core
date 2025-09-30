@@ -12,7 +12,6 @@ from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 # Removed Any import - using object for ONEX compliance
@@ -43,7 +42,6 @@ def allow_dict_any(func: F) -> F:
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
@@ -252,15 +250,20 @@ class ModelOutputFormatOptions(BaseModel):
 
         # Register enum fields
         registry.register_enum_field(
-            "color_scheme", EnumColorScheme, EnumColorScheme.DEFAULT
+            "color_scheme",
+            EnumColorScheme,
+            EnumColorScheme.DEFAULT,
         )
         registry.register_enum_field(
-            "table_alignment", EnumTableAlignment, EnumTableAlignment.LEFT
+            "table_alignment",
+            EnumTableAlignment,
+            EnumTableAlignment.LEFT,
         )
 
         # Convert known fields using registry
         kwargs_dict: TypedDictOutputFormatOptionsKwargs = cast(
-            TypedDictOutputFormatOptionsKwargs, registry.convert_data(data)
+            TypedDictOutputFormatOptionsKwargs,
+            registry.convert_data(data),
         )
 
         # Handle custom options separately
@@ -271,7 +274,7 @@ class ModelOutputFormatOptions(BaseModel):
                 # Infer type from value - this could also be moved to registry pattern
                 if value.lower() in ("true", "false"):
                     custom_options[custom_key] = ModelCliValue.from_boolean(
-                        value.lower() == "true"
+                        value.lower() == "true",
                     )
                 elif value.isdigit():
                     custom_options[custom_key] = ModelCliValue.from_integer(int(value))

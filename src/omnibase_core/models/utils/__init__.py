@@ -12,8 +12,8 @@ from .model_yaml_value import ModelYamlValue
 # Import it directly where needed: from omnibase_core.models.utils.model_validation_rules_converter import ModelValidationRulesConverter
 
 __all__ = [
+    "ModelSubcontractConstraintValidator",
     "ModelYamlOption",
     "ModelYamlValue",
-    "ModelSubcontractConstraintValidator",
     # "ModelValidationRulesConverter",  # Excluded to break circular import
 ]

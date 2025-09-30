@@ -24,7 +24,8 @@ class SampleResult(BaseModel):
     data: ModelSchemaValue | None = Field(default=None, description="Result data")
     error_message: str | None = Field(default=None, description="Error message")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata"
+        default_factory=dict,
+        description="Additional metadata",
     )
 
 
@@ -45,10 +46,12 @@ class SampleMetrics(BaseModel):
     success: bool = Field(description="Operation success")
     error_message: str | None = Field(default=None, description="Error message")
     severity: EnumSeverityLevel | None = Field(
-        default=None, description="Error severity"
+        default=None,
+        description="Error severity",
     )
     details: dict[str, Any] = Field(
-        default_factory=dict, description="Additional details"
+        default_factory=dict,
+        description="Additional details",
     )
 
 
@@ -133,7 +136,11 @@ class TestModelGenericFactory:
         factory.register_builder("dynamic", build_config)
 
         config = factory.build(
-            "dynamic", name="test_config", value="test_value", enabled=False, priority=5
+            "dynamic",
+            name="test_config",
+            value="test_value",
+            enabled=False,
+            priority=5,
         )
 
         assert isinstance(config, SampleConfig)
@@ -205,7 +212,10 @@ class TestModelGenericFactory:
 
         # Test builder usage
         custom = factory.build(
-            "custom", operation="custom_op", duration_ms=200.0, success=True
+            "custom",
+            operation="custom_op",
+            duration_ms=200.0,
+            success=True,
         )
         assert custom.operation == "custom_op"
         assert custom.duration_ms == 200.0
@@ -236,7 +246,8 @@ class TestModelGenericFactoryUtilities:
     def test_create_success_result_no_data(self):
         """Test success result creation without data."""
         result = ModelGenericFactory.create_success_result(
-            SampleResult, metadata={"source": "test"}
+            SampleResult,
+            metadata={"source": "test"},
         )
 
         assert result.success is True
@@ -449,7 +460,8 @@ class TestModelGenericFactoryErrorHandling:
         # This should raise Pydantic validation error
         with pytest.raises(Exception):  # Could be ValidationError or similar
             factory.build(
-                "invalid", invalid_field="value"
+                "invalid",
+                invalid_field="value",
             )  # SampleConfig doesn't have this field
 
     def test_empty_factory_and_builder_lists(self):
@@ -492,5 +504,7 @@ class TestModelGenericFactoryErrorHandling:
 
         with pytest.raises(ValidationError):
             ModelGenericFactory.create_success_result(
-                IncompatibleModel, field1="test", field2=42
+                IncompatibleModel,
+                field1="test",
+                field2=42,
             )

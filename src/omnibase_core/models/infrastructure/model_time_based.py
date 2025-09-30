@@ -12,7 +12,6 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
@@ -336,7 +335,8 @@ class ModelTimeBased(BaseModel, Generic[T]):
     def from_timedelta(cls, delta: timedelta) -> ModelTimeBased[float]:
         """Create from timedelta object."""
         return ModelTimeBased[float](
-            value=delta.total_seconds(), unit=EnumTimeUnit.SECONDS
+            value=delta.total_seconds(),
+            unit=EnumTimeUnit.SECONDS,
         )
 
     @classmethod

@@ -13,14 +13,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelWorkflowInstanceMetadata(BaseModel):
     """
@@ -35,17 +27,21 @@ class ModelWorkflowInstanceMetadata(BaseModel):
     """
 
     workflow_id: UUID = Field(
-        default_factory=uuid4, description="Unique workflow identifier (UUID format)"
+        default_factory=uuid4,
+        description="Unique workflow identifier (UUID format)",
     )
     workflow_type: str = Field(..., description="Type of workflow")
     instance_id: UUID = Field(
-        default_factory=uuid4, description="Workflow instance identifier (UUID format)"
+        default_factory=uuid4,
+        description="Workflow instance identifier (UUID format)",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Creation timestamp"
+        default_factory=datetime.now,
+        description="Creation timestamp",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now, description="Last update timestamp"
+        default_factory=datetime.now,
+        description="Last update timestamp",
     )
 
     # Workflow state
@@ -55,7 +51,8 @@ class ModelWorkflowInstanceMetadata(BaseModel):
 
     # Dependencies
     parent_workflow_id: UUID | None = Field(
-        default=None, description="Parent workflow identifier (UUID format)"
+        default=None,
+        description="Parent workflow identifier (UUID format)",
     )
     dependency_count: int = Field(default=0, description="Number of dependencies")
 

@@ -10,9 +10,8 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
@@ -60,6 +59,74 @@ class ModelCustomConnectionProperties(BaseModel):
         description="Additional custom properties with type safety",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def handle_flat_init_kwargs(cls, data: Any) -> dict[str, Any]:
+        """Handle flat kwargs during initialization by routing to nested models."""
+        if not isinstance(data, dict):
+            return data  # type: ignore[return-value]
+
+        # Database properties
+        database_kwargs = {}
+        for key in [
+            "database_id",
+            "database_display_name",
+            "schema_id",
+            "schema_display_name",
+            "charset",
+            "collation",
+        ]:
+            if key in data:
+                database_kwargs[key] = data.pop(key)
+        if database_kwargs and "database" not in data:
+            data["database"] = database_kwargs
+
+        # Message queue properties
+        queue_kwargs = {}
+        for key in [
+            "queue_id",
+            "queue_display_name",
+            "exchange_id",
+            "exchange_display_name",
+            "routing_key",
+            "durable",
+        ]:
+            if key in data:
+                queue_kwargs[key] = data.pop(key)
+        if queue_kwargs and "message_queue" not in data:
+            data["message_queue"] = queue_kwargs
+
+        # Cloud service properties
+        cloud_kwargs = {}
+        for key in [
+            "service_id",
+            "service_display_name",
+            "region",
+            "availability_zone",
+            "instance_type",
+        ]:
+            if key in data:
+                cloud_kwargs[key] = data.pop(key)
+        if cloud_kwargs and "cloud_service" not in data:
+            data["cloud_service"] = cloud_kwargs
+
+        # Performance properties
+        perf_kwargs = {}
+        for key in [
+            "max_connections",
+            "connection_limit",
+            "command_timeout",
+            "enable_compression",
+            "compression_level",
+            "enable_caching",
+        ]:
+            if key in data:
+                perf_kwargs[key] = data.pop(key)
+        if perf_kwargs and "performance" not in data:
+            data["performance"] = perf_kwargs
+
+        return data
+
     # Factory methods
     @classmethod
     def create_database_connection(
@@ -82,25 +149,29 @@ class ModelCustomConnectionProperties(BaseModel):
         kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
         message_queue = kwargs_dict.pop("message_queue", None)
         if message_queue is not None and not isinstance(
-            message_queue, ModelMessageQueueProperties
+            message_queue,
+            ModelMessageQueueProperties,
         ):
             message_queue = ModelMessageQueueProperties()
 
         cloud_service = kwargs_dict.pop("cloud_service", None)
         if cloud_service is not None and not isinstance(
-            cloud_service, ModelCloudServiceProperties
+            cloud_service,
+            ModelCloudServiceProperties,
         ):
             cloud_service = ModelCloudServiceProperties()
 
         performance = kwargs_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceProperties
+            performance,
+            ModelPerformanceProperties,
         ):
             performance = ModelPerformanceProperties()
 
         custom_properties = kwargs_dict.pop("custom_properties", None)
         if custom_properties is not None and not isinstance(
-            custom_properties, ModelCustomProperties
+            custom_properties,
+            ModelCustomProperties,
         ):
             custom_properties = ModelCustomProperties()
 
@@ -138,19 +209,22 @@ class ModelCustomConnectionProperties(BaseModel):
 
         cloud_service = kwargs_dict.pop("cloud_service", None)
         if cloud_service is not None and not isinstance(
-            cloud_service, ModelCloudServiceProperties
+            cloud_service,
+            ModelCloudServiceProperties,
         ):
             cloud_service = ModelCloudServiceProperties()
 
         performance = kwargs_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceProperties
+            performance,
+            ModelPerformanceProperties,
         ):
             performance = ModelPerformanceProperties()
 
         custom_properties = kwargs_dict.pop("custom_properties", None)
         if custom_properties is not None and not isinstance(
-            custom_properties, ModelCustomProperties
+            custom_properties,
+            ModelCustomProperties,
         ):
             custom_properties = ModelCustomProperties()
 
@@ -214,19 +288,22 @@ class ModelCustomConnectionProperties(BaseModel):
 
         message_queue = kwargs_dict.pop("message_queue", None)
         if message_queue is not None and not isinstance(
-            message_queue, ModelMessageQueueProperties
+            message_queue,
+            ModelMessageQueueProperties,
         ):
             message_queue = ModelMessageQueueProperties()
 
         performance = kwargs_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceProperties
+            performance,
+            ModelPerformanceProperties,
         ):
             performance = ModelPerformanceProperties()
 
         custom_properties = kwargs_dict.pop("custom_properties", None)
         if custom_properties is not None and not isinstance(
-            custom_properties, ModelCustomProperties
+            custom_properties,
+            ModelCustomProperties,
         ):
             custom_properties = ModelCustomProperties()
 

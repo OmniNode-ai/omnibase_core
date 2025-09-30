@@ -30,27 +30,27 @@ class EnumEventType(str, Enum):
         return self.value
 
     @classmethod
-    def is_user_initiated(cls, event_type: "EnumEventType") -> bool:
+    def is_user_initiated(cls, event_type: EnumEventType) -> bool:
         """Check if the event type is user-initiated."""
         return event_type == cls.USER
 
     @classmethod
-    def is_system_generated(cls, event_type: "EnumEventType") -> bool:
+    def is_system_generated(cls, event_type: EnumEventType) -> bool:
         """Check if the event type is system-generated."""
         return event_type in {cls.SYSTEM, cls.WORKFLOW}
 
     @classmethod
-    def requires_error_handling(cls, event_type: "EnumEventType") -> bool:
+    def requires_error_handling(cls, event_type: EnumEventType) -> bool:
         """Check if the event type requires special error handling."""
         return event_type == cls.ERROR
 
     @classmethod
-    def is_workflow_related(cls, event_type: "EnumEventType") -> bool:
+    def is_workflow_related(cls, event_type: EnumEventType) -> bool:
         """Check if the event type is workflow-related."""
         return event_type == cls.WORKFLOW
 
     @classmethod
-    def get_severity_level(cls, event_type: "EnumEventType") -> str:
+    def get_severity_level(cls, event_type: EnumEventType) -> str:
         """Get the default severity level for the event type."""
         severity_levels = {
             cls.SYSTEM: "info",
@@ -61,7 +61,7 @@ class EnumEventType(str, Enum):
         return severity_levels.get(event_type, "info")
 
     @classmethod
-    def get_routing_priority(cls, event_type: "EnumEventType") -> str:
+    def get_routing_priority(cls, event_type: EnumEventType) -> str:
         """Get the routing priority for the event type."""
         priorities = {
             cls.SYSTEM: "normal",
@@ -72,7 +72,7 @@ class EnumEventType(str, Enum):
         return priorities.get(event_type, "normal")
 
     @classmethod
-    def get_event_description(cls, event_type: "EnumEventType") -> str:
+    def get_event_description(cls, event_type: EnumEventType) -> str:
         """Get a human-readable description of the event type."""
         descriptions = {
             cls.SYSTEM: "System-level events and notifications",

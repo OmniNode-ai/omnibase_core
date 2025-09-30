@@ -8,8 +8,6 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from .model_effect_parameters import ModelEffectParameters
 
 # Import models from individual files following ONEX one-model-per-file architecture
@@ -18,7 +16,7 @@ from .model_workflow_parameters import ModelWorkflowParameters
 
 # Export all models
 __all__ = [
+    "ModelEffectParameters",
     "ModelOperationParameters",
     "ModelWorkflowParameters",
-    "ModelEffectParameters",
 ]

@@ -11,8 +11,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
-
 
 class ModelDatabaseProperties(BaseModel):
     """Database-specific connection properties.

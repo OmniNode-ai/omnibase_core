@@ -18,10 +18,6 @@ from omnibase_core.enums.enum_function_lifecycle_status import (
     EnumMetadataNodeStatus,
 )
 from omnibase_core.enums.enum_general_status import EnumGeneralStatus, EnumStatus
-from omnibase_core.enums.enum_scenario_status_v2 import (
-    EnumScenarioStatus,
-    EnumScenarioStatusV2,
-)
 from omnibase_core.enums.enum_status_migration import (
     EnumStatusMigrationValidator,
     EnumStatusMigrator,
@@ -160,35 +156,35 @@ class TestFunctionLifecycleStatus:
         """Test lifecycle status utility methods."""
         # Test availability
         assert EnumFunctionLifecycleStatus.is_available(
-            EnumFunctionLifecycleStatus.ACTIVE
+            EnumFunctionLifecycleStatus.ACTIVE,
         )
         assert EnumFunctionLifecycleStatus.is_available(
-            EnumFunctionLifecycleStatus.EXPERIMENTAL
+            EnumFunctionLifecycleStatus.EXPERIMENTAL,
         )
         assert not EnumFunctionLifecycleStatus.is_available(
-            EnumFunctionLifecycleStatus.DISABLED
+            EnumFunctionLifecycleStatus.DISABLED,
         )
 
         # Test production ready
         assert EnumFunctionLifecycleStatus.is_production_ready(
-            EnumFunctionLifecycleStatus.ACTIVE
+            EnumFunctionLifecycleStatus.ACTIVE,
         )
         assert EnumFunctionLifecycleStatus.is_production_ready(
-            EnumFunctionLifecycleStatus.STABLE
+            EnumFunctionLifecycleStatus.STABLE,
         )
         assert not EnumFunctionLifecycleStatus.is_production_ready(
-            EnumFunctionLifecycleStatus.BETA
+            EnumFunctionLifecycleStatus.BETA,
         )
 
         # Test testing phase
         assert EnumFunctionLifecycleStatus.is_testing_phase(
-            EnumFunctionLifecycleStatus.ALPHA
+            EnumFunctionLifecycleStatus.ALPHA,
         )
         assert EnumFunctionLifecycleStatus.is_testing_phase(
-            EnumFunctionLifecycleStatus.BETA
+            EnumFunctionLifecycleStatus.BETA,
         )
         assert not EnumFunctionLifecycleStatus.is_testing_phase(
-            EnumFunctionLifecycleStatus.STABLE
+            EnumFunctionLifecycleStatus.STABLE,
         )
 
     def test_base_status_conversion(self):
@@ -300,7 +296,9 @@ class TestStatusMigration:
 
         # Test valid value validation
         result = validator.validate_value_migration(
-            "active", "EnumStatus", EnumGeneralStatus
+            "active",
+            "EnumStatus",
+            EnumGeneralStatus,
         )
         assert result["success"]
         assert result["migrated_value"] == "active"

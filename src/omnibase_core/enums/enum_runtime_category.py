@@ -82,6 +82,7 @@ class EnumRuntimeCategory(str, Enum):
     @classmethod
     def from_seconds(cls, seconds: float) -> EnumRuntimeCategory:
         """Determine category from duration in seconds."""
+        # Runtime threshold classification - architectural design for runtime categories
         if seconds < 0.1:
             return cls.INSTANT
         if seconds < 1:

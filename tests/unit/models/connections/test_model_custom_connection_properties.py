@@ -5,9 +5,7 @@ Tests the refactored connection properties model with UUID references
 and backward compatibility factory methods.
 """
 
-from uuid import UUID, uuid4
-
-import pytest
+from uuid import uuid4
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.connections.model_custom_connection_properties import (
@@ -81,7 +79,8 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_string(self):
         """Test creating service connection with string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service", instance_type="t3.medium"
+            service_name="test_service",
+            instance_type="t3.medium",
         )
 
         assert props.service_display_name == "test_service"
@@ -90,7 +89,8 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_generic_string(self):
         """Test creating service connection with generic string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service", instance_type="large"
+            service_name="test_service",
+            instance_type="large",
         )
 
         assert props.service_display_name == "test_service"
@@ -99,7 +99,8 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_unknown_string(self):
         """Test creating service connection with unknown string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service", instance_type="custom_unknown_type"
+            service_name="test_service",
+            instance_type="custom_unknown_type",
         )
 
         assert props.service_display_name == "test_service"
@@ -213,11 +214,12 @@ class TestModelCustomConnectionProperties:
         )
 
         # Test dict conversion (Pydantic serialization)
+        # The model uses nested composition, so check nested structure
         data = props.model_dump()
-        assert data["database_display_name"] == "test_db"
-        assert data["instance_type"] == "t3.medium"
-        assert data["max_connections"] == 100
-        assert data["enable_compression"] is True
+        assert data["database"]["database_display_name"] == "test_db"
+        assert data["cloud_service"]["instance_type"] == "t3.medium"
+        assert data["performance"]["max_connections"] == 100
+        assert data["performance"]["enable_compression"] is True
 
     def test_custom_properties_integration(self):
         """Test integration with custom properties."""
@@ -226,6 +228,6 @@ class TestModelCustomConnectionProperties:
         # Custom properties should be initialized
         assert props.custom_properties is not None
 
-        # Should be able to add custom properties
-        props.custom_properties.set_property("custom_key", "custom_value")
-        assert props.custom_properties.get_property("custom_key") == "custom_value"
+        # Should be able to add custom properties using the correct API
+        props.custom_properties.set_custom_value("custom_key", "custom_value")
+        assert props.custom_properties.get_custom_value("custom_key") == "custom_value"

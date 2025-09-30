@@ -7,16 +7,10 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 
 
 class ModelNodeTimestamps(BaseModel):
@@ -140,16 +134,15 @@ class ModelNodeTimestamps(BaseModel):
         last_modified = self.last_modified_days_ago
         if last_modified is None:
             return "Unknown"
-        elif last_modified <= 7:
+        if last_modified <= 7:
             return "Fresh"
-        elif last_modified <= 30:
+        if last_modified <= 30:
             return "Recent"
-        elif last_modified <= 90:
+        if last_modified <= 90:
             return "Aging"
-        elif last_modified <= 180:
+        if last_modified <= 180:
             return "Stale"
-        else:
-            return "Very Stale"
+        return "Very Stale"
 
     @classmethod
     def create_new(cls) -> ModelNodeTimestamps:

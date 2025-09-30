@@ -39,7 +39,7 @@ class EnumTimeUnit(str, Enum):
         return self._get_millisecond_multipliers()[self]
 
     @classmethod
-    def _get_display_names(cls) -> dict["EnumTimeUnit", str]:
+    def _get_display_names(cls) -> dict[EnumTimeUnit, str]:
         """Get display name mapping. Update this when adding new enum values."""
         return {
             cls.MILLISECONDS: "Milliseconds",
@@ -50,7 +50,7 @@ class EnumTimeUnit(str, Enum):
         }
 
     @classmethod
-    def _get_millisecond_multipliers(cls) -> dict["EnumTimeUnit", int]:
+    def _get_millisecond_multipliers(cls) -> dict[EnumTimeUnit, int]:
         """Get millisecond multiplier mapping. Update this when adding new enum values."""
         return {
             cls.MILLISECONDS: 1,

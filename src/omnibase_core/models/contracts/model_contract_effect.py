@@ -10,7 +10,6 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, assert_never
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
@@ -30,7 +29,6 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_backup_config import ModelBackupConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
-from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.contracts.model_effect_retry_config import (
     ModelEffectRetryConfig,
 )
@@ -62,9 +60,6 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
 )
 
 # Import centralized conversion utilities
-from omnibase_core.models.utils.model_validation_rules_converter import (
-    ModelValidationRulesInputValue,
-)
 
 
 class ModelContractEffect(ModelContractBase):
@@ -91,21 +86,20 @@ class ModelContractEffect(ModelContractBase):
         if isinstance(v, EnumNodeArchitectureType):
             # Convert architecture type to base node type
             return EnumNodeType(v.value)  # Both have "effect" value
-        elif isinstance(v, EnumNodeType):
+        if isinstance(v, EnumNodeType):
             return v
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Invalid node_type: {v}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
-                        ),
-                    }
-                ),
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid node_type: {v}",
+            details=ModelErrorContext.with_context(
+                {
+                    "error_type": ModelSchemaValue.from_value("valueerror"),
+                    "validation_context": ModelSchemaValue.from_value(
+                        "model_validation",
+                    ),
+                },
+            ),
+        )
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization validation."""
@@ -289,7 +283,9 @@ class ModelContractEffect(ModelContractBase):
 
         # Validate subcontract constraints using shared utility
         ModelSubcontractConstraintValidator.validate_node_subcontract_constraints(
-            "effect", self.model_dump(), original_contract_data
+            "effect",
+            self.model_dump(),
+            original_contract_data,
         )
 
     def _validate_effect_io_operations(self) -> None:
@@ -303,9 +299,9 @@ class ModelContractEffect(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -323,9 +319,9 @@ class ModelContractEffect(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -343,9 +339,9 @@ class ModelContractEffect(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -362,9 +358,9 @@ class ModelContractEffect(ModelContractBase):
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
 
@@ -383,9 +379,9 @@ class ModelContractEffect(ModelContractBase):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
 
@@ -462,9 +458,9 @@ class ModelContractEffect(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e
         except yaml.YAMLError as e:
@@ -475,9 +471,9 @@ class ModelContractEffect(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e
         except Exception as e:
@@ -488,8 +484,8 @@ class ModelContractEffect(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e

@@ -7,11 +7,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
-
-from omnibase_core.core.type_constraints import Executable
 
 
 class ModelFsmState(BaseModel):
@@ -26,17 +22,21 @@ class ModelFsmState(BaseModel):
     name: str = Field(..., description="State name")
     description: str = Field(default="", description="State description")
     is_initial: bool = Field(
-        default=False, description="Whether this is the initial state"
+        default=False,
+        description="Whether this is the initial state",
     )
     is_final: bool = Field(default=False, description="Whether this is a final state")
     entry_actions: list[str] = Field(
-        default_factory=list, description="Actions on state entry"
+        default_factory=list,
+        description="Actions on state entry",
     )
     exit_actions: list[str] = Field(
-        default_factory=list, description="Actions on state exit"
+        default_factory=list,
+        description="Actions on state exit",
     )
     properties: dict[str, str] = Field(
-        default_factory=dict, description="State properties"
+        default_factory=dict,
+        description="State properties",
     )
 
     model_config = {

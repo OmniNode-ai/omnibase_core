@@ -7,16 +7,10 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_workflow_parameter_type import EnumWorkflowParameterType
 
 # Discriminator function for workflow parameters
@@ -44,7 +38,8 @@ class ModelWorkflowConfigParameter(ModelBaseWorkflowParameter):
     config_value: str = Field(..., description="Configuration value")
     config_scope: str = Field(default="workflow", description="Configuration scope")
     overridable: bool = Field(
-        default=True, description="Whether config can be overridden"
+        default=True,
+        description="Whether config can be overridden",
     )
 
 
@@ -58,7 +53,8 @@ class ModelExecutionSettingParameter(ModelBaseWorkflowParameter):
     setting_name: str = Field(..., description="Setting name")
     enabled: bool = Field(default=True, description="Whether setting is enabled")
     conditional: bool = Field(
-        default=False, description="Whether setting is conditional"
+        default=False,
+        description="Whether setting is conditional",
     )
     dependency: str = Field(default="", description="Dependency for setting")
 
@@ -73,10 +69,13 @@ class ModelTimeoutSettingParameter(ModelBaseWorkflowParameter):
     timeout_name: str = Field(..., description="Timeout name")
     timeout_ms: int = Field(..., description="Timeout in milliseconds", gt=0)
     retry_on_timeout: bool = Field(
-        default=True, description="Whether to retry on timeout"
+        default=True,
+        description="Whether to retry on timeout",
     )
     escalation_timeout_ms: int = Field(
-        default=0, description="Escalation timeout in milliseconds", ge=0
+        default=0,
+        description="Escalation timeout in milliseconds",
+        ge=0,
     )
 
 
@@ -91,7 +90,8 @@ class ModelResourceLimitParameter(ModelBaseWorkflowParameter):
     limit_value: float = Field(..., description="Limit value", ge=0.0)
     unit: str = Field(..., description="Unit for limit value")
     enforce_hard_limit: bool = Field(
-        default=True, description="Whether to enforce hard limit"
+        default=True,
+        description="Whether to enforce hard limit",
     )
 
 
@@ -106,31 +106,28 @@ class ModelEnvironmentVariableParameter(ModelBaseWorkflowParameter):
     variable_value: str = Field(..., description="Environment variable value")
     sensitive: bool = Field(default=False, description="Whether variable is sensitive")
     inherit_from_parent: bool = Field(
-        default=True, description="Whether to inherit from parent"
+        default=True,
+        description="Whether to inherit from parent",
     )
 
 
 # ONEX-compliant discriminated unions (max 4 members each)
 # Configuration and Execution Parameters Union
 ConfigExecutionParameterUnion = Annotated[
-    Union[
-        ModelWorkflowConfigParameter,
-        ModelExecutionSettingParameter,
-        ModelTimeoutSettingParameter,
-        ModelEnvironmentVariableParameter,
-    ],
+    ModelWorkflowConfigParameter
+    | ModelExecutionSettingParameter
+    | ModelTimeoutSettingParameter
+    | ModelEnvironmentVariableParameter,
     Field(discriminator="parameter_type"),
 ]
 
 # Primary discriminated union for workflow parameters (5 members max - ONEX compliant)
 ModelWorkflowParameterValue = Annotated[
-    Union[
-        ModelWorkflowConfigParameter,
-        ModelExecutionSettingParameter,
-        ModelTimeoutSettingParameter,
-        ModelEnvironmentVariableParameter,
-        ModelResourceLimitParameter,
-    ],
+    ModelWorkflowConfigParameter
+    | ModelExecutionSettingParameter
+    | ModelTimeoutSettingParameter
+    | ModelEnvironmentVariableParameter
+    | ModelResourceLimitParameter,
     Field(discriminator="parameter_type"),
 ]
 
@@ -160,7 +157,7 @@ class ModelWorkflowParameters(BaseModel):
     }
 
     @model_validator(mode="after")
-    def validate_parameter_types(self) -> "ModelWorkflowParameters":
+    def validate_parameter_types(self) -> ModelWorkflowParameters:
         """Validate that all parameters have correct types."""
         for param_name, param_value in self.workflow_parameters.items():
             if not isinstance(
@@ -174,7 +171,7 @@ class ModelWorkflowParameters(BaseModel):
                 ),
             ):
                 raise ValueError(
-                    f"Invalid parameter type for {param_name}: {type(param_value)}"
+                    f"Invalid parameter type for {param_name}: {type(param_value)}",
                 )
         return self
 
@@ -293,7 +290,8 @@ class ModelWorkflowParameters(BaseModel):
                 # Update only valid fields with runtime validation
                 for key, value in updates.items():
                     if hasattr(self, key) and isinstance(
-                        value, (str, bool, int, float)
+                        value,
+                        (str, bool, int, float),
                     ):
                         setattr(self, key, value)
             return True
@@ -328,13 +326,13 @@ class ModelWorkflowParameters(BaseModel):
 
 # Export for use
 __all__ = [
-    "ModelWorkflowParameters",
-    "ModelWorkflowParameterValue",
     "ConfigExecutionParameterUnion",
     "ModelBaseWorkflowParameter",
-    "ModelWorkflowConfigParameter",
-    "ModelExecutionSettingParameter",
-    "ModelTimeoutSettingParameter",
-    "ModelResourceLimitParameter",
     "ModelEnvironmentVariableParameter",
+    "ModelExecutionSettingParameter",
+    "ModelResourceLimitParameter",
+    "ModelTimeoutSettingParameter",
+    "ModelWorkflowConfigParameter",
+    "ModelWorkflowParameterValue",
+    "ModelWorkflowParameters",
 ]

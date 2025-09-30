@@ -6,15 +6,13 @@ Composed model that combines focused progress tracking components.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
@@ -304,40 +302,42 @@ class ModelProgress(BaseModel):
             "current_step": ModelMetadataValue.from_int(self.core.current_step),
             "total_steps": ModelMetadataValue.from_int(self.core.total_steps),
             "current_phase": ModelMetadataValue.from_string(
-                self.core.current_phase.value
+                self.core.current_phase.value,
             ),
             "phase_percentage": ModelMetadataValue.from_float(
-                self.core.phase_percentage
+                self.core.phase_percentage,
             ),
             "status_message": ModelMetadataValue.from_string(
-                str(self.core.status_message)
+                str(self.core.status_message),
             ),
             "is_completed": ModelMetadataValue.from_bool(self.core.is_completed),
             "elapsed_seconds": ModelMetadataValue.from_float(
-                self.timing.elapsed_seconds
+                self.timing.elapsed_seconds,
             ),
             "estimated_remaining_seconds": ModelMetadataValue.from_float(
-                self.timing.estimated_remaining_duration.to_seconds()
-                if self.timing.estimated_remaining_duration
-                else 0.0
+                (
+                    self.timing.estimated_remaining_duration.to_seconds()
+                    if self.timing.estimated_remaining_duration
+                    else 0.0
+                ),
             ),
             "completed_milestones": ModelMetadataValue.from_int(
-                self.milestones.get_completed_count()
+                self.milestones.get_completed_count(),
             ),
             "total_milestones": ModelMetadataValue.from_int(
-                self.milestones.get_total_count()
+                self.milestones.get_total_count(),
             ),
             "completion_rate_per_minute": ModelMetadataValue.from_float(
-                self.timing.get_completion_rate_per_minute(self.core.percentage)
+                self.timing.get_completion_rate_per_minute(self.core.percentage),
             ),
             "elapsed_formatted": ModelMetadataValue.from_string(
-                self.timing.get_elapsed_formatted()
+                self.timing.get_elapsed_formatted(),
             ),
             "remaining_formatted": ModelMetadataValue.from_string(
-                self.timing.get_time_remaining_formatted()
+                self.timing.get_time_remaining_formatted(),
             ),
             "total_formatted": ModelMetadataValue.from_string(
-                self.timing.get_estimated_total_formatted()
+                self.timing.get_estimated_total_formatted(),
             ),
         }
 

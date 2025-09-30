@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 

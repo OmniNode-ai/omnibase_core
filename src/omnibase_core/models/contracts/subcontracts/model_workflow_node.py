@@ -20,17 +20,20 @@ class ModelWorkflowNode(BaseModel):
     """A node definition in a workflow graph."""
 
     node_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the node"
+        default_factory=uuid4,
+        description="Unique identifier for the node",
     )
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
     node_requirements: StructuredData = Field(
-        default_factory=dict, description="Requirements for this node"
+        default_factory=dict,
+        description="Requirements for this node",
     )
 
     dependencies: list[UUID] = Field(
-        default_factory=list, description="List of node IDs this node depends on"
+        default_factory=list,
+        description="List of node IDs this node depends on",
     )
 
     model_config = {

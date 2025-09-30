@@ -10,18 +10,14 @@ import hashlib
 import logging
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from omnibase_core.validation.exceptions import (
-    FileProcessingError,
     InputValidationError,
-    PathTraversalError,
-    ProtocolParsingError,
 )
 from omnibase_core.validation.validation_utils import (
-    ProtocolInfo,
     ProtocolSignatureExtractor,
     extract_protocol_signature,
     extract_protocols_from_directory,
@@ -144,7 +140,7 @@ class TestProtocol(Protocol
 
         try:
             with patch(
-                "omnibase_core.validation.validation_utils.logger"
+                "omnibase_core.validation.validation_utils.logger",
             ) as mock_logger:
                 result = extract_protocol_signature(temp_path)
 
@@ -177,7 +173,7 @@ class TestProtocol(Protocol
 
         try:
             with patch(
-                "omnibase_core.validation.validation_utils.logger"
+                "omnibase_core.validation.validation_utils.logger",
             ) as mock_logger:
                 result = extract_protocol_signature(temp_path)
 
@@ -246,7 +242,7 @@ class TestPathValidation:
             temp_path = Path(temp_dir) / ".." / Path(temp_dir).name
 
             with patch(
-                "omnibase_core.validation.validation_utils.logger"
+                "omnibase_core.validation.validation_utils.logger",
             ) as mock_logger:
                 validated_path = validate_directory_path(temp_path, "test")
 
@@ -280,7 +276,7 @@ class TestProtocol(Protocol):
             regular_file.write_text("print('hello')")
 
             with patch(
-                "omnibase_core.validation.validation_utils.logger"
+                "omnibase_core.validation.validation_utils.logger",
             ) as mock_logger:
                 protocols = extract_protocols_from_directory(temp_path)
 
@@ -305,7 +301,7 @@ class TestProtocol(Protocol):
             temp_path = Path(temp_dir)
 
             with patch(
-                "omnibase_core.validation.validation_utils.logger"
+                "omnibase_core.validation.validation_utils.logger",
             ) as mock_logger:
                 protocols = extract_protocols_from_directory(temp_path)
 
@@ -403,7 +399,7 @@ class TestLoggingIntegration:
 
         try:
             with patch(
-                "omnibase_core.validation.validation_utils.logger"
+                "omnibase_core.validation.validation_utils.logger",
             ) as mock_logger:
                 result = extract_protocol_signature(temp_path)
 

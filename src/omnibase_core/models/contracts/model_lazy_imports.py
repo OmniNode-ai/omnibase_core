@@ -15,7 +15,7 @@ Usage:
 """
 
 import functools
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 # Type checking imports only - no runtime cost
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ class ModelLazyContractLoader:
         self._cache: dict[str, ContractType] = {}
         self._loading: dict[str, bool] = {}
 
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def get_contract_base(self) -> type["ModelContractBase"]:
         """
         Lazy load ModelContractBase.
@@ -55,7 +55,7 @@ class ModelLazyContractLoader:
             self._cache["ModelContractBase"] = ModelContractBase
         return cast(type["ModelContractBase"], self._cache["ModelContractBase"])
 
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def get_contract_compute(self) -> type["ModelContractCompute"]:
         """
         Lazy load ModelContractCompute.
@@ -69,7 +69,7 @@ class ModelLazyContractLoader:
             self._cache["ModelContractCompute"] = ModelContractCompute
         return cast(type["ModelContractCompute"], self._cache["ModelContractCompute"])
 
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def get_contract_effect(self) -> type["ModelContractEffect"]:
         """
         Lazy load ModelContractEffect.
@@ -83,7 +83,7 @@ class ModelLazyContractLoader:
             self._cache["ModelContractEffect"] = ModelContractEffect
         return cast(type["ModelContractEffect"], self._cache["ModelContractEffect"])
 
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def get_contract_reducer(self) -> type["ModelContractReducer"]:
         """
         Lazy load ModelContractReducer.
@@ -97,7 +97,7 @@ class ModelLazyContractLoader:
             self._cache["ModelContractReducer"] = ModelContractReducer
         return cast(type["ModelContractReducer"], self._cache["ModelContractReducer"])
 
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def get_contract_orchestrator(self) -> type["ModelContractOrchestrator"]:
         """
         Lazy load ModelContractOrchestrator.
@@ -110,7 +110,8 @@ class ModelLazyContractLoader:
 
             self._cache["ModelContractOrchestrator"] = ModelContractOrchestrator
         return cast(
-            type["ModelContractOrchestrator"], self._cache["ModelContractOrchestrator"]
+            type["ModelContractOrchestrator"],
+            self._cache["ModelContractOrchestrator"],
         )
 
     def preload_all(self) -> None:

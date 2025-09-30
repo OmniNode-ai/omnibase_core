@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelAnalyticsPerformanceSummary(BaseModel):
     """
@@ -31,10 +25,10 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
 
     # Performance metrics
     average_execution_time_ms: float = Field(
-        description="Average execution time in milliseconds"
+        description="Average execution time in milliseconds",
     )
     average_execution_time_seconds: float = Field(
-        description="Average execution time in seconds"
+        description="Average execution time in seconds",
     )
     peak_memory_usage_mb: float = Field(description="Peak memory usage in MB")
 
@@ -70,12 +64,11 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
         """Get overall performance status based on multiple indicators."""
         if self.is_fast_performance and self.is_low_memory_usage:
             return "Excellent"
-        elif self.is_fast_performance or self.is_low_memory_usage:
+        if self.is_fast_performance or self.is_low_memory_usage:
             return "Good"
-        elif not self.needs_optimization:
+        if not self.needs_optimization:
             return "Fair"
-        else:
-            return "Poor"
+        return "Poor"
 
     def get_performance_metrics(self) -> dict[str, float]:
         """Get core performance metrics as a dictionary."""

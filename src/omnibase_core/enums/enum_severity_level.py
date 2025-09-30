@@ -71,6 +71,7 @@ class EnumSeverityLevel(str, Enum):
     @property
     def numeric_level(self) -> int:
         """Get numeric representation for level comparison."""
+        # Severity level classification - architectural design for logging levels
         levels = {
             self.TRACE: 10,
             self.DEBUG: 20,

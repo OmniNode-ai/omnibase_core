@@ -14,7 +14,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -141,7 +140,7 @@ class ModelCliCommandOption(BaseModel):
     ) -> ModelCliCommandOption:
         """Create command option from string value."""
         # Extract known fields with proper types from kwargs
-        option_display_name = kwargs.get("option_display_name", None)
+        option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
         is_required = kwargs.get("is_required", False)
         is_multiple = kwargs.get("is_multiple", False)
@@ -185,7 +184,7 @@ class ModelCliCommandOption(BaseModel):
     ) -> ModelCliCommandOption:
         """Create command option from integer value."""
         # Extract known fields with proper types from kwargs
-        option_display_name = kwargs.get("option_display_name", None)
+        option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
         is_required = kwargs.get("is_required", False)
         is_multiple = kwargs.get("is_multiple", False)
@@ -229,7 +228,7 @@ class ModelCliCommandOption(BaseModel):
     ) -> ModelCliCommandOption:
         """Create command option from float value."""
         # Extract known fields with proper types from kwargs
-        option_display_name = kwargs.get("option_display_name", None)
+        option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
         is_required = kwargs.get("is_required", False)
         is_multiple = kwargs.get("is_multiple", False)
@@ -273,7 +272,7 @@ class ModelCliCommandOption(BaseModel):
     ) -> ModelCliCommandOption:
         """Create command option from boolean value."""
         # Extract known fields with proper types from kwargs
-        option_display_name = kwargs.get("option_display_name", None)
+        option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
         is_required = kwargs.get("is_required", False)
         is_multiple = kwargs.get("is_multiple", False)
@@ -310,11 +309,14 @@ class ModelCliCommandOption(BaseModel):
 
     @classmethod
     def from_uuid(
-        cls, option_id: UUID, value: UUID, **kwargs: object
+        cls,
+        option_id: UUID,
+        value: UUID,
+        **kwargs: object,
     ) -> ModelCliCommandOption:
         """Create command option from UUID value."""
         # Extract known fields with proper types from kwargs
-        option_display_name = kwargs.get("option_display_name", None)
+        option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
         is_required = kwargs.get("is_required", False)
         is_multiple = kwargs.get("is_multiple", False)
@@ -358,7 +360,7 @@ class ModelCliCommandOption(BaseModel):
     ) -> ModelCliCommandOption:
         """Create command option from string list value."""
         # Extract known fields with proper types from kwargs
-        option_display_name = kwargs.get("option_display_name", None)
+        option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
         is_required = kwargs.get("is_required", False)
         is_multiple = kwargs.get("is_multiple", False)

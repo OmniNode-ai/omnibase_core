@@ -12,11 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -229,7 +224,8 @@ class ModelStructuredDisplayName(BaseModel):
         """Create a version-specific variant of this name."""
         return ModelStructuredDisplayName(
             name_id=uuid_from_string(
-                f"{self.display_name}_v{version}", "structured_name"
+                f"{self.display_name}_v{version}",
+                "structured_name",
             ),
             base_name=self.base_name,
             prefix=self.prefix,
@@ -246,7 +242,8 @@ class ModelStructuredDisplayName(BaseModel):
 
         return ModelStructuredDisplayName(
             name_id=uuid_from_string(
-                f"{env_prefix}{self.display_name}", "structured_name"
+                f"{env_prefix}{self.display_name}",
+                "structured_name",
             ),
             base_name=self.base_name,
             prefix=self.prefix,

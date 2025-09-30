@@ -32,7 +32,7 @@ from enum import Enum
 
 
 class EnumLogLevel(str, Enum):
-    """Log levels enum based on SPI LogLevel Literal type and severity levels for validation."""
+    """Log levels enum for SPI LogLevel Literal type and validation."""
 
     TRACE = "trace"
     DEBUG = "debug"

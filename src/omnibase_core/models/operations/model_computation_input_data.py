@@ -8,17 +8,10 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Discriminated union using the computation_type field
@@ -70,18 +63,20 @@ class ModelComputationInputBase(BaseModel):
     """Base computation input with discriminator."""
 
     computation_type: ModelComputationType = Field(
-        ..., description="Computation type discriminator"
+        ...,
+        description="Computation type discriminator",
     )
     source_values: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Source values for computation with proper typing",
     )
-    operation_parameters: "ModelComputationOperationParameters" = Field(
+    operation_parameters: ModelComputationOperationParameters = Field(
         default_factory=lambda: ModelComputationOperationParameters(),
         description="Structured operation parameters for computation",
     )
     boolean_flags: dict[str, bool] = Field(
-        default_factory=dict, description="Boolean configuration flags"
+        default_factory=dict,
+        description="Boolean configuration flags",
     )
 
 
@@ -89,19 +84,24 @@ class ModelNumericComputationInput(ModelComputationInputBase):
     """Numeric computation input data."""
 
     computation_type: Literal[ModelComputationType.NUMERIC] = Field(
-        default=ModelComputationType.NUMERIC, description="Numeric computation type"
+        default=ModelComputationType.NUMERIC,
+        description="Numeric computation type",
     )
     numeric_parameters: dict[str, float] = Field(
-        default_factory=dict, description="Numeric parameters for calculations"
+        default_factory=dict,
+        description="Numeric parameters for calculations",
     )
     precision_requirements: int = Field(
-        default=2, description="Required decimal precision"
+        default=2,
+        description="Required decimal precision",
     )
     calculation_mode: str = Field(
-        default="standard", description="Calculation mode or algorithm"
+        default="standard",
+        description="Calculation mode or algorithm",
     )
     rounding_strategy: str = Field(
-        default="round_half_up", description="Numeric rounding strategy"
+        default="round_half_up",
+        description="Numeric rounding strategy",
     )
 
 
@@ -109,17 +109,21 @@ class ModelTextComputationInput(ModelComputationInputBase):
     """Text computation input data."""
 
     computation_type: Literal[ModelComputationType.TEXT] = Field(
-        default=ModelComputationType.TEXT, description="Text computation type"
+        default=ModelComputationType.TEXT,
+        description="Text computation type",
     )
     text_parameters: dict[str, str] = Field(
-        default_factory=dict, description="Text-specific parameters"
+        default_factory=dict,
+        description="Text-specific parameters",
     )
     encoding: str = Field(default="utf-8", description="Text encoding")
     language_locale: str = Field(
-        default="en-US", description="Language and locale for text processing"
+        default="en-US",
+        description="Language and locale for text processing",
     )
     case_sensitivity: bool = Field(
-        default=True, description="Whether text processing is case sensitive"
+        default=True,
+        description="Whether text processing is case sensitive",
     )
 
 
@@ -127,17 +131,21 @@ class ModelBinaryComputationInput(ModelComputationInputBase):
     """Binary data computation input."""
 
     computation_type: Literal[ModelComputationType.BINARY] = Field(
-        default=ModelComputationType.BINARY, description="Binary computation type"
+        default=ModelComputationType.BINARY,
+        description="Binary computation type",
     )
     binary_format: str = Field(..., description="Binary data format")
     compression_algorithm: str = Field(
-        default="none", description="Compression algorithm used"
+        default="none",
+        description="Compression algorithm used",
     )
     checksum_verification: bool = Field(
-        default=True, description="Whether to verify data checksums"
+        default=True,
+        description="Whether to verify data checksums",
     )
     byte_order: str = Field(
-        default="big_endian", description="Byte order for binary data"
+        default="big_endian",
+        description="Byte order for binary data",
     )
 
 
@@ -149,14 +157,17 @@ class ModelStructuredComputationInput(ModelComputationInputBase):
         description="Structured computation type",
     )
     schema_definition: str = Field(
-        ..., description="Schema definition for structured data"
+        ...,
+        description="Schema definition for structured data",
     )
     validation_level: str = Field(default="strict", description="Data validation level")
     transformation_rules: dict[str, str] = Field(
-        default_factory=dict, description="Data transformation rules"
+        default_factory=dict,
+        description="Data transformation rules",
     )
     nested_processing: bool = Field(
-        default=True, description="Whether to process nested structures"
+        default=True,
+        description="Whether to process nested structures",
     )
 
 
@@ -166,20 +177,25 @@ class ModelComputationMetadataContext(BaseModel):
 
     execution_id: str = Field(default="", description="Execution identifier")
     computation_session: str = Field(
-        default="", description="Computation session identifier"
+        default="",
+        description="Computation session identifier",
     )
     performance_hints: dict[str, str] = Field(
-        default_factory=dict, description="Performance optimization hints"
+        default_factory=dict,
+        description="Performance optimization hints",
     )
     quality_requirements: dict[str, str] = Field(
-        default_factory=dict, description="Quality and precision requirements"
+        default_factory=dict,
+        description="Quality and precision requirements",
     )
     resource_constraints: dict[str, str] = Field(
-        default_factory=dict, description="Resource constraint specifications"
+        default_factory=dict,
+        description="Resource constraint specifications",
     )
     debug_mode: bool = Field(default=False, description="Whether debug mode is enabled")
     trace_enabled: bool = Field(
-        default=False, description="Whether execution tracing is enabled"
+        default=False,
+        description="Whether execution tracing is enabled",
     )
 
 
@@ -188,28 +204,30 @@ class ModelComputationOperationParameters(BaseModel):
 
     algorithm_name: str = Field(default="", description="Algorithm identifier")
     optimization_level: str = Field(
-        default="standard", description="Optimization level"
+        default="standard",
+        description="Optimization level",
     )
     parallel_execution: bool = Field(
-        default=False, description="Enable parallel execution"
+        default=False,
+        description="Enable parallel execution",
     )
     validation_mode: str = Field(default="strict", description="Input validation mode")
     error_handling: str = Field(
-        default="fail_fast", description="Error handling strategy"
+        default="fail_fast",
+        description="Error handling strategy",
     )
     custom_parameters: dict[str, str] = Field(
-        default_factory=dict, description="Additional custom parameters"
+        default_factory=dict,
+        description="Additional custom parameters",
     )
 
 
 # Discriminated union type for computation input data
 ModelComputationInputUnion = Annotated[
-    Union[
-        ModelNumericComputationInput,
-        ModelTextComputationInput,
-        ModelBinaryComputationInput,
-        ModelStructuredComputationInput,
-    ],
+    ModelNumericComputationInput
+    | ModelTextComputationInput
+    | ModelBinaryComputationInput
+    | ModelStructuredComputationInput,
     Field(discriminator="computation_type"),
 ]
 
@@ -227,10 +245,12 @@ class ModelComputationInputData(BaseModel):
     """
 
     computation_type: ModelComputationType = Field(
-        ..., description="Type of computation being performed"
+        ...,
+        description="Type of computation being performed",
     )
     input_data: ModelComputationInputUnion = Field(
-        ..., description="Computation-specific input data with discriminated union"
+        ...,
+        description="Computation-specific input data with discriminated union",
     )
     metadata_context: ModelComputationMetadataContext = Field(
         default_factory=ModelComputationMetadataContext,
@@ -240,7 +260,9 @@ class ModelComputationInputData(BaseModel):
     @field_validator("input_data")
     @classmethod
     def validate_input_data_type(
-        cls, v: ModelComputationInputUnion, info: ValidationInfo
+        cls,
+        v: ModelComputationInputUnion,
+        info: ValidationInfo,
     ) -> ModelComputationInputUnion:
         """Validate that input_data type matches computation_type discriminator."""
         if "computation_type" not in info.data:
@@ -249,26 +271,30 @@ class ModelComputationInputData(BaseModel):
         computation_type = info.data["computation_type"]
 
         if computation_type == ModelComputationType.NUMERIC and not isinstance(
-            v, ModelNumericComputationInput
+            v,
+            ModelNumericComputationInput,
         ):
             raise ValueError(
-                "NUMERIC computation_type requires ModelNumericComputationInput"
+                "NUMERIC computation_type requires ModelNumericComputationInput",
             )
-        elif computation_type == ModelComputationType.TEXT and not isinstance(
-            v, ModelTextComputationInput
+        if computation_type == ModelComputationType.TEXT and not isinstance(
+            v,
+            ModelTextComputationInput,
         ):
             raise ValueError("TEXT computation_type requires ModelTextComputationInput")
-        elif computation_type == ModelComputationType.BINARY and not isinstance(
-            v, ModelBinaryComputationInput
+        if computation_type == ModelComputationType.BINARY and not isinstance(
+            v,
+            ModelBinaryComputationInput,
         ):
             raise ValueError(
-                "BINARY computation_type requires ModelBinaryComputationInput"
+                "BINARY computation_type requires ModelBinaryComputationInput",
             )
-        elif computation_type == ModelComputationType.STRUCTURED and not isinstance(
-            v, ModelStructuredComputationInput
+        if computation_type == ModelComputationType.STRUCTURED and not isinstance(
+            v,
+            ModelStructuredComputationInput,
         ):
             raise ValueError(
-                "STRUCTURED computation_type requires ModelStructuredComputationInput"
+                "STRUCTURED computation_type requires ModelStructuredComputationInput",
             )
 
         return v
@@ -325,18 +351,18 @@ class ModelComputationInputData(BaseModel):
 
 # Export for use
 __all__ = [
-    "ModelComputationInputData",
-    "ModelComputationType",
-    "ModelComputationInputBase",
-    "ModelNumericComputationInput",
-    "ModelTextComputationInput",
     "ModelBinaryComputationInput",
-    "ModelStructuredComputationInput",
+    "ModelComputationInputBase",
+    "ModelComputationInputData",
     "ModelComputationInputUnion",
     "ModelComputationMetadataContext",
     "ModelComputationOperationParameters",
+    "ModelComputationType",
     "ModelInputDataType",
-    "ModelStructuredInputValue",
-    "ModelPrimitiveInputValue",
     "ModelMixedInputValue",
+    "ModelNumericComputationInput",
+    "ModelPrimitiveInputValue",
+    "ModelStructuredComputationInput",
+    "ModelStructuredInputValue",
+    "ModelTextComputationInput",
 ]

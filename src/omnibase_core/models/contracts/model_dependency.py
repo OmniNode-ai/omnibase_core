@@ -12,7 +12,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 import re
 from functools import lru_cache
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -76,7 +76,7 @@ class ModelDependency(BaseModel):
     # Thread-safe: ClassVar patterns are compiled once at class load time
     # and re.Pattern objects are immutable, allowing safe concurrent access
     _MODULE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
-        r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$"
+        r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$",
     )
     # Removed _CAMEL_TO_SNAKE_PATTERN to reduce memory footprint as requested in PR
 
@@ -98,7 +98,7 @@ class ModelDependency(BaseModel):
                         "provided_value": ModelSchemaValue.from_value(str(v)),
                         "field": ModelSchemaValue.from_value("name"),
                         "requirement": ModelSchemaValue.from_value("non_empty_string"),
-                    }
+                    },
                 ),
             )
 
@@ -121,7 +121,7 @@ class ModelDependency(BaseModel):
                         "length": ModelSchemaValue.from_value(len(v)),
                         "min_length": ModelSchemaValue.from_value(min_name_length),
                         "field": ModelSchemaValue.from_value("name"),
-                    }
+                    },
                 ),
             )
 
@@ -188,7 +188,7 @@ class ModelDependency(BaseModel):
         if found_chars:
             security_violations.append("shell_injection_characters")
             recommendations.append(
-                f"Remove dangerous characters: {', '.join(found_chars)}"
+                f"Remove dangerous characters: {', '.join(found_chars)}",
             )
 
         # Enhanced length validation
@@ -196,7 +196,7 @@ class ModelDependency(BaseModel):
         if len(module_path) > max_length:
             security_violations.append("excessive_length")
             recommendations.append(
-                f"Shorten module path to under {max_length} characters"
+                f"Shorten module path to under {max_length} characters",
             )
 
         # Additional security checks - refined to catch privileged paths while allowing legitimate protocol names
@@ -219,7 +219,7 @@ class ModelDependency(BaseModel):
                 # Flag other uses of privileged keywords
                 security_violations.append("potentially_privileged_path")
                 recommendations.append(
-                    f"Avoid '{keyword}' references in module paths unless for legitimate protocols"
+                    f"Avoid '{keyword}' references in module paths unless for legitimate protocols",
                 )
                 break  # Only report first violation to avoid spam
 
@@ -236,18 +236,18 @@ class ModelDependency(BaseModel):
                     {
                         "module_path": ModelSchemaValue.from_value(module_path[:100]),
                         "security_violations": ModelSchemaValue.from_value(
-                            ", ".join(security_violations)
+                            ", ".join(security_violations),
                         ),
                         "recommendations": ModelSchemaValue.from_value(
-                            ", ".join(recommendations)
+                            ", ".join(recommendations),
                         ),
                         "valid_example": ModelSchemaValue.from_value(
-                            "omnibase_core.models.example"
+                            "omnibase_core.models.example",
                         ),
                         "security_policy": ModelSchemaValue.from_value(
-                            "Module paths must use only alphanumeric, underscore, and dot characters"
+                            "Module paths must use only alphanumeric, underscore, and dot characters",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -260,7 +260,6 @@ class ModelDependency(BaseModel):
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         if not cls._MODULE_PATTERN.match(module_path):
-
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid module path format: {module_path}. Must be valid Python module path.",
@@ -268,18 +267,18 @@ class ModelDependency(BaseModel):
                     {
                         "module_path": ModelSchemaValue.from_value(module_path),
                         "expected_format": ModelSchemaValue.from_value(
-                            "alphanumeric.segments.with_underscores"
+                            "alphanumeric.segments.with_underscores",
                         ),
                         "pattern": ModelSchemaValue.from_value(
-                            cls._MODULE_PATTERN.pattern
+                            cls._MODULE_PATTERN.pattern,
                         ),
                         "example": ModelSchemaValue.from_value(
-                            "omnibase_core.models.example"
+                            "omnibase_core.models.example",
                         ),
                         "performance_note": ModelSchemaValue.from_value(
-                            "Validation uses optimized pre-compiled regex"
+                            "Validation uses optimized pre-compiled regex",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -305,7 +304,6 @@ class ModelDependency(BaseModel):
 
                 # Warn about potential naming inconsistencies but allow flexibility
             # Log inconsistency for audit purposes without blocking valid dependencies
-            pass
 
         return self
 

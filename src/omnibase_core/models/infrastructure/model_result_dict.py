@@ -10,8 +10,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
-
 from .model_cli_value import ModelCliValue
 from .model_error_value import ModelErrorValue
 

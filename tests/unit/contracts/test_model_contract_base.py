@@ -14,9 +14,6 @@ Coverage Requirements:
 ZERO TOLERANCE: Every code path must be tested thoroughly.
 """
 
-from typing import Any, Dict, List
-from unittest.mock import Mock, patch
-
 import pytest
 from pydantic import ValidationError
 
@@ -127,7 +124,7 @@ class TestModelContractBase:
         data["name"] = "   "
         with pytest.raises(ValidationError, match="at least 1 character"):
             TestableContractModel(
-                **data
+                **data,
             )  # Pydantic strips whitespace, then validates min_length
 
     def test_required_field_validation_description(self):
@@ -236,7 +233,7 @@ class TestModelContractBase:
                 "dependency_type": "protocol",
                 "required": True,
                 "description": "YAML loaded protocol",
-            }
+            },
         ]
 
         data = {**self.minimal_valid_data, "dependencies": dict_deps}
@@ -392,7 +389,8 @@ class TestModelContractBase:
             "protocol_interfaces": ["omnibase_core.invalid.interface"],
         }
         with pytest.raises(
-            ValueError, match="Protocol interface must contain 'protocol'"
+            ValueError,
+            match="Protocol interface must contain 'protocol'",
         ):
             TestableContractModel(**invalid_data)
 

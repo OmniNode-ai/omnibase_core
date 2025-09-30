@@ -20,12 +20,13 @@ import signal
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation")
+    0,
+    str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation"),
 )
 
 # Import the contracts module using importlib
@@ -370,7 +371,7 @@ outputs:
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'"""
+node_type: 'compute'""",
         )
 
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
@@ -385,7 +386,7 @@ node_type: 'compute'"""
         with open(yaml_file, "wb") as f:
             # Write corrupt binary data with version format
             f.write(
-                b"\xff\xfe\x00\x00contract_version:\n  major: 1\n  minor: 0\n  patch: 0\n\x80\x81\x82"
+                b"\xff\xfe\x00\x00contract_version:\n  major: 1\n  minor: 0\n  patch: 0\n\x80\x81\x82",
             )
 
         errors = validate_yaml_file(yaml_file)
@@ -493,7 +494,7 @@ invalid: [yaml, structure
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'"""
+node_type: 'compute'""",
         )
 
         # Create regular YAML file
@@ -502,7 +503,7 @@ node_type: 'compute'"""
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'"""
+node_type: 'compute'""",
         )
 
         with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
@@ -556,7 +557,9 @@ class TestErrorRecovery:
 
         # Patch the function in the validate module directly
         with patch.object(
-            validate_module, "validate_yaml_file", side_effect=KeyboardInterrupt()
+            validate_module,
+            "validate_yaml_file",
+            side_effect=KeyboardInterrupt(),
         ):
             with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
                 result = main()
@@ -584,7 +587,7 @@ class TestErrorRecovery:
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'"""
+node_type: 'compute'""",
         )
         (temp_repo / "problem.yaml").write_text("valid: yaml")
 
@@ -598,7 +601,9 @@ node_type: 'compute'"""
 
         # Patch the function in the validate module directly
         with patch.object(
-            validate_module, "validate_yaml_file", side_effect=mock_validate
+            validate_module,
+            "validate_yaml_file",
+            side_effect=mock_validate,
         ):
             with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
                 result = main()
@@ -647,7 +652,7 @@ class TestFixtureValidation:
             if edge_cases.exists():
                 # Test any YAML files in edge cases
                 yaml_files = list(edge_cases.glob("*.yaml")) + list(
-                    edge_cases.glob("*.yml")
+                    edge_cases.glob("*.yml"),
                 )
                 for yaml_file in yaml_files:
                     # Should not crash, regardless of content
@@ -670,7 +675,7 @@ class TestPerformanceAndScalability:
 contract_version: "1.0.{i}"
 node_type: "compute"
 description: "Contract {i}"
-"""
+""",
             )
 
         start_time = time.time()
@@ -697,7 +702,7 @@ contract_version:
   patch: 0
 node_type: "compute"
 description: "Contract at level {i}"
-"""
+""",
             )
 
         with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):

@@ -8,8 +8,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import Serializable
-
 
 class ModelYamlDumpOptions(BaseModel):
     """Type-safe YAML dump options.

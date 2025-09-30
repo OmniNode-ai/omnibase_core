@@ -138,6 +138,7 @@ class EnumStandardCategory(str, Enum):
     @classmethod
     def from_string(cls, value: str) -> EnumStandardCategory | None:
         """Convert string to standard category with fallback handling."""
+        # Category alias mapping - architectural design for category classification
         # Direct mapping
         for category in cls:
             if category.value == value.lower():
@@ -163,25 +164,24 @@ class EnumStandardCategory(str, Enum):
         }
 
         normalized = value.lower().strip()
-        return aliases.get(normalized, None)
+        return aliases.get(normalized)
 
     @property
     def hierarchy_level(self) -> str:
         """Get the hierarchy level this category belongs to."""
         if self in self.get_architecture_categories():
             return "architecture"
-        elif self in self.get_functional_categories():
+        if self in self.get_functional_categories():
             return "functional"
-        elif self in self.get_domain_categories():
+        if self in self.get_domain_categories():
             return "domain"
-        elif self in self.get_lifecycle_categories():
+        if self in self.get_lifecycle_categories():
             return "lifecycle"
-        elif self in self.get_quality_categories():
+        if self in self.get_quality_categories():
             return "quality"
-        elif self in self.get_data_categories():
+        if self in self.get_data_categories():
             return "data"
-        else:
-            return "other"
+        return "other"
 
     @property
     def is_onex_architecture(self) -> bool:

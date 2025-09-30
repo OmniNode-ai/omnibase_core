@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.exceptions.onex_error import OnexError
@@ -144,7 +143,8 @@ class ModelProgressMilestones(BaseModel):
 
     @classmethod
     def create_with_milestones(
-        cls, milestones: dict[str, float]
+        cls,
+        milestones: dict[str, float],
     ) -> ModelProgressMilestones:
         """Create milestone tracker with predefined milestones."""
         return cls(milestones=milestones)

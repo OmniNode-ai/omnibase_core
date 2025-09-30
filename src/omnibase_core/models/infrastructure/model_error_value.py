@@ -10,7 +10,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_error_value_type import EnumErrorValueType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -34,7 +33,7 @@ class ModelErrorValue(BaseModel):
     }
 
     error_type: EnumErrorValueType = Field(
-        description="Type discriminator for error value"
+        description="Type discriminator for error value",
     )
 
     # Error value storage (only one should be populated)
@@ -44,7 +43,7 @@ class ModelErrorValue(BaseModel):
     exception_traceback: str | None = None  # Exception traceback if available
 
     @model_validator(mode="after")
-    def validate_single_error(self) -> "ModelErrorValue":
+    def validate_single_error(self) -> ModelErrorValue:
         """Ensure only one error value is set based on type discriminator."""
         if self.error_type == EnumErrorValueType.STRING:
             if self.string_error is None:
@@ -53,7 +52,11 @@ class ModelErrorValue(BaseModel):
                     message="string_error must be set when error_type is 'string'",
                 )
             if any(
-                [self.exception_class, self.exception_message, self.exception_traceback]
+                [
+                    self.exception_class,
+                    self.exception_message,
+                    self.exception_traceback,
+                ],
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -77,7 +80,7 @@ class ModelErrorValue(BaseModel):
                     self.exception_class,
                     self.exception_message,
                     self.exception_traceback,
-                ]
+                ],
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -87,12 +90,12 @@ class ModelErrorValue(BaseModel):
         return self
 
     @classmethod
-    def from_string(cls, error: str) -> "ModelErrorValue":
+    def from_string(cls, error: str) -> ModelErrorValue:
         """Create error value from string."""
         return cls(error_type=EnumErrorValueType.STRING, string_error=error)
 
     @classmethod
-    def from_exception(cls, error: Exception) -> "ModelErrorValue":
+    def from_exception(cls, error: Exception) -> ModelErrorValue:
         """Create error value from exception."""
         import traceback
 
@@ -108,7 +111,7 @@ class ModelErrorValue(BaseModel):
         )
 
     @classmethod
-    def from_none(cls) -> "ModelErrorValue":
+    def from_none(cls) -> ModelErrorValue:
         """Create empty error value."""
         return cls(error_type=EnumErrorValueType.NONE)
 
@@ -116,10 +119,9 @@ class ModelErrorValue(BaseModel):
         """Get the actual error value as a string representation."""
         if self.error_type == EnumErrorValueType.STRING:
             return self.string_error
-        elif self.error_type == EnumErrorValueType.EXCEPTION:
+        if self.error_type == EnumErrorValueType.EXCEPTION:
             return f"{self.exception_class}: {self.exception_message}"
-        else:
-            return None
+        return None
 
     def get_exception_info(self) -> dict[str, str | None]:
         """Get structured exception information."""
@@ -153,9 +155,8 @@ class ModelErrorValue(BaseModel):
 
             if self.exception_class in exception_classes:
                 return exception_classes[self.exception_class](self.exception_message)
-            else:
-                # Fall back to generic RuntimeError with original class info
-                return RuntimeError(f"{self.exception_class}: {self.exception_message}")
+            # Fall back to generic RuntimeError with original class info
+            return RuntimeError(f"{self.exception_class}: {self.exception_message}")
         except Exception:
             # If recreation fails, return a generic runtime error
             return RuntimeError(f"{self.exception_class}: {self.exception_message}")

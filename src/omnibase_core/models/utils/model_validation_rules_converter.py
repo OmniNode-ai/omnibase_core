@@ -7,11 +7,10 @@ all contract models, eliminating code duplication and ensuring consistency.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, assert_never
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rules_input_type import (
     EnumValidationRulesInputType,
@@ -32,7 +31,7 @@ class ModelValidationRulesInputValue(BaseModel):
     """
 
     input_type: EnumValidationRulesInputType = Field(
-        description="Validation rules input type discriminator"
+        description="Validation rules input type discriminator",
     )
 
     # Data storage fields (only one should be populated based on input_type)
@@ -60,7 +59,7 @@ class ModelValidationRulesInputValue(BaseModel):
         required_field = required_fields.get(input_type)
         if required_field == field_name and v is None:
             raise ValueError(
-                f"Field {field_name} is required for input type {input_type}"
+                f"Field {field_name} is required for input type {input_type}",
             )
 
         return v
@@ -77,7 +76,8 @@ class ModelValidationRulesInputValue(BaseModel):
 
     @classmethod
     def from_validation_rules(
-        cls, rules: ModelValidationRules
+        cls,
+        rules: ModelValidationRules,
     ) -> "ModelValidationRulesInputValue":
         """Create validation rules input from ModelValidationRules."""
         return cls(
@@ -89,7 +89,8 @@ class ModelValidationRulesInputValue(BaseModel):
     def from_string(cls, constraint: str) -> "ModelValidationRulesInputValue":
         """Create validation rules input from string constraint."""
         return cls(
-            input_type=EnumValidationRulesInputType.STRING, string_constraint=constraint
+            input_type=EnumValidationRulesInputType.STRING,
+            string_constraint=constraint,
         )
 
     @classmethod
@@ -97,11 +98,11 @@ class ModelValidationRulesInputValue(BaseModel):
         """Create validation rules input from any supported type with automatic detection."""
         if data is None:
             return cls.from_none()
-        elif isinstance(data, dict):
+        if isinstance(data, dict):
             return cls.from_dict(data)
-        elif isinstance(data, ModelValidationRules):
+        if isinstance(data, ModelValidationRules):
             return cls.from_validation_rules(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             return cls.from_string(data)
 
         # This should never be reached given the type annotations
@@ -142,7 +143,7 @@ class ModelValidationRulesConverter:
             if isinstance(v, ModelValidationRulesInputValue):
                 return (
                     ModelValidationRulesConverter._convert_discriminated_union_to_rules(
-                        v
+                        v,
                     )
                 )
 
@@ -152,7 +153,7 @@ class ModelValidationRulesConverter:
                 discriminated_input = ModelValidationRulesInputValue.from_any(v)
                 return (
                     ModelValidationRulesConverter._convert_discriminated_union_to_rules(
-                        discriminated_input
+                        discriminated_input,
                     )
                 )
 
@@ -164,23 +165,23 @@ class ModelValidationRulesConverter:
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
         except (TypeError, ValueError) as e:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Failed to convert validation rules: {str(e)}",
+                message=f"Failed to convert validation rules: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("conversion_error"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
                         "original_type": ModelSchemaValue.from_value(str(type(v))),
-                    }
+                    },
                 ),
             ) from e
 
@@ -191,25 +192,24 @@ class ModelValidationRulesConverter:
         """Convert discriminated union to ModelValidationRules."""
         if v.input_type == EnumValidationRulesInputType.NONE:
             return ModelValidationRules()
-        elif (
+        if (
             v.input_type == EnumValidationRulesInputType.DICT_OBJECT
             and v.dict_data is not None
         ):
             return ModelValidationRulesConverter._convert_dict_to_rules(v.dict_data)
-        elif (
+        if (
             v.input_type == EnumValidationRulesInputType.MODEL_VALIDATION_RULES
             and v.validation_rules is not None
         ):
             return v.validation_rules
-        elif (
+        if (
             v.input_type == EnumValidationRulesInputType.STRING
             and v.string_constraint is not None
         ):
             return ModelValidationRulesConverter._convert_string_to_rules(
-                v.string_constraint
+                v.string_constraint,
             )
-        else:
-            return ModelValidationRules()
+        return ModelValidationRules()
 
     @staticmethod
     def _convert_dict_to_rules(v: dict[str, object]) -> ModelValidationRules:
@@ -219,13 +219,14 @@ class ModelValidationRulesConverter:
         input_validation_enabled = bool(v.get("input_validation_enabled", True))
         output_validation_enabled = bool(v.get("output_validation_enabled", True))
         performance_validation_enabled = bool(
-            v.get("performance_validation_enabled", True)
+            v.get("performance_validation_enabled", True),
         )
 
         # Handle constraint definitions separately
         constraint_definitions: dict[str, str] = {}
         if "constraint_definitions" in v and isinstance(
-            v["constraint_definitions"], dict
+            v["constraint_definitions"],
+            dict,
         ):
             constraint_definitions = {
                 str(k): str(val) for k, val in v["constraint_definitions"].items()

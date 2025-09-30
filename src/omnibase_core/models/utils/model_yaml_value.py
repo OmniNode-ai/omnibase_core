@@ -8,7 +8,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -26,11 +25,12 @@ class ModelYamlValue(BaseModel):
     """
 
     value_type: EnumYamlValueType = Field(
-        description="Type discriminator for the YAML value"
+        description="Type discriminator for the YAML value",
     )
     schema_value: ModelSchemaValue | None = Field(None, description="Schema value data")
     dict_value: dict[str, "ModelYamlValue"] | None = Field(
-        None, description="Dictionary data"
+        None,
+        description="Dictionary data",
     )
     list_value: list["ModelYamlValue"] | None = Field(None, description="List data")
 
@@ -70,9 +70,9 @@ class ModelYamlValue(BaseModel):
         """Convert back to serializable data structure."""
         if self.value_type == EnumYamlValueType.SCHEMA_VALUE:
             return self.schema_value
-        elif self.value_type == EnumYamlValueType.DICT:
+        if self.value_type == EnumYamlValueType.DICT:
             return {k: v.to_serializable() for k, v in (self.dict_value or {}).items()}
-        elif self.value_type == EnumYamlValueType.LIST:
+        if self.value_type == EnumYamlValueType.LIST:
             return [v.to_serializable() for v in (self.list_value or [])]
         raise OnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -81,10 +81,10 @@ class ModelYamlValue(BaseModel):
                 {
                     "value_type": ModelSchemaValue.from_value(self.value_type),
                     "expected_types": ModelSchemaValue.from_value(
-                        ["SCHEMA_VALUE", "DICT", "LIST"]
+                        ["SCHEMA_VALUE", "DICT", "LIST"],
                     ),
                     "function": ModelSchemaValue.from_value("to_serializable"),
-                }
+                },
             ),
         )
 

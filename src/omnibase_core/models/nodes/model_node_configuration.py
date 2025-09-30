@@ -9,12 +9,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.types.typed_dict_node_configuration_summary import (
     TypedDictNodeConfigurationSummary,
@@ -24,10 +18,6 @@ from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
-from .model_types_node_connection_summary import ModelNodeConnectionSummaryType
-from .model_types_node_execution_summary import ModelNodeExecutionSummaryType
-from .model_types_node_feature_summary import ModelNodeFeatureSummaryType
-from .model_types_node_resource_summary import ModelNodeResourceSummaryType
 
 
 class ModelNodeConfiguration(BaseModel):

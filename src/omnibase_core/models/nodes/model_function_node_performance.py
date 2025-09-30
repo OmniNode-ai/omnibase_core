@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory

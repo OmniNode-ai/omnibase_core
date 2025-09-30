@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelNodeQualitySummary(BaseModel):
     """
@@ -46,7 +40,8 @@ class ModelNodeQualitySummary(BaseModel):
 
     # Improvement suggestions
     improvement_suggestions: list[str] = Field(
-        default_factory=list, description="List of quality improvement suggestions"
+        default_factory=list,
+        description="List of quality improvement suggestions",
     )
 
     @property
@@ -63,12 +58,11 @@ class ModelNodeQualitySummary(BaseModel):
         """Get overall quality status based on multiple indicators."""
         if self.is_well_documented and not self.needs_documentation:
             return "Excellent"
-        elif self.has_documentation and not self.needs_documentation:
+        if self.has_documentation and not self.needs_documentation:
             return "Good"
-        elif self.has_documentation and self.needs_documentation:
+        if self.has_documentation and self.needs_documentation:
             return "Fair"
-        else:
-            return "Poor"
+        return "Poor"
 
     def get_priority_improvements(self) -> list[str]:
         """Get the most critical improvement suggestions."""

@@ -8,7 +8,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.exceptions.onex_error import OnexError
@@ -39,7 +38,7 @@ class ModelDataHandlingDeclaration(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_data_handling_consistency(self) -> "ModelDataHandlingDeclaration":
+    def validate_data_handling_consistency(self) -> ModelDataHandlingDeclaration:
         """Validate consistency between fields."""
         # If processing sensitive data, should have classification or residency requirements
         if self.processes_sensitive_data:

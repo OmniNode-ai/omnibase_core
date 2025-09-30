@@ -4,8 +4,6 @@ Test cases for EnumStatusMessage.
 Tests the status message enumeration.
 """
 
-import pytest
-
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
 
 

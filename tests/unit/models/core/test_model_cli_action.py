@@ -15,6 +15,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_action_category import EnumActionCategory
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 
 
@@ -66,41 +67,90 @@ class TestModelCliAction:
     def test_required_fields_validation(self):
         """Test that required fields are properly validated for direct constructor."""
         node_id = uuid4()
-        action_name_id = uuid4()
 
-        # Missing action_name_id (required field)
+        # Missing action_display_name (via alias action_name)
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
                 node_id=node_id,
-                node_display_name="test_node",
+                node_name="test_node",
                 description="Test description",
             )
-        assert "action_name_id" in str(exc_info.value)
+        assert (
+            "action_name" in str(exc_info.value).lower()
+            or "action_display_name" in str(exc_info.value).lower()
+        )
 
         # Missing node_id
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                action_name_id=action_name_id,
-                node_display_name="test_node",
+                action_name="test_action",
+                node_name="test_node",
                 description="Test description",
             )
         assert "node_id" in str(exc_info.value)
 
-        # Missing description
+        # Missing node_display_name (via alias node_name)
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                action_name_id=action_name_id,
+                action_name="test_action",
                 node_id=node_id,
-                node_display_name="test_node",
+                description="Test description",
             )
-        assert "description" in str(exc_info.value)
+        assert (
+            "node_name" in str(exc_info.value).lower()
+            or "node_display_name" in str(exc_info.value).lower()
+        )
 
         # Missing description
         with pytest.raises(ValidationError) as exc_info:
             ModelCliAction(
-                action_name="test_action", node_id=node_id, node_name="test_node"
+                action_name="test_action",
+                node_id=node_id,
+                node_name="test_node",
             )
         assert "description" in str(exc_info.value)
+
+    def test_action_name_id_auto_generation(self):
+        """Test that action_name_id is auto-generated when not provided."""
+        node_id = uuid4()
+
+        # Create action without providing action_name_id
+        action = ModelCliAction(
+            action_name="test_action",
+            node_id=node_id,
+            node_name="test_node",
+            description="Test description",
+        )
+
+        # Verify action_name_id is auto-generated as UUID
+        assert isinstance(action.action_name_id, UUID)
+
+        # Verify it's computed from action_display_name hash (deterministic)
+        import hashlib
+
+        action_hash = hashlib.sha256(b"test_action").hexdigest()
+        expected_action_name_id = UUID(
+            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}",
+        )
+        assert action.action_name_id == expected_action_name_id
+
+        # Verify same action_name produces same action_name_id
+        action2 = ModelCliAction(
+            action_name="test_action",
+            node_id=uuid4(),
+            node_name="different_node",
+            description="Different description",
+        )
+        assert action2.action_name_id == action.action_name_id
+
+        # Verify different action_name produces different action_name_id
+        action3 = ModelCliAction(
+            action_name="different_action",
+            node_id=node_id,
+            node_name="test_node",
+            description="Test description",
+        )
+        assert action3.action_name_id != action.action_name_id
 
     def test_action_name_pattern_validation(self):
         """Test that action_name follows the required pattern."""
@@ -137,16 +187,20 @@ class TestModelCliAction:
 
         node_id = uuid4()
         for name in invalid_names:
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises((ValidationError, OnexError)) as exc_info:
                 ModelCliAction.from_contract_action(
                     action_name=name,
                     node_id=node_id,
                     node_name="test_node",
                     description="Test description",
                 )
-            assert "pattern" in str(
-                exc_info.value
-            ).lower() or "string_pattern_mismatch" in str(exc_info.value)
+            # Check for pattern-related error message
+            error_message = str(exc_info.value).lower()
+            assert (
+                "pattern" in error_message
+                or "string_pattern_mismatch" in error_message
+                or "validation_error" in error_message
+            )
 
     def test_field_types_validation(self):
         """Test that field types are properly validated."""
@@ -203,7 +257,9 @@ class TestModelCliAction:
         # Test with minimal parameters
         node_id = uuid4()
         action = ModelCliAction.from_contract_action(
-            action_name="deploy", node_id=node_id, node_name="test_node"
+            action_name="deploy",
+            node_id=node_id,
+            node_name="test_node",
         )
 
         assert action.action_display_name == "deploy"
@@ -488,8 +544,18 @@ class TestModelCliAction:
         )
         assert action.category == EnumActionCategory.CONFIGURATION
 
+        # Test with valid enum string value - should convert to enum
+        action = ModelCliAction.from_contract_action(
+            action_name="test_action",
+            node_id=node_id,
+            node_name="test_node",
+            description="Test description",
+            category="configuration",
+        )
+        assert action.category == EnumActionCategory.CONFIGURATION
+
         # Test with invalid string should fail
-        with pytest.raises(ValidationError):
+        with pytest.raises((ValidationError, OnexError)):
             ModelCliAction.from_contract_action(
                 action_name="test_action",
                 node_id=node_id,
@@ -507,7 +573,7 @@ class TestModelCliActionEdgeCases:
         node_id = uuid4()
 
         # Empty action_name should fail pattern validation
-        with pytest.raises(ValidationError):
+        with pytest.raises((ValidationError, OnexError)):
             ModelCliAction.from_contract_action(
                 action_name="",
                 node_id=node_id,
@@ -604,9 +670,11 @@ class TestModelCliActionEdgeCases:
     def test_factory_method_with_invalid_pattern(self):
         """Test factory method with invalid action_name pattern."""
         node_id = uuid4()
-        with pytest.raises(ValidationError):
+        with pytest.raises((ValidationError, OnexError)):
             ModelCliAction.from_contract_action(
-                action_name="Invalid-Action", node_id=node_id, node_name="test_node"
+                action_name="Invalid-Action",
+                node_id=node_id,
+                node_name="test_node",
             )
 
 

@@ -7,7 +7,6 @@ serialization, and error handling following ONEX testing patterns.
 
 import json
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
@@ -22,7 +21,8 @@ class TestModelContainer:
     def test_basic_creation_string(self):
         """Test basic creation with string value."""
         container = ModelContainer[str](
-            value="test_value", container_type="string_container"
+            value="test_value",
+            container_type="string_container",
         )
 
         assert container.value == "test_value"
@@ -43,7 +43,8 @@ class TestModelContainer:
         """Test basic creation with dict value."""
         data = {"key": "value", "nested": {"inner": 123}}
         container = ModelContainer[dict[str, Any]](
-            value=data, container_type="dict_container"
+            value=data,
+            container_type="dict_container",
         )
 
         assert container.value == data
@@ -84,7 +85,8 @@ class TestModelContainer:
     def test_get_value(self):
         """Test value retrieval."""
         container = ModelContainer.create(
-            value=["a", "b", "c"], container_type="list_container"
+            value=["a", "b", "c"],
+            container_type="list_container",
         )
 
         retrieved_value = container.get_value()
@@ -94,7 +96,8 @@ class TestModelContainer:
     def test_update_value_basic(self):
         """Test basic value updating."""
         container = ModelContainer.create(
-            value="original", container_type="string_container"
+            value="original",
+            container_type="string_container",
         )
 
         container.update_value("updated")
@@ -103,11 +106,14 @@ class TestModelContainer:
     def test_update_value_with_validation_notes(self):
         """Test value updating with validation notes."""
         container = ModelContainer.create(
-            value="original", container_type="string_container", is_validated=True
+            value="original",
+            container_type="string_container",
+            is_validated=True,
         )
 
         container.update_value(
-            "updated", validation_notes="Updated value requires re-validation"
+            "updated",
+            validation_notes="Updated value requires re-validation",
         )
 
         assert container.value == "updated"
@@ -117,11 +123,14 @@ class TestModelContainer:
     def test_update_value_mark_validated(self):
         """Test value updating with validation marking."""
         container = ModelContainer.create(
-            value="original", container_type="string_container"
+            value="original",
+            container_type="string_container",
         )
 
         container.update_value(
-            "updated", validation_notes="Validated during update", mark_validated=True
+            "updated",
+            validation_notes="Validated during update",
+            mark_validated=True,
         )
 
         assert container.value == "updated"
@@ -149,7 +158,8 @@ class TestModelContainer:
     def test_map_value_with_type_change(self):
         """Test value mapping with type transformation."""
         container = ModelContainer.create(
-            value="123", container_type="string_container"
+            value="123",
+            container_type="string_container",
         )
 
         # Map to integer
@@ -162,7 +172,8 @@ class TestModelContainer:
     def test_map_value_failure(self):
         """Test value mapping failure handling."""
         container = ModelContainer.create(
-            value="not_a_number", container_type="string_container"
+            value="not_a_number",
+            container_type="string_container",
         )
 
         with pytest.raises(Exception) as exc_info:
@@ -195,7 +206,8 @@ class TestModelContainer:
     def test_validate_with_exception_in_validator(self):
         """Test validation with exception in validator function."""
         container = ModelContainer.create(
-            value="test", container_type="string_container"
+            value="test",
+            container_type="string_container",
         )
 
         def failing_validator(x: str) -> bool:
@@ -210,7 +222,8 @@ class TestModelContainer:
     def test_compare_value_with_same_type(self):
         """Test value comparison with same type."""
         container = ModelContainer.create(
-            value="test", container_type="string_container"
+            value="test",
+            container_type="string_container",
         )
 
         assert container.compare_value("test") is True
@@ -219,14 +232,16 @@ class TestModelContainer:
     def test_compare_value_with_container(self):
         """Test value comparison with other container."""
         container1 = ModelContainer.create(
-            value="test", container_type="string_container"
+            value="test",
+            container_type="string_container",
         )
         container2 = ModelContainer.create(
             value="test",
             container_type="other_container",  # Different type but same value
         )
         container3 = ModelContainer.create(
-            value="different", container_type="string_container"
+            value="different",
+            container_type="string_container",
         )
 
         assert container1.compare_value(container2) is True
@@ -267,7 +282,9 @@ class TestModelContainer:
     def test_repr_method(self):
         """Test __repr__ method."""
         container = ModelContainer.create(
-            value="test", container_type="test_type", source="test_source"
+            value="test",
+            container_type="test_type",
+            source="test_source",
         )
 
         repr_str = repr(container)
@@ -373,12 +390,13 @@ class TestModelContainerEdgeCases:
                     "list": [1, 2, {"nested_dict": "value"}],
                     "tuple": (1, 2, 3),
                     "set_converted_to_list": [1, 2, 3],  # Sets become lists in JSON
-                }
-            }
+                },
+            },
         }
 
         container = ModelContainer.create(
-            value=complex_data, container_type="complex_data"
+            value=complex_data,
+            container_type="complex_data",
         )
 
         assert container.value["level1"]["level2"]["list"][2]["nested_dict"] == "value"
@@ -386,7 +404,8 @@ class TestModelContainerEdgeCases:
     def test_validation_with_complex_logic(self):
         """Test validation with complex validation logic."""
         container = ModelContainer.create(
-            value={"username": "test_user", "age": 25}, container_type="user_data"
+            value={"username": "test_user", "age": 25},
+            container_type="user_data",
         )
 
         def validate_user_data(data: dict[str, Any]) -> bool:
@@ -405,7 +424,9 @@ class TestModelContainerEdgeCases:
     def test_mapping_preserves_source_metadata(self):
         """Test that mapping preserves source and container_type."""
         container = ModelContainer.create(
-            value=10, container_type="original_int", source="calculation_service"
+            value=10,
+            container_type="original_int",
+            source="calculation_service",
         )
 
         # Map to string
@@ -425,11 +446,13 @@ class TestModelContainerEdgeCases:
         """Test that generic type parameters are enforced correctly."""
         # This is more about demonstrating proper usage
         str_container: ModelContainer[str] = ModelContainer.create(
-            value="string_value", container_type="string_type"
+            value="string_value",
+            container_type="string_type",
         )
 
         int_container: ModelContainer[int] = ModelContainer.create(
-            value=42, container_type="int_type"
+            value=42,
+            container_type="int_type",
         )
 
         # Type checker should catch mismatches, but runtime allows it
@@ -444,7 +467,9 @@ class TestModelContainerIntegration:
         """Test using containers in a processing pipeline."""
         # Start with raw data
         raw_container = ModelContainer.create(
-            value="  HELLO WORLD  ", container_type="raw_string", source="user_input"
+            value="  HELLO WORLD  ",
+            container_type="raw_string",
+            source="user_input",
         )
 
         # Process through pipeline
@@ -480,7 +505,8 @@ class TestModelContainerIntegration:
     def test_error_context_preservation(self):
         """Test that error contexts preserve container information."""
         container = ModelContainer.create(
-            value="invalid_number", container_type="numeric_string"
+            value="invalid_number",
+            container_type="numeric_string",
         )
 
         with pytest.raises(OnexError) as exc_info:

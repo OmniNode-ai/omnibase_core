@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelAnalyticsErrorSummary(BaseModel):
     """
@@ -38,7 +32,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
     # Rate metrics (percentages)
     error_rate_percentage: float = Field(description="Error rate as percentage")
     critical_error_rate_percentage: float = Field(
-        description="Critical error rate as percentage"
+        description="Critical error rate as percentage",
     )
 
     # Status indicators
@@ -68,12 +62,11 @@ class ModelAnalyticsErrorSummary(BaseModel):
         """Get overall health status based on error counts."""
         if self.critical_error_count > 0:
             return "Critical"
-        elif self.error_count > 0:
+        if self.error_count > 0:
             return "Poor"
-        elif self.warning_count > 0:
+        if self.warning_count > 0:
             return "Fair"
-        else:
-            return "Excellent"
+        return "Excellent"
 
     def get_issue_breakdown(self) -> dict[str, int]:
         """Get breakdown of issue counts by type."""

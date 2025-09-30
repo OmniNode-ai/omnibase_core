@@ -30,22 +30,22 @@ class EnumNodeArchitectureType(str, Enum):
         return self.value
 
     @classmethod
-    def is_processing_node(cls, node_type: "EnumNodeArchitectureType") -> bool:
+    def is_processing_node(cls, node_type: EnumNodeArchitectureType) -> bool:
         """Check if the node type performs data processing."""
         return node_type in {cls.COMPUTE, cls.REDUCER}
 
     @classmethod
-    def is_control_node(cls, node_type: "EnumNodeArchitectureType") -> bool:
+    def is_control_node(cls, node_type: EnumNodeArchitectureType) -> bool:
         """Check if the node type handles control flow."""
         return node_type == cls.ORCHESTRATOR
 
     @classmethod
-    def is_output_node(cls, node_type: "EnumNodeArchitectureType") -> bool:
+    def is_output_node(cls, node_type: EnumNodeArchitectureType) -> bool:
         """Check if the node type produces output effects."""
         return node_type == cls.EFFECT
 
     @classmethod
-    def get_node_purpose(cls, node_type: "EnumNodeArchitectureType") -> str:
+    def get_node_purpose(cls, node_type: EnumNodeArchitectureType) -> str:
         """Get the primary purpose of a node type."""
         purposes = {
             cls.ORCHESTRATOR: "workflow coordination and control flow",
@@ -57,7 +57,8 @@ class EnumNodeArchitectureType(str, Enum):
 
     @classmethod
     def get_typical_responsibilities(
-        cls, node_type: "EnumNodeArchitectureType"
+        cls,
+        node_type: EnumNodeArchitectureType,
     ) -> list[str]:
         """Get typical responsibilities for a node type."""
         responsibilities = {

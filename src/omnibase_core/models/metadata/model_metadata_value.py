@@ -7,15 +7,8 @@ with structured validation and proper type handling for metadata fields.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -201,10 +194,10 @@ class ModelMetadataValue(BaseModel):
                     details=ModelErrorContext.with_context(
                         {
                             "expected_types": ModelSchemaValue.from_value(
-                                "int, float, str"
+                                "int, float, str",
                             ),
                             "actual_type": ModelSchemaValue.from_value(
-                                str(type(self.value))
+                                str(type(self.value)),
                             ),
                             "value": ModelSchemaValue.from_value(str(self.value)),
                         },
@@ -250,10 +243,10 @@ class ModelMetadataValue(BaseModel):
                     details=ModelErrorContext.with_context(
                         {
                             "expected_types": ModelSchemaValue.from_value(
-                                "int, float, str"
+                                "int, float, str",
                             ),
                             "actual_type": ModelSchemaValue.from_value(
-                                str(type(self.value))
+                                str(type(self.value)),
                             ),
                             "value": ModelSchemaValue.from_value(str(self.value)),
                         },
@@ -330,7 +323,8 @@ class ModelMetadataValue(BaseModel):
             # Set metadata with runtime validation for type safety
             for key, value in metadata.items():
                 if hasattr(self, key) and isinstance(
-                    value, (str, int, float, bool, dict, list)
+                    value,
+                    (str, int, float, bool, dict, list),
                 ):
                     setattr(self, key, value)
             return True

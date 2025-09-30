@@ -14,12 +14,6 @@ from typing import Any, Generic, TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 from omnibase_core.exceptions.onex_error import OnexError

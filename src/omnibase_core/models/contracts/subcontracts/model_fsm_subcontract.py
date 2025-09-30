@@ -14,7 +14,6 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
@@ -181,9 +180,9 @@ class ModelFSMSubcontract(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         return v
@@ -191,7 +190,9 @@ class ModelFSMSubcontract(BaseModel):
     @field_validator("terminal_states", "error_states")
     @classmethod
     def validate_special_states_exist(
-        cls, v: list[str], info: ValidationInfo
+        cls,
+        v: list[str],
+        info: ValidationInfo,
     ) -> list[str]:
         """Validate that terminal and error states are defined in states list."""
         if info.data and "states" in info.data and v:
@@ -206,9 +207,9 @@ class ModelFSMSubcontract(BaseModel):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
         return v
@@ -237,9 +238,9 @@ class ModelFSMSubcontract(BaseModel):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
                 if transition.to_state not in state_names:
@@ -251,9 +252,9 @@ class ModelFSMSubcontract(BaseModel):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
         return v

@@ -10,11 +10,6 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_version_union_type import EnumVersionUnionType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -42,7 +37,8 @@ class ModelVersionUnion(BaseModel):
     """
 
     version_type: EnumVersionUnionType = Field(
-        description="Type discriminator for version value", discriminator="version_type"
+        description="Type discriminator for version value",
+        discriminator="version_type",
     )
 
     # Version storage (only one should be populated based on type)
@@ -92,14 +88,16 @@ class ModelVersionUnion(BaseModel):
     def from_semantic_version(cls, version: ModelSemVer) -> ModelVersionUnion:
         """Create union from semantic version."""
         return cls(
-            version_type=EnumVersionUnionType.SEMANTIC_VERSION, semantic_version=version
+            version_type=EnumVersionUnionType.SEMANTIC_VERSION,
+            semantic_version=version,
         )
 
     @classmethod
     def from_version_dict(cls, version_dict: TypedDictVersionDict) -> ModelVersionUnion:
         """Create union from version dictionary."""
         return cls(
-            version_type=EnumVersionUnionType.VERSION_DICT, version_dict=version_dict
+            version_type=EnumVersionUnionType.VERSION_DICT,
+            version_dict=version_dict,
         )
 
     @classmethod
@@ -137,20 +135,19 @@ class ModelVersionUnion(BaseModel):
                     message="Invalid state: semantic_version is None but version_type is SEMANTIC_VERSION",
                 )
             return self.semantic_version
-        elif self.version_type == EnumVersionUnionType.VERSION_DICT:
+        if self.version_type == EnumVersionUnionType.VERSION_DICT:
             if self.version_dict is None:
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: version_dict is None but version_type is VERSION_DICT",
                 )
             return self.version_dict
-        elif self.version_type == EnumVersionUnionType.NONE_VERSION:
+        if self.version_type == EnumVersionUnionType.NONE_VERSION:
             return None
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unknown version_type: {self.version_type}",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unknown version_type: {self.version_type}",
+        )
 
     def has_version(self) -> bool:
         """Check if version union has a non-None version."""
@@ -173,18 +170,17 @@ class ModelVersionUnion(BaseModel):
                     message="semantic_version is None",
                 )
             return self.semantic_version
-        elif self.version_type == EnumVersionUnionType.VERSION_DICT:
+        if self.version_type == EnumVersionUnionType.VERSION_DICT:
             if self.version_dict is None:
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="version_dict is None",
                 )
             return ModelSemVer(**self.version_dict)
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Cannot convert None version to ModelSemVer",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="Cannot convert None version to ModelSemVer",
+        )
 
     model_config = {
         "extra": "ignore",

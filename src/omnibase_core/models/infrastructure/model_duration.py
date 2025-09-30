@@ -46,7 +46,8 @@ class ModelDuration(BaseModel):
             super().__init__()
             if isinstance(ms, (int, float)):
                 self.time_based = ModelTimeBased(
-                    value=int(ms), unit=EnumTimeUnit.MILLISECONDS
+                    value=int(ms),
+                    unit=EnumTimeUnit.MILLISECONDS,
                 )
             else:
                 raise OnexError(
@@ -56,9 +57,9 @@ class ModelDuration(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         elif "seconds" in data:
@@ -77,9 +78,9 @@ class ModelDuration(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         elif "minutes" in data:
@@ -98,9 +99,9 @@ class ModelDuration(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         elif "hours" in data:
@@ -119,9 +120,9 @@ class ModelDuration(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         elif "days" in data:
@@ -140,9 +141,9 @@ class ModelDuration(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         else:

@@ -10,12 +10,11 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
@@ -44,7 +43,7 @@ class ModelCliExecutionCore(BaseModel):
 
     # Command information
     command_name_id: UUID = Field(..., description="UUID for command name")
-    command_display_name: Optional[str] = Field(
+    command_display_name: str | None = Field(
         None,
         description="Human-readable command name",
     )
@@ -58,15 +57,15 @@ class ModelCliExecutionCore(BaseModel):
     )
 
     # Target information
-    target_node_id: Optional[UUID] = Field(
+    target_node_id: UUID | None = Field(
         default=None,
         description="Target node UUID for precise identification",
     )
-    target_node_display_name: Optional[str] = Field(
+    target_node_display_name: str | None = Field(
         default=None,
         description="Target node display name if applicable",
     )
-    target_path: Optional[Path] = Field(
+    target_path: Path | None = Field(
         default=None,
         description="Target file or directory path",
     )
@@ -76,7 +75,7 @@ class ModelCliExecutionCore(BaseModel):
         default=EnumExecutionStatus.PENDING,
         description="Execution status",
     )
-    current_phase: Optional[EnumExecutionPhase] = Field(
+    current_phase: EnumExecutionPhase | None = Field(
         default=None,
         description="Current execution phase",
     )
@@ -86,7 +85,7 @@ class ModelCliExecutionCore(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="Execution start time",
     )
-    end_time: Optional[datetime] = Field(default=None, description="Execution end time")
+    end_time: datetime | None = Field(default=None, description="Execution end time")
 
     # Progress tracking
     progress_percentage: float = Field(
@@ -100,11 +99,11 @@ class ModelCliExecutionCore(BaseModel):
         """Get the command name."""
         return self.command_display_name or f"command_{str(self.command_name_id)[:8]}"
 
-    def get_target_node_id(self) -> Optional[UUID]:
+    def get_target_node_id(self) -> UUID | None:
         """Get the target node UUID."""
         return self.target_node_id
 
-    def get_target_node_name(self) -> Optional[str]:
+    def get_target_node_name(self) -> str | None:
         """Get the target node display name."""
         return self.target_node_display_name
 
@@ -176,8 +175,8 @@ class ModelCliExecutionCore(BaseModel):
     def create_simple(
         cls,
         command_name: str,
-        target_node_id: Optional[UUID] = None,
-        target_node_name: Optional[str] = None,
+        target_node_id: UUID | None = None,
+        target_node_name: str | None = None,
     ) -> ModelCliExecutionCore:
         """Create a simple execution core."""
         import hashlib

@@ -11,12 +11,11 @@ from enum import Enum, unique
 
 @unique
 class EnumMigrationConflictType(str, Enum):
-    """
-    Strongly typed migration conflict type discriminators.
+    """Strongly typed migration conflict type discriminators.
 
     Used for discriminated union patterns in migration conflict handling.
-    Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameConflictDict]
-    patterns with structured conflict handling.
+    Replaces Union[TypedDictMigrationDuplicateConflictDict,
+    TypedDictMigrationNameConflictDict] patterns with structured conflict handling.
     Inherits from str for JSON serialization compatibility while providing
     type safety and IDE support.
     """
@@ -46,7 +45,8 @@ class EnumMigrationConflictType(str, Enum):
 
     @classmethod
     def requires_manual_resolution(
-        cls, conflict_type: EnumMigrationConflictType
+        cls,
+        conflict_type: EnumMigrationConflictType,
     ) -> bool:
         """Check if the conflict type requires manual resolution."""
         # Exact duplicates might be automatically resolvable by deduplication

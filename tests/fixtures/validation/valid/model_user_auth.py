@@ -2,7 +2,6 @@
 """Valid model file example following naming conventions."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -14,7 +13,7 @@ class ModelUserAuth(BaseModel):
     username: str
     email: str
     created_at: datetime
-    last_login: Optional[datetime] = None
+    last_login: datetime | None = None
     is_active: bool = True
 
     model_config = ConfigDict(

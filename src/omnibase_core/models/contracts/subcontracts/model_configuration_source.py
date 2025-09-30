@@ -4,7 +4,6 @@ Configuration Source Model - ONEX Standards Compliant.
 Model for configuration source specifications in the ONEX configuration management system.
 """
 
-from pathlib import Path
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field

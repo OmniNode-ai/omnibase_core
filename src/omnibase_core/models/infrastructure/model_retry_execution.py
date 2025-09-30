@@ -12,7 +12,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_retry_failure_info import ModelRetryFailureInfo
@@ -91,7 +90,7 @@ class ModelRetryExecution(BaseModel):
         """Record the result of an attempt."""
         self.current_attempt += 1
         self.last_attempt_time = ModelSchemaValue.from_value(
-            datetime.now(UTC).isoformat()
+            datetime.now(UTC).isoformat(),
         )
         self.total_execution_time_seconds += execution_time_seconds
 
@@ -104,7 +103,7 @@ class ModelRetryExecution(BaseModel):
             successful_value = self.successful_attempt.to_value()
             if not isinstance(successful_value, int) or successful_value == 0:
                 self.successful_attempt = ModelSchemaValue.from_value(
-                    self.current_attempt
+                    self.current_attempt,
                 )
 
     def get_next_attempt_time(self, delay_seconds: float) -> datetime:

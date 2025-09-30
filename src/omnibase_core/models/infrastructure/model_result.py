@@ -12,7 +12,6 @@ from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
-from omnibase_core.core.type_constraints import Configurable, PrimitiveValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 
@@ -24,7 +23,8 @@ F = TypeVar("F")  # Mapped error type for transformations
 
 
 class ModelResult(
-    BaseModel, Generic[T, E]
+    BaseModel,
+    Generic[T, E],
 ):  # Protocols removed temporarily for validation
     """
     Generic Result[T, E] pattern for type-safe error handling.

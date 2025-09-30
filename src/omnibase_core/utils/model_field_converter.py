@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
@@ -62,7 +62,7 @@ class FieldConverter(Generic[T]):
                             "field_name": ModelSchemaValue.from_value(self.field_name),
                             "value": ModelSchemaValue.from_value(value),
                             "converted_value": ModelSchemaValue.from_value(str(result)),
-                        }
+                        },
                     ),
                 )
 
@@ -83,7 +83,7 @@ class FieldConverter(Generic[T]):
                         "field_name": ModelSchemaValue.from_value(self.field_name),
                         "value": ModelSchemaValue.from_value(value),
                         "error": ModelSchemaValue.from_value(str(e)),
-                    }
+                    },
                 ),
             )
 
@@ -182,7 +182,7 @@ class ModelFieldConverterRegistry:
                         "enum_class": ModelSchemaValue.from_value(enum_class.__name__),
                         "invalid_value": ModelSchemaValue.from_value(value),
                         "field_name": ModelSchemaValue.from_value(field_name),
-                    }
+                    },
                 ),
             )
 
@@ -250,9 +250,9 @@ class ModelFieldConverterRegistry:
                     {
                         "field_name": ModelSchemaValue.from_value(field_name),
                         "available_fields": ModelSchemaValue.from_value(
-                            ", ".join(self._converters.keys())
+                            ", ".join(self._converters.keys()),
                         ),
-                    }
+                    },
                 ),
             )
 

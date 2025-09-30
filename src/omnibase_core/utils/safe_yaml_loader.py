@@ -19,7 +19,6 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.config.model_schema_example import ModelSchemaExample
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
-from omnibase_core.models.model_yaml_dump_options import ModelYamlDumpOptions
 from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
 
 # ModelYamlWithExamples import removed - using direct YAML parsing
@@ -68,10 +67,10 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model"
+                        "load_and_validate_yaml_model",
                     ),
                     "path": ModelSchemaValue.from_value(str(path)),
-                }
+                },
             ),
             cause=ve,
         )
@@ -82,10 +81,10 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model"
+                        "load_and_validate_yaml_model",
                     ),
                     "path": ModelSchemaValue.from_value(str(path)),
-                }
+                },
             ),
             cause=e,
         )
@@ -96,10 +95,10 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model"
+                        "load_and_validate_yaml_model",
                     ),
                     "path": ModelSchemaValue.from_value(str(path)),
-                }
+                },
             ),
             cause=e,
         )
@@ -110,10 +109,10 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model"
+                        "load_and_validate_yaml_model",
                     ),
                     "path": ModelSchemaValue.from_value(str(path)),
-                }
+                },
             ),
             cause=e,
         )
@@ -150,7 +149,11 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"YAML validation error: {ve}",
             details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("load_yaml_content_as_model")}
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_yaml_content_as_model",
+                    ),
+                },
             ),
             cause=ve,
         )
@@ -159,7 +162,11 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             code=EnumCoreErrorCode.CONVERSION_ERROR,
             message=f"YAML parsing error: {e}",
             details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("load_yaml_content_as_model")}
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_yaml_content_as_model",
+                    ),
+                },
             ),
             cause=e,
         )
@@ -168,7 +175,11 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML content: {e}",
             details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("load_yaml_content_as_model")}
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "load_yaml_content_as_model",
+                    ),
+                },
             ),
             cause=e,
         )
@@ -222,7 +233,7 @@ def _dump_yaml_content(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Carriage return found in YAML string",
                 details=ModelErrorContext.with_context(
-                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")}
+                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")},
                 ),
             )
 
@@ -234,7 +245,7 @@ def _dump_yaml_content(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid UTF-8 in YAML output: {e}",
                 details=ModelErrorContext.with_context(
-                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")}
+                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")},
                 ),
                 cause=e,
             )
@@ -245,7 +256,7 @@ def _dump_yaml_content(
             code=EnumCoreErrorCode.CONVERSION_ERROR,
             message=f"YAML serialization error: {e}",
             details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("_dump_yaml_content")}
+                {"operation": ModelSchemaValue.from_value("_dump_yaml_content")},
             ),
             cause=e,
         )
@@ -295,9 +306,9 @@ def serialize_pydantic_model_to_yaml(
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "serialize_pydantic_model_to_yaml"
-                    )
-                }
+                        "serialize_pydantic_model_to_yaml",
+                    ),
+                },
             ),
             cause=e,
         )
@@ -340,7 +351,7 @@ def serialize_data_to_yaml(
             code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize data to YAML: {e}",
             details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("serialize_data_to_yaml")}
+                {"operation": ModelSchemaValue.from_value("serialize_data_to_yaml")},
             ),
             cause=e,
         )
@@ -379,11 +390,11 @@ def extract_example_from_schema(
                 details=ModelErrorContext.with_context(
                     {
                         "operation": ModelSchemaValue.from_value(
-                            "extract_example_from_schema"
+                            "extract_example_from_schema",
                         ),
                         "path": ModelSchemaValue.from_value(str(schema_path)),
                         "example_index": ModelSchemaValue.from_value(example_index),
-                    }
+                    },
                 ),
             )
 
@@ -394,12 +405,12 @@ def extract_example_from_schema(
                 details=ModelErrorContext.with_context(
                     {
                         "operation": ModelSchemaValue.from_value(
-                            "extract_example_from_schema"
+                            "extract_example_from_schema",
                         ),
                         "path": ModelSchemaValue.from_value(str(schema_path)),
                         "example_index": ModelSchemaValue.from_value(example_index),
                         "examples_count": ModelSchemaValue.from_value(len(examples)),
-                    }
+                    },
                 ),
             )
 
@@ -411,14 +422,14 @@ def extract_example_from_schema(
                 details=ModelErrorContext.with_context(
                     {
                         "operation": ModelSchemaValue.from_value(
-                            "extract_example_from_schema"
+                            "extract_example_from_schema",
                         ),
                         "path": ModelSchemaValue.from_value(str(schema_path)),
                         "example_index": ModelSchemaValue.from_value(example_index),
                         "example_type": ModelSchemaValue.from_value(
-                            type(example).__name__
+                            type(example).__name__,
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -451,11 +462,11 @@ def extract_example_from_schema(
             details=ModelErrorContext.with_context(
                 {
                     "operation": ModelSchemaValue.from_value(
-                        "extract_example_from_schema"
+                        "extract_example_from_schema",
                     ),
                     "path": ModelSchemaValue.from_value(str(schema_path)),
                     "example_index": ModelSchemaValue.from_value(example_index),
-                }
+                },
             ),
             cause=e,
         )

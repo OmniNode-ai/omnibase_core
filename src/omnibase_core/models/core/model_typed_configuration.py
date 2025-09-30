@@ -7,13 +7,10 @@ configuration base with ModelCustomProperties for extensible custom fields.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from .model_configuration_base import ModelConfigurationBase
 from .model_custom_properties import ModelCustomProperties
-
-if TYPE_CHECKING:
-    from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 T = TypeVar("T")
 
@@ -34,7 +31,7 @@ class ModelTypedConfiguration(
     - Nameable: Name management interface
     """
 
-    def merge_configuration(self, other: "ModelTypedConfiguration[T]") -> None:
+    def merge_configuration(self, other: ModelTypedConfiguration[T]) -> None:
         """Merge another configuration into this one."""
         # Merge core configuration
         if other.name is not None:

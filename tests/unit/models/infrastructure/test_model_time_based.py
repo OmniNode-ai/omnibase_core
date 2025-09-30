@@ -6,7 +6,6 @@ ModelTimeout, and timing aspects of ModelProgress.
 """
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 import pytest
 
@@ -147,16 +146,21 @@ class TestModelTimeBasedValidation:
         """Test warning threshold validation."""
         # Valid warning threshold
         time_based = ModelTimeBased(
-            value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=45
+            value=60,
+            unit=EnumTimeUnit.SECONDS,
+            warning_threshold_value=45,
         )
         assert time_based.warning_threshold_value == 45
 
         # Invalid warning threshold (greater than main value)
         with pytest.raises(
-            OnexError, match="Warning threshold must be less than main value"
+            OnexError,
+            match="Warning threshold must be less than main value",
         ):
             ModelTimeBased(
-                value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=70
+                value=60,
+                unit=EnumTimeUnit.SECONDS,
+                warning_threshold_value=70,
             )
 
     def test_extension_limit_validation(self) -> None:
@@ -172,7 +176,8 @@ class TestModelTimeBasedValidation:
 
         # Invalid extension limit without extension allowed
         with pytest.raises(
-            OnexError, match="Extension limit requires allow_extension=True"
+            OnexError,
+            match="Extension limit requires allow_extension=True",
         ):
             ModelTimeBased(
                 value=60,
@@ -235,7 +240,9 @@ class TestModelTimeBasedTimeout:
     def test_get_warning_time(self) -> None:
         """Test warning time calculation."""
         timeout = ModelTimeBased(
-            value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=45
+            value=60,
+            unit=EnumTimeUnit.SECONDS,
+            warning_threshold_value=45,
         )
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         expected_warning = datetime(2024, 1, 1, 12, 0, 45, tzinfo=UTC)
@@ -267,7 +274,9 @@ class TestModelTimeBasedTimeout:
     def test_is_warning_triggered(self) -> None:
         """Test warning trigger checking."""
         timeout = ModelTimeBased(
-            value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=45
+            value=60,
+            unit=EnumTimeUnit.SECONDS,
+            warning_threshold_value=45,
         )
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
@@ -345,7 +354,9 @@ class TestModelTimeBasedTimeout:
 
         # Extension not allowed
         timeout_no_ext = ModelTimeBased(
-            value=60, unit=EnumTimeUnit.SECONDS, allow_extension=False
+            value=60,
+            unit=EnumTimeUnit.SECONDS,
+            allow_extension=False,
         )
         result = timeout_no_ext.extend_time(10)
         assert result is False
@@ -434,7 +445,8 @@ class TestModelTimeBasedFactoryMethods:
     def test_from_runtime_category(self) -> None:
         """Test creation from runtime category."""
         timeout = ModelTimeBased.from_runtime_category(
-            EnumRuntimeCategory.FAST, description="Fast operation timeout"
+            EnumRuntimeCategory.FAST,
+            description="Fast operation timeout",
         )
         assert timeout.runtime_category == EnumRuntimeCategory.FAST
         assert timeout.metadata["description"] == "Fast operation timeout"

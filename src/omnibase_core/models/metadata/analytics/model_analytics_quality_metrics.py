@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 
 class ModelAnalyticsQualityMetrics(BaseModel):
     """
@@ -67,14 +61,13 @@ class ModelAnalyticsQualityMetrics(BaseModel):
         """Get descriptive health level."""
         if self.health_score >= 90.0:
             return "Excellent"
-        elif self.health_score >= 75.0:
+        if self.health_score >= 75.0:
             return "Good"
-        elif self.health_score >= 60.0:
+        if self.health_score >= 60.0:
             return "Fair"
-        elif self.health_score >= 40.0:
+        if self.health_score >= 40.0:
             return "Poor"
-        else:
-            return "Critical"
+        return "Critical"
 
     def get_success_rate_percentage(self) -> float:
         """Get success rate as percentage."""
@@ -133,7 +126,7 @@ class ModelAnalyticsQualityMetrics(BaseModel):
 
         if self.health_score < 90.0 and self.success_rate > 0.9:
             suggestions.append(
-                "Focus on health metrics while maintaining high success rate"
+                "Focus on health metrics while maintaining high success rate",
             )
 
         return suggestions

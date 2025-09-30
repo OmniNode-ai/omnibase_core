@@ -30,32 +30,32 @@ class EnumEditMode(str, Enum):
         return self.value
 
     @classmethod
-    def is_destructive(cls, edit_mode: "EnumEditMode") -> bool:
+    def is_destructive(cls, edit_mode: EnumEditMode) -> bool:
         """Check if the edit mode is destructive to existing content."""
         return edit_mode in {cls.REPLACE, cls.DELETE}
 
     @classmethod
-    def is_additive(cls, edit_mode: "EnumEditMode") -> bool:
+    def is_additive(cls, edit_mode: EnumEditMode) -> bool:
         """Check if the edit mode adds new content."""
         return edit_mode == cls.INSERT
 
     @classmethod
-    def requires_content(cls, edit_mode: "EnumEditMode") -> bool:
+    def requires_content(cls, edit_mode: EnumEditMode) -> bool:
         """Check if the edit mode requires content to be provided."""
         return edit_mode in {cls.REPLACE, cls.INSERT}
 
     @classmethod
-    def requires_target(cls, edit_mode: "EnumEditMode") -> bool:
+    def requires_target(cls, edit_mode: EnumEditMode) -> bool:
         """Check if the edit mode requires a target to operate on."""
         return edit_mode in {cls.REPLACE, cls.DELETE}
 
     @classmethod
-    def changes_structure(cls, edit_mode: "EnumEditMode") -> bool:
+    def changes_structure(cls, edit_mode: EnumEditMode) -> bool:
         """Check if the edit mode changes document structure."""
         return edit_mode in {cls.INSERT, cls.DELETE}
 
     @classmethod
-    def get_operation_description(cls, edit_mode: "EnumEditMode") -> str:
+    def get_operation_description(cls, edit_mode: EnumEditMode) -> str:
         """Get a human-readable description of the edit operation."""
         descriptions = {
             cls.REPLACE: "Replace existing content with new content",
@@ -65,7 +65,7 @@ class EnumEditMode(str, Enum):
         return descriptions.get(edit_mode, "Unknown edit operation")
 
     @classmethod
-    def get_required_parameters(cls, edit_mode: "EnumEditMode") -> list[str]:
+    def get_required_parameters(cls, edit_mode: EnumEditMode) -> list[str]:
         """Get list of required parameters for each edit mode."""
         requirements = {
             cls.REPLACE: ["target_identifier", "new_content"],

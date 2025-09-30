@@ -16,7 +16,6 @@ from omnibase_core.core.type_constraints import (
     ContextValueType,
     PrimitiveValueType,
     is_primitive_value,
-    validate_primitive_value,
 )
 
 # Type alias for condition value that can be single or list
@@ -26,7 +25,6 @@ from omnibase_core.enums.enum_condition_type import EnumConditionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.contracts.model_condition_value import (
-    ConditionValue,
     ModelConditionValue,
 )
 from omnibase_core.models.contracts.model_condition_value_list import (
@@ -130,21 +128,22 @@ class ModelWorkflowCondition(BaseModel):
 
             # Perform operator-specific evaluation
             return self._evaluate_operator(
-                field_value, expected_actual_value, self.operator
+                field_value,
+                expected_actual_value,
+                self.operator,
             )
 
         except KeyError as e:
             # Handle missing fields specially for EXISTS/NOT_EXISTS operators
             if self.operator == EnumConditionOperator.EXISTS:
                 return False  # Field doesn't exist, so EXISTS is False
-            elif self.operator == EnumConditionOperator.NOT_EXISTS:
+            if self.operator == EnumConditionOperator.NOT_EXISTS:
                 return True  # Field doesn't exist, so NOT_EXISTS is True
-            else:
-                # For other operators, missing fields are an error
-                raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Field '{self.field_name}' not found in context data",
-                ) from e
+            # For other operators, missing fields are an error
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Field '{self.field_name}' not found in context data",
+            ) from e
 
     def _extract_field_value(
         self,
@@ -153,7 +152,8 @@ class ModelWorkflowCondition(BaseModel):
     ) -> ContextValueType:
         """Extract field value supporting nested field paths with dot notation."""
         current_value: ComplexContextValueType = cast(
-            ComplexContextValueType, context_data
+            ComplexContextValueType,
+            context_data,
         )
 
         for field_part in field_path.split("."):
@@ -172,14 +172,13 @@ class ModelWorkflowCondition(BaseModel):
         """Extract the actual value from the type-safe container."""
         if isinstance(container, ModelConditionValueList):
             return container.values
-        elif hasattr(container, "value"):
+        if hasattr(container, "value"):
             # ModelConditionValue generic container - type guard for .value attribute
             return cast(ConditionValueType, container.value)
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Invalid container type: {type(container).__name__}. Expected ModelConditionValue or ModelConditionValueList.",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid container type: {type(container).__name__}. Expected ModelConditionValue or ModelConditionValueList.",
+        )
 
     def _evaluate_operator(
         self,
@@ -265,17 +264,17 @@ class ModelWorkflowCondition(BaseModel):
         if isinstance(actual_value, str) and isinstance(expected_value, str):
             # String comparison is valid
             return
-        elif isinstance(actual_value, numeric_types) and isinstance(
-            expected_value, numeric_types
+        if isinstance(actual_value, numeric_types) and isinstance(
+            expected_value,
+            numeric_types,
         ):
             # Numeric comparison is valid
             return
-        else:
-            # Incompatible types
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Cannot compare {type(actual_value).__name__} with {type(expected_value).__name__} using {operator.value} operator",
-            )
+        # Incompatible types
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot compare {type(actual_value).__name__} with {type(expected_value).__name__} using {operator.value} operator",
+        )
 
     def _validate_contains_types(
         self,
@@ -293,11 +292,10 @@ class ModelWorkflowCondition(BaseModel):
                     message=f"Cannot use {operator.value} operator with list as expected value - expected a single primitive value",
                 )
             return
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Cannot use {operator.value} operator on {type(actual_value).__name__} - must be string, list, or dict",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot use {operator.value} operator on {type(actual_value).__name__} - must be string, list, or dict",
+        )
 
     def _validate_in_types(
         self,
@@ -315,11 +313,10 @@ class ModelWorkflowCondition(BaseModel):
                     message=f"Cannot use {operator.value} operator with non-primitive actual value {type(actual_value).__name__}",
                 )
             return
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Cannot use {operator.value} operator with {type(expected_value).__name__} - expected value must be string or list",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Cannot use {operator.value} operator with {type(expected_value).__name__} - expected value must be string or list",
+        )
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

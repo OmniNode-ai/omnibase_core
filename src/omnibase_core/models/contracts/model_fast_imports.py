@@ -7,16 +7,11 @@ NO imports are executed at module level to eliminate cascade effects.
 Performance Target: Module import <5ms, contract loading <50ms total
 """
 
-import sys
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
     TypedDict,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -53,7 +48,7 @@ class ModelFastContractFactory:
     """
 
     def __init__(self) -> None:
-        self._contract_cache: dict[str, type["ModelContractBase"]] = {}
+        self._contract_cache: dict[str, type[ModelContractBase]] = {}
         self._import_paths = {
             "base": "omnibase_core.models.contracts.model_contract_base",
             "compute": "omnibase_core.models.contracts.model_contract_compute",
@@ -63,7 +58,9 @@ class ModelFastContractFactory:
         }
 
     def _import_contract(
-        self, contract_type: str, class_name: str
+        self,
+        contract_type: str,
+        class_name: str,
     ) -> type["ModelContractBase"]:
         """Import a contract class on-demand with caching."""
         # Function-level imports to maintain zero-import-time loading
@@ -87,9 +84,9 @@ class ModelFastContractFactory:
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -257,11 +254,6 @@ class ModelPerformanceMonitor:
     def measure_import_time() -> PerformanceMetrics:
         """Measure import times for this module vs alternatives."""
         import time
-
-        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.exceptions.onex_error import OnexError
-        from omnibase_core.models.common.model_error_context import ModelErrorContext
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         # This should be near-zero since no imports at module level
         start = time.perf_counter()

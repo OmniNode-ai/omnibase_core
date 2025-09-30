@@ -84,17 +84,17 @@ class ModelWorkflowDependency(BaseModel):
         """
         if isinstance(v, UUID):
             return v
-        else:
-            # ZERO TOLERANCE: Reject all non-UUID types including strings
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
-            )
+        # ZERO TOLERANCE: Reject all non-UUID types including strings
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
+        )
 
     @field_validator("condition", mode="before")
     @classmethod
     def validate_condition_structured_only(
-        cls, v: ModelWorkflowCondition | None
+        cls,
+        v: ModelWorkflowCondition | None,
     ) -> ModelWorkflowCondition | None:
         """
         Validate condition is ModelWorkflowCondition instance only.
@@ -110,12 +110,11 @@ class ModelWorkflowDependency(BaseModel):
         if isinstance(v, ModelWorkflowCondition):
             # STRONG TYPE: Already validated ModelWorkflowCondition instance
             return v
-        else:
-            # STRONG TYPES ONLY: Reject all other types (dicts, strings, Any, etc.)
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
-            )
+        # STRONG TYPES ONLY: Reject all other types (dicts, strings, Any, etc.)
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
+        )
 
     @model_validator(mode="after")
     def validate_no_circular_dependency(self) -> "ModelWorkflowDependency":

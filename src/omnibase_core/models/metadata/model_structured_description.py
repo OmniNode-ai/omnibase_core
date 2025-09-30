@@ -12,11 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -244,7 +239,8 @@ class ModelStructuredDescription(BaseModel):
 
         return cls(
             description_id=uuid_from_string(
-                f"analytics_{collection_name}", "description"
+                f"analytics_{collection_name}",
+                "description",
             ),
             purpose=purpose,
             functionality="Aggregates and summarizes collection performance metrics",

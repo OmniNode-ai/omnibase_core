@@ -76,6 +76,7 @@ class EnumMemoryUsage(str, Enum):
     @classmethod
     def from_mb(cls, mb: float) -> EnumMemoryUsage:
         """Determine category from memory usage in MB."""
+        # Memory threshold classification - architectural design for memory categories
         if mb < 10:
             return cls.MINIMAL
         if mb < 50:

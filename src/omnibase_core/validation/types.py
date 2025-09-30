@@ -130,7 +130,9 @@ class UnionUsageChecker(ast.NodeVisitor):
 
                 # Create union pattern for analysis
                 union_pattern = ModelUnionPattern(
-                    union_types, node.lineno, self.file_path
+                    union_types,
+                    node.lineno,
+                    self.file_path,
                 )
                 self.union_patterns.append(union_pattern)
 

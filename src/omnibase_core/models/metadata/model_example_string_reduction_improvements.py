@@ -38,7 +38,8 @@ def demonstrate_string_field_improvements() -> None:
     print("AFTER:  display_name: ModelStructuredDisplayName")
 
     structured_name = ModelStructuredDisplayName.for_function_node(
-        "user_auth", category=EnumStandardCategory.AUTHENTICATION
+        "user_auth",
+        category=EnumStandardCategory.AUTHENTICATION,
     )
     print(f"   Generated name: {structured_name.display_name}")
     print(f"   Human readable: {structured_name.human_readable_name}")
@@ -103,7 +104,7 @@ def demonstrate_string_field_improvements() -> None:
     print(f"   Description: {node_info.description.summary_description}")
     print(f"   Tags: {node_info.tags.all_tags}")
     print(
-        f"   Categories: {[cat for cat in [node_info.tags.primary_category] + node_info.tags.secondary_categories if cat is not None]}"
+        f"   Categories: {[cat for cat in [node_info.tags.primary_category] + node_info.tags.secondary_categories if cat is not None]}",
     )
     print()
 

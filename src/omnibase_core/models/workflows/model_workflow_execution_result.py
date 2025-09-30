@@ -36,19 +36,24 @@ class ModelWorkflowExecutionResult(BaseModel):
     status: EnumWorkflowStatus = Field(..., description="Final status of the workflow")
 
     execution_time_ms: int = Field(
-        ..., description="Total execution time in milliseconds", ge=0
+        ...,
+        description="Total execution time in milliseconds",
+        ge=0,
     )
 
     result_data: StructuredData = Field(
-        default_factory=dict, description="Result data from the workflow"
+        default_factory=dict,
+        description="Result data from the workflow",
     )
 
     error_message: str | None = Field(
-        default=None, description="Error message if workflow failed"
+        default=None,
+        description="Error message if workflow failed",
     )
 
     coordination_metrics: ModelWorkflowMetrics = Field(
-        ..., description="Performance metrics for the execution"
+        ...,
+        description="Performance metrics for the execution",
     )
 
     model_config = {

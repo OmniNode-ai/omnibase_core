@@ -86,7 +86,7 @@ class TestFileProcessingError:
 
     def test_file_processing_error_with_original_exception(self):
         """Test FileProcessingError with original exception."""
-        original = IOError("Permission denied")
+        original = OSError("Permission denied")
         exc = FileProcessingError("Could not read file", "/path/to/file.py", original)
 
         assert exc.file_path == "/path/to/file.py"
@@ -153,7 +153,7 @@ class TestExceptionCatching:
                 assert isinstance(caught, ValidationFrameworkError)
             else:
                 pytest.fail(
-                    f"Failed to catch {type(exc).__name__} with ValidationFrameworkError"
+                    f"Failed to catch {type(exc).__name__} with ValidationFrameworkError",
                 )
 
     def test_catch_specific_exceptions(self):

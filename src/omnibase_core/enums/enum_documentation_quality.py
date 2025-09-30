@@ -114,6 +114,7 @@ class EnumDocumentationQuality(str, Enum):
     @classmethod
     def from_score(cls, score: int) -> EnumDocumentationQuality:
         """Convert numeric score (0-10) to quality level."""
+        # Threshold-based quality mapping - architectural design for clear boundaries
         if score <= 0:
             return cls.NONE
         if score <= 1:

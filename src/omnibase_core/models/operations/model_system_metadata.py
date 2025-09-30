@@ -13,16 +13,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.models.metadata.model_semver import (
     ModelSemVer,
-    parse_semver_from_string,
 )
 
 
@@ -39,20 +31,24 @@ class ModelSystemMetadata(BaseModel):
     """
 
     system_id: UUID = Field(
-        default_factory=uuid4, description="System identifier (UUID format)"
+        default_factory=uuid4,
+        description="System identifier (UUID format)",
     )
     system_name: str = Field(..., description="System name")
     version: ModelSemVer = Field(
-        ..., description="System version in semantic version format"
+        ...,
+        description="System version in semantic version format",
     )
     deployment_id: UUID | None = Field(
-        default=None, description="Deployment identifier (UUID format)"
+        default=None,
+        description="Deployment identifier (UUID format)",
     )
 
     # System health
     health_status: str = Field(default="unknown", description="System health status")
     last_health_check: datetime = Field(
-        default_factory=datetime.now, description="Last health check"
+        default_factory=datetime.now,
+        description="Last health check",
     )
     uptime_seconds: int = Field(default=0, description="System uptime in seconds")
 
@@ -62,10 +58,12 @@ class ModelSystemMetadata(BaseModel):
         description="Configuration version in semantic version format",
     )
     feature_flags: dict[str, bool] = Field(
-        default_factory=dict, description="Feature flags"
+        default_factory=dict,
+        description="Feature flags",
     )
     environment_config: dict[str, str] = Field(
-        default_factory=dict, description="Environment configuration"
+        default_factory=dict,
+        description="Environment configuration",
     )
 
     model_config = {

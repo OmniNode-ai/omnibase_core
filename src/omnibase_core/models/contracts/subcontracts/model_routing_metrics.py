@@ -7,8 +7,6 @@ Part of the Routing Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 

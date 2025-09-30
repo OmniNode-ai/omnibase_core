@@ -7,12 +7,10 @@ with structured discriminated union pattern for type safety.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -37,7 +35,7 @@ class ModelFlexibleValue(BaseModel):
     """
 
     value_type: EnumFlexibleValueType = Field(
-        description="Type discriminator for value"
+        description="Type discriminator for value",
     )
 
     # Value storage (only one should be populated)
@@ -52,11 +50,12 @@ class ModelFlexibleValue(BaseModel):
     # Metadata
     source: str | None = Field(None, description="Source of the value")
     is_validated: bool = Field(
-        default=False, description="Whether value has been validated"
+        default=False,
+        description="Whether value has been validated",
     )
 
     @model_validator(mode="after")
-    def validate_single_value(self) -> "ModelFlexibleValue":
+    def validate_single_value(self) -> ModelFlexibleValue:
         """Ensure only one value is set based on type discriminator."""
         values_map = {
             EnumFlexibleValueType.STRING: self.string_value,
@@ -82,9 +81,9 @@ class ModelFlexibleValue(BaseModel):
                         {
                             "value_type": ModelSchemaValue.from_value(self.value_type),
                             "non_none_count": ModelSchemaValue.from_value(
-                                str(non_none_count)
+                                str(non_none_count),
                             ),
-                        }
+                        },
                     ),
                 )
         else:
@@ -97,12 +96,12 @@ class ModelFlexibleValue(BaseModel):
                         {
                             "value_type": ModelSchemaValue.from_value(self.value_type),
                             "non_none_count": ModelSchemaValue.from_value(
-                                str(non_none_count)
+                                str(non_none_count),
                             ),
                             "expected_value": ModelSchemaValue.from_value(
-                                self.value_type
+                                self.value_type,
                             ),
-                        }
+                        },
                     ),
                 )
 
@@ -116,9 +115,9 @@ class ModelFlexibleValue(BaseModel):
                         {
                             "value_type": ModelSchemaValue.from_value(self.value_type),
                             "required_field": ModelSchemaValue.from_value(
-                                f"{self.value_type}_value"
+                                f"{self.value_type}_value",
                             ),
-                        }
+                        },
                     ),
                 )
 
@@ -166,7 +165,9 @@ class ModelFlexibleValue(BaseModel):
 
     @classmethod
     def from_dict_value(
-        cls, value: dict[str, ModelSchemaValue], source: str | None = None
+        cls,
+        value: dict[str, ModelSchemaValue],
+        source: str | None = None,
     ) -> ModelFlexibleValue:
         """Create flexible value from dictionary of ModelSchemaValue."""
         return cls(
@@ -178,7 +179,9 @@ class ModelFlexibleValue(BaseModel):
 
     @classmethod
     def from_raw_dict(
-        cls, value: dict[str, object], source: str | None = None
+        cls,
+        value: dict[str, object],
+        source: str | None = None,
     ) -> ModelFlexibleValue:
         """Create flexible value from raw dictionary, converting to ModelSchemaValue format."""
         converted_value = {
@@ -188,7 +191,9 @@ class ModelFlexibleValue(BaseModel):
 
     @classmethod
     def from_list(
-        cls, value: list[object], source: str | None = None
+        cls,
+        value: list[object],
+        source: str | None = None,
     ) -> ModelFlexibleValue:
         """Create flexible value from list."""
         return cls(
@@ -266,7 +271,7 @@ class ModelFlexibleValue(BaseModel):
                     "supported_types": ModelSchemaValue.from_value(
                         "string, integer, float, boolean, dict, list, uuid, none",
                     ),
-                }
+                },
             ),
         )
 

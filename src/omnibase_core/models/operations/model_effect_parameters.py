@@ -12,13 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.decorators import allow_dict_str_any
-from omnibase_core.core.type_constraints import (
-    Executable,
-    Identifiable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_effect_parameter_type import EnumEffectParameterType
 
 
@@ -82,7 +75,7 @@ class ModelEffectParameterValue(BaseModel):
     """
 
     parameter_type: EnumEffectParameterType = Field(
-        description="Effect parameter type discriminator"
+        description="Effect parameter type discriminator",
     )
     name: str = Field(..., description="Parameter name")
     description: str = Field(default="", description="Parameter description")
@@ -121,7 +114,9 @@ class ModelEffectParameterValue(BaseModel):
     @field_validator("system_identifier", "mode", "rule_name")
     @classmethod
     def validate_required_string_fields(
-        cls, v: str | None, info: ValidationInfo
+        cls,
+        v: str | None,
+        info: ValidationInfo,
     ) -> str | None:
         """Ensure required fields are present for each parameter type."""
         if not hasattr(info, "data") or "parameter_type" not in info.data:
@@ -140,7 +135,7 @@ class ModelEffectParameterValue(BaseModel):
         required_field = required_fields.get(parameter_type)
         if required_field == field_name and v is None:
             raise ValueError(
-                f"Field {field_name} is required for parameter type {parameter_type}"
+                f"Field {field_name} is required for parameter type {parameter_type}",
             )
 
         return v
@@ -148,7 +143,9 @@ class ModelEffectParameterValue(BaseModel):
     @field_validator("reference_id")
     @classmethod
     def validate_required_reference_id(
-        cls, v: UUID | None, info: ValidationInfo
+        cls,
+        v: UUID | None,
+        info: ValidationInfo,
     ) -> UUID | None:
         """Ensure reference_id is present for external reference parameter type."""
         if not hasattr(info, "data") or "parameter_type" not in info.data:
@@ -163,7 +160,7 @@ class ModelEffectParameterValue(BaseModel):
             and v is None
         ):
             raise ValueError(
-                f"Field {field_name} is required for parameter type {parameter_type}"
+                f"Field {field_name} is required for parameter type {parameter_type}",
             )
 
         return v
@@ -175,7 +172,7 @@ class ModelEffectParameterValue(BaseModel):
         system_identifier: str,
         connection_type: str,
         **kwargs: Unpack[TypedDictTargetSystemKwargs],
-    ) -> "ModelEffectParameterValue":
+    ) -> ModelEffectParameterValue:
         """Create target system parameter."""
         return cls(
             parameter_type=EnumEffectParameterType.TARGET_SYSTEM,
@@ -190,8 +187,11 @@ class ModelEffectParameterValue(BaseModel):
 
     @classmethod
     def from_operation_mode(
-        cls, name: str, mode: str, **kwargs: Unpack[TypedDictOperationModeKwargs]
-    ) -> "ModelEffectParameterValue":
+        cls,
+        name: str,
+        mode: str,
+        **kwargs: Unpack[TypedDictOperationModeKwargs],
+    ) -> ModelEffectParameterValue:
         """Create operation mode parameter."""
         return cls(
             parameter_type=EnumEffectParameterType.OPERATION_MODE,
@@ -206,8 +206,10 @@ class ModelEffectParameterValue(BaseModel):
 
     @classmethod
     def from_retry_setting(
-        cls, name: str, **kwargs: Unpack[TypedDictRetrySettingKwargs]
-    ) -> "ModelEffectParameterValue":
+        cls,
+        name: str,
+        **kwargs: Unpack[TypedDictRetrySettingKwargs],
+    ) -> ModelEffectParameterValue:
         """Create retry setting parameter."""
         return cls(
             parameter_type=EnumEffectParameterType.RETRY_SETTING,
@@ -222,8 +224,11 @@ class ModelEffectParameterValue(BaseModel):
 
     @classmethod
     def from_validation_rule(
-        cls, name: str, rule_name: str, **kwargs: Unpack[TypedDictValidationRuleKwargs]
-    ) -> "ModelEffectParameterValue":
+        cls,
+        name: str,
+        rule_name: str,
+        **kwargs: Unpack[TypedDictValidationRuleKwargs],
+    ) -> ModelEffectParameterValue:
         """Create validation rule parameter."""
         return cls(
             parameter_type=EnumEffectParameterType.VALIDATION_RULE,
@@ -243,7 +248,7 @@ class ModelEffectParameterValue(BaseModel):
         reference_id: UUID,
         reference_type: str,
         **kwargs: Unpack[TypedDictExternalReferenceKwargs],
-    ) -> "ModelEffectParameterValue":
+    ) -> ModelEffectParameterValue:
         """Create external reference parameter."""
         return cls(
             parameter_type=EnumEffectParameterType.EXTERNAL_REFERENCE,
@@ -326,4 +331,4 @@ class ModelEffectParameters(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelEffectParameters", "ModelEffectParameterValue"]
+__all__ = ["ModelEffectParameterValue", "ModelEffectParameters"]

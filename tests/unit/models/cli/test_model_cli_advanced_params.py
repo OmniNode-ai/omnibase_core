@@ -48,7 +48,8 @@ class TestModelCliAdvancedParams:
 
         # Output formatting parameters (default_factory creates instance)
         assert isinstance(
-            params.output_format_options, type(params.output_format_options)
+            params.output_format_options,
+            type(params.output_format_options),
         )
         assert params.compression_enabled is False
 
@@ -450,7 +451,8 @@ class TestModelCliAdvancedParams:
 
         # Add environment variables
         params.add_environment_variable(
-            "DATABASE_URL", "postgresql://localhost:5432/prod"
+            "DATABASE_URL",
+            "postgresql://localhost:5432/prod",
         )
         params.add_environment_variable("REDIS_URL", "redis://localhost:6379")
 
@@ -479,7 +481,8 @@ class TestModelCliAdvancedParams:
 
         # Start with default format options object (not empty dict)
         assert isinstance(
-            params.output_format_options, type(params.output_format_options)
+            params.output_format_options,
+            type(params.output_format_options),
         )
 
         # Update format options using proper model attributes (not dict access)

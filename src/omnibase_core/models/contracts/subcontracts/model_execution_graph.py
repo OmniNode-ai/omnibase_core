@@ -13,7 +13,8 @@ class ModelExecutionGraph(BaseModel):
     """Execution graph for a workflow."""
 
     nodes: list[ModelWorkflowNode] = Field(
-        default_factory=list, description="Nodes in the execution graph"
+        default_factory=list,
+        description="Nodes in the execution graph",
     )
 
     model_config = {

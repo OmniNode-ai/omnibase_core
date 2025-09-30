@@ -14,12 +14,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Discriminator, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
@@ -172,7 +166,8 @@ class ModelNodeStatusActive(BaseModel):
     """Active node status with uptime tracking."""
 
     status_type: Literal["active"] = Field(
-        default="active", description="Status discriminator"
+        default="active",
+        description="Status discriminator",
     )
     uptime_seconds: int = Field(ge=0, description="Node uptime in seconds")
     last_heartbeat: str = Field(description="ISO timestamp of last heartbeat")
@@ -182,10 +177,11 @@ class ModelNodeStatusMaintenance(BaseModel):
     """Maintenance node status with estimated completion."""
 
     status_type: Literal["maintenance"] = Field(
-        default="maintenance", description="Status discriminator"
+        default="maintenance",
+        description="Status discriminator",
     )
     estimated_completion: str = Field(
-        description="ISO timestamp of estimated completion"
+        description="ISO timestamp of estimated completion",
     )
     maintenance_reason: str = Field(description="Reason for maintenance")
 
@@ -194,12 +190,14 @@ class ModelNodeStatusError(BaseModel):
     """Error node status with error details."""
 
     status_type: Literal["error"] = Field(
-        default="error", description="Status discriminator"
+        default="error",
+        description="Status discriminator",
     )
     error_code: str = Field(description="Error classification code")
     error_message: str = Field(description="Human-readable error description")
     recovery_suggestion: str | None = Field(
-        None, description="Suggested recovery action"
+        None,
+        description="Suggested recovery action",
     )
 
 
@@ -229,9 +227,9 @@ NodeStatusDiscriminator = Discriminator(
 # Export for use
 __all__ = [
     "ModelNodeCoreMetadata",
-    "NodeStatusUnion",
     "ModelNodeStatusActive",
-    "ModelNodeStatusMaintenance",
     "ModelNodeStatusError",
+    "ModelNodeStatusMaintenance",
     "NodeStatusDiscriminator",
+    "NodeStatusUnion",
 ]

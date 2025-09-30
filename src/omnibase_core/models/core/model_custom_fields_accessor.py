@@ -8,13 +8,12 @@ typed custom fields with automatic initialization and type safety.
 from __future__ import annotations
 
 import copy
-from typing import Any, Dict, Generic, List, Set, TypeVar
+from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 
 from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_result import ModelResult
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -30,13 +29,13 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
     """Generic custom fields accessor with comprehensive field management."""
 
     # Typed field storage
-    string_fields: Dict[str, str] = Field(default_factory=dict)
-    int_fields: Dict[str, int] = Field(default_factory=dict)
-    bool_fields: Dict[str, bool] = Field(default_factory=dict)
-    list_fields: Dict[str, List[Any]] = Field(default_factory=dict)
-    float_fields: Dict[str, float] = Field(default_factory=dict)
+    string_fields: dict[str, str] = Field(default_factory=dict)
+    int_fields: dict[str, int] = Field(default_factory=dict)
+    bool_fields: dict[str, bool] = Field(default_factory=dict)
+    list_fields: dict[str, list[Any]] = Field(default_factory=dict)
+    float_fields: dict[str, float] = Field(default_factory=dict)
     # Custom fields storage - can be overridden by subclasses to have default=None
-    custom_fields: Dict[str, PrimitiveValueType] | None = Field(default=None)
+    custom_fields: dict[str, PrimitiveValueType] | None = Field(default=None)
 
     # Pydantic configuration to allow extra fields
     model_config = {
@@ -47,7 +46,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_and_distribute_fields(cls, values: Any) -> Dict[str, Any]:
+    def validate_and_distribute_fields(cls, values: Any) -> dict[str, Any]:
         """Validate and distribute incoming fields to appropriate typed storages."""
         if not isinstance(values, dict):
             return {}
@@ -114,35 +113,34 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                     # For PrimitiveValueType (str, int, float, bool) - pass through directly
                     parent_value = value
                 return super().set_field(key, parent_value)
+            # Handle simple field names (no dots)
+            # Store in appropriate typed field based on value type
+            # Use runtime type checking to avoid MyPy type narrowing issues
+            if value is None:
+                # Handle None by storing as empty string
+                self.string_fields[key] = ""
+            elif isinstance(value, ModelSchemaValue):
+                # Convert ModelSchemaValue to string representation
+                self.string_fields[key] = str(value.to_value())
             else:
-                # Handle simple field names (no dots)
-                # Store in appropriate typed field based on value type
-                # Use runtime type checking to avoid MyPy type narrowing issues
-                if value is None:
-                    # Handle None by storing as empty string
-                    self.string_fields[key] = ""
-                elif isinstance(value, ModelSchemaValue):
-                    # Convert ModelSchemaValue to string representation
-                    self.string_fields[key] = str(value.to_value())
+                # Runtime type checking for primitive values
+                # NOTE: Check bool before int since bool is a subclass of int in Python
+                value_type = type(value)
+                if value_type is bool:
+                    self.bool_fields[key] = value  # type: ignore[assignment]
+                elif value_type is str:
+                    self.string_fields[key] = value  # type: ignore[assignment]
+                elif value_type is int:
+                    self.int_fields[key] = value  # type: ignore[assignment]
+                elif value_type is float:
+                    self.float_fields[key] = value  # type: ignore[assignment]
+                elif isinstance(value, list):
+                    self.list_fields[key] = value
                 else:
-                    # Runtime type checking for primitive values
-                    # NOTE: Check bool before int since bool is a subclass of int in Python
-                    value_type = type(value)
-                    if value_type is bool:
-                        self.bool_fields[key] = value  # type: ignore[assignment]
-                    elif value_type is str:
-                        self.string_fields[key] = value  # type: ignore[assignment]
-                    elif value_type is int:
-                        self.int_fields[key] = value  # type: ignore[assignment]
-                    elif value_type is float:
-                        self.float_fields[key] = value  # type: ignore[assignment]
-                    elif isinstance(value, list):
-                        self.list_fields[key] = value
-                    else:
-                        # Fallback to string storage for any other type
-                        self.string_fields[key] = str(value)
+                    # Fallback to string storage for any other type
+                    self.string_fields[key] = str(value)
 
-                return True
+            return True
         except Exception:
             return False
 
@@ -169,23 +167,22 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             # Check each typed field storage
             if key in self.string_fields:
                 return self.string_fields[key]
-            elif key in self.int_fields:
+            if key in self.int_fields:
                 return self.int_fields[key]
-            elif key in self.bool_fields:
+            if key in self.bool_fields:
                 return self.bool_fields[key]
-            elif key in self.list_fields:
+            if key in self.list_fields:
                 return self.list_fields[key]
-            elif key in self.float_fields:
+            if key in self.float_fields:
                 return self.float_fields[key]
-            elif (
+            if (
                 hasattr(self, "custom_fields")
                 and getattr(self, "custom_fields", None) is not None
                 and key in getattr(self, "custom_fields", {})
             ):
                 custom_fields = getattr(self, "custom_fields", {})
                 return custom_fields[key]
-            else:
-                return default
+            return default
         except Exception:
             return default
 
@@ -219,7 +216,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             return bool(value)  # Explicit cast for type safety
         return default
 
-    def get_list(self, key: str, default: List[Any] | None = None) -> List[Any]:
+    def get_list(self, key: str, default: list[Any] | None = None) -> list[Any]:
         """Get a list field value."""
         if default is None:
             default = []
@@ -317,9 +314,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             + custom_count
         )
 
-    def get_all_field_names(self) -> List[str]:
+    def get_all_field_names(self) -> list[str]:
         """Get all field names across all typed storages."""
-        all_names: Set[str] = set()
+        all_names: set[str] = set()
         all_names.update(self.string_fields.keys())
         all_names.update(self.int_fields.keys())
         all_names.update(self.bool_fields.keys())
@@ -351,20 +348,21 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
         """Get the type of a field."""
         if key in self.string_fields:
             return "string"
-        elif key in self.int_fields:
+        if key in self.int_fields:
             return "int"
-        elif key in self.bool_fields:
+        if key in self.bool_fields:
             return "bool"
-        elif key in self.list_fields:
+        if key in self.list_fields:
             return "list"
-        elif key in self.float_fields:
+        if key in self.float_fields:
             return "float"
-        elif hasattr(self, "custom_fields") and key in getattr(
-            self, "custom_fields", {}
+        if hasattr(self, "custom_fields") and key in getattr(
+            self,
+            "custom_fields",
+            {},
         ):
             return "custom"
-        else:
-            return "unknown"
+        return "unknown"
 
     def validate_field_value(self, key: str, value: SchemaValueType) -> bool:
         """Validate if a value is compatible with a field's existing type."""
@@ -381,38 +379,36 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
 
         if field_type == "string":
             return value_type is str
-        elif field_type == "int":
+        if field_type == "int":
             return value_type is int
-        elif field_type == "bool":
+        if field_type == "bool":
             return value_type is bool
-        elif field_type == "float":
+        if field_type == "float":
             return value_type is float
-        elif field_type == "list":
+        if field_type == "list":
             return isinstance(value, list)
-        elif field_type == "custom":
+        if field_type == "custom":
             return True  # Custom fields accept any type
-        else:
-            return False
+        return False
 
-    def get_fields_by_type(self, field_type: str) -> Dict[str, Any]:
+    def get_fields_by_type(self, field_type: str) -> dict[str, Any]:
         """Get all fields of a specific type."""
         if field_type == "string":
             return dict(self.string_fields)
-        elif field_type == "int":
+        if field_type == "int":
             return dict(self.int_fields)
-        elif field_type == "bool":
+        if field_type == "bool":
             return dict(self.bool_fields)
-        elif field_type == "list":
+        if field_type == "list":
             return dict(self.list_fields)
-        elif field_type == "float":
+        if field_type == "float":
             return dict(self.float_fields)
-        elif field_type == "custom":
+        if field_type == "custom":
             custom_fields = getattr(self, "custom_fields", {})
             return dict(custom_fields) if custom_fields else {}
-        else:
-            return {}
+        return {}
 
-    def copy_fields(self) -> "ModelCustomFieldsAccessor[T]":
+    def copy_fields(self) -> ModelCustomFieldsAccessor[T]:
         """Create a deep copy of this field accessor."""
         new_instance = self.__class__()
         new_instance.string_fields = copy.deepcopy(self.string_fields)
@@ -427,11 +423,11 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             and getattr(self, "custom_fields", None) is not None
         ):
             custom_fields = getattr(self, "custom_fields", {})
-            setattr(new_instance, "custom_fields", copy.deepcopy(custom_fields))
+            new_instance.custom_fields = copy.deepcopy(custom_fields)
 
         return new_instance
 
-    def merge_fields(self, other: "ModelCustomFieldsAccessor[T]") -> None:
+    def merge_fields(self, other: ModelCustomFieldsAccessor[T]) -> None:
         """Merge fields from another accessor into this one."""
         self.string_fields.update(other.string_fields)
         self.int_fields.update(other.int_fields)
@@ -452,9 +448,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             self_custom_fields.update(other_custom_fields)
         elif hasattr(other, "custom_fields") and other_custom_fields is not None:
             # Initialize our custom_fields if other has them but we don't
-            setattr(self, "custom_fields", copy.deepcopy(other_custom_fields))
+            self.custom_fields = copy.deepcopy(other_custom_fields)
 
-    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> Dict[str, Any]:
+    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Override model_dump to include all field data."""
         data = {}
 
@@ -479,8 +475,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             and key in self.custom_fields
         ):
             return self.custom_fields[key]
-        else:
-            return default
+        return default
 
     def get_custom_field_value(
         self,
@@ -491,16 +486,17 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
         return self.get_custom_field(key, default)
 
     def set_custom_field(
-        self, key: str, value: PrimitiveValueType | ModelSchemaValue | None
+        self,
+        key: str,
+        value: PrimitiveValueType | ModelSchemaValue | None,
     ) -> bool:
         """Set a custom field value. Accepts raw values or ModelSchemaValue."""
         try:
             # Initialize custom_fields if it's None with explicit type annotation
             if not hasattr(self, "custom_fields") or self.custom_fields is None:
                 # Explicitly type the dictionary to avoid MyPy inference issues
-                from typing import Dict
 
-                self.custom_fields: Dict[str, PrimitiveValueType] = {}
+                self.custom_fields: dict[str, PrimitiveValueType] = {}
 
             # Store raw values directly in custom_fields
             if isinstance(value, ModelSchemaValue):

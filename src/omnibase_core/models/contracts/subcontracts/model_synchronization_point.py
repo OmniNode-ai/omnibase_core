@@ -17,7 +17,9 @@ class ModelSynchronizationPoint(BaseModel):
     timestamp: datetime = Field(..., description="When the synchronization occurred")
 
     nodes_synchronized: int = Field(
-        ..., description="Number of nodes synchronized at this point", ge=0
+        ...,
+        description="Number of nodes synchronized at this point",
+        ge=0,
     )
 
     model_config = {

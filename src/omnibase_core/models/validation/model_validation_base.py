@@ -11,8 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
-
 from .model_validation_container import ModelValidationContainer
 
 
@@ -94,7 +92,6 @@ class ModelValidationBase(BaseModel):
             internal_error_code = "internal_error"
 
         try:
-
             # Validate the validation container exists and is properly configured
             # Note: self.validation is never None due to default_factory, but we validate it's working
             if not hasattr(self.validation, "add_error"):

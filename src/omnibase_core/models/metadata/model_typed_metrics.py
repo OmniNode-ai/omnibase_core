@@ -7,15 +7,12 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
     SimpleValueType,
 )
 

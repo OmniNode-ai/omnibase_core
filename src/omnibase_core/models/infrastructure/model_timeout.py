@@ -75,9 +75,9 @@ class ModelTimeout(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
         timeout_seconds = int(timeout_seconds_raw)
@@ -92,9 +92,9 @@ class ModelTimeout(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
             warning_threshold_seconds = int(warning_threshold_seconds_raw)
@@ -107,9 +107,9 @@ class ModelTimeout(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
         is_strict = is_strict_raw
@@ -122,9 +122,9 @@ class ModelTimeout(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
         allow_extension = allow_extension_raw
@@ -139,9 +139,9 @@ class ModelTimeout(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
             extension_limit_seconds = int(extension_limit_seconds_raw)
@@ -156,9 +156,9 @@ class ModelTimeout(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
             runtime_category = runtime_category_raw
@@ -173,9 +173,9 @@ class ModelTimeout(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("typeerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
             description = description_raw
@@ -196,9 +196,9 @@ class ModelTimeout(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -470,9 +470,8 @@ class ModelTimeout(BaseModel):
         min_seconds, max_seconds = category.estimated_seconds
         if use_max_estimate and max_seconds is not None:
             return int(max_seconds)
-        else:
-            # Use minimum with some buffer
-            return max(int(min_seconds * 2), 30)
+        # Use minimum with some buffer
+        return max(int(min_seconds * 2), 30)
 
     @classmethod
     def from_runtime_category(
@@ -483,7 +482,8 @@ class ModelTimeout(BaseModel):
     ) -> ModelTimeout:
         """Create timeout from runtime category."""
         timeout_seconds = cls._calculate_timeout_from_category(
-            category, use_max_estimate
+            category,
+            use_max_estimate,
         )
 
         return cls(

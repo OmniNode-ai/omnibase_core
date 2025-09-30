@@ -58,16 +58,17 @@ def __getattr__(name: str) -> object:
 
         # Return the requested attribute from validation module
         return locals()[name]
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+    msg = f"module '{__name__}' has no attribute '{name}'"
+    raise AttributeError(msg)
 
 
 __all__ = [
     # Validation tools (main exports for other repositories)
+    "ModelValidationSuite",
+    "ValidationResult",
+    "validate_all",
     "validate_architecture",
-    "validate_union_usage",
     "validate_contracts",
     "validate_patterns",
-    "validate_all",
-    "ValidationResult",
-    "ModelValidationSuite",
+    "validate_union_usage",
 ]

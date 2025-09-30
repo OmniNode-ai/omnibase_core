@@ -14,12 +14,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
@@ -30,9 +24,6 @@ from .model_function_deprecation_info import (
 )
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
-from .model_types_function_documentation_summary import (
-    ModelFunctionDocumentationSummaryType,
-)
 
 # Removed type alias - using ModelMetadataValue for proper type safety
 
@@ -419,7 +410,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
 # Export for use
 __all__ = [
-    "ModelFunctionNodeMetadata",
-    "ModelFunctionMetadataSummary",
     "ModelDocumentationSummaryFiltered",
+    "ModelFunctionMetadataSummary",
+    "ModelFunctionNodeMetadata",
 ]

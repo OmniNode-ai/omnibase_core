@@ -9,7 +9,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
 from .model_validation_value import ModelValidationValue

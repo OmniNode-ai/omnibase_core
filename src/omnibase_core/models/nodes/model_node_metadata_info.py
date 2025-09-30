@@ -10,15 +10,8 @@ from typing import Any
 from uuid import UUID, uuid4
 
 # Import SPI protocol directly - no fallback pattern per ONEX standards
-from omnibase_spi.protocols.types.protocol_core_types import ProtocolNodeInfoLike
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
@@ -203,7 +196,8 @@ class ModelNodeMetadataInfo(BaseModel):
                 flag_key: str = item[0]
                 flag_val: bool = item[1]
                 result[flag_key] = ModelMetadataValue.from_bool(
-                    flag_val, "custom_flags"
+                    flag_val,
+                    "custom_flags",
                 )
         return result
 
@@ -270,7 +264,9 @@ class ModelNodeMetadataInfo(BaseModel):
     ) -> None:
         """Add execution sample to performance metrics."""
         self.performance.add_execution_sample(
-            execution_time_ms, success, memory_usage_mb
+            execution_time_ms,
+            success,
+            memory_usage_mb,
         )
 
     def get_summary(self) -> ModelNodeMetadataSummaryType:

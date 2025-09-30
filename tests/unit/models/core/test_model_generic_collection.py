@@ -3,7 +3,6 @@ Unit tests for ModelGenericCollection - Generic collection management pattern.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -47,7 +46,7 @@ class TestModelGenericCollection:
     def test_create_named_collection(self):
         """Test creating a named collection."""
         collection = ModelGenericCollection[MockItem](
-            collection_display_name="test_collection"
+            collection_display_name="test_collection",
         )
 
         assert collection.collection_display_name == "test_collection"
@@ -326,7 +325,7 @@ class TestModelGenericCollection:
     def test_get_summary(self):
         """Test getting collection summary."""
         collection = ModelGenericCollection[MockItem](
-            collection_display_name="test_collection"
+            collection_display_name="test_collection",
         )
         items = [
             MockItem(name="enabled_valid", enabled=True, is_valid=True),
@@ -433,43 +432,43 @@ class TestModelGenericCollection:
         collection.sort_by_priority()
         assert collection.updated_at > updated_at_after_extend
 
-    def test_backward_compatibility(self):
-        """Test backward compatibility with collection_name."""
-        # Test legacy property access
+    def test_collection_display_name_access(self):
+        """Test collection_display_name property access."""
+        # Test property access
         collection = ModelGenericCollection[MockItem](
-            collection_display_name="test_collection"
+            collection_display_name="test_collection",
         )
 
-        # Legacy getter should work
-        assert collection.collection_name == "test_collection"
+        # Property getter should work
+        assert collection.collection_display_name == "test_collection"
 
-        # Legacy setter should work
-        collection.collection_name = "updated_name"
+        # Property setter should work
+        collection.collection_display_name = "updated_name"
         assert collection.collection_display_name == "updated_name"
-        assert collection.collection_name == "updated_name"
 
-        # Test legacy class methods
+        # Test class factory methods
         empty_collection = ModelGenericCollection.create_empty_with_name("legacy_empty")
-        assert empty_collection.collection_name == "legacy_empty"
+        assert empty_collection.collection_display_name == "legacy_empty"
         assert empty_collection.collection_display_name == "legacy_empty"
 
         items = [MockItem(name=f"item{i}") for i in range(2)]
         legacy_collection = ModelGenericCollection.create_from_items_with_name(
-            items, "legacy_collection"
+            items,
+            "legacy_collection",
         )
-        assert legacy_collection.collection_name == "legacy_collection"
+        assert legacy_collection.collection_display_name == "legacy_collection"
         assert legacy_collection.collection_display_name == "legacy_collection"
         assert legacy_collection.item_count() == 2
 
-        # Test summary backward compatibility
+        # Test summary access
         summary = legacy_collection.get_summary()
-        assert summary.collection_name == "legacy_collection"
+        assert summary.collection_display_name == "legacy_collection"
         assert summary.collection_display_name == "legacy_collection"
 
         # Test summary setter
-        summary.collection_name = "updated_summary"
+        summary.collection_display_name = "updated_summary"
         assert summary.collection_display_name == "updated_summary"
-        assert summary.collection_name == "updated_summary"
+        assert summary.collection_display_name == "updated_summary"
 
     def test_collection_id_uniqueness(self):
         """Test that collection IDs are unique."""
@@ -483,7 +482,8 @@ class TestModelGenericCollection:
         shared_id = uuid4()
         collection3 = ModelGenericCollection.create_empty(collection_id=shared_id)
         collection4 = ModelGenericCollection.create_from_items(
-            [], collection_id=shared_id
+            [],
+            collection_id=shared_id,
         )
 
         assert collection3.collection_id == shared_id

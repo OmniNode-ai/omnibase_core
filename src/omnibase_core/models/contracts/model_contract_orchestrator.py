@@ -11,10 +11,9 @@ Specialized contract model for NodeOrchestrator implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -205,7 +204,8 @@ class ModelContractOrchestrator(ModelContractBase):
     @field_validator("published_events")
     @classmethod
     def validate_published_events_consistency(
-        cls, v: list[ModelEventDescriptor]
+        cls,
+        v: list[ModelEventDescriptor],
     ) -> list[ModelEventDescriptor]:
         """Validate published events configuration consistency."""
         # Check for duplicate event names
@@ -222,7 +222,8 @@ class ModelContractOrchestrator(ModelContractBase):
     @field_validator("consumed_events")
     @classmethod
     def validate_consumed_events_consistency(
-        cls, v: list[ModelEventSubscription]
+        cls,
+        v: list[ModelEventSubscription],
     ) -> list[ModelEventSubscription]:
         """Validate consumed events configuration consistency."""
         # Check for conflicting batch processing settings
@@ -239,7 +240,8 @@ class ModelContractOrchestrator(ModelContractBase):
     @field_validator("event_coordination")
     @classmethod
     def validate_event_coordination_consistency(
-        cls, v: ModelEventCoordinationConfig
+        cls,
+        v: ModelEventCoordinationConfig,
     ) -> ModelEventCoordinationConfig:
         """Validate event coordination configuration consistency."""
         if v.coordination_strategy == "buffered" and v.buffer_size < 1:

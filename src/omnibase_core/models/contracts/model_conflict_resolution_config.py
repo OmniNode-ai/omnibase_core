@@ -8,7 +8,7 @@ data conflicts during reduction operations.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class ModelConflictResolutionConfig(BaseModel):

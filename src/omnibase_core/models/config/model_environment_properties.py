@@ -11,8 +11,6 @@ from typing import Any, TypeVar, cast, get_origin
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
-
 # Type variable for generic property handling
 T = TypeVar("T")
 
@@ -56,23 +54,25 @@ class ModelEnvironmentProperties(BaseModel):
             # Use ModelPropertyValue's type-safe accessors based on expected type
             if expected_type == str:
                 return cast(T, prop_value.as_string())
-            elif expected_type == int:
+            if expected_type == int:
                 return cast(T, prop_value.as_int())
-            elif expected_type == float:
+            if expected_type == float:
                 return cast(T, prop_value.as_float())
-            elif expected_type == bool:
+            if expected_type == bool:
                 return cast(T, prop_value.as_bool())
-            elif expected_type == list or get_origin(expected_type) is list:
+            if expected_type == list or get_origin(expected_type) is list:
                 # Handle list types
                 if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
                     return cast(T, [str(item) for item in prop_value.value])
                 # Try string conversion for comma-separated values
                 str_val = prop_value.as_string()
                 return cast(
-                    T, [item.strip() for item in str_val.split(",") if item.strip()]
+                    T,
+                    [item.strip() for item in str_val.split(",") if item.strip()],
                 )
-            elif hasattr(prop_value, "value") and isinstance(
-                prop_value.value, expected_type
+            if hasattr(prop_value, "value") and isinstance(
+                prop_value.value,
+                expected_type,
             ):
                 return prop_value.value
         except (ValueError, AttributeError):

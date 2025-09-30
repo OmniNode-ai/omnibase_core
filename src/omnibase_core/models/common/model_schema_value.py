@@ -9,7 +9,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Serializable
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 

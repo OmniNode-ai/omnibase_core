@@ -144,9 +144,9 @@ class ModelCustomProperties(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 

@@ -50,14 +50,13 @@ class EnumUriType(str, Enum):
         """Get the general category of the resource type."""
         if uri_type in {cls.TOOL, cls.AGENT, cls.PLUGIN}:
             return "executable"
-        elif uri_type in {cls.SCHEMA, cls.MODEL}:
+        if uri_type in {cls.SCHEMA, cls.MODEL}:
             return "definition"
-        elif uri_type == cls.VALIDATOR:
+        if uri_type == cls.VALIDATOR:
             return "validation"
-        elif uri_type == cls.NODE:
+        if uri_type == cls.NODE:
             return "infrastructure"
-        else:
-            return "unknown"
+        return "unknown"
 
 
 # Export the enum

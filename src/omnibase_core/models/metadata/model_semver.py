@@ -6,21 +6,14 @@ Pydantic model for semantic versioning following SemVer specification.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
 
 # Import only when needed to break circular dependencies
-if TYPE_CHECKING:
-    from .model_input_state import ModelInputState
 
 
 class ModelSemVer(BaseModel):
@@ -82,7 +75,7 @@ class ModelSemVer(BaseModel):
                 and self.minor == other.minor
                 and self.patch == other.patch
             )
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return str(self) == other
         return False
 
@@ -180,7 +173,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
         >>> assert version.major == 1 and version.minor == 2 and version.patch == 3
     """
     import re
-    from typing import Match
+    from re import Match
 
     # Basic SemVer regex pattern for major.minor.patch
     pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"

@@ -4,10 +4,7 @@ Test suite for ModelExampleContextData.
 Tests the clean, strongly-typed replacement for dict[str, Any] in example context data.
 """
 
-from uuid import UUID, uuid4
-
-import pytest
-from pydantic import ValidationError
+from uuid import uuid4
 
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_environment import EnumEnvironment
@@ -253,7 +250,7 @@ class TestModelExampleContextData:
             update={
                 "context_type": EnumContextType.SYSTEM,
                 "environment": EnumEnvironment.STAGING,
-            }
+            },
         )
 
         assert copy.context_type == EnumContextType.SYSTEM
@@ -305,7 +302,9 @@ class TestModelExampleContextData:
     def test_edge_cases_empty_collections(self):
         """Test edge cases with empty collections."""
         context = ModelExampleContextData(
-            environment_variables={}, configuration_overrides={}, tags=[]
+            environment_variables={},
+            configuration_overrides={},
+            tags=[],
         )
 
         assert context.environment_variables == {}
@@ -341,7 +340,8 @@ class TestModelExampleContextData:
         """Test field type validation."""
         # Valid initialization should work
         context = ModelExampleContextData(
-            context_type=EnumContextType.API, timeout_seconds=30.0
+            context_type=EnumContextType.API,
+            timeout_seconds=30.0,
         )
         assert context.context_type == EnumContextType.API
         assert context.timeout_seconds == 30.0
@@ -380,15 +380,18 @@ class TestModelExampleContextData:
     def test_model_equality(self):
         """Test model equality comparison."""
         context1 = ModelExampleContextData(
-            context_type=EnumContextType.USER, environment=EnumEnvironment.TESTING
+            context_type=EnumContextType.USER,
+            environment=EnumEnvironment.TESTING,
         )
 
         context2 = ModelExampleContextData(
-            context_type=EnumContextType.USER, environment=EnumEnvironment.TESTING
+            context_type=EnumContextType.USER,
+            environment=EnumEnvironment.TESTING,
         )
 
         context3 = ModelExampleContextData(
-            context_type=EnumContextType.SYSTEM, environment=EnumEnvironment.TESTING
+            context_type=EnumContextType.SYSTEM,
+            environment=EnumEnvironment.TESTING,
         )
 
         # Should be equal with same values

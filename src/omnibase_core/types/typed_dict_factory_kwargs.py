@@ -7,14 +7,8 @@ Restructured using composition to reduce string field count and follow ONEX one-
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 
 
@@ -67,8 +61,8 @@ class TypedDictFactoryKwargs(
 
 
 __all__ = [
-    "TypedDictFactoryKwargs",
     "TypedDictExecutionParams",
+    "TypedDictFactoryKwargs",
     "TypedDictMessageParams",
     "TypedDictMetadataParams",
 ]

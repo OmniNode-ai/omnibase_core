@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.enums.enum_output_type import EnumOutputType

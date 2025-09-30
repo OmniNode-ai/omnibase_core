@@ -7,10 +7,9 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError

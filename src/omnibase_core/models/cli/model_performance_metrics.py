@@ -11,8 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Nameable
-
 
 class ModelPerformanceMetrics(BaseModel):
     """Restrictive model for performance metrics.

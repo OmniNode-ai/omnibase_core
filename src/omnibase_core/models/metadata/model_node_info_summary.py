@@ -7,22 +7,15 @@ Composed model that combines focused node information components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Callable, Mapping, TypedDict, TypeVar
+from typing import Any, TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    PrimitiveValueType,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_semver import ModelSemVer
 from .node_info.model_node_categorization import ModelNodeCategorization
@@ -105,11 +98,13 @@ class TypedDictNodeInfoSummaryData(TypedDict):
     core: TypedDictNodeCore
     timestamps: dict[str, Any]  # From component method call - returns lifecycle summary
     categorization: dict[
-        str, Any
+        str,
+        Any,
     ]  # From component method call - returns categorization summary
     quality: dict[str, Any]  # From component method call - returns quality summary
     performance: dict[
-        str, Any
+        str,
+        Any,
     ]  # From component method call - returns performance summary
 
 
@@ -443,7 +438,7 @@ class ModelNodeInfoSummary(BaseModel):
                 self.timestamps.update_modified_timestamp(timestamp_data["updated_at"])
             if "last_accessed" in timestamp_data:
                 self.timestamps.update_validation_timestamp(
-                    timestamp_data["last_accessed"]
+                    timestamp_data["last_accessed"],
                 )
 
         # Update categorization
@@ -465,7 +460,8 @@ class ModelNodeInfoSummary(BaseModel):
             ):
                 # Extract and validate documentation status parameters
                 has_doc_value = quality_data.get(
-                    "has_documentation", self.quality.has_documentation
+                    "has_documentation",
+                    self.quality.has_documentation,
                 )
                 doc_quality_value = quality_data.get("documentation_quality")
                 has_examples_value = quality_data.get("has_examples")
@@ -491,7 +487,9 @@ class ModelNodeInfoSummary(BaseModel):
                     has_examples = bool(has_examples_value)
 
                 self.quality.update_documentation_status(
-                    has_doc, doc_quality, has_examples
+                    has_doc,
+                    doc_quality,
+                    has_examples,
                 )
 
         # Update performance
@@ -501,13 +499,16 @@ class ModelNodeInfoSummary(BaseModel):
                 for key in ["usage_count", "success_rate", "error_rate"]
             ):
                 usage_value = performance_data.get(
-                    "usage_count", self.performance.usage_count
+                    "usage_count",
+                    self.performance.usage_count,
                 )
                 success_value = performance_data.get(
-                    "success_rate", self.performance.success_rate
+                    "success_rate",
+                    self.performance.success_rate,
                 )
                 error_value = performance_data.get(
-                    "error_rate", self.performance.error_rate
+                    "error_rate",
+                    self.performance.error_rate,
                 )
 
                 self.performance.update_usage_metrics(
@@ -537,7 +538,8 @@ class ModelNodeInfoSummary(BaseModel):
                         self.performance.average_execution_time_ms,
                     ),
                     performance_data.get(
-                        "memory_usage_mb", self.performance.memory_usage_mb
+                        "memory_usage_mb",
+                        self.performance.memory_usage_mb,
                     ),
                 )
 

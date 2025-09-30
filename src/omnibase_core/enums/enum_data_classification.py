@@ -22,8 +22,8 @@ class EnumDataClassification(str, Enum):
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
     RESTRICTED = "restricted"
-    SECRET = "secret"
-    TOP_SECRET = "top_secret"
+    SECRET = "secret"  # Security classification level, not a password
+    TOP_SECRET = "top_secret"  # Security classification level, not a password
 
     # Common aliases
     OPEN = "open"

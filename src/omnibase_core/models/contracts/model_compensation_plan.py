@@ -7,10 +7,10 @@ with proper Pydantic validation and type safety for saga pattern workflows.
 ZERO TOLERANCE: No Any types or dict patterns allowed.
 """
 
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -166,7 +166,7 @@ class ModelCompensationPlan(BaseModel):
         """Validate plan ID format."""
         if isinstance(v, UUID):
             return v
-        elif isinstance(v, str):
+        if isinstance(v, str):
             v_str = v.strip()
             if not v_str:
                 from omnibase_core.models.common.model_error_context import (
@@ -182,9 +182,9 @@ class ModelCompensationPlan(BaseModel):
                     details=ModelErrorContext.with_context(
                         {
                             "onex_principle": ModelSchemaValue.from_value(
-                                "Strong types only"
-                            )
-                        }
+                                "Strong types only",
+                            ),
+                        },
                     ),
                 )
 
@@ -206,9 +206,9 @@ class ModelCompensationPlan(BaseModel):
                         {
                             "plan_id": ModelSchemaValue.from_value(v_str),
                             "onex_principle": ModelSchemaValue.from_value(
-                                "Strong validation for identifiers"
+                                "Strong validation for identifiers",
                             ),
-                        }
+                        },
                     ),
                 )
 
@@ -242,9 +242,9 @@ class ModelCompensationPlan(BaseModel):
                         {
                             "action_id": ModelSchemaValue.from_value(action_id),
                             "onex_principle": ModelSchemaValue.from_value(
-                                "Strong validation for action identifiers"
+                                "Strong validation for action identifiers",
                             ),
-                        }
+                        },
                     ),
                 )
 
@@ -282,12 +282,12 @@ class ModelCompensationPlan(BaseModel):
                         details=ModelErrorContext.with_context(
                             {
                                 "dependency_plan_id": ModelSchemaValue.from_value(
-                                    plan_id_str
+                                    plan_id_str,
                                 ),
                                 "onex_principle": ModelSchemaValue.from_value(
-                                    "Strong validation for plan dependencies"
+                                    "Strong validation for plan dependencies",
                                 ),
-                            }
+                            },
                         ),
                     )
             # Note: else clause removed as it's unreachable due to type annotation UUID | str

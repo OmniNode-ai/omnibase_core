@@ -7,11 +7,9 @@ Part of the FSM Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
-
-from omnibase_core.core.type_constraints import PrimitiveValueType
 
 
 class ModelActionConfigValue(BaseModel):
@@ -49,7 +47,7 @@ class ModelActionConfigValue(BaseModel):
         if value_type == "scalar" and field_name == "scalar_value":
             if v is None:
                 raise ValueError(
-                    "scalar_value must be provided when value_type='scalar'"
+                    "scalar_value must be provided when value_type='scalar'",
                 )
         elif value_type == "scalar" and field_name == "list_value":
             if v is not None:
@@ -67,10 +65,9 @@ class ModelActionConfigValue(BaseModel):
         """Get the actual value based on the value type."""
         if self.value_type == "scalar":
             return self.scalar_value or ""
-        elif self.value_type == "list":
+        if self.value_type == "list":
             return self.list_value or []
-        else:
-            raise ValueError(f"Invalid value_type: {self.value_type}")
+        raise ValueError(f"Invalid value_type: {self.value_type}")
 
 
 class ModelFSMTransitionAction(BaseModel):

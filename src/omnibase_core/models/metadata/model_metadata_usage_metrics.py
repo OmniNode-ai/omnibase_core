@@ -5,15 +5,12 @@ Metadata usage metrics model for tracking node performance.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     BasicValueType,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
 )
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -122,9 +119,9 @@ class ModelMetadataUsageMetrics(BaseModel):
             if hasattr(self, field):
                 value = getattr(self, field)
                 if value is not None:
-                    if field == "tags" and isinstance(value, list):
-                        metadata[field] = value  # type: ignore[literal-required]
-                    elif field == "metadata" and isinstance(value, dict):
+                    if (field == "tags" and isinstance(value, list)) or (
+                        field == "metadata" and isinstance(value, dict)
+                    ):
                         metadata[field] = value  # type: ignore[literal-required]
                     else:
                         metadata[field] = str(value)  # type: ignore[literal-required]

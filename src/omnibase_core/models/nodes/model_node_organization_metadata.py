@@ -12,12 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
@@ -44,7 +38,8 @@ class ModelNodeOrganizationMetadata(BaseModel):
         description="Node capabilities",
     )
     categories: list[EnumCategory] = Field(
-        default_factory=list, description="Node categories"
+        default_factory=list,
+        description="Node categories",
     )
 
     # Tags and classification (1 field)

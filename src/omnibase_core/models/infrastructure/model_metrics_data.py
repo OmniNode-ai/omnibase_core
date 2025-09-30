@@ -14,7 +14,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -120,7 +119,7 @@ class ModelMetricsData(BaseModel):
         else:
             self.collection_id = None
         self.collection_display_name = ModelSchemaValue.from_value(
-            value if value else ""
+            value if value else "",
         )
 
     model_config = {

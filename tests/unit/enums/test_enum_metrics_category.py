@@ -4,8 +4,6 @@ Test cases for EnumMetricsCategory.
 Tests the metrics category enumeration.
 """
 
-import pytest
-
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 
 

@@ -1,7 +1,8 @@
 """
 Omnibase Core - ONEX Four-Node Architecture Implementation (OPTIMIZED)
 
-PERFORMANCE FIX: This version removes package-level imports that cause 453ms+ import penalty.
+PERFORMANCE FIX: This version removes package-level imports that cause
+453ms+ import penalty.
 
 Main module for the omnibase_core package following ONEX standards.
 
@@ -40,7 +41,8 @@ import-time penalties. This reduces package import time from 453ms to <5ms.
 # NO PACKAGE-LEVEL IMPORTS - This is the key fix!
 # All validation imports moved to lazy functions to eliminate import cascade
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .validation.validation_utils import ValidationResult
@@ -73,11 +75,11 @@ def get_validation_tools() -> tuple[
     )
 
 
-def get_validation_suite() -> (
-    tuple[
-        type["ValidationResult"], type, Callable[[str], dict[str, "ValidationResult"]]
-    ]
-):
+def get_validation_suite() -> tuple[
+    type["ValidationResult"],
+    type,
+    Callable[[str], dict[str, "ValidationResult"]],
+]:
     """
     Lazy load complete validation suite.
 
@@ -122,8 +124,8 @@ def get_all_validation() -> dict[str, object]:
 
 
 __all__ = [
+    "get_all_validation",
+    "get_validation_suite",
     # Lazy loading functions
     "get_validation_tools",
-    "get_validation_suite",
-    "get_all_validation",
 ]

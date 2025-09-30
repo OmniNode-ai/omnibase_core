@@ -14,12 +14,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
@@ -207,4 +201,4 @@ class ModelNodeCoreInfo(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelNodeCoreInfo", "ModelCoreSummary"]
+__all__ = ["ModelCoreSummary", "ModelNodeCoreInfo"]

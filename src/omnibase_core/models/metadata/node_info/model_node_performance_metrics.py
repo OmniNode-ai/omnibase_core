@@ -11,12 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
-
 from .model_node_performance_summary import ModelNodePerformanceSummary
 
 
@@ -97,12 +91,11 @@ class ModelNodePerformanceMetrics(BaseModel):
 
         if self.average_execution_time_ms <= 100.0:
             return "Fast"
-        elif self.average_execution_time_ms <= 500.0:
+        if self.average_execution_time_ms <= 500.0:
             return "Moderate"
-        elif self.average_execution_time_ms <= 1000.0:
+        if self.average_execution_time_ms <= 1000.0:
             return "Slow"
-        else:
-            return "Very Slow"
+        return "Very Slow"
 
     def get_reliability_level(self) -> str:
         """Get descriptive reliability level."""
@@ -111,25 +104,23 @@ class ModelNodePerformanceMetrics(BaseModel):
 
         if self.success_rate >= 0.99:
             return "Excellent"
-        elif self.success_rate >= 0.95:
+        if self.success_rate >= 0.95:
             return "Good"
-        elif self.success_rate >= 0.90:
+        if self.success_rate >= 0.90:
             return "Fair"
-        elif self.success_rate >= 0.80:
+        if self.success_rate >= 0.80:
             return "Poor"
-        else:
-            return "Unreliable"
+        return "Unreliable"
 
     def get_memory_usage_level(self) -> str:
         """Get descriptive memory usage level."""
         if self.memory_usage_mb <= 10.0:
             return "Low"
-        elif self.memory_usage_mb <= 50.0:
+        if self.memory_usage_mb <= 50.0:
             return "Moderate"
-        elif self.memory_usage_mb <= 100.0:
+        if self.memory_usage_mb <= 100.0:
             return "High"
-        else:
-            return "Very High"
+        return "Very High"
 
     def calculate_performance_score(self) -> float:
         """Calculate composite performance score (0-100)."""
@@ -211,8 +202,7 @@ class ModelNodePerformanceMetrics(BaseModel):
             self.error_rate = 1.0 - self.success_rate
 
         # Update memory usage (peak)
-        if memory_usage_mb > self.memory_usage_mb:
-            self.memory_usage_mb = memory_usage_mb
+        self.memory_usage_mb = max(memory_usage_mb, self.memory_usage_mb)
 
         self.usage_count += 1
 

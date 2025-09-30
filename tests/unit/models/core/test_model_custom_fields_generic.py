@@ -156,7 +156,7 @@ class TestModelCustomFieldsAccessorGeneric:
 
         # Test JSON deserialization
         restored = ModelCustomFieldsAccessor[dict[str, Any]].model_validate_json(
-            json_str
+            json_str,
         )
         # Note: dict gets converted to string as fallback
         assert restored.get_field("config") == "{'nested': 'value'}"

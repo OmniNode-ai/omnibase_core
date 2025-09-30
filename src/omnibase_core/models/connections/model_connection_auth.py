@@ -12,7 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, field_serializer
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 
 

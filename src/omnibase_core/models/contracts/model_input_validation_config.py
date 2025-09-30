@@ -7,8 +7,6 @@ constraints, and transformation logic for input data processing.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 

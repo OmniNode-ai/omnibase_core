@@ -22,7 +22,8 @@ class ModelWorkflowInstance(BaseModel):
     """A workflow execution instance."""
 
     workflow_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the workflow instance"
+        default_factory=uuid4,
+        description="Unique identifier for the workflow instance",
     )
 
     workflow_name: str = Field(..., description="Name of the workflow")
@@ -33,19 +34,23 @@ class ModelWorkflowInstance(BaseModel):
     )
 
     created_timestamp: datetime = Field(
-        ..., description="When the workflow instance was created"
+        ...,
+        description="When the workflow instance was created",
     )
 
     status: EnumWorkflowStatus = Field(
-        ..., description="Current status of the workflow"
+        ...,
+        description="Current status of the workflow",
     )
 
     input_parameters: StructuredData = Field(
-        default_factory=dict, description="Input parameters for the workflow"
+        default_factory=dict,
+        description="Input parameters for the workflow",
     )
 
     execution_context: StructuredData = Field(
-        default_factory=dict, description="Execution context for the workflow"
+        default_factory=dict,
+        description="Execution context for the workflow",
     )
 
     model_config = {

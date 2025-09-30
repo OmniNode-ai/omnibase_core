@@ -10,9 +10,7 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, assert_never
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -46,7 +44,6 @@ from omnibase_core.models.utils.model_validation_rules_converter import (
 
 # Import configuration models from individual files
 from .model_algorithm_config import ModelAlgorithmConfig
-from .model_caching_config import ModelCachingConfig
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
@@ -74,33 +71,39 @@ class ModelContractCompute(ModelContractBase):
 
         version = data_dict.pop("version", None)
         assert isinstance(
-            version, ModelSemVer
+            version,
+            ModelSemVer,
         ), f"version must be ModelSemVer, got {type(version)}"
 
         description = data_dict.pop("description", None)
         assert isinstance(
-            description, str
+            description,
+            str,
         ), f"description must be str, got {type(description)}"
 
         node_type = data_dict.pop("node_type", None)
         assert isinstance(
-            node_type, EnumNodeType
+            node_type,
+            EnumNodeType,
         ), f"node_type must be EnumNodeType, got {type(node_type)}"
 
         input_model = data_dict.pop("input_model", None)
         assert isinstance(
-            input_model, str
+            input_model,
+            str,
         ), f"input_model must be str, got {type(input_model)}"
 
         output_model = data_dict.pop("output_model", None)
         assert isinstance(
-            output_model, str
+            output_model,
+            str,
         ), f"output_model must be str, got {type(output_model)}"
 
         # Optional fields with type validation
         performance = data_dict.pop("performance", None)
         if performance is not None and not isinstance(
-            performance, ModelPerformanceRequirements
+            performance,
+            ModelPerformanceRequirements,
         ):
             performance = ModelPerformanceRequirements()
 
@@ -114,13 +117,15 @@ class ModelContractCompute(ModelContractBase):
 
         protocol_interfaces = data_dict.pop("protocol_interfaces", None)
         if protocol_interfaces is not None and not isinstance(
-            protocol_interfaces, list
+            protocol_interfaces,
+            list,
         ):
             protocol_interfaces = []
 
         validation_rules = data_dict.pop("validation_rules", None)
         if validation_rules is not None and not isinstance(
-            validation_rules, ModelValidationRules
+            validation_rules,
+            ModelValidationRules,
         ):
             validation_rules = ModelValidationRules()
 
@@ -130,7 +135,8 @@ class ModelContractCompute(ModelContractBase):
 
         documentation_url = data_dict.pop("documentation_url", None)
         if documentation_url is not None and not isinstance(
-            documentation_url, (str, type(None))
+            documentation_url,
+            (str, type(None)),
         ):
             documentation_url = None
 
@@ -163,9 +169,9 @@ class ModelContractCompute(ModelContractBase):
         """Validate and convert architecture type to base node type."""
         if isinstance(v, EnumNodeArchitectureType):
             return EnumNodeType(v.value)  # Both have "compute" value
-        elif isinstance(v, EnumNodeType):
+        if isinstance(v, EnumNodeType):
             return v
-        elif isinstance(v, str):
+        if isinstance(v, str):
             try:
                 return EnumNodeType(v)
             except ValueError:
@@ -176,9 +182,9 @@ class ModelContractCompute(ModelContractBase):
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         else:
@@ -189,9 +195,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -352,7 +358,9 @@ class ModelContractCompute(ModelContractBase):
 
         # Validate subcontract constraints using shared utility
         ModelSubcontractConstraintValidator.validate_node_subcontract_constraints(
-            "compute", self.model_dump(), original_contract_data
+            "compute",
+            self.model_dump(),
+            original_contract_data,
         )
 
     def _validate_compute_algorithm_config(self) -> None:
@@ -366,9 +374,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -387,9 +395,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -407,9 +415,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -423,9 +431,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
 
@@ -444,9 +452,9 @@ class ModelContractCompute(ModelContractBase):
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
                                 "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation"
+                                    "model_validation",
                                 ),
-                            }
+                            },
                         ),
                     )
 
@@ -466,9 +474,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             )
         return v
@@ -527,9 +535,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e
         except yaml.YAMLError as e:
@@ -540,9 +548,9 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e
         except Exception as e:
@@ -553,8 +561,8 @@ class ModelContractCompute(ModelContractBase):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "model_validation"
+                            "model_validation",
                         ),
-                    }
+                    },
                 ),
             ) from e

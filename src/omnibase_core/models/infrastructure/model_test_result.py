@@ -12,7 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -72,7 +71,7 @@ class ModelTestResult(BaseModel):
             passed=passed,
             duration_ms=duration_ms,
             error_message=ModelSchemaValue.from_value(
-                error_message if error_message else ""
+                error_message if error_message else "",
             ),
             details=ModelSchemaValue.from_value(details if details else ""),
         )

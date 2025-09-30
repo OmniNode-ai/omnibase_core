@@ -8,16 +8,13 @@ performance tracking and health monitoring.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.type_constraints import (
     BasicValueType,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
 )
 from omnibase_core.enums.enum_collection_purpose import EnumCollectionPurpose
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -32,7 +29,7 @@ from .model_metadata_value import ModelMetadataValue
 from .model_semver import ModelSemVer
 
 
-def _create_default_metrics_data() -> "ModelMetricsData":
+def _create_default_metrics_data() -> ModelMetricsData:
     """Create default ModelMetricsData with proper typing."""
     return ModelMetricsData(
         collection_id=None,
@@ -332,9 +329,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
             if hasattr(self, field):
                 value = getattr(self, field)
                 if value is not None:
-                    if field == "tags" and isinstance(value, list):
-                        metadata[field] = value  # type: ignore[literal-required]
-                    elif field == "metadata" and isinstance(value, dict):
+                    if (field == "tags" and isinstance(value, list)) or (
+                        field == "metadata" and isinstance(value, dict)
+                    ):
                         metadata[field] = value  # type: ignore[literal-required]
                     else:
                         metadata[field] = str(value)  # type: ignore[literal-required]

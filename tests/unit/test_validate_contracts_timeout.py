@@ -1,5 +1,4 @@
 import importlib.util
-import signal
 from pathlib import Path
 
 import pytest
@@ -7,7 +6,8 @@ import pytest
 
 def import_module_from_path(path: Path):
     spec = importlib.util.spec_from_file_location(
-        "validate_contracts_module", str(path)
+        "validate_contracts_module",
+        str(path),
     )
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)

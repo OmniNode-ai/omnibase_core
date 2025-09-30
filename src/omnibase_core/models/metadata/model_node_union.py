@@ -10,11 +10,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.type_constraints import (
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -35,7 +30,7 @@ class ModelNodeUnion(BaseModel):
     """
 
     node_type: EnumNodeUnionType = Field(
-        description="Type discriminator for node value"
+        description="Type discriminator for node value",
     )
 
     # Node storage (only one should be populated)
@@ -43,7 +38,7 @@ class ModelNodeUnion(BaseModel):
     function_node_data: ModelFunctionNodeData | None = None
 
     @model_validator(mode="after")
-    def validate_single_node(self) -> "ModelNodeUnion":
+    def validate_single_node(self) -> ModelNodeUnion:
         """Ensure only one node value is set based on type discriminator."""
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
@@ -71,17 +66,19 @@ class ModelNodeUnion(BaseModel):
         return self
 
     @classmethod
-    def from_function_node(cls, node: ModelFunctionNode) -> "ModelNodeUnion":
+    def from_function_node(cls, node: ModelFunctionNode) -> ModelNodeUnion:
         """Create union from function node."""
         return cls(node_type=EnumNodeUnionType.FUNCTION_NODE, function_node=node)
 
     @classmethod
     def from_function_node_data(
-        cls, node_data: ModelFunctionNodeData
-    ) -> "ModelNodeUnion":
+        cls,
+        node_data: ModelFunctionNodeData,
+    ) -> ModelNodeUnion:
         """Create union from function node data."""
         return cls(
-            node_type=EnumNodeUnionType.FUNCTION_NODE_DATA, function_node_data=node_data
+            node_type=EnumNodeUnionType.FUNCTION_NODE_DATA,
+            function_node_data=node_data,
         )
 
     def get_node(self) -> ModelFunctionNode | ModelFunctionNodeData:
@@ -112,18 +109,17 @@ class ModelNodeUnion(BaseModel):
                     message="Invalid state: function_node is None but node_type is FUNCTION_NODE",
                 )
             return self.function_node
-        elif self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
+        if self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node_data is None but node_type is FUNCTION_NODE_DATA",
                 )
             return self.function_node_data
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unknown node_type: {self.node_type}",
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unknown node_type: {self.node_type}",
+        )
 
     model_config = {
         "extra": "ignore",

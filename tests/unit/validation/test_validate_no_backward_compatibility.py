@@ -10,7 +10,6 @@ Tests all aspects of the BackwardCompatibilityDetector including:
 - CLI interface and argument parsing
 """
 
-import ast
 import importlib.util
 import shutil
 
@@ -18,12 +17,13 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation")
+    0,
+    str(Path(__file__).parent.parent.parent.parent / "scripts" / "validation"),
 )
 
 # Import the backward compatibility module using importlib
@@ -34,7 +34,8 @@ script_path = (
     / "validate-no-backward-compatibility.py"
 )
 spec = importlib.util.spec_from_file_location(
-    "validate_no_backward_compatibility", script_path
+    "validate_no_backward_compatibility",
+    script_path,
 )
 validate_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(validate_module)
@@ -527,7 +528,7 @@ class TestValidateAllFiles:
 def process_legacy(data: dict) -> dict:
     """Process data for backward compatibility."""
     return data
-'''
+''',
         )
 
         files = [valid_file, compat_file]
@@ -599,7 +600,8 @@ class TestCLIInterface:
         test_file.write_text("print('test')")
 
         with patch(
-            "sys.argv", ["validate-no-backward-compatibility.py", str(test_file)]
+            "sys.argv",
+            ["validate-no-backward-compatibility.py", str(test_file)],
         ):
             result = main()
             assert result == 0  # Should succeed
@@ -623,11 +625,12 @@ class TestCLIInterface:
 def process_legacy_data(data: dict) -> dict:
     """Process data for backward compatibility."""
     return data
-'''
+''',
         )
 
         with patch(
-            "sys.argv", ["validate-no-backward-compatibility.py", str(compat_file)]
+            "sys.argv",
+            ["validate-no-backward-compatibility.py", str(compat_file)],
         ):
             result = main()
             assert result == 1  # Should fail

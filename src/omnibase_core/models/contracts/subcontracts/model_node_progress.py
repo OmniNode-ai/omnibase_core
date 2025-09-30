@@ -15,13 +15,17 @@ class ModelNodeProgress(BaseModel):
     """Progress information for a single node."""
 
     node_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the node"
+        default_factory=uuid4,
+        description="Unique identifier for the node",
     )
 
     node_type: EnumNodeType = Field(..., description="Type of the node")
 
     progress_percent: float = Field(
-        ..., description="Progress percentage for this node", ge=0.0, le=100.0
+        ...,
+        description="Progress percentage for this node",
+        ge=0.0,
+        le=100.0,
     )
 
     status: str = Field(..., description="Current status of the node")

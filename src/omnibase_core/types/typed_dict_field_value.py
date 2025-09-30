@@ -5,14 +5,7 @@ This supports the field accessor pattern by providing strong typing
 for field values without resorting to Any type usage.
 """
 
-from typing import Any, TypedDict
-
-from omnibase_core.core.type_constraints import (
-    Configurable,
-    Nameable,
-    ProtocolValidatable,
-    Serializable,
-)
+from typing import TypedDict
 
 
 class TypedDictFieldValue(TypedDict, total=False):

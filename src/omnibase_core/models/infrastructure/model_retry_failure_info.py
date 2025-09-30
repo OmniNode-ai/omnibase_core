@@ -7,12 +7,10 @@ with structured validation and proper type handling for retry execution failures
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import Configurable
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -55,7 +53,7 @@ class ModelRetryFailureInfo(BaseModel):
         return cls(
             error_message=ModelSchemaValue.from_value(last_error if last_error else ""),
             last_status_code=ModelSchemaValue.from_value(
-                last_status_code if last_status_code else 0
+                last_status_code if last_status_code else 0,
             ),
             attempts_made=attempts_made,
         )

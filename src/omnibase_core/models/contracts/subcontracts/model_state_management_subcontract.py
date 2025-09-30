@@ -14,7 +14,6 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
@@ -212,9 +211,9 @@ class ModelStateManagementSubcontract(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         return v
@@ -233,9 +232,9 @@ class ModelStateManagementSubcontract(BaseModel):
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
                             "validation_context": ModelSchemaValue.from_value(
-                                "model_validation"
+                                "model_validation",
                             ),
-                        }
+                        },
                     ),
                 )
         return v
