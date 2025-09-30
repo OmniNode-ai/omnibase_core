@@ -26,7 +26,7 @@ class TestModelValidationContainer:
         assert container.get_error_count() == 0
         assert container.get_critical_error_count() == 0
         assert container.get_warning_count() == 0
-        assert container.is_valid()
+        assert container.validate_instance()
         assert container.get_error_summary() == "No validation issues"
 
     def test_add_error(self):
@@ -36,7 +36,7 @@ class TestModelValidationContainer:
         container.add_error("Test error message")
         assert container.has_errors()
         assert container.get_error_count() == 1
-        assert not container.is_valid()
+        assert not container.validate_instance()
 
         container.add_error(
             "Another error",
@@ -68,7 +68,7 @@ class TestModelValidationContainer:
         container.add_warning("Warning message")
         assert container.has_warnings()
         assert container.get_warning_count() == 1
-        assert container.is_valid()  # Warnings don't affect validity
+        assert container.validate_instance()  # Warnings don't affect validity
 
         # Test deduplication
         container.add_warning("Warning message")
@@ -91,7 +91,7 @@ class TestModelValidationContainer:
         assert container.get_error_count() == 2
         assert container.get_critical_error_count() == 1
         assert container.get_warning_count() == 1
-        assert not container.is_valid()
+        assert not container.validate_instance()
 
         summary = container.get_error_summary()
         assert "2 errors" in summary

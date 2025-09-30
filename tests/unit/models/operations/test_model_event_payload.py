@@ -2,7 +2,7 @@
 Tests for ModelEventPayload structure.
 
 Validates event payload functionality including data handling, context management,
-serialization, and ONEX strong typing compliance.
+serialization, and ONEX strong typing compliance with discriminated union structure.
 """
 
 import json
@@ -10,259 +10,351 @@ import json
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.operations.model_event_payload import ModelEventPayload
+from omnibase_core.models.operations.model_event_payload import (
+    ModelErrorEventData,
+    ModelEventPayload,
+    ModelSystemEventData,
+    ModelUserEventData,
+    ModelWorkflowEventData,
+)
 
 
 class TestModelEventPayload:
-    """Test basic event payload functionality."""
+    """Test basic event payload functionality with discriminated unions."""
 
-    def test_default_creation(self):
-        """Test creating event payload with default values."""
-        payload = ModelEventPayload()
-
-        assert payload.event_data == {}
-        assert payload.context == {}
-        assert payload.attributes == {}
-        assert payload.source_info == {}
-        assert payload.routing_info == {}
-
-    def test_creation_with_data(self):
-        """Test creating event payload with initial data."""
-        event_data = {
-            "user_id": ModelSchemaValue.from_value(12345),
-            "action": ModelSchemaValue.from_value("user_login"),
-            "timestamp": ModelSchemaValue.from_value("2024-01-01T12:00:00Z"),
-        }
-
-        context = {
-            "session_id": "abc123",
-            "request_id": "req-456",
-            "user_agent": "Mozilla/5.0",
-        }
-
-        attributes = {
-            "severity": "info",
-            "category": "authentication",
-            "priority": "high",
-        }
-
-        source_info = {
-            "service": "auth-service",
-            "version": "1.2.3",
-            "instance": "auth-01",
-        }
-
-        routing_info = {
-            "destination": "user-analytics",
-            "routing_key": "user.login",
-            "exchange": "events",
-        }
+    def test_system_event_creation(self):
+        """Test creating system event payload."""
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="auth-service",
+            severity_level="info",
+        )
 
         payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
             event_data=event_data,
-            context=context,
-            attributes=attributes,
-            source_info=source_info,
-            routing_info=routing_info,
         )
 
-        assert payload.event_data["user_id"].to_value() == 12345
-        assert payload.event_data["action"].to_value() == "user_login"
-        assert payload.context["session_id"] == "abc123"
-        assert payload.attributes["severity"] == "info"
-        assert payload.source_info["service"] == "auth-service"
-        assert payload.routing_info["destination"] == "user-analytics"
+        assert payload.event_type == EnumEventType.SYSTEM
+        assert payload.event_data.system_component == "auth-service"
+        assert payload.event_data.severity_level == "info"
 
-    def test_event_data_with_various_types(self):
-        """Test event data with various ModelSchemaValue types."""
-        payload = ModelEventPayload()
-
-        # Add different types of event data
-        payload.event_data["string_value"] = ModelSchemaValue.from_value("test_string")
-        payload.event_data["int_value"] = ModelSchemaValue.from_value(42)
-        payload.event_data["float_value"] = ModelSchemaValue.from_value(3.14159)
-        payload.event_data["bool_value"] = ModelSchemaValue.from_value(True)
-        payload.event_data["list_value"] = ModelSchemaValue.from_value(
-            ["item1", "item2", "item3"],
+    def test_user_event_creation(self):
+        """Test creating user event payload."""
+        event_data = ModelUserEventData(
+            event_type=EnumEventType.USER,
+            user_action="login",
+            session_context={"session_id": "abc123"},
         )
-        payload.event_data["dict_value"] = ModelSchemaValue.from_value(
-            {"nested": "data"},
+
+        payload = ModelEventPayload(
+            event_type=EnumEventType.USER,
+            event_data=event_data,
         )
-        payload.event_data["none_value"] = ModelSchemaValue.from_value(None)
 
-        assert payload.event_data["string_value"].to_value() == "test_string"
-        assert payload.event_data["int_value"].to_value() == 42
-        assert payload.event_data["float_value"].to_value() == 3.14159
-        assert payload.event_data["bool_value"].to_value() is True
-        assert payload.event_data["list_value"].to_value() == [
-            "item1",
-            "item2",
-            "item3",
-        ]
-        assert payload.event_data["dict_value"].to_value() == {"nested": "data"}
-        assert payload.event_data["none_value"].to_value() is None
+        assert payload.event_type == EnumEventType.USER
+        assert payload.event_data.user_action == "login"
+        assert payload.event_data.session_context["session_id"] == "abc123"
 
-    def test_context_information_management(self):
-        """Test context information handling."""
-        payload = ModelEventPayload()
+    def test_workflow_event_creation(self):
+        """Test creating workflow event payload."""
+        event_data = ModelWorkflowEventData(
+            event_type=EnumEventType.WORKFLOW,
+            workflow_stage="processing",
+            workflow_step="validation",
+            execution_metrics={"duration_ms": 150.5},
+        )
 
-        # Add context information
-        payload.context["request_id"] = "req-123"
-        payload.context["correlation_id"] = "corr-456"
-        payload.context["user_context"] = "authenticated"
-        payload.context["trace_id"] = "trace-789"
+        payload = ModelEventPayload(
+            event_type=EnumEventType.WORKFLOW,
+            event_data=event_data,
+        )
 
-        assert len(payload.context) == 4
-        assert payload.context["request_id"] == "req-123"
-        assert payload.context["correlation_id"] == "corr-456"
-        assert payload.context["user_context"] == "authenticated"
-        assert payload.context["trace_id"] == "trace-789"
+        assert payload.event_type == EnumEventType.WORKFLOW
+        assert payload.event_data.workflow_stage == "processing"
+        assert payload.event_data.execution_metrics["duration_ms"] == 150.5
 
-    def test_attributes_management(self):
-        """Test event attributes handling."""
-        payload = ModelEventPayload()
+    def test_error_event_creation(self):
+        """Test creating error event payload."""
+        event_data = ModelErrorEventData(
+            event_type=EnumEventType.ERROR,
+            error_type="DatabaseError",
+            error_message="Connection timeout",
+            stack_trace="Error at line 42",
+        )
 
-        # Add event attributes
-        payload.attributes["priority"] = "high"
-        payload.attributes["category"] = "business_event"
-        payload.attributes["tags"] = "user,authentication,login"
-        payload.attributes["environment"] = "production"
+        payload = ModelEventPayload(
+            event_type=EnumEventType.ERROR,
+            event_data=event_data,
+        )
 
-        assert payload.attributes["priority"] == "high"
-        assert payload.attributes["category"] == "business_event"
-        assert payload.attributes["tags"] == "user,authentication,login"
-        assert payload.attributes["environment"] == "production"
+        assert payload.event_type == EnumEventType.ERROR
+        assert payload.event_data.error_type == "DatabaseError"
+        assert payload.event_data.error_message == "Connection timeout"
 
-    def test_source_info_tracking(self):
-        """Test source information tracking."""
-        payload = ModelEventPayload()
+    def test_event_data_with_schema_values(self):
+        """Test event data with ModelSchemaValue types."""
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="metrics-service",
+            diagnostic_data={
+                "cpu_usage": ModelSchemaValue.from_value(75.5),
+                "memory_mb": ModelSchemaValue.from_value(2048),
+                "status": ModelSchemaValue.from_value("healthy"),
+            },
+        )
 
-        # Add source information
-        payload.source_info["service_name"] = "user-service"
-        payload.source_info["service_version"] = "2.1.0"
-        payload.source_info["hostname"] = "user-service-01"
-        payload.source_info["pod_name"] = "user-service-deployment-abc123"
-        payload.source_info["namespace"] = "production"
+        payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
+        )
 
-        assert payload.source_info["service_name"] == "user-service"
-        assert payload.source_info["service_version"] == "2.1.0"
-        assert payload.source_info["hostname"] == "user-service-01"
-        assert payload.source_info["pod_name"] == "user-service-deployment-abc123"
-        assert payload.source_info["namespace"] == "production"
+        assert payload.event_data.diagnostic_data["cpu_usage"].to_value() == 75.5
+        assert payload.event_data.diagnostic_data["memory_mb"].to_value() == 2048
+        assert payload.event_data.diagnostic_data["status"].to_value() == "healthy"
+
+    def test_context_information_in_event_data(self):
+        """Test context information handling within event data."""
+        event_data = ModelUserEventData(
+            event_type=EnumEventType.USER,
+            user_action="profile_update",
+        )
+        # Context is part of the event data base class
+        event_data.context.environment = "production"
+
+        payload = ModelEventPayload(
+            event_type=EnumEventType.USER,
+            event_data=event_data,
+        )
+
+        assert payload.event_data.context.environment == "production"
+
+    def test_attributes_in_event_data(self):
+        """Test attributes handling within event data."""
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="cache-service",
+        )
+        event_data.attributes.category = "performance"
+        event_data.attributes.importance = "high"
+        event_data.attributes.tags = ["cache", "performance", "monitoring"]
+
+        payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
+        )
+
+        assert payload.event_data.attributes.category == "performance"
+        assert payload.event_data.attributes.importance == "high"
+        assert len(payload.event_data.attributes.tags) == 3
+
+    def test_source_info_in_event_data(self):
+        """Test source information tracking within event data."""
+        event_data = ModelUserEventData(
+            event_type=EnumEventType.USER,
+            user_action="checkout",
+        )
+        event_data.source_info.service_name = "payment-service"
+        event_data.source_info.host_name = "payment-01"
+
+        payload = ModelEventPayload(
+            event_type=EnumEventType.USER,
+            event_data=event_data,
+        )
+
+        assert payload.event_data.source_info.service_name == "payment-service"
+        assert payload.event_data.source_info.host_name == "payment-01"
 
     def test_routing_info_management(self):
-        """Test routing information management."""
-        payload = ModelEventPayload()
+        """Test structured routing information."""
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="notification-service",
+        )
 
-        # Add routing information
-        payload.routing_info["exchange"] = "events_exchange"
-        payload.routing_info["routing_key"] = "user.profile.updated"
-        payload.routing_info["queue"] = "analytics_queue"
-        payload.routing_info["delivery_mode"] = "persistent"
+        payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
+        )
 
-        assert payload.routing_info["exchange"] == "events_exchange"
-        assert payload.routing_info["routing_key"] == "user.profile.updated"
-        assert payload.routing_info["queue"] == "analytics_queue"
-        assert payload.routing_info["delivery_mode"] == "persistent"
+        # Update routing info
+        payload.routing_info.target_queue = "notifications"
+        payload.routing_info.routing_key = "system.notification"
+        payload.routing_info.priority = "high"
+        payload.routing_info.broadcast = True
+
+        assert payload.routing_info.target_queue == "notifications"
+        assert payload.routing_info.routing_key == "system.notification"
+        assert payload.routing_info.priority == "high"
+        assert payload.routing_info.broadcast is True
 
 
 class TestModelEventPayloadSerialization:
-    """Test serialization and deserialization capabilities."""
+    """Test serialization and deserialization with discriminated unions."""
 
-    def test_json_serialization(self):
-        """Test JSON serialization of event payload."""
-        payload = ModelEventPayload(
-            event_data={
-                "user_id": ModelSchemaValue.from_value(12345),
-                "action": ModelSchemaValue.from_value("profile_update"),
+    def test_system_event_serialization(self):
+        """Test JSON serialization of system event."""
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="database-monitor",
+            severity_level="warning",
+            diagnostic_data={
+                "connections": ModelSchemaValue.from_value(95),
+                "max_connections": ModelSchemaValue.from_value(100),
             },
-            context={"session_id": "sess_123", "ip_address": "192.168.1.100"},
-            attributes={"priority": "medium", "category": "user_event"},
-            source_info={"service": "profile-service", "version": "1.0.0"},
-            routing_info={"destination": "audit-service", "routing_key": "user.audit"},
         )
 
-        # Serialize to dictionary
+        payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
+        )
+
         serialized = payload.model_dump()
 
-        assert "event_data" in serialized
-        assert "context" in serialized
-        assert "attributes" in serialized
-        assert "source_info" in serialized
-        assert "routing_info" in serialized
+        assert serialized["event_type"] == EnumEventType.SYSTEM
+        assert serialized["event_data"]["system_component"] == "database-monitor"
+        assert serialized["event_data"]["severity_level"] == "warning"
 
-        # Check event_data serialization (ModelSchemaValue objects)
-        assert serialized["event_data"]["user_id"]["number_value"]["value"] == 12345.0
-        assert serialized["event_data"]["action"]["string_value"] == "profile_update"
+    def test_user_event_serialization(self):
+        """Test JSON serialization of user event."""
+        event_data = ModelUserEventData(
+            event_type=EnumEventType.USER,
+            user_action="password_reset",
+            session_context={"reset_token": "token123"},
+            request_metadata={"ip": "192.168.1.1"},
+        )
 
-        # Check other fields (simple strings)
-        assert serialized["context"]["session_id"] == "sess_123"
-        assert serialized["attributes"]["priority"] == "medium"
-        assert serialized["source_info"]["service"] == "profile-service"
-        assert serialized["routing_info"]["destination"] == "audit-service"
+        payload = ModelEventPayload(
+            event_type=EnumEventType.USER,
+            event_data=event_data,
+        )
 
-    def test_json_deserialization(self):
-        """Test JSON deserialization of event payload."""
+        serialized = payload.model_dump()
+
+        assert serialized["event_type"] == EnumEventType.USER
+        assert serialized["event_data"]["user_action"] == "password_reset"
+        assert serialized["event_data"]["session_context"]["reset_token"] == "token123"
+
+    def test_workflow_event_deserialization(self):
+        """Test JSON deserialization of workflow event."""
         json_data = {
+            "event_type": "workflow",
             "event_data": {
-                "operation": {
-                    "string_value": "delete_user",
-                    "number_value": None,
-                    "boolean_value": None,
-                    "null_value": None,
-                    "array_value": None,
-                    "object_value": None,
-                    "value_type": "string",
+                "event_type": "workflow",
+                "workflow_stage": "execution",
+                "workflow_step": "data_processing",
+                "execution_metrics": {"records_processed": 1000, "duration_ms": 5500.0},
+                "state_changes": {},
+                "context": {
+                    "correlation_id": None,
+                    "causation_id": None,
+                    "session_id": None,
+                    "tenant_id": None,
+                    "environment": "production",
+                    "version": {"major": 1, "minor": 0, "patch": 0},
                 },
-                "target_id": {
-                    "string_value": None,
-                    "number_value": {
-                        "value": 67890.0,
-                        "value_type": "float",
-                        "is_validated": True,
-                        "source": None,
-                    },
-                    "boolean_value": None,
-                    "null_value": None,
-                    "array_value": None,
-                    "object_value": None,
-                    "value_type": "number",
+                "attributes": {
+                    "category": "",
+                    "importance": "medium",
+                    "tags": [],
+                    "custom_attributes": {},
+                    "classification": "",
+                },
+                "source_info": {
+                    "service_name": "workflow-engine",
+                    "service_version": None,
+                    "host_name": "",
+                    "instance_id": None,
+                    "request_id": None,
+                    "user_agent": "",
                 },
             },
-            "context": {"admin_user": "admin@company.com", "reason": "account_cleanup"},
-            "attributes": {"severity": "high", "requires_approval": "true"},
-            "source_info": {"service": "admin-service", "version": "2.0.0"},
             "routing_info": {
-                "approval_queue": "admin_approvals",
-                "notification_targets": "admin_team",
+                "target_queue": "workflow-events",
+                "routing_key": "workflow.execution",
+                "priority": "normal",
+                "broadcast": False,
+                "retry_routing": True,
+                "dead_letter_queue": "",
             },
         }
 
         payload = ModelEventPayload.model_validate(json_data)
 
-        # Verify event data
-        assert payload.event_data["operation"].to_value() == "delete_user"
-        assert payload.event_data["target_id"].to_value() == 67890
+        assert payload.event_type == EnumEventType.WORKFLOW
+        assert payload.event_data.workflow_stage == "execution"
+        assert payload.event_data.execution_metrics["records_processed"] == 1000
+        assert payload.routing_info.target_queue == "workflow-events"
 
-        # Verify other sections
-        assert payload.context["admin_user"] == "admin@company.com"
-        assert payload.attributes["severity"] == "high"
-        assert payload.source_info["service"] == "admin-service"
-        assert payload.routing_info["approval_queue"] == "admin_approvals"
+    def test_error_event_deserialization(self):
+        """Test JSON deserialization of error event."""
+        json_data = {
+            "event_type": "error",
+            "event_data": {
+                "event_type": "error",
+                "error_type": "ValidationError",
+                "error_message": "Invalid input data",
+                "stack_trace": "Error at validation.py:100",
+                "recovery_actions": ["retry", "manual_review"],
+                "impact_assessment": {"severity": "medium", "users_affected": "1"},
+                "context": {
+                    "correlation_id": None,
+                    "causation_id": None,
+                    "session_id": None,
+                    "tenant_id": None,
+                    "environment": "",
+                    "version": {"major": 1, "minor": 0, "patch": 0},
+                },
+                "attributes": {
+                    "category": "",
+                    "importance": "medium",
+                    "tags": [],
+                    "custom_attributes": {},
+                    "classification": "",
+                },
+                "source_info": {
+                    "service_name": "",
+                    "service_version": None,
+                    "host_name": "",
+                    "instance_id": None,
+                    "request_id": None,
+                    "user_agent": "",
+                },
+            },
+            "routing_info": {
+                "target_queue": "",
+                "routing_key": "",
+                "priority": "normal",
+                "broadcast": False,
+                "retry_routing": True,
+                "dead_letter_queue": "",
+            },
+        }
+
+        payload = ModelEventPayload.model_validate(json_data)
+
+        assert payload.event_type == EnumEventType.ERROR
+        assert payload.event_data.error_type == "ValidationError"
+        assert payload.event_data.error_message == "Invalid input data"
+        assert len(payload.event_data.recovery_actions) == 2
 
     def test_round_trip_serialization(self):
         """Test full round-trip serialization."""
-        original = ModelEventPayload(
-            event_data={
-                "metric_name": ModelSchemaValue.from_value("response_time"),
-                "metric_value": ModelSchemaValue.from_value(150.75),
-                "tags": ModelSchemaValue.from_value(["performance", "api", "prod"]),
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="metrics-collector",
+            severity_level="info",
+            diagnostic_data={
+                "cpu_percent": ModelSchemaValue.from_value(45.2),
+                "memory_gb": ModelSchemaValue.from_value(8.5),
             },
-            context={"environment": "production", "region": "us-west-2"},
-            attributes={"alert_threshold": "200", "measurement_unit": "milliseconds"},
-            source_info={"collector": "prometheus", "scrape_interval": "30s"},
-            routing_info={"metrics_store": "influxdb", "retention_policy": "30d"},
+        )
+
+        original = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
         )
 
         # Serialize to JSON string
@@ -273,78 +365,105 @@ class TestModelEventPayloadSerialization:
         deserialized = ModelEventPayload.model_validate(json_data)
 
         # Verify all fields match
-        assert deserialized.event_data["metric_name"].to_value() == "response_time"
-        assert deserialized.event_data["metric_value"].to_value() == 150.75
-        assert deserialized.event_data["tags"].to_value() == [
-            "performance",
-            "api",
-            "prod",
-        ]
-        assert deserialized.context["environment"] == "production"
-        assert deserialized.attributes["alert_threshold"] == "200"
-        assert deserialized.source_info["collector"] == "prometheus"
-        assert deserialized.routing_info["metrics_store"] == "influxdb"
+        assert deserialized.event_type == original.event_type
+        assert (
+            deserialized.event_data.system_component
+            == original.event_data.system_component
+        )
+        assert (
+            deserialized.event_data.diagnostic_data["cpu_percent"].to_value()
+            == original.event_data.diagnostic_data["cpu_percent"].to_value()
+        )
 
 
 class TestModelEventPayloadValidation:
     """Test validation and error handling."""
 
-    def test_valid_payload_creation(self):
-        """Test that valid payloads are created successfully."""
-        # All fields optional, so empty payload should be valid
-        payload = ModelEventPayload()
+    def test_missing_required_fields(self):
+        """Test validation error for missing required fields."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEventPayload()
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 2
+        assert any(e["loc"] == ("event_type",) for e in errors)
+        assert any(e["loc"] == ("event_data",) for e in errors)
+
+    def test_invalid_event_type(self):
+        """Test validation error for invalid event type."""
+        with pytest.raises(ValidationError):
+            ModelEventPayload(
+                event_type="invalid_type",  # Not a valid EnumEventType
+                event_data=ModelSystemEventData(
+                    event_type=EnumEventType.SYSTEM,
+                    system_component="test",
+                ),
+            )
+
+    def test_mismatched_event_types(self):
+        """Test that mismatched event types are allowed (discriminator uses event_data.event_type)."""
+        # The discriminated union is based on event_data.event_type, so top-level event_type
+        # can differ without raising a validation error
+        payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=ModelUserEventData(
+                event_type=EnumEventType.USER,
+                user_action="login",
+            ),
+        )
+        # Verify payload was created successfully with mismatched types
+        assert payload.event_type == EnumEventType.SYSTEM
+        assert payload.event_data.event_type == EnumEventType.USER
+
+    def test_valid_system_event(self):
+        """Test valid system event creation."""
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="test-component",
+        )
+        payload = ModelEventPayload(
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
+        )
         assert isinstance(payload, ModelEventPayload)
 
-        # Payload with all fields should also be valid
-        payload_full = ModelEventPayload(
-            event_data={"key": ModelSchemaValue.from_value("value")},
-            context={"ctx": "value"},
-            attributes={"attr": "value"},
-            source_info={"src": "value"},
-            routing_info={"route": "value"},
+    def test_valid_user_event(self):
+        """Test valid user event creation."""
+        event_data = ModelUserEventData(
+            event_type=EnumEventType.USER,
+            user_action="test-action",
         )
-        assert isinstance(payload_full, ModelEventPayload)
-
-    def test_invalid_event_data_type(self):
-        """Test validation error for invalid event_data type."""
-        with pytest.raises(ValidationError):
-            # event_data should be dict[str, ModelSchemaValue], not dict[str, str]
-            ModelEventPayload(
-                event_data={
-                    "key": "raw_string_not_schema_value",
-                },  # Should be ModelSchemaValue
-            )
-
-    def test_invalid_context_type(self):
-        """Test validation error for invalid context type."""
-        with pytest.raises(ValidationError):
-            # context should be dict[str, str], not dict[str, int]
-            ModelEventPayload(context={"key": 123})  # Should be string
-
-    def test_invalid_attributes_type(self):
-        """Test validation error for invalid attributes type."""
-        with pytest.raises(ValidationError):
-            # attributes should be dict[str, str]
-            ModelEventPayload(
-                attributes={"key": ["list", "not", "string"]},  # Should be string
-            )
-
-    def test_field_type_validation(self):
-        """Test field type validation for all sections."""
-        # Valid payload
-        valid_payload = ModelEventPayload(
-            event_data={"valid_data": ModelSchemaValue.from_value("test")},
-            context={"valid_context": "string_value"},
-            attributes={"valid_attr": "string_value"},
-            source_info={"valid_source": "string_value"},
-            routing_info={"valid_routing": "string_value"},
+        payload = ModelEventPayload(
+            event_type=EnumEventType.USER,
+            event_data=event_data,
         )
+        assert isinstance(payload, ModelEventPayload)
 
-        assert len(valid_payload.event_data) == 1
-        assert len(valid_payload.context) == 1
-        assert len(valid_payload.attributes) == 1
-        assert len(valid_payload.source_info) == 1
-        assert len(valid_payload.routing_info) == 1
+    def test_valid_workflow_event(self):
+        """Test valid workflow event creation."""
+        event_data = ModelWorkflowEventData(
+            event_type=EnumEventType.WORKFLOW,
+            workflow_stage="test-stage",
+            workflow_step="test-step",
+        )
+        payload = ModelEventPayload(
+            event_type=EnumEventType.WORKFLOW,
+            event_data=event_data,
+        )
+        assert isinstance(payload, ModelEventPayload)
+
+    def test_valid_error_event(self):
+        """Test valid error event creation."""
+        event_data = ModelErrorEventData(
+            event_type=EnumEventType.ERROR,
+            error_type="TestError",
+            error_message="Test error message",
+        )
+        payload = ModelEventPayload(
+            event_type=EnumEventType.ERROR,
+            event_data=event_data,
+        )
+        assert isinstance(payload, ModelEventPayload)
 
 
 class TestModelEventPayloadUsagePatterns:
@@ -352,180 +471,136 @@ class TestModelEventPayloadUsagePatterns:
 
     def test_user_authentication_event(self):
         """Test user authentication event payload pattern."""
-        auth_payload = ModelEventPayload(
-            event_data={
-                "user_id": ModelSchemaValue.from_value("user_12345"),
-                "authentication_method": ModelSchemaValue.from_value("oauth2"),
-                "success": ModelSchemaValue.from_value(True),
-                "attempt_count": ModelSchemaValue.from_value(1),
-                "client_info": ModelSchemaValue.from_value(
-                    {
-                        "client_id": "mobile_app_v2",
-                        "client_version": "2.1.0",
-                        "platform": "ios",
-                    },
-                ),
-            },
-            context={
+        event_data = ModelUserEventData(
+            event_type=EnumEventType.USER,
+            user_action="authentication",
+            session_context={
                 "session_id": "sess_abc123def456",
-                "request_id": "req_789012ghi345",
+                "authentication_method": "oauth2",
+            },
+            request_metadata={
                 "ip_address": "192.168.1.100",
                 "user_agent": "MyApp/2.1.0 (iOS 17.0)",
             },
-            attributes={
-                "event_type": "authentication",
-                "category": "security",
-                "severity": "info",
-                "tags": "auth,mobile,oauth2",
-            },
-            source_info={
-                "service": "authentication-service",
-                "version": "3.2.1",
-                "hostname": "auth-server-01",
-                "environment": "production",
-            },
-            routing_info={
-                "destination_services": "analytics,audit,notification",
-                "routing_key": "user.auth.success",
-                "priority": "normal",
+            authorization_context={
+                "client_id": "mobile_app_v2",
+                "scope": "user:profile user:email",
             },
         )
+        event_data.context.environment = "production"
+        event_data.attributes.category = "security"
+        event_data.attributes.importance = "high"
+        event_data.source_info.service_name = "authentication-service"
+
+        payload = ModelEventPayload(
+            event_type=EnumEventType.USER,
+            event_data=event_data,
+        )
+        payload.routing_info.routing_key = "user.auth.success"
+        payload.routing_info.priority = "high"
 
         # Verify authentication event structure
-        assert auth_payload.event_data["user_id"].to_value() == "user_12345"
-        assert auth_payload.event_data["success"].to_value() is True
-        assert auth_payload.context["ip_address"] == "192.168.1.100"
-        assert auth_payload.attributes["event_type"] == "authentication"
-        assert auth_payload.source_info["service"] == "authentication-service"
-        assert "analytics" in auth_payload.routing_info["destination_services"]
+        assert payload.event_type == EnumEventType.USER
+        assert payload.event_data.user_action == "authentication"
+        assert payload.event_data.session_context["authentication_method"] == "oauth2"
+        assert payload.event_data.context.environment == "production"
+        assert payload.routing_info.routing_key == "user.auth.success"
 
     def test_system_error_event(self):
         """Test system error event payload pattern."""
-        error_payload = ModelEventPayload(
-            event_data={
-                "error_code": ModelSchemaValue.from_value("DB_CONNECTION_TIMEOUT"),
-                "error_message": ModelSchemaValue.from_value(
-                    "Database connection timed out after 30 seconds",
-                ),
-                "stack_trace": ModelSchemaValue.from_value(
-                    "Error at line 42 in database.py",
-                ),
-                "affected_operation": ModelSchemaValue.from_value("user_profile_fetch"),
-                "duration_ms": ModelSchemaValue.from_value(30000),
-            },
-            context={
-                "request_id": "req_error_123",
-                "correlation_id": "corr_error_456",
-                "user_id": "user_affected_789",
-            },
-            attributes={
-                "event_type": "system_error",
+        event_data = ModelErrorEventData(
+            event_type=EnumEventType.ERROR,
+            error_type="DB_CONNECTION_TIMEOUT",
+            error_message="Database connection timed out after 30 seconds",
+            stack_trace="Error at line 42 in database.py\nConnection.connect()",
+            recovery_actions=["retry_connection", "check_db_status", "alert_oncall"],
+            impact_assessment={
                 "severity": "high",
-                "category": "database",
-                "alert_required": "true",
-            },
-            source_info={
-                "service": "user-profile-service",
-                "version": "1.5.2",
-                "hostname": "profile-srv-03",
-                "pod_name": "profile-deployment-xyz789",
-            },
-            routing_info={
-                "alert_manager": "prometheus_alertmanager",
-                "oncall_notification": "enabled",
-                "escalation_policy": "database_errors",
+                "users_affected": "all",
+                "services_impacted": "user-profile,orders",
             },
         )
+        event_data.context.environment = "production"
+        event_data.attributes.category = "database"
+        event_data.attributes.importance = "high"
+        event_data.source_info.service_name = "user-profile-service"
+        event_data.source_info.host_name = "profile-srv-03"
+
+        payload = ModelEventPayload(
+            event_type=EnumEventType.ERROR,
+            event_data=event_data,
+        )
+        payload.routing_info.target_queue = "error-alerts"
+        payload.routing_info.priority = "high"
 
         # Verify error event structure
-        assert (
-            error_payload.event_data["error_code"].to_value() == "DB_CONNECTION_TIMEOUT"
-        )
-        assert error_payload.event_data["duration_ms"].to_value() == 30000
-        assert error_payload.attributes["severity"] == "high"
-        assert error_payload.attributes["alert_required"] == "true"
-        assert error_payload.routing_info["oncall_notification"] == "enabled"
+        assert payload.event_type == EnumEventType.ERROR
+        assert payload.event_data.error_type == "DB_CONNECTION_TIMEOUT"
+        assert payload.event_data.impact_assessment["severity"] == "high"
+        assert len(payload.event_data.recovery_actions) == 3
 
-    def test_business_metrics_event(self):
-        """Test business metrics event payload pattern."""
-        metrics_payload = ModelEventPayload(
-            event_data={
-                "metric_family": ModelSchemaValue.from_value("business_kpis"),
-                "metric_name": ModelSchemaValue.from_value("daily_active_users"),
-                "metric_value": ModelSchemaValue.from_value(15420),
-                "measurement_time": ModelSchemaValue.from_value("2024-01-01T23:59:59Z"),
-                "dimensions": ModelSchemaValue.from_value(
-                    {"region": "us-west", "platform": "web", "user_segment": "premium"},
-                ),
+    def test_workflow_execution_event(self):
+        """Test workflow execution event payload pattern."""
+        event_data = ModelWorkflowEventData(
+            event_type=EnumEventType.WORKFLOW,
+            workflow_stage="processing",
+            workflow_step="data_validation",
+            execution_metrics={
+                "records_processed": 15420,
+                "duration_ms": 5250.5,
+                "success_rate": 98.7,
             },
-            context={
-                "collection_job_id": "daily_metrics_20240101",
-                "data_source": "user_activity_aggregator",
-                "collection_timestamp": "2024-01-02T00:15:00Z",
-            },
-            attributes={
-                "event_type": "business_metrics",
-                "frequency": "daily",
-                "data_quality": "verified",
-                "retention_days": "365",
-            },
-            source_info={
-                "service": "metrics-collector",
-                "version": "4.1.0",
-                "collector_type": "batch_processor",
-            },
-            routing_info={
-                "metrics_store": "timeseries_db",
-                "dashboard_refresh": "enabled",
-                "alert_evaluation": "scheduled",
+            state_changes={
+                "status": ModelSchemaValue.from_value("completed"),
+                "progress": ModelSchemaValue.from_value(100),
             },
         )
+        event_data.context.environment = "production"
+        event_data.attributes.category = "business_workflow"
+        event_data.source_info.service_name = "workflow-engine"
 
-        # Verify metrics event structure
-        assert (
-            metrics_payload.event_data["metric_name"].to_value() == "daily_active_users"
+        payload = ModelEventPayload(
+            event_type=EnumEventType.WORKFLOW,
+            event_data=event_data,
         )
-        assert metrics_payload.event_data["metric_value"].to_value() == 15420
-        assert (
-            metrics_payload.event_data["dimensions"].to_value()["region"] == "us-west"
-        )
-        assert metrics_payload.attributes["retention_days"] == "365"
-        assert metrics_payload.routing_info["metrics_store"] == "timeseries_db"
+        payload.routing_info.target_queue = "workflow-events"
+
+        # Verify workflow event structure
+        assert payload.event_type == EnumEventType.WORKFLOW
+        assert payload.event_data.workflow_stage == "processing"
+        assert payload.event_data.execution_metrics["records_processed"] == 15420
+        assert payload.event_data.state_changes["status"].to_value() == "completed"
 
     def test_event_payload_modification_workflow(self):
         """Test modifying event payload through workflow stages."""
-        # Start with basic event
+        # Start with basic system event
+        event_data = ModelSystemEventData(
+            event_type=EnumEventType.SYSTEM,
+            system_component="order-processor",
+            severity_level="info",
+        )
+
         payload = ModelEventPayload(
-            event_data={"base_event": ModelSchemaValue.from_value("order_created")},
-            context={"initial_context": "basic"},
+            event_type=EnumEventType.SYSTEM,
+            event_data=event_data,
         )
 
-        # Stage 1: Enrich with processing context
-        payload.context["processing_stage"] = "validation"
-        payload.context["processor_id"] = "validator_01"
-        payload.attributes["validation_status"] = "pending"
+        # Stage 1: Add processing context
+        payload.event_data.context.environment = "production"
+        payload.event_data.attributes.category = "order_processing"
 
-        # Stage 2: Add validation results
-        payload.event_data["validation_result"] = ModelSchemaValue.from_value("passed")
-        payload.attributes["validation_status"] = "completed"
-        payload.context["processing_stage"] = "enrichment"
+        # Stage 2: Add diagnostic data
+        payload.event_data.diagnostic_data = {
+            "orders_processed": ModelSchemaValue.from_value(150),
+            "avg_processing_time": ModelSchemaValue.from_value(250.5),
+        }
 
-        # Stage 3: Add enrichment data
-        payload.event_data["customer_tier"] = ModelSchemaValue.from_value("premium")
-        payload.event_data["fulfillment_center"] = ModelSchemaValue.from_value(
-            "west_coast",
-        )
-        payload.context["processing_stage"] = "routing"
-
-        # Stage 4: Add routing information
-        payload.routing_info["fulfillment_queue"] = "premium_orders"
-        payload.routing_info["notification_targets"] = "customer,fulfillment"
-        payload.routing_info["priority"] = "high"
+        # Stage 3: Update routing
+        payload.routing_info.target_queue = "analytics"
+        payload.routing_info.priority = "normal"
 
         # Verify final enriched payload
-        assert payload.event_data["base_event"].to_value() == "order_created"
-        assert payload.event_data["validation_result"].to_value() == "passed"
-        assert payload.event_data["customer_tier"].to_value() == "premium"
-        assert payload.context["processing_stage"] == "routing"
-        assert payload.attributes["validation_status"] == "completed"
-        assert payload.routing_info["priority"] == "high"
+        assert payload.event_data.system_component == "order-processor"
+        assert payload.event_data.context.environment == "production"
+        assert payload.event_data.diagnostic_data["orders_processed"].to_value() == 150
+        assert payload.routing_info.target_queue == "analytics"

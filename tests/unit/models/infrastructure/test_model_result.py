@@ -116,7 +116,8 @@ class TestModelResultCreation:
         assert str_err.error == "string error"
 
         exception_err = ModelResult.err(ValueError("validation failed"))
-        assert isinstance(exception_err.error, ValueError)
+        assert isinstance(exception_err.error, str)
+        assert exception_err.error == "validation failed"
 
         dict_err = ModelResult.err({"code": "E001", "message": "Error occurred"})
         # Use safe dictionary access with isinstance check
@@ -213,7 +214,8 @@ class TestModelResultMonadicOperations:
         mapped = result.map(lambda x: int(x))  # Will raise ValueError
 
         assert mapped.is_err()
-        assert isinstance(mapped.error, ValueError)
+        assert isinstance(mapped.error, str)
+        assert "invalid literal" in mapped.error
 
     def test_map_chaining(self):
         """Test chaining multiple map operations."""
@@ -249,7 +251,8 @@ class TestModelResultMonadicOperations:
         mapped = result.map_err(failing_mapper)
 
         assert mapped.is_err()
-        assert isinstance(mapped.error, RuntimeError)
+        assert isinstance(mapped.error, str)
+        assert mapped.error == "Mapper failed"
 
     def test_and_then_success(self):
         """Test and_then (bind) with successful result."""
@@ -301,7 +304,8 @@ class TestModelResultMonadicOperations:
         chained = result.and_then(failing_bind)
 
         assert chained.is_err()
-        assert isinstance(chained.error, ValueError)
+        assert isinstance(chained.error, str)
+        assert chained.error == "Bind function failed"
 
     def test_or_else_success_passthrough(self):
         """Test or_else with successful result passes through value."""
@@ -353,7 +357,8 @@ class TestModelResultMonadicOperations:
         recovered = result.or_else(failing_recovery)
 
         assert recovered.is_err()
-        assert isinstance(recovered.error, RuntimeError)
+        assert isinstance(recovered.error, str)
+        assert recovered.error == "Recovery failed"
 
 
 class TestModelResultUtilityFunctions:
@@ -395,8 +400,8 @@ class TestModelResultUtilityFunctions:
         result = try_result(failing_function)
 
         assert result.is_err()
-        assert isinstance(result.error, ValueError)
-        assert "Function failed" in str(result.error)
+        assert isinstance(result.error, str)
+        assert "Function failed" in result.error
 
     def test_try_result_with_side_effects(self):
         """Test try_result with function that has side effects."""

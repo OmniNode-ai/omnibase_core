@@ -71,6 +71,7 @@ class EnumSeverityLevel(str, Enum):
     @property
     def numeric_level(self) -> int:
         """Get numeric representation for level comparison."""
+        # Severity level classification - architectural design for logging levels
         levels = {
             self.TRACE: 10,
             self.DEBUG: 20,
@@ -88,15 +89,15 @@ class EnumSeverityLevel(str, Enum):
 
     def is_error_level(self) -> bool:
         """Check if this is an error-level severity."""
-        return self.numeric_level >= 50
+        return self.numeric_level >= 50  # noqa: PLR2004
 
     def is_warning_level(self) -> bool:
         """Check if this is a warning-level severity."""
-        return self.numeric_level >= 40
+        return self.numeric_level >= 40  # noqa: PLR2004
 
     def is_info_level(self) -> bool:
         """Check if this is an info-level severity."""
-        return self.numeric_level >= 30
+        return self.numeric_level >= 30  # noqa: PLR2004
 
 
 # Export for use

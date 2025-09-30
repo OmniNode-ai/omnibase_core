@@ -11,12 +11,11 @@ from enum import Enum, unique
 
 @unique
 class EnumMigrationConflictType(str, Enum):
-    """
-    Strongly typed migration conflict type discriminators.
+    """Strongly typed migration conflict type discriminators.
 
     Used for discriminated union patterns in migration conflict handling.
-    Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameConflictDict]
-    patterns with structured conflict handling.
+    Replaces Union[TypedDictMigrationDuplicateConflictDict,
+    TypedDictMigrationNameConflictDict] patterns with structured conflict handling.
     Inherits from str for JSON serialization compatibility while providing
     type safety and IDE support.
     """

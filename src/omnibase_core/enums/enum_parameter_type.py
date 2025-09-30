@@ -93,7 +93,7 @@ class EnumParameterType(str, Enum):
     @classmethod
     def supports_null(cls, param_type: EnumParameterType) -> bool:
         """Check if the parameter type supports null/None values."""
-        # All types can be optional, but primitives are typically not nullable by default
+        # All types can be optional, but primitives typically not nullable by default
         return param_type in {
             cls.OBJECT,
             cls.ARRAY,

@@ -138,6 +138,7 @@ class EnumStandardCategory(str, Enum):
     @classmethod
     def from_string(cls, value: str) -> EnumStandardCategory | None:
         """Convert string to standard category with fallback handling."""
+        # Category alias mapping - architectural design for category classification
         # Direct mapping
         for category in cls:
             if category.value == value.lower():
@@ -166,7 +167,7 @@ class EnumStandardCategory(str, Enum):
         return aliases.get(normalized)
 
     @property
-    def hierarchy_level(self) -> str:
+    def hierarchy_level(self) -> str:  # noqa: PLR0911
         """Get the hierarchy level this category belongs to."""
         if self in self.get_architecture_categories():
             return "architecture"

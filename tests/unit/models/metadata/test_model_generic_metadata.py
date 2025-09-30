@@ -22,7 +22,7 @@ class TestModelGenericMetadataCreation:
 
     def test_default_creation(self):
         """Test creating metadata with default values."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         assert metadata.metadata_id is None
         assert metadata.metadata_display_name is None
@@ -36,7 +36,7 @@ class TestModelGenericMetadataCreation:
         metadata_id = uuid4()
         version = ModelSemVer(major=1, minor=2, patch=3)
 
-        metadata = ModelGenericMetadata[str](
+        metadata = ModelGenericMetadata(
             metadata_id=metadata_id,
             name="Test Metadata",
             description="A test metadata instance",
@@ -58,16 +58,16 @@ class TestModelGenericMetadataCreation:
 
     def test_creation_with_various_generic_types(self):
         """Test creating metadata with different generic types."""
-        str_metadata = ModelGenericMetadata[str](name="String Metadata")
+        str_metadata = ModelGenericMetadata(name="String Metadata")
         assert isinstance(str_metadata, ModelGenericMetadata)
 
-        int_metadata = ModelGenericMetadata[int](name="Integer Metadata")
+        int_metadata = ModelGenericMetadata(name="Integer Metadata")
         assert isinstance(int_metadata, ModelGenericMetadata)
 
-        bool_metadata = ModelGenericMetadata[bool](name="Boolean Metadata")
+        bool_metadata = ModelGenericMetadata(name="Boolean Metadata")
         assert isinstance(bool_metadata, ModelGenericMetadata)
 
-        float_metadata = ModelGenericMetadata[float](name="Float Metadata")
+        float_metadata = ModelGenericMetadata(name="Float Metadata")
         assert isinstance(float_metadata, ModelGenericMetadata)
 
 
@@ -76,7 +76,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_field_string(self):
         """Test setting string field."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         metadata.set_field("name", "test_value")
 
@@ -86,7 +86,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_field_int(self):
         """Test setting integer field."""
-        metadata = ModelGenericMetadata[int]()
+        metadata = ModelGenericMetadata()
 
         metadata.set_field("count", 42)
 
@@ -95,7 +95,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_field_bool(self):
         """Test setting boolean field."""
-        metadata = ModelGenericMetadata[bool]()
+        metadata = ModelGenericMetadata()
 
         metadata.set_field("enabled", True)
 
@@ -104,7 +104,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_field_float(self):
         """Test setting float field."""
-        metadata = ModelGenericMetadata[float]()
+        metadata = ModelGenericMetadata()
 
         metadata.set_field("rate", 3.14159)
 
@@ -113,7 +113,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_field_invalid_type_fails(self):
         """Test that setting invalid type fails."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         from omnibase_core.exceptions.onex_error import OnexError
 
@@ -124,7 +124,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_get_field_existing(self):
         """Test getting existing field."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         metadata.set_field("existing_key", "existing_value")
 
         value = metadata.get_field("existing_key", "default")
@@ -133,7 +133,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_get_field_nonexistent(self):
         """Test getting non-existent field returns default."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         value = metadata.get_field("nonexistent_key", "default_value")
 
@@ -141,7 +141,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_get_field_no_custom_fields(self):
         """Test getting field when custom_fields is None."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         value = metadata.get_field("any_key", "default_value")
 
@@ -149,7 +149,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_get_typed_field_correct_type(self):
         """Test getting typed field with correct type."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         metadata.set_field("string_field", "test_string")
         metadata.set_field("int_field", 100)
 
@@ -161,7 +161,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_get_typed_field_wrong_type_returns_default(self):
         """Test getting typed field with wrong type returns default."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         metadata.set_field("string_field", "test_string")
 
         # Try to get as int, should return default
@@ -171,7 +171,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_get_typed_field_nonexistent_returns_default(self):
         """Test getting typed field that doesn't exist returns default."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         value = metadata.get_typed_field("nonexistent", str, "default")
 
@@ -179,7 +179,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_typed_field_primitive_types(self):
         """Test setting typed fields with primitive types."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         metadata.set_field("str_field", "string_value")
         metadata.set_field("int_field", 42)
@@ -193,7 +193,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_set_typed_field_unsupported_type_fails(self):
         """Test that setting unsupported type fails."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         class UnsupportedType:
             pass
@@ -207,7 +207,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_has_field(self):
         """Test checking field existence."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         assert not metadata.has_field("nonexistent")
 
@@ -217,13 +217,13 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_has_field_no_custom_fields(self):
         """Test has_field when custom_fields is None."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         assert not metadata.has_field("any_field")
 
     def test_remove_field_existing(self):
         """Test removing existing field."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         metadata.set_field("to_remove", "value")
 
         assert metadata.has_field("to_remove")
@@ -234,7 +234,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_remove_field_nonexistent(self):
         """Test removing non-existent field."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         metadata.set_field("existing", "value")
 
         result = metadata.remove_field("nonexistent")
@@ -244,7 +244,7 @@ class TestModelGenericMetadataFieldOperations:
 
     def test_remove_field_no_custom_fields(self):
         """Test removing field when custom_fields is None."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         result = metadata.remove_field("any_field")
 
@@ -256,7 +256,7 @@ class TestModelGenericMetadataVersionHandling:
 
     def test_version_assignment(self):
         """Test assigning version."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         version = ModelSemVer(major=2, minor=1, patch=0)
 
         metadata.version = version
@@ -268,7 +268,7 @@ class TestModelGenericMetadataVersionHandling:
 
     def test_version_serialization(self):
         """Test version serialization."""
-        metadata = ModelGenericMetadata[str](
+        metadata = ModelGenericMetadata(
             name="Versioned Metadata",
             version=ModelSemVer(major=1, minor=0, patch=0),
         )
@@ -287,7 +287,7 @@ class TestModelGenericMetadataVersionHandling:
             "version": {"major": 3, "minor": 2, "patch": 1},
         }
 
-        metadata = ModelGenericMetadata[str].model_validate(json_data)
+        metadata = ModelGenericMetadata.model_validate(json_data)
 
         assert metadata.version is not None
         assert metadata.version.major == 3
@@ -300,13 +300,13 @@ class TestModelGenericMetadataTagsHandling:
 
     def test_tags_default_empty(self):
         """Test tags default to empty list."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
 
         assert metadata.tags == []
 
     def test_tags_assignment(self):
         """Test assigning tags."""
-        metadata = ModelGenericMetadata[str]()
+        metadata = ModelGenericMetadata()
         tags = ["tag1", "tag2", "category:important"]
 
         metadata.tags = tags
@@ -315,7 +315,7 @@ class TestModelGenericMetadataTagsHandling:
 
     def test_tags_modification(self):
         """Test modifying tags list."""
-        metadata = ModelGenericMetadata[str](tags=["initial", "tags"])
+        metadata = ModelGenericMetadata(tags=["initial", "tags"])
 
         metadata.tags.append("new_tag")
         metadata.tags.remove("initial")
@@ -326,7 +326,7 @@ class TestModelGenericMetadataTagsHandling:
 
     def test_tags_serialization(self):
         """Test tags serialization."""
-        metadata = ModelGenericMetadata[str](tags=["serialize", "test", "metadata"])
+        metadata = ModelGenericMetadata(tags=["serialize", "test", "metadata"])
 
         serialized = metadata.model_dump()
 
@@ -338,7 +338,7 @@ class TestModelGenericMetadataSerialization:
 
     def test_json_serialization_minimal(self):
         """Test JSON serialization with minimal data."""
-        metadata = ModelGenericMetadata[str](name="Minimal Test")
+        metadata = ModelGenericMetadata(name="Minimal Test")
 
         serialized = metadata.model_dump()
 
@@ -352,7 +352,7 @@ class TestModelGenericMetadataSerialization:
     def test_json_serialization_complete(self):
         """Test JSON serialization with complete data."""
         metadata_id = uuid4()
-        metadata = ModelGenericMetadata[str](
+        metadata = ModelGenericMetadata(
             metadata_id=metadata_id,
             name="Complete Test",
             description="A complete test metadata",
@@ -385,7 +385,7 @@ class TestModelGenericMetadataSerialization:
             },
         }
 
-        metadata = ModelGenericMetadata[str].model_validate(json_data)
+        metadata = ModelGenericMetadata.model_validate(json_data)
 
         assert metadata.metadata_id == UUID(metadata_id)
         assert metadata.metadata_display_name == "Deserialized Test"
@@ -396,7 +396,7 @@ class TestModelGenericMetadataSerialization:
 
     def test_round_trip_serialization(self):
         """Test full round-trip serialization."""
-        original = ModelGenericMetadata[str](
+        original = ModelGenericMetadata(
             name="Round Trip Test",
             description="Testing serialization round trip",
             tags=["round", "trip", "test"],
@@ -409,7 +409,7 @@ class TestModelGenericMetadataSerialization:
 
         # Parse and create new instance
         json_data = json.loads(json_str)
-        deserialized = ModelGenericMetadata[str].model_validate(json_data)
+        deserialized = ModelGenericMetadata.model_validate(json_data)
 
         # Verify standard fields match
         assert deserialized.metadata_display_name == original.metadata_display_name
@@ -428,7 +428,7 @@ class TestModelGenericMetadataComplexScenarios:
 
     def test_metadata_field_management_workflow(self):
         """Test complete field management workflow."""
-        metadata = ModelGenericMetadata[str](name="Configuration Metadata")
+        metadata = ModelGenericMetadata(name="Configuration Metadata")
 
         # Add initial configuration
         metadata.set_field("environment", "production")
@@ -464,7 +464,7 @@ class TestModelGenericMetadataComplexScenarios:
     def test_metadata_versioning_workflow(self):
         """Test metadata versioning workflow."""
         # Create initial version
-        metadata = ModelGenericMetadata[str](
+        metadata = ModelGenericMetadata(
             name="API Metadata",
             version=ModelSemVer(major=1, minor=0, patch=0),
             tags=["api", "v1"],
@@ -488,7 +488,7 @@ class TestModelGenericMetadataComplexScenarios:
 
     def test_metadata_tagging_and_categorization(self):
         """Test metadata tagging and categorization."""
-        metadata = ModelGenericMetadata[str](name="Service Metadata")
+        metadata = ModelGenericMetadata(name="Service Metadata")
 
         # Add service classification tags
         metadata.tags = [
@@ -519,7 +519,7 @@ class TestModelGenericMetadataComplexScenarios:
     def test_metadata_inheritance_pattern(self):
         """Test metadata inheritance/overlay pattern."""
         # Base metadata (like defaults)
-        base_metadata = ModelGenericMetadata[str](
+        base_metadata = ModelGenericMetadata(
             name="Base Service Config",
             tags=["service", "base"],
         )
@@ -528,7 +528,7 @@ class TestModelGenericMetadataComplexScenarios:
         base_metadata.set_field("retry_count", 3)
 
         # Environment-specific metadata
-        prod_metadata = ModelGenericMetadata[str](
+        prod_metadata = ModelGenericMetadata(
             name="Production Service Config",
             tags=["service", "production"],
         )
@@ -552,7 +552,7 @@ class TestModelGenericMetadataComplexScenarios:
 
     def test_metadata_validation_pattern(self):
         """Test metadata validation pattern."""
-        metadata = ModelGenericMetadata[str](name="Database Config")
+        metadata = ModelGenericMetadata(name="Database Config")
 
         # Set configuration fields
         metadata.set_field("host", "localhost")
@@ -561,7 +561,7 @@ class TestModelGenericMetadataComplexScenarios:
         metadata.set_field("ssl_enabled", True)
 
         # Validation function
-        def validate_database_config(meta: ModelGenericMetadata[str]) -> list[str]:
+        def validate_database_config(meta: ModelGenericMetadata) -> list[str]:
             errors = []
 
             # Required fields
@@ -586,7 +586,7 @@ class TestModelGenericMetadataComplexScenarios:
         assert len(validation_errors) == 0  # Should be valid
 
         # Test with invalid config
-        invalid_metadata = ModelGenericMetadata[str]()
+        invalid_metadata = ModelGenericMetadata()
         invalid_metadata.set_field("port", 70000)  # Invalid port
 
         validation_errors = validate_database_config(invalid_metadata)

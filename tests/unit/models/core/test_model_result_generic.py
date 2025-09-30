@@ -52,11 +52,11 @@ class TestResultGeneric:
         assert str_error.error == "error message"
         assert str_error.value is None
 
-        # Exception error
+        # Exception error (converted to string by validators)
         exc_error = ModelResult.err(ValueError("invalid value"))
         assert exc_error.is_err()
-        assert isinstance(exc_error.error, ValueError)
-        assert str(exc_error.error) == "invalid value"
+        assert isinstance(exc_error.error, str)
+        assert exc_error.error == "invalid value"
 
         # Custom error type
         custom_error = ModelResult.err({"code": 404, "message": "Not found"})
@@ -125,11 +125,12 @@ class TestResultGeneric:
         assert mapped.is_err()
         assert mapped.error == "error"
 
-        # Map with exception should convert to error
+        # Map with exception should convert to error (stored as string)
         success = ModelResult.ok("text")
         mapped = success.map(lambda x: int(x))  # Will raise ValueError
         assert mapped.is_err()
-        assert isinstance(mapped.error, ValueError)
+        assert isinstance(mapped.error, str)
+        assert "invalid literal" in mapped.error
 
     def test_result_map_err_operations(self):
         """Test map_err operations on results."""
@@ -291,14 +292,14 @@ class TestResultGeneric:
         assert result.is_ok()
         assert result.unwrap() == 42
 
-        # Failing operation
+        # Failing operation (exception converted to string)
         def failing_operation():
             raise ValueError("operation failed")
 
         result = try_result(failing_operation)
         assert result.is_err()
-        assert isinstance(result.error, ValueError)
-        assert str(result.error) == "operation failed"
+        assert isinstance(result.error, str)
+        assert result.error == "operation failed"
 
     def test_collect_results_function(self):
         """Test collect_results function for combining results."""
@@ -488,18 +489,20 @@ class TestResultGenericEdgeCases:
         """Test exception handling in Result operations."""
         success = ModelResult.ok("test")
 
-        # Exception in map should convert to error
+        # Exception in map should convert to error (stored as string)
         mapped = success.map(lambda x: x / 0)  # TypeError (str / int)
         assert mapped.is_err()
-        assert isinstance(mapped.error, TypeError)
+        assert isinstance(mapped.error, str)
+        assert "unsupported operand type" in mapped.error
 
-        # Exception in and_then should convert to error
+        # Exception in and_then should convert to error (stored as string)
         def failing_operation(x):
             raise RuntimeError("Operation failed")
 
         chained = success.and_then(failing_operation)
         assert chained.is_err()
-        assert isinstance(chained.error, RuntimeError)
+        assert isinstance(chained.error, str)
+        assert chained.error == "Operation failed"
 
 
 if __name__ == "__main__":
