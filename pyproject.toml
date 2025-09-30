@@ -91,8 +91,50 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/unit"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests that test individual components in isolation",
+    "integration: Integration tests that test multiple components together",
+    "slow: Tests that take a long time to run",
+    "smoke: Quick smoke tests for basic functionality",
+    "performance: Performance and benchmark tests"
+]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--showlocals",
+    "--tb=short"
+]
+
+[tool.coverage.run]
+source = ["src/omnibase_core"]
+omit = [
+    "*/tests/*",
+    "*/archived/*",
+    "*/archive/*",
+    "*/__pycache__/*",
+    "*/site-packages/*"
+]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if typing.TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod"
+]
