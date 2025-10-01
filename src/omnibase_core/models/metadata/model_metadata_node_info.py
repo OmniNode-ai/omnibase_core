@@ -31,9 +31,6 @@ from .model_structured_description import ModelStructuredDescription
 from .model_structured_display_name import ModelStructuredDisplayName
 from .model_structured_tags import ModelStructuredTags
 
-# Removed Any import - replaced with specific types
-
-
 # Type aliases for convenience
 ModelMetadataNodeType = EnumMetadataNodeType
 ModelMetadataNodeStatus = EnumMetadataNodeStatus
@@ -296,23 +293,11 @@ class ModelMetadataNodeInfo(BaseModel):
             else EnumNodeType.UNKNOWN
         )
 
-        # Map complexity (use string value)
-        complexity_map = {
-            "simple": EnumConceptualComplexity.BASIC,
-            "moderate": EnumConceptualComplexity.INTERMEDIATE,
-            "complex": EnumConceptualComplexity.ADVANCED,
-        }
-        complexity = complexity_map.get(
-            self.complexity.value,
-            EnumConceptualComplexity.INTERMEDIATE,
-        )
-
-        # Map documentation quality (direct enum lookup)
+        # Map documentation quality (using quality level enum keys)
         doc_quality_map = {
-            EnumValidationLevel.BASIC: EnumDocumentationQuality.BASIC,
-            EnumValidationLevel.STANDARD: EnumDocumentationQuality.COMPREHENSIVE,
-            EnumValidationLevel.COMPREHENSIVE: EnumDocumentationQuality.COMPREHENSIVE,
-            EnumValidationLevel.EXCELLENT: EnumDocumentationQuality.EXCELLENT,
+            EnumValidationLevel.BASIC: EnumDocumentationQuality.MINIMAL,
+            EnumValidationLevel.GOOD: EnumDocumentationQuality.GOOD,
+            EnumValidationLevel.EXCELLENT: EnumDocumentationQuality.COMPREHENSIVE,
         }
         documentation_quality = doc_quality_map.get(
             self.documentation_quality,

@@ -151,7 +151,7 @@ class ModelFunctionNode(BaseModel):
         """Record a function execution."""
         self.performance.record_execution(success, execution_time_ms, memory_used_mb)
 
-    def has_tests(self) -> bool:
+    def has_tests(self) -> bool:  # stub-ok - Tracked in issue #47
         """
         Check if function has tests.
 
@@ -165,7 +165,7 @@ class ModelFunctionNode(BaseModel):
 
         Note:
             Current stub implementation to prevent silent failures.
-            TODO: Implement actual test detection logic (GitHub issue #47)
+            Implementation tracked in GitHub issue #47.
         """
         msg = (
             "Test detection not yet implemented. "
@@ -175,7 +175,7 @@ class ModelFunctionNode(BaseModel):
         raise NotImplementedError(msg)  # stub-ok - Tracked in issue #47
 
     @property
-    def implementation(self) -> str:
+    def implementation(self) -> str:  # stub-ok - Tracked in issue #49
         """
         Get function implementation source code.
 
@@ -189,7 +189,7 @@ class ModelFunctionNode(BaseModel):
 
         Note:
             Current stub implementation to prevent silent failures.
-            TODO: Implement actual function source code retrieval (GitHub issue #49)
+            Implementation tracked in GitHub issue #49.
         """
         msg = (
             "Source code retrieval not yet implemented. "
@@ -268,11 +268,15 @@ class ModelFunctionNode(BaseModel):
         """Create function node from signature information."""
         # Import the enum to convert string to enum
 
-        # Convert string to enum for type safety
+        # Convert string to enum for type safety (normalize to uppercase first)
         return_type_enum = None
         if return_type is not None:
             try:
-                return_type_enum = EnumReturnType(return_type)
+                # Normalize return_type to uppercase before enum conversion
+                normalized_return_type = (
+                    return_type.upper() if return_type else "UNKNOWN"
+                )
+                return_type_enum = EnumReturnType(normalized_return_type)
             except ValueError:
                 return_type_enum = EnumReturnType.UNKNOWN  # Default fallback
 

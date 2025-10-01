@@ -70,6 +70,16 @@ class ProtocolMigrator:
         """
         # Get protocols from source repository OR use provided protocols
         if protocols is not None:
+            # Validate that provided protocols have valid path format and required metadata
+            for protocol in protocols:
+                if not protocol.file_path:
+                    msg = "Protocol must have a file_path specified"
+                    raise ValueError(msg)
+                if not protocol.name:
+                    msg = "Protocol must have a name specified"
+                    raise ValueError(msg)
+                # Note: File existence is not required for planning phase
+                # Actual file validation occurs during execution
             # Use the explicitly provided protocols
             source_protocols = protocols
         else:

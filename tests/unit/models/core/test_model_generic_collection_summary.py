@@ -330,9 +330,8 @@ class TestModelGenericCollectionSummary:
         assert summary.total_items == 20
 
         # Should raise validation error with invalid type
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(ValidationError, match="total_items"):
             summary.total_items = "not_an_int"
-        assert "total_items" in str(exc_info.value)
 
     def test_statistics_consistency(self):
         """Test that statistics are consistent."""

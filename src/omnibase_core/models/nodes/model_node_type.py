@@ -620,29 +620,59 @@ class ModelNodeType(BaseModel):
         """
         Get unique identifier for the node type instance.
 
-        Implements the Identifiable protocol by returning a unique string
-        identifier. Checks multiple common ID field patterns and falls back
-        to a generated identifier if no ID field is found.
+        Implements the Identifiable protocol by returning a stable string
+        identifier. The method searches for ID fields in priority order to
+        ensure deterministic, unique identification across serialization cycles.
+
+        ID Generation Strategy:
+            The method implements a priority-based search for stable identifiers:
+
+            Priority order:
+            1. type_id (UUID) - Most stable, preferred for node types
+            2. id, uuid - Alternative UUID fields from protocols
+            3. identifier, node_id - Named identifiers from specific contexts
+            4. execution_id, metadata_id - Context-specific IDs
+            5. Fallback: ClassName_instance_id (non-deterministic across runs)
+
+            Rationale:
+            - UUID fields provide cryptographic uniqueness and stability
+            - Type-specific IDs (type_id) take precedence for semantic clarity
+            - Named identifiers support protocol implementations
+            - Memory address fallback ensures all instances have an ID
 
         Returns:
             String identifier for this instance. Uses type_id (UUID) if available,
-            falls back to other ID fields, or generates a unique identifier based
-            on class name and instance ID.
+            falls back to other ID fields in priority order, or generates a
+            unique identifier based on class name and instance memory address.
 
         Example:
             ```python
+            # UUID-based identification (stable)
             node = ModelNodeType.CONTRACT_TO_MODEL()
             node_id = node.get_id()
             print(f"Node ID: {node_id}")  # e.g., "550e8400-e29b-41d4-a716-446655440000"
 
             # ID is consistent for the same instance
             assert node.get_id() == node.get_id()
+
+            # Serialization stability
+            serialized = node.serialize()
+            restored = ModelNodeType(**serialized)
+            assert node.get_id() == restored.get_id()  # Same UUID preserved
             ```
 
+        Warning:
+            The fallback using id(self) is NOT stable across process restarts
+            or serialization cycles. Always ensure models have proper UUID fields
+            (type_id, id, uuid, etc.) for production use where identity persistence
+            is required. The fallback exists only to guarantee every instance has
+            an identifier for in-memory operations.
+
         Note:
-            This method searches for ID fields in priority order: type_id,
-            id, uuid, identifier, node_id, execution_id, metadata_id.
-            The type_id field (UUID) is the primary identifier for node types.
+            This method is called by protocol implementations (Identifiable)
+            and should not be overridden unless you have specific requirements
+            for identity semantics. The priority order is carefully designed
+            to balance stability, uniqueness, and semantic clarity.
         """
         # Try common ID field patterns, starting with type_id
         for field in [

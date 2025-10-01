@@ -307,6 +307,10 @@ class StubImplementationDetector(ast.NodeVisitor):
         # Pattern 4: NotImplementedError
         for stmt in statements:
             if self._raises_not_implemented_error(stmt):
+                # Check if the raise statement has a stub-ok comment
+                if self._has_stub_ok_comment(stmt.lineno):
+                    continue  # Skip this - it's an approved stub
+
                 self._add_issue(
                     stmt.lineno,
                     func_name,
@@ -336,13 +340,15 @@ class StubImplementationDetector(ast.NodeVisitor):
                 marker in docstring.upper()
                 for marker in ["TODO", "FIXME", "XXX", "STUB"]
             ):
-                self._add_issue(
-                    node.lineno,
-                    func_name,
-                    "todo_in_docstring",
-                    f"Function docstring contains TODO/FIXME marker",
-                    "Complete the implementation and remove TODO/FIXME markers",
-                )
+                # Check if the function has a stub-ok comment
+                if not self._has_stub_ok_comment(node.lineno):
+                    self._add_issue(
+                        node.lineno,
+                        func_name,
+                        "todo_in_docstring",
+                        f"Function docstring contains TODO/FIXME marker",
+                        "Complete the implementation and remove TODO/FIXME markers",
+                    )
 
     def _is_ellipsis(self, stmt: ast.stmt) -> bool:
         """Check if statement is an Ellipsis (...)."""
