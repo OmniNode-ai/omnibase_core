@@ -62,9 +62,6 @@ class TestModelProgressCoreValidation:
         with pytest.raises(Exception):  # Pydantic ValidationError
             ModelProgressCore(total_steps=0)
 
-    @pytest.mark.xfail(
-        reason="Validator not working as expected - may be order of operations issue"
-    )
     def test_current_step_exceeds_total(self):
         """Test validation when current_step exceeds total_steps."""
         # The validator should raise OnexError when current_step > total_steps

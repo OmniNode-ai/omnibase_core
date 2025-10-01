@@ -7,9 +7,9 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Self
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
@@ -71,16 +71,13 @@ class ModelProgressCore(BaseModel):
         max_length=2000,
     )
 
-    @field_validator("current_step")
-    @classmethod
-    def validate_current_step(cls, v: int, info: ValidationInfo) -> int:
+    @model_validator(mode="after")
+    def validate_current_step(self) -> Self:
         """Validate current step doesn't exceed total steps."""
-        if "total_steps" in info.data and info.data["total_steps"] is not None:
-            total = info.data["total_steps"]
-            if v > total:
-                msg = "Current step cannot exceed total steps"
-                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
-        return v
+        if self.current_step > self.total_steps:
+            msg = "Current step cannot exceed total steps"
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+        return self
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization to update calculated fields."""
