@@ -148,9 +148,13 @@ class ModelCliDebugInfo(BaseModel):
         """Add a stack trace."""
         self.stack_traces.append(trace)
 
-    def set_custom_field(self, key: str, value: object) -> None:
-        """Set a custom debug field. Accepts any value type."""
-        self.custom_debug_fields[key] = ModelCliValue.from_any(value)
+    def set_custom_field(self, key: str, value: ModelCliValue | object) -> None:
+        """Set a custom debug field with automatic type conversion."""
+        if isinstance(value, ModelCliValue):
+            self.custom_debug_fields[key] = value
+        else:
+            # Convert to ModelCliValue for type safety
+            self.custom_debug_fields[key] = ModelCliValue.from_any(value)
 
     def get_custom_field(self, key: str, default: str = "") -> str:
         """Get a custom debug field. CLI debug fields are strings."""

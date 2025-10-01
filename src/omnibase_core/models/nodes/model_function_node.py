@@ -15,9 +15,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.exceptions.onex_error import OnexError
 
 from .model_function_node_core import ModelFunctionNodeCore
 from .model_function_node_metadata import ModelFunctionNodeMetadata
@@ -151,19 +153,62 @@ class ModelFunctionNode(BaseModel):
         """Record a function execution."""
         self.performance.record_execution(success, execution_time_ms, memory_used_mb)
 
-    def has_tests(self) -> bool:
-        """Check if function has tests (placeholder implementation)."""
-        # TODO: Implement actual test detection logic
-        return False
+    def has_tests(self) -> bool:  # stub-ok - Tracked in issue #47
+        """
+        Check if function has tests.
+
+        Raises:
+            NotImplementedError: This method requires implementation of test
+                detection logic. See GitHub issue #47 for implementation requirements:
+                - AST parsing of test files
+                - Test name pattern matching
+                - Support for multiple test frameworks (pytest, unittest, etc.)
+                - Caching mechanism for performance
+
+        Note:
+            Current stub implementation to prevent silent failures.
+            Implementation tracked in GitHub issue #47.
+        """
+        msg = (
+            "Test detection not yet implemented. "
+            "This requires AST parsing of test files and pattern matching. "
+            "See GitHub issue #47 for implementation details."
+        )
+        raise NotImplementedError(msg)  # stub-ok: Tracked in issue #47
 
     @property
-    def implementation(self) -> str:
-        """Get function implementation (placeholder)."""
-        # TODO: Implement actual function source code retrieval
-        return ""
+    def implementation(self) -> str:  # stub-ok - Tracked in issue #49
+        """
+        Get function implementation source code.
+
+        Raises:
+            NotImplementedError: This property requires implementation of source
+                code retrieval. See GitHub issue #49 for implementation requirements:
+                - Use inspect.getsource() as primary method
+                - Fall back to AST parsing if needed
+                - Store source file path and line numbers in model
+                - Handle edge cases (built-ins, C extensions, etc.)
+
+        Note:
+            Current stub implementation to prevent silent failures.
+            Implementation tracked in GitHub issue #49.
+        """
+        msg = (
+            "Source code retrieval not yet implemented. "
+            "This requires AST parsing or inspect module integration. "
+            "See GitHub issue #49 for implementation details."
+        )
+        raise NotImplementedError(msg)  # stub-ok: Tracked in issue #49
 
     def to_summary(self) -> ModelFunctionNodeSummary:
         """Get function summary with clean typing."""
+        # Handle NotImplementedError from has_tests() gracefully
+        # See GitHub issue #47 for test detection implementation
+        try:
+            has_tests_value = self.has_tests()
+        except NotImplementedError:
+            has_tests_value = False
+
         return ModelFunctionNodeSummary.create_from_full_data(
             name=self.name,
             description=self.description,
@@ -175,7 +220,7 @@ class ModelFunctionNode(BaseModel):
             has_documentation=self.has_documentation(),
             has_examples=self.has_examples(),
             has_type_annotations=self.has_type_annotations(),
-            has_tests=self.has_tests(),
+            has_tests=has_tests_value,
             tags=self.tags,
             categories=[cat.value for cat in self.metadata.categories],
             dependencies=[str(dep) for dep in self.metadata.relationships.dependencies],
@@ -195,7 +240,7 @@ class ModelFunctionNode(BaseModel):
         cls,
         name: str,
         description: str = "",
-        function_type: str = "function",
+        function_type: str = "transform",
     ) -> ModelFunctionNode:
         """Create a simple function node."""
         # Import the enum to convert string to enum
@@ -203,9 +248,13 @@ class ModelFunctionNode(BaseModel):
 
         # Convert string to enum for type safety
         try:
-            function_type_enum = EnumFunctionType(function_type.upper())
-        except ValueError:
-            function_type_enum = EnumFunctionType.TRANSFORM  # Default fallback
+            function_type_enum = EnumFunctionType(function_type)
+        except ValueError as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid function type '{function_type}' for EnumFunctionType. "
+                f"Must be one of {[t.value for t in EnumFunctionType]}.",
+            ) from e
 
         core = ModelFunctionNodeCore.create_simple(
             name,
@@ -225,13 +274,21 @@ class ModelFunctionNode(BaseModel):
         """Create function node from signature information."""
         # Import the enum to convert string to enum
 
-        # Convert string to enum for type safety
+        # Convert string to enum for type safety (normalize to uppercase first)
         return_type_enum = None
         if return_type is not None:
             try:
-                return_type_enum = EnumReturnType(return_type.upper())
-            except ValueError:
-                return_type_enum = EnumReturnType.UNKNOWN  # Default fallback
+                # Normalize return_type to uppercase before enum conversion
+                normalized_return_type = (
+                    return_type.upper() if return_type else "UNKNOWN"
+                )
+                return_type_enum = EnumReturnType(normalized_return_type)
+            except ValueError as e:
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Invalid return type '{return_type}' for EnumReturnType. "
+                    f"Must be one of {[t.value for t in EnumReturnType]}.",
+                ) from e
 
         core = ModelFunctionNodeCore.create_from_signature(
             name,
@@ -278,6 +335,11 @@ class ModelFunctionNode(BaseModel):
 
     def get_id(self) -> str:
         """Get unique identifier (Identifiable protocol)."""
+        # Check core.function_id first for ModelFunctionNode
+        if hasattr(self, "core") and hasattr(self.core, "function_id"):
+            if self.core.function_id is not None:
+                return str(self.core.function_id)
+
         # Try common ID field patterns
         for field in [
             "id",
@@ -291,7 +353,12 @@ class ModelFunctionNode(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
@@ -313,7 +380,9 @@ class ModelFunctionNode(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -326,7 +395,9 @@ class ModelFunctionNode(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

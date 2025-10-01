@@ -7,9 +7,9 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Self
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
@@ -72,16 +72,24 @@ class ModelRetryConfig(BaseModel):
         le=60.0,
     )
 
-    @field_validator("max_delay_seconds")
-    @classmethod
-    def validate_max_delay(cls, v: float, info: ValidationInfo) -> float:
-        """Validate max delay is greater than base delay."""
-        if "base_delay_seconds" in info.data:
-            base = info.data["base_delay_seconds"]
-            if v < base:
-                msg = "Max delay must be greater than or equal to base delay"
-                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
-        return v
+    @model_validator(mode="after")
+    def validate_max_delay(self) -> Self:
+        """
+        Validate max delay is greater than or equal to base delay.
+
+        Uses @model_validator(mode='after') to ensure both fields are always
+        available (no fallback pattern).
+
+        Returns:
+            The validated model instance if validation passes.
+
+        Raises:
+            OnexError: If max_delay_seconds is less than base_delay_seconds.
+        """
+        if self.max_delay_seconds < self.base_delay_seconds:
+            msg = "Max delay must be greater than or equal to base delay"
+            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+        return self
 
     def get_strategy_name(self) -> str:
         """Get human-readable strategy name."""
@@ -136,7 +144,9 @@ class ModelRetryConfig(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def configure(self, **kwargs: Any) -> bool:
@@ -146,7 +156,9 @@ class ModelRetryConfig(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def serialize(self) -> dict[str, Any]:

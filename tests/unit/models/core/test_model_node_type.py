@@ -18,7 +18,7 @@ from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.exceptions.onex_error import OnexError
-from omnibase_core.models.patterns import ModelNodeType
+from omnibase_core.models.nodes import ModelNodeType
 
 
 class TestModelNodeType:
@@ -45,14 +45,11 @@ class TestModelNodeType:
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
-        uuid_a = uuid4()
-        uuid_b = uuid4()
-
         node_type = ModelNodeType(
             type_name=EnumTypeName.VALIDATION_ENGINE,
             description="Custom node with all fields",
             category=EnumConfigCategory.VALIDATION,
-            dependencies=[uuid_a, uuid_b],
+            dependencies=["NODE_A", "NODE_B"],
             version_compatibility=">=2.0.0",
             execution_priority=75,
             is_generator=True,
@@ -64,7 +61,7 @@ class TestModelNodeType:
         assert node_type.type_name == EnumTypeName.VALIDATION_ENGINE
         assert node_type.description == "Custom node with all fields"
         assert node_type.category == EnumConfigCategory.VALIDATION
-        assert node_type.dependencies == [uuid_a, uuid_b]
+        assert node_type.dependencies == ["NODE_A", "NODE_B"]
         assert node_type.version_compatibility == ">=2.0.0"
         assert node_type.execution_priority == 75
         assert node_type.is_generator is True
@@ -115,7 +112,7 @@ class TestModelNodeType:
             )
             assert node_type.type_name == name
 
-        # Invalid enum values should raise OnexError (custom validation)
+        # Invalid strings should raise Pydantic ValidationError (enum type safety)
         invalid_names = [
             "INVALID_NODE",  # Not in enum
             "lowercase",  # Invalid format
@@ -124,16 +121,12 @@ class TestModelNodeType:
         ]
 
         for name in invalid_names:
-            with pytest.raises(OnexError) as exc_info:
+            with pytest.raises(ValidationError):
                 ModelNodeType(
                     type_name=name,
                     description="Test description",
                     category=EnumConfigCategory.TESTING,
                 )
-            assert (
-                "validation_error" in str(exc_info.value).lower()
-                or "enum" in str(exc_info.value).lower()
-            )
 
     def test_category_pattern_validation(self):
         """Test that category uses valid enum values."""
@@ -153,25 +146,21 @@ class TestModelNodeType:
             )
             assert node_type.category == category
 
-        # Invalid categories should raise OnexError (custom validation)
+        # Invalid strings should raise Pydantic ValidationError (enum type safety)
         invalid_categories = [
             "INVALID_CATEGORY",  # Not in enum
-            "Uppercase",  # Invalid format
-            "123category",  # Invalid format
+            "Uppercase",  # Not in enum
+            "123category",  # Not in enum
             "",  # Empty string
         ]
 
         for category in invalid_categories:
-            with pytest.raises(OnexError) as exc_info:
+            with pytest.raises(ValidationError):
                 ModelNodeType(
                     type_name=EnumTypeName.CONTRACT_TO_MODEL,
                     description="Test description",
                     category=category,
                 )
-            assert (
-                "validation_error" in str(exc_info.value).lower()
-                or "enum" in str(exc_info.value).lower()
-            )
 
     def test_execution_priority_validation(self):
         """Test that execution_priority is validated within range."""
@@ -227,35 +216,39 @@ class TestModelNodeType:
             ModelNodeType(
                 type_name=123,
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
             )
 
         # Test non-string description
         with pytest.raises(ValidationError):
-            ModelNodeType(type_name="TEST_NODE", description=123, category="testing")
+            ModelNodeType(
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
+                description=123,
+                category=EnumConfigCategory.TESTING,
+            )
 
         # Test non-string category - Pydantic's built-in validation catches this first
         with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
                 category=123,
             )
 
         # Test non-list dependencies - Custom validator catches this
-        with pytest.raises(OnexError):
+        with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
                 dependencies="not_a_list",
             )
 
         # Test non-boolean flags (Pydantic converts "true" to True)
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             is_generator="true",  # Pydantic converts to True
         )
         assert node_type.is_generator is True
@@ -370,17 +363,17 @@ class TestModelNodeType:
 
     def test_factory_method_logger_emit_log_event(self):
         """Test the LOGGER_EMIT_LOG_EVENT factory method."""
-        # This factory method uses a name that doesn't match the pattern
-        # So it should raise OnexError (custom validation)
-        with pytest.raises(OnexError):
-            ModelNodeType.LOGGER_EMIT_LOG_EVENT()
+        # Now uses proper enum value, should work fine
+        node_type = ModelNodeType.LOGGER_EMIT_LOG_EVENT()
+        assert node_type.type_name == EnumTypeName.NODE_LOGGER_EMIT_LOG_EVENT
+        assert node_type.category == EnumConfigCategory.LOGGING
 
     def test_factory_method_scenario_runner(self):
         """Test the SCENARIO_RUNNER factory method."""
-        # This factory method uses a name that doesn't match the pattern
-        # So it should raise OnexError (custom validation)
-        with pytest.raises(OnexError):
-            ModelNodeType.SCENARIO_RUNNER()
+        # Now uses proper enum value, should work fine
+        node_type = ModelNodeType.SCENARIO_RUNNER()
+        assert node_type.type_name == EnumTypeName.SCENARIO_RUNNER
+        assert node_type.category == EnumConfigCategory.TESTING
 
     def test_from_string_method_known_types(self):
         """Test the from_string method with known node types."""
@@ -399,12 +392,13 @@ class TestModelNodeType:
             assert node_type.category == expected_category
 
     def test_from_string_method_unknown_type(self):
-        """Test the from_string method with unknown node type."""
-        node_type = ModelNodeType.from_string("UNKNOWN_NODE_TYPE")
+        """Test the from_string method with unknown node type raises OnexError."""
+        # Unknown types not in the enum should raise OnexError to maintain type safety
+        with pytest.raises(OnexError) as exc_info:
+            ModelNodeType.from_string("UNKNOWN_NODE_TYPE")
 
-        assert node_type.type_name == "UNKNOWN_NODE_TYPE"
-        assert node_type.description == "Node: UNKNOWN_NODE_TYPE"
-        assert node_type.category == "unknown"
+        assert "Unknown node type" in str(exc_info.value)
+        assert "UNKNOWN_NODE_TYPE" in str(exc_info.value)
 
     def test_string_representation(self):
         """Test the string representation of the model."""
@@ -412,11 +406,11 @@ class TestModelNodeType:
         assert str(node_type) == "CONTRACT_TO_MODEL"
 
         custom_node = ModelNodeType(
-            type_name="CUSTOM_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Custom description",
-            category="custom",
+            category=EnumConfigCategory.GENERAL,
         )
-        assert str(custom_node) == "CUSTOM_NODE"
+        assert str(custom_node) == "CONTRACT_TO_MODEL"
 
     def test_equality_comparison(self):
         """Test equality comparison methods."""
@@ -442,9 +436,9 @@ class TestModelNodeType:
     def test_model_serialization(self):
         """Test model serialization to dict."""
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test node for serialization",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             dependencies=["DEP_A", "DEP_B"],
             version_compatibility=">=1.5.0",
             execution_priority=75,
@@ -457,7 +451,8 @@ class TestModelNodeType:
         data = node_type.model_dump()
 
         expected_data = {
-            "type_name": "TEST_NODE",
+            "type_id": node_type.type_id,
+            "type_name": "CONTRACT_TO_MODEL",
             "description": "Test node for serialization",
             "category": "testing",
             "dependencies": ["DEP_A", "DEP_B"],
@@ -474,23 +469,24 @@ class TestModelNodeType:
     def test_model_deserialization(self):
         """Test model deserialization from dict."""
         data = {
-            "type_name": "DESERIALIZED_NODE",
+            "type_name": "VALIDATION_ENGINE",  # Valid EnumTypeName value
             "description": "Node created from dict",
-            "category": "deserialization",
+            "category": "validation",  # Valid EnumConfigCategory value
             "dependencies": ["NODE_X", "NODE_Y"],
             "version_compatibility": ">=2.0.0",
             "execution_priority": 85,
             "is_generator": False,
             "is_validator": True,
             "requires_contract": False,
-            "output_type": EnumReturnType.REPORTS,
+            "output_type": "REPORTS",  # EnumReturnType value as string
         }
 
         node_type = ModelNodeType.model_validate(data)
 
-        assert node_type.type_name == "DESERIALIZED_NODE"
+        # Verify deserialized values are proper enum types
+        assert node_type.type_name == EnumTypeName.VALIDATION_ENGINE
         assert node_type.description == "Node created from dict"
-        assert node_type.category == "deserialization"
+        assert node_type.category == EnumConfigCategory.VALIDATION
         assert node_type.dependencies == ["NODE_X", "NODE_Y"]
         assert node_type.version_compatibility == ">=2.0.0"
         assert node_type.execution_priority == 85
@@ -515,6 +511,44 @@ class TestModelNodeType:
         assert node_type_from_json.category == node_type.category
         assert node_type_from_json.is_validator == node_type.is_validator
         assert node_type_from_json.requires_contract == node_type.requires_contract
+
+    def test_get_id_returns_type_id(self):
+        """Test that get_id() returns str(type_id) for Identifiable protocol compliance."""
+        # Create a node with a known type_id
+        known_type_id = uuid4()
+        node_type = ModelNodeType(
+            type_id=known_type_id,
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
+            description="Test node for ID verification",
+            category=EnumConfigCategory.TESTING,
+        )
+
+        # Verify get_id() returns str(type_id)
+        result_id = node_type.get_id()
+        assert result_id == str(known_type_id)
+        assert isinstance(result_id, str)
+
+        # Verify it's a valid UUID string
+        from uuid import UUID
+
+        UUID(result_id)  # Should not raise ValueError
+
+    def test_get_id_stable_across_calls(self):
+        """Test that get_id() returns stable value across multiple calls."""
+        node_type = ModelNodeType(
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
+            description="Test node for ID stability",
+            category=EnumConfigCategory.TESTING,
+        )
+
+        # Call get_id() multiple times
+        id1 = node_type.get_id()
+        id2 = node_type.get_id()
+        id3 = node_type.get_id()
+
+        # All calls should return the same value
+        assert id1 == id2 == id3
+        assert id1 == str(node_type.type_id)
 
     def test_all_factory_methods_coverage(self):
         """Test that all factory methods defined in from_string are callable."""
@@ -559,7 +593,7 @@ class TestModelNodeType:
             assert node_type.description != ""
             assert node_type.category != ""
 
-        # Names that don't match the pattern but are in factory map - should raise OnexError
+        # Names that don't match the pattern and are not in factory map - should raise OnexError
         invalid_pattern_names = [
             "node_logger_emit_log_event",
             "scenario_runner",
@@ -569,14 +603,14 @@ class TestModelNodeType:
             with pytest.raises(OnexError):
                 ModelNodeType.from_string(name)
 
-        # Names not in factory map should create generic nodes (but must follow name pattern)
+        # Names not in factory map and not in EnumTypeName - should raise OnexError
+        # This maintains type safety by enforcing strict enum values
         unknown_names = ["UNKNOWN_NODE_TYPE", "CUSTOM_PROCESSOR", "SPECIAL_HANDLER"]
 
         for name in unknown_names:
-            node_type = ModelNodeType.from_string(name)
-            assert node_type.type_name == name
-            assert node_type.description == f"Node: {name}"
-            assert node_type.category == "unknown"
+            with pytest.raises(OnexError) as exc_info:
+                ModelNodeType.from_string(name)
+            assert "Unknown node type" in str(exc_info.value)
 
 
 class TestModelNodeTypeEdgeCases:
@@ -585,25 +619,25 @@ class TestModelNodeTypeEdgeCases:
     def test_empty_string_fields(self):
         """Test behavior with empty string fields."""
         # Empty name should fail pattern validation
-        with pytest.raises(OnexError):
+        with pytest.raises(ValidationError):
             ModelNodeType(
                 type_name="",
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
             )
 
         # Empty description should be valid (no min_length constraint)
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
         )
         assert node_type.description == ""
 
         # Empty category should fail pattern validation
-        with pytest.raises(OnexError):
+        with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
                 category="",
             )
@@ -612,24 +646,24 @@ class TestModelNodeTypeEdgeCases:
         """Test handling of whitespace in fields."""
         # Valid with whitespace in description
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="  Description with spaces  ",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
         )
         assert node_type.description == "  Description with spaces  "
 
         # Whitespace in name should fail pattern validation
-        with pytest.raises(OnexError):
+        with pytest.raises(ValidationError):
             ModelNodeType(
                 type_name=" TEST_NODE ",
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
             )
 
         # Whitespace in category should fail pattern validation
-        with pytest.raises(OnexError):
+        with pytest.raises(ValidationError):
             ModelNodeType(
-                type_name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
                 category=" testing ",
             )
@@ -638,18 +672,18 @@ class TestModelNodeTypeEdgeCases:
         """Test handling of unicode characters."""
         # Unicode in description should work
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Descripción with ñ and émojis 🚀",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
         )
         assert "ñ" in node_type.description
         assert "🚀" in node_type.description
 
         # Unicode in output_type (use valid enum value)
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             output_type=EnumReturnType.TEXT,
         )
         assert node_type.output_type == EnumReturnType.TEXT
@@ -659,9 +693,9 @@ class TestModelNodeTypeEdgeCases:
         long_description = "a" * 10000
 
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description=long_description,
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             output_type=EnumReturnType.TEXT,
         )
 
@@ -671,9 +705,9 @@ class TestModelNodeTypeEdgeCases:
     def test_none_values_for_optional_fields(self):
         """Test explicit None values for optional fields."""
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             output_type=None,
         )
 
@@ -683,17 +717,17 @@ class TestModelNodeTypeEdgeCases:
         """Test edge cases with priority values."""
         # Test exact boundary values
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             execution_priority=0,
         )
         assert node_type.execution_priority == 0
 
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             execution_priority=100,
         )
         assert node_type.execution_priority == 100
@@ -703,18 +737,18 @@ class TestModelNodeTypeEdgeCases:
         # Large number of dependencies
         many_deps = [f"NODE_{i}" for i in range(100)]
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             dependencies=many_deps,
         )
         assert len(node_type.dependencies) == 100
 
         # Empty dependencies list
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             dependencies=[],
         )
         assert node_type.dependencies == []
@@ -722,9 +756,9 @@ class TestModelNodeTypeEdgeCases:
         # Dependencies with special characters
         special_deps = ["NODE_WITH_123", "NODE_WITH_UNDERSCORES_LONG"]
         node_type = ModelNodeType(
-            type_name="TEST_NODE",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test description",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             dependencies=special_deps,
         )
         assert node_type.dependencies == special_deps
@@ -736,9 +770,9 @@ class TestModelNodeTypeEdgeCases:
 
         for constraint in version_constraints:
             node_type = ModelNodeType(
-                type_name="TEST_NODE",
+                type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
-                category="testing",
+                category=EnumConfigCategory.TESTING,
                 version_compatibility=constraint,
             )
             assert node_type.version_compatibility == constraint

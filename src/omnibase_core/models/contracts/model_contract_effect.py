@@ -22,6 +22,7 @@ StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
 
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.exceptions.onex_error import OnexError
@@ -349,7 +350,10 @@ class ModelContractEffect(ModelContractBase):
         """Validate external services configuration."""
         # Validate external services have proper configuration
         for service in self.external_services:
-            if service.authentication_method != "none" and not service.endpoint_url:
+            if (
+                service.authentication_method != EnumAuthType.NONE
+                and not service.endpoint_url
+            ):
                 msg = "External services with authentication must specify endpoint_url"
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,

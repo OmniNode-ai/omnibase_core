@@ -52,21 +52,42 @@ class ProtocolMigrator:
         Create a migration plan for moving protocols to omnibase_spi.
 
         Args:
-            protocols: Specific protocols to migrate, or None for all
+            protocols: Specific protocols to migrate, or None for all.
+                When provided, bypasses filesystem extraction and validation.
+                The caller is responsible for ensuring:
+                - Protocol file paths exist and are accessible
+                - ModelProtocolInfo objects have correct types and structure
+                - All protocol metadata (name, signature_hash, etc.) is valid
+                Bypassed validation includes:
+                - Source directory existence check (src_path.exists())
+                - Protocol extraction via extract_protocols_from_directory()
+                - File path validation and protocol parsing
+                When None, extracts all protocols from the source repository
+                with full filesystem validation.
 
         Returns:
             ModelMigrationPlan with detailed migration strategy
         """
-        # Get protocols from source repository
-        src_path = self.source_path / "src"
-        source_protocols = (
-            extract_protocols_from_directory(src_path) if src_path.exists() else []
-        )
-
+        # Get protocols from source repository OR use provided protocols
         if protocols is not None:
-            # Filter to only requested protocols
-            protocol_names = {p.name for p in protocols}
-            source_protocols = [p for p in source_protocols if p.name in protocol_names]
+            # Validate that provided protocols have valid path format and required metadata
+            for protocol in protocols:
+                if not protocol.file_path:
+                    msg = "Protocol must have a file_path specified"
+                    raise ValueError(msg)
+                if not protocol.name:
+                    msg = "Protocol must have a name specified"
+                    raise ValueError(msg)
+                # Note: File existence is not required for planning phase
+                # Actual file validation occurs during execution
+            # Use the explicitly provided protocols
+            source_protocols = protocols
+        else:
+            # Extract from source directory
+            src_path = self.source_path / "src"
+            source_protocols = (
+                extract_protocols_from_directory(src_path) if src_path.exists() else []
+            )
 
         # Get existing SPI protocols
         spi_protocols_path = self.spi_path / "src" / "omnibase_spi" / "protocols"
@@ -403,33 +424,3 @@ class ProtocolMigrator:
 
         except Exception as e:
             return ValidationResult(success=False, errors=[f"Rollback failed: {e}"])
-
-    def print_migration_plan(self, plan: ModelMigrationPlan) -> None:
-        """Print human-readable migration plan."""
-
-        if plan.conflicts_detected:
-            for conflict in plan.conflicts_detected:
-                if hasattr(conflict, "spi_file") and conflict.spi_file:
-                    pass
-
-        if plan.protocols_to_migrate and not plan.conflicts_detected:
-            by_category: dict[str, list[ModelProtocolInfo]] = {}
-            for protocol in plan.protocols_to_migrate:
-                category = suggest_spi_location(protocol)
-                if category not in by_category:
-                    by_category[category] = []
-                by_category[category].append(protocol)
-
-            for category, protocols in by_category.items():
-                for protocol in protocols:
-                    pass
-
-        if plan.recommendations:
-            for _recommendation in plan.recommendations:
-                pass
-
-        (
-            "✅ READY TO PROCEED"
-            if plan.can_proceed()
-            else "❌ CONFLICTS MUST BE RESOLVED"
-        )

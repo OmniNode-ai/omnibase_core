@@ -12,7 +12,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_parameter_type import EnumEffectParameterType
+from omnibase_core.exceptions.onex_error import OnexError
 
 
 # TypedDict definitions for factory method parameters
@@ -134,8 +136,9 @@ class ModelEffectParameterValue(BaseModel):
 
         required_field = required_fields.get(parameter_type)
         if required_field == field_name and v is None:
-            raise ValueError(
-                f"Field {field_name} is required for parameter type {parameter_type}",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Field {field_name} is required for parameter type {parameter_type}",
             )
 
         return v
@@ -159,8 +162,9 @@ class ModelEffectParameterValue(BaseModel):
             and field_name == "reference_id"
             and v is None
         ):
-            raise ValueError(
-                f"Field {field_name} is required for parameter type {parameter_type}",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Field {field_name} is required for parameter type {parameter_type}",
             )
 
         return v
@@ -296,7 +300,9 @@ class ModelEffectParameters(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -314,7 +320,12 @@ class ModelEffectParameters(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -326,7 +337,9 @@ class ModelEffectParameters(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

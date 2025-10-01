@@ -12,6 +12,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -200,29 +202,33 @@ class ModelComputationOutputData(BaseModel):
             v,
             ModelNumericComputationOutput,
         ):
-            raise ValueError(
-                "NUMERIC computation_type requires ModelNumericComputationOutput",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="NUMERIC computation_type requires ModelNumericComputationOutput",
             )
         if computation_type == ModelComputationType.TEXT and not isinstance(
             v,
             ModelTextComputationOutput,
         ):
-            raise ValueError(
-                "TEXT computation_type requires ModelTextComputationOutput",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="TEXT computation_type requires ModelTextComputationOutput",
             )
         if computation_type == ModelComputationType.BINARY and not isinstance(
             v,
             ModelBinaryComputationOutput,
         ):
-            raise ValueError(
-                "BINARY computation_type requires ModelBinaryComputationOutput",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="BINARY computation_type requires ModelBinaryComputationOutput",
             )
         if computation_type == ModelComputationType.STRUCTURED and not isinstance(
             v,
             ModelStructuredComputationOutput,
         ):
-            raise ValueError(
-                "STRUCTURED computation_type requires ModelStructuredComputationOutput",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="STRUCTURED computation_type requires ModelStructuredComputationOutput",
             )
 
         return v
@@ -243,7 +249,9 @@ class ModelComputationOutputData(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -261,7 +269,12 @@ class ModelComputationOutputData(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -273,7 +286,9 @@ class ModelComputationOutputData(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

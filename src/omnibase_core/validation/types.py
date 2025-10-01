@@ -46,6 +46,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.issues: list[str] = []
         self.file_path = file_path
         self.union_patterns: list[ModelUnionPattern] = []
+        self._in_union_binop = False  # Track if we're inside a union BinOp chain
 
         # Track problematic patterns
         self.complex_unions: list[ModelUnionPattern] = []
@@ -81,6 +82,14 @@ class UnionUsageChecker(ast.NodeVisitor):
     def _analyze_union_pattern(self, union_pattern: ModelUnionPattern) -> None:
         """Analyze a union pattern for potential issues."""
         types_set = frozenset(union_pattern.types)
+
+        # Check for Union[T, None] which should use Optional[T]
+        if "None" in union_pattern.types and union_pattern.type_count == 2:
+            non_none_types = [t for t in union_pattern.types if t != "None"]
+            self.issues.append(
+                f"Line {union_pattern.line}: Use Optional[{non_none_types[0]}] "
+                f"instead of {union_pattern.get_signature()}",
+            )
 
         # Check for complex unions (configurable complexity threshold)
         if union_pattern.type_count >= 3:
@@ -123,6 +132,11 @@ class UnionUsageChecker(ast.NodeVisitor):
     def visit_BinOp(self, node: ast.BinOp) -> None:
         """Visit binary operation nodes (e.g., str | int | float)."""
         if isinstance(node.op, ast.BitOr):
+            # Skip if we're already inside a union BinOp chain
+            # This prevents double-counting nested unions like (str | int) | bool
+            if self._in_union_binop:
+                return
+
             # Modern union syntax: str | int | float
             union_types = self._extract_union_from_binop(node)
             if len(union_types) >= 2:  # Only process if we have multiple types
@@ -138,6 +152,14 @@ class UnionUsageChecker(ast.NodeVisitor):
 
                 # Analyze the pattern
                 self._analyze_union_pattern(union_pattern)
+
+            # Mark that we're inside a union BinOp chain and visit children
+            # This ensures we still visit Subscript nodes and other structures
+            # but skip nested BinOp unions that are part of the same chain
+            self._in_union_binop = True
+            self.generic_visit(node)
+            self._in_union_binop = False
+            return
 
         self.generic_visit(node)
 

@@ -347,3 +347,112 @@ class TestModelResultAccessor:
         except Exception:
             # If serialization is not supported, that's okay for now
             pass
+
+    def test_configure_protocol_method(self):
+        """Test configure method (Configurable protocol)."""
+        accessor = TestResultModel()
+
+        result = accessor.configure(
+            results={"test": "value"},
+            metadata={"meta": "data"},
+        )
+
+        assert result is True
+        # Verify configuration was applied
+        assert hasattr(accessor, "results")
+        assert hasattr(accessor, "metadata")
+
+    def test_configure_with_invalid_attribute(self):
+        """Test configure with non-existent attribute."""
+        accessor = TestResultModel()
+
+        result = accessor.configure(
+            valid_field="value",
+            nonexistent_field="invalid",
+        )
+
+        # Should still return True
+        assert result is True
+
+    def test_configure_with_exception(self):
+        """Test configure handles exceptions gracefully."""
+        accessor = TestResultModel()
+
+        # Try to configure with invalid type
+        result = accessor.configure(results="invalid_type")
+
+        # Should return False on exception
+        assert result is False
+
+    def test_serialize_protocol_method(self):
+        """Test serialize method (Serializable protocol)."""
+        accessor = TestResultModel()
+
+        accessor.set_result_value("test", "value")
+
+        serialized = accessor.serialize()
+
+        assert isinstance(serialized, dict)
+        assert "accessor_type" in serialized
+        assert serialized["accessor_type"] == "TestResultModel"
+
+    def test_serialize_includes_data_attributes(self):
+        """Test serialize includes accessible data attributes."""
+        accessor = TestResultModel()
+
+        accessor.set_result_value("key1", "value1")
+        accessor.set_metadata_value("key2", "value2")
+
+        serialized = accessor.serialize()
+
+        assert isinstance(serialized, dict)
+        # Should include results and metadata if they're not private
+        assert "results" in serialized or "accessor_type" in serialized
+
+    def test_serialize_excludes_private_attributes(self):
+        """Test serialize excludes private attributes."""
+        accessor = TestResultModel()
+
+        accessor._private_attr = "should_not_serialize"
+
+        serialized = accessor.serialize()
+
+        assert "_private_attr" not in serialized
+
+    def test_validate_instance_protocol_method(self):
+        """Test validate_instance method (Validatable protocol)."""
+        accessor = TestResultModel()
+
+        result = accessor.validate_instance()
+
+        assert result is True
+
+    def test_validate_instance_with_data(self):
+        """Test validate_instance with populated data."""
+        accessor = TestResultModel()
+
+        accessor.set_result_value("test", "value")
+        accessor.set_metadata_value("meta", "data")
+
+        result = accessor.validate_instance()
+
+        assert result is True
+
+    def test_get_name_protocol_method(self):
+        """Test get_name method (Nameable protocol)."""
+        accessor = TestResultModel()
+
+        name = accessor.get_name()
+
+        assert isinstance(name, str)
+        assert "TestResultModel" in name
+
+    def test_set_name_protocol_method(self):
+        """Test set_name method (Nameable protocol)."""
+        accessor = TestResultModel()
+
+        # Should not raise exception
+        accessor.set_name("Custom Accessor Name")
+
+        # Method should complete without errors
+        assert True

@@ -157,6 +157,24 @@ repos:
         exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
         stages: [pre-commit]
 
+      - id: check-no-fallbacks
+        name: ONEX No Fallback Patterns Validation
+        entry: poetry run python scripts/validation/check_no_fallbacks.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
+      - id: check-error-raising
+        name: ONEX Error Raising Validation
+        entry: poetry run python scripts/validation/check_error_raising.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards
