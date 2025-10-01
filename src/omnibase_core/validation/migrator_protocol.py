@@ -403,33 +403,3 @@ class ProtocolMigrator:
 
         except Exception as e:
             return ValidationResult(success=False, errors=[f"Rollback failed: {e}"])
-
-    def print_migration_plan(self, plan: ModelMigrationPlan) -> None:
-        """Print human-readable migration plan."""
-
-        if plan.conflicts_detected:
-            for conflict in plan.conflicts_detected:
-                if hasattr(conflict, "spi_file") and conflict.spi_file:
-                    pass
-
-        if plan.protocols_to_migrate and not plan.conflicts_detected:
-            by_category: dict[str, list[ModelProtocolInfo]] = {}
-            for protocol in plan.protocols_to_migrate:
-                category = suggest_spi_location(protocol)
-                if category not in by_category:
-                    by_category[category] = []
-                by_category[category].append(protocol)
-
-            for category, protocols in by_category.items():
-                for protocol in protocols:
-                    pass
-
-        if plan.recommendations:
-            for _recommendation in plan.recommendations:
-                pass
-
-        (
-            "✅ READY TO PROCEED"
-            if plan.can_proceed()
-            else "❌ CONFLICTS MUST BE RESOLVED"
-        )

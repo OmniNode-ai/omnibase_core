@@ -42,7 +42,7 @@ class TestValidateArchitectureWrapper:
         # Change to temp directory for relative path test
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
             result = validate_architecture()
@@ -118,7 +118,7 @@ class TestValidateUnionUsageWrapper:
 
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
             result = validate_union_usage()
@@ -207,7 +207,7 @@ class TestValidateContractsWrapper:
 
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
             result = validate_contracts()
@@ -269,7 +269,7 @@ class TestValidatePatternsWrapper:
 
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
             result = validate_patterns()
@@ -337,7 +337,7 @@ class TestValidateAllWrapper:
 
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
             results = validate_all()

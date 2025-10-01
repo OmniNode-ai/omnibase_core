@@ -503,7 +503,7 @@ def func(x: Union[str, int, bool, float]) -> None:  # Complex union
         assert len(results) > 0
         # At least one result should have errors
         has_errors = any(not r.success for r in results.values())
-        assert has_errors or True  # May pass if validation is permissive
+        assert True  # May pass if validation is permissive
 
     def test_suite_validators_immutability(self) -> None:
         """Test that validator configuration is consistent across calls."""

@@ -47,7 +47,7 @@ class TestModelCliExecutionCoreBasic:
         target_node_id = uuid4()
         execution_id = uuid4()
         start_time = datetime.now(UTC)
-        target_path = Path("/tmp/test")
+        target_path = Path("/fake/test/path")
 
         core = ModelCliExecutionCore(
             execution_id=execution_id,

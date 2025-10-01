@@ -5,7 +5,7 @@ Validates that BaseCollection works correctly with concrete implementations
 and enforces the collection protocol.
 """
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from pydantic import Field

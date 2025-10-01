@@ -50,55 +50,47 @@ class TestModelTimeoutValidation:
 
     def test_invalid_timeout_seconds_type(self):
         """Test that invalid timeout_seconds type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a number"):
             ModelTimeout(timeout_seconds="invalid")
-        assert "must be a number" in str(exc_info.value)
 
     def test_invalid_warning_threshold_type(self):
         """Test that invalid warning_threshold_seconds type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a number"):
             ModelTimeout(timeout_seconds=60, warning_threshold_seconds="invalid")
-        assert "must be a number" in str(exc_info.value)
 
     def test_invalid_is_strict_type(self):
         """Test that invalid is_strict type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a boolean"):
             ModelTimeout(timeout_seconds=60, is_strict="true")
-        assert "must be a boolean" in str(exc_info.value)
 
     def test_invalid_allow_extension_type(self):
         """Test that invalid allow_extension type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a boolean"):
             ModelTimeout(timeout_seconds=60, allow_extension="yes")
-        assert "must be a boolean" in str(exc_info.value)
 
     def test_invalid_extension_limit_type(self):
         """Test that invalid extension_limit_seconds type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a number"):
             ModelTimeout(
                 timeout_seconds=60,
                 allow_extension=True,
                 extension_limit_seconds="invalid",
             )
-        assert "must be a number" in str(exc_info.value)
 
     def test_invalid_runtime_category_type(self):
         """Test that invalid runtime_category type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be an EnumRuntimeCategory"):
             ModelTimeout(timeout_seconds=60, runtime_category="fast")
-        assert "must be an EnumRuntimeCategory" in str(exc_info.value)
 
     def test_invalid_description_type(self):
         """Test that invalid description type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a string"):
             ModelTimeout(timeout_seconds=60, description=123)
-        assert "must be a string" in str(exc_info.value)
 
     def test_invalid_custom_metadata_type(self):
         """Test that invalid custom_metadata type raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(OnexError, match="must be a dictionary"):
             ModelTimeout(timeout_seconds=60, custom_metadata="invalid")
-        assert "must be a dictionary" in str(exc_info.value)
 
 
 class TestModelTimeoutProperties:
@@ -189,12 +181,10 @@ class TestModelTimeoutDeadlineCalculations:
     def test_get_deadline_from_now(self):
         """Test get_deadline from current time."""
         timeout = ModelTimeout(timeout_seconds=60)
-        deadline = timeout.get_deadline()
-        now = datetime.now(UTC)
-        assert deadline > now
-        # Should be approximately 60 seconds from now
-        time_diff = (deadline - now).total_seconds()
-        assert 59 <= time_diff <= 61
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        deadline = timeout.get_deadline(start_time)
+        expected = datetime(2024, 1, 1, 12, 1, 0, tzinfo=UTC)
+        assert deadline == expected
 
     def test_get_deadline_from_specific_time(self):
         """Test get_deadline from specific start time."""
@@ -226,47 +216,54 @@ class TestModelTimeoutExpirationChecks:
     def test_is_expired_false(self):
         """Test is_expired returns False for non-expired timeout."""
         timeout = ModelTimeout(timeout_seconds=60)
-        start_time = datetime.now(UTC)
-        assert timeout.is_expired(start_time) is False
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 30, tzinfo=UTC)
+        assert timeout.is_expired(start_time, current_time) is False
 
     def test_is_expired_true(self):
         """Test is_expired returns True for expired timeout."""
         timeout = ModelTimeout(timeout_seconds=10)
-        start_time = datetime.now(UTC) - timedelta(seconds=15)
-        assert timeout.is_expired(start_time) is True
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 15, tzinfo=UTC)
+        assert timeout.is_expired(start_time, current_time) is True
 
     def test_is_warning_triggered_false(self):
         """Test is_warning_triggered returns False before threshold."""
         timeout = ModelTimeout(timeout_seconds=60, warning_threshold_seconds=45)
-        start_time = datetime.now(UTC)
-        assert timeout.is_warning_triggered(start_time) is False
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 30, tzinfo=UTC)
+        assert timeout.is_warning_triggered(start_time, current_time) is False
 
     def test_is_warning_triggered_true(self):
         """Test is_warning_triggered returns True after threshold."""
         timeout = ModelTimeout(timeout_seconds=60, warning_threshold_seconds=10)
-        start_time = datetime.now(UTC) - timedelta(seconds=15)
-        assert timeout.is_warning_triggered(start_time) is True
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 15, tzinfo=UTC)
+        assert timeout.is_warning_triggered(start_time, current_time) is True
 
     def test_get_remaining_seconds(self):
         """Test get_remaining_seconds calculation."""
         timeout = ModelTimeout(timeout_seconds=60)
-        start_time = datetime.now(UTC) - timedelta(seconds=30)
-        remaining = timeout.get_remaining_seconds(start_time)
-        assert 29 <= remaining <= 31
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 30, tzinfo=UTC)
+        remaining = timeout.get_remaining_seconds(start_time, current_time)
+        assert remaining == 30
 
     def test_get_elapsed_seconds(self):
         """Test get_elapsed_seconds calculation."""
         timeout = ModelTimeout(timeout_seconds=60)
-        start_time = datetime.now(UTC) - timedelta(seconds=15)
-        elapsed = timeout.get_elapsed_seconds(start_time)
-        assert 14 <= elapsed <= 16
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 15, tzinfo=UTC)
+        elapsed = timeout.get_elapsed_seconds(start_time, current_time)
+        assert elapsed == 15
 
     def test_get_progress_percentage(self):
         """Test get_progress_percentage calculation."""
         timeout = ModelTimeout(timeout_seconds=100)
-        start_time = datetime.now(UTC) - timedelta(seconds=50)
-        progress = timeout.get_progress_percentage(start_time)
-        assert 49 <= progress <= 51
+        start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 1, 12, 0, 50, tzinfo=UTC)
+        progress = timeout.get_progress_percentage(start_time, current_time)
+        assert progress == 50.0
 
 
 class TestModelTimeoutExtension:

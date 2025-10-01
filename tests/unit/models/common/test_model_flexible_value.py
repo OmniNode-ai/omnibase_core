@@ -1,6 +1,6 @@
 """Tests for ModelFlexibleValue."""
 
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -64,6 +64,10 @@ class TestModelFlexibleValueCollections:
         value = ModelFlexibleValue.from_dict_value(dict_val)
         assert value.value_type == EnumFlexibleValueType.DICT
         assert len(value.dict_value) == 2
+        assert "key1" in value.dict_value
+        assert "key2" in value.dict_value
+        assert value.dict_value["key1"].to_value() == "value1"
+        assert value.dict_value["key2"].to_value() == 42
 
     def test_create_from_raw_dict(self):
         """Test creating flexible value from raw dict."""
@@ -71,6 +75,8 @@ class TestModelFlexibleValueCollections:
         value = ModelFlexibleValue.from_raw_dict(raw_dict)
         assert value.value_type == EnumFlexibleValueType.DICT
         assert len(value.dict_value) == 3
+        assert set(value.dict_value.keys()) == {"key1", "key2", "key3"}
+        assert all(isinstance(v, ModelSchemaValue) for v in value.dict_value.values())
 
     def test_create_from_list(self):
         """Test creating flexible value from list."""
@@ -78,6 +84,10 @@ class TestModelFlexibleValueCollections:
         value = ModelFlexibleValue.from_list(list_val)
         assert value.value_type == EnumFlexibleValueType.LIST
         assert len(value.list_value) == 4
+        assert value.list_value[0].to_value() == "item1"
+        assert value.list_value[1].to_value() == 42
+        assert value.list_value[2].to_value() is True
+        assert value.list_value[3].to_value() == 3.14
 
     def test_list_value_conversion(self):
         """Test that list values are converted to ModelSchemaValue."""
@@ -345,3 +355,7 @@ class TestModelFlexibleValueEdgeCases:
         assert value.value_type == EnumFlexibleValueType.LIST
         retrieved_list = value.get_value()
         assert len(retrieved_list) == 2
+        assert isinstance(retrieved_list[0], list)
+        assert isinstance(retrieved_list[1], list)
+        assert retrieved_list[0] == [1, 2]
+        assert retrieved_list[1] == [3, 4]

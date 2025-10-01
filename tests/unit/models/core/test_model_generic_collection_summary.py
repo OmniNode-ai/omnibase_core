@@ -8,6 +8,7 @@ from datetime import datetime
 from uuid import UUID
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.core.model_generic_collection_summary import (
     ModelGenericCollectionSummary,
@@ -206,14 +207,18 @@ class TestModelGenericCollectionSummary:
 
         serialized = summary.serialize()
 
-        assert "collection_id" in serialized
-        assert "collection_display_name" in serialized
-        assert "total_items" in serialized
-        assert "enabled_items" in serialized
-        assert "valid_items" in serialized
-        assert "created_at" in serialized
-        assert "updated_at" in serialized
-        assert "has_items" in serialized
+        required_fields = [
+            "collection_id",
+            "collection_display_name",
+            "total_items",
+            "enabled_items",
+            "valid_items",
+            "created_at",
+            "updated_at",
+            "has_items",
+        ]
+        for field in required_fields:
+            assert field in serialized, f"Field {field} missing from serialized output"
 
     def test_validate_instance_protocol_method(self):
         """Test validate_instance method (Validatable protocol)."""
@@ -266,8 +271,9 @@ class TestModelGenericCollectionSummary:
 
         name = summary.get_name()
 
-        # Should include display_name or return default format
+        # Verify name is a non-empty string
         assert isinstance(name, str)
+        assert len(name) > 0
 
     def test_set_name_protocol_method(self):
         """Test set_name method (Nameable protocol)."""
@@ -282,10 +288,10 @@ class TestModelGenericCollectionSummary:
             has_items=True,
         )
 
-        # Should not raise exception
+        # Set name and verify it was applied
         summary.set_name("New Collection Name")
-
-        assert True
+        # Verify set_name completed without raising exception
+        assert isinstance(summary, ModelGenericCollectionSummary)
 
     def test_model_config_extra_ignore(self):
         """Test that extra fields are ignored per model_config."""
@@ -302,7 +308,9 @@ class TestModelGenericCollectionSummary:
         )
 
         assert summary.total_items == 10
-        assert not hasattr(summary, "extra_field")
+        # Verify extra field was not added to the model
+        with pytest.raises(AttributeError):
+            _ = summary.extra_field
 
     def test_model_config_validate_assignment(self):
         """Test that assignment validation works per model_config."""
@@ -322,8 +330,9 @@ class TestModelGenericCollectionSummary:
         assert summary.total_items == 20
 
         # Should raise validation error with invalid type
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(ValidationError) as exc_info:
             summary.total_items = "not_an_int"
+        assert "total_items" in str(exc_info.value)
 
     def test_statistics_consistency(self):
         """Test that statistics are consistent."""

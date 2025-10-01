@@ -347,7 +347,7 @@ class TestContextValueValidation:
         """Test is_context_value with invalid types."""
         assert is_context_value(None) is False
         assert is_context_value(object()) is False
-        assert is_context_value(set([1, 2, 3])) is False
+        assert is_context_value({1, 2, 3}) is False
 
     def test_is_complex_context_value(self):
         """Test is_complex_context_value (same as is_context_value)."""
@@ -378,7 +378,7 @@ class TestContextValueValidation:
     def test_validate_context_value_with_set(self):
         """Test validate_context_value fails with set."""
         with pytest.raises(TypeError) as exc_info:
-            validate_context_value(set([1, 2, 3]))
+            validate_context_value({1, 2, 3})
         assert "Expected context value" in str(exc_info.value)
 
 

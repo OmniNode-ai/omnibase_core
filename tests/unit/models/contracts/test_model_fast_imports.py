@@ -457,7 +457,6 @@ class TestZeroImportTimeLoading:
 
     def test_no_imports_at_module_level(self):
         """Test that no contract imports occur at module import time."""
-        import sys
 
         # Remove any cached contract modules
         modules_to_remove = [
@@ -474,7 +473,7 @@ class TestZeroImportTimeLoading:
         # Verify no contract modules were imported
         contract_modules = [
             key
-            for key in sys.modules.keys()
+            for key in sys.modules
             if "model_contract_" in key and "model_fast_imports" not in key
         ]
 
@@ -485,7 +484,6 @@ class TestZeroImportTimeLoading:
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""
-        import sys
 
         # Create a new factory to test fresh import behavior
         from omnibase_core.models.contracts.model_fast_imports import (

@@ -82,7 +82,7 @@ class TestModelErrorContextFactoryMethods:
         }
         context = ModelErrorContext.with_context(additional)
         assert len(context.additional_context) == 3
-        assert all(k in context.additional_context for k in additional.keys())
+        assert all(k in context.additional_context for k in additional)
 
 
 class TestModelErrorContextSerialization:

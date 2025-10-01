@@ -430,7 +430,54 @@ class ModelNodeType(BaseModel):
 
     @classmethod
     def from_string(cls, name: str) -> ModelNodeType:
-        """Create ModelNodeType from string name for current standards."""
+        """
+        Create ModelNodeType instance from string name.
+
+        Factory method that creates a ModelNodeType instance from a string
+        identifier. Supports all registered node type names with proper
+        factory method mapping and fallback to generic node creation for
+        valid enum values.
+
+        Args:
+            name: String identifier for the node type. Must match a factory
+                method name (e.g., "CONTRACT_TO_MODEL", "NODE_GENERATOR")
+                or be a valid EnumTypeName value.
+
+        Returns:
+            ModelNodeType instance configured with appropriate metadata,
+            category, and capabilities for the specified node type.
+
+        Raises:
+            OnexError: If the name is not a recognized node type and not
+                a valid EnumTypeName value. Error includes validation_error
+                code and suggestions for valid node types.
+
+        Example:
+            ```python
+            # Create from factory method name
+            node = ModelNodeType.from_string("CONTRACT_TO_MODEL")
+            assert node.type_name == EnumTypeName.CONTRACT_TO_MODEL
+            assert node.is_generator is True
+            assert node.requires_contract is True
+
+            # Create from enum value
+            node = ModelNodeType.from_string("VALIDATION_ENGINE")
+            assert node.category == EnumConfigCategory.VALIDATION
+
+            # Invalid name raises OnexError
+            try:
+                invalid_node = ModelNodeType.from_string("INVALID_TYPE")
+            except OnexError as e:
+                print(f"Unknown node type: {e.message}")
+            ```
+
+        Note:
+            For known node types with dedicated factory methods, this
+            returns a fully configured instance with all metadata. For
+            valid EnumTypeName values without factory methods, creates
+            a generic node with UNKNOWN category. Use factory methods
+            directly when possible for better type safety and IDE support.
+        """
         factory_map = {
             "CONTRACT_TO_MODEL": cls.CONTRACT_TO_MODEL,
             "MULTI_DOC_MODEL_GENERATOR": cls.MULTI_DOC_MODEL_GENERATOR,
@@ -485,15 +532,74 @@ class ModelNodeType(BaseModel):
 
     @property
     def name(self) -> str:
-        """Get type name as string."""
+        """
+        Get the node type name as a string.
+
+        Convenience property that returns the string value of the type_name
+        enum. Useful for logging, display, and serialization scenarios.
+
+        Returns:
+            String representation of the node type name (e.g., "CONTRACT_TO_MODEL").
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            print(node.name)  # Output: "CONTRACT_TO_MODEL"
+            assert node.name == "CONTRACT_TO_MODEL"
+            ```
+        """
         return self.type_name.value
 
     def __str__(self) -> str:
-        """String representation for current standards."""
+        """
+        String representation of the ModelNodeType.
+
+        Returns the type name value for string conversion operations.
+        Used for logging, debugging, and display purposes.
+
+        Returns:
+            String representation of the node type name.
+
+        Example:
+            ```python
+            node = ModelNodeType.VALIDATION_ENGINE()
+            print(str(node))  # Output: "VALIDATION_ENGINE"
+            log_message = f"Processing {node}"  # Uses __str__ implicitly
+            ```
+        """
         return self.type_name.value
 
     def __eq__(self, other: object) -> bool:
-        """Equality comparison for current standards."""
+        """
+        Equality comparison for ModelNodeType instances.
+
+        Supports comparison with strings, other ModelNodeType instances,
+        and EnumTypeName values for flexible equality checking.
+
+        Args:
+            other: Object to compare with. Can be str, ModelNodeType, or EnumTypeName.
+
+        Returns:
+            True if the objects represent the same node type, False otherwise.
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+
+            # Compare with string
+            assert node == "CONTRACT_TO_MODEL"
+
+            # Compare with another instance
+            node2 = ModelNodeType.CONTRACT_TO_MODEL()
+            assert node == node2
+
+            # Compare with enum
+            assert node == EnumTypeName.CONTRACT_TO_MODEL
+
+            # Different types are not equal
+            assert node != "DIFFERENT_TYPE"
+            ```
+        """
         if isinstance(other, str):
             return self.type_name.value == other
         if isinstance(other, ModelNodeType):
@@ -511,7 +617,33 @@ class ModelNodeType(BaseModel):
     # Protocol method implementations
 
     def get_id(self) -> str:
-        """Get unique identifier (Identifiable protocol)."""
+        """
+        Get unique identifier for the node type instance.
+
+        Implements the Identifiable protocol by returning a unique string
+        identifier. Checks multiple common ID field patterns and falls back
+        to a generated identifier if no ID field is found.
+
+        Returns:
+            String identifier for this instance. Uses type_id (UUID) if available,
+            falls back to other ID fields, or generates a unique identifier based
+            on class name and instance ID.
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            node_id = node.get_id()
+            print(f"Node ID: {node_id}")  # e.g., "550e8400-e29b-41d4-a716-446655440000"
+
+            # ID is consistent for the same instance
+            assert node.get_id() == node.get_id()
+            ```
+
+        Note:
+            This method searches for ID fields in priority order: type_id,
+            id, uuid, identifier, node_id, execution_id, metadata_id.
+            The type_id field (UUID) is the primary identifier for node types.
+        """
         # Try common ID field patterns, starting with type_id
         for field in [
             "type_id",
@@ -529,7 +661,34 @@ class ModelNodeType(BaseModel):
         return f"{self.__class__.__name__}_{id(self)}"
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """
+        Get node type metadata as a dictionary.
+
+        Implements the ProtocolMetadataProvider protocol by extracting
+        metadata from common fields. Useful for serialization, logging,
+        and metadata-driven processing.
+
+        Returns:
+            Dictionary containing metadata fields such as name, description,
+            version, tags, and other metadata attributes if present.
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            metadata = node.get_metadata()
+            print(metadata)
+            # Output: {'description': 'Generates Pydantic models from contract.yaml'}
+
+            # Access specific metadata
+            if 'description' in metadata:
+                print(f"Description: {metadata['description']}")
+            ```
+
+        Note:
+            Only includes fields that exist on the instance and have non-None
+            values. Common metadata fields checked: name, description, version,
+            tags, metadata.
+        """
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -542,7 +701,42 @@ class ModelNodeType(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """
+        Set node type metadata from a dictionary.
+
+        Implements the ProtocolMetadataProvider protocol by updating
+        instance attributes from a metadata dictionary. Only updates
+        attributes that already exist on the instance.
+
+        Args:
+            metadata: Dictionary of metadata key-value pairs to set.
+                Keys should match attribute names on the instance.
+
+        Returns:
+            True if metadata was successfully set, False if an error occurred.
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+
+            # Update description
+            success = node.set_metadata({
+                'description': 'Updated description',
+                'execution_priority': 80
+            })
+            assert success is True
+            assert node.description == 'Updated description'
+            assert node.execution_priority == 80
+
+            # Unknown attributes are ignored
+            node.set_metadata({'unknown_field': 'value'})  # Silently ignored
+            ```
+
+        Note:
+            This method silently ignores metadata keys that don't correspond
+            to existing attributes. Returns False if any exception occurs
+            during the update process.
+        """
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -552,11 +746,69 @@ class ModelNodeType(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """
+        Serialize the node type to a dictionary.
+
+        Implements the Serializable protocol by converting the instance
+        to a dictionary representation suitable for JSON serialization,
+        storage, or transmission.
+
+        Returns:
+            Dictionary representation of the node type with all fields
+            including None values, using field aliases if defined.
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            serialized = node.serialize()
+
+            # Contains all fields
+            assert 'type_name' in serialized
+            assert 'description' in serialized
+            assert 'category' in serialized
+
+            # Can be used for JSON serialization
+            import json
+            json_str = json.dumps(serialized, default=str)
+            ```
+
+        Note:
+            This method includes all fields regardless of their value,
+            including None values. Uses Pydantic's model_dump with
+            by_alias=True to support field aliases.
+        """
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """
+        Validate the integrity of this node type instance.
+
+        Implements the ProtocolValidatable protocol by performing basic
+        validation checks on the instance. Currently performs minimal
+        validation as Pydantic handles most validation automatically.
+
+        Returns:
+            True if the instance is valid, False if validation fails.
+
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            is_valid = node.validate_instance()
+            assert is_valid is True
+
+            # Can be used in validation workflows
+            if node.validate_instance():
+                print("Node type is valid")
+            else:
+                print("Node type has validation errors")
+            ```
+
+        Note:
+            This method provides a hook for custom validation logic.
+            Override in subclasses to implement specific validation
+            requirements. Pydantic validation occurs automatically
+            during instantiation and assignment.
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

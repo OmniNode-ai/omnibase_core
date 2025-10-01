@@ -5,7 +5,6 @@ Validates decorator functionality for model configuration including
 allow_any_type and allow_dict_str_any decorators.
 """
 
-import pytest
 from pydantic import BaseModel
 
 from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any

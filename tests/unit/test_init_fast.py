@@ -46,7 +46,7 @@ class TestLazyValidationLoading:
         # Remove validation modules if already imported
         modules_to_remove = [
             key
-            for key in sys.modules.keys()
+            for key in sys.modules
             if "omnibase_core.validation" in key and key != "omnibase_core"
         ]
         for mod in modules_to_remove:
@@ -57,7 +57,7 @@ class TestLazyValidationLoading:
 
         # Validation modules should NOT be imported yet
         validation_modules = [
-            key for key in sys.modules.keys() if "omnibase_core.validation" in key
+            key for key in sys.modules if "omnibase_core.validation" in key
         ]
         assert (
             len(validation_modules) == 0
@@ -155,7 +155,7 @@ class TestLazyValidationLoading:
 
         # Verify no validation modules loaded yet
         validation_modules = [
-            key for key in sys.modules.keys() if "omnibase_core.validation." in key
+            key for key in sys.modules if "omnibase_core.validation." in key
         ]
 
         # Should be minimal (not testing specific times, just that no cascade occurred)

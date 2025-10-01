@@ -627,67 +627,6 @@ class TestRollback:
         assert not created_file.exists()  # Should be deleted
 
 
-class TestPrintMigrationPlan:
-    """Test migration plan printing."""
-
-    def test_print_migration_plan_empty(
-        self,
-        tmp_path: Path,
-        capsys: CaptureFixture[str],
-    ) -> None:
-        """Test printing empty migration plan."""
-        migrator = ProtocolMigrator()
-
-        plan = ModelMigrationPlan(
-            success=True,
-            source_repository="source",
-            target_repository="spi",
-            protocols_to_migrate=[],
-            conflicts_detected=[],
-            migration_steps=[],
-            estimated_time_minutes=0,
-            recommendations=[],
-        )
-
-        migrator.print_migration_plan(plan)
-
-        # Should complete without error
-        # (Output is implementation-dependent)
-
-    def test_print_migration_plan_with_conflicts(
-        self,
-        tmp_path: Path,
-        capsys: CaptureFixture[str],
-    ) -> None:
-        """Test printing plan with conflicts."""
-        migrator = ProtocolMigrator()
-
-        plan = ModelMigrationPlan(
-            success=False,
-            source_repository="source",
-            target_repository="spi",
-            protocols_to_migrate=[],
-            conflicts_detected=[
-                ModelMigrationConflictUnion(
-                    conflict_type=EnumMigrationConflictType.NAME_CONFLICT,
-                    protocol_name="ConflictProtocol",
-                    source_file="/source/conflict.py",
-                    spi_file="/spi/conflict.py",
-                    recommendation="Rename protocol",
-                    source_signature="hash1",
-                    spi_signature="hash2",
-                ),
-            ],
-            migration_steps=[],
-            estimated_time_minutes=0,
-            recommendations=[],
-        )
-
-        migrator.print_migration_plan(plan)
-
-        # Should complete without error
-
-
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 

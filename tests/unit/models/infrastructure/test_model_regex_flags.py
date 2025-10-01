@@ -128,27 +128,35 @@ class TestModelRegexFlagsUsage:
         """Test using flag in actual regex operation."""
         flags = ModelRegexFlags.dotall()
         pattern = re.compile(r"a.b", flags.get_flag())
-        assert pattern.match("a\nb") is not None
+        match = pattern.match("a\nb")
+        assert match is not None
+        assert match.group(0) == "a\nb"
 
     def test_use_in_regex_ignorecase(self):
         """Test using IGNORECASE flag in regex."""
         flags = ModelRegexFlags.ignorecase()
         pattern = re.compile(r"hello", flags.get_flag())
-        assert pattern.match("HELLO") is not None
+        match = pattern.match("HELLO")
+        assert match is not None
+        assert match.group(0) == "HELLO"
 
     def test_use_in_regex_multiline(self):
         """Test using MULTILINE flag in regex."""
         flags = ModelRegexFlags.multiline()
         text = "line1\nline2"
         pattern = re.compile(r"^line2", flags.get_flag())
-        assert pattern.search(text) is not None
+        match = pattern.search(text)
+        assert match is not None
+        assert match.group(0) == "line2"
 
     def test_use_combined_flags(self):
         """Test using combined flags in regex."""
         flags = ModelRegexFlags.combined(re.IGNORECASE, re.MULTILINE)
         text = "Line1\nLINE2"
         pattern = re.compile(r"^line2", flags.get_flag())
-        assert pattern.search(text) is not None
+        match = pattern.search(text)
+        assert match is not None
+        assert match.group(0) == "LINE2"
 
 
 class TestModelRegexFlagsSerialization:
@@ -197,8 +205,6 @@ class TestModelRegexFlagsEdgeCases:
 
     def test_combined_with_no_flags(self):
         """Test combined method with no flags raises validation error."""
-        from omnibase_core.exceptions.onex_error import OnexError
-
         with pytest.raises(OnexError) as exc_info:
             ModelRegexFlags.combined()
         assert "Invalid combined flag value" in str(exc_info.value)

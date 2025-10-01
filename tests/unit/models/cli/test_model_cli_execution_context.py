@@ -110,7 +110,7 @@ class TestModelCliExecutionContextBasic:
 
     def test_context_with_path_value(self):
         """Test context with Path value."""
-        path = Path("/tmp/test")
+        path = Path("/fake/test/path")
         context = ModelCliExecutionContext(
             key="path_key",
             value=path,
@@ -184,7 +184,7 @@ class TestModelCliExecutionContextMethods:
 
     def test_get_string_value_from_path(self):
         """Test getting string representation from Path value."""
-        path = Path("/tmp/test")
+        path = Path("/fake/test/path")
         context = ModelCliExecutionContext(
             key="test",
             value=path,
@@ -255,7 +255,7 @@ class TestModelCliExecutionContextMethods:
         """Test checking if value is Path when it is."""
         context = ModelCliExecutionContext(
             key="test",
-            value=Path("/tmp/test"),
+            value=Path("/fake/test/path"),
             context_type=EnumContextType.SYSTEM,
         )
 

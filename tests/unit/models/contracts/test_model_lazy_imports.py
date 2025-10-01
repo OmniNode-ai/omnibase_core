@@ -368,7 +368,6 @@ class TestLazyLoadingBehavior:
 
     def test_no_imports_at_module_level(self):
         """Test that no contract imports occur at module import time."""
-        import sys
 
         # Remove any cached contract modules
         modules_to_remove = [
@@ -385,7 +384,7 @@ class TestLazyLoadingBehavior:
         # Verify no contract modules were imported
         contract_modules = [
             key
-            for key in sys.modules.keys()
+            for key in sys.modules
             if "model_contract_" in key and "model_lazy_imports" not in key
         ]
 
@@ -396,7 +395,6 @@ class TestLazyLoadingBehavior:
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""
-        import sys
 
         # Create a new loader to test fresh import behavior
         from omnibase_core.models.contracts.model_lazy_imports import (
@@ -450,7 +448,6 @@ class TestPerformanceOptimization:
 
     def test_lazy_loading_defers_import_penalty(self):
         """Test that lazy loading defers import penalty until first access."""
-        import sys
         import time
 
         # Clear cached modules
@@ -473,7 +470,7 @@ class TestPerformanceOptimization:
         # Verify no contract modules loaded yet
         contract_modules = [
             key
-            for key in sys.modules.keys()
+            for key in sys.modules
             if "model_contract_" in key and "model_lazy_imports" not in key
         ]
 

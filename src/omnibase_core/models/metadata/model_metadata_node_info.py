@@ -307,16 +307,16 @@ class ModelMetadataNodeInfo(BaseModel):
             EnumConceptualComplexity.INTERMEDIATE,
         )
 
-        # Map documentation quality (use string value)
+        # Map documentation quality (direct enum lookup)
         doc_quality_map = {
-            "basic": EnumDocumentationQuality.BASIC,
-            "standard": EnumDocumentationQuality.COMPREHENSIVE,
-            "comprehensive": EnumDocumentationQuality.COMPREHENSIVE,
-            "excellent": EnumDocumentationQuality.EXCELLENT,
+            EnumValidationLevel.BASIC: EnumDocumentationQuality.BASIC,
+            EnumValidationLevel.STANDARD: EnumDocumentationQuality.COMPREHENSIVE,
+            EnumValidationLevel.COMPREHENSIVE: EnumDocumentationQuality.COMPREHENSIVE,
+            EnumValidationLevel.EXCELLENT: EnumDocumentationQuality.EXCELLENT,
         }
         documentation_quality = doc_quality_map.get(
-            self.documentation_quality.value,
-            EnumDocumentationQuality.UNKNOWN,
+            self.documentation_quality,
+            EnumDocumentationQuality.NONE,
         )
 
         summary = ModelNodeInfoSummary()
