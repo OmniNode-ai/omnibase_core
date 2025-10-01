@@ -7,8 +7,10 @@ outcome of CLI command execution with proper typing.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
@@ -187,6 +189,9 @@ class ModelCliResult(BaseModel):
         category: EnumConfigCategory = EnumConfigCategory.GENERAL,
     ) -> None:
         """Add a performance metric with proper typing."""
+        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
+        # This pattern is repeated in add_debug_info, add_trace_data, add_metadata
+        # Should be: perf_metrics = CliDataConverter.get_or_create(self.performance_metrics, ModelPerformanceMetrics, {...})
         # Performance metrics are now strongly typed - use proper model
         perf_metrics_value = self.performance_metrics.to_value()
         if perf_metrics_value is None:
@@ -217,6 +222,7 @@ class ModelCliResult(BaseModel):
 
     def add_debug_info(self, key: str, value: object) -> None:
         """Add debug information with proper typing."""
+        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
         if self.execution.is_debug_enabled:
             debug_info_value = self.debug_info.to_value()
             if debug_info_value is None:
@@ -240,11 +246,9 @@ class ModelCliResult(BaseModel):
         operation: str = "",
     ) -> None:
         """Add trace data with proper typing."""
+        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
         trace_data_value = self.trace_data.to_value()
         if trace_data_value is None:
-            from datetime import UTC, datetime
-            from uuid import uuid4
-
             now = datetime.now(UTC)
             trace_data = ModelTraceData(
                 trace_id=uuid4(),
@@ -260,9 +264,6 @@ class ModelCliResult(BaseModel):
             trace_data = trace_data_value
         else:
             # Create new if type is wrong
-            from datetime import UTC, datetime
-            from uuid import uuid4
-
             now = datetime.now(UTC)
             trace_data = ModelTraceData(
                 trace_id=uuid4(),
@@ -279,6 +280,7 @@ class ModelCliResult(BaseModel):
 
     def add_metadata(self, key: str, value: object) -> None:
         """Add result metadata with proper typing."""
+        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
         result_metadata_value = self.result_metadata.to_value()
         if result_metadata_value is None:
             result_metadata = ModelCliResultMetadata(
@@ -316,6 +318,9 @@ class ModelCliResult(BaseModel):
 
     def get_metadata(self, key: str, default: object = None) -> object:
         """Get result metadata with proper typing."""
+        # TODO: Extract to CliDataConverter.convert_cli_value_to_type()
+        # This type conversion logic is duplicated in get_output_value() - DRY violation
+        # Should be: return CliDataConverter.get_typed_field(result_metadata, key, default)
         result_metadata_value = self.result_metadata.to_value()
         if result_metadata_value is None or not isinstance(
             result_metadata_value,
@@ -378,6 +383,8 @@ class ModelCliResult(BaseModel):
         default: object = None,
     ) -> object:
         """Get a specific output value with proper typing."""
+        # TODO: Extract to CliDataConverter.convert_cli_value_to_type()
+        # This is duplicated from get_metadata() - same type conversion logic
         value = self.output_data.get_field_value(
             key,
             str(default) if default is not None else "",
@@ -408,13 +415,14 @@ class ModelCliResult(BaseModel):
 
     def get_formatted_output(self) -> str:
         """Get formatted output for display."""
+        # TODO: Extract to CliResultFormatter.format_output()
+        # This formatting logic should be in a separate formatter class
+        # Should be: return CliResultFormatter.format(self.output_text, self.output_data)
         if self.output_text:
             return self.output_text
 
         if self.output_data:
             # Try to format structured data nicely
-            import json
-
             try:
                 return json.dumps(self.output_data.model_dump(), indent=2, default=str)
             except (TypeError, ValueError):

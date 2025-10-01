@@ -52,7 +52,18 @@ class ProtocolMigrator:
         Create a migration plan for moving protocols to omnibase_spi.
 
         Args:
-            protocols: Specific protocols to migrate, or None for all
+            protocols: Specific protocols to migrate, or None for all.
+                When provided, bypasses filesystem extraction and validation.
+                The caller is responsible for ensuring:
+                - Protocol file paths exist and are accessible
+                - ModelProtocolInfo objects have correct types and structure
+                - All protocol metadata (name, signature_hash, etc.) is valid
+                Bypassed validation includes:
+                - Source directory existence check (src_path.exists())
+                - Protocol extraction via extract_protocols_from_directory()
+                - File path validation and protocol parsing
+                When None, extracts all protocols from the source repository
+                with full filesystem validation.
 
         Returns:
             ModelMigrationPlan with detailed migration strategy
