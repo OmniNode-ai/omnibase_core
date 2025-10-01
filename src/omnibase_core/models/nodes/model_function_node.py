@@ -240,7 +240,7 @@ class ModelFunctionNode(BaseModel):
         cls,
         name: str,
         description: str = "",
-        function_type: str = "function",
+        function_type: str = "transform",
     ) -> ModelFunctionNode:
         """Create a simple function node."""
         # Import the enum to convert string to enum
@@ -335,6 +335,11 @@ class ModelFunctionNode(BaseModel):
 
     def get_id(self) -> str:
         """Get unique identifier (Identifiable protocol)."""
+        # Check core.function_id first for ModelFunctionNode
+        if hasattr(self, "core") and hasattr(self.core, "function_id"):
+            if self.core.function_id is not None:
+                return str(self.core.function_id)
+
         # Try common ID field patterns
         for field in [
             "id",

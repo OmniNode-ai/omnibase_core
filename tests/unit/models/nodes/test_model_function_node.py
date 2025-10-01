@@ -18,6 +18,7 @@ from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_function_type import EnumFunctionType
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
 from omnibase_core.models.nodes.model_function_node_core import ModelFunctionNodeCore
 from omnibase_core.models.nodes.model_function_node_metadata import (
@@ -291,15 +292,16 @@ class TestModelFunctionNode:
         assert node.core.function_type == EnumFunctionType.COMPUTE
 
     def test_create_simple_with_invalid_function_type(self):
-        """Test create_simple with invalid function type falls back to default."""
-        node = ModelFunctionNode.create_simple(
-            "test_func",
-            "Description",
-            function_type="invalid_type",
-        )
+        """Test create_simple with invalid function type raises OnexError."""
+        with pytest.raises(OnexError) as exc_info:
+            ModelFunctionNode.create_simple(
+                "test_func",
+                "Description",
+                function_type="invalid_type",
+            )
 
-        assert node.name == "test_func"
-        assert node.core.function_type == EnumFunctionType.TRANSFORM  # Default fallback
+        assert "Invalid function type" in str(exc_info.value)
+        assert "invalid_type" in str(exc_info.value)
 
     def test_create_from_signature_factory(self):
         """Test create_from_signature factory method."""
@@ -315,14 +317,16 @@ class TestModelFunctionNode:
         assert node.core.return_type == EnumReturnType.TEXT
 
     def test_create_from_signature_with_invalid_return_type(self):
-        """Test create_from_signature with invalid return type."""
-        node = ModelFunctionNode.create_from_signature(
-            "test_func",
-            ["param1"],
-            return_type="invalid_type",
-        )
+        """Test create_from_signature with invalid return type raises OnexError."""
+        with pytest.raises(OnexError) as exc_info:
+            ModelFunctionNode.create_from_signature(
+                "test_func",
+                ["param1"],
+                return_type="invalid_type",
+            )
 
-        assert node.core.return_type == EnumReturnType.UNKNOWN
+        assert "Invalid return type" in str(exc_info.value)
+        assert "invalid_type" in str(exc_info.value)
 
     def test_create_documented_factory(self):
         """Test create_documented factory method."""

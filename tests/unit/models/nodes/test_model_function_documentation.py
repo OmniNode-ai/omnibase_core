@@ -236,12 +236,15 @@ class TestModelFunctionDocumentation:
         assert doc.docstring is None
 
     def test_get_id_protocol(self):
-        """Test get_id protocol method."""
+        """Test get_id protocol method raises OnexError without ID field."""
+        from omnibase_core.exceptions.onex_error import OnexError
+
         doc = ModelFunctionDocumentation()
 
-        doc_id = doc.get_id()
-        assert isinstance(doc_id, str)
-        assert len(doc_id) > 0
+        with pytest.raises(OnexError) as exc_info:
+            doc.get_id()
+
+        assert "must have a valid ID field" in str(exc_info.value)
 
     def test_get_metadata_protocol(self):
         """Test get_metadata protocol method."""

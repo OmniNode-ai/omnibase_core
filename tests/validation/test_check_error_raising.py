@@ -301,7 +301,7 @@ def test_something():
         finally:
             test_file.unlink()
             tests_dir.rmdir()
-            os.rmdir(temp_dir)
+            Path(temp_dir).rmdir()
 
     def test_handles_syntax_error(self):
         """Test handling of syntax errors in files."""

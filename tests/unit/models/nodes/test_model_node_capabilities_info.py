@@ -271,12 +271,15 @@ class TestModelNodeCapabilitiesInfo:
         assert info.performance_metrics is None
 
     def test_get_id_protocol(self):
-        """Test get_id protocol method."""
+        """Test get_id protocol method raises OnexError without ID field."""
+        from omnibase_core.exceptions.onex_error import OnexError
+
         info = ModelNodeCapabilitiesInfo()
 
-        info_id = info.get_id()
-        assert isinstance(info_id, str)
-        assert len(info_id) > 0
+        with pytest.raises(OnexError) as exc_info:
+            info.get_id()
+
+        assert "must have a valid ID field" in str(exc_info.value)
 
     def test_get_metadata_protocol(self):
         """Test get_metadata protocol method."""

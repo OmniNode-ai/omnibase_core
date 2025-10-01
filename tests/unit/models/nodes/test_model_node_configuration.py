@@ -412,12 +412,15 @@ class TestModelNodeConfiguration:
         assert config.connection.endpoint is None
 
     def test_get_id_protocol(self):
-        """Test get_id protocol method."""
+        """Test get_id protocol method raises OnexError without ID field."""
+        from omnibase_core.exceptions.onex_error import OnexError
+
         config = ModelNodeConfiguration()
 
-        config_id = config.get_id()
-        assert isinstance(config_id, str)
-        assert len(config_id) > 0
+        with pytest.raises(OnexError) as exc_info:
+            config.get_id()
+
+        assert "must have a valid ID field" in str(exc_info.value)
 
     def test_get_metadata_protocol(self):
         """Test get_metadata protocol method."""
