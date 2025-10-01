@@ -75,6 +75,11 @@ class TestProtocolWithComplexModels:
             identifier: str = "test_id"  # Test fixture
 
             @property
+            def id(self) -> str:
+                """Provide id property for Identifiable protocol."""
+                return self.identifier
+
+            @property
             def metadata(self) -> dict[str, object]:
                 return {
                     "id": self.id,

@@ -430,6 +430,11 @@ class TestProtocolIntegration:
         class IdentifiableModel(BaseModel):
             identifier: str = "test_id"  # Test fixture
 
+            @property
+            def id(self) -> str:
+                """Provide id property for Identifiable protocol."""
+                return self.identifier
+
         model = IdentifiableModel()
         assert is_identifiable(model) is True
 

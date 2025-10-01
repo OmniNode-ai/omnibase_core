@@ -83,7 +83,7 @@ class TestOnexErrorCodes:
     """Test OnexError with different error codes."""
 
     @pytest.mark.parametrize(
-        "error_code,expected_value",
+        ("error_code", "expected_value"),
         [
             (EnumCoreErrorCode.VALIDATION_ERROR, "validation_error"),
             (EnumCoreErrorCode.OPERATION_FAILED, "operation_failed"),

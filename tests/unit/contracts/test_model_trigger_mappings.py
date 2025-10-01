@@ -28,7 +28,6 @@ class TestModelTriggerMappings:
 
     def setup_method(self):
         """Set up test fixtures for each test method."""
-        pass
 
     # =================== VALID CONSTRUCTION TESTS ===================
 

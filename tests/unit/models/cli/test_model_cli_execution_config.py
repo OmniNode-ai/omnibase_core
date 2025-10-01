@@ -36,10 +36,10 @@ class TestModelCliExecutionConfigBasic:
         assert config.output_format == EnumOutputFormat.TEXT
         assert config.capture_output is True
 
-    def test_custom_configuration(self):
+    def test_custom_configuration(self, tmp_path):
         """Test custom execution configuration."""
         config = ModelCliExecutionConfig(
-            working_directory=Path("/tmp/test"),
+            working_directory=tmp_path,
             environment_vars={"VAR1": "value1", "VAR2": "value2"},
             is_dry_run=True,
             is_test_execution=True,
@@ -50,7 +50,7 @@ class TestModelCliExecutionConfigBasic:
             capture_output=False,
         )
 
-        assert config.working_directory == Path("/tmp/test")
+        assert config.working_directory == tmp_path
         assert config.environment_vars == {"VAR1": "value1", "VAR2": "value2"}
         assert config.is_dry_run is True
         assert config.is_test_execution is True
@@ -218,11 +218,11 @@ class TestModelCliExecutionConfigSerialization:
         assert data["is_debug_enabled"] is True
         assert data["environment_vars"] == {"KEY": "VALUE"}
 
-    def test_round_trip_serialization(self):
+    def test_round_trip_serialization(self, tmp_path):
         """Test serialization and deserialization."""
         original = ModelCliExecutionConfig(
             is_dry_run=True,
-            working_directory=Path("/home/test"),
+            working_directory=tmp_path,
             output_format=EnumOutputFormat.YAML,
         )
 
