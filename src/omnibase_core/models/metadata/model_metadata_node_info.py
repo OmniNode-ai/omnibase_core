@@ -289,10 +289,10 @@ class ModelMetadataNodeInfo(BaseModel):
         )
         from omnibase_core.enums.enum_node_type import EnumNodeType
 
-        # Map node type (use string value)
+        # Map node type (compare enum directly)
         node_type = (
             EnumNodeType.FUNCTION
-            if self.node_type.value == "function"
+            if self.node_type == EnumMetadataNodeType.FUNCTION
             else EnumNodeType.UNKNOWN
         )
 

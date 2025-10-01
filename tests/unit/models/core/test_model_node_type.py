@@ -512,6 +512,44 @@ class TestModelNodeType:
         assert node_type_from_json.is_validator == node_type.is_validator
         assert node_type_from_json.requires_contract == node_type.requires_contract
 
+    def test_get_id_returns_type_id(self):
+        """Test that get_id() returns str(type_id) for Identifiable protocol compliance."""
+        # Create a node with a known type_id
+        known_type_id = uuid4()
+        node_type = ModelNodeType(
+            type_id=known_type_id,
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
+            description="Test node for ID verification",
+            category=EnumConfigCategory.TESTING,
+        )
+
+        # Verify get_id() returns str(type_id)
+        result_id = node_type.get_id()
+        assert result_id == str(known_type_id)
+        assert isinstance(result_id, str)
+
+        # Verify it's a valid UUID string
+        from uuid import UUID
+
+        UUID(result_id)  # Should not raise ValueError
+
+    def test_get_id_stable_across_calls(self):
+        """Test that get_id() returns stable value across multiple calls."""
+        node_type = ModelNodeType(
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
+            description="Test node for ID stability",
+            category=EnumConfigCategory.TESTING,
+        )
+
+        # Call get_id() multiple times
+        id1 = node_type.get_id()
+        id2 = node_type.get_id()
+        id3 = node_type.get_id()
+
+        # All calls should return the same value
+        assert id1 == id2 == id3
+        assert id1 == str(node_type.type_id)
+
     def test_all_factory_methods_coverage(self):
         """Test that all factory methods defined in from_string are callable."""
         # Valid factory method names that should work

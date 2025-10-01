@@ -31,7 +31,7 @@ class ModelExternalServiceConfig(BaseModel):
 
     authentication_method: EnumAuthType = Field(
         default=EnumAuthType.NONE,
-        description="Authentication method (none, bearer_token, api_key, oauth2)",
+        description="Authentication method for external service integration",
     )
 
     rate_limit_enabled: bool = Field(

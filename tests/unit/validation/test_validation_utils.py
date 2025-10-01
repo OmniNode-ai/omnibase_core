@@ -10,7 +10,6 @@ import hashlib
 import logging
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -124,7 +123,7 @@ class TestProtocol(Protocol):
         finally:
             temp_path.unlink()
 
-    def test_extract_from_syntax_error_file(self):
+    def test_extract_from_syntax_error_file(self, caplog):
         """Test handling of files with syntax errors."""
         invalid_code = """
 from typing import Protocol
@@ -139,48 +138,47 @@ class TestProtocol(Protocol
             temp_path = Path(f.name)
 
         try:
-            with patch(
-                "omnibase_core.validation.validation_utils.logger",
-            ) as mock_logger:
+            with caplog.at_level(logging.WARNING):
                 result = extract_protocol_signature(temp_path)
 
                 assert result is None
-                mock_logger.warning.assert_called_once()
-                call_args = mock_logger.warning.call_args[0][0]
-                assert "syntax error" in call_args.lower()
-                assert str(temp_path) in call_args
+                assert len(caplog.records) == 1
+                assert caplog.records[0].levelname == "WARNING"
+                log_message = caplog.records[0].message
+                assert "syntax error" in log_message.lower()
+                assert str(temp_path) in log_message
 
         finally:
             temp_path.unlink()
 
-    def test_extract_from_nonexistent_file(self):
+    def test_extract_from_nonexistent_file(self, caplog):
         """Test handling of nonexistent files."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with patch("omnibase_core.validation.validation_utils.logger") as mock_logger:
+        with caplog.at_level(logging.ERROR):
             result = extract_protocol_signature(nonexistent_path)
 
             assert result is None
-            mock_logger.exception.assert_called_once()
-            call_args = mock_logger.exception.call_args[0][0]
-            assert "error reading file" in call_args.lower()
+            assert len(caplog.records) == 1
+            assert caplog.records[0].levelname == "ERROR"
+            log_message = caplog.records[0].message
+            assert "error reading file" in log_message.lower()
 
-    def test_extract_from_binary_file(self):
+    def test_extract_from_binary_file(self, caplog):
         """Test handling of binary files."""
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".py", delete=False) as f:
             f.write(b"\x00\x01\x02\x03\xff\xfe")  # Binary data
             temp_path = Path(f.name)
 
         try:
-            with patch(
-                "omnibase_core.validation.validation_utils.logger",
-            ) as mock_logger:
+            with caplog.at_level(logging.ERROR):
                 result = extract_protocol_signature(temp_path)
 
                 assert result is None
-                mock_logger.exception.assert_called_once()
-                call_args = mock_logger.exception.call_args[0][0]
-                assert "encoding error" in call_args.lower()
+                assert len(caplog.records) == 1
+                assert caplog.records[0].levelname == "ERROR"
+                log_message = caplog.records[0].message
+                assert "encoding error" in log_message.lower()
 
         finally:
             temp_path.unlink()
@@ -235,27 +233,26 @@ class TestPathValidation:
             with pytest.raises(InputValidationError, match="not a file"):
                 validate_file_path(temp_path, "test")
 
-    def test_directory_traversal_warning(self):
+    def test_directory_traversal_warning(self, caplog):
         """Test directory traversal attempts are logged."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a path with .. in it (but still valid)
             temp_path = Path(temp_dir) / ".." / Path(temp_dir).name
 
-            with patch(
-                "omnibase_core.validation.validation_utils.logger",
-            ) as mock_logger:
+            with caplog.at_level(logging.WARNING):
                 validated_path = validate_directory_path(temp_path, "test")
 
                 assert validated_path.exists()
-                mock_logger.warning.assert_called_once()
-                call_args = mock_logger.warning.call_args[0][0]
-                assert "directory traversal" in call_args.lower()
+                assert len(caplog.records) == 1
+                assert caplog.records[0].levelname == "WARNING"
+                log_message = caplog.records[0].message
+                assert "directory traversal" in log_message.lower()
 
 
 class TestExtractProtocolsFromDirectory:
     """Test directory-level protocol extraction."""
 
-    def test_extract_from_directory_with_protocols(self):
+    def test_extract_from_directory_with_protocols(self, caplog):
         """Test extraction from directory containing protocol files."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -275,39 +272,35 @@ class TestProtocol(Protocol):
             regular_file = temp_path / "regular.py"
             regular_file.write_text("print('hello')")
 
-            with patch(
-                "omnibase_core.validation.validation_utils.logger",
-            ) as mock_logger:
+            with caplog.at_level(logging.INFO):
                 protocols = extract_protocols_from_directory(temp_path)
 
                 assert len(protocols) == 1
                 assert protocols[0].name == "TestProtocol"
 
                 # Verify logging
-                mock_logger.info.assert_called()
-                info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
+                log_messages = [record.message for record in caplog.records]
                 assert any(
-                    "found" in call.lower() and "protocol files" in call.lower()
-                    for call in info_calls
+                    "found" in msg.lower() and "protocol files" in msg.lower()
+                    for msg in log_messages
                 )
                 assert any(
-                    "extracted" in call.lower() and "protocols" in call.lower()
-                    for call in info_calls
+                    "extracted" in msg.lower() and "protocols" in msg.lower()
+                    for msg in log_messages
                 )
 
-    def test_extract_from_empty_directory(self):
+    def test_extract_from_empty_directory(self, caplog):
         """Test extraction from empty directory."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            with patch(
-                "omnibase_core.validation.validation_utils.logger",
-            ) as mock_logger:
+            with caplog.at_level(logging.INFO):
                 protocols = extract_protocols_from_directory(temp_path)
 
                 assert len(protocols) == 0
                 # Should still log the attempt
-                mock_logger.info.assert_called()
+                assert len(caplog.records) > 0
+                assert any(record.levelname == "INFO" for record in caplog.records)
 
     def test_extract_from_invalid_directory(self):
         """Test extraction fails for invalid directory."""
@@ -391,21 +384,20 @@ class TestLoggingIntegration:
             validation_utils.logger.name == "omnibase_core.validation.validation_utils"
         )
 
-    def test_exception_logging(self):
+    def test_exception_logging(self, caplog):
         """Test that exceptions are properly logged."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("invalid python syntax (((")
             temp_path = Path(f.name)
 
         try:
-            with patch(
-                "omnibase_core.validation.validation_utils.logger",
-            ) as mock_logger:
+            with caplog.at_level(logging.WARNING):
                 result = extract_protocol_signature(temp_path)
 
                 assert result is None
                 # Should have called warning for syntax error
-                mock_logger.warning.assert_called_once()
+                assert len(caplog.records) == 1
+                assert caplog.records[0].levelname == "WARNING"
 
         finally:
             temp_path.unlink()

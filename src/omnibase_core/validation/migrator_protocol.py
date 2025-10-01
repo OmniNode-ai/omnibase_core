@@ -57,16 +57,16 @@ class ProtocolMigrator:
         Returns:
             ModelMigrationPlan with detailed migration strategy
         """
-        # Get protocols from source repository
-        src_path = self.source_path / "src"
-        source_protocols = (
-            extract_protocols_from_directory(src_path) if src_path.exists() else []
-        )
-
+        # Get protocols from source repository OR use provided protocols
         if protocols is not None:
-            # Filter to only requested protocols
-            protocol_names = {p.name for p in protocols}
-            source_protocols = [p for p in source_protocols if p.name in protocol_names]
+            # Use the explicitly provided protocols
+            source_protocols = protocols
+        else:
+            # Extract from source directory
+            src_path = self.source_path / "src"
+            source_protocols = (
+                extract_protocols_from_directory(src_path) if src_path.exists() else []
+            )
 
         # Get existing SPI protocols
         spi_protocols_path = self.spi_path / "src" / "omnibase_spi" / "protocols"

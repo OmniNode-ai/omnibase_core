@@ -26,7 +26,7 @@ class ModelEffectRetryConfig(BaseModel):
 
     backoff_strategy: EnumRetryBackoffStrategy = Field(
         default=EnumRetryBackoffStrategy.EXPONENTIAL,
-        description="Backoff strategy (linear, exponential, constant)",
+        description="Backoff strategy (fixed, linear, exponential, random, fibonacci)",
     )
 
     base_delay_ms: int = Field(

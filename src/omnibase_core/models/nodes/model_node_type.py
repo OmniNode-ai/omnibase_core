@@ -512,8 +512,9 @@ class ModelNodeType(BaseModel):
 
     def get_id(self) -> str:
         """Get unique identifier (Identifiable protocol)."""
-        # Try common ID field patterns
+        # Try common ID field patterns, starting with type_id
         for field in [
+            "type_id",
             "id",
             "uuid",
             "identifier",

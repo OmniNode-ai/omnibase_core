@@ -229,9 +229,9 @@ class ModelCliResult(BaseModel):
                 # Create new if type is wrong
                 debug_info = ModelCliDebugInfo()
                 self.debug_info = ModelSchemaValue.from_value(debug_info)
-            # Convert value to ModelSchemaValue for proper typing
+            # Pass value directly - set_custom_field handles type conversion
             schema_value = ModelSchemaValue.from_value(value)
-            debug_info.set_custom_field(key, str(schema_value.to_value()))
+            debug_info.set_custom_field(key, schema_value.to_value())
 
     def add_trace_data(
         self,
@@ -310,15 +310,9 @@ class ModelCliResult(BaseModel):
                 processing_time_ms=None,
             )
             self.result_metadata = ModelSchemaValue.from_value(result_metadata)
-        # Convert value to ModelSchemaValue for proper typing
+        # Pass value directly - set_custom_field handles type conversion
         schema_value = ModelSchemaValue.from_value(value)
-        # TODO: Fix the signature mismatch - set_custom_field expects ModelCliValue, not str
-        from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
-
-        result_metadata.set_custom_field(
-            key,
-            ModelCliValue.from_string(str(schema_value.to_value())),
-        )
+        result_metadata.set_custom_field(key, schema_value.to_value())
 
     def get_metadata(self, key: str, default: object = None) -> object:
         """Get result metadata with proper typing."""

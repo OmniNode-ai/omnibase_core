@@ -152,18 +152,61 @@ class ModelFunctionNode(BaseModel):
         self.performance.record_execution(success, execution_time_ms, memory_used_mb)
 
     def has_tests(self) -> bool:
-        """Check if function has tests (placeholder implementation)."""
-        # TODO: Implement actual test detection logic
-        return False
+        """
+        Check if function has tests.
+
+        Raises:
+            NotImplementedError: This method requires implementation of test
+                detection logic. See GitHub issue #47 for implementation requirements:
+                - AST parsing of test files
+                - Test name pattern matching
+                - Support for multiple test frameworks (pytest, unittest, etc.)
+                - Caching mechanism for performance
+
+        Note:
+            Current stub implementation to prevent silent failures.
+            TODO: Implement actual test detection logic (GitHub issue #47)
+        """
+        msg = (
+            "Test detection not yet implemented. "
+            "This requires AST parsing of test files and pattern matching. "
+            "See GitHub issue #47 for implementation details."
+        )
+        raise NotImplementedError(msg)  # stub-ok - Tracked in issue #47
 
     @property
     def implementation(self) -> str:
-        """Get function implementation (placeholder)."""
-        # TODO: Implement actual function source code retrieval
-        return ""
+        """
+        Get function implementation source code.
+
+        Raises:
+            NotImplementedError: This property requires implementation of source
+                code retrieval. See GitHub issue #49 for implementation requirements:
+                - Use inspect.getsource() as primary method
+                - Fall back to AST parsing if needed
+                - Store source file path and line numbers in model
+                - Handle edge cases (built-ins, C extensions, etc.)
+
+        Note:
+            Current stub implementation to prevent silent failures.
+            TODO: Implement actual function source code retrieval (GitHub issue #49)
+        """
+        msg = (
+            "Source code retrieval not yet implemented. "
+            "This requires AST parsing or inspect module integration. "
+            "See GitHub issue #49 for implementation details."
+        )
+        raise NotImplementedError(msg)  # stub-ok - Tracked in issue #49
 
     def to_summary(self) -> ModelFunctionNodeSummary:
         """Get function summary with clean typing."""
+        # Handle NotImplementedError from has_tests() gracefully
+        # See GitHub issue #47 for test detection implementation
+        try:
+            has_tests_value = self.has_tests()
+        except NotImplementedError:
+            has_tests_value = False
+
         return ModelFunctionNodeSummary.create_from_full_data(
             name=self.name,
             description=self.description,
@@ -175,7 +218,7 @@ class ModelFunctionNode(BaseModel):
             has_documentation=self.has_documentation(),
             has_examples=self.has_examples(),
             has_type_annotations=self.has_type_annotations(),
-            has_tests=self.has_tests(),
+            has_tests=has_tests_value,
             tags=self.tags,
             categories=[cat.value for cat in self.metadata.categories],
             dependencies=[str(dep) for dep in self.metadata.relationships.dependencies],
@@ -203,7 +246,7 @@ class ModelFunctionNode(BaseModel):
 
         # Convert string to enum for type safety
         try:
-            function_type_enum = EnumFunctionType(function_type.upper())
+            function_type_enum = EnumFunctionType(function_type)
         except ValueError:
             function_type_enum = EnumFunctionType.TRANSFORM  # Default fallback
 
@@ -229,7 +272,7 @@ class ModelFunctionNode(BaseModel):
         return_type_enum = None
         if return_type is not None:
             try:
-                return_type_enum = EnumReturnType(return_type.upper())
+                return_type_enum = EnumReturnType(return_type)
             except ValueError:
                 return_type_enum = EnumReturnType.UNKNOWN  # Default fallback
 
