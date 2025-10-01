@@ -20,7 +20,7 @@ class EnumRetryBackoffStrategy(str, Enum):
     FIBONACCI = "fibonacci"  # Fibonacci sequence delays
 
     def __str__(self) -> str:
-        return self.value  # Fibonacci sequence delays
+        return self.value  # Return string value of the strategy
 
 
 # Export for use
