@@ -7,6 +7,8 @@ discovery, authentication, and integration patterns.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_auth_type import EnumAuthType
+
 
 class ModelExternalServiceConfig(BaseModel):
     """
@@ -27,8 +29,8 @@ class ModelExternalServiceConfig(BaseModel):
         description="Service endpoint URL",
     )
 
-    authentication_method: str = Field(
-        default="none",
+    authentication_method: EnumAuthType = Field(
+        default=EnumAuthType.NONE,
         description="Authentication method (none, bearer_token, api_key, oauth2)",
     )
 

@@ -8,6 +8,7 @@ breaker patterns for resilient side-effect operations.
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -23,8 +24,8 @@ class ModelEffectRetryConfig(BaseModel):
 
     max_attempts: int = Field(default=3, description="Maximum retry attempts", ge=1)
 
-    backoff_strategy: str = Field(
-        default="exponential",
+    backoff_strategy: EnumRetryBackoffStrategy = Field(
+        default=EnumRetryBackoffStrategy.EXPONENTIAL,
         description="Backoff strategy (linear, exponential, constant)",
     )
 

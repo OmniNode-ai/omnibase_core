@@ -29,6 +29,7 @@ from .model_node_information_summary import ModelNodeInformationSummary
 from .model_node_metadata_info import ModelNodeMetadataInfo
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_resource_limits import ModelNodeResourceLimits
+from .model_node_type import ModelNodeType
 
 __all__ = [
     "ModelFunctionNode",
@@ -54,4 +55,5 @@ __all__ = [
     "ModelNodeCapabilitiesSummary",
     "ModelNodeConfigurationSummary",
     "ModelNodeCoreInfoSummary",
+    "ModelNodeType",
 ]

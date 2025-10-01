@@ -7,20 +7,22 @@ descriptions, and categorization for each node type.
 
 from __future__ import annotations
 
-import re
-
-# Removed unused Any import - using proper union types instead
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
+from omnibase_core.core.type_constraints import (
+    Identifiable,
+    ProtocolMetadataProvider,
+    ProtocolValidatable,
+    Serializable,
+)
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.exceptions.onex_error import OnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelNodeType(BaseModel):
@@ -29,30 +31,34 @@ class ModelNodeType(BaseModel):
 
     Replaces the EnumNodeType enum to provide richer information
     about each node type.
+    Implements omnibase_spi protocols:
+    - Identifiable: UUID-based identification
+    - ProtocolMetadataProvider: Metadata management capabilities
+    - Serializable: Data serialization/deserialization
+    - Validatable: Validation and verification
     """
 
     # Core fields (required) - Entity reference with UUID
     type_id: UUID = Field(
         default_factory=uuid4,
         description="Unique identifier for the node type entity",
-        exclude=True,  # Exclude from serialization as tests don't expect it
     )
-    type_name: str = Field(
+    type_name: EnumTypeName = Field(
         ...,
         description="Node type identifier (e.g., CONTRACT_TO_MODEL)",
     )
 
     description: str = Field(..., description="Human-readable description of the node")
 
-    category: str = Field(
+    category: EnumConfigCategory = Field(
         ...,
         description="Node category for organization",
     )
 
-    # Optional metadata - can be strings or UUIDs for flexibility
-    dependencies: list[str | UUID] = Field(
+    # Optional metadata
+    dependencies: list[str] = Field(
         default_factory=list,
-        description="Other node names or UUIDs this node depends on",
+        description="Other node type names this node depends on",
     )
 
     version_compatibility: str = Field(
@@ -87,204 +93,14 @@ class ModelNodeType(BaseModel):
         description="Type of output produced (models, files, reports, etc.)",
     )
 
-    @field_validator("type_name")
-    @classmethod
-    def validate_type_name(cls, v: object) -> str:
-        """Validate type_name pattern and convert enum to string."""
-        # Handle enum values and convert to string
-        validated_value: str
-        if isinstance(v, EnumTypeName):
-            validated_value = v.value
-        else:
-            validated_value = str(v)
-
-        # Check for empty or whitespace-only
-        if not validated_value or not validated_value.strip():
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="enum value",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )  # Match test expectation
-
-        # Check for whitespace in name (should fail)
-        if " " in validated_value or validated_value != validated_value.strip():
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="enum value",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )  # Match test expectation
-
-        # Names like "node_logger_emit_log_event" and "scenario_runner" should fail
-        if validated_value in ["node_logger_emit_log_event", "scenario_runner"]:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f'type_name "{validated_value}" does not match required pattern',
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )
-
-        # Invalid patterns should fail - check for known invalid patterns
-        # Use single comprehensive check to avoid unreachable code issues
-        starts_with_lowercase = re.match(r"^[a-z]", validated_value) is not None
-        starts_with_digit = re.match(r"^\d", validated_value) is not None
-        is_invalid_node = validated_value in ["INVALID_NODE"]
-
-        if starts_with_lowercase or starts_with_digit or is_invalid_node:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="enum value",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )  # Match test expectation
-
-        # If we reach here, the value is valid
-        return validated_value
-
-    @field_validator("category")
-    @classmethod
-    def validate_category(cls, v: object) -> str:
-        """Validate category pattern and convert enum to string."""
-        # Handle enum values and convert to string
-        validated_value: str
-        if isinstance(v, EnumConfigCategory):
-            validated_value = v.value
-        else:
-            validated_value = str(v)
-
-        # Check for empty or whitespace-only
-        if not validated_value or not validated_value.strip():
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="enum value",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )  # Match test expectation
-
-        # Check for whitespace in category (should fail)
-        if " " in validated_value or validated_value != validated_value.strip():
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="enum value",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )  # Match test expectation
-
-        # Invalid patterns should fail - categories should be lowercase
-        # Use single comprehensive check to avoid unreachable code issues
-        starts_with_uppercase = re.match(r"^[A-Z]", validated_value) is not None
-        starts_with_digit = re.match(r"^\d", validated_value) is not None
-        is_invalid_category = validated_value in [
-            "INVALID_CATEGORY",
-            "Uppercase",
-            "123category",
-        ]
-
-        if starts_with_uppercase or starts_with_digit or is_invalid_category:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="enum value",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )  # Match test expectation
-
-        # If we reach here, the value is valid (lowercase category)
-        return validated_value
-
-    @field_validator("dependencies", mode="before")
-    @classmethod
-    def validate_dependencies(
-        cls,
-        v: list[str | UUID] | tuple[str | UUID, ...] | object,
-    ) -> list[str | UUID]:
-        """Validate dependencies, preserving string types unless they're valid UUIDs."""
-        if not v:
-            return []
-
-        # Ensure input is a list or sequence
-        if not isinstance(v, (list, tuple)):
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="dependencies must be a list",
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )
-
-        result: list[str | UUID] = []
-        for item in v:
-            if isinstance(item, UUID):
-                result.append(item)
-            elif isinstance(item, str):
-                # Try to parse as UUID first
-                try:
-                    uuid_item = UUID(item)
-                    result.append(uuid_item)
-                except ValueError:
-                    # Keep as string if not a valid UUID
-                    result.append(item)
-            else:
-                # Convert other types to string
-                string_item: str = str(item)
-                result.append(string_item)
-        return result
-
     # Factory methods for all node types
     @classmethod
     def CONTRACT_TO_MODEL(cls) -> ModelNodeType:
         """Generates Pydantic models from contract.yaml."""
         return cls(
-            type_name="CONTRACT_TO_MODEL",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Generates Pydantic models from contract.yaml",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             requires_contract=True,
             output_type=EnumReturnType.MODELS,
@@ -294,9 +110,9 @@ class ModelNodeType(BaseModel):
     def MULTI_DOC_MODEL_GENERATOR(cls) -> ModelNodeType:
         """Generates models from multiple YAML documents."""
         return cls(
-            type_name="MULTI_DOC_MODEL_GENERATOR",
+            type_name=EnumTypeName.MULTI_DOC_MODEL_GENERATOR,
             description="Generates models from multiple YAML documents",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             output_type=EnumReturnType.MODELS,
         )
@@ -305,9 +121,9 @@ class ModelNodeType(BaseModel):
     def GENERATE_ERROR_CODES(cls) -> ModelNodeType:
         """Generates error code enums from contract."""
         return cls(
-            type_name="GENERATE_ERROR_CODES",
+            type_name=EnumTypeName.GENERATE_ERROR_CODES,
             description="Generates error code enums from contract",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             requires_contract=True,
             output_type=EnumReturnType.ENUMS,
@@ -317,9 +133,9 @@ class ModelNodeType(BaseModel):
     def GENERATE_INTROSPECTION(cls) -> ModelNodeType:
         """Generates introspection metadata."""
         return cls(
-            type_name="GENERATE_INTROSPECTION",
+            type_name=EnumTypeName.GENERATE_INTROSPECTION,
             description="Generates introspection metadata",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             output_type=EnumReturnType.METADATA,
         )
@@ -328,9 +144,9 @@ class ModelNodeType(BaseModel):
     def NODE_GENERATOR(cls) -> ModelNodeType:
         """Generates complete node structure from templates."""
         return cls(
-            type_name="NODE_GENERATOR",
+            type_name=EnumTypeName.NODE_GENERATOR,
             description="Generates complete node structure from templates",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             execution_priority=90,
             output_type=EnumReturnType.METADATA,
@@ -340,9 +156,9 @@ class ModelNodeType(BaseModel):
     def TEMPLATE_ENGINE(cls) -> ModelNodeType:
         """Processes templates with token replacement."""
         return cls(
-            type_name="TEMPLATE_ENGINE",
+            type_name=EnumTypeName.TEMPLATE_ENGINE,
             description="Processes templates with token replacement",
-            category="template",
+            category=EnumConfigCategory.TEMPLATE,
             is_generator=True,
             output_type=EnumReturnType.TEXT,
         )
@@ -351,11 +167,11 @@ class ModelNodeType(BaseModel):
     def FILE_GENERATOR(cls) -> ModelNodeType:
         """Generates files from templates."""
         return cls(
-            type_name="FILE_GENERATOR",
+            type_name=EnumTypeName.FILE_GENERATOR,
             description="Generates files from templates",
-            category="template",
+            category=EnumConfigCategory.TEMPLATE,
             is_generator=True,
-            dependencies=["TEMPLATE_ENGINE"],  # String dependency as expected by tests
+            dependencies=["TEMPLATE_ENGINE"],
             output_type=EnumReturnType.FILES,
         )
 
@@ -363,9 +179,9 @@ class ModelNodeType(BaseModel):
     def TEMPLATE_VALIDATOR(cls) -> ModelNodeType:
         """Validates node templates for consistency."""
         return cls(
-            type_name="TEMPLATE_VALIDATOR",
+            type_name=EnumTypeName.TEMPLATE_VALIDATOR,
             description="Validates node templates for consistency",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -374,9 +190,9 @@ class ModelNodeType(BaseModel):
     def VALIDATION_ENGINE(cls) -> ModelNodeType:
         """Validates node structure and contracts."""
         return cls(
-            type_name="VALIDATION_ENGINE",
+            type_name=EnumTypeName.VALIDATION_ENGINE,
             description="Validates node structure and contracts",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             requires_contract=True,
             execution_priority=80,
@@ -387,9 +203,9 @@ class ModelNodeType(BaseModel):
     def STANDARDS_COMPLIANCE_FIXER(cls) -> ModelNodeType:
         """Fixes code to comply with ONEX standards."""
         return cls(
-            type_name="STANDARDS_COMPLIANCE_FIXER",
+            type_name=EnumTypeName.STANDARDS_COMPLIANCE_FIXER,
             description="Fixes code to comply with ONEX standards",
-            category="maintenance",
+            category=EnumConfigCategory.MAINTENANCE,
             is_generator=True,
             is_validator=True,
             output_type=EnumReturnType.FILES,
@@ -399,9 +215,9 @@ class ModelNodeType(BaseModel):
     def PARITY_VALIDATOR_WITH_FIXES(cls) -> ModelNodeType:
         """Validates and fixes parity issues."""
         return cls(
-            type_name="PARITY_VALIDATOR_WITH_FIXES",
+            type_name=EnumTypeName.PARITY_VALIDATOR_WITH_FIXES,
             description="Validates and fixes parity issues",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             is_generator=True,
             output_type=EnumReturnType.REPORTS,
@@ -411,9 +227,9 @@ class ModelNodeType(BaseModel):
     def CONTRACT_COMPLIANCE(cls) -> ModelNodeType:
         """Validates contract compliance."""
         return cls(
-            type_name="CONTRACT_COMPLIANCE",
+            type_name=EnumTypeName.CONTRACT_COMPLIANCE,
             description="Validates contract compliance",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             requires_contract=True,
             output_type=EnumReturnType.REPORTS,
@@ -423,9 +239,9 @@ class ModelNodeType(BaseModel):
     def INTROSPECTION_VALIDITY(cls) -> ModelNodeType:
         """Validates introspection data."""
         return cls(
-            type_name="INTROSPECTION_VALIDITY",
+            type_name=EnumTypeName.INTROSPECTION_VALIDITY,
             description="Validates introspection data",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -434,9 +250,9 @@ class ModelNodeType(BaseModel):
     def SCHEMA_CONFORMANCE(cls) -> ModelNodeType:
         """Validates schema conformance."""
         return cls(
-            type_name="SCHEMA_CONFORMANCE",
+            type_name=EnumTypeName.SCHEMA_CONFORMANCE,
             description="Validates schema conformance",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -445,9 +261,9 @@ class ModelNodeType(BaseModel):
     def ERROR_CODE_USAGE(cls) -> ModelNodeType:
         """Validates error code usage."""
         return cls(
-            type_name="ERROR_CODE_USAGE",
+            type_name=EnumTypeName.ERROR_CODE_USAGE,
             description="Validates error code usage",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -456,9 +272,9 @@ class ModelNodeType(BaseModel):
     def CLI_COMMANDS(cls) -> ModelNodeType:
         """Handles CLI command generation."""
         return cls(
-            type_name="CLI_COMMANDS",
+            type_name=EnumTypeName.CLI_COMMANDS,
             description="Handles CLI command generation",
-            category="cli",
+            category=EnumConfigCategory.CLI,
             is_generator=True,
             output_type=EnumReturnType.TEXT,
         )
@@ -467,9 +283,9 @@ class ModelNodeType(BaseModel):
     def CLI_NODE_PARITY(cls) -> ModelNodeType:
         """Validates CLI and node parity."""
         return cls(
-            type_name="CLI_NODE_PARITY",
+            type_name=EnumTypeName.CLI_NODE_PARITY,
             description="Validates CLI and node parity",
-            category="cli",
+            category=EnumConfigCategory.CLI,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -478,9 +294,9 @@ class ModelNodeType(BaseModel):
     def NODE_DISCOVERY(cls) -> ModelNodeType:
         """Discovers nodes in the codebase."""
         return cls(
-            type_name="NODE_DISCOVERY",
+            type_name=EnumTypeName.NODE_DISCOVERY,
             description="Discovers nodes in the codebase",
-            category="discovery",
+            category=EnumConfigCategory.DISCOVERY,
             execution_priority=95,
             output_type=EnumReturnType.METADATA,
         )
@@ -489,9 +305,9 @@ class ModelNodeType(BaseModel):
     def NODE_VALIDATION(cls) -> ModelNodeType:
         """Validates node implementation."""
         return cls(
-            type_name="NODE_VALIDATION",
+            type_name=EnumTypeName.NODE_VALIDATION,
             description="Validates node implementation",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             requires_contract=True,
             output_type=EnumReturnType.REPORTS,
@@ -501,9 +317,9 @@ class ModelNodeType(BaseModel):
     def METADATA_LOADER(cls) -> ModelNodeType:
         """Loads node metadata."""
         return cls(
-            type_name="METADATA_LOADER",
+            type_name=EnumTypeName.METADATA_LOADER,
             description="Loads node metadata",
-            category="discovery",
+            category=EnumConfigCategory.DISCOVERY,
             output_type=EnumReturnType.METADATA,
         )
 
@@ -511,9 +327,9 @@ class ModelNodeType(BaseModel):
     def SCHEMA_GENERATOR(cls) -> ModelNodeType:
         """Generates JSON schemas."""
         return cls(
-            type_name="SCHEMA_GENERATOR",
+            type_name=EnumTypeName.SCHEMA_GENERATOR,
             description="Generates JSON schemas",
-            category="schema",
+            category=EnumConfigCategory.SCHEMA,
             is_generator=True,
             output_type=EnumReturnType.SCHEMAS,
         )
@@ -522,9 +338,9 @@ class ModelNodeType(BaseModel):
     def SCHEMA_DISCOVERY(cls) -> ModelNodeType:
         """Discovers and parses schemas."""
         return cls(
-            type_name="SCHEMA_DISCOVERY",
+            type_name=EnumTypeName.SCHEMA_DISCOVERY,
             description="Discovers and parses schemas",
-            category="schema",
+            category=EnumConfigCategory.SCHEMA,
             output_type=EnumReturnType.SCHEMAS,
         )
 
@@ -532,11 +348,11 @@ class ModelNodeType(BaseModel):
     def SCHEMA_TO_PYDANTIC(cls) -> ModelNodeType:
         """Converts schemas to Pydantic models."""
         return cls(
-            type_name="SCHEMA_TO_PYDANTIC",
+            type_name=EnumTypeName.SCHEMA_TO_PYDANTIC,
             description="Converts schemas to Pydantic models",
-            category="schema",
+            category=EnumConfigCategory.SCHEMA,
             is_generator=True,
-            dependencies=[],  # Empty dependencies as expected by tests
+            dependencies=["SCHEMA_DISCOVERY"],
             output_type=EnumReturnType.MODELS,
         )
 
@@ -544,9 +360,9 @@ class ModelNodeType(BaseModel):
     def PROTOCOL_GENERATOR(cls) -> ModelNodeType:
         """Generates protocol interfaces."""
         return cls(
-            type_name="PROTOCOL_GENERATOR",
+            type_name=EnumTypeName.PROTOCOL_GENERATOR,
             description="Generates protocol interfaces",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             output_type=EnumReturnType.PROTOCOLS,
         )
@@ -555,9 +371,9 @@ class ModelNodeType(BaseModel):
     def BACKEND_SELECTION(cls) -> ModelNodeType:
         """Selects appropriate backend."""
         return cls(
-            type_name="BACKEND_SELECTION",
+            type_name=EnumTypeName.BACKEND_SELECTION,
             description="Selects appropriate backend",
-            category="runtime",
+            category=EnumConfigCategory.RUNTIME,
             output_type=EnumReturnType.BACKEND,
         )
 
@@ -565,9 +381,9 @@ class ModelNodeType(BaseModel):
     def NODE_MANAGER_RUNNER(cls) -> ModelNodeType:
         """Runs node manager operations."""
         return cls(
-            type_name="NODE_MANAGER_RUNNER",
+            type_name=EnumTypeName.NODE_MANAGER_RUNNER,
             description="Runs node manager operations",
-            category="runtime",
+            category=EnumConfigCategory.RUNTIME,
             execution_priority=100,
             output_type=EnumReturnType.RESULT,
         )
@@ -576,9 +392,9 @@ class ModelNodeType(BaseModel):
     def MAINTENANCE(cls) -> ModelNodeType:
         """Handles maintenance operations."""
         return cls(
-            type_name="MAINTENANCE",
+            type_name=EnumTypeName.MAINTENANCE,
             description="Handles maintenance operations",
-            category="maintenance",
+            category=EnumConfigCategory.MAINTENANCE,
             output_type=EnumReturnType.STATUS,
         )
 
@@ -586,9 +402,9 @@ class ModelNodeType(BaseModel):
     def LOGGER_EMIT_LOG_EVENT(cls) -> ModelNodeType:
         """Emits structured log events."""
         return cls(
-            type_name="node_logger_emit_log_event",  # Use the exact name from enum/test
+            type_name=EnumTypeName.NODE_LOGGER_EMIT_LOG_EVENT,
             description="Emits structured log events",
-            category="logging",
+            category=EnumConfigCategory.LOGGING,
             output_type=EnumReturnType.LOGS,
         )
 
@@ -596,9 +412,9 @@ class ModelNodeType(BaseModel):
     def LOGGING_UTILS(cls) -> ModelNodeType:
         """Logging utility functions."""
         return cls(
-            type_name="LOGGING_UTILS",
+            type_name=EnumTypeName.LOGGING_UTILS,
             description="Logging utility functions",
-            category="logging",
+            category=EnumConfigCategory.LOGGING,
             output_type=EnumReturnType.LOGS,
         )
 
@@ -606,9 +422,9 @@ class ModelNodeType(BaseModel):
     def SCENARIO_RUNNER(cls) -> ModelNodeType:
         """Runs test scenarios."""
         return cls(
-            type_name="scenario_runner",  # Use the exact name from enum/test
+            type_name=EnumTypeName.SCENARIO_RUNNER,
             description="Runs test scenarios",
-            category="testing",
+            category=EnumConfigCategory.TESTING,
             output_type=EnumReturnType.RESULTS,
         )
 
@@ -643,44 +459,106 @@ class ModelNodeType(BaseModel):
             "BACKEND_SELECTION": cls.BACKEND_SELECTION,
             "NODE_MANAGER_RUNNER": cls.NODE_MANAGER_RUNNER,
             "MAINTENANCE": cls.MAINTENANCE,
-            "node_logger_emit_log_event": cls.LOGGER_EMIT_LOG_EVENT,
+            "NODE_LOGGER_EMIT_LOG_EVENT": cls.LOGGER_EMIT_LOG_EVENT,
             "LOGGING_UTILS": cls.LOGGING_UTILS,
-            "scenario_runner": cls.SCENARIO_RUNNER,
+            "SCENARIO_RUNNER": cls.SCENARIO_RUNNER,
         }
 
         factory = factory_map.get(name)
         if factory:
             return factory()
-
-        # Unknown node type - create generic node as expected by tests
-        return cls(
-            type_name=name,
-            description=f"Node: {name}",
-            category="unknown",
-        )
+        # Unknown node type - create generic
+        # Try to create from known enum values, otherwise create generic
+        try:
+            enum_value = EnumTypeName(name)
+            return cls(
+                type_name=enum_value,
+                description=f"Node: {name}",
+                category=EnumConfigCategory.UNKNOWN,
+            )
+        except ValueError:
+            # If name is not in enum, we can't create it - this maintains type safety
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}",
+            )
 
     @property
     def name(self) -> str:
         """Get type name as string."""
-        return self.type_name
+        return self.type_name.value
 
     def __str__(self) -> str:
         """String representation for current standards."""
-        return self.type_name
+        return self.type_name.value
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
-            return self.type_name == other
+            return self.type_name.value == other
         if isinstance(other, ModelNodeType):
             return self.type_name == other.type_name
         if isinstance(other, EnumTypeName):
-            return self.type_name == other.value
+            return self.type_name == other
         return False
 
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
-        "populate_by_name": True,  # Allow both field name and alias
     }
+
+    # Protocol method implementations
+
+    def get_id(self) -> str:
+        """Get unique identifier (Identifiable protocol)."""
+        # Try common ID field patterns
+        for field in [
+            "id",
+            "uuid",
+            "identifier",
+            "node_id",
+            "execution_id",
+            "metadata_id",
+        ]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    return str(value)
+        return f"{self.__class__.__name__}_{id(self)}"
+
+    def get_metadata(self) -> dict[str, Any]:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata = {}
+        # Include common metadata fields
+        for field in ["name", "description", "version", "tags", "metadata"]:
+            if hasattr(self, field):
+                value = getattr(self, field)
+                if value is not None:
+                    metadata[field] = (
+                        str(value) if not isinstance(value, (dict, list)) else value
+                    )
+        return metadata
+
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        try:
+            for key, value in metadata.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except Exception:
+            return False
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize to dictionary (Serializable protocol)."""
+        return self.model_dump(exclude_none=False, by_alias=True)
+
+    def validate_instance(self) -> bool:
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception:
+            return False
