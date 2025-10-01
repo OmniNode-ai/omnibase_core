@@ -11,7 +11,9 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_parameter_type import EnumWorkflowParameterType
+from omnibase_core.exceptions.onex_error import OnexError
 
 # Discriminator function for workflow parameters
 # Using Field(discriminator="parameter_type") for discriminated unions
@@ -170,8 +172,9 @@ class ModelWorkflowParameters(BaseModel):
                     ModelResourceLimitParameter,
                 ),
             ):
-                raise ValueError(
-                    f"Invalid parameter type for {param_name}: {type(param_value)}",
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Invalid parameter type for {param_name}: {type(param_value)}",
                 )
         return self
 
@@ -295,7 +298,9 @@ class ModelWorkflowParameters(BaseModel):
                     ):
                         setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -304,7 +309,12 @@ class ModelWorkflowParameters(BaseModel):
         param_names = sorted(self.workflow_parameters.keys())
         if param_names:
             return f"workflow_params_{hash('_'.join(param_names))}"
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def serialize(
         self,
@@ -320,7 +330,9 @@ class ModelWorkflowParameters(BaseModel):
                 if param.required and not param.name:
                     return False
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

@@ -11,7 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParameterType
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -82,10 +84,14 @@ class ModelOperationParameterValue(BaseModel):
             and v is None
             and parameter_type != EnumOperationParameterType.NESTED
         ):
-            raise ValueError(f"Value required for parameter type {parameter_type}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value required for parameter type {parameter_type}",
+            )
         if expected_field != field_name and v is not None:
-            raise ValueError(
-                f"Unexpected value in {field_name} for parameter type {parameter_type}",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unexpected value in {field_name} for parameter type {parameter_type}",
             )
 
         return v
@@ -178,7 +184,10 @@ class ModelOperationParameterValue(BaseModel):
         if self.parameter_type == EnumOperationParameterType.NESTED:
             return self.nested_value
         # Exhaustive case handling - this should never be reached
-        raise ValueError(f"Unknown parameter type: {self.parameter_type}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unknown parameter type: {self.parameter_type}",
+        )
 
 
 class ModelOperationParameters(BaseModel):
@@ -215,7 +224,9 @@ class ModelOperationParameters(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -233,7 +244,12 @@ class ModelOperationParameters(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -245,7 +261,9 @@ class ModelOperationParameters(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

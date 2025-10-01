@@ -14,6 +14,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.models.operations.model_event_metadata import ModelEventMetadata
@@ -235,7 +237,9 @@ class ModelMessagePayload(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -253,7 +257,12 @@ class ModelMessagePayload(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -265,7 +274,9 @@ class ModelMessagePayload(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

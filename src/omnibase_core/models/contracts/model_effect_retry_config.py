@@ -5,7 +5,9 @@ Defines retry strategies, backoff algorithms, and circuit
 breaker patterns for resilient side-effect operations.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from typing import Self
+
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
@@ -63,13 +65,8 @@ class ModelEffectRetryConfig(BaseModel):
         ge=1,
     )
 
-    @field_validator("max_delay_ms")
-    @classmethod
-    def validate_max_delay_greater_than_base(
-        cls,
-        v: int,
-        info: ValidationInfo,
-    ) -> int:
+    @model_validator(mode="after")
+    def validate_max_delay_greater_than_base(self) -> Self:
         """
         Validate that max_delay_ms is greater than base_delay_ms.
 
@@ -77,12 +74,8 @@ class ModelEffectRetryConfig(BaseModel):
         to maintain valid backoff progression. This validation prevents
         configuration errors that would result in invalid backoff calculations.
 
-        Args:
-            v: The max_delay_ms value being validated.
-            info: Validation context containing other field values including base_delay_ms.
-
         Returns:
-            The validated max_delay_ms value if validation passes.
+            The validated model instance if validation passes.
 
         Raises:
             OnexError: If max_delay_ms is less than or equal to base_delay_ms.
@@ -109,9 +102,10 @@ class ModelEffectRetryConfig(BaseModel):
         Note:
             This validator is automatically called during model instantiation
             and when max_delay_ms is assigned to an existing instance with
-            validate_assignment=True.
+            validate_assignment=True. Uses @model_validator(mode='after') to
+            ensure both fields are always available (no fallback pattern).
         """
-        if "base_delay_ms" in info.data and v <= info.data["base_delay_ms"]:
+        if self.max_delay_ms <= self.base_delay_ms:
             msg = "max_delay_ms must be greater than base_delay_ms"
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -125,7 +119,7 @@ class ModelEffectRetryConfig(BaseModel):
                     },
                 ),
             )
-        return v
+        return self
 
     model_config = {
         "extra": "ignore",

@@ -13,9 +13,11 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
@@ -368,7 +370,12 @@ class ModelNodeMetadataInfo(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        return f"{self.__class__.__name__}_{id(self)}"
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{self.__class__.__name__} must have a valid ID field "
+            f"(type_id, id, uuid, identifier, etc.). "
+            f"Cannot generate stable ID without UUID field.",
+        )
 
     def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
@@ -390,7 +397,9 @@ class ModelNodeMetadataInfo(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -403,7 +412,9 @@ class ModelNodeMetadataInfo(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 
