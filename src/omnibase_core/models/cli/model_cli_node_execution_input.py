@@ -14,7 +14,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
 from omnibase_core.enums.enum_cli_action import EnumCliAction
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
+from omnibase_core.exceptions.onex_error import OnexError
 
 from .model_cli_advanced_params import ModelCliAdvancedParams
 
@@ -137,8 +139,11 @@ class ModelCliNodeExecutionInput(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 # Export for use

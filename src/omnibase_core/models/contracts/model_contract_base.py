@@ -537,16 +537,18 @@ class ModelContractBase(BaseModel, ABC):
             # All dependencies are guaranteed to be ModelDependency instances via Pydantic validation
             # Validate dependency follows ONEX patterns
             if not dependency.matches_onex_patterns():
-                msg = f"Dependency does not follow ONEX patterns: {dependency.name}"
-                raise ValueError(msg)
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Dependency does not follow ONEX patterns: {dependency.name}",
+                )
 
         for interface in self.protocol_interfaces:
             # Only accept fully qualified protocol paths - no legacy patterns
             if "protocol" in interface.lower():
                 continue
-            msg = f"Protocol interface must contain 'protocol' in the name, got: {interface}"
-            raise ValueError(
-                msg,
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Protocol interface must contain 'protocol' in the name, got: {interface}",
             )
 
     def _validate_dependency_graph(self) -> None:

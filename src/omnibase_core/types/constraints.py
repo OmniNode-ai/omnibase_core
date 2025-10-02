@@ -5,9 +5,12 @@ This module provides well-defined protocols, type variables with proper bounds,
 and type constraints to replace overly broad generic usage patterns.
 """
 
-from typing import Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # Temporary local protocol definitions for validation purposes
 # TODO: Replace with actual omnibase_spi imports when available
@@ -120,8 +123,35 @@ ComplexContextValueType = object  # Runtime validation required - see type guard
 
 
 # Import abstract base classes from separate files (ONEX one-model-per-file)
-from .model_base_collection import BaseCollection
-from .model_base_factory import BaseFactory
+# Use TYPE_CHECKING to avoid circular imports at runtime
+if TYPE_CHECKING:
+    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
+    # Type aliases for test compatibility
+    BaseCollection = ModelBaseCollection
+    BaseFactory = ModelBaseFactory
+else:
+    # Lazy import at runtime to avoid circular dependencies
+    def __getattr__(name: str) -> object:
+        """Lazy import for ModelBaseCollection and ModelBaseFactory to avoid circular imports."""
+        if name in (
+            "ModelBaseCollection",
+            "ModelBaseFactory",
+            "BaseCollection",
+            "BaseFactory",
+        ):
+            from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
+            globals()["ModelBaseCollection"] = ModelBaseCollection
+            globals()["ModelBaseFactory"] = ModelBaseFactory
+            # Add test compatibility aliases
+            globals()["BaseCollection"] = ModelBaseCollection
+            globals()["BaseFactory"] = ModelBaseFactory
+            return globals()[name]
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        # error-ok: AttributeError is standard Python pattern for __getattr__
+        raise AttributeError(msg)
+
 
 # Type guards for runtime checking
 
@@ -196,10 +226,14 @@ def is_complex_context_value(obj: object) -> bool:
 def validate_primitive_value(obj: object) -> bool:
     """Validate and ensure object is a primitive value."""
     if not is_primitive_value(obj):
+        # Lazy import to avoid circular dependency
+        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
-        raise TypeError(
-            msg,
+        raise OnexError(
+            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message=msg,
         )
     return True
 
@@ -207,10 +241,14 @@ def validate_primitive_value(obj: object) -> bool:
 def validate_context_value(obj: object) -> bool:
     """Validate and ensure object is a valid context value."""
     if not is_context_value(obj):
+        # Lazy import to avoid circular dependency
+        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
         obj_type = type(obj).__name__
         msg = f"Expected context value (primitive, list, or dict), got {obj_type}"
-        raise TypeError(
-            msg,
+        raise OnexError(
+            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message=msg,
         )
     return True
 
@@ -218,6 +256,9 @@ def validate_context_value(obj: object) -> bool:
 # Export all types and utilities
 __all__ = [
     # Abstract base classes
+    "ModelBaseCollection",
+    "ModelBaseFactory",
+    # Test compatibility aliases
     "BaseCollection",
     "BaseFactory",
     "BasicValueType",

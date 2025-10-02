@@ -17,8 +17,8 @@ from typing import Dict, Optional
 from omnibase_spi import ProtocolCacheService
 
 from omnibase_core.core.errors import OnexError
-from omnibase_core.core.infrastructure_service_bases import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
+from omnibase_core.infrastructure.service_bases import NodeEffectService
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     CircuitBreakerException,
     ModelCircuitBreakerConfig,

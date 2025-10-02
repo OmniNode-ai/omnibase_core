@@ -177,7 +177,7 @@ class ProtocolImplementer:
 
     def update_imports(self, content: str, protocols: List[str]) -> str:
         """Add protocol imports if not already present."""
-        import_section = """from omnibase_core.core.type_constraints import (
+        import_section = """from omnibase_core.types.constraints import (
     {protocols}
 )"""
 
@@ -185,12 +185,12 @@ class ProtocolImplementer:
         new_import = import_section.format(protocols=protocols_str)
 
         # Check if type_constraints import already exists
-        if "from omnibase_core.core.type_constraints import" in content:
+        if "from omnibase_core.types.constraints import" in content:
             # Update existing import
             pattern = r"from omnibase_core\.core\.type_constraints import \([^)]+\)"
             return re.sub(
                 pattern,
-                f"from omnibase_core.core.type_constraints import (\n    {protocols_str}\n)",
+                f"from omnibase_core.types.constraints import (\n    {protocols_str}\n)",
                 content,
             )
         else:

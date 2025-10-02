@@ -8,7 +8,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from __future__ import annotations
 
 from typing import Any, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -24,8 +24,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 class ModelWorkflowExecutionContext(BaseModel):
     """Structured workflow execution context."""
 
-    execution_id: str = Field(
-        default="",
+    execution_id: UUID = Field(
+        default_factory=uuid4,
         description="Unique workflow execution identifier",
     )
     parent_execution_id: UUID | None = Field(

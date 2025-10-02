@@ -33,8 +33,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
-from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery.model_node_introspection_event import (

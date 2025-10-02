@@ -157,34 +157,41 @@ class ModelErrorValue(BaseModel):
                 return exception_classes[self.exception_class](self.exception_message)
             # Fall back to generic RuntimeError with original class info
             return RuntimeError(f"{self.exception_class}: {self.exception_message}")
-        except Exception:
-            # If recreation fails, return a generic runtime error
-            return RuntimeError(f"{self.exception_class}: {self.exception_message}")
+        except Exception as e:
+            # If recreation fails, raise error with context about the failure
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Failed to recreate exception {self.exception_class}: {e}",
+            ) from e
 
     # Export the model
 
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If execution logic fails
+        """
+        # Update any relevant execution fields
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If configuration logic fails
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

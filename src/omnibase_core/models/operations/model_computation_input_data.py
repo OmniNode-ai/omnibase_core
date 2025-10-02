@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import Annotated, Any, Literal
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -177,7 +178,9 @@ class ModelStructuredComputationInput(ModelComputationInputBase):
 class ModelComputationMetadataContext(BaseModel):
     """Structured computation metadata context."""
 
-    execution_id: str = Field(default="", description="Execution identifier")
+    execution_id: UUID = Field(
+        default_factory=uuid4, description="Execution identifier"
+    )
     computation_session: str = Field(
         default="",
         description="Computation session identifier",

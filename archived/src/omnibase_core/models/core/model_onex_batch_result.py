@@ -32,8 +32,8 @@ class ModelOnexBatchResult(BaseModel):
     @classmethod
     def export_schema(cls) -> str:
         """Export the JSONSchema for ModelOnexBatchResult and all submodels."""
-        from omnibase_core.core.core_structured_logging import emit_log_event_sync
         from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+        from omnibase_core.logging.structured import emit_log_event_sync
 
         emit_log_event_sync(
             LogLevel.DEBUG,

@@ -98,8 +98,11 @@ class ModelYamlOption(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelYamlOption"]

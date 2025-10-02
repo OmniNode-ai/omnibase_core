@@ -11,6 +11,7 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Discriminator, Field
 
+from omnibase_core.errors.error_onex import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
@@ -36,7 +37,12 @@ class ModelNodeConfigurationStringValue(BaseModel):
         try:
             return int(self.value)
         except ValueError as e:
-            raise ValueError(f"Cannot convert string '{self.value}' to int") from e
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot convert string '{self.value}' to int",
+                details={"value": self.value, "target_type": "int"},
+                cause=e,
+            ) from e
 
 
 class ModelNodeConfigurationNumericValue(BaseModel):

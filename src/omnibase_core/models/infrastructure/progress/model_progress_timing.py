@@ -12,6 +12,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
 
 
@@ -165,8 +167,11 @@ class ModelProgressTiming(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -175,8 +180,11 @@ class ModelProgressTiming(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

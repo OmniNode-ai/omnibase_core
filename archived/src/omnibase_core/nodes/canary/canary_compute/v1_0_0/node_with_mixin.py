@@ -14,10 +14,13 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.node_compute import ModelComputeInput, ModelComputeOutput
-from omnibase_core.core.node_compute_service import NodeComputeService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.infrastructure.node_compute import (
+    ModelComputeInput,
+    ModelComputeOutput,
+)
+from omnibase_core.infrastructure.node_compute_service import NodeComputeService
 from omnibase_core.models.core.model_health_status import ModelHealthStatus
 from omnibase_core.models.subcontracts.model_error_handling_subcontract import (
     HandleErrorInput,

@@ -212,8 +212,11 @@ class ModelGenericFactory(Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -230,8 +233,11 @@ class ModelGenericFactory(Generic[T]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

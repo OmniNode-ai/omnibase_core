@@ -424,27 +424,30 @@ class ModelPropertyValue(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If configuration logic fails
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = ["ModelPropertyValue"]

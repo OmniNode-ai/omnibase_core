@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import Field, RootModel
 
+from omnibase_core.errors.error_onex import CoreErrorCode, OnexError
+
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer
 
@@ -42,7 +44,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             root: Initial root data - accepts dict[str, Any] or None
 
         Raises:
-            TypeError: If root is not of expected type
+            OnexError: If root is not of expected type (VALIDATION_ERROR)
         """
         # Runtime validation for type safety
         if root is None:
@@ -51,7 +53,15 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             # Validate dict structure if needed
             validated_root = root
         else:
-            raise TypeError(f"root must be dict or None, got {type(root).__name__}")
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"root must be dict or None, got {type(root).__name__}",
+                details={
+                    "received_type": type(root).__name__,
+                    "expected_types": ["dict", "None"],
+                    "parameter": "root",
+                },
+            )
 
         super().__init__(validated_root)
 
@@ -91,6 +101,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
                     setattr(self, key, value)
             return True
         except Exception:
+            # fallback-ok: ProtocolMetadataProvider contract expects bool, not exceptions
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -105,4 +116,5 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             # Override in specific models for custom validation
             return True
         except Exception:
+            # fallback-ok: ProtocolValidatable contract expects bool validation result, not exceptions
             return False

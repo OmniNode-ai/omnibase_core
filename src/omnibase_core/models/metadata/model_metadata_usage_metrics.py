@@ -9,10 +9,10 @@ from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.types.constraints import (
     BasicValueType,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 # TypedDict for protocol method parameters
@@ -134,7 +134,9 @@ class ModelMetadataUsageMetrics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
@@ -147,5 +149,7 @@ class ModelMetadataUsageMetrics(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
             return False

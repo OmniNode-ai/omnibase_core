@@ -10,7 +10,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
-from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.utils.decorators import allow_any_type, allow_dict_str_any
 
 # Import separated models
 from .model_custom_field_definition import ModelCustomFieldDefinition

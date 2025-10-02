@@ -381,8 +381,11 @@ class ModelTimeBased(BaseModel, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -391,8 +394,11 @@ class ModelTimeBased(BaseModel, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

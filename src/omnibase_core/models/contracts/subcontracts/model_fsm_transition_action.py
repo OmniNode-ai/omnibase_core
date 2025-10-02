@@ -11,6 +11,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+
 
 class ModelActionConfigValue(BaseModel):
     """
@@ -46,18 +49,28 @@ class ModelActionConfigValue(BaseModel):
 
         if value_type == "scalar" and field_name == "scalar_value":
             if v is None:
-                raise ValueError(
-                    "scalar_value must be provided when value_type='scalar'",
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="scalar_value must be provided when value_type='scalar'",
                 )
         elif value_type == "scalar" and field_name == "list_value":
             if v is not None:
-                raise ValueError("list_value must be None when value_type='scalar'")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="list_value must be None when value_type='scalar'",
+                )
         elif value_type == "list" and field_name == "list_value":
             if v is None:
-                raise ValueError("list_value must be provided when value_type='list'")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="list_value must be provided when value_type='list'",
+                )
         elif value_type == "list" and field_name == "scalar_value":
             if v is not None:
-                raise ValueError("scalar_value must be None when value_type='list'")
+                raise OnexError(
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="scalar_value must be None when value_type='list'",
+                )
 
         return v
 
@@ -67,7 +80,10 @@ class ModelActionConfigValue(BaseModel):
             return self.scalar_value or ""
         if self.value_type == "list":
             return self.list_value or []
-        raise ValueError(f"Invalid value_type: {self.value_type}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid value_type: {self.value_type}",
+        )
 
 
 class ModelFSMTransitionAction(BaseModel):

@@ -12,18 +12,17 @@ ARCHITECTURAL PRINCIPLE: Strong Typing Only
 
 from __future__ import annotations
 
+from typing import TypeAlias
+
 # JSON-serializable value types (most common replacement for Any)
-# Uses PEP 695 type statement for recursive type alias
-type JsonSerializable = (
+# Recursive type alias for JSON-compatible data structures
+JsonSerializable: TypeAlias = (
     str
     | int
     | float
     | bool
-    | list[JsonSerializable]
-    | dict[
-        str,
-        JsonSerializable,
-    ]
+    | list["JsonSerializable"]
+    | dict[str, "JsonSerializable"]
     | None
 )
 
@@ -37,17 +36,14 @@ EnvValue = str | int | float | bool | None
 MetadataValue = str | int | float | bool | list[str] | dict[str, str] | None
 
 # Validation field values (for validation errors)
-# Uses PEP 695 type statement for recursive type alias
-type ValidationValue = (
+# Recursive type alias for validation error contexts
+ValidationValue: TypeAlias = (
     str
     | int
     | float
     | bool
-    | list[ValidationValue]
-    | dict[
-        str,
-        ValidationValue,
-    ]
+    | list["ValidationValue"]
+    | dict[str, "ValidationValue"]
     | None
 )
 
@@ -61,18 +57,9 @@ CliValue = str | int | float | bool | list[str]
 ParameterValue = PropertyValue
 
 # Result/output values (for result models)
-# Uses PEP 695 type statement for recursive type alias
-type ResultValue = (
-    str
-    | int
-    | float
-    | bool
-    | list[ResultValue]
-    | dict[
-        str,
-        ResultValue,
-    ]
-    | None
+# Recursive type alias for result/output data
+ResultValue: TypeAlias = (
+    str | int | float | bool | list["ResultValue"] | dict[str, "ResultValue"] | None
 )
 
 # ONEX Type Safety Guidelines:

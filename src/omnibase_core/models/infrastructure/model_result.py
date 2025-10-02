@@ -206,7 +206,7 @@ class ModelResult(
                 new_value = f(self.value)
                 return ModelResult.ok(new_value)
             except Exception as e:
-                # Convert exceptions to error results
+                # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
         if self.error is None:
             raise OnexError(
@@ -239,7 +239,7 @@ class ModelResult(
             new_error = f(self.error)
             return ModelResult.err(new_error)
         except Exception as e:
-            # Return exception directly without unsafe cast
+            # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)
 
     def and_then(self, f: Callable[[T], ModelResult[U, E]]) -> ModelResult[U, object]:
@@ -260,6 +260,7 @@ class ModelResult(
                 # Cast to match the object return type signature
                 return cast(ModelResult[U, object], result)
             except Exception as e:
+                # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
         if self.error is None:
             raise OnexError(
@@ -293,6 +294,7 @@ class ModelResult(
             # Cast to match the object return type signature
             return cast(ModelResult[T, object], result)
         except Exception as e:
+            # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)
 
     def __repr__(self) -> str:
@@ -321,8 +323,11 @@ class ModelResult(
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -331,8 +336,11 @@ class ModelResult(
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -367,6 +375,7 @@ def try_result(f: Callable[[], T]) -> ModelResult[T, Exception]:
     try:
         return ModelResult.ok(f())
     except Exception as e:
+        # fallback-ok: Monadic error handling - converting exceptions to error results
         return ModelResult.err(e)
 
 

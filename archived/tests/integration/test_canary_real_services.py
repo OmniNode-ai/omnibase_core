@@ -17,7 +17,7 @@ from datetime import datetime
 import pytest
 
 from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.core.node_effect import EffectType, ModelEffectInput
+from omnibase_core.infrastructure.node_effect import EffectType, ModelEffectInput
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
     NodeCanaryEffect,
 )
@@ -69,7 +69,7 @@ class TestCanaryRealServices:
         )
 
         # Use ModelONEXContainer with real service integrations
-        from omnibase_core.core.enhanced_container import ModelONEXContainer
+        from omnibase_core.container.enhanced_container import ModelONEXContainer
 
         container = ModelONEXContainer(enable_performance_cache=False)
         await container.init()

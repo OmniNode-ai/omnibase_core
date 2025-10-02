@@ -15,7 +15,7 @@ from pydantic import BaseModel
 T = TypeVar("T")
 
 
-class BaseFactory(ABC, BaseModel, Generic[T]):
+class ModelBaseFactory(ABC, BaseModel, Generic[T]):
     """Abstract base class for typed factories."""
 
     @abstractmethod
@@ -36,4 +36,4 @@ class BaseFactory(ABC, BaseModel, Generic[T]):
 
 
 # Export the model
-__all__ = ["BaseFactory"]
+__all__ = ["ModelBaseFactory"]

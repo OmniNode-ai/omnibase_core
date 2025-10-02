@@ -8,7 +8,7 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--formatter, retain_line_breaks=true]
-        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/)
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/)
 
   # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -30,7 +30,7 @@ repos:
       - id: black
         name: Black Python Formatter
         args: [--line-length, "88", --target-version, py311]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/).*$
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
 
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
@@ -38,7 +38,7 @@ repos:
       - id: isort
         name: isort Import Sorter
         args: [--profile, black, --line-length, "88"]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/).*$
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
 
   # ONEX Framework Validation (from shared templates)
   - repo: local

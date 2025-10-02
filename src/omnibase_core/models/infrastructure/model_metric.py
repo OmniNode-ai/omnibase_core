@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -133,7 +135,10 @@ class ModelMetric(BaseModel):
             numeric_value = ModelNumericValue.from_numeric(value)
             return cls.create_numeric_metric(key, numeric_value, unit, description)
         # This should not be reached with the bounded type signature
-        raise ValueError(f"Unsupported metric value type: {type(value)}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unsupported metric value type: {type(value)}",
+        )
 
     model_config = {
         "extra": "ignore",
@@ -151,8 +156,11 @@ class ModelMetric(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -161,8 +169,11 @@ class ModelMetric(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

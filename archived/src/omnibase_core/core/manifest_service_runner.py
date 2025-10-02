@@ -15,9 +15,6 @@ import time
 from pathlib import Path
 from types import FrameType
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.tool_manifest_discovery import (
     ToolManifest,
@@ -25,6 +22,7 @@ from omnibase_core.core.tool_manifest_discovery import (
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 
 # Configuration constants
 DEFAULT_EVENT_BUS_URL = os.getenv("EVENT_BUS_URL", "http://localhost:8083")
@@ -168,10 +166,9 @@ class ManifestServiceRunner:
             # instead of going through main() which has argparse
             from pathlib import Path
 
-            from omnibase_core.core.node_base import ModelNodeBase
-
             # Resolve event bus adapter from DI container
             from omnibase_core.core.registry_bootstrap import BootstrapRegistry
+            from omnibase_core.infrastructure.node_base import ModelNodeBase
 
             registry = BootstrapRegistry()
             event_bus_adapter = registry.discover_event_bus_implementation()

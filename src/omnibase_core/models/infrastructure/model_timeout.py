@@ -545,38 +545,59 @@ class ModelTimeout(BaseModel):
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:
-        """Execute or update execution status (Executable protocol)."""
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            OnexError: If execution fails with details about the failure
+        """
         try:
             # Update any relevant execution fields
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Execution failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            OnexError: If configuration fails with details about the failure
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Configuration failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            OnexError: If validation fails with details about the failure
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Instance validation failed: {e}",
+            ) from e
 
 
 # Export for use

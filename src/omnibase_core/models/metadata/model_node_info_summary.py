@@ -647,27 +647,30 @@ class ModelNodeInfoSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
-        try:
-            for key, value in metadata.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If metadata setting logic fails
+        """
+        for key, value in metadata.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = ["ModelNodeInfoSummary"]

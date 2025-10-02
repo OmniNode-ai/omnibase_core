@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, TypedDict, overload
 from uuid import UUID
 
 # Import simplified type constraint from core
-from omnibase_core.core.type_constraints import BasicValueType
+from omnibase_core.types.constraints import BasicValueType
 
 if TYPE_CHECKING:
     from . import ProtocolSupportedMetadataType
@@ -263,7 +263,7 @@ class ModelGenericMetadata(BaseModel):
                         if isinstance(value, (str, int, bool, float)):
                             self.set_field(key, value)
             return True
-        except Exception:
+        except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
@@ -290,7 +290,9 @@ class ModelGenericMetadata(BaseModel):
                         or self.version.patch < 0
                     ):
                         return False
-                except Exception:
+                except (
+                    Exception
+                ):  # fallback-ok: version validation, return False on any error
                     return False
 
             # Validate custom fields if present
@@ -301,9 +303,11 @@ class ModelGenericMetadata(BaseModel):
                     try:
                         # Test that we can convert to python value
                         cli_value.to_python_value()
-                    except Exception:
+                    except (
+                        Exception
+                    ):  # fallback-ok: field conversion test, return False on any error
                         return False
 
             return True
-        except Exception:
+        except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False

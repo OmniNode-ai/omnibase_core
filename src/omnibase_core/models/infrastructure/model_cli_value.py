@@ -183,8 +183,11 @@ class ModelCliValue(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -194,8 +197,11 @@ class ModelCliValue(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -207,8 +213,11 @@ class ModelCliValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 # Export for use

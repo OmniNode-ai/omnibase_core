@@ -8,10 +8,8 @@ Provides consistent contract processing across all ONEX tools.
 from dataclasses import dataclass
 from pathlib import Path
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_schema import ModelSchema
 from omnibase_core.models.generation.model_contract_document import (

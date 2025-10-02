@@ -31,11 +31,12 @@ class ModelValidationBase(BaseModel):
     )
 
     def validate_instance(self) -> bool:
-        """Check if model is valid (no validation errors) (ProtocolValidatable protocol)."""
-        try:
-            return self.validation.validate_instance()
-        except Exception:
-            return False
+        """Check if model is valid (no validation errors) (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        return self.validation.validate_instance()
 
     def has_validation_errors(self) -> bool:
         """Check if there are validation errors."""

@@ -9,13 +9,13 @@ from typing import Dict, List, Optional, TypeVar
 
 from omnibase_spi import ProtocolLogger
 
-from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import resolve_service_discovery
+from omnibase_core.utils.decorators import allow_dict_str_any
 
 T = TypeVar("T")
 
@@ -150,7 +150,7 @@ class ServiceDiscoveryManager:
 
         if "Logger" in protocol_type.__name__:
             # Use ONEX-compliant structured logging
-            from omnibase_core.core.core_structured_logging import emit_log_event_sync
+            from omnibase_core.logging.structured import emit_log_event_sync
 
             # Return a simple logging wrapper that follows ONEX patterns
             class OnexLogger:
@@ -194,7 +194,7 @@ class ServiceDiscoveryManager:
 
         if "Logger" in protocol_type.__name__:
             # Use ONEX-compliant structured logging
-            from omnibase_core.core.core_structured_logging import emit_log_event_sync
+            from omnibase_core.logging.structured import emit_log_event_sync
 
             # Return a simple logging wrapper that follows ONEX patterns
             class OnexLogger:
@@ -215,7 +215,7 @@ class ServiceDiscoveryManager:
 
         # Provide basic fallback implementations
         if "Logger" in protocol_name:
-            from omnibase_core.core.bootstrap_logger import create_basic_logger
+            from omnibase_core.logging.bootstrap_logger import create_basic_logger
 
             return create_basic_logger()
 

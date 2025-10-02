@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.decorators import allow_dict_str_any
+from omnibase_core.utils.decorators import allow_dict_str_any
 
 
 class EnumConversationRole(str, Enum):

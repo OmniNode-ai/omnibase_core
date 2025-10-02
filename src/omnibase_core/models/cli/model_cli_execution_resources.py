@@ -126,13 +126,14 @@ class ModelCliExecutionResources(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 # Export for use

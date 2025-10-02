@@ -210,7 +210,13 @@ class ModelConfigurationSubcontract(BaseModel):
         required_priorities = [src.priority for src in v if src.required]
         if len(required_priorities) != len(set(required_priorities)):
             msg = "Required configuration sources cannot have duplicate priorities"
-            raise ValueError(msg)
+            duplicate_priorities = [
+                p for p in required_priorities if required_priorities.count(p) > 1
+            ]
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return v
 
@@ -227,7 +233,10 @@ class ModelConfigurationSubcontract(BaseModel):
         if required_set & optional_set:
             overlapping = required_set & optional_set
             msg = f"Keys cannot be both required and optional: {overlapping}"
-            raise ValueError(msg)
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return v
 

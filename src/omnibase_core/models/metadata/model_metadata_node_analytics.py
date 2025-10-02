@@ -13,15 +13,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import (
-    BasicValueType,
-)
 from omnibase_core.enums.enum_collection_purpose import EnumCollectionPurpose
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
+from omnibase_core.types.constraints import (
+    BasicValueType,
+)
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
@@ -345,6 +345,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception:
+            # fallback-ok: metadata update failure in analytics does not impact core functionality
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
@@ -358,6 +359,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception:
+            # fallback-ok: validation failure in monitoring analytics defaults to invalid state
             return False
 
 

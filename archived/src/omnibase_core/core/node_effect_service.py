@@ -5,8 +5,8 @@ Proper base class that handles the boilerplate initialization for NodeEffect + M
 This eliminates the need for every single node to manually wire up mixin initialization.
 """
 
-from omnibase_core.core.node_effect import NodeEffect
 from omnibase_core.core.onex_container import ModelONEXContainer
+from omnibase_core.infrastructure.node_effect import NodeEffect
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixin.mixin_node_service import MixinNodeService

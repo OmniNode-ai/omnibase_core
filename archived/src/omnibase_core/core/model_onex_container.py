@@ -38,7 +38,7 @@ from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDis
 from omnibase_core.services.protocol_service_resolver import get_service_resolver
 
 if TYPE_CHECKING:
-    from omnibase_core.core.node_base import ModelNodeBase
+    from omnibase_core.infrastructure.node_base import ModelNodeBase
 
 T = TypeVar("T")
 
@@ -463,7 +463,7 @@ class ModelONEXContainer:
         Returns:
             ModelNodeBase: Configured node instance
         """
-        from omnibase_core.core.node_base import ModelNodeBase
+        from omnibase_core.infrastructure.node_base import ModelNodeBase
 
         return ModelNodeBase(
             contract_path=contract_path,

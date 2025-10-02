@@ -32,13 +32,11 @@ from omnibase_core.core.common_types import ModelScalarValue
 
 # Import contract model for compute nodes
 from omnibase_core.core.contracts.model_contract_compute import ModelContractCompute
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 
 # Import utilities for contract loading
 

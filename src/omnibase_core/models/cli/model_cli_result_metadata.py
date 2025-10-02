@@ -13,10 +13,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
@@ -144,8 +146,14 @@ class ModelCliResultMetadata(BaseModel):
                 return ModelSemVer(major=int(parts[0]), minor=int(parts[1]), patch=0)
             if len(parts) == 1:
                 return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
-            raise ValueError(f"Invalid version string: {v}")
-        raise ValueError(f"Invalid processor version type: {type(v)}")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid version string: {v}",
+            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid processor version type: {type(v)}",
+        )
 
     @field_validator("retention_policy", mode="before")
     @classmethod
@@ -163,8 +171,14 @@ class ModelCliResultMetadata(BaseModel):
                 try:
                     return EnumRetentionPolicy(v.upper())
                 except ValueError:
-                    raise ValueError(f"Invalid retention policy: {v}")
-        raise ValueError(f"Invalid retention policy type: {type(v)}")
+                    raise OnexError(
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=f"Invalid retention policy: {v}",
+                    )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid retention policy type: {type(v)}",
+        )
 
     @field_validator("custom_metadata", mode="before")
     @classmethod
@@ -228,14 +242,20 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            raise ValueError("Quality score must be between 0.0 and 1.0")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Quality score must be between 0.0 and 1.0",
+            )
 
     def set_confidence_level(self, confidence: float) -> None:
         """Set the confidence level."""
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            raise ValueError("Confidence level must be between 0.0 and 1.0")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Confidence level must be between 0.0 and 1.0",
+            )
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
         """Add resource usage information."""
@@ -342,8 +362,11 @@ class ModelCliResultMetadata(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelCliResultMetadata"]

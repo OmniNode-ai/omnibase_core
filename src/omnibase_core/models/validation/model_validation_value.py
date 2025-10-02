@@ -125,13 +125,20 @@ class ModelValidationValue(BaseModel):
     # Protocol method implementations
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            OnexError: If validation fails with details about the failure
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Instance validation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

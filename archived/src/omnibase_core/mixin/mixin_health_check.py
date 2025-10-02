@@ -10,11 +10,9 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Union
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_health_status import ModelHealthStatus
 
 

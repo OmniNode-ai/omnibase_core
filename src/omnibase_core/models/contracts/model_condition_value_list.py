@@ -9,7 +9,7 @@ ZERO TOLERANCE: No string conditions or Any types allowed.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.type_constraints import PrimitiveValueType
+from omnibase_core.types.constraints import PrimitiveValueType
 
 
 class ModelConditionValueList(BaseModel):

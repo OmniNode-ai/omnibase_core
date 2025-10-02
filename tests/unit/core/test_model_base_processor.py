@@ -8,7 +8,7 @@ process and can_process methods, following ONEX testing patterns.
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.core.model_base_processor import ModelServiceBaseProcessor
+from omnibase_core.models.base.model_processor import ModelServiceBaseProcessor
 
 
 class TestModelServiceBaseProcessor:

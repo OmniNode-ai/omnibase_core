@@ -29,15 +29,13 @@ from omnibase_core.agents.models.model_workflow_persistence_manager import (
 from omnibase_core.agents.models.model_workflow_state_manager import (
     WorkflowStateManager,
 )
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.classification.enum_execution_mode import EnumExecutionMode
 from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
 

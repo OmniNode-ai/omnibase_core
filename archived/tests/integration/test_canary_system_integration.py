@@ -15,8 +15,8 @@ import uuid
 
 import pytest
 
-from omnibase_core.core.node_effect import EffectType
 from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.infrastructure.node_effect import EffectType
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.models import (
     ModelCanaryEffectInput,
     ModelCanaryEffectOutput,

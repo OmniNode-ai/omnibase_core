@@ -8,6 +8,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+
 
 class ModelYamlDumpOptions(BaseModel):
     """Type-safe YAML dump options.
@@ -44,8 +47,11 @@ class ModelYamlDumpOptions(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelYamlDumpOptions"]

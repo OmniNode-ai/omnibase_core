@@ -165,26 +165,32 @@ class ModelRetryAdvanced(BaseModel):
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields with runtime validation
-            for key, value in kwargs.items():
-                if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            TypeError: If value type is invalid
+            Exception: If execution logic fails
+        """
+        # Update any relevant execution fields with runtime validation
+        for key, value in kwargs.items():
+            if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
+                setattr(self, key, value)
+        return True
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            # Configure with runtime validation for type safety
-            for key, value in kwargs.items():
-                if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            TypeError: If value type is invalid
+            Exception: If configuration logic fails
+        """
+        # Configure with runtime validation for type safety
+        for key, value in kwargs.items():
+            if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""

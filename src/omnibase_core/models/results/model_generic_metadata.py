@@ -5,11 +5,11 @@ Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer
-from omnibase_core.models.types.model_onex_common_types import JsonSerializable
 
 
 class ModelGenericMetadata(BaseModel):
@@ -39,16 +39,18 @@ class ModelGenericMetadata(BaseModel):
         description="Key-value annotations",
     )
 
-    # Additional flexible storage
-    custom_fields: dict[str, JsonSerializable] | None = Field(
+    # Additional flexible storage (non-recursive for Pydantic compatibility)
+    # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible metadata storage
+    # Supporting various JSON-serializable types validated at runtime
+    custom_fields: dict[str, Any] = Field(
         default_factory=dict,
-        description="Custom fields with basic types",
+        description="Custom fields with JSON-serializable types",
     )
 
-    # For complex nested data (last resort)
-    extended_data: dict[str, BaseModel] | None = Field(
+    # For complex nested data - use JSON string representation
+    extended_data_json: str | None = Field(
         None,
-        description="Extended data with nested models",
+        description="Extended data as JSON string (for nested structures)",
     )
 
     model_config = ConfigDict(

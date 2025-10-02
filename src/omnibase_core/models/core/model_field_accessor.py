@@ -11,9 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
+from omnibase_core.types.constraints import PrimitiveValueType
 
 
 class ModelFieldAccessor(BaseModel):
@@ -187,7 +187,9 @@ class ModelFieldAccessor(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -200,7 +202,9 @@ class ModelFieldAccessor(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: Validatable protocol requires boolean return for graceful validation failure
             return False
 
     def get_name(self) -> str:

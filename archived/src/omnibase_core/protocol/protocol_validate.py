@@ -25,7 +25,7 @@
 from typing import TYPE_CHECKING, Optional, Protocol
 
 if TYPE_CHECKING:
-    from omnibase_core.core.core_structured_logging import ProtocolLogger
+    from omnibase_core.logging.structured import ProtocolLogger
     from omnibase_core.models.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )

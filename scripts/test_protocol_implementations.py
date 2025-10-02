@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Tuple
 src_dir = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_dir))
 
-from omnibase_core.core.type_constraints import (
+from omnibase_core.types.constraints import (
     Configurable,
     Executable,
     Identifiable,

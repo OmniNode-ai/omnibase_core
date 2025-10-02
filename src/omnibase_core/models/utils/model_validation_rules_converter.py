@@ -58,8 +58,9 @@ class ModelValidationRulesInputValue(BaseModel):
 
         required_field = required_fields.get(input_type)
         if required_field == field_name and v is None:
-            raise ValueError(
-                f"Field {field_name} is required for input type {input_type}",
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Field {field_name} is required for input type {input_type}",
             )
 
         return v
@@ -106,7 +107,10 @@ class ModelValidationRulesInputValue(BaseModel):
             return cls.from_string(data)
 
         # This should never be reached given the type annotations
-        raise TypeError(f"Unsupported data type: {type(data)}")
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unsupported data type: {type(data)}",
+        )
 
     def is_empty(self) -> bool:
         """Check if validation rules input is empty."""

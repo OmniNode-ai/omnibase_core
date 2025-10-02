@@ -3,12 +3,12 @@ Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fi
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer
-from omnibase_core.models.types.model_onex_common_types import JsonSerializable
 
 from .model_orchestrator_metrics import ModelOrchestratorMetrics
 
@@ -44,7 +44,7 @@ class ModelOrchestratorInfo(BaseModel):
     workflow_status: str | None = Field(None, description="Workflow status")
 
     # Execution context
-    execution_id: str | None = Field(None, description="Execution identifier")
+    execution_id: UUID | None = Field(None, description="Execution identifier")
     parent_execution_id: UUID | None = Field(None, description="Parent execution ID")
     root_execution_id: UUID | None = Field(None, description="Root execution ID")
 
@@ -91,10 +91,11 @@ class ModelOrchestratorInfo(BaseModel):
     )
     sidecar_injected: bool = Field(False, description="Whether sidecar is injected")
 
-    # Custom orchestrator data
-    custom_data: JsonSerializable = Field(
+    # Custom orchestrator data (non-recursive for Pydantic compatibility)
+    # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible orchestrator data storage
+    custom_data: dict[str, Any] = Field(
         default_factory=dict,
-        description="Custom orchestrator-specific data",
+        description="Custom orchestrator-specific data (basic JSON types)",
     )
 
     model_config = ConfigDict()

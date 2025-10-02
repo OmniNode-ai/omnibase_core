@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.constraints import PrimitiveValueType
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -76,6 +76,7 @@ class ModelResultAccessor(ModelFieldAccessor):
                     setattr(self, key, value)
             return True
         except Exception:
+            # fallback-ok: Configurable protocol requires bool return - False signals configuration failure
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -110,6 +111,7 @@ class ModelResultAccessor(ModelFieldAccessor):
             # Override in specific models for custom validation
             return True
         except Exception:
+            # fallback-ok: Validatable protocol requires bool return - False signals validation failure
             return False
 
     def get_name(self) -> str:

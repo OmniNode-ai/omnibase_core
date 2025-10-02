@@ -7,10 +7,8 @@ Provides consistent AST generation across all ONEX tools.
 
 import ast
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_schema import ModelSchema
 
 
@@ -57,10 +55,10 @@ class UtilityASTBuilder:
         # DEBUG LOGGING: Track where this is being called from
         import traceback
 
-        from omnibase_core.core.core_structured_logging import (
+        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+        from omnibase_core.logging.structured import (
             emit_log_event_sync as emit_log_event,
         )
-        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         emit_log_event(
             LogLevel.DEBUG,

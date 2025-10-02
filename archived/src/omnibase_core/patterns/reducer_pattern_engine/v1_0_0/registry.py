@@ -10,10 +10,8 @@ import threading
 import time
 from typing import Any
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
     WorkflowType,

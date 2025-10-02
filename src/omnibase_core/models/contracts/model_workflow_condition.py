@@ -11,7 +11,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.type_constraints import (
+from omnibase_core.types.constraints import (
     ComplexContextValueType,
     ContextValueType,
     PrimitiveValueType,
@@ -160,6 +160,7 @@ class ModelWorkflowCondition(BaseModel):
             if isinstance(current_value, dict) and field_part in current_value:
                 current_value = current_value[field_part]
             else:
+                # error-ok: KeyError is caught by caller to handle EXISTS/NOT_EXISTS operators
                 raise KeyError(f"Field path '{field_path}' not found")
 
         # Return the extracted value

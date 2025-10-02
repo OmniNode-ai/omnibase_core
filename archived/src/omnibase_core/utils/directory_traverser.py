@@ -16,10 +16,10 @@ except ImportError:
     pathspec = None
 import contextlib
 
-from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums import IgnorePatternSourceEnum, LogLevel, TraversalModeEnum
 from omnibase_core.exceptions import OnexError
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_directory_processing_result import (
     ModelDirectoryProcessingResult,
 )

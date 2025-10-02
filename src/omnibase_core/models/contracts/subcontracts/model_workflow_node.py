@@ -8,9 +8,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
-from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.enums.enum_node_type import EnumNodeType
+
+# Type aliases for structured data - ZERO TOLERANCE for Any types
+from omnibase_core.types.constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]

@@ -21,11 +21,9 @@ from uuid import UUID
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus

@@ -12,6 +12,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.exceptions.onex_error import OnexError
+
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
 
@@ -215,8 +218,11 @@ class ModelValidationContainer(BaseModel):
         try:
             # Basic validation - ensure required fields exist and no errors
             return not self.has_errors()
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def merge_from(self, other: ModelValidationContainer) -> None:
         """Merge validation results from another container."""

@@ -35,8 +35,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from omnibase_core.core.constants.event_types import CoreEventTypes
-from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixin.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (

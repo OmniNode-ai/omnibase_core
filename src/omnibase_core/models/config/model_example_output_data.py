@@ -13,8 +13,10 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIOType
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
@@ -78,8 +80,11 @@ class ModelExampleOutputData(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -91,8 +96,11 @@ class ModelExampleOutputData(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelExampleOutputData"]

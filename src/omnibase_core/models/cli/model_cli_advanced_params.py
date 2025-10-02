@@ -143,7 +143,10 @@ class ModelCliAdvancedParams(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for node_config_overrides."""
         if not isinstance(v, dict):
-            raise ValueError("node_config_overrides must be a dictionary")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="node_config_overrides must be a dictionary",
+            )
 
         result = {}
         for key, value in v.items():
@@ -169,7 +172,10 @@ class ModelCliAdvancedParams(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_parameters."""
         if not isinstance(v, dict):
-            raise ValueError("custom_parameters must be a dictionary")
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="custom_parameters must be a dictionary",
+            )
 
         result = {}
         for key, value in v.items():
@@ -287,8 +293,11 @@ class ModelCliAdvancedParams(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     model_config = {
         "extra": "ignore",

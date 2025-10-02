@@ -14,8 +14,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
+from omnibase_core.exceptions.onex_error import OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
@@ -138,8 +140,11 @@ class ModelMetricsData(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -148,8 +153,11 @@ class ModelMetricsData(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
