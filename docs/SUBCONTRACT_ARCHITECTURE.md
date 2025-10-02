@@ -982,7 +982,7 @@ class SubcontractMetricsCollector:
         metrics.append({
             "metric_name": "subcontract.aggregation.execution_time",
             "value": execution_result.execution_time_ms,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": subcontract.correlation_id,
             "unit": "ms",
             "tags": {
@@ -1002,7 +1002,7 @@ class SubcontractMetricsCollector:
         metrics.append({
             "metric_name": "subcontract.aggregation.throughput",
             "value": throughput,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": subcontract.correlation_id,
             "unit": "records/sec",
             "tags": {
@@ -1027,7 +1027,7 @@ class SubcontractMetricsCollector:
         metrics.append({
             "metric_name": "subcontract.fsm.transitions_executed",
             "value": execution_result.transition_count,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": subcontract.correlation_id,
             "unit": "count",
             "tags": {

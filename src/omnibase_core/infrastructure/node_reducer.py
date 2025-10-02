@@ -28,8 +28,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.exceptions import OnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -202,7 +203,7 @@ class ConflictResolver:
             return self._merge_values(existing_value, new_value)
         if self.strategy == ConflictResolution.ERROR:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Conflict detected for key: {key}",
                 context={
                     "existing_value": str(existing_value),
@@ -751,7 +752,7 @@ class NodeReducer(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Reduction failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -886,7 +887,7 @@ class NodeReducer(NodeCoreBase):
         """
         if reduction_type in self.reduction_functions:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Reduction type already registered: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -896,7 +897,7 @@ class NodeReducer(NodeCoreBase):
 
         if not callable(function):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Reduction function must be callable: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -968,7 +969,7 @@ class NodeReducer(NodeCoreBase):
 
         if not isinstance(input_data.reduction_type, EnumReductionType):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Reduction type must be valid EnumReductionType enum",
                 context={
                     "node_id": self.node_id,
@@ -978,7 +979,7 @@ class NodeReducer(NodeCoreBase):
 
         if input_data.data is None:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Data cannot be None for reduction",
                 context={
                     "node_id": self.node_id,
@@ -996,7 +997,7 @@ class NodeReducer(NodeCoreBase):
 
         if reduction_type not in self.reduction_functions:
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"No reduction function for type: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -1820,7 +1821,7 @@ class NodeReducer(NodeCoreBase):
 
         if not hasattr(input_data, "data"):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'data' attribute",
                 context={
                     "node_id": self.node_id,
@@ -1830,7 +1831,7 @@ class NodeReducer(NodeCoreBase):
 
         if not hasattr(input_data, "reduction_type"):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'reduction_type' attribute",
                 context={
                     "node_id": self.node_id,

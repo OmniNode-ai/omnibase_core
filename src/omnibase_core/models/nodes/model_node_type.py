@@ -13,10 +13,9 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types.constraints import (
     Identifiable,
     ProtocolMetadataProvider,
@@ -526,7 +525,7 @@ class ModelNodeType(BaseModel):
         except ValueError:
             # If name is not in enum, we can't create it - this maintains type safety
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}",
             )
 
@@ -689,7 +688,7 @@ class ModelNodeType(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

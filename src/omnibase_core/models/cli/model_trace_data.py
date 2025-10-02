@@ -13,8 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelTraceData(BaseModel):
@@ -72,6 +71,6 @@ class ModelTraceData(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

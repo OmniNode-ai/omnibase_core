@@ -28,8 +28,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.exceptions import OnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -600,7 +601,7 @@ class NodeOrchestrator(NodeCoreBase):
                     # Check for cycles
                     if dependency_graph.has_cycles():
                         raise OnexError(
-                            error_code=CoreErrorCode.VALIDATION_ERROR,
+                            code=CoreErrorCode.VALIDATION_ERROR,
                             message="Workflow contains dependency cycles",
                             context={
                                 "node_id": self.node_id,
@@ -678,7 +679,7 @@ class NodeOrchestrator(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow orchestration failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -831,14 +832,14 @@ class NodeOrchestrator(NodeCoreBase):
         """
         if condition_name in self.condition_functions:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Condition function already registered: {condition_name}",
                 context={"node_id": self.node_id, "condition_name": condition_name},
             )
 
         if not callable(function):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Condition function must be callable: {condition_name}",
                 context={"node_id": self.node_id, "condition_name": condition_name},
             )
@@ -924,7 +925,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not input_data.workflow_id:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Workflow ID cannot be empty",
                 context={
                     "node_id": self.node_id,
@@ -934,7 +935,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not input_data.steps:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Workflow must have at least one step",
                 context={
                     "node_id": self.node_id,
@@ -944,7 +945,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not isinstance(input_data.execution_mode, ExecutionMode):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Execution mode must be valid ExecutionMode enum",
                 context={
                     "node_id": self.node_id,
@@ -1878,7 +1879,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not hasattr(input_data, "workflow_id"):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'workflow_id' attribute",
                 context={
                     "node_id": self.node_id,
@@ -1888,7 +1889,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not hasattr(input_data, "steps"):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'steps' attribute",
                 context={
                     "node_id": self.node_id,

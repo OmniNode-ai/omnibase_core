@@ -19,18 +19,18 @@ from omnibase_core.errors.error_codes import (
     register_error_codes,
 )
 
-# Document freshness errors - TEMPORARILY DISABLED due to missing enum dependency
-# from omnibase_core.errors.error_document_freshness import (
-#     DocumentFreshnessAIError,
-#     DocumentFreshnessAnalysisError,
-#     DocumentFreshnessChangeDetectionError,
-#     DocumentFreshnessDependencyError,
-#     DocumentFreshnessError,
-#     DocumentFreshnessPathError,
-#     DocumentFreshnessSystemError,
-#     DocumentFreshnessValidationError,
-#     ModelDocumentFreshnessDatabaseError,
-# )
+# Document freshness errors
+from omnibase_core.errors.error_document_freshness import (
+    DocumentFreshnessAIError,
+    DocumentFreshnessAnalysisError,
+    DocumentFreshnessChangeDetectionError,
+    DocumentFreshnessDependencyError,
+    DocumentFreshnessError,
+    DocumentFreshnessPathError,
+    DocumentFreshnessSystemError,
+    DocumentFreshnessValidationError,
+    ModelDocumentFreshnessDatabaseError,
+)
 
 __all__ = [
     # Base error classes
@@ -53,14 +53,14 @@ __all__ = [
     "list_registered_components",
     # Registry errors
     "ModelRegistryError",
-    # Document freshness errors - TEMPORARILY DISABLED
-    # "DocumentFreshnessError",
-    # "DocumentFreshnessPathError",
-    # "ModelDocumentFreshnessDatabaseError",
-    # "DocumentFreshnessAnalysisError",
-    # "DocumentFreshnessAIError",
-    # "DocumentFreshnessDependencyError",
-    # "DocumentFreshnessChangeDetectionError",
-    # "DocumentFreshnessValidationError",
-    # "DocumentFreshnessSystemError",
+    # Document freshness errors
+    "DocumentFreshnessError",
+    "DocumentFreshnessPathError",
+    "ModelDocumentFreshnessDatabaseError",
+    "DocumentFreshnessAnalysisError",
+    "DocumentFreshnessAIError",
+    "DocumentFreshnessDependencyError",
+    "DocumentFreshnessChangeDetectionError",
+    "DocumentFreshnessValidationError",
+    "DocumentFreshnessSystemError",
 ]

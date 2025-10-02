@@ -18,20 +18,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict, TypeVar
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
 from .enum_execution_status_v2 import EnumExecutionStatusV2
 from .enum_function_lifecycle_status import EnumFunctionLifecycleStatus
 from .enum_general_status import EnumGeneralStatus
 from .enum_scenario_status_v2 import EnumScenarioStatusV2
 
 if TYPE_CHECKING:
+    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
     from .enum_base_status import EnumBaseStatus
 
 
-def _get_onex_error() -> type:
+def _get_core_error_code() -> type["CoreErrorCode"]:
+    """Get CoreErrorCode class at runtime to avoid circular import."""
+    from omnibase_core.errors.error_codes import CoreErrorCode
+
+    return CoreErrorCode
+
+
+def _get_onex_error() -> type["OnexError"]:
     """Get OnexError class at runtime to avoid circular import."""
-    from omnibase_core.exceptions.onex_error import OnexError
+    from omnibase_core.errors.error_codes import OnexError
 
     return OnexError
 
@@ -153,7 +160,7 @@ class EnumStatusMigrator:
         """
         if old_value not in LEGACY_ENUM_STATUS_VALUES:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=_get_core_error_code().VALIDATION_ERROR,
                 message=f"Unknown legacy status value: {old_value}",
             )
 
@@ -162,7 +169,7 @@ class EnumStatusMigrator:
             return EnumGeneralStatus(old_value)
         except ValueError as e:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                code=_get_core_error_code().CONVERSION_ERROR,
                 message=f"Cannot migrate status value: {old_value}",
                 cause=e,
             ) from e
@@ -183,7 +190,7 @@ class EnumStatusMigrator:
         """
         if old_value not in LEGACY_EXECUTION_STATUS_VALUES:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=_get_core_error_code().VALIDATION_ERROR,
                 message=f"Unknown legacy execution status value: {old_value}",
             )
 
@@ -192,7 +199,7 @@ class EnumStatusMigrator:
             return EnumExecutionStatusV2(old_value)
         except ValueError as e:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                code=_get_core_error_code().CONVERSION_ERROR,
                 message=f"Cannot migrate execution status value: {old_value}",
                 cause=e,
             ) from e
@@ -213,7 +220,7 @@ class EnumStatusMigrator:
         """
         if old_value not in LEGACY_SCENARIO_STATUS_VALUES:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=_get_core_error_code().VALIDATION_ERROR,
                 message=f"Unknown legacy scenario status value: {old_value}",
             )
 
@@ -222,7 +229,7 @@ class EnumStatusMigrator:
             return EnumScenarioStatusV2(old_value)
         except ValueError as e:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                code=_get_core_error_code().CONVERSION_ERROR,
                 message=f"Cannot migrate scenario status value: {old_value}",
                 cause=e,
             ) from e
@@ -243,7 +250,7 @@ class EnumStatusMigrator:
         """
         if old_value not in LEGACY_FUNCTION_STATUS_VALUES:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=_get_core_error_code().VALIDATION_ERROR,
                 message=f"Unknown legacy function status value: {old_value}",
             )
 
@@ -252,7 +259,7 @@ class EnumStatusMigrator:
             return EnumFunctionLifecycleStatus(old_value)
         except ValueError as e:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                code=_get_core_error_code().CONVERSION_ERROR,
                 message=f"Cannot migrate function status value: {old_value}",
                 cause=e,
             ) from e
@@ -273,7 +280,7 @@ class EnumStatusMigrator:
         """
         if old_value not in LEGACY_METADATA_NODE_STATUS_VALUES:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=_get_core_error_code().VALIDATION_ERROR,
                 message=f"Unknown legacy metadata node status value: {old_value}",
             )
 
@@ -282,7 +289,7 @@ class EnumStatusMigrator:
             return EnumFunctionLifecycleStatus(old_value)
         except ValueError as e:
             raise _get_onex_error()(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                code=_get_core_error_code().CONVERSION_ERROR,
                 message=f"Cannot migrate metadata node status value: {old_value}",
                 cause=e,
             ) from e
@@ -316,7 +323,7 @@ class EnumStatusMigrator:
             ).to_base_status()
 
         raise _get_onex_error()(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=_get_core_error_code().VALIDATION_ERROR,
             message=f"Unknown source enum: {source_enum}",
         )
 

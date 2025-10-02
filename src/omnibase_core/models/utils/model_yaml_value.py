@@ -8,9 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -75,7 +74,7 @@ class ModelYamlValue(BaseModel):
         if self.value_type == EnumYamlValueType.LIST:
             return [v.to_serializable() for v in (self.list_value or [])]
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid value_type: {self.value_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -114,7 +113,7 @@ class ModelYamlValue(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

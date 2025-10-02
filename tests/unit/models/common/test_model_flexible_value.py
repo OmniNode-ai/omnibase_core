@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

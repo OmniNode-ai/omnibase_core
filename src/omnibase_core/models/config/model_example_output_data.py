@@ -13,10 +13,9 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIOType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
@@ -82,7 +81,7 @@ class ModelExampleOutputData(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -98,7 +97,7 @@ class ModelExampleOutputData(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

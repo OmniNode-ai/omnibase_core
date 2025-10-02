@@ -13,8 +13,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelFilterConditions(BaseModel):
@@ -218,7 +217,7 @@ class ModelFilterConditions(BaseModel):
 
             if len(item) > 200:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Source/type filter '{item}' too long. Maximum 200 characters.",
                 )
 

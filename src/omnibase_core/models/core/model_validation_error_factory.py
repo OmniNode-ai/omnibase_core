@@ -10,9 +10,8 @@ from typing import Any, TypeVar, Unpack
 
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types import TypedDictFactoryKwargs
 
 from .model_generic_factory import ModelGenericFactory
@@ -117,7 +116,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -138,7 +137,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

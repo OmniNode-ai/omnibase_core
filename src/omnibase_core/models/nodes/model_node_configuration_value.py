@@ -11,7 +11,7 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Discriminator, Field
 
-from omnibase_core.errors.error_onex import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 

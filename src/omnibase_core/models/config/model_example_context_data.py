@@ -13,10 +13,9 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -94,7 +93,7 @@ class ModelExampleContextData(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -110,7 +109,7 @@ class ModelExampleContextData(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

@@ -11,8 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelActionConfigValue(BaseModel):
@@ -50,25 +49,25 @@ class ModelActionConfigValue(BaseModel):
         if value_type == "scalar" and field_name == "scalar_value":
             if v is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="scalar_value must be provided when value_type='scalar'",
                 )
         elif value_type == "scalar" and field_name == "list_value":
             if v is not None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="list_value must be None when value_type='scalar'",
                 )
         elif value_type == "list" and field_name == "list_value":
             if v is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="list_value must be provided when value_type='list'",
                 )
         elif value_type == "list" and field_name == "scalar_value":
             if v is not None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="scalar_value must be None when value_type='list'",
                 )
 
@@ -81,7 +80,7 @@ class ModelActionConfigValue(BaseModel):
         if self.value_type == "list":
             return self.list_value or []
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid value_type: {self.value_type}",
         )
 

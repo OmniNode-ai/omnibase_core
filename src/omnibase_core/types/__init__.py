@@ -52,6 +52,12 @@ from .constraints import (
 if TYPE_CHECKING:
     from .constraints import ModelBaseCollection, ModelBaseFactory
 
+# Core types for breaking circular dependencies
+from .core_types import (
+    BasicErrorContext,
+    ProtocolErrorContext,
+    ProtocolSchemaValue,
+)
 from .typed_dict_capability_factory_kwargs import TypedDictCapabilityFactoryKwargs
 from .typed_dict_cli_input_dict import TypedDictCliInputDict
 from .typed_dict_collection_kwargs import (
@@ -78,6 +84,10 @@ from .typed_dict_ssl_context_options import TypedDictSSLContextOptions
 from .typed_dict_trace_info_data import TypedDictTraceInfoData
 
 __all__ = [
+    # Core types (no dependencies)
+    "BasicErrorContext",
+    "ProtocolErrorContext",
+    "ProtocolSchemaValue",
     # Type constraints and protocols
     "ModelBaseCollection",
     "ModelBaseFactory",

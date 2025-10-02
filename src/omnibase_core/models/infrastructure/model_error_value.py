@@ -10,9 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_error_value_type import EnumErrorValueType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelErrorValue(BaseModel):
@@ -48,7 +47,7 @@ class ModelErrorValue(BaseModel):
         if self.error_type == EnumErrorValueType.STRING:
             if self.string_error is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be set when error_type is 'string'",
                 )
             if any(
@@ -59,18 +58,18 @@ class ModelErrorValue(BaseModel):
                 ],
             ):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="exception fields must be None when error_type is 'string'",
                 )
         elif self.error_type == EnumErrorValueType.EXCEPTION:
             if self.exception_class is None or self.exception_message is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="exception_class and exception_message must be set when error_type is 'exception'",
                 )
             if self.string_error is not None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be None when error_type is 'exception'",
                 )
         elif self.error_type == EnumErrorValueType.NONE:
@@ -83,7 +82,7 @@ class ModelErrorValue(BaseModel):
                 ],
             ):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="All error values must be None when error_type is 'none'",
                 )
 
@@ -160,7 +159,7 @@ class ModelErrorValue(BaseModel):
         except Exception as e:
             # If recreation fails, raise error with context about the failure
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to recreate exception {self.exception_class}: {e}",
             ) from e
 

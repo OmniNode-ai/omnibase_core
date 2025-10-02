@@ -11,10 +11,9 @@ from typing import Any, Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelProgressCore(BaseModel):
@@ -76,7 +75,7 @@ class ModelProgressCore(BaseModel):
         """Validate current step doesn't exceed total steps."""
         if self.current_step > self.total_steps:
             msg = "Current step cannot exceed total steps"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return self
 
     def model_post_init(self, __context: object) -> None:

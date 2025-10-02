@@ -898,7 +898,7 @@ class TypedDictPerformanceMetricData(TypedDict):
         compute_metric: TypedDictPerformanceMetricData = {
             "metric_name": "node.compute.records_processed_per_second",
             "value": 1250,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": UUID("87654321-4321-8765-2109-876543210def"),
             "unit": "records/sec",
             "tags": {
@@ -919,7 +919,7 @@ class TypedDictPerformanceMetricData(TypedDict):
         reducer_metric: TypedDictPerformanceMetricData = {
             "metric_name": "node.reducer.memory_utilization",
             "value": 78.5,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": UUID("abcdef12-3456-7890-abcd-ef1234567890"),
             "unit": "percent",
             "tags": {
@@ -940,7 +940,7 @@ class TypedDictPerformanceMetricData(TypedDict):
         orchestrator_metric: TypedDictPerformanceMetricData = {
             "metric_name": "node.orchestrator.workflow_success_rate",
             "value": 98.7,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": UUID("fedcba09-8765-4321-fedc-ba0987654321"),
             "unit": "percent",
             "tags": {

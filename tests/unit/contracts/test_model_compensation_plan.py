@@ -19,9 +19,8 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.contracts.model_compensation_plan import (
     ModelCompensationPlan,
 )
@@ -137,7 +136,7 @@ class TestModelCompensationPlan:
                 plan_name="test_plan",
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Plan ID cannot be empty" in str(exc_info.value)
 
     def test_validate_plan_id_with_whitespace_string(self):
@@ -148,7 +147,7 @@ class TestModelCompensationPlan:
                 plan_name="test_plan",
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Plan ID cannot be empty" in str(exc_info.value)
 
     def test_validate_plan_id_with_invalid_uuid_string(self):
@@ -159,7 +158,7 @@ class TestModelCompensationPlan:
                 plan_name="test_plan",
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Invalid plan_id" in str(exc_info.value)
         assert "Must be a valid UUID" in str(exc_info.value)
 
@@ -203,7 +202,7 @@ class TestModelCompensationPlan:
                 rollback_actions=["valid_action", "invalid@action!"],
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Invalid action_id" in str(exc_info.value)
         assert "Must contain only alphanumeric characters" in str(exc_info.value)
 
@@ -216,7 +215,7 @@ class TestModelCompensationPlan:
                 cleanup_actions=["action$special"],
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_validate_multiple_action_types(self):
         """Test validation across all action types."""
@@ -304,7 +303,7 @@ class TestModelCompensationPlan:
                 depends_on_plans=["not-a-valid-uuid"],
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Invalid dependency plan_id" in str(exc_info.value)
         assert "Must be a valid UUID" in str(exc_info.value)
 

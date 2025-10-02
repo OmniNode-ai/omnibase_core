@@ -19,8 +19,7 @@ else:
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
@@ -197,7 +196,7 @@ class ModelGenericMetadata(BaseModel):
                 self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Value type {type(value)} not supported for metadata storage",
                 details=ModelErrorContext.with_context(
                     {

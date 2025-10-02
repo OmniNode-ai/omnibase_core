@@ -9,8 +9,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -59,7 +58,7 @@ class ModelAlgorithmConfig(BaseModel):
         if not (0.99 <= total_weight <= 1.01):
             msg = f"Factor weights must sum to 1.0, got {total_weight}"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {

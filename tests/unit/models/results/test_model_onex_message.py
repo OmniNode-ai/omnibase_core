@@ -168,7 +168,7 @@ class TestModelOnexMessageCodeField:
         """Test code field with error code."""
         message = ModelOnexMessage(summary="Validation error", code="E001")
 
-        assert message.code == "E001"
+        assert message.error_code == "E001"
 
     def test_code_field_with_standard_codes(self):
         """Test code field with standard error code formats."""
@@ -176,7 +176,7 @@ class TestModelOnexMessageCodeField:
 
         for code in codes:
             message = ModelOnexMessage(summary="Test", code=code)
-            assert message.code == code
+            assert message.error_code == code
 
 
 class TestModelOnexMessageContextField:
@@ -416,7 +416,7 @@ class TestModelOnexMessageSerialization:
         assert restored.level == original.level
         assert restored.file == original.file
         assert restored.line == original.line
-        assert restored.code == original.code
+        assert restored.error_code == original.code
 
 
 class TestModelOnexMessageComplexScenarios:

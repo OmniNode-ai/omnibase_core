@@ -6,7 +6,7 @@ Provides centralized structured logging with standardized formats.
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -62,7 +62,7 @@ def emit_log_event_sync(
 
     # Create structured log entry
     log_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "level": level.value,
         "message": message,
         "context": context or {},

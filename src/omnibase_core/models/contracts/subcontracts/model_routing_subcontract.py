@@ -21,8 +21,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -237,7 +236,7 @@ class ModelRoutingSubcontract(BaseModel):
                 if route.priority in priorities_seen:
                     msg = f"Duplicate priority {route.priority} found in pattern '{pattern}' (route: {route.route_name})"
                     raise OnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        code=CoreErrorCode.VALIDATION_ERROR,
                         message=msg,
                         details=ModelErrorContext.with_context(
                             {
@@ -263,7 +262,7 @@ class ModelRoutingSubcontract(BaseModel):
         if v > 0.5:
             msg = "Trace sampling rate above 50% may impact performance"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {

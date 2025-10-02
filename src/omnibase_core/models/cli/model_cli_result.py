@@ -69,9 +69,9 @@ class ModelCliResult(BaseModel):
 
     output_text: str = Field(default="", description="Human-readable output text")
 
-    error_message: ModelSchemaValue = Field(
-        default_factory=lambda: ModelSchemaValue.from_value(None),
-        description="Primary error message if execution failed (string or null)",
+    error_message: str | None = Field(
+        default=None,
+        description="Primary error message if execution failed",
     )
 
     error_details: str = Field(default="", description="Detailed error information")
@@ -92,24 +92,24 @@ class ModelCliResult(BaseModel):
 
     retry_count: int = Field(default=0, description="Number of retries attempted", ge=0)
 
-    performance_metrics: ModelSchemaValue = Field(
-        default_factory=lambda: ModelSchemaValue.from_value(None),
-        description="Performance metrics and timing data (ModelPerformanceMetrics or null)",
+    performance_metrics: ModelPerformanceMetrics | None = Field(
+        default=None,
+        description="Performance metrics and timing data",
     )
 
-    debug_info: ModelSchemaValue = Field(
-        default_factory=lambda: ModelSchemaValue.from_value(None),
-        description="Debug information (ModelCliDebugInfo or null)",
+    debug_info: ModelCliDebugInfo | None = Field(
+        default=None,
+        description="Debug information",
     )
 
-    trace_data: ModelSchemaValue = Field(
-        default_factory=lambda: ModelSchemaValue.from_value(None),
-        description="Trace data (ModelTraceData or null)",
+    trace_data: ModelTraceData | None = Field(
+        default=None,
+        description="Trace data",
     )
 
-    result_metadata: ModelSchemaValue = Field(
-        default_factory=lambda: ModelSchemaValue.from_value(None),
-        description="Additional result metadata (ModelCliResultMetadata or null)",
+    result_metadata: ModelCliResultMetadata | None = Field(
+        default=None,
+        description="Additional result metadata",
     )
 
     def is_success(self) -> bool:
@@ -122,9 +122,7 @@ class ModelCliResult(BaseModel):
 
     def has_errors(self) -> bool:
         """Check if there are any errors."""
-        # Check if error_message is not null
-        error_msg_value = self.error_message.to_value()
-        return error_msg_value is not None or len(self.validation_errors) > 0
+        return self.error_message is not None or len(self.validation_errors) > 0
 
     def has_warnings(self) -> bool:
         """Check if there are any warnings."""
@@ -142,24 +140,22 @@ class ModelCliResult(BaseModel):
         """Get execution duration in seconds."""
         return float(self.execution_time.total_seconds())
 
-    def get_primary_error(self) -> ModelSchemaValue:
+    def get_primary_error(self) -> str | None:
         """Get the primary error message."""
-        error_msg_value = self.error_message.to_value()
-        if error_msg_value is not None:
+        if self.error_message is not None:
             return self.error_message
         if self.validation_errors:
             critical_errors = [e for e in self.validation_errors if e.is_critical()]
             if critical_errors:
-                return ModelSchemaValue.from_value(str(critical_errors[0].message))
-            return ModelSchemaValue.from_value(str(self.validation_errors[0].message))
-        return ModelSchemaValue.from_value(None)
+                return str(critical_errors[0].message)
+            return str(self.validation_errors[0].message)
+        return None
 
     def get_all_errors(self) -> list[str]:
         """Get all error messages."""
         errors: list[str] = []
-        error_msg_value = self.error_message.to_value()
-        if error_msg_value is not None:
-            errors.append(str(error_msg_value))
+        if self.error_message is not None:
+            errors.append(self.error_message)
         for validation_error in self.validation_errors:
             errors.append(validation_error.message)
         return errors
@@ -189,55 +185,30 @@ class ModelCliResult(BaseModel):
         category: EnumConfigCategory = EnumConfigCategory.GENERAL,
     ) -> None:
         """Add a performance metric with proper typing."""
-        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
-        # This pattern is repeated in add_debug_info, add_trace_data, add_metadata
-        # Should be: perf_metrics = CliDataConverter.get_or_create(self.performance_metrics, ModelPerformanceMetrics, {...})
-        # Performance metrics are now strongly typed - use proper model
-        perf_metrics_value = self.performance_metrics.to_value()
-        if perf_metrics_value is None:
-            perf_metrics = ModelPerformanceMetrics(
-                execution_time_ms=0.0,
-                memory_usage_mb=0.0,  # Use default value instead of None
-                cpu_usage_percent=0.0,  # Use default value instead of None
-                io_operations=0,  # Use default value instead of None
-                network_calls=0,  # Use default value instead of None
-            )
-            self.performance_metrics = ModelSchemaValue.from_value(perf_metrics)
-        # Type check the extracted value
-        elif isinstance(perf_metrics_value, ModelPerformanceMetrics):
-            perf_metrics = perf_metrics_value
-        else:
-            # Create new if type is wrong
-            perf_metrics = ModelPerformanceMetrics(
+        # Create performance metrics if not exists
+        if self.performance_metrics is None:
+            self.performance_metrics = ModelPerformanceMetrics(
                 execution_time_ms=0.0,
                 memory_usage_mb=0.0,
                 cpu_usage_percent=0.0,
                 io_operations=0,
                 network_calls=0,
             )
-            self.performance_metrics = ModelSchemaValue.from_value(perf_metrics)
+
         # Add through the performance metrics model's typed interface
-        if hasattr(perf_metrics, "add_metric"):
-            perf_metrics.add_metric(name, value, unit, category)
+        if hasattr(self.performance_metrics, "add_metric"):
+            self.performance_metrics.add_metric(name, value, unit, category)
 
     def add_debug_info(self, key: str, value: object) -> None:
         """Add debug information with proper typing."""
-        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
         if self.execution.is_debug_enabled:
-            debug_info_value = self.debug_info.to_value()
-            if debug_info_value is None:
-                debug_info = ModelCliDebugInfo()
-                self.debug_info = ModelSchemaValue.from_value(debug_info)
-            # Type check the extracted value
-            elif isinstance(debug_info_value, ModelCliDebugInfo):
-                debug_info = debug_info_value
-            else:
-                # Create new if type is wrong
-                debug_info = ModelCliDebugInfo()
-                self.debug_info = ModelSchemaValue.from_value(debug_info)
+            # Create debug info if not exists
+            if self.debug_info is None:
+                self.debug_info = ModelCliDebugInfo()
+
             # Pass value directly - set_custom_field handles type conversion
             schema_value = ModelSchemaValue.from_value(value)
-            debug_info.set_custom_field(key, schema_value.to_value())
+            self.debug_info.set_custom_field(key, schema_value.to_value())
 
     def add_trace_data(
         self,
@@ -246,11 +217,10 @@ class ModelCliResult(BaseModel):
         operation: str = "",
     ) -> None:
         """Add trace data with proper typing."""
-        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
-        trace_data_value = self.trace_data.to_value()
-        if trace_data_value is None:
+        # Create trace data if not exists
+        if self.trace_data is None:
             now = datetime.now(UTC)
-            trace_data = ModelTraceData(
+            self.trace_data = ModelTraceData(
                 trace_id=uuid4(),
                 span_id=uuid4(),
                 parent_span_id=None,
@@ -258,32 +228,16 @@ class ModelCliResult(BaseModel):
                 end_time=now,
                 duration_ms=0.0,
             )
-            self.trace_data = ModelSchemaValue.from_value(trace_data)
-        # Type check the extracted value
-        elif isinstance(trace_data_value, ModelTraceData):
-            trace_data = trace_data_value
-        else:
-            # Create new if type is wrong
-            now = datetime.now(UTC)
-            trace_data = ModelTraceData(
-                trace_id=uuid4(),
-                span_id=uuid4(),
-                parent_span_id=None,
-                start_time=now,
-                end_time=now,
-                duration_ms=0.0,
-            )
-            self.trace_data = ModelSchemaValue.from_value(trace_data)
+
         # Add through the trace data model's typed interface
-        if hasattr(trace_data, "add_trace_info"):
-            trace_data.add_trace_info(key, value, operation)
+        if hasattr(self.trace_data, "add_trace_info"):
+            self.trace_data.add_trace_info(key, value, operation)
 
     def add_metadata(self, key: str, value: object) -> None:
         """Add result metadata with proper typing."""
-        # TODO: Extract to CliDataConverter.get_or_create_typed_field()
-        result_metadata_value = self.result_metadata.to_value()
-        if result_metadata_value is None:
-            result_metadata = ModelCliResultMetadata(
+        # Create result metadata if not exists
+        if self.result_metadata is None:
+            self.result_metadata = ModelCliResultMetadata(
                 metadata_version=None,
                 result_category=None,
                 source_command=None,
@@ -294,38 +248,14 @@ class ModelCliResult(BaseModel):
                 retention_policy=None,
                 processing_time_ms=None,
             )
-            self.result_metadata = ModelSchemaValue.from_value(result_metadata)
-        # Type check the extracted value
-        elif isinstance(result_metadata_value, ModelCliResultMetadata):
-            result_metadata = result_metadata_value
-        else:
-            # Create new if type is wrong
-            result_metadata = ModelCliResultMetadata(
-                metadata_version=None,
-                result_category=None,
-                source_command=None,
-                source_node=None,
-                processor_version=None,
-                quality_score=None,
-                confidence_level=None,
-                retention_policy=None,
-                processing_time_ms=None,
-            )
-            self.result_metadata = ModelSchemaValue.from_value(result_metadata)
+
         # Pass value directly - set_custom_field handles type conversion
         schema_value = ModelSchemaValue.from_value(value)
-        result_metadata.set_custom_field(key, schema_value.to_value())
+        self.result_metadata.set_custom_field(key, schema_value.to_value())
 
     def get_metadata(self, key: str, default: object = None) -> object:
         """Get result metadata with proper typing."""
-        # TODO: Extract to CliDataConverter.convert_cli_value_to_type()
-        # This type conversion logic is duplicated in get_output_value() - DRY violation
-        # Should be: return CliDataConverter.get_typed_field(result_metadata, key, default)
-        result_metadata_value = self.result_metadata.to_value()
-        if result_metadata_value is None or not isinstance(
-            result_metadata_value,
-            ModelCliResultMetadata,
-        ):
+        if self.result_metadata is None:
             return default
 
         # Get ModelCliValue - provide a default ModelCliValue for empty string
@@ -334,29 +264,28 @@ class ModelCliResult(BaseModel):
         default_cli_value = ModelCliValue.from_string(
             str(default) if default is not None else "",
         )
-        cli_value = result_metadata_value.get_custom_field(key, default_cli_value)
+        cli_value = self.result_metadata.get_custom_field(key, default_cli_value)
 
         if cli_value is not None:
             # Convert ModelCliValue to Python value
             python_value = cli_value.to_python_value()
             value_str = str(python_value)
 
-            if value_str != "":
-                # Convert string value to match the type of default
-                if isinstance(default, bool):
-                    return value_str.lower() in ("true", "1", "yes", "on")
-                if isinstance(default, int):
-                    try:
-                        return int(value_str)
-                    except ValueError:
-                        return default
-                elif isinstance(default, float):
-                    try:
-                        return float(value_str)
-                    except ValueError:
-                        return default
-                else:  # str
-                    return value_str
+            # Simple type conversion based on default type
+            if isinstance(default, bool):
+                return value_str.lower() in ("true", "1", "yes", "on")
+            if isinstance(default, int):
+                try:
+                    return int(value_str)
+                except (ValueError, TypeError):
+                    return default
+            if isinstance(default, float):
+                try:
+                    return float(value_str)
+                except (ValueError, TypeError):
+                    return default
+            return value_str
+
         return default
 
     def get_typed_metadata(
@@ -366,13 +295,9 @@ class ModelCliResult(BaseModel):
         default: object,
     ) -> object:
         """Get result metadata with specific type checking."""
-        result_metadata_value = self.result_metadata.to_value()
-        if result_metadata_value is None or not isinstance(
-            result_metadata_value,
-            ModelCliResultMetadata,
-        ):
+        if self.result_metadata is None:
             return default
-        value = result_metadata_value.get_custom_field(key)
+        value = self.result_metadata.get_custom_field(key)
         if value is not None and isinstance(value, field_type):
             return value
         return default
@@ -383,52 +308,37 @@ class ModelCliResult(BaseModel):
         default: object = None,
     ) -> object:
         """Get a specific output value with proper typing."""
-        # TODO: Extract to CliDataConverter.convert_cli_value_to_type()
-        # This is duplicated from get_metadata() - same type conversion logic
         value = self.output_data.get_field_value(
             key,
             str(default) if default is not None else "",
         )
+        # Simple type conversion based on default type
         if value is not None and value != "":
-            # Convert string value to match the type of default
             if isinstance(default, bool):
                 return value.lower() in ("true", "1", "yes", "on")
             if isinstance(default, int):
                 try:
                     return int(value)
-                except ValueError:
+                except (ValueError, TypeError):
                     return default
-            elif isinstance(default, float):
+            if isinstance(default, float):
                 try:
                     return float(value)
-                except ValueError:
+                except (ValueError, TypeError):
                     return default
-            else:  # str
-                return value
+            return value
         return default
 
     def set_output_value(self, key: str, value: object) -> None:
         """Set a specific output value with proper typing."""
-        # Convert value to ModelSchemaValue for proper typing
-        schema_value = ModelSchemaValue.from_value(value)
-        self.output_data.set_field_value(key, str(schema_value.to_value()))
+        # Convert value to string for storage
+        self.output_data.set_field_value(key, str(value))
 
     def get_formatted_output(self) -> str:
         """Get formatted output for display."""
-        # TODO: Extract to CliResultFormatter.format_output()
-        # This formatting logic should be in a separate formatter class
-        # Should be: return CliResultFormatter.format(self.output_text, self.output_data)
-        if self.output_text:
-            return self.output_text
+        from .model_cli_result_formatter import ModelCliResultFormatter
 
-        if self.output_data:
-            # Try to format structured data nicely
-            try:
-                return json.dumps(self.output_data.model_dump(), indent=2, default=str)
-            except (TypeError, ValueError):
-                return str(self.output_data)
-
-        return ""
+        return ModelCliResultFormatter.format_output(self.output_text, self.output_data)
 
     def get_summary(self) -> ModelResultSummary:
         """Get result summary for logging/monitoring."""
@@ -451,59 +361,47 @@ class ModelCliResult(BaseModel):
     def create_success(
         cls,
         execution: ModelCliExecution,
-        output_data: ModelSchemaValue = ModelSchemaValue.from_value(None),
-        output_text: ModelSchemaValue = ModelSchemaValue.from_value(None),
-        execution_time: ModelSchemaValue = ModelSchemaValue.from_value(None),
+        output_data: ModelCliOutputData | None = None,
+        output_text: str | None = None,
+        execution_time: ModelDuration | None = None,
     ) -> ModelCliResult:
         """Create a successful result."""
-        execution_time_value = execution_time.to_value()
-        if execution_time_value is None:
+        # Use provided execution time or calculate from execution
+        if execution_time is None:
             execution_time_final = ModelDuration(
                 milliseconds=execution.get_elapsed_ms(),
             )
-        # Type check the extracted value
-        elif isinstance(execution_time_value, ModelDuration):
-            execution_time_final = execution_time_value
         else:
-            execution_time_final = ModelDuration(
-                milliseconds=execution.get_elapsed_ms(),
-            )
+            execution_time_final = execution_time
 
         # Mark execution as completed
         execution.mark_completed()
 
         # Use provided output data or create empty one
-        output_data_value = output_data.to_value()
-        if output_data_value is not None and isinstance(
-            output_data_value,
-            ModelCliOutputData,
-        ):
-            output_data_obj = output_data_value
-        else:
+        if output_data is None:
             output_data_obj = ModelCliOutputData(
                 stdout="",
                 stderr="",
                 execution_time_ms=0.0,
                 memory_usage_mb=0.0,
             )
+        else:
+            output_data_obj = output_data
 
-        output_text_value = output_text.to_value()
-        output_text_final = (
-            str(output_text_value) if output_text_value is not None else ""
-        )
+        output_text_final = output_text if output_text is not None else ""
 
         return cls(
             execution=execution,
             success=True,
             exit_code=0,
             output_data=output_data_obj,
-            performance_metrics=ModelSchemaValue.from_value(None),
-            trace_data=ModelSchemaValue.from_value(None),
+            performance_metrics=None,
+            trace_data=None,
             output_text=output_text_final,
-            error_message=ModelSchemaValue.from_value(None),
+            error_message=None,
             error_details="",
-            debug_info=ModelSchemaValue.from_value(None),
-            result_metadata=ModelSchemaValue.from_value(None),
+            debug_info=None,
+            result_metadata=None,
             execution_time=execution_time_final,
         )
 
@@ -513,54 +411,40 @@ class ModelCliResult(BaseModel):
         execution: ModelCliExecution,
         error_message: str,
         exit_code: int = 1,
-        error_details: ModelSchemaValue = ModelSchemaValue.from_value(None),
-        validation_errors: ModelSchemaValue = ModelSchemaValue.from_value(None),
-        execution_time: ModelSchemaValue = ModelSchemaValue.from_value(None),
+        error_details: str | None = None,
+        validation_errors: list[ModelValidationError] | None = None,
+        execution_time: ModelDuration | None = None,
     ) -> ModelCliResult:
         """Create a failure result."""
-        execution_time_value = execution_time.to_value()
-        if execution_time_value is None:
+        # Use provided execution time or calculate from execution
+        if execution_time is None:
             execution_time_final = ModelDuration(
                 milliseconds=execution.get_elapsed_ms(),
             )
-        # Type check the extracted value
-        elif isinstance(execution_time_value, ModelDuration):
-            execution_time_final = execution_time_value
         else:
-            execution_time_final = ModelDuration(
-                milliseconds=execution.get_elapsed_ms(),
-            )
+            execution_time_final = execution_time
 
         # Mark execution as completed
         execution.mark_completed()
 
-        error_details_value = error_details.to_value()
-        error_details_final = (
-            str(error_details_value) if error_details_value is not None else ""
+        error_details_final = error_details if error_details is not None else ""
+        validation_errors_final = (
+            validation_errors if validation_errors is not None else []
         )
-
-        validation_errors_value = validation_errors.to_value()
-        if validation_errors_value is not None and isinstance(
-            validation_errors_value,
-            list,
-        ):
-            validation_errors_final = validation_errors_value
-        else:
-            validation_errors_final = []
 
         return cls(
             execution=execution,
             success=False,
             exit_code=exit_code,
-            error_message=ModelSchemaValue.from_value(error_message),
+            error_message=error_message,
             error_details=error_details_final,
             validation_errors=validation_errors_final,
             output_text="",
-            debug_info=ModelSchemaValue.from_value(None),
-            result_metadata=ModelSchemaValue.from_value(None),
+            debug_info=None,
+            result_metadata=None,
             execution_time=execution_time_final,
-            performance_metrics=ModelSchemaValue.from_value(None),
-            trace_data=ModelSchemaValue.from_value(None),
+            performance_metrics=None,
+            trace_data=None,
         )
 
     @classmethod
@@ -568,21 +452,16 @@ class ModelCliResult(BaseModel):
         cls,
         execution: ModelCliExecution,
         validation_errors: list[ModelValidationError],
-        execution_time: ModelSchemaValue = ModelSchemaValue.from_value(None),
+        execution_time: ModelDuration | None = None,
     ) -> ModelCliResult:
         """Create a result for validation failures."""
-        execution_time_value = execution_time.to_value()
-        if execution_time_value is None:
+        # Use provided execution time or calculate from execution
+        if execution_time is None:
             execution_time_final = ModelDuration(
                 milliseconds=execution.get_elapsed_ms(),
             )
-        # Type check the extracted value
-        elif isinstance(execution_time_value, ModelDuration):
-            execution_time_final = execution_time_value
         else:
-            execution_time_final = ModelDuration(
-                milliseconds=execution.get_elapsed_ms(),
-            )
+            execution_time_final = execution_time
 
         # Mark execution as completed
         execution.mark_completed()
@@ -595,15 +474,15 @@ class ModelCliResult(BaseModel):
             execution=execution,
             success=False,
             exit_code=2,  # Exit code 2 for validation errors
-            error_message=ModelSchemaValue.from_value(primary_error),
+            error_message=primary_error,
             error_details="",
             validation_errors=validation_errors,
             output_text="",
-            debug_info=ModelSchemaValue.from_value(None),
-            result_metadata=ModelSchemaValue.from_value(None),
+            debug_info=None,
+            result_metadata=None,
             execution_time=execution_time_final,
-            performance_metrics=ModelSchemaValue.from_value(None),
-            trace_data=ModelSchemaValue.from_value(None),
+            performance_metrics=None,
+            trace_data=None,
         )
 
     model_config = {

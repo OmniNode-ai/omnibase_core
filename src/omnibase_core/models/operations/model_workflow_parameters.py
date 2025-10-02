@@ -11,9 +11,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_parameter_type import EnumWorkflowParameterType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # Discriminator function for workflow parameters
 # Using Field(discriminator="parameter_type") for discriminated unions
@@ -173,7 +172,7 @@ class ModelWorkflowParameters(BaseModel):
                 ),
             ):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid parameter type for {param_name}: {type(param_value)}",
                 )
         return self
@@ -310,7 +309,7 @@ class ModelWorkflowParameters(BaseModel):
         if param_names:
             return f"workflow_params_{hash('_'.join(param_names))}"
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

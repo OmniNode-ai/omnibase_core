@@ -19,10 +19,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Import individual configuration model components
@@ -214,7 +213,7 @@ class ModelConfigurationSubcontract(BaseModel):
                 p for p in required_priorities if required_priorities.count(p) > 1
             ]
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -234,7 +233,7 @@ class ModelConfigurationSubcontract(BaseModel):
             overlapping = required_set & optional_set
             msg = f"Keys cannot be both required and optional: {overlapping}"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -336,7 +335,7 @@ class ModelConfigurationSubcontract(BaseModel):
         if not self.allow_runtime_updates:
             msg = "Runtime configuration updates are not allowed for this subcontract"
             raise OnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=msg,
             )
 
@@ -391,7 +390,7 @@ class ModelConfigurationSubcontract(BaseModel):
                     "already exists"
                 )
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 

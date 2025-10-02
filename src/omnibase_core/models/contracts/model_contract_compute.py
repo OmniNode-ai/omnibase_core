@@ -13,9 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
@@ -176,7 +175,7 @@ class ModelContractCompute(ModelContractBase):
                 return EnumNodeType(v)
             except ValueError:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid string value for node_type: {v}",
                     details=ModelErrorContext.with_context(
                         {
@@ -189,7 +188,7 @@ class ModelContractCompute(ModelContractBase):
                 )
         else:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid node_type type: {type(v).__name__}",
                 details=ModelErrorContext.with_context(
                     {
@@ -368,7 +367,7 @@ class ModelContractCompute(ModelContractBase):
         if not self.algorithm.factors:
             msg = "Compute node must define at least one algorithm factor"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -389,7 +388,7 @@ class ModelContractCompute(ModelContractBase):
         ):
             msg = "Parallel processing requires at least 1 worker"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -409,7 +408,7 @@ class ModelContractCompute(ModelContractBase):
         ):
             msg = "Caching requires positive max_entries"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -425,7 +424,7 @@ class ModelContractCompute(ModelContractBase):
         if not self.performance.single_operation_max_ms:
             msg = "Compute nodes must specify single_operation_max_ms performance requirement"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -446,7 +445,7 @@ class ModelContractCompute(ModelContractBase):
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
                     raise OnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        code=CoreErrorCode.VALIDATION_ERROR,
                         message=msg,
                         details=ModelErrorContext.with_context(
                             {
@@ -468,7 +467,7 @@ class ModelContractCompute(ModelContractBase):
         if v.algorithm_type == "weighted_factor_algorithm" and not v.factors:
             msg = "Weighted factor algorithm requires at least one factor"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -529,7 +528,7 @@ class ModelContractCompute(ModelContractBase):
 
         except ValidationError as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract validation failed: {e}",
                 details=ModelErrorContext.with_context(
                     {
@@ -542,7 +541,7 @@ class ModelContractCompute(ModelContractBase):
             ) from e
         except yaml.YAMLError as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"YAML parsing error: {e}",
                 details=ModelErrorContext.with_context(
                     {
@@ -555,7 +554,7 @@ class ModelContractCompute(ModelContractBase):
             ) from e
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to load contract YAML: {e}",
                 details=ModelErrorContext.with_context(
                     {

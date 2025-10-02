@@ -28,8 +28,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.exceptions import OnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -528,7 +530,7 @@ class NodeCompute(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Computation failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -617,14 +619,14 @@ class NodeCompute(NodeCoreBase):
         """
         if computation_type in self.computation_registry:
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Computation type already registered: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
 
         if not callable(computation_func):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Computation function must be callable: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
@@ -707,7 +709,7 @@ class NodeCompute(NodeCoreBase):
 
         if not hasattr(input_data, "data"):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'data' attribute",
                 context={
                     "node_id": self.node_id,
@@ -717,7 +719,7 @@ class NodeCompute(NodeCoreBase):
 
         if not hasattr(input_data, "computation_type"):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'computation_type' attribute",
                 context={
                     "node_id": self.node_id,
@@ -749,7 +751,7 @@ class NodeCompute(NodeCoreBase):
             computation_func = self.computation_registry[computation_type]
             return computation_func(input_data.data)
         raise OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
+            code=CoreErrorCode.OPERATION_FAILED,
             message=f"Unknown computation type: {computation_type}",
             context={
                 "node_id": self.node_id,
@@ -772,7 +774,7 @@ class NodeCompute(NodeCoreBase):
 
         if not computation_func:
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Unknown computation type: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )

@@ -269,7 +269,7 @@ class TestModelCliAdvancedParams:
         assert params.timeout_seconds == 45.0
 
         # Invalid timeout should raise OnexError (not ValueError)
-        from omnibase_core.exceptions.onex_error import OnexError
+        from omnibase_core.errors.error_codes import OnexError
 
         with pytest.raises(OnexError, match="Timeout must be positive"):
             params.set_timeout(0.0)
@@ -286,7 +286,7 @@ class TestModelCliAdvancedParams:
         assert params.memory_limit_mb == 512
 
         # Invalid memory limit should raise OnexError (not ValueError)
-        from omnibase_core.exceptions.onex_error import OnexError
+        from omnibase_core.errors.error_codes import OnexError
 
         with pytest.raises(OnexError, match="Memory limit must be positive"):
             params.set_memory_limit(0)
@@ -309,7 +309,7 @@ class TestModelCliAdvancedParams:
         assert params.cpu_limit_percent == 100.0
 
         # Invalid CPU limits should raise OnexError (not ValueError)
-        from omnibase_core.exceptions.onex_error import OnexError
+        from omnibase_core.errors.error_codes import OnexError
 
         with pytest.raises(OnexError, match="CPU limit must be between 0.0 and 100.0"):
             params.set_cpu_limit(-0.1)

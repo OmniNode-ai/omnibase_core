@@ -175,6 +175,15 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      - id: validate-no-enhancement-prefixes
+        name: ONEX Enhancement Prefix Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-no-enhancement-prefixes.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards

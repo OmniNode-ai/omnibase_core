@@ -18,9 +18,8 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -179,7 +178,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "invalid_node_type" in error.message
         assert "valid EnumNodeType value" in error.message
         assert error.details is not None
@@ -192,7 +191,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "EnumNodeType enum or valid string" in error.message
 
     # =================== DEPENDENCY VALIDATION TESTS ===================
@@ -250,7 +249,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "must be a list" in error.message
 
     def test_dependencies_validation_string_dependency_security_rejection(self):
@@ -263,7 +262,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Batch validation failed" in error.message
         assert "string_dependency" in str(error.details)
 
@@ -280,7 +279,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Too many dependencies" in error.message
         assert "101" in error.message
         assert "100" in error.message
@@ -300,7 +299,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Batch validation failed" in error.message
 
     # =================== POST-INIT VALIDATION TESTS ===================
@@ -319,7 +318,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Direct circular dependency" in error.message
         assert "test_contract" in error.message
 
@@ -336,7 +335,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Duplicate dependency detected" in error.message
 
     def test_circular_dependency_detection_module_reference(self):
@@ -353,7 +352,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Potential circular dependency" in error.message
 
     def test_dependency_complexity_limit_enforcement(self):
@@ -369,7 +368,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "too many dependencies" in error.message
         assert "51" in error.message
 

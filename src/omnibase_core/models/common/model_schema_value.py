@@ -9,8 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
@@ -161,13 +160,22 @@ class ModelSchemaValue(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Note: This is a pure validation method that does NOT throw exceptions
+        to avoid circular dependencies. Use validation layer for exception-based validation.
+        """
+        # Basic validation - ensure value_type matches actual value
+        # This is pure data validation without exception throwing
+        if self.value_type == "string" and self.string_value is None:
+            return False
+        if self.value_type == "number" and self.number_value is None:
+            return False
+        if self.value_type == "boolean" and self.boolean_value is None:
+            return False
+        if self.value_type == "array" and self.array_value is None:
+            return False
+        if self.value_type == "object" and self.object_value is None:
+            return False
+        return True

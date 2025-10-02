@@ -11,11 +11,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rules_input_type import (
     EnumValidationRulesInputType,
 )
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
@@ -59,7 +58,7 @@ class ModelValidationRulesInputValue(BaseModel):
         required_field = required_fields.get(input_type)
         if required_field == field_name and v is None:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Field {field_name} is required for input type {input_type}",
             )
 
@@ -108,7 +107,7 @@ class ModelValidationRulesInputValue(BaseModel):
 
         # This should never be reached given the type annotations
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported data type: {type(data)}",
         )
 
@@ -163,7 +162,7 @@ class ModelValidationRulesConverter:
 
             # This should never be reached due to type checking
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Unsupported validation rules format: {type(v)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -176,7 +175,7 @@ class ModelValidationRulesConverter:
             )
         except (TypeError, ValueError) as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to convert validation rules: {e!s}",
                 details=ModelErrorContext.with_context(
                     {

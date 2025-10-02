@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import Field, RootModel
 
-from omnibase_core.errors.error_onex import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer

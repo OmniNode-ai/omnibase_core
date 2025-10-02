@@ -12,9 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_parameter_type import EnumEffectParameterType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 # TypedDict definitions for factory method parameters
@@ -137,7 +136,7 @@ class ModelEffectParameterValue(BaseModel):
         required_field = required_fields.get(parameter_type)
         if required_field == field_name and v is None:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Field {field_name} is required for parameter type {parameter_type}",
             )
 
@@ -163,7 +162,7 @@ class ModelEffectParameterValue(BaseModel):
             and v is None
         ):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Field {field_name} is required for parameter type {parameter_type}",
             )
 
@@ -321,7 +320,7 @@ class ModelEffectParameters(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

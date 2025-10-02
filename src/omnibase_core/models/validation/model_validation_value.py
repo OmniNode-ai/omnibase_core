@@ -11,9 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # ONEX validation values - use discriminated union pattern instead of broad unions
 # ValidationValueType replaced with EnumValidationValueType + structured fields
@@ -51,22 +50,22 @@ class ModelValidationValue(BaseModel):
 
         if value_type == EnumValidationValueType.STRING and not isinstance(v, str):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="String validation value must contain str data",
             )
         if value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Integer validation value must contain int data",
             )
         if value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Boolean validation value must contain bool data",
             )
         if value_type == EnumValidationValueType.NULL and v is not None:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Null validation value must contain None",
             )
 
@@ -136,7 +135,7 @@ class ModelValidationValue(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

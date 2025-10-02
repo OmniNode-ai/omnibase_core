@@ -40,7 +40,7 @@ Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
 """
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -48,8 +48,10 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.types.core_types import BasicErrorContext
 
 if TYPE_CHECKING:
+    from omnibase_core.models.common.model_error_context import ModelErrorContext
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -155,6 +157,7 @@ class CoreErrorCode(OnexErrorCode):
     VALIDATION_ERROR = "ONEX_CORE_006_VALIDATION_ERROR"
     INVALID_INPUT = "ONEX_CORE_007_INVALID_INPUT"
     INVALID_OPERATION = "ONEX_CORE_008_INVALID_OPERATION"
+    CONVERSION_ERROR = "ONEX_CORE_009_CONVERSION_ERROR"
 
     # File system errors (021-040)
     FILE_NOT_FOUND = "ONEX_CORE_021_FILE_NOT_FOUND"
@@ -185,7 +188,10 @@ class CoreErrorCode(OnexErrorCode):
     RESOURCE_NOT_FOUND = "ONEX_CORE_085_RESOURCE_NOT_FOUND"
     INVALID_STATE = "ONEX_CORE_086_INVALID_STATE"
     INITIALIZATION_FAILED = "ONEX_CORE_087_INITIALIZATION_FAILED"
-    TIMEOUT = "ONEX_CORE_088_TIMEOUT"  # Add TIMEOUT as alias
+    TIMEOUT = "ONEX_CORE_088_TIMEOUT"
+    INTERNAL_ERROR = "ONEX_CORE_089_INTERNAL_ERROR"
+    NETWORK_ERROR = "ONEX_CORE_090_NETWORK_ERROR"
+    MIGRATION_ERROR = "ONEX_CORE_091_MIGRATION_ERROR"
 
     # Test and development errors (101-120)
     TEST_SETUP_FAILED = "ONEX_CORE_101_TEST_SETUP_FAILED"
@@ -197,6 +203,7 @@ class CoreErrorCode(OnexErrorCode):
     MODULE_NOT_FOUND = "ONEX_CORE_121_MODULE_NOT_FOUND"
     DEPENDENCY_UNAVAILABLE = "ONEX_CORE_122_DEPENDENCY_UNAVAILABLE"
     VERSION_INCOMPATIBLE = "ONEX_CORE_123_VERSION_INCOMPATIBLE"
+    IMPORT_ERROR = "ONEX_CORE_124_IMPORT_ERROR"
 
     # Database errors (131-140)
     DATABASE_CONNECTION_ERROR = "ONEX_CORE_131_DATABASE_CONNECTION_ERROR"
@@ -244,6 +251,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     CoreErrorCode.VALIDATION_ERROR: CLIExitCode.ERROR,
     CoreErrorCode.INVALID_INPUT: CLIExitCode.ERROR,
     CoreErrorCode.INVALID_OPERATION: CLIExitCode.ERROR,
+    CoreErrorCode.CONVERSION_ERROR: CLIExitCode.ERROR,
     # File system errors -> ERROR
     CoreErrorCode.FILE_NOT_FOUND: CLIExitCode.ERROR,
     CoreErrorCode.FILE_READ_ERROR: CLIExitCode.ERROR,
@@ -269,6 +277,9 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     CoreErrorCode.INVALID_STATE: CLIExitCode.ERROR,
     CoreErrorCode.INITIALIZATION_FAILED: CLIExitCode.ERROR,
     CoreErrorCode.TIMEOUT: CLIExitCode.ERROR,
+    CoreErrorCode.INTERNAL_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.NETWORK_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.MIGRATION_ERROR: CLIExitCode.ERROR,
     # Database errors -> ERROR
     CoreErrorCode.DATABASE_CONNECTION_ERROR: CLIExitCode.ERROR,
     CoreErrorCode.DATABASE_OPERATION_ERROR: CLIExitCode.ERROR,
@@ -314,6 +325,7 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
         CoreErrorCode.VALIDATION_ERROR: "Validation error occurred",
         CoreErrorCode.INVALID_INPUT: "Invalid input provided",
         CoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
+        CoreErrorCode.CONVERSION_ERROR: "Data conversion error",
         CoreErrorCode.FILE_NOT_FOUND: "File not found",
         CoreErrorCode.FILE_READ_ERROR: "Cannot read file",
         CoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",
@@ -335,6 +347,9 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
         CoreErrorCode.INVALID_STATE: "Invalid state",
         CoreErrorCode.INITIALIZATION_FAILED: "Initialization failed",
         CoreErrorCode.TIMEOUT: "Operation timed out",
+        CoreErrorCode.INTERNAL_ERROR: "Internal error occurred",
+        CoreErrorCode.NETWORK_ERROR: "Network error occurred",
+        CoreErrorCode.MIGRATION_ERROR: "Migration error occurred",
         CoreErrorCode.DATABASE_CONNECTION_ERROR: "Database connection failed",
         CoreErrorCode.DATABASE_OPERATION_ERROR: "Database operation failed",
         CoreErrorCode.DATABASE_QUERY_ERROR: "Database query failed",
@@ -389,11 +404,11 @@ class ModelOnexError(BaseModel):
         json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
     )
     timestamp: datetime | None = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the error occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: "dict[str, ModelSchemaValue]" = Field(
+    context: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional context information for the error",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
@@ -444,11 +459,11 @@ class ModelOnexWarning(BaseModel):
         json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
     )
     timestamp: datetime | None = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the warning occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: "dict[str, ModelSchemaValue]" = Field(
+    context: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional context information for the warning",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
@@ -498,70 +513,52 @@ class OnexError(Exception):
             correlation_id if correlation_id is not None else uuid4()
         )
 
-        # Create the Pydantic model for structured data
-        # Check if ModelOnexError expects ModelErrorContext (newer version) or dict (older version)
-        try:
-            # Try to import ModelErrorContext to detect if we're using the newer ModelOnexError
-            from omnibase_core.models.core.model_error_context import ModelErrorContext
-
-            # Convert dictionary context to ModelErrorContext for new ModelOnexError
-            if isinstance(context, dict):
-                # ONEX-compliant boundary-layer transformation
-                # Extract known fields from dict for direct construction
-                known_fields = {
+        # Store simple context (no circular dependencies)
+        self._simple_context = BasicErrorContext(
+            file_path=context.get("file_path") if isinstance(context, dict) else None,
+            line_number=(
+                context.get("line_number") if isinstance(context, dict) else None
+            ),
+            column_number=(
+                context.get("column_number") if isinstance(context, dict) else None
+            ),
+            function_name=(
+                context.get("function_name") if isinstance(context, dict) else None
+            ),
+            module_name=(
+                context.get("module_name") if isinstance(context, dict) else None
+            ),
+            stack_trace=(
+                context.get("stack_trace") if isinstance(context, dict) else None
+            ),
+            additional_context=(
+                {
                     k: v
-                    for k, v in {
-                        "file_path": context.get("file_path"),
-                        "line_number": context.get("line_number"),
-                        "column_number": context.get("column_number"),
-                        "function_name": context.get("function_name"),
-                        "module_name": context.get("module_name"),
-                        "stack_trace": context.get("stack_trace"),
-                    }.items()
-                    if v is not None
+                    for k, v in context.items()
+                    if k
+                    not in {
+                        "file_path",
+                        "line_number",
+                        "column_number",
+                        "function_name",
+                        "module_name",
+                        "stack_trace",
+                    }
                 }
+                if isinstance(context, dict)
+                else {}
+            ),
+        )
 
-                # Convert remaining fields to schema values for additional_context
-                from omnibase_core.models.core.model_schema_value import (
-                    ModelSchemaValue,
-                )
-
-                additional_context = {}
-                for key, value in context.items():
-                    if key not in known_fields:
-                        additional_context[key] = ModelSchemaValue.from_value(value)
-
-                context_model = ModelErrorContext(
-                    **known_fields, additional_context=additional_context
-                )
-            elif isinstance(context, ModelErrorContext):
-                context_model = context
-            else:
-                context_model = ModelErrorContext()
-
-            # Use newer ModelOnexError from model package
-            from omnibase_core.models.core.model_onex_error import (
-                ModelOnexError as NewModelOnexError,
-            )
-
-            self.model = NewModelOnexError(
-                message=message,
-                error_code=error_code,
-                status=status,
-                correlation_id=final_correlation_id,
-                timestamp=timestamp or datetime.utcnow(),
-                context=context_model,
-            )
-        except ImportError:
-            # Fall back to older ModelOnexError that expects dict context
-            self.model = ModelOnexError(
-                message=message,
-                error_code=error_code,
-                status=status,
-                correlation_id=final_correlation_id,
-                timestamp=timestamp or datetime.utcnow(),
-                context=context,
-            )
+        # Create the Pydantic model for structured data (using dict context, no circular deps)
+        self.model = ModelOnexError(
+            message=message,
+            error_code=error_code,
+            status=status,
+            correlation_id=final_correlation_id,
+            timestamp=timestamp or datetime.now(UTC),
+            context=context if isinstance(context, dict) else {},
+        )
 
     @classmethod
     def with_correlation_id(
@@ -663,78 +660,8 @@ class OnexError(Exception):
     @property
     def context(self) -> dict[str, Any]:
         """Get the context information."""
-        # Handle both old dict format and new ModelErrorContext format
-        if hasattr(self.model.context, "model_dump"):
-            # ONEX-compliant pattern: Use model_dump() with boundary-layer transformation
-            context_data = self.model.context.model_dump()
-
-            # Transform to expected error context format
-            result: dict[str, Any] = {}
-
-            # Add known fields if present
-            for field in [
-                "file_path",
-                "line_number",
-                "column_number",
-                "function_name",
-                "module_name",
-                "stack_trace",
-            ]:
-                if context_data.get(field) is not None:
-                    result[field] = context_data[field]
-
-            # Add additional context by converting schema values back to primitives
-            additional_context = context_data.get("additional_context", {})
-            for key, value_obj in additional_context.items():
-                if isinstance(value_obj, dict):
-                    # Handle ModelSchemaValue serialized structure
-                    result[key] = self._extract_schema_value(value_obj)
-                else:
-                    result[key] = value_obj
-
-            return result
-        # Old dict format
-        return self.model.context
-
-    def _extract_schema_value(self, value_obj: dict[str, Any]) -> Any:
-        """
-        Extract the actual value from a ModelSchemaValue structure.
-
-        Args:
-            value_obj: Dictionary representing serialized ModelSchemaValue
-
-        Returns:
-            The extracted primitive value
-        """
-        # Handle ModelSchemaValue serialized structure
-        if isinstance(value_obj, dict):
-            value_type = value_obj.get("value_type")
-
-            if value_type == "string":
-                return value_obj.get("string_value")
-            elif value_type == "number":
-                return value_obj.get("number_value")
-            elif value_type == "boolean":
-                return value_obj.get("boolean_value")
-            elif value_type == "null":
-                return None
-            elif value_type == "array":
-                array_val = value_obj.get("array_value")
-                if isinstance(array_val, list):
-                    return [self._extract_schema_value(item) for item in array_val]
-                return array_val
-            elif value_type == "object":
-                object_val = value_obj.get("object_value", {})
-                if isinstance(object_val, dict):
-                    return {
-                        k: self._extract_schema_value(v) for k, v in object_val.items()
-                    }
-                return object_val
-            else:
-                # Fallback: try "value" key or return as-is
-                return value_obj.get("value", value_obj)
-
-        return value_obj
+        # Return context as dict from BasicErrorContext (no circular dependencies)
+        return self._simple_context.to_dict()
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""

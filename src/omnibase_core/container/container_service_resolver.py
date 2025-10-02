@@ -8,18 +8,36 @@ dependency-injector DynamicContainer transformation.
 
 from collections.abc import Callable
 from typing import TypeVar
+from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from omnibase_core.errors.error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 
 # DELETED: not needed import create_hybrid_event_bus
-from omnibase_core.models.core import ModelContainerInstance, ModelService
+from omnibase_core.models.container.model_service import ModelService
+from omnibase_core.models.core import ModelContainer
 
 T = TypeVar("T")
 
 
+def _generate_service_uuid(service_name: str) -> UUID:
+    """
+    Generate deterministic UUID for service name.
+
+    Uses UUID5 with DNS namespace to create consistent UUIDs
+    for the same service name across invocations.
+
+    Args:
+        service_name: Name of the service
+
+    Returns:
+        Deterministic UUID for the service
+    """
+    return uuid5(NAMESPACE_DNS, f"omnibase.service.{service_name}")
+
+
 def create_get_service_method(
-    container: ModelContainerInstance,
+    container: ModelContainer,
 ) -> Callable[..., ModelService]:
     """
     Create get_service method for container instance.
@@ -52,7 +70,7 @@ def create_get_service_method(
             if service_name == "event_bus":
                 # create_hybrid_event_bus() - REMOVED: function no longer exists
                 return ModelService(
-                    service_id="event_bus",
+                    service_id=_generate_service_uuid("event_bus"),
                     service_name="event_bus",
                     service_type="hybrid_event_bus",
                     protocol_name="ProtocolEventBus",
@@ -72,7 +90,7 @@ def create_get_service_method(
             if protocol_name == "ProtocolEventBus":
                 # create_hybrid_event_bus() - REMOVED: function no longer exists
                 return ModelService(
-                    service_id="event_bus_protocol",
+                    service_id=_generate_service_uuid("event_bus_protocol"),
                     service_name="event_bus",
                     service_type="hybrid_event_bus",
                     protocol_name=protocol_name,
@@ -81,7 +99,7 @@ def create_get_service_method(
             if protocol_name == "ProtocolConsulClient":
                 self.consul_client()
                 return ModelService(
-                    service_id="consul_client",
+                    service_id=_generate_service_uuid("consul_client"),
                     service_name="consul_client",
                     service_type="consul_client",
                     protocol_name=protocol_name,
@@ -93,7 +111,7 @@ def create_get_service_method(
                 if hasattr(self, "vault_client"):
                     self.vault_client()
                     return ModelService(
-                        service_id="vault_client",
+                        service_id=_generate_service_uuid("vault_client"),
                         service_name="vault_client",
                         service_type="vault_client",
                         protocol_name=protocol_name,
@@ -102,7 +120,7 @@ def create_get_service_method(
                 msg = f"Vault client not available in container: {protocol_name}"
                 raise OnexError(
                     msg,
-                    CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+                    CoreErrorCode.REGISTRY_RESOLUTION_FAILED,
                 )
 
         # Handle generation tool registries with registry pattern
@@ -111,7 +129,7 @@ def create_get_service_method(
             if service_name in registry_map:
                 registry_map[service_name]()
                 return ModelService(
-                    service_id=service_name,
+                    service_id=_generate_service_uuid(service_name),
                     service_name=service_name,
                     service_type="registry_service",
                     health_status="healthy",
@@ -123,14 +141,14 @@ def create_get_service_method(
         msg = f"Unable to resolve service: {service_name}"
         raise OnexError(
             msg,
-            error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+            error_code=CoreErrorCode.REGISTRY_RESOLUTION_FAILED,
         )
 
     return get_service
 
 
 def _build_registry_map(
-    container: ModelContainerInstance,
+    container: ModelContainer,
 ) -> dict[str, Callable[[], ModelService]]:
     """Build registry mapping for service resolution."""
     return {
@@ -173,7 +191,7 @@ def _build_registry_map(
     }
 
 
-def bind_get_service_method(container: ModelContainerInstance) -> None:
+def bind_get_service_method(container: ModelContainer) -> None:
     """
     Bind get_service method to container instance.
 

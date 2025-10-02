@@ -15,11 +15,10 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .model_function_node_core import ModelFunctionNodeCore
 from .model_function_node_metadata import ModelFunctionNodeMetadata
@@ -251,7 +250,7 @@ class ModelFunctionNode(BaseModel):
             function_type_enum = EnumFunctionType(function_type)
         except ValueError as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid function type '{function_type}' for EnumFunctionType. "
                 f"Must be one of {[t.value for t in EnumFunctionType]}.",
             ) from e
@@ -285,7 +284,7 @@ class ModelFunctionNode(BaseModel):
                 return_type_enum = EnumReturnType(normalized_return_type)
             except ValueError as e:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid return type '{return_type}' for EnumReturnType. "
                     f"Must be one of {[t.value for t in EnumReturnType]}.",
                 ) from e
@@ -354,7 +353,7 @@ class ModelFunctionNode(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

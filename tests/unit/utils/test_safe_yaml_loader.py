@@ -21,8 +21,7 @@ import pytest
 import yaml
 from pydantic import BaseModel, ValidationError, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.config.model_schema_example import ModelSchemaExample
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.utils.safe_yaml_loader import (
@@ -137,7 +136,7 @@ metadata:
 
         with pytest.raises(OnexError) as exc_info:
             load_and_validate_yaml_model(yaml_file, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_validation_error(self, tmp_path: Path) -> None:
         """Test YAML loading with validation error."""
@@ -151,7 +150,7 @@ value: not_an_integer
 
         with pytest.raises(OnexError) as exc_info:
             load_and_validate_yaml_model(yaml_file, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "YAML validation error" in exc_info.value.message
 
     def test_load_yaml_missing_required_field(self, tmp_path: Path) -> None:
@@ -165,7 +164,7 @@ name: TestName
 
         with pytest.raises(OnexError) as exc_info:
             load_and_validate_yaml_model(yaml_file, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_file_not_found(self, tmp_path: Path) -> None:
         """Test loading non-existent YAML file."""
@@ -173,7 +172,7 @@ name: TestName
 
         with pytest.raises(OnexError) as exc_info:
             load_and_validate_yaml_model(yaml_file, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.NOT_FOUND
+        assert exc_info.value.error_code == CoreErrorCode.NOT_FOUND
         assert "YAML file not found" in exc_info.value.message
 
     def test_load_yaml_parsing_error(self, tmp_path: Path) -> None:
@@ -189,7 +188,7 @@ value: 42
 
         with pytest.raises(OnexError) as exc_info:
             load_and_validate_yaml_model(yaml_file, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.CONVERSION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.CONVERSION_ERROR
         assert "YAML parsing error" in exc_info.value.message
 
     def test_load_yaml_with_custom_validation(self, tmp_path: Path) -> None:
@@ -218,7 +217,7 @@ age: 30
 
         with pytest.raises(OnexError) as exc_info:
             load_and_validate_yaml_model(yaml_file, TestModelWithValidation)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_unicode_content(self, tmp_path: Path) -> None:
         """Test loading YAML with Unicode content."""
@@ -255,7 +254,7 @@ enabled: true
         """Test loading empty YAML content."""
         with pytest.raises(OnexError) as exc_info:
             load_yaml_content_as_model("", SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_content_validation_error(self) -> None:
         """Test YAML content with validation error."""
@@ -265,7 +264,7 @@ value: not_an_integer
 """
         with pytest.raises(OnexError) as exc_info:
             load_yaml_content_as_model(content, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_content_parsing_error(self) -> None:
         """Test malformed YAML content."""
@@ -276,7 +275,7 @@ value: 42
 """
         with pytest.raises(OnexError) as exc_info:
             load_yaml_content_as_model(content, SimpleTestModel)
-        assert exc_info.value.code == EnumCoreErrorCode.CONVERSION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.CONVERSION_ERROR
         assert "YAML parsing error" in exc_info.value.message
 
     def test_load_nested_yaml_content(self) -> None:
@@ -493,7 +492,7 @@ version: 1.0
 
         with pytest.raises(OnexError) as exc_info:
             extract_example_from_schema(schema_file)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "No 'examples' section found" in exc_info.value.message
 
     def test_extract_example_index_out_of_range(self, tmp_path: Path) -> None:
@@ -508,7 +507,7 @@ examples:
 
         with pytest.raises(OnexError) as exc_info:
             extract_example_from_schema(schema_file, example_index=5)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "index 5 out of range" in exc_info.value.message
 
     def test_extract_example_not_dict(self, tmp_path: Path) -> None:
@@ -523,7 +522,7 @@ examples:
 
         with pytest.raises(OnexError) as exc_info:
             extract_example_from_schema(schema_file, example_index=0)
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "is not a dict" in exc_info.value.message
 
     def test_extract_example_with_mixed_types(self, tmp_path: Path) -> None:
@@ -556,7 +555,7 @@ examples:
 
         with pytest.raises(OnexError) as exc_info:
             extract_example_from_schema(schema_file)
-        assert exc_info.value.code == EnumCoreErrorCode.INTERNAL_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.INTERNAL_ERROR
 
     def test_extract_example_malformed_yaml(self, tmp_path: Path) -> None:
         """Test extracting from malformed YAML schema."""
@@ -575,6 +574,6 @@ examples:
         with pytest.raises(OnexError) as exc_info:
             extract_example_from_schema(schema_file)
         assert exc_info.value.code in [
-            EnumCoreErrorCode.INTERNAL_ERROR,
-            EnumCoreErrorCode.VALIDATION_ERROR,
+            CoreErrorCode.INTERNAL_ERROR,
+            CoreErrorCode.VALIDATION_ERROR,
         ]

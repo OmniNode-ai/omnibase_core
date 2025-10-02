@@ -10,7 +10,7 @@ Python's logging module to maintain architectural purity and centralized process
 
 import inspect
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -216,12 +216,12 @@ def trace_function_lifecycle(func):
             },
         )
 
-        start_time = datetime.utcnow()
+        start_time = datetime.now(UTC)
         try:
             result = func(*args, **kwargs)
 
             # Log successful exit
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             execution_time_ms = (end_time - start_time).total_seconds() * 1000
 
             emit_log_event(
@@ -241,7 +241,7 @@ def trace_function_lifecycle(func):
 
         except Exception as e:
             # Log exception exit
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             execution_time_ms = (end_time - start_time).total_seconds() * 1000
 
             emit_log_event(
@@ -288,7 +288,7 @@ class log_code_block:
         self.start_time = None
 
     def __enter__(self):
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(UTC)
 
         emit_log_event(
             level=self.level,
@@ -305,7 +305,7 @@ class log_code_block:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.start_time is not None:
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             execution_time_ms = (end_time - self.start_time).total_seconds() * 1000
         else:
             execution_time_ms = 0
@@ -360,9 +360,9 @@ def log_performance_metrics(threshold_ms: int = 1000):
             function_name = func.__name__
             correlation_id = uuid4()
 
-            start_time = datetime.utcnow()
+            start_time = datetime.now(UTC)
             result = func(*args, **kwargs)
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
 
             execution_time_ms = (end_time - start_time).total_seconds() * 1000
 
@@ -570,14 +570,14 @@ def _create_log_context_from_frame() -> LogModelContext:
             calling_function=frame.f_code.co_name,
             calling_module=frame.f_globals.get("__name__", "unknown"),
             calling_line=frame.f_lineno,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=_detect_node_id_from_context(),
         )
     return LogModelContext(
         calling_function="unknown",
         calling_module="unknown",
         calling_line=0,
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         node_id="unknown",
     )
 

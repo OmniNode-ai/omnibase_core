@@ -425,7 +425,7 @@ class DataAggregationReducerService(NodeReducerService):
         """Create backup of aggregated state."""
         backup_config = contract.backup_config
         backup_data = {
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "correlation_id": contract.correlation_id,
             "aggregated_state": result.aggregated_state,
             "backup_metadata": {

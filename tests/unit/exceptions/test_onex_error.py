@@ -12,8 +12,7 @@ Tests cover:
 
 import pytest
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -24,11 +23,11 @@ class TestOnexErrorBasicBehavior:
     def test_onex_error_with_minimal_args(self):
         """Test OnexError creation with only required arguments."""
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test validation error",
         )
 
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert error.message == "Test validation error"
         assert error.details is not None
         assert isinstance(error.details, ModelErrorContext)
@@ -45,13 +44,13 @@ class TestOnexErrorBasicBehavior:
         cause = ValueError("Original error")
 
         error = OnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=CoreErrorCode.OPERATION_FAILED,
             message="Operation failed",
             details=context,
             cause=cause,
         )
 
-        assert error.code == EnumCoreErrorCode.OPERATION_FAILED
+        assert error.error_code == CoreErrorCode.OPERATION_FAILED
         assert error.message == "Operation failed"
         assert error.details == context
         assert error.cause == cause
@@ -60,7 +59,7 @@ class TestOnexErrorBasicBehavior:
     def test_onex_error_is_exception(self):
         """Test that OnexError is a proper Exception subclass."""
         error = OnexError(
-            code=EnumCoreErrorCode.INTERNAL_ERROR,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
             message="Internal error",
         )
 
@@ -71,11 +70,11 @@ class TestOnexErrorBasicBehavior:
         """Test that OnexError can be raised and caught."""
         with pytest.raises(OnexError) as exc_info:
             raise OnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                error_code=CoreErrorCode.RESOURCE_NOT_FOUND,
                 message="Resource not found",
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.NOT_FOUND
+        assert exc_info.value.error_code == CoreErrorCode.RESOURCE_NOT_FOUND
         assert exc_info.value.message == "Resource not found"
 
 
@@ -83,40 +82,44 @@ class TestOnexErrorCodes:
     """Test OnexError with different error codes."""
 
     @pytest.mark.parametrize(
-        ("error_code", "expected_value"),
+        ("error_code", "expected_code_string"),
         [
-            (EnumCoreErrorCode.VALIDATION_ERROR, "validation_error"),
-            (EnumCoreErrorCode.OPERATION_FAILED, "operation_failed"),
-            (EnumCoreErrorCode.NOT_FOUND, "not_found"),
-            (EnumCoreErrorCode.CONFIGURATION_ERROR, "configuration_error"),
-            (EnumCoreErrorCode.DEPENDENCY_ERROR, "dependency_error"),
-            (EnumCoreErrorCode.NETWORK_ERROR, "network_error"),
-            (EnumCoreErrorCode.TIMEOUT_ERROR, "timeout_error"),
-            (EnumCoreErrorCode.PERMISSION_ERROR, "permission_error"),
-            (EnumCoreErrorCode.RESOURCE_ERROR, "resource_error"),
-            (EnumCoreErrorCode.INTERNAL_ERROR, "internal_error"),
-            (EnumCoreErrorCode.CONVERSION_ERROR, "conversion_error"),
+            (CoreErrorCode.INVALID_PARAMETER, "ONEX_CORE_001_INVALID_PARAMETER"),
+            (CoreErrorCode.VALIDATION_FAILED, "ONEX_CORE_005_VALIDATION_FAILED"),
+            (CoreErrorCode.FILE_NOT_FOUND, "ONEX_CORE_021_FILE_NOT_FOUND"),
+            (
+                CoreErrorCode.INVALID_CONFIGURATION,
+                "ONEX_CORE_041_INVALID_CONFIGURATION",
+            ),
+            (CoreErrorCode.OPERATION_FAILED, "ONEX_CORE_081_OPERATION_FAILED"),
+            (CoreErrorCode.TIMEOUT_EXCEEDED, "ONEX_CORE_082_TIMEOUT_EXCEEDED"),
+            (CoreErrorCode.RESOURCE_NOT_FOUND, "ONEX_CORE_085_RESOURCE_NOT_FOUND"),
+            (CoreErrorCode.INVALID_STATE, "ONEX_CORE_086_INVALID_STATE"),
+            (
+                CoreErrorCode.DATABASE_CONNECTION_ERROR,
+                "ONEX_CORE_131_DATABASE_CONNECTION_ERROR",
+            ),
         ],
     )
-    def test_onex_error_with_all_error_codes(self, error_code, expected_value):
+    def test_onex_error_with_all_error_codes(self, error_code, expected_code_string):
         """Test OnexError creation with each error code."""
         error = OnexError(
-            code=error_code,
-            message=f"Test {expected_value}",
+            error_code=error_code,
+            message=f"Test {expected_code_string}",
         )
 
-        assert error.code == error_code
-        assert error.code.value == expected_value
-        assert expected_value in str(error)
+        assert error.error_code == error_code
+        assert error.error_code.value == expected_code_string
+        assert error_code.value in str(error)
 
     def test_error_code_in_string_representation(self):
         """Test that error code is included in string representation."""
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test message",
         )
 
-        assert "[validation_error]" in str(error)
+        assert "[ONEX_CORE_006_VALIDATION_ERROR]" in str(error)
         assert "Test message" in str(error)
 
 
@@ -127,7 +130,7 @@ class TestOnexErrorContext:
         """Test OnexError with empty error context."""
         context = ModelErrorContext.with_context({})
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
             details=context,
         )
@@ -147,7 +150,7 @@ class TestOnexErrorContext:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Validation failed",
             details=context,
         )
@@ -180,7 +183,7 @@ class TestOnexErrorContext:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Validation error occurred",
             details=context,
         )
@@ -205,7 +208,7 @@ class TestOnexErrorContext:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+            error_code=CoreErrorCode.CONFIGURATION_ERROR,
             message="Configuration error",
             details=context,
         )
@@ -225,7 +228,7 @@ class TestOnexErrorContext:
     def test_onex_error_default_context_creation(self):
         """Test that OnexError creates default context when None provided."""
         error = OnexError(
-            code=EnumCoreErrorCode.INTERNAL_ERROR,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
             message="Test error",
             details=None,
         )
@@ -242,7 +245,7 @@ class TestOnexErrorCauseChaining:
         """Test OnexError with a cause exception."""
         original = ValueError("Original error message")
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Wrapped error",
             cause=original,
         )
@@ -254,7 +257,7 @@ class TestOnexErrorCauseChaining:
     def test_onex_error_with_none_cause(self):
         """Test OnexError with None cause."""
         error = OnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=CoreErrorCode.OPERATION_FAILED,
             message="No cause error",
             cause=None,
         )
@@ -266,12 +269,12 @@ class TestOnexErrorCauseChaining:
         # Create a chain of errors
         original = TypeError("Type mismatch")
         first_error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="First level error",
             cause=original,
         )
         second_error = OnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=CoreErrorCode.OPERATION_FAILED,
             message="Second level error",
             cause=first_error,
         )
@@ -294,7 +297,7 @@ class TestOnexErrorCauseChaining:
 
         for original_exception in exception_types:
             error = OnexError(
-                code=EnumCoreErrorCode.INTERNAL_ERROR,
+                error_code=CoreErrorCode.INTERNAL_ERROR,
                 message="Wrapped exception",
                 cause=original_exception,
             )
@@ -309,7 +312,7 @@ class TestOnexErrorMessageFormatting:
     def test_message_format_basic(self):
         """Test basic message formatting without context."""
         error = OnexError(
-            code=EnumCoreErrorCode.NOT_FOUND,
+            error_code=CoreErrorCode.NOT_FOUND,
             message="Resource not found",
         )
 
@@ -322,7 +325,7 @@ class TestOnexErrorMessageFormatting:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.NOT_FOUND,
+            error_code=CoreErrorCode.NOT_FOUND,
             message="Resource not found",
             details=context,
         )
@@ -343,7 +346,7 @@ class TestOnexErrorMessageFormatting:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+            error_code=CoreErrorCode.CONFIGURATION_ERROR,
             message="Invalid configuration",
             details=context,
         )
@@ -358,7 +361,7 @@ class TestOnexErrorMessageFormatting:
     def test_message_format_with_special_characters(self):
         """Test message formatting with special characters in message."""
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message='Error with "quotes" and special chars: <>!@#$%',
         )
 
@@ -367,7 +370,7 @@ class TestOnexErrorMessageFormatting:
     def test_message_format_with_unicode(self):
         """Test message formatting with unicode characters."""
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Error with unicode: 你好 🚀 ñ",
         )
 
@@ -382,7 +385,7 @@ class TestOnexErrorEdgeCases:
     def test_empty_message(self):
         """Test OnexError with empty message."""
         error = OnexError(
-            code=EnumCoreErrorCode.INTERNAL_ERROR,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
             message="",
         )
 
@@ -393,7 +396,7 @@ class TestOnexErrorEdgeCases:
         """Test OnexError with very long message."""
         long_message = "A" * 10000
         error = OnexError(
-            code=EnumCoreErrorCode.INTERNAL_ERROR,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
             message=long_message,
         )
 
@@ -404,7 +407,7 @@ class TestOnexErrorEdgeCases:
         """Test OnexError with multiline message."""
         message = "Line 1\nLine 2\nLine 3"
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message=message,
         )
 
@@ -415,11 +418,11 @@ class TestOnexErrorEdgeCases:
     def test_onex_error_equality_not_implemented(self):
         """Test that OnexError instances are compared by identity."""
         error1 = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
         )
         error2 = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
         )
 
@@ -429,12 +432,12 @@ class TestOnexErrorEdgeCases:
     def test_onex_error_attributes_immutable(self):
         """Test that OnexError attributes can be accessed and modified."""
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
         )
 
         # Attributes should be accessible
-        assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert error.message == "Test error"
 
         # Python doesn't enforce immutability, but we can modify
@@ -450,14 +453,14 @@ class TestOnexErrorIntegration:
 
         def function_that_raises():
             raise OnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=CoreErrorCode.OPERATION_FAILED,
                 message="Operation failed in function",
             )
 
         with pytest.raises(OnexError) as exc_info:
             function_that_raises()
 
-        assert exc_info.value.code == EnumCoreErrorCode.OPERATION_FAILED
+        assert exc_info.value.error_code == CoreErrorCode.OPERATION_FAILED
         assert "Operation failed in function" in str(exc_info.value)
 
     def test_catch_and_rewrap_exception(self):
@@ -471,7 +474,7 @@ class TestOnexErrorIntegration:
                 inner_function()
             except ValueError as e:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message="Caught and wrapped error",
                     cause=e,
                 )
@@ -479,7 +482,7 @@ class TestOnexErrorIntegration:
         with pytest.raises(OnexError) as exc_info:
             outer_function()
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert isinstance(exc_info.value.cause, ValueError)
 
     def test_error_context_serialization(self):
@@ -493,7 +496,7 @@ class TestOnexErrorIntegration:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
             details=context,
         )
@@ -509,14 +512,14 @@ class TestOnexErrorIntegration:
         """Test creating multiple errors with the same error code."""
         errors = [
             OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Error {i}",
             )
             for i in range(5)
         ]
 
         for i, error in enumerate(errors):
-            assert error.code == EnumCoreErrorCode.VALIDATION_ERROR
+            assert error.error_code == CoreErrorCode.VALIDATION_ERROR
             assert error.message == f"Error {i}"
 
     def test_error_with_context_validation(self):
@@ -527,7 +530,7 @@ class TestOnexErrorIntegration:
         )
 
         error = OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
             details=context,
         )

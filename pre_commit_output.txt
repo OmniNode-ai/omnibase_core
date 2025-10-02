@@ -1,0 +1,355 @@
+yamlfmt..................................................................Passed
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+check for merge conflicts................................................Passed
+check for added large files..............................................Passed
+Black Python Formatter...................................................Failed
+- hook id: black
+- files were modified by this hook
+
+All done! ✨ 🍰 ✨
+817 files left unchanged.
+
+isort Import Sorter......................................................Failed
+- hook id: isort
+- files were modified by this hook
+MyPy Type Checking (via Poetry)..........................................Failed
+- hook id: mypy-poetry
+- exit code: 1
+
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+src/omnibase_core/enums/enum_status_migration.py:172: error: "type[CoreErrorCode]" has no attribute "CONVERSION_ERROR"  [attr-defined]
+src/omnibase_core/enums/enum_status_migration.py:202: error: "type[CoreErrorCode]" has no attribute "CONVERSION_ERROR"  [attr-defined]
+src/omnibase_core/enums/enum_status_migration.py:232: error: "type[CoreErrorCode]" has no attribute "CONVERSION_ERROR"  [attr-defined]
+src/omnibase_core/enums/enum_status_migration.py:262: error: "type[CoreErrorCode]" has no attribute "CONVERSION_ERROR"  [attr-defined]
+src/omnibase_core/enums/enum_status_migration.py:292: error: "type[CoreErrorCode]" has no attribute "CONVERSION_ERROR"  [attr-defined]
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+Traceback (most recent call last):
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/mypy", line 8, in <module>
+    sys.exit(console_entry())
+             ^^^^^^^^^^^^^^^
+  File "/Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/lib/python3.12/site-packages/mypy/__main__.py", line 15, in console_entry
+    main()
+  File "mypy/main.py", line 127, in main
+  File "mypy/main.py", line 211, in run_build
+  File "mypy/build.py", line 191, in build
+  File "mypy/build.py", line 267, in _build
+  File "mypy/build.py", line 2939, in dispatch
+  File "mypy/build.py", line 3330, in process_graph
+  File "mypy/build.py", line 3411, in process_fresh_modules
+  File "mypy/build.py", line 2104, in fix_cross_refs
+AssertionError: Internal error: method must be called on parsed file only
+
+ONEX Repository Structure Validation.....................................Passed
+ONEX Naming Convention Validation........................................Failed
+- hook id: validate-naming-conventions
+- exit code: 1
+- files were modified by this hook
+
+🚨 Naming Convention Validation Report
+========================================
+
+Summary: 3 errors, 13 warnings
+
+🔴 NAMING ERRORS (Must Fix):
+==============================
+🔴 SchemaValueProtocol (Line 110)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/types/core_types.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 ErrorContextProtocol (Line 96)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/types/core_types.py
+   Expected Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+   Rule: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+
+🔴 SchemaValueProtocol (Line 110)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/types/core_types.py
+   Expected Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+   Rule: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+
+🟡 NAMING WARNINGS (Should Fix):
+================================
+🟡 ModelFieldConverterRegistry (Line 90)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/utils/model_field_converter.py
+   Issue: ModelFieldConverterRegistry should be in models/ directory
+
+🟡 ModelMigrationPlan (Line 18)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/validation/model_migration_plan.py
+   Issue: ModelMigrationPlan should be in models/ directory
+
+🟡 ModelMigrationResult (Line 11)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/validation/model_migration_result.py
+   Issue: ModelMigrationResult should be in models/ directory
+
+🟡 ModelProtocolInfo (Line 13)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/validation/model_protocol_info.py
+   Issue: ModelProtocolInfo should be in models/ directory
+
+🟡 NodeComputeService (Line 15)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_compute_service.py
+   Issue: NodeComputeService should be in nodes/ directory
+
+🟡 NodeReducer (Line 243)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_reducer.py
+   Issue: NodeReducer should be in nodes/ directory
+
+🟡 NodeCoreBase (Line 32)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_core_base.py
+   Issue: NodeCoreBase should be in nodes/ directory
+
+🟡 NodeState (Line 50)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_base.py
+   Issue: NodeState should be in nodes/ directory
+
+🟡 NodeBase (Line 65)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_base.py
+   Issue: NodeBase should be in nodes/ directory
+
+🟡 NodeOrchestrator (Line 312)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_orchestrator.py
+   Issue: NodeOrchestrator should be in nodes/ directory
+
+🟡 NodeArchitectureValidator (Line 33)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_architecture_validation.py
+   Issue: NodeArchitectureValidator should be in nodes/ directory
+
+🟡 NodeEffect (Line 324)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_effect.py
+   Issue: NodeEffect should be in nodes/ directory
+
+🟡 NodeCompute (Line 162)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_compute.py
+   Issue: NodeCompute should be in nodes/ directory
+
+📚 NAMING CONVENTION REFERENCE:
+=================================
+• Models: Models must start with 'Model' (e.g., ModelUserAuth)
+  File Pattern: model_*.py
+  Class Pattern: ^Model[A-Z][A-Za-z0-9]*$
+
+• Protocols: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+  File Pattern: protocol_*.py
+  Class Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+
+• Enums: Enums must start with 'Enum' (e.g., EnumWorkflowType)
+  File Pattern: enum_*.py
+  Class Pattern: ^Enum[A-Z][A-Za-z0-9]*$
+
+• Services: Services must start with 'Service' (e.g., ServiceAuth)
+  File Pattern: service_*.py
+  Class Pattern: ^Service[A-Z][A-Za-z0-9]*$
+
+• Mixins: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+  File Pattern: mixin_*.py
+  Class Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+
+• Nodes: Nodes must start with 'Node' (e.g., NodeEffectUserData)
+  File Pattern: node_*.py
+  Class Pattern: ^Node[A-Z][A-Za-z0-9]*$
+
+• Typeddicts: TypedDict classes must start with 'TypedDict' (e.g., TypedDictUserParams)
+  File Pattern: Any .py file
+  Class Pattern: ^TypedDict[A-Z][A-Za-z0-9]*$
+
+
+
+❌ FAILURE: 3 naming violations must be fixed!
+
+ONEX String Version Anti-Pattern Detection...............................Passed
+ONEX Archived Path Import Prevention.....................................Passed
+ONEX Backward Compatibility Anti-Pattern Detection.......................Passed
+ONEX Manual YAML Prevention..............................................Passed
+ONEX Pydantic Pattern Validation.........................................Passed
+ONEX Union Usage Validation..............................................Failed
+- hook id: validate-union-usage
+- files were modified by this hook
+
+📈 Union Validation Results:
+   Total unions found: 1261
+   Legitimate unions: 1257
+   Invalid unions: 4
+
+❌ Union legitimacy issues found:
+   src/omnibase_core/types/constraints.py: Line 207: Invalid union pattern: primitive_soup - Union[bool, float, int, str]
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Replace with specific type (str, int, etc.) if only one type is actually needed
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Use TypeVar for generic functions: T = TypeVar("T", str, int, float)
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Create discriminated union with Literal discriminator
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Consider using ModelSchemaValue with proper type field
+   src/omnibase_core/types/constraints.py: Line 207: Invalid union pattern: primitive_soup - Union[float, int, str]
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Replace with specific type (str, int, etc.) if only one type is actually needed
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Use TypeVar for generic functions: T = TypeVar("T", str, int, float)
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Create discriminated union with Literal discriminator
+   src/omnibase_core/types/constraints.py: Line 207: Suggestion - Consider using ModelSchemaValue with proper type field
+   ... and 10 more issues
+
+✅ Union validation passed: 99.7% legitimate unions
+   📁 Scanned 802 Python files
+   🎯 Found 1257 legitimate unions, 4 invalid unions
+
+ONEX Contract Validation.................................................Passed
+ONEX Optional Type Usage Audit...........................................Passed
+ONEX Stub Implementation Detector........................................Failed
+- hook id: check-stub-implementations
+- files were modified by this hook
+
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 45 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 45 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 46 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 40 file(s) - no stub implementations found
+
+ONEX No Fallback Patterns Validation.....................................Passed
+ONEX Error Raising Validation............................................Failed
+- hook id: check-error-raising
+- files were modified by this hook
+
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (46 files checked)
+✅ ONEX Error Raising Check PASSED (40 files checked)

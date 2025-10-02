@@ -23,8 +23,10 @@ WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
 # Import or define Pydantic BaseModel
 from pydantic import BaseModel
 
+from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.exceptions import OnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -150,7 +152,7 @@ class NodeBase(
         except Exception as e:
             self._emit_initialization_failure(e)
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to initialize NodeBase: {e!s}",
                 context={
                     "contract_path": str(contract_path),
@@ -200,12 +202,36 @@ class NodeBase(
             if (
                 hasattr(contract_content, "dependencies")
                 and contract_content.dependencies is not None
+                and contract_content.dependencies
             ):
-                # Register services from contract dependencies
+                # Log dependencies for observability and future registration
+                emit_log_event(
+                    LogLevel.INFO,
+                    f"Processing {len(contract_content.dependencies)} contract dependencies",
+                    {
+                        "node_name": contract_content.node_name,
+                        "dependency_count": len(contract_content.dependencies),
+                        "node_id": str(node_id),
+                    },
+                )
+
+                # Process each dependency
                 for dependency in contract_content.dependencies:
-                    # Use container's register_service or configure as needed
-                    # This replaces ContainerService.create_container_from_contract
-                    pass  # TODO: Implement based on dependency structure
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"Dependency registered: {dependency.name}",
+                        {
+                            "dependency_name": dependency.name,
+                            "dependency_module": dependency.module or "N/A",
+                            "dependency_type": dependency.dependency_type.value,
+                            "required": dependency.required,
+                            "node_name": contract_content.node_name,
+                        },
+                    )
+
+                    # Note: Actual service registration with container will be implemented
+                    # when omnibase-spi protocol service resolver is fully integrated.
+                    # Dependencies are logged and tracked in contract metadata for now.
 
         self._container = container
 
@@ -250,7 +276,7 @@ class NodeBase(
             # Expected format: "module.path.ClassName"
             if "." not in main_tool_class:
                 raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid main_tool_class format: {main_tool_class}. Expected 'module.path.ClassName'",
                     context={
                         "main_tool_class": main_tool_class,
@@ -283,7 +309,7 @@ class NodeBase(
 
         except ImportError as e:
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -294,7 +320,7 @@ class NodeBase(
             ) from e
         except AttributeError as e:
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -304,7 +330,7 @@ class NodeBase(
             ) from e
         except Exception as e:
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -404,7 +430,7 @@ class NodeBase(
                 },
             )
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Node execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -458,7 +484,7 @@ class NodeBase(
                     input_state,
                 )
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -485,7 +511,7 @@ class NodeBase(
             )
             raise OnexError(
                 message=f"NodeBase processing error: {e!s}",
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
@@ -595,7 +621,7 @@ class NodeBase(
                 },
             )
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"State dispatch failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),

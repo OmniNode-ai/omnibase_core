@@ -29,8 +29,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, Tag
 
+from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.exceptions import OnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -601,7 +602,7 @@ class NodeEffect(NodeCoreBase):
                 )
                 if not circuit_breaker.can_execute():
                     raise OnexError(
-                        error_code=CoreErrorCode.OPERATION_FAILED,
+                        code=CoreErrorCode.OPERATION_FAILED,
                         message=f"Circuit breaker open for {input_data.effect_type.value}",
                         context={
                             "node_id": str(self.node_id),
@@ -731,7 +732,7 @@ class NodeEffect(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Effect execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -816,7 +817,7 @@ class NodeEffect(NodeCoreBase):
         if isinstance(result.result, ModelEffectResultDict):
             return result.result.value
         raise OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
+            code=CoreErrorCode.OPERATION_FAILED,
             message="File operation did not return expected dict result",
             context={"result_type": result.result.result_type},
         )
@@ -860,7 +861,7 @@ class NodeEffect(NodeCoreBase):
         if isinstance(result.result, ModelEffectResultBool):
             return result.result.value
         raise OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
+            code=CoreErrorCode.OPERATION_FAILED,
             message="Event emission did not return expected bool result",
             context={"result_type": result.result.result_type},
         )
@@ -943,7 +944,7 @@ class NodeEffect(NodeCoreBase):
 
         if not isinstance(input_data.effect_type, EnumEffectType):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Effect type must be valid EnumEffectType enum",
                 context={
                     "node_id": str(self.node_id),
@@ -953,7 +954,7 @@ class NodeEffect(NodeCoreBase):
 
         if not isinstance(input_data.operation_data, dict):
             raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Operation data must be a dictionary",
                 context={
                     "node_id": str(self.node_id),
@@ -975,7 +976,7 @@ class NodeEffect(NodeCoreBase):
         """Execute effect with retry logic."""
         retry_count = 0
         last_exception: Exception = OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
+            code=CoreErrorCode.OPERATION_FAILED,
             message="No retries executed",
         )
 
@@ -1022,7 +1023,7 @@ class NodeEffect(NodeCoreBase):
             handler = self.effect_handlers[effect_type]
             return await handler(input_data.operation_data, transaction)
         raise OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
+            code=CoreErrorCode.OPERATION_FAILED,
             message=f"No handler registered for effect type: {effect_type.value}",
             context={
                 "node_id": str(self.node_id),
@@ -1091,7 +1092,7 @@ class NodeEffect(NodeCoreBase):
             if operation_type == "read":
                 if not file_path.exists():
                     raise OnexError(
-                        error_code=CoreErrorCode.RESOURCE_UNAVAILABLE,
+                        code=CoreErrorCode.RESOURCE_UNAVAILABLE,
                         message=f"File not found: {file_path}",
                         context={"file_path": str(file_path)},
                     )
@@ -1161,7 +1162,7 @@ class NodeEffect(NodeCoreBase):
 
             else:
                 raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Unknown file operation: {operation_type}",
                     context={"operation_type": operation_type},
                 )

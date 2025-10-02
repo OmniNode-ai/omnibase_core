@@ -11,8 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -136,7 +135,7 @@ class ModelMetric(BaseModel):
             return cls.create_numeric_metric(key, numeric_value, unit, description)
         # This should not be reached with the bounded type signature
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported metric value type: {type(value)}",
         )
 
@@ -158,7 +157,7 @@ class ModelMetric(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -171,7 +170,7 @@ class ModelMetric(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

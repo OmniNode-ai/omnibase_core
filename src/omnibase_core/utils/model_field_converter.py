@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Generic, TypeVar
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -55,7 +54,7 @@ class FieldConverter(Generic[T]):
             # Validate if validator provided
             if self.validator and not self.validator(result):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Validation failed for field {self.field_name}",
                     details=ModelErrorContext.with_context(
                         {
@@ -76,7 +75,7 @@ class FieldConverter(Generic[T]):
                 return self.default_value
 
             raise OnexError(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                code=CoreErrorCode.CONVERSION_ERROR,
                 message=f"Failed to convert field {self.field_name}: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -175,7 +174,7 @@ class ModelFieldConverterRegistry:
                 return default
 
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid {enum_class.__name__} value: {value}",
                 details=ModelErrorContext.with_context(
                     {
@@ -244,7 +243,7 @@ class ModelFieldConverterRegistry:
         """
         if field_name not in self._converters:
             raise OnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                code=CoreErrorCode.NOT_FOUND,
                 message=f"No converter registered for field: {field_name}",
                 details=ModelErrorContext.with_context(
                     {

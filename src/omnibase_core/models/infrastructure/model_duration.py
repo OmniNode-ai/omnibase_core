@@ -11,9 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -51,7 +50,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="milliseconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -72,7 +71,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="seconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -93,7 +92,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="minutes must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -114,7 +113,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="hours must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -135,7 +134,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="days must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -256,7 +255,7 @@ class ModelDuration(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -269,7 +268,7 @@ class ModelDuration(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

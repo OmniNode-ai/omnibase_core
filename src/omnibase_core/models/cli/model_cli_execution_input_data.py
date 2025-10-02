@@ -16,9 +16,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # Input data values use discriminated union pattern with runtime validation
 
@@ -70,39 +69,39 @@ class ModelCliExecutionInputData(BaseModel):
 
         if value_type == EnumCliInputValueType.STRING and not isinstance(v, str):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="String value type must contain str data",
             )
         if value_type == EnumCliInputValueType.INTEGER and not isinstance(v, int):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Integer value type must contain int data",
             )
         if value_type == EnumCliInputValueType.FLOAT and not isinstance(v, float):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Float value type must contain float data",
             )
         if value_type == EnumCliInputValueType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Boolean value type must contain bool data",
             )
         if value_type == EnumCliInputValueType.PATH and not isinstance(v, Path):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Path value type must contain Path data",
             )
         if value_type == EnumCliInputValueType.UUID and not isinstance(v, UUID):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="UUID value type must contain UUID data",
             )
         if value_type == EnumCliInputValueType.STRING_LIST and not (
             isinstance(v, list) and all(isinstance(item, str) for item in v)
         ):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="StringList value type must contain list[str] data",
             )
 
@@ -432,7 +431,7 @@ class ModelCliExecutionInputData(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

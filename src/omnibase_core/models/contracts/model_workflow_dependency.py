@@ -12,9 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.contracts.model_workflow_condition import (
     ModelWorkflowCondition,
 )
@@ -86,7 +85,7 @@ class ModelWorkflowDependency(BaseModel):
             return v
         # ZERO TOLERANCE: Reject all non-UUID types including strings
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
         )
 
@@ -112,7 +111,7 @@ class ModelWorkflowDependency(BaseModel):
             return v
         # STRONG TYPES ONLY: Reject all other types (dicts, strings, Any, etc.)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
         )
 
@@ -126,7 +125,7 @@ class ModelWorkflowDependency(BaseModel):
         """
         if self.workflow_id == self.dependent_workflow_id:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"CIRCULAR DEPENDENCY DETECTED: Workflow {self.workflow_id} cannot depend on itself.",
             )
         return self

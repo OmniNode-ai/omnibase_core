@@ -21,8 +21,7 @@ import yaml
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .validation_utils import ValidationResult
 
@@ -34,7 +33,7 @@ VALIDATION_TIMEOUT = 300  # 5 minutes
 def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
     raise OnexError(
-        code=EnumCoreErrorCode.TIMEOUT_ERROR,
+        code=CoreErrorCode.TIMEOUT_ERROR,
         message="Validation timed out",
     )
 
@@ -100,7 +99,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except Exception as e:
             # Re-raise validation errors with context
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract validation failed for {file_path}: {e}",
             ) from e
 
@@ -113,7 +112,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     except Exception as e:
         # Re-raise file reading errors with context
         raise OnexError(
-            code=EnumCoreErrorCode.FILE_ACCESS_ERROR,
+            code=CoreErrorCode.FILE_ACCESS_ERROR,
             message=f"Error reading file {file_path}: {e}",
         ) from e
 
@@ -266,7 +265,7 @@ def validate_contracts_cli() -> int:
         return 1
 
     except OnexError as e:
-        if e.code == EnumCoreErrorCode.TIMEOUT_ERROR:
+        if e.error_code == CoreErrorCode.TIMEOUT_ERROR:
             print(f"❌ Validation timed out after {args.timeout} seconds")
         else:
             print(f"❌ Validation error: {e.message}")

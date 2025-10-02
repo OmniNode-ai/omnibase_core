@@ -13,12 +13,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
@@ -147,11 +146,11 @@ class ModelCliResultMetadata(BaseModel):
             if len(parts) == 1:
                 return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid version string: {v}",
             )
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid processor version type: {type(v)}",
         )
 
@@ -172,11 +171,11 @@ class ModelCliResultMetadata(BaseModel):
                     return EnumRetentionPolicy(v.upper())
                 except ValueError:
                     raise OnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        code=CoreErrorCode.VALIDATION_ERROR,
                         message=f"Invalid retention policy: {v}",
                     )
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid retention policy type: {type(v)}",
         )
 
@@ -243,7 +242,7 @@ class ModelCliResultMetadata(BaseModel):
             self.quality_score = score
         else:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Quality score must be between 0.0 and 1.0",
             )
 
@@ -253,7 +252,7 @@ class ModelCliResultMetadata(BaseModel):
             self.confidence_level = confidence
         else:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Confidence level must be between 0.0 and 1.0",
             )
 
@@ -364,7 +363,7 @@ class ModelCliResultMetadata(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

@@ -11,8 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelConnectionPool(BaseModel):
@@ -74,7 +73,7 @@ class ModelConnectionPool(BaseModel):
         if self.pool_size and self.max_overflow:
             if self.max_overflow > self.pool_size:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="max_overflow cannot exceed pool_size",
                 )
         return self

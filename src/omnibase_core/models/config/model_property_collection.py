@@ -12,11 +12,11 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_property_type import EnumPropertyType
+
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_property_type import EnumPropertyType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -119,7 +119,7 @@ class ModelPropertyCollection(BaseModel):
 
         # If no handler matches, raise error
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported property type: {type(value)}",
             details=ModelErrorContext.with_context(
                 {
@@ -178,7 +178,7 @@ class ModelPropertyCollection(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -194,6 +194,6 @@ class ModelPropertyCollection(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

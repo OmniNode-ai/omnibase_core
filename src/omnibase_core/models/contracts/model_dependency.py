@@ -16,9 +16,8 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -91,7 +90,7 @@ class ModelDependency(BaseModel):
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Dependency name cannot be empty or whitespace-only",
                 details=ModelErrorContext.with_context(
                     {
@@ -113,7 +112,7 @@ class ModelDependency(BaseModel):
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Dependency name too short: {v}",
                 details=ModelErrorContext.with_context(
                     {
@@ -230,7 +229,7 @@ class ModelDependency(BaseModel):
             from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Security violations in module path '{module_path[:50]}...': {', '.join(security_violations)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -261,7 +260,7 @@ class ModelDependency(BaseModel):
 
         if not cls._MODULE_PATTERN.match(module_path):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid module path format: {module_path}. Must be valid Python module path.",
                 details=ModelErrorContext.with_context(
                     {

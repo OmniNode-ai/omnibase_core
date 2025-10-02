@@ -11,8 +11,8 @@ from omnibase_core.enums.enum_document_freshness_errors import (
     EnumDocumentFreshnessErrorCodes,
 )
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.docs.model_error_details import ModelErrorDetails
 
 
 class DocumentFreshnessError(OnexError):
@@ -27,7 +27,7 @@ class DocumentFreshnessError(OnexError):
         self,
         error_code: EnumDocumentFreshnessErrorCodes,
         message: str,
-        details: ModelErrorDetails | None = None,
+        details: ModelErrorContext | None = None,
         correlation_id: UUID | None = None,
         file_path: str | None = None,
     ):
@@ -67,7 +67,7 @@ class DocumentFreshnessError(OnexError):
 
         # Store additional attributes specific to document freshness errors
         self._error_code_enum = error_code
-        self.correlation_id = correlation_id
+        # correlation_id is already set by parent __init__
         self.file_path = file_path
 
     @property
@@ -200,11 +200,15 @@ class DocumentFreshnessError(OnexError):
     def to_dict(self) -> dict[str, ModelSchemaValue]:
         """Convert error to dictionary for serialization."""
         # Custom error serialization with correlation and file path
+        core_code = self.model.error_code
+        core_code_str = (
+            core_code.value
+            if core_code and hasattr(core_code, "value")
+            else (str(core_code) if core_code else "UNKNOWN")
+        )
         return {
-            "error_code": ModelSchemaValue.from_value(self.error_code.value),
-            "core_error_code": ModelSchemaValue.from_value(
-                self.code.value
-            ),  # Include core error code for better categorization
+            "error_code": ModelSchemaValue.from_value(self._error_code_enum.value),
+            "core_error_code": ModelSchemaValue.from_value(core_code_str),
             "message": ModelSchemaValue.from_value(str(self)),
             "correlation_id": ModelSchemaValue.from_value(
                 str(self.correlation_id) if self.correlation_id else None

@@ -15,8 +15,7 @@ import ast
 import sys
 from pathlib import Path
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .validation_utils import ValidationResult
 
@@ -242,7 +241,7 @@ def validate_union_usage_file(
     except Exception as e:
         # Re-raise with context for other errors
         raise OnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            code=CoreErrorCode.OPERATION_FAILED,
             message=f"Failed to validate union usage in {file_path}: {e}",
             cause=e,
         ) from e

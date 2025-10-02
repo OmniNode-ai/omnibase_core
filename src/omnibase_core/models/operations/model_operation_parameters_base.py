@@ -11,9 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParameterType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -85,12 +84,12 @@ class ModelOperationParameterValue(BaseModel):
             and parameter_type != EnumOperationParameterType.NESTED
         ):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Value required for parameter type {parameter_type}",
             )
         if expected_field != field_name and v is not None:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Unexpected value in {field_name} for parameter type {parameter_type}",
             )
 
@@ -185,7 +184,7 @@ class ModelOperationParameterValue(BaseModel):
             return self.nested_value
         # Exhaustive case handling - this should never be reached
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown parameter type: {self.parameter_type}",
         )
 
@@ -245,7 +244,7 @@ class ModelOperationParameters(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

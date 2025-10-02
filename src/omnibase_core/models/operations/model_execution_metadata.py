@@ -13,10 +13,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import (
     ModelSemVer,
 )
@@ -90,7 +89,7 @@ class ModelExecutionMetadata(BaseModel):
         if isinstance(v, EnumExecutionStatusV2):
             return v
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Status must be EnumExecutionStatusV2, got {type(v)}",
         )
 
@@ -101,7 +100,7 @@ class ModelExecutionMetadata(BaseModel):
         if isinstance(v, EnumEnvironment):
             return v
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Environment must be EnumEnvironment, got {type(v)}",
         )
 
@@ -121,7 +120,7 @@ class ModelExecutionMetadata(BaseModel):
                     self.status = status_value
                 else:
                     raise OnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        code=CoreErrorCode.VALIDATION_ERROR,
                         message=f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
                     )
             if "end_time" in kwargs:
@@ -138,7 +137,7 @@ class ModelExecutionMetadata(BaseModel):
             return True
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to execute metadata update: {e}",
             ) from e
 
@@ -156,33 +155,33 @@ class ModelExecutionMetadata(BaseModel):
         # Validate required fields
         if not self.execution_id:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="execution_id is required",
             )
         if not self.start_time:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="start_time is required",
             )
         # Validate logical consistency
         if self.end_time and self.end_time < self.start_time:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="end_time cannot be before start_time",
             )
         if self.duration_ms < 0:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="duration_ms cannot be negative",
             )
         if self.memory_usage_mb < 0 or self.cpu_usage_percent < 0:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Resource usage values cannot be negative",
             )
         if self.error_count < 0 or self.warning_count < 0:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Error and warning counts cannot be negative",
             )
         return True

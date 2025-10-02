@@ -10,7 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
-from omnibase_core.errors.error_onex import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.validation.migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,

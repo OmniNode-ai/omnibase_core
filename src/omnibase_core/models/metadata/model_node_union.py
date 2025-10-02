@@ -10,9 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
 
 from .model_function_node_data import ModelFunctionNodeData
@@ -43,23 +42,23 @@ class ModelNodeUnion(BaseModel):
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="function_node must be set when node_type is 'function_node'",
                 )
             if self.function_node_data is not None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="function_node_data must be None when node_type is 'function_node'",
                 )
         elif self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="function_node_data must be set when node_type is 'function_node_data'",
                 )
             if self.function_node is not None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="function_node must be None when node_type is 'function_node_data'",
                 )
 
@@ -105,19 +104,19 @@ class ModelNodeUnion(BaseModel):
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node is None but node_type is FUNCTION_NODE",
                 )
             return self.function_node
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node_data is None but node_type is FUNCTION_NODE_DATA",
                 )
             return self.function_node_data
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown node_type: {self.node_type}",
         )
 

@@ -17,9 +17,8 @@ from typing import cast
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_dependency import ModelDependency
@@ -210,7 +209,7 @@ class ModelContractBase(BaseModel, ABC):
         """
         if not isinstance(v, list):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract dependencies must be a list, got {type(v).__name__}",
                 details=cls._create_error_context(
                     {
@@ -225,7 +224,7 @@ class ModelContractBase(BaseModel, ABC):
         max_dependencies = 100  # Same as Field max_length constraint
         if len(v) > max_dependencies:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Too many dependencies: {len(v)}. Maximum allowed: {max_dependencies}",
                 details=cls._create_error_context(
                     {
@@ -376,7 +375,7 @@ class ModelContractBase(BaseModel, ABC):
 
         # Single comprehensive error with all validation issues
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Batch validation failed: {len(error_details)} invalid dependencies found",
             details=cls._create_error_context(
                 {
@@ -457,7 +456,7 @@ class ModelContractBase(BaseModel, ABC):
         # Report all conversion errors at once if any occurred
         if conversion_errors:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Batch YAML dependency conversion failed: {len(conversion_errors)} errors",
                 details=cls._create_error_context(
                     {
@@ -491,7 +490,7 @@ class ModelContractBase(BaseModel, ABC):
                 return EnumNodeType(v)
             except ValueError:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid node_type string '{v}'. Must be valid EnumNodeType value.",
                     details=cls._create_error_context(
                         {
@@ -504,7 +503,7 @@ class ModelContractBase(BaseModel, ABC):
         else:
             # ZERO TOLERANCE: Reject all other types
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"node_type must be EnumNodeType enum or valid string for YAML, not {type(v).__name__}.",
                 details=cls._create_error_context(
                     {
@@ -538,7 +537,7 @@ class ModelContractBase(BaseModel, ABC):
             # Validate dependency follows ONEX patterns
             if not dependency.matches_onex_patterns():
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Dependency does not follow ONEX patterns: {dependency.name}",
                 )
 
@@ -547,7 +546,7 @@ class ModelContractBase(BaseModel, ABC):
             if "protocol" in interface.lower():
                 continue
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Protocol interface must contain 'protocol' in the name, got: {interface}",
             )
 
@@ -571,7 +570,7 @@ class ModelContractBase(BaseModel, ABC):
             # Check for direct self-dependency
             if dep_name == contract_name:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Direct circular dependency: Contract '{self.name}' cannot depend on itself via dependency '{dependency.name}'.",
                     details=self._create_error_context(
                         {
@@ -587,7 +586,7 @@ class ModelContractBase(BaseModel, ABC):
             # Check for duplicate dependencies (same name)
             if dep_name in dependency_names:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Duplicate dependency detected: '{dependency.name}' is already defined in this contract.",
                     details=self._create_error_context(
                         {
@@ -606,7 +605,7 @@ class ModelContractBase(BaseModel, ABC):
             if dependency.module and self.name.lower() in dependency.module.lower():
                 # This could indicate a potential circular dependency through module references
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Potential circular dependency: Contract '{self.name}' depends on module '{dependency.module}' which contains the contract name.",
                     details=self._create_error_context(
                         {
@@ -624,7 +623,7 @@ class ModelContractBase(BaseModel, ABC):
         max_dependencies = 50  # Reasonable limit for contract complexity
         if len(self.dependencies) > max_dependencies:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract has too many dependencies: {len(self.dependencies)}. Maximum recommended: {max_dependencies}.",
                 details=self._create_error_context(
                     {
