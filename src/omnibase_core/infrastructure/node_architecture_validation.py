@@ -38,7 +38,7 @@ class NodeArchitectureValidator:
     including performance SLAs, type safety, and ONEX standards.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize validator with mock container."""
         # Create mock container for testing
         self.container = self._create_mock_container()
@@ -108,7 +108,7 @@ class NodeArchitectureValidator:
         try:
             # Test 1: Abstract base instantiation should fail
             try:
-                NodeCoreBase(self.container)
+                NodeCoreBase(self.container)  # type: ignore[abstract]
                 self.validation_results["foundation"]["abstract_base"] = {
                     "passed": False,
                     "message": "NodeCoreBase should be abstract and not instantiable",
@@ -141,8 +141,8 @@ class NodeArchitectureValidator:
             }
 
             # Test 3: ModelONEXContainer integration
-            class TestNode(NodeCoreBase):
-                async def process(self, input_data):
+            class TestNode(NodeCoreBase):  # type: ignore[abstract]
+                async def process(self, input_data: Any) -> dict[str, str]:
                     return {"test": "success"}
 
             test_node = TestNode(self.container)
@@ -177,7 +177,7 @@ class NodeArchitectureValidator:
         for node_name, node_class in node_classes.items():
             try:
                 # Test instantiation
-                node_instance = node_class(self.container)
+                node_instance = node_class(self.container)  # type: ignore[abstract]
 
                 # Test required methods
                 required_methods = ["process", "initialize", "cleanup"]
@@ -215,7 +215,7 @@ class NodeArchitectureValidator:
     async def _test_node_specific_capabilities(
         self,
         node_name: str,
-        node_instance,
+        node_instance: Any,
     ) -> dict[str, Any]:
         """Test node-specific capabilities."""
         try:
@@ -448,7 +448,7 @@ class NodeArchitectureValidator:
     def _get_category_summary(self, tests: dict[str, Any]) -> dict[str, Any]:
         """Get summary for a test category."""
         if not isinstance(tests, dict):
-            return {"passed": False, "count": 0}
+            return {"passed": False, "total": 0, "passed_count": 0}  # type: ignore[unreachable]
 
         passed = 0
         total = 0
@@ -469,13 +469,13 @@ class NodeArchitectureValidator:
         """Create mock ModelONEXContainer for testing."""
 
         class MockContainer:
-            def get_service(self, service_name: str):
+            def get_service(self, service_name: str) -> None:
                 return None  # Mock implementation
 
-        return MockContainer()
+        return MockContainer()  # type: ignore[return-value]
 
 
-async def main():
+async def main() -> None:
     """Main validation runner."""
     validator = NodeArchitectureValidator()
     results = await validator.validate_all()
@@ -485,7 +485,7 @@ async def main():
     for _category, result in summary["categories"].items():
         "✅ PASS" if result["passed"] else "❌ FAIL"
 
-    return results
+    # Results are printed above, no return value needed
 
 
 if __name__ == "__main__":

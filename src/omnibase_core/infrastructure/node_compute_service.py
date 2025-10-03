@@ -5,6 +5,9 @@ Base class for compute nodes that need service capabilities.
 Handles boilerplate initialization for NodeCompute + MixinNodeService + MixinNodeIdFromContract.
 """
 
+from typing import Any
+from uuid import UUID
+
 from omnibase_core.infrastructure.node_compute import NodeCompute
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
@@ -32,14 +35,15 @@ class NodeComputeService(
     """
 
     @property
-    def node_id(self) -> str:
+    def node_id(self) -> UUID:  # type: ignore[override]
         """Get the node ID from contract."""
-        return getattr(self, "_node_id", "unknown")
+        node_id_str = getattr(self, "_node_id", "00000000-0000-0000-0000-000000000000")
+        return UUID(node_id_str) if isinstance(node_id_str, str) else node_id_str
 
     @node_id.setter
-    def node_id(self, value: str) -> None:
+    def node_id(self, value: str | UUID) -> None:
         """Allow setting node_id (compatibility with NodeCoreBase)."""
-        self._node_id = value
+        self._node_id = str(value) if isinstance(value, UUID) else value
 
     def __init__(self, container: ModelONEXContainer):
         """Initialize with proper mixin coordination."""
@@ -50,8 +54,8 @@ class NodeComputeService(
         self._node_id = self._load_node_id()
 
         # Get services from the infrastructure container via duck typing
-        event_bus = container.get_service("ProtocolEventBus")
-        metadata_loader = container.get_service("ProtocolSchemaLoader")
+        event_bus: Any = container.get_service("ProtocolEventBus")  # type: ignore[arg-type]
+        metadata_loader: Any = container.get_service("ProtocolSchemaLoader")  # type: ignore[arg-type]
 
         # Initialize NodeCompute
         NodeCompute.__init__(self, container)

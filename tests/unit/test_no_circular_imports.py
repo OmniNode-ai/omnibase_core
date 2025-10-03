@@ -207,9 +207,7 @@ def test_import_chain_sequential() -> None:
     exist at module import time.
     """
     # Start with a clean slate - remove all omnibase_core modules
-    modules_to_remove = [
-        key for key in sys.modules if key.startswith("omnibase_core")
-    ]
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
     for module in modules_to_remove:
         del sys.modules[module]
 
@@ -301,9 +299,7 @@ def test_validation_functions_lazy_import() -> None:
     should import error_codes only when they need to raise an error.
     """
     # Clear module cache
-    modules_to_remove = [
-        key for key in sys.modules if key.startswith("omnibase_core")
-    ]
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
     for module in modules_to_remove:
         del sys.modules[module]
 
@@ -365,9 +361,7 @@ def test_error_codes_safe_imports() -> None:
     by importing from models or types.constraints at runtime.
     """
     # Clear module cache
-    modules_to_remove = [
-        key for key in sys.modules if key.startswith("omnibase_core")
-    ]
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
     for module in modules_to_remove:
         del sys.modules[module]
 
@@ -375,9 +369,7 @@ def test_error_codes_safe_imports() -> None:
     import omnibase_core.errors.error_codes
 
     # Check what omnibase_core modules were imported
-    imported_modules = [
-        key for key in sys.modules if key.startswith("omnibase_core")
-    ]
+    imported_modules = [key for key in sys.modules if key.startswith("omnibase_core")]
 
     # error_codes should only import from safe modules
     # It should NOT import from models.* or types.constraints

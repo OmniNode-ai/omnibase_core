@@ -13,20 +13,25 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from uuid import UUID, uuid4
 
-from omnibase_spi.protocols.core import protocol_workflow_reducer
+if TYPE_CHECKING:
+    from omnibase_spi.protocols.core.protocol_workflow_reducer import (
+        ProtocolWorkflowReducer as WorkflowReducerInterface,
+    )
+else:
+    from omnibase_spi.protocols.core import protocol_workflow_reducer
 
-WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
+    WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
 
 # Import or define Pydantic BaseModel
 from pydantic import BaseModel
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors import OnexError
 from omnibase_core.errors.error_codes import CoreErrorCode
-from omnibase_core.exceptions import OnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -105,8 +110,8 @@ class NodeBase(
         container: ModelONEXContainer | None = None,
         workflow_id: UUID | None = None,
         session_id: UUID | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """
         Initialize NodeBase with monadic patterns and workflow support.
 
@@ -127,9 +132,9 @@ class NodeBase(
         # Store initialization parameters
         self._contract_path = contract_path
         self._container: ModelONEXContainer | None = None
-        self._main_tool = None
+        self._main_tool: object | None = None
         self._reducer_state: ModelState | None = None
-        self._workflow_instance = None
+        self._workflow_instance: Any | None = None
 
         try:
             # Load and validate contract
@@ -168,7 +173,7 @@ class NodeBase(
         node_id: UUID | None,
         event_bus: object | None,
         container: ModelONEXContainer | None,
-    ):
+    ) -> None:
         """Load contract and initialize core components using ONEX 2.0 patterns."""
         # ONEX 2.0: Use ContractLoader instead of ContractService
         from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
@@ -236,6 +241,14 @@ class NodeBase(
         self._container = container
 
         # Store contract and configuration
+        business_logic_pattern = contract_content.tool_specification.business_logic_pattern
+        # Handle both string and enum cases
+        pattern_value = (
+            business_logic_pattern.value
+            if hasattr(business_logic_pattern, "value")
+            else str(business_logic_pattern)
+        )
+
         self.state = NodeState(
             contract_path=contract_path,
             node_id=node_id,
@@ -244,7 +257,7 @@ class NodeBase(
             node_name=contract_content.node_name,
             version=contract_content.contract_version,  # Use ModelSemVer directly
             node_tier=1,
-            node_classification=contract_content.tool_specification.business_logic_pattern.value,
+            node_classification=pattern_value,
             event_bus=event_bus,
             initialization_metadata={
                 "main_tool_class": contract_content.tool_specification.main_tool_class,
@@ -466,6 +479,17 @@ class NodeBase(
 
             main_tool = self._main_tool
 
+            if main_tool is None:
+                raise OnexError(
+                    code=CoreErrorCode.OPERATION_FAILED,
+                    message="Main tool is not initialized",
+                    context={
+                        "node_name": self.state.node_name,
+                        "workflow_id": str(self.workflow_id),
+                    },
+                    correlation_id=self.correlation_id,
+                )
+
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
                 return await main_tool.process_async(input_state)
@@ -630,18 +654,18 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
 
-    def create_workflow(self):
+    def create_workflow(self) -> Any | None:
         """
         Factory method for creating LlamaIndex workflow instances.
 
         Default implementation returns None (no workflow needed).
         Override in subclasses that need workflow orchestration.
         """
-        return
+        return None
 
     # ===== HELPER METHODS =====
 
-    def _emit_initialization_event(self):
+    def _emit_initialization_event(self) -> None:
         """Emit initialization success event."""
         emit_log_event(
             LogLevel.INFO,
@@ -656,7 +680,7 @@ class NodeBase(
             },
         )
 
-    def _emit_initialization_failure(self, error: Exception):
+    def _emit_initialization_failure(self, error: Exception) -> None:
         """Emit initialization failure event."""
         emit_log_event(
             LogLevel.ERROR,
@@ -676,6 +700,12 @@ class NodeBase(
     @property
     def container(self) -> ModelONEXContainer:
         """Get the ModelONEXContainer instance for dependency injection."""
+        if self._container is None:
+            raise OnexError(
+                code=CoreErrorCode.OPERATION_FAILED,
+                message="Container is not initialized",
+                context={"node_id": str(self.node_id)},
+            )
         return self._container
 
     @property
@@ -686,9 +716,15 @@ class NodeBase(
     @property
     def current_state(self) -> ModelState:
         """Get the current reducer state."""
+        if self._reducer_state is None:
+            raise OnexError(
+                code=CoreErrorCode.OPERATION_FAILED,
+                message="Reducer state is not initialized",
+                context={"node_id": str(self.node_id)},
+            )
         return self._reducer_state
 
     @property
-    def workflow_instance(self):
+    def workflow_instance(self) -> Any | None:
         """Get the LlamaIndex workflow instance if available."""
         return self._workflow_instance

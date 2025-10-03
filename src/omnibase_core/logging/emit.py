@@ -10,8 +10,9 @@ Python's logging module to maintain architectural purity and centralized process
 
 import inspect
 import os
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, TypeVar
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -24,6 +25,7 @@ LogNodeIdentifier = UUID | str
 # LogDataValue uses Any for boundary layer flexibility - logging infrastructure
 # needs to accept various types while sanitization ensures JSON compatibility
 LogDataValue = Any
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def emit_log_event(
@@ -187,7 +189,7 @@ async def emit_log_event_async(
     )
 
 
-def trace_function_lifecycle(func):
+def trace_function_lifecycle(func: F) -> F:
     """
     Decorator to automatically log function entry/exit with TRACE level.
 
@@ -197,7 +199,7 @@ def trace_function_lifecycle(func):
             return result
     """
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         function_name = func.__name__
         module_name = func.__module__
         correlation_id = uuid4()
@@ -261,7 +263,7 @@ def trace_function_lifecycle(func):
 
             raise
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
 
 
 class log_code_block:
@@ -280,14 +282,14 @@ class log_code_block:
         correlation_id: UUID,
         level: LogLevel = LogLevel.DEBUG,
         data: dict[str, LogDataValue | None] | None = None,
-    ):
+    ) -> None:
         self.block_name = block_name
         self.correlation_id = correlation_id
         self.level = level
         self.data = data or {}
-        self.start_time = None
+        self.start_time: datetime | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> "log_code_block":
         self.start_time = datetime.now(UTC)
 
         emit_log_event(
@@ -303,7 +305,7 @@ class log_code_block:
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if self.start_time is not None:
             end_time = datetime.now(UTC)
             execution_time_ms = (end_time - self.start_time).total_seconds() * 1000
@@ -342,7 +344,7 @@ class log_code_block:
             )
 
 
-def log_performance_metrics(threshold_ms: int = 1000):
+def log_performance_metrics(threshold_ms: int = 1000) -> Callable[[F], F]:
     """
     Decorator to log performance metrics for functions.
 
@@ -355,8 +357,8 @@ def log_performance_metrics(threshold_ms: int = 1000):
             pass
     """
 
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def decorator(func: F) -> F:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             function_name = func.__name__
             correlation_id = uuid4()
 
@@ -395,7 +397,7 @@ def log_performance_metrics(threshold_ms: int = 1000):
 
             return result
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
     return decorator
 
@@ -409,7 +411,7 @@ import time
 
 _cached_formatter = None
 _cached_output_handler = None
-_cache_timestamp = 0
+_cache_timestamp = 0.0
 _cache_ttl = 300  # 5 minutes TTL
 _cache_lock = threading.Lock()  # Initialize lock at module level
 
@@ -451,7 +453,7 @@ def _sanitize_sensitive_data(text: str) -> str:
         Sanitized text with sensitive patterns redacted
     """
     if not isinstance(text, str):
-        return text
+        return text  # type: ignore[unreachable, return-value]
 
     sanitized = text
     for pattern, replacement in _SENSITIVE_PATTERNS:
@@ -473,14 +475,15 @@ def _sanitize_data_dict(
         Sanitized dictionary with JSON-compatible values
     """
     if not isinstance(data, dict):
-        return data
+        return data  # type: ignore[unreachable, return-value]
 
-    sanitized = {}
+    sanitized: dict[str, Any | None] = {}
     for key, value in data.items():
         # Sanitize key names that might contain sensitive info
         sanitized_key = _sanitize_sensitive_data(str(key))
 
         # Validate and sanitize values to ensure JSON compatibility
+        sanitized_value: Any | None
         if isinstance(value, str):
             sanitized_value = _sanitize_sensitive_data(value)
         elif isinstance(value, bool):  # Check bool first (bool is subclass of int)
@@ -585,13 +588,15 @@ def _create_log_context_from_frame() -> LogModelContext:
 def _get_default_event_bus() -> Any | None:
     """Get the default event bus for logging using protocol-based discovery."""
     try:
-        from omnibase_core.container import EnhancedContainer
+        from omnibase_core.models.container.model_onex_container import (
+            ModelONEXContainer,
+        )
         from omnibase_core.nodes.node_runtime.protocols.protocol_event_bus_factory import (
             AnyFactory,
         )
 
         # Try to get container and event bus factory
-        container = EnhancedContainer()
+        container = ModelONEXContainer()
         event_bus_factory = container.get_service(AnyFactory)
 
         if event_bus_factory:
@@ -634,18 +639,17 @@ def _route_to_logger_node(
         output_handler = _cached_output_handler
 
         # If not cached or cache expired, perform lookup with locking
-        if formatter is None or output_handler is None or cache_expired:
+        if formatter is None or output_handler is None or cache_expired:  # type: ignore[unreachable]
             with _cache_lock:
                 # Double-check after acquiring lock
                 current_time = time.time()
                 cache_expired = (current_time - _cache_timestamp) > _cache_ttl
 
-                if (
-                    _cached_formatter is None
-                    or _cached_output_handler is None
-                    or cache_expired
-                ):
-                    from omnibase_core.container import EnhancedContainer
+                # Re-check after lock acquisition (may have changed)
+                if _cached_formatter is None or _cached_output_handler is None or cache_expired:  # type: ignore[unreachable]
+                    from omnibase_core.models.container.model_onex_container import (
+                        ModelONEXContainer,
+                    )
                     from omnibase_core.nodes.node_logger.protocols.protocol_context_aware_output_handler import (
                         ProtocolContextAwareOutputHandler,
                     )
@@ -655,7 +659,7 @@ def _route_to_logger_node(
 
                     # Try to get logger components from container
                     try:
-                        container = EnhancedContainer()
+                        container = ModelONEXContainer()
                         _cached_formatter = container.get_service(
                             ProtocolSmartLogFormatter,
                         )

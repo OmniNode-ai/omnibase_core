@@ -72,8 +72,9 @@ class DocumentFreshnessError(OnexError):
             # Use duck typing - if it has model_dump(), call it
             if hasattr(details, "model_dump"):
                 error_details.update(details.model_dump())
-            elif isinstance(details, dict):
-                error_details.update(details)
+            else:
+                # Otherwise assume it's dict-like and update directly
+                error_details.update(details)  # type: ignore[arg-type]
         if correlation_id:
             error_details["correlation_id"] = str(correlation_id)
         if file_path:

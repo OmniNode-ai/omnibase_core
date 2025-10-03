@@ -24,8 +24,8 @@ from uuid import UUID, uuid4
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors import OnexError
 from omnibase_core.errors.error_codes import CoreErrorCode
-from omnibase_core.exceptions import OnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -326,14 +326,16 @@ class NodeCoreBase(ABC):
         """
         try:
             # Try to get contract service from container
-            contract_service = None
+            contract_service: Any = None
             try:
-                contract_service = self.container.get_service("contract_service")
+                contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
             except Exception:
                 # Contract service not available - that's OK
-                pass
+                contract_service = None
 
-            if contract_service and hasattr(contract_service, "get_node_contract"):
+            if contract_service is not None and hasattr(
+                contract_service, "get_node_contract"
+            ):
                 # Load contract for this node type
                 contract_data_raw = contract_service.get_node_contract(
                     self.__class__.__name__,
@@ -400,15 +402,16 @@ class NodeCoreBase(ABC):
         """
         try:
             # Try to get event bus from container
-            event_bus = None
+            event_bus: Any = None
             try:
-                event_bus = self.container.get_service("event_bus")
+                event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
             except Exception:
                 # Event bus not available - that's OK
-                pass
+                event_bus = None
 
-            if event_bus and hasattr(event_bus, "emit_event"):
-                correlation_id = UUID(self.node_id)
+            if event_bus is not None and hasattr(event_bus, "emit_event"):
+                # node_id is already a UUID, use it directly
+                correlation_id = self.node_id
                 event_data = {
                     "node_id": self.node_id,
                     "node_type": self.__class__.__name__,

@@ -145,9 +145,6 @@ class ProtocolContractLoader:
             yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
             content = yaml_model.model_dump()
 
-            if content is None:
-                content = {}
-
             # Parse and cache if enabled
             if self.state.cache_enabled:
                 parsed_content = self._parse_contract_content(content, file_path)
@@ -196,6 +193,8 @@ class ProtocolContractLoader:
         try:
             # Parse contract version
             version_data = raw_content.get("contract_version", {})
+            if not isinstance(version_data, dict):
+                version_data = {}
             contract_version = ModelSemVer(
                 major=int(version_data.get("major", 1)),
                 minor=int(version_data.get("minor", 0)),
@@ -204,6 +203,8 @@ class ProtocolContractLoader:
 
             # Parse tool specification
             tool_spec_data = raw_content.get("tool_specification", {})
+            if not isinstance(tool_spec_data, dict):
+                tool_spec_data = {}
             tool_specification = ModelToolSpecification(
                 main_tool_class=str(
                     tool_spec_data.get("main_tool_class", "DefaultToolNode"),
@@ -281,7 +282,7 @@ class ProtocolContractLoader:
             "node_name": content.node_name,
             "tool_specification": {
                 "main_tool_class": content.tool_specification.main_tool_class,
-                "business_logic_pattern": content.tool_specification.business_logic_pattern.value,
+                "business_logic_pattern": content.tool_specification.business_logic_pattern,
             },
         }
 

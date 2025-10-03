@@ -10,6 +10,7 @@ This module provides the simplest possible logging interface:
 
 import asyncio
 import threading
+from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -40,7 +41,8 @@ def emit_log_event(level: LogLevel, message: str) -> None:
     # Use the registry-resolved logger
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(_async_emit_via_logger(logger, level, message, correlation_id))
+        # Fire-and-forget task (intentionally not awaited)
+        _ = loop.create_task(_async_emit_via_logger(logger, level, message, correlation_id))
     except RuntimeError:
         # No event loop, use sync fallback
         logger.emit(level, message, correlation_id)
@@ -64,9 +66,11 @@ class _SimpleFallbackLogger:
         """Emit log message to stdout."""
         import sys
 
+        # ERROR and CRITICAL levels go to stderr, others to stdout
+        is_error = level in (LogLevel.ERROR, LogLevel.CRITICAL, LogLevel.FATAL)
         print(
             f"[{level.name}] {correlation_id}: {message}",
-            file=sys.stdout if level.value < 40 else sys.stderr,
+            file=sys.stderr if is_error else sys.stdout,
         )
 
 
@@ -80,7 +84,7 @@ def _get_correlation_id() -> UUID:
     return correlation_id
 
 
-def _get_registry_logger():
+def _get_registry_logger() -> Any:
     """Get logger from registry with caching for performance."""
     global _cached_logger
 
@@ -88,26 +92,15 @@ def _get_registry_logger():
     if _cached_logger is None:
         with _cache_lock:
             if _cached_logger is None:
-                try:
-                    # Try to get logger from container
-                    from omnibase_core.container import EnhancedContainer
-
-                    container = EnhancedContainer()
-                    _cached_logger = container.get_service("Logger")
-
-                    if _cached_logger is None:
-                        # Fallback to simple logger
-                        _cached_logger = _SimpleFallbackLogger()
-
-                except Exception:
-                    # Final fallback to simple logger
-                    _cached_logger = _SimpleFallbackLogger()
+                # Use simple fallback logger to avoid circular dependencies
+                # The logging module is foundational and should not depend on the container
+                _cached_logger = _SimpleFallbackLogger()
 
     return _cached_logger
 
 
 async def _async_emit_via_logger(
-    logger,
+    logger: Any,
     level: LogLevel,
     message: str,
     correlation_id: UUID,

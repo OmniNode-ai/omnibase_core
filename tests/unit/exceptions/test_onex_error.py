@@ -4,7 +4,7 @@ Comprehensive unit tests for OnexError exception class.
 Tests cover:
 - OnexError initialization and basic behaviors
 - Error code validation and handling
-- Error context handling with ModelErrorContext
+- Error context handling with BasicErrorContext
 - Exception inheritance and chaining
 - Message formatting with and without context
 - Edge cases and error scenarios
@@ -13,8 +13,7 @@ Tests cover:
 import pytest
 
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.core_types import BasicErrorContext
 
 
 class TestOnexErrorBasicBehavior:
@@ -23,44 +22,38 @@ class TestOnexErrorBasicBehavior:
     def test_onex_error_with_minimal_args(self):
         """Test OnexError creation with only required arguments."""
         error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test validation error",
+            error_code=CoreErrorCode.VALIDATION_ERROR,
         )
 
         assert error.error_code == CoreErrorCode.VALIDATION_ERROR
         assert error.message == "Test validation error"
-        assert error.details is not None
-        assert isinstance(error.details, ModelErrorContext)
-        assert error.cause is None
-        assert str(error) == "[validation_error] Test validation error"
+        assert error.context is not None
+        assert isinstance(error.context, dict)
+        assert str(error) == "[ONEX_CORE_006_VALIDATION_ERROR] Test validation error"
 
     def test_onex_error_with_all_args(self):
         """Test OnexError creation with all arguments."""
-        context = ModelErrorContext(
+        error = OnexError(
+            message="Operation failed",
+            error_code=CoreErrorCode.OPERATION_FAILED,
             file_path="/test/file.py",
             line_number=42,
             function_name="test_function",
         )
-        cause = ValueError("Original error")
-
-        error = OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
-            message="Operation failed",
-            details=context,
-            cause=cause,
-        )
 
         assert error.error_code == CoreErrorCode.OPERATION_FAILED
         assert error.message == "Operation failed"
-        assert error.details == context
-        assert error.cause == cause
-        assert str(error) == "[operation_failed] Operation failed"
+        assert error.context["file_path"] == "/test/file.py"
+        assert error.context["line_number"] == 42
+        assert error.context["function_name"] == "test_function"
+        assert str(error) == "[ONEX_CORE_081_OPERATION_FAILED] Operation failed"
 
     def test_onex_error_is_exception(self):
         """Test that OnexError is a proper Exception subclass."""
         error = OnexError(
-            error_code=CoreErrorCode.INTERNAL_ERROR,
             message="Internal error",
+            error_code=CoreErrorCode.INTERNAL_ERROR,
         )
 
         assert isinstance(error, Exception)
@@ -70,8 +63,8 @@ class TestOnexErrorBasicBehavior:
         """Test that OnexError can be raised and caught."""
         with pytest.raises(OnexError) as exc_info:
             raise OnexError(
-                error_code=CoreErrorCode.RESOURCE_NOT_FOUND,
                 message="Resource not found",
+                error_code=CoreErrorCode.RESOURCE_NOT_FOUND,
             )
 
         assert exc_info.value.error_code == CoreErrorCode.RESOURCE_NOT_FOUND
@@ -104,19 +97,19 @@ class TestOnexErrorCodes:
     def test_onex_error_with_all_error_codes(self, error_code, expected_code_string):
         """Test OnexError creation with each error code."""
         error = OnexError(
-            error_code=error_code,
             message=f"Test {expected_code_string}",
+            error_code=error_code,
         )
 
         assert error.error_code == error_code
         assert error.error_code.value == expected_code_string
-        assert error_code.value in str(error)
+        assert expected_code_string in str(error)
 
     def test_error_code_in_string_representation(self):
         """Test that error code is included in string representation."""
         error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test message",
+            error_code=CoreErrorCode.VALIDATION_ERROR,
         )
 
         assert "[ONEX_CORE_006_VALIDATION_ERROR]" in str(error)
@@ -128,162 +121,135 @@ class TestOnexErrorContext:
 
     def test_onex_error_with_empty_context(self):
         """Test OnexError with empty error context."""
-        context = ModelErrorContext.with_context({})
         error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Test error",
-            details=context,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
         )
 
-        assert error.details == context
-        assert error.details.additional_context == {}
-        assert str(error) == "[validation_error] Test error"
+        assert error.context == {}
+        assert str(error) == "[ONEX_CORE_006_VALIDATION_ERROR] Test error"
 
     def test_onex_error_with_additional_context(self):
         """Test OnexError with additional context information."""
-        context = ModelErrorContext.with_context(
-            {
-                "field": ModelSchemaValue.from_value("username"),
-                "value": ModelSchemaValue.from_value("test_user"),
-                "constraint": ModelSchemaValue.from_value("min_length"),
-            }
-        )
-
         error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Validation failed",
-            details=context,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
+            field="username",
+            value="test_user",
+            constraint="min_length",
         )
 
-        assert error.details.additional_context["field"].to_value() == "username"
-        assert error.details.additional_context["value"].to_value() == "test_user"
-        assert error.details.additional_context["constraint"].to_value() == "min_length"
+        assert error.context["field"] == "username"
+        assert error.context["value"] == "test_user"
+        assert error.context["constraint"] == "min_length"
 
         # Check that context is included in the string representation
         error_str = str(error)
-        assert "[validation_error]" in error_str
+        assert "[ONEX_CORE_006_VALIDATION_ERROR]" in error_str
         assert "Validation failed" in error_str
-        assert "Context:" in error_str
-        assert "field=username" in error_str
-        assert "value=test_user" in error_str
-        assert "constraint=min_length" in error_str
 
     def test_onex_error_with_full_context_fields(self):
-        """Test OnexError with all ModelErrorContext fields populated."""
-        context = ModelErrorContext(
+        """Test OnexError with all context fields populated."""
+        error = OnexError(
+            message="Validation error occurred",
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             file_path="/path/to/file.py",
             line_number=100,
             column_number=15,
             function_name="process_data",
             module_name="data_processor",
             stack_trace="Traceback (most recent call last)...",
-            additional_context={
-                "error_type": ModelSchemaValue.from_value("validation"),
-            },
+            error_type="validation",
         )
 
-        error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Validation error occurred",
-            details=context,
-        )
-
-        assert error.details.file_path == "/path/to/file.py"
-        assert error.details.line_number == 100
-        assert error.details.column_number == 15
-        assert error.details.function_name == "process_data"
-        assert error.details.module_name == "data_processor"
-        assert error.details.stack_trace == "Traceback (most recent call last)..."
+        assert error.context["file_path"] == "/path/to/file.py"
+        assert error.context["line_number"] == 100
+        assert error.context["column_number"] == 15
+        assert error.context["function_name"] == "process_data"
+        assert error.context["module_name"] == "data_processor"
+        assert error.context["stack_trace"] == "Traceback (most recent call last)..."
+        assert error.context["error_type"] == "validation"
 
     def test_onex_error_with_complex_context_values(self):
         """Test OnexError with complex nested context values."""
-        context = ModelErrorContext.with_context(
-            {
-                "config": ModelSchemaValue.from_value(
-                    {"timeout": 30, "retries": 3, "enabled": True}
-                ),
-                "items": ModelSchemaValue.from_value([1, 2, 3, 4, 5]),
-                "status": ModelSchemaValue.from_value(None),
-            }
-        )
-
         error = OnexError(
-            error_code=CoreErrorCode.CONFIGURATION_ERROR,
             message="Configuration error",
-            details=context,
+            error_code=CoreErrorCode.CONFIGURATION_ERROR,
+            config={"timeout": 30, "retries": 3, "enabled": True},
+            items=[1, 2, 3, 4, 5],
+            state=None,
         )
 
         # Verify complex values are preserved
-        config = error.details.additional_context["config"].to_value()
-        assert config["timeout"] == 30
-        assert config["retries"] == 3
-        assert config["enabled"] is True
-
-        items = error.details.additional_context["items"].to_value()
-        assert items == [1, 2, 3, 4, 5]
-
-        status = error.details.additional_context["status"].to_value()
-        assert status is None
+        assert error.context["config"]["timeout"] == 30
+        assert error.context["config"]["retries"] == 3
+        assert error.context["config"]["enabled"] is True
+        assert error.context["items"] == [1, 2, 3, 4, 5]
+        assert error.context["state"] is None
 
     def test_onex_error_default_context_creation(self):
-        """Test that OnexError creates default context when None provided."""
+        """Test that OnexError creates default context when no context provided."""
         error = OnexError(
-            error_code=CoreErrorCode.INTERNAL_ERROR,
             message="Test error",
-            details=None,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
         )
 
-        assert error.details is not None
-        assert isinstance(error.details, ModelErrorContext)
-        assert error.details.additional_context == {}
+        assert error.context is not None
+        assert isinstance(error.context, dict)
+        assert error.context == {}
 
 
 class TestOnexErrorCauseChaining:
-    """Test OnexError cause exception chaining."""
+    """Test OnexError cause exception chaining using Python's standard __cause__."""
 
     def test_onex_error_with_cause_exception(self):
-        """Test OnexError with a cause exception."""
+        """Test OnexError with a cause exception using 'from' syntax."""
         original = ValueError("Original error message")
-        error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Wrapped error",
-            cause=original,
-        )
 
-        assert error.cause == original
-        assert isinstance(error.cause, ValueError)
-        assert str(error.cause) == "Original error message"
+        try:
+            raise OnexError(
+                message="Wrapped error",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+            ) from original
+        except OnexError as error:
+            assert error.__cause__ == original
+            assert isinstance(error.__cause__, ValueError)
+            assert str(error.__cause__) == "Original error message"
 
     def test_onex_error_with_none_cause(self):
         """Test OnexError with None cause."""
         error = OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
             message="No cause error",
-            cause=None,
+            error_code=CoreErrorCode.OPERATION_FAILED,
         )
 
-        assert error.cause is None
+        assert error.__cause__ is None
 
     def test_onex_error_chain_multiple_causes(self):
         """Test chaining multiple OnexError exceptions."""
-        # Create a chain of errors
+        # Create a chain of errors using standard Python exception chaining
         original = TypeError("Type mismatch")
-        first_error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="First level error",
-            cause=original,
-        )
-        second_error = OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED,
-            message="Second level error",
-            cause=first_error,
-        )
 
-        # Verify the chain
-        assert second_error.cause == first_error
-        assert first_error.cause == original
-        assert isinstance(second_error.cause, OnexError)
-        assert isinstance(first_error.cause, TypeError)
+        try:
+            try:
+                raise original
+            except TypeError as e:
+                raise OnexError(
+                    message="First level error",
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                ) from e
+        except OnexError as first_error:
+            try:
+                raise OnexError(
+                    message="Second level error",
+                    error_code=CoreErrorCode.OPERATION_FAILED,
+                ) from first_error
+            except OnexError as second_error:
+                # Verify the chain
+                assert second_error.__cause__ == first_error
+                assert first_error.__cause__ == original
+                assert isinstance(second_error.__cause__, OnexError)
+                assert isinstance(first_error.__cause__, TypeError)
 
     def test_onex_error_with_different_exception_types(self):
         """Test OnexError with various exception types as cause."""
@@ -296,14 +262,14 @@ class TestOnexErrorCauseChaining:
         ]
 
         for original_exception in exception_types:
-            error = OnexError(
-                error_code=CoreErrorCode.INTERNAL_ERROR,
-                message="Wrapped exception",
-                cause=original_exception,
-            )
-
-            assert error.cause == original_exception
-            assert type(error.cause) == type(original_exception)
+            try:
+                raise OnexError(
+                    message="Wrapped exception",
+                    error_code=CoreErrorCode.INTERNAL_ERROR,
+                ) from original_exception
+            except OnexError as error:
+                assert error.__cause__ == original_exception
+                assert type(error.__cause__) == type(original_exception)
 
 
 class TestOnexErrorMessageFormatting:
@@ -316,47 +282,41 @@ class TestOnexErrorMessageFormatting:
             message="Resource not found",
         )
 
-        assert str(error) == "[not_found] Resource not found"
+        assert str(error) == "[ONEX_CORE_028_NOT_FOUND] Resource not found"
 
     def test_message_format_with_single_context_item(self):
         """Test message formatting with single context item."""
-        context = ModelErrorContext.with_context(
-            {"resource_id": ModelSchemaValue.from_value("12345")}
-        )
-
         error = OnexError(
-            error_code=CoreErrorCode.NOT_FOUND,
             message="Resource not found",
-            details=context,
+            error_code=CoreErrorCode.NOT_FOUND,
+            resource_id="12345",
         )
 
+        # Verify error string includes error code and message
         error_str = str(error)
-        assert "[not_found] Resource not found" in error_str
-        assert "Context:" in error_str
-        assert "resource_id=12345" in error_str
+        assert "[ONEX_CORE_028_NOT_FOUND] Resource not found" == error_str
+
+        # Verify context is accessible
+        assert error.context["resource_id"] == "12345"
 
     def test_message_format_with_multiple_context_items(self):
         """Test message formatting with multiple context items."""
-        context = ModelErrorContext.with_context(
-            {
-                "param1": ModelSchemaValue.from_value("value1"),
-                "param2": ModelSchemaValue.from_value(42),
-                "param3": ModelSchemaValue.from_value(True),
-            }
-        )
-
         error = OnexError(
-            error_code=CoreErrorCode.CONFIGURATION_ERROR,
             message="Invalid configuration",
-            details=context,
+            error_code=CoreErrorCode.CONFIGURATION_ERROR,
+            param1="value1",
+            param2=42,
+            param3=True,
         )
 
+        # Verify error string includes error code and message
         error_str = str(error)
-        assert "[configuration_error] Invalid configuration" in error_str
-        assert "Context:" in error_str
-        assert "param1=value1" in error_str
-        assert "param2=42" in error_str
-        assert "param3=True" in error_str
+        assert "[ONEX_CORE_044_CONFIGURATION_ERROR] Invalid configuration" == error_str
+
+        # Verify context values are accessible
+        assert error.context["param1"] == "value1"
+        assert error.context["param2"] == 42
+        assert error.context["param3"] is True
 
     def test_message_format_with_special_characters(self):
         """Test message formatting with special characters in message."""
@@ -365,7 +325,7 @@ class TestOnexErrorMessageFormatting:
             message='Error with "quotes" and special chars: <>!@#$%',
         )
 
-        assert '[validation_error] Error with "quotes"' in str(error)
+        assert '[ONEX_CORE_006_VALIDATION_ERROR] Error with "quotes"' in str(error)
 
     def test_message_format_with_unicode(self):
         """Test message formatting with unicode characters."""
@@ -374,7 +334,7 @@ class TestOnexErrorMessageFormatting:
             message="Error with unicode: 你好 🚀 ñ",
         )
 
-        assert "[validation_error]" in str(error)
+        assert "[ONEX_CORE_006_VALIDATION_ERROR]" in str(error)
         assert "你好" in str(error)
         assert "🚀" in str(error)
 
@@ -390,7 +350,7 @@ class TestOnexErrorEdgeCases:
         )
 
         assert error.message == ""
-        assert str(error) == "[internal_error] "
+        assert str(error) == "[ONEX_CORE_089_INTERNAL_ERROR] "
 
     def test_very_long_message(self):
         """Test OnexError with very long message."""
@@ -418,12 +378,12 @@ class TestOnexErrorEdgeCases:
     def test_onex_error_equality_not_implemented(self):
         """Test that OnexError instances are compared by identity."""
         error1 = OnexError(
+            "Test error",
             error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Test error",
         )
         error2 = OnexError(
+            "Test error",
             error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Test error",
         )
 
         # Exceptions are not equal even with same content
@@ -432,8 +392,8 @@ class TestOnexErrorEdgeCases:
     def test_onex_error_attributes_immutable(self):
         """Test that OnexError attributes can be accessed and modified."""
         error = OnexError(
+            "Test error",
             error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Test error",
         )
 
         # Attributes should be accessible
@@ -441,7 +401,7 @@ class TestOnexErrorEdgeCases:
         assert error.message == "Test error"
 
         # Python doesn't enforce immutability, but we can modify
-        error.message = "Modified message"
+        error.model.message = "Modified message"
         assert error.message == "Modified message"
 
 
@@ -453,8 +413,8 @@ class TestOnexErrorIntegration:
 
         def function_that_raises():
             raise OnexError(
+                "Operation failed in function",
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message="Operation failed in function",
             )
 
         with pytest.raises(OnexError) as exc_info:
@@ -474,46 +434,40 @@ class TestOnexErrorIntegration:
                 inner_function()
             except ValueError as e:
                 raise OnexError(
+                    "Caught and wrapped error",
                     error_code=CoreErrorCode.VALIDATION_ERROR,
-                    message="Caught and wrapped error",
-                    cause=e,
-                )
+                ) from e
 
         with pytest.raises(OnexError) as exc_info:
             outer_function()
 
         assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
-        assert isinstance(exc_info.value.cause, ValueError)
+        assert isinstance(exc_info.value.__cause__, ValueError)
 
     def test_error_context_serialization(self):
         """Test that error context can be serialized."""
-        context = ModelErrorContext(
+        error = OnexError(
+            "Test error",
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             file_path="/test/file.py",
             line_number=42,
-            additional_context={
-                "key": ModelSchemaValue.from_value("value"),
-            },
-        )
-
-        error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Test error",
-            details=context,
+            key="value",
         )
 
         # Serialize the context
-        serialized = error.details.serialize()
+        serialized = error.context
 
         assert isinstance(serialized, dict)
         assert serialized["file_path"] == "/test/file.py"
         assert serialized["line_number"] == 42
+        assert serialized["key"] == "value"
 
     def test_multiple_errors_with_same_code(self):
         """Test creating multiple errors with the same error code."""
         errors = [
             OnexError(
+                f"Error {i}",
                 error_code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Error {i}",
             )
             for i in range(5)
         ]
@@ -524,16 +478,14 @@ class TestOnexErrorIntegration:
 
     def test_error_with_context_validation(self):
         """Test that error context can be validated."""
-        context = ModelErrorContext(
+        error = OnexError(
+            "Test error",
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             file_path="/test/file.py",
             line_number=42,
         )
 
-        error = OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
-            message="Test error",
-            details=context,
-        )
-
-        # Context should be valid
-        assert error.details.validate_instance() is True
+        # Context should be accessible and valid
+        assert error._simple_context.file_path == "/test/file.py"
+        assert error._simple_context.line_number == 42
+        assert isinstance(error._simple_context, BasicErrorContext)
