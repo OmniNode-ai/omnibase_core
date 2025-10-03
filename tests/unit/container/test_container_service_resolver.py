@@ -19,8 +19,7 @@ from omnibase_core.container.container_service_resolver import (
     bind_get_service_method,
     create_get_service_method,
 )
-from omnibase_core.errors.error_codes import CoreErrorCode
-from omnibase_core.exceptions import OnexError
+from omnibase_core.errors import CoreErrorCode, OnexError
 from omnibase_core.models.container.model_service import ModelService
 
 

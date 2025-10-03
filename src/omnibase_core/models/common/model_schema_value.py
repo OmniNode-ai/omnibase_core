@@ -3,12 +3,31 @@ Model for representing schema values with proper type safety.
 
 This model replaces Any type usage in schema definitions by providing
 a structured representation of possible schema values.
+
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is part of a carefully managed import chain to avoid circular dependencies.
+
+Safe Runtime Imports:
+- omnibase_core.errors.error_codes (imports only from types.core_types and enums)
+- omnibase_core.models.common.model_numeric_value (no circular risk)
+- pydantic, typing (standard library)
+
+Import Chain Position:
+1. errors.error_codes → types.core_types
+2. THIS MODULE → errors.error_codes (OK - no circle)
+3. types.constraints → TYPE_CHECKING import of errors.error_codes
+4. models.* → types.constraints
+
+This module can safely import error_codes because error_codes only imports
+from types.core_types (not from models or types.constraints).
 """
 
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+# Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 

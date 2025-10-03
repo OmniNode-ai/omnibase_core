@@ -37,6 +37,28 @@ Exit Code Conventions:
 - 6: Info (EnumOnexStatus.INFO)
 
 Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
+
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is part of a carefully managed import chain to avoid circular dependencies.
+
+Safe Runtime Imports (OK to import at module level):
+- omnibase_core.enums.* (no dependencies on this module)
+- omnibase_core.types.core_types (minimal types, no dependencies on this module)
+- Standard library modules
+
+Type-Only Imports (MUST use TYPE_CHECKING guard):
+- omnibase_core.models.* (imports from types.constraints, which references this module)
+- Any module that directly/indirectly imports from types.constraints
+
+Import Chain:
+1. types.core_types (minimal types, no external deps)
+2. THIS MODULE (errors.error_codes) → imports types.core_types
+3. models.common.model_schema_value → imports THIS MODULE
+4. types.constraints → TYPE_CHECKING import of THIS MODULE
+5. models.* → imports types.constraints
+
+Breaking this chain (e.g., adding runtime import from models.*) will cause circular import!
 """
 
 import re
@@ -47,9 +69,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# Safe runtime imports - no circular dependency risk
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.types.core_types import BasicErrorContext
 
+# Type-only imports - protected by TYPE_CHECKING to prevent circular imports
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_error_context import ModelErrorContext
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -166,11 +190,15 @@ class CoreErrorCode(OnexErrorCode):
     DIRECTORY_NOT_FOUND = "ONEX_CORE_024_DIRECTORY_NOT_FOUND"
     PERMISSION_DENIED = "ONEX_CORE_025_PERMISSION_DENIED"
     FILE_OPERATION_ERROR = "ONEX_CORE_026_FILE_OPERATION_ERROR"
+    FILE_ACCESS_ERROR = "ONEX_CORE_027_FILE_ACCESS_ERROR"
+    NOT_FOUND = "ONEX_CORE_028_NOT_FOUND"
+    PERMISSION_ERROR = "ONEX_CORE_029_PERMISSION_ERROR"
 
     # Configuration errors (041-060)
     INVALID_CONFIGURATION = "ONEX_CORE_041_INVALID_CONFIGURATION"
     CONFIGURATION_NOT_FOUND = "ONEX_CORE_042_CONFIGURATION_NOT_FOUND"
     CONFIGURATION_PARSE_ERROR = "ONEX_CORE_043_CONFIGURATION_PARSE_ERROR"
+    CONFIGURATION_ERROR = "ONEX_CORE_044_CONFIGURATION_ERROR"
 
     # Registry errors (061-080)
     REGISTRY_NOT_FOUND = "ONEX_CORE_061_REGISTRY_NOT_FOUND"
@@ -192,6 +220,8 @@ class CoreErrorCode(OnexErrorCode):
     INTERNAL_ERROR = "ONEX_CORE_089_INTERNAL_ERROR"
     NETWORK_ERROR = "ONEX_CORE_090_NETWORK_ERROR"
     MIGRATION_ERROR = "ONEX_CORE_091_MIGRATION_ERROR"
+    TIMEOUT_ERROR = "ONEX_CORE_092_TIMEOUT_ERROR"
+    RESOURCE_ERROR = "ONEX_CORE_093_RESOURCE_ERROR"
 
     # Test and development errors (101-120)
     TEST_SETUP_FAILED = "ONEX_CORE_101_TEST_SETUP_FAILED"
@@ -204,6 +234,7 @@ class CoreErrorCode(OnexErrorCode):
     DEPENDENCY_UNAVAILABLE = "ONEX_CORE_122_DEPENDENCY_UNAVAILABLE"
     VERSION_INCOMPATIBLE = "ONEX_CORE_123_VERSION_INCOMPATIBLE"
     IMPORT_ERROR = "ONEX_CORE_124_IMPORT_ERROR"
+    DEPENDENCY_ERROR = "ONEX_CORE_125_DEPENDENCY_ERROR"
 
     # Database errors (131-140)
     DATABASE_CONNECTION_ERROR = "ONEX_CORE_131_DATABASE_CONNECTION_ERROR"
@@ -259,10 +290,14 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     CoreErrorCode.DIRECTORY_NOT_FOUND: CLIExitCode.ERROR,
     CoreErrorCode.PERMISSION_DENIED: CLIExitCode.ERROR,
     CoreErrorCode.FILE_OPERATION_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.FILE_ACCESS_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.NOT_FOUND: CLIExitCode.ERROR,
+    CoreErrorCode.PERMISSION_ERROR: CLIExitCode.ERROR,
     # Configuration errors -> ERROR
     CoreErrorCode.INVALID_CONFIGURATION: CLIExitCode.ERROR,
     CoreErrorCode.CONFIGURATION_NOT_FOUND: CLIExitCode.ERROR,
     CoreErrorCode.CONFIGURATION_PARSE_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.CONFIGURATION_ERROR: CLIExitCode.ERROR,
     # Registry errors -> ERROR
     CoreErrorCode.REGISTRY_NOT_FOUND: CLIExitCode.ERROR,
     CoreErrorCode.REGISTRY_INITIALIZATION_FAILED: CLIExitCode.ERROR,
@@ -280,6 +315,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     CoreErrorCode.INTERNAL_ERROR: CLIExitCode.ERROR,
     CoreErrorCode.NETWORK_ERROR: CLIExitCode.ERROR,
     CoreErrorCode.MIGRATION_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.TIMEOUT_ERROR: CLIExitCode.ERROR,
+    CoreErrorCode.RESOURCE_ERROR: CLIExitCode.ERROR,
     # Database errors -> ERROR
     CoreErrorCode.DATABASE_CONNECTION_ERROR: CLIExitCode.ERROR,
     CoreErrorCode.DATABASE_OPERATION_ERROR: CLIExitCode.ERROR,
@@ -332,9 +369,13 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
         CoreErrorCode.DIRECTORY_NOT_FOUND: "Directory not found",
         CoreErrorCode.PERMISSION_DENIED: "Permission denied",
         CoreErrorCode.FILE_OPERATION_ERROR: "File operation failed",
+        CoreErrorCode.FILE_ACCESS_ERROR: "File access error",
+        CoreErrorCode.NOT_FOUND: "Resource not found",
+        CoreErrorCode.PERMISSION_ERROR: "Permission error",
         CoreErrorCode.INVALID_CONFIGURATION: "Invalid configuration",
         CoreErrorCode.CONFIGURATION_NOT_FOUND: "Configuration not found",
         CoreErrorCode.CONFIGURATION_PARSE_ERROR: "Configuration parse error",
+        CoreErrorCode.CONFIGURATION_ERROR: "Configuration error",
         CoreErrorCode.REGISTRY_NOT_FOUND: "Registry not found",
         CoreErrorCode.REGISTRY_INITIALIZATION_FAILED: "Registry initialization failed",
         CoreErrorCode.ITEM_NOT_REGISTERED: "Item not registered",
@@ -350,9 +391,16 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
         CoreErrorCode.INTERNAL_ERROR: "Internal error occurred",
         CoreErrorCode.NETWORK_ERROR: "Network error occurred",
         CoreErrorCode.MIGRATION_ERROR: "Migration error occurred",
+        CoreErrorCode.TIMEOUT_ERROR: "Timeout error occurred",
+        CoreErrorCode.RESOURCE_ERROR: "Resource error occurred",
         CoreErrorCode.DATABASE_CONNECTION_ERROR: "Database connection failed",
         CoreErrorCode.DATABASE_OPERATION_ERROR: "Database operation failed",
         CoreErrorCode.DATABASE_QUERY_ERROR: "Database query failed",
+        CoreErrorCode.MODULE_NOT_FOUND: "Module not found",
+        CoreErrorCode.DEPENDENCY_UNAVAILABLE: "Dependency unavailable",
+        CoreErrorCode.VERSION_INCOMPATIBLE: "Version incompatible",
+        CoreErrorCode.IMPORT_ERROR: "Import error occurred",
+        CoreErrorCode.DEPENDENCY_ERROR: "Dependency error occurred",
         CoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
         CoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
         CoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",

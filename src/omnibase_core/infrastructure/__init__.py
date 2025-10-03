@@ -3,13 +3,6 @@
 This module contains node bases and infrastructure services.
 """
 
-# Service bases removed - depend on archived mixins
-# from omnibase_core.infrastructure.node_compute_service import NodeComputeService
-# from omnibase_core.infrastructure.infrastructure_service_bases import (
-#     NodeEffectService,
-#     NodeReducerService,
-#     NodeOrchestratorService,
-# )
 from omnibase_core.infrastructure.node_architecture_validation import (
     NodeArchitectureValidator,
 )
@@ -28,11 +21,6 @@ __all__ = [
     "NodeReducer",
     "NodeOrchestrator",
     "NodeCoreBase",
-    # Services removed - depend on archived mixins
-    # "NodeComputeService",
-    # "NodeEffectService",
-    # "NodeReducerService",
-    # "NodeOrchestratorService",
     # Validation
     "NodeArchitectureValidator",
 ]

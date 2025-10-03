@@ -3,16 +3,33 @@ Document Freshness Error Classes
 
 Structured error classes for document freshness monitoring operations.
 Extends OmniBaseError with specific error codes and contexts.
+
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is imported by errors/__init__.py, which is imported when error_codes is imported.
+Therefore, this module MUST NOT import from models at runtime to avoid circular dependencies.
+
+Import Chain:
+1. errors.error_codes (safe - only imports types.core_types)
+2. errors/__init__.py → imports error_codes AND this module
+3. THIS MODULE → MUST NOT import models.* at runtime (use TYPE_CHECKING)
+4. models.common.model_schema_value → imports errors.error_codes
+
+Breaking this chain (adding runtime import from models) will cause circular import!
 """
 
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from omnibase_core.enums.enum_document_freshness_errors import (
     EnumDocumentFreshnessErrorCodes,
 )
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+# Type-only imports - MUST stay under TYPE_CHECKING to prevent circular imports
+if TYPE_CHECKING:
+    from omnibase_core.models.common.model_error_context import ModelErrorContext
+    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class DocumentFreshnessError(OnexError):
@@ -27,7 +44,7 @@ class DocumentFreshnessError(OnexError):
         self,
         error_code: EnumDocumentFreshnessErrorCodes,
         message: str,
-        details: ModelErrorContext | None = None,
+        details: "ModelErrorContext | None" = None,
         correlation_id: UUID | None = None,
         file_path: str | None = None,
     ):
@@ -37,7 +54,7 @@ class DocumentFreshnessError(OnexError):
         Args:
             error_code: Standardized error code from enum
             message: Human-readable error message
-            details: Additional context information
+            details: Additional context information (ModelErrorContext)
             correlation_id: Correlation ID for request tracing
             file_path: File path related to the error
         """
@@ -49,10 +66,14 @@ class DocumentFreshnessError(OnexError):
         # Convert to appropriate core error code based on document freshness error type
         core_error_code = self._map_to_core_error_code(error_code)
 
-        # Build details dict
-        error_details = {}
+        # Build details dict using duck typing to avoid importing ModelErrorContext
+        error_details: dict[str, Any] = {}
         if details:
-            error_details.update(details.model_dump())
+            # Use duck typing - if it has model_dump(), call it
+            if hasattr(details, "model_dump"):
+                error_details.update(details.model_dump())
+            elif isinstance(details, dict):
+                error_details.update(details)
         if correlation_id:
             error_details["correlation_id"] = str(correlation_id)
         if file_path:
@@ -197,8 +218,17 @@ class DocumentFreshnessError(OnexError):
         # Default fallback for any unmapped errors
         return CoreErrorCode.OPERATION_FAILED
 
-    def to_dict(self) -> dict[str, ModelSchemaValue]:
-        """Convert error to dictionary for serialization."""
+    def to_dict(self) -> dict[str, "ModelSchemaValue"]:
+        """
+        Convert error to dictionary for serialization.
+
+        Uses lazy import of ModelSchemaValue to avoid circular dependencies.
+        This import is only triggered when the method is called, not at module load time.
+        """
+        # LAZY IMPORT: Only load ModelSchemaValue when this method is called
+        # This prevents circular dependency at module import time
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
         # Custom error serialization with correlation and file path
         core_code = self.model.error_code
         core_code_str = (

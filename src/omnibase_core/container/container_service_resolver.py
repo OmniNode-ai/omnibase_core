@@ -10,8 +10,7 @@ from collections.abc import Callable
 from typing import TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
-from omnibase_core.errors.error_codes import CoreErrorCode
-from omnibase_core.exceptions import OnexError
+from omnibase_core.errors import CoreErrorCode, OnexError
 
 # DELETED: not needed import create_hybrid_event_bus
 from omnibase_core.models.container.model_service import ModelService
