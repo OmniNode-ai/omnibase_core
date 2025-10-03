@@ -12,8 +12,8 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import Field, model_validator
 
-from omnibase_core.core.type_constraints import PrimitiveValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.constraints import PrimitiveValueType
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -141,7 +141,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                     self.string_fields[key] = str(value)
 
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
     def get_field(self, key: str, default: Any = None) -> Any:
@@ -183,7 +185,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 custom_fields = getattr(self, "custom_fields", {})
                 return custom_fields[key]
             return default
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: get_field returns default value on error for graceful field access
             return default
 
     def get_string(self, key: str, default: str = "") -> str:
@@ -296,7 +300,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 del custom_fields[key]
                 removed = True
             return removed
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: remove_field method signature returns bool for success/failure rather than raising
             return False
 
     def get_field_count(self) -> int:
@@ -511,7 +517,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             # Since PrimitiveValueType is object, this is safe at runtime
             self.custom_fields[key] = raw_value
             return True
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising
             return False
 
     def has_custom_field(self, key: str) -> bool:
@@ -533,7 +541,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 del self.custom_fields[key]
                 return True
             return False
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: remove_custom_field method signature returns bool for success/failure rather than raising
             return False
 
     # Protocol method implementations
@@ -545,7 +555,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -558,7 +568,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def get_name(self) -> str:

@@ -34,7 +34,7 @@ All ONEX errors inherit from the `OnexError` base class which provides structure
 from omnibase_core.exceptions.base_onex_error import OnexError
 from uuid import UUID
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import UTC, datetime
 
 class OnexError(Exception):
     """
@@ -69,7 +69,7 @@ class OnexError(Exception):
         self.correlation_id = correlation_id
         self.error_code = error_code
         self.error_context = error_context or {}
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)
         self.component = component
         self.operation = operation
         self.recoverable = recoverable
@@ -642,7 +642,7 @@ class CircuitBreaker:
 
     async def _update_state(self):
         """Update circuit breaker state based on current conditions."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         if self.state == CircuitBreakerState.OPEN:
             # Check if recovery timeout has passed
@@ -660,7 +660,7 @@ class CircuitBreaker:
 
     async def _record_success(self):
         """Record successful operation."""
-        self.last_success_time = datetime.utcnow()
+        self.last_success_time = datetime.now(UTC)
 
         if self.state == CircuitBreakerState.HALF_OPEN:
             self.success_count += 1
@@ -670,7 +670,7 @@ class CircuitBreaker:
 
     async def _record_failure(self):
         """Record failed operation."""
-        self.last_failure_time = datetime.utcnow()
+        self.last_failure_time = datetime.now(UTC)
         self.failure_count += 1
 
         if (self.state == CircuitBreakerState.CLOSED and
@@ -1128,7 +1128,7 @@ class GracefulDegradationMixin:
             "service_name": service_name,
             "degradation_reason": self.degradation_reasons.get(service_name),
             "correlation_id": str(correlation_id) if correlation_id else None,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         }
 
     def get_service_health(self) -> Dict[str, Any]:
@@ -1214,7 +1214,7 @@ class ErrorMetricsCollector:
         metrics.append({
             "metric_name": "onex.error.count",
             "value": 1,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": error.correlation_id or UUID("00000000-0000-0000-0000-000000000000"),
             "unit": "count",
             "tags": {
@@ -1234,7 +1234,7 @@ class ErrorMetricsCollector:
             metrics.append({
                 "metric_name": "onex.error.duration",
                 "value": error.error_context["duration_ms"],
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(UTC),
                 "component_id": error.correlation_id or UUID("00000000-0000-0000-0000-000000000000"),
                 "unit": "ms",
                 "tags": {
@@ -1262,7 +1262,7 @@ class ErrorMetricsCollector:
         metric = {
             "metric_name": "onex.error.recovery.success",
             "value": 1,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": correlation_id,
             "unit": "count",
             "tags": {
@@ -1314,7 +1314,7 @@ class ErrorAlertManager:
     ):
         """Trigger alert for error threshold breach."""
         alert_key = f"{component}:{error.error_code}"
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Rate limit alerts (max one per hour for same error type)
         last_alert = self.last_alert_times.get(alert_key)

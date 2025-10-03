@@ -8,13 +8,12 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from __future__ import annotations
 
 from typing import Any, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Workflow types - using EnumWorkflowType from enums package
@@ -24,8 +23,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 class ModelWorkflowExecutionContext(BaseModel):
     """Structured workflow execution context."""
 
-    execution_id: str = Field(
-        default="",
+    execution_id: UUID = Field(
+        default_factory=uuid4,
         description="Unique workflow execution identifier",
     )
     parent_execution_id: UUID | None = Field(
@@ -331,7 +330,7 @@ class ModelWorkflowPayload(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

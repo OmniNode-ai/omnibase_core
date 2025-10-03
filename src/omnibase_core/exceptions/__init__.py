@@ -2,10 +2,9 @@
 Omnibase Core - Exception Definitions
 
 Exception classes for ONEX architecture error handling.
+
+All exception implementations are located in omnibase_core.errors.
+Import from that module directly.
 """
 
-from .onex_error import OnexError
-
-__all__ = [
-    "OnexError",
-]
+__all__: list[str] = []

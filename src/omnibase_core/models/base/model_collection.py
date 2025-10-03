@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class BaseCollection(ABC, BaseModel, Generic[T]):
+class ModelBaseCollection(ABC, BaseModel, Generic[T]):
     """Abstract base class for typed collections."""
 
     @abstractmethod
@@ -55,4 +55,4 @@ class BaseCollection(ABC, BaseModel, Generic[T]):
 
 
 # Export the model
-__all__ = ["BaseCollection"]
+__all__ = ["ModelBaseCollection"]

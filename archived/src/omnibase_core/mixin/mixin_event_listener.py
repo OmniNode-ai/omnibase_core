@@ -18,10 +18,8 @@ from typing import Generic, TypeVar
 
 from pydantic import ValidationError
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 

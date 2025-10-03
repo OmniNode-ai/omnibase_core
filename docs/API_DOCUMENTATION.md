@@ -890,7 +890,7 @@ class TypedDictPerformanceMetricData(TypedDict):
         metric_data: TypedDictPerformanceMetricData = {
             "metric_name": "response_time",
             "value": 245.7,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "component_id": UUID("12345678-1234-5678-9012-123456789abc"),
             "unit": "ms",
             "tags": {
@@ -957,7 +957,7 @@ except ValidationError as e:
         error_context={
             "contract_type": type(contract).__name__,
             "validation_errors": e.errors(),
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(UTC)
         }
     ) from e
 ```

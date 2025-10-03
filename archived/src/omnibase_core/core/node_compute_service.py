@@ -5,8 +5,8 @@ Base class for compute nodes that need service capabilities.
 Handles boilerplate initialization for NodeCompute + MixinNodeService + MixinNodeIdFromContract.
 """
 
-from omnibase_core.core.node_compute import NodeCompute
 from omnibase_core.core.onex_container import ModelONEXContainer
+from omnibase_core.infrastructure.node_compute import NodeCompute
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixin.mixin_node_service import MixinNodeService

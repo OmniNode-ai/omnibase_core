@@ -9,8 +9,8 @@ import contextlib
 import time
 
 from omnibase_core.core.constants.event_types import CoreEventTypes
-from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery.enum_node_current_status import (
     NodeCurrentStatusEnum,
@@ -129,8 +129,8 @@ class MixinRequestResponseIntrospection:
         Args:
             envelope_or_event: The envelope or event to handle
         """
-        from omnibase_core.core.core_structured_logging import emit_log_event_sync
         from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+        from omnibase_core.logging.structured import emit_log_event_sync
 
         # Extract event from envelope if needed
         if hasattr(envelope_or_event, "payload"):

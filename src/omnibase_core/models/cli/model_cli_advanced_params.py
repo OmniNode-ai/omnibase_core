@@ -16,10 +16,9 @@ from pydantic import BaseModel, Field, field_validator
 # through runtime validation in ModelCliValue.from_any().
 CliConvertibleValue = object
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_output_format_options import ModelOutputFormatOptions
@@ -143,7 +142,10 @@ class ModelCliAdvancedParams(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for node_config_overrides."""
         if not isinstance(v, dict):
-            raise ValueError("node_config_overrides must be a dictionary")
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="node_config_overrides must be a dictionary",
+            )
 
         result = {}
         for key, value in v.items():
@@ -169,7 +171,10 @@ class ModelCliAdvancedParams(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_parameters."""
         if not isinstance(v, dict):
-            raise ValueError("custom_parameters must be a dictionary")
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="custom_parameters must be a dictionary",
+            )
 
         result = {}
         for key, value in v.items():
@@ -196,7 +201,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Set timeout with validation."""
         if seconds <= 0:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Timeout must be positive",
             )
         self.timeout_seconds = seconds
@@ -205,7 +210,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Set memory limit with validation."""
         if mb <= 0:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Memory limit must be positive",
             )
         self.memory_limit_mb = mb
@@ -214,7 +219,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Set CPU limit with validation."""
         if not 0.0 <= percent <= 100.0:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="CPU limit must be between 0.0 and 100.0",
             )
         self.cpu_limit_percent = percent
@@ -287,8 +292,11 @@ class ModelCliAdvancedParams(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     model_config = {
         "extra": "ignore",

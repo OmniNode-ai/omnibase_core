@@ -17,8 +17,7 @@ from pydantic import (
     model_validator,
 )
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -84,7 +83,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                         f"Must be one of {valid_values}"
                     )
                     raise OnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        code=CoreErrorCode.VALIDATION_ERROR,
                         message=message,
                         details=ModelErrorContext.with_context(
                             {
@@ -100,7 +99,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
             # Invalid type
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Category must be None or EnumActionCategory, got {type(v)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -130,7 +129,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 "numbers, and underscores"
             )
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=message,
                 details=ModelErrorContext.with_context(
                     {
@@ -295,5 +294,8 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e

@@ -227,6 +227,26 @@ class NamingConventionValidator:
                 return True
         return False
 
+    def _is_basemodel_class(self, node: ast.ClassDef) -> bool:
+        """Check if a class definition inherits from Pydantic BaseModel."""
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id == "BaseModel":
+                return True
+            # Handle cases like pydantic.BaseModel
+            if isinstance(base, ast.Attribute) and base.attr == "BaseModel":
+                return True
+        return False
+
+    def _is_enum_class(self, node: ast.ClassDef) -> bool:
+        """Check if a class definition inherits from Enum."""
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id == "Enum":
+                return True
+            # Handle cases like enum.Enum
+            if isinstance(base, ast.Attribute) and base.attr == "Enum":
+                return True
+        return False
+
     def _contains_relevant_classes(self, content: str, pattern: str) -> bool:
         """Check if file contains classes that should match the pattern."""
         try:
@@ -255,6 +275,17 @@ class NamingConventionValidator:
         # Skip TypedDict classes when validating other categories
         # They should only be validated in the typeddicts category
         if category != "typeddicts" and self._is_typeddict_class(node):
+            return
+
+        # Skip BaseModel classes when validating nodes category
+        # BaseModel subclasses are data models and should use "Model" prefix
+        # even if they're located in infrastructure/ alongside node classes
+        if category == "nodes" and self._is_basemodel_class(node):
+            return
+
+        # Skip Enum classes when validating non-enum categories
+        # Enum classes should only be validated in the enums category
+        if category != "enums" and self._is_enum_class(node):
             return
 
         # Check if this file is in the right directory for this category

@@ -80,6 +80,8 @@ class TypedDictAnalyticsSummaryData(TypedDict):
     timestamps: TypedDictTimestampData
 
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
 from .analytics.model_analytics_core import ModelAnalyticsCore
 from .analytics.model_analytics_error_summary import ModelAnalyticsErrorSummary
 from .analytics.model_analytics_error_tracking import ModelAnalyticsErrorTracking
@@ -456,8 +458,11 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -469,8 +474,11 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 # Export for use

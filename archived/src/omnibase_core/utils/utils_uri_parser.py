@@ -55,10 +55,10 @@ See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for UR
 import re
 from pathlib import Path
 
-from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_metadata import UriTypeEnum
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_uri import ModelOnexUri
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 from omnibase_core.protocol.protocol_uri_parser import ProtocolUriParser

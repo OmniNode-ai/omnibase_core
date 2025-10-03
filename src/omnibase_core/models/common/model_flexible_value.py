@@ -11,9 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
@@ -75,7 +74,7 @@ class ModelFlexibleValue(BaseModel):
         if self.value_type == EnumFlexibleValueType.NONE:
             if non_none_count > 0:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="No values should be set when value_type is 'none'",
                     details=ModelErrorContext.with_context(
                         {
@@ -90,7 +89,7 @@ class ModelFlexibleValue(BaseModel):
             # For other types, exactly one value should be set
             if non_none_count != 1:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Exactly one value must be set for value_type '{self.value_type}'",
                     details=ModelErrorContext.with_context(
                         {
@@ -109,7 +108,7 @@ class ModelFlexibleValue(BaseModel):
             expected_value = values_map[self.value_type]
             if expected_value is None:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Required value for type '{self.value_type}' is None",
                     details=ModelErrorContext.with_context(
                         {
@@ -263,7 +262,7 @@ class ModelFlexibleValue(BaseModel):
         if self.value_type == EnumFlexibleValueType.NONE:
             return None
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown value_type: {self.value_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -356,13 +355,14 @@ class ModelFlexibleValue(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = ["ModelFlexibleValue"]

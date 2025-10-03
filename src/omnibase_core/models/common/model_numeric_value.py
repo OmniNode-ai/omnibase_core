@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # Import all dependencies only when needed to break circular imports
 
@@ -53,26 +54,14 @@ class ModelNumericValue(BaseModel):
     @field_validator("value")
     @classmethod
     def validate_value_type(cls, v: object, info: ValidationInfo) -> float:
-        """Validate that value is numeric."""
-        if not isinstance(v, (int, float)):
-            # Use delayed imports to break circular dependencies
-            from omnibase_core.exceptions.onex_error import OnexError
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        """
+        Validate that value is numeric.
 
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Value must be numeric, got {type(v)}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "expected_type": ModelSchemaValue.from_value("int or float"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                        "value": ModelSchemaValue.from_value(str(v)),
-                    },
-                ),
-            )
+        Raises OnexError with VALIDATION_ERROR code for non-numeric values.
+        """
+        if not isinstance(v, (int, float)):
+            msg = f"Value must be numeric (int or float), got {type(v).__name__}"
+            raise OnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
         return float(v)
 
     @classmethod
@@ -190,13 +179,18 @@ class ModelNumericValue(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Note: This is a pure validation method that does NOT throw exceptions
+        to avoid circular dependencies. Use validation layer for exception-based validation.
+
+        Returns:
+            bool: True if validation passes, False otherwise
+        """
+        # Basic validation - Pydantic already ensures value and value_type are set
+        # This method always returns True for properly constructed instances
+        return True
 
 
 __all__ = ["ModelNumericValue"]

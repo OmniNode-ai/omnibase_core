@@ -1,14 +1,14 @@
 """
-Tests for BaseFactory abstract base class.
+Tests for ModelBaseFactory abstract base class.
 
-Validates that BaseFactory works correctly with concrete implementations
+Validates that ModelBaseFactory works correctly with concrete implementations
 and enforces the factory protocol.
 """
 
 import pytest
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.model_base_factory import BaseFactory
+from omnibase_core.models.base.model_factory import ModelBaseFactory
 
 
 # Test models to be created by factories
@@ -28,7 +28,7 @@ class User(BaseModel):
     active: bool = True
 
 
-class ConcreteProductFactory(BaseFactory[Product]):
+class ConcreteProductFactory(ModelBaseFactory[Product]):
     """Concrete factory for creating products."""
 
     default_category: str = Field(default="general")
@@ -46,7 +46,7 @@ class ConcreteProductFactory(BaseFactory[Product]):
         return type_name in self.supported_types
 
 
-class UserFactory(BaseFactory[User]):
+class UserFactory(ModelBaseFactory[User]):
     """Concrete factory for creating users."""
 
     domain: str = Field(default="example.com")
@@ -63,19 +63,19 @@ class UserFactory(BaseFactory[User]):
         return type_name in ["standard", "admin", "guest"]
 
 
-class TestBaseFactoryAbstract:
-    """Test that BaseFactory enforces abstract methods."""
+class TestModelBaseFactoryAbstract:
+    """Test that ModelBaseFactory enforces abstract methods."""
 
     def test_cannot_instantiate_abstract_class(self):
-        """Test that BaseFactory cannot be instantiated directly."""
+        """Test that ModelBaseFactory cannot be instantiated directly."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            BaseFactory()  # type: ignore[abstract]
+            ModelBaseFactory()  # type: ignore[abstract]
 
     def test_missing_create_method(self):
         """Test that implementations must define create."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
 
-            class IncompleteFactory(BaseFactory[Product]):
+            class IncompleteFactory(ModelBaseFactory[Product]):
                 def can_create(self, type_name: str) -> bool:
                     return True
 
@@ -85,7 +85,7 @@ class TestBaseFactoryAbstract:
         """Test that implementations must define can_create."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
 
-            class IncompleteFactory(BaseFactory[Product]):
+            class IncompleteFactory(ModelBaseFactory[Product]):
                 def create(self, **kwargs: object) -> Product:
                     return Product(name="test", price=0.0)
 
@@ -250,7 +250,7 @@ class TestFactoryEdgeCases:
     def test_create_with_no_kwargs(self):
         """Test create with no keyword arguments."""
 
-        class SimpleFactory(BaseFactory[Product]):
+        class SimpleFactory(ModelBaseFactory[Product]):
             def create(self, **kwargs: object) -> Product:
                 return Product(name="default", price=0.0, **kwargs)  # type: ignore[arg-type]
 
@@ -281,7 +281,7 @@ class TestFactoryEdgeCases:
     def test_can_create_none_type(self):
         """Test can_create with None."""
 
-        class FlexibleFactory(BaseFactory[Product]):
+        class FlexibleFactory(ModelBaseFactory[Product]):
             def create(self, **kwargs: object) -> Product:
                 return Product(name="test", price=0.0)
 
@@ -379,7 +379,7 @@ class TestFactoryWithComplexTypes:
             name: str
             address: Address
 
-        class PersonFactory(BaseFactory[Person]):
+        class PersonFactory(ModelBaseFactory[Person]):
             default_city: str = "Unknown"
 
             def create(self, **kwargs: object) -> Person:

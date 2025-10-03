@@ -19,9 +19,9 @@ from typing import Any
 import pytest
 
 from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.core.node_loader import NodeLoader
 from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.infrastructure.node_effect import EffectType, ModelEffectInput
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 
 

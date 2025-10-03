@@ -15,8 +15,7 @@ from typing import TypedDict, cast
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_contract_data_type import EnumContractDataType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -246,7 +245,7 @@ class ModelSubcontractConstraintValidator:
         # Raise validation error if any violations found
         if violations:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="\n".join(violations),
                 details=ModelErrorContext.with_context(
                     {

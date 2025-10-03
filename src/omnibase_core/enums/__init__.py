@@ -4,6 +4,11 @@ Omnibase Core - Enumerations
 Enumeration definitions for ONEX architecture with strong typing support.
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.errors import OnexError
+
 from .enum_action_category import EnumActionCategory
 from .enum_artifact_type import EnumArtifactType
 from .enum_auth_type import EnumAuthType
@@ -36,6 +41,7 @@ from .enum_data_format import EnumDataFormat
 from .enum_data_type import EnumDataType
 from .enum_debug_level import EnumDebugLevel
 from .enum_difficulty_level import EnumDifficultyLevel
+from .enum_document_freshness_errors import EnumDocumentFreshnessErrorCodes
 from .enum_edit_mode import EnumEditMode
 from .enum_effect_parameter_type import EnumEffectParameterType
 from .enum_entity_type import EnumEntityType
@@ -100,11 +106,35 @@ from .enum_security_level import EnumSecurityLevel
 from .enum_severity_level import EnumSeverityLevel
 from .enum_status import EnumStatus
 from .enum_status_message import EnumStatusMessage
-from .enum_status_migration import (
-    EnumStatusMigrationValidator,
-    EnumStatusMigrator,
-)
+
+# Lazy import to avoid circular dependency with error_codes
+# from .enum_status_migration import (
+#     EnumStatusMigrationValidator,
+#     EnumStatusMigrator,
+# )
 from .enum_stop_reason import EnumStopReason
+
+
+def __getattr__(name: str) -> type:
+    """Lazy import for enum_status_migration to avoid circular dependency."""
+    if name in ("EnumStatusMigrationValidator", "EnumStatusMigrator"):
+        from .enum_status_migration import (
+            EnumStatusMigrationValidator,
+            EnumStatusMigrator,
+        )
+
+        return (
+            EnumStatusMigrationValidator
+            if name == "EnumStatusMigrationValidator"
+            else EnumStatusMigrator
+        )
+    # Lazy import to avoid circular dependency
+    from omnibase_core.errors import OnexError
+
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise OnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+
+
 from .enum_table_alignment import EnumTableAlignment
 from .enum_time_period import EnumTimePeriod
 from .enum_time_unit import EnumTimeUnit
@@ -159,6 +189,7 @@ __all__ = [
     "EnumDataType",
     "EnumDebugLevel",
     "EnumDifficultyLevel",
+    "EnumDocumentFreshnessErrorCodes",
     "EnumEditMode",
     "EnumEffectParameterType",
     "EnumEntityType",

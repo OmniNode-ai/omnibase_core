@@ -639,8 +639,8 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase_core.core.core_bootstrap import emit_log_event_sync
         from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+        from omnibase_core.infrastructure.bootstrap import emit_log_event_sync
 
         exit_code = get_exit_code_for_status(status)
 
@@ -679,8 +679,8 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase_core.core.core_bootstrap import emit_log_event_sync
         from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+        from omnibase_core.infrastructure.bootstrap import emit_log_event_sync
 
         exit_code = getattr(error, "code", "UNKNOWN_ERROR")
         emit_log_event_sync(

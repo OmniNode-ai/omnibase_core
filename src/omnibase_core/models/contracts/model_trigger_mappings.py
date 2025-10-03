@@ -11,8 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelTriggerMappings(BaseModel):
@@ -119,14 +118,14 @@ class ModelTriggerMappings(BaseModel):
 
             if len(key) > 500:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Mapping key '{key}' too long. Maximum 500 characters.",
                 )
 
             # Validate value
             if not isinstance(value, str):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Mapping value for key '{key}' must be a string, got {type(value)}",
                 )
 
@@ -136,7 +135,7 @@ class ModelTriggerMappings(BaseModel):
 
             if len(value) > 500:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Mapping value '{value}' too long. Maximum 500 characters.",
                 )
 
@@ -199,7 +198,7 @@ class ModelTriggerMappings(BaseModel):
 
         if category not in category_mapping:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid mapping category '{category}'. Valid categories: {list(category_mapping.keys())}",
             )
 

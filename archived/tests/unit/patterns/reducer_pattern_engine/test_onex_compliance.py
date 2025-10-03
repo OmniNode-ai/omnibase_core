@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.core.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (

@@ -12,8 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
 )
@@ -45,17 +44,17 @@ class ModelConnectionSecurity(BaseModel):
         if self.use_ssl:
             if self.ssl_cert_path and not self.ssl_cert_path.exists():
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"SSL certificate path does not exist: {self.ssl_cert_path}",
                 )
             if self.ssl_key_path and not self.ssl_key_path.exists():
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"SSL key path does not exist: {self.ssl_key_path}",
                 )
             if self.ssl_ca_path and not self.ssl_ca_path.exists():
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"SSL CA bundle path does not exist: {self.ssl_ca_path}",
                 )
         return self
@@ -158,8 +157,11 @@ class ModelConnectionSecurity(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
@@ -167,8 +169,11 @@ class ModelConnectionSecurity(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

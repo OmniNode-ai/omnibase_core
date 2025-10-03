@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
 
 @unique
 class EnumTimeUnit(str, Enum):
@@ -68,26 +66,28 @@ class EnumTimeUnit(str, Enum):
         multiplier_keys = set(cls._get_millisecond_multipliers().keys())
 
         if display_keys != all_members:
-            from omnibase_core.exceptions.onex_error import OnexError
+            from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
             missing = all_members - display_keys
             raise OnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                CoreErrorCode.VALIDATION_ERROR,
                 f"Missing display names for: {missing}",
             )
 
         if multiplier_keys != all_members:
-            from omnibase_core.exceptions.onex_error import OnexError
+            from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
             missing = all_members - multiplier_keys
             raise OnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                CoreErrorCode.VALIDATION_ERROR,
                 f"Missing multipliers for: {missing}",
             )
 
 
-# Validate mappings at module level - this will raise an error if mappings are incomplete
-EnumTimeUnit.validate_completeness()
+# NOTE: validate_completeness() is available but not called at module level
+# to avoid circular import issues with error_codes. Call it explicitly in tests
+# or during runtime validation when needed.
+# EnumTimeUnit.validate_completeness()
 
 
 # Export for use

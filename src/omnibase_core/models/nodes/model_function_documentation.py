@@ -11,8 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .model_types_function_documentation_summary import (
     ModelFunctionDocumentationSummaryType,
@@ -133,7 +132,7 @@ class ModelFunctionDocumentation(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

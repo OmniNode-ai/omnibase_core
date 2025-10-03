@@ -1,7 +1,7 @@
 """
-Tests for BaseCollection abstract base class.
+Tests for ModelBaseCollection abstract base class.
 
-Validates that BaseCollection works correctly with concrete implementations
+Validates that ModelBaseCollection works correctly with concrete implementations
 and enforces the collection protocol.
 """
 
@@ -10,11 +10,11 @@ from collections.abc import Iterator
 import pytest
 from pydantic import Field
 
-from omnibase_core.core.model_base_collection import BaseCollection
+from omnibase_core.models.base.model_collection import ModelBaseCollection
 
 
-class ConcreteCollection(BaseCollection[str]):
-    """Concrete implementation of BaseCollection for testing."""
+class ConcreteCollection(ModelBaseCollection[str]):
+    """Concrete implementation of ModelBaseCollection for testing."""
 
     items: list[str] = Field(default_factory=list)
 
@@ -42,7 +42,7 @@ class ConcreteCollection(BaseCollection[str]):
         return self.items.copy()
 
 
-class IntegerCollection(BaseCollection[int]):
+class IntegerCollection(ModelBaseCollection[int]):
     """Concrete integer collection for testing."""
 
     values: list[int] = Field(default_factory=list)
@@ -72,19 +72,19 @@ class IntegerCollection(BaseCollection[int]):
         return self.values[:]
 
 
-class TestBaseCollectionAbstract:
-    """Test that BaseCollection enforces abstract methods."""
+class TestModelBaseCollectionAbstract:
+    """Test that ModelBaseCollection enforces abstract methods."""
 
     def test_cannot_instantiate_abstract_class(self):
-        """Test that BaseCollection cannot be instantiated directly."""
+        """Test that ModelBaseCollection cannot be instantiated directly."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            BaseCollection()  # type: ignore[abstract]
+            ModelBaseCollection()  # type: ignore[abstract]
 
     def test_missing_add_item_method(self):
         """Test that implementations must define add_item."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
 
-            class IncompleteCollection(BaseCollection[str]):
+            class IncompleteCollection(ModelBaseCollection[str]):
                 def remove_item(self, item: str) -> bool:
                     return True
 
@@ -103,7 +103,7 @@ class TestBaseCollectionAbstract:
         """Test that implementations must define remove_item."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
 
-            class IncompleteCollection(BaseCollection[str]):
+            class IncompleteCollection(ModelBaseCollection[str]):
                 def add_item(self, item: str) -> None:
                     pass
 

@@ -7,12 +7,10 @@ Provides consistent type string generation across all ONEX tools.
 
 import re
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_schema import ModelSchema
 
 
@@ -93,10 +91,10 @@ class UtilityTypeMapper:
 
         # Handle string with format specifiers
         if schema.schema_type == "string" and schema.format:
-            from omnibase_core.core.core_structured_logging import (
+            from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+            from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
             )
-            from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
             emit_log_event(
                 LogLevel.INFO,
@@ -178,10 +176,10 @@ class UtilityTypeMapper:
         first_value = enum_values[0]
 
         # TRACE: Enum name generation
-        from omnibase_core.core.core_structured_logging import (
+        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+        from omnibase_core.logging.structured import (
             emit_log_event_sync as emit_log_event,
         )
-        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         emit_log_event(
             LogLevel.DEBUG,

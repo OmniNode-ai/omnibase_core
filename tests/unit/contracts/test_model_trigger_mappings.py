@@ -18,8 +18,7 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.contracts.model_trigger_mappings import ModelTriggerMappings
 
 
@@ -152,7 +151,7 @@ class TestModelTriggerMappings:
                 },
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "too long" in str(exc_info.value)
         assert "Maximum 500 characters" in str(exc_info.value)
 
@@ -167,7 +166,7 @@ class TestModelTriggerMappings:
                 },
             )
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "too long" in str(exc_info.value)
         assert "Maximum 500 characters" in str(exc_info.value)
 
@@ -400,7 +399,7 @@ class TestModelTriggerMappings:
         with pytest.raises(OnexError) as exc_info:
             mappings.add_mapping("invalid_category", "event", "action")
 
-        assert exc_info.value.code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
         assert "Invalid mapping category" in str(exc_info.value)
 
     def test_add_mapping_with_whitespace_trimming(self):

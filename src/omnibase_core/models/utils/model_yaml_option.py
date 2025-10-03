@@ -8,9 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -68,7 +67,7 @@ class ModelYamlOption(BaseModel):
         if self.option_type == EnumYamlOptionType.STRING:
             return self.string_value
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid option_type: {self.option_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -98,8 +97,11 @@ class ModelYamlOption(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelYamlOption"]

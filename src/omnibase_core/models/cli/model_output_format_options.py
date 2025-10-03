@@ -42,6 +42,7 @@ def allow_dict_any(func: F) -> F:
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
@@ -322,8 +323,11 @@ class ModelOutputFormatOptions(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 # Export for use

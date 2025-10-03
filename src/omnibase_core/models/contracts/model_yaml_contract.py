@@ -13,8 +13,7 @@ This replaces manual YAML field validation with proper Pydantic validation.
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -112,7 +111,7 @@ class ModelYamlContract(BaseModel):
                 )
 
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
                     details=error_context,
                 )
@@ -130,7 +129,7 @@ class ModelYamlContract(BaseModel):
         )
 
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"node_type must be an EnumNodeType enum or valid string, got {type(value).__name__}",
             details=error_context,
         )

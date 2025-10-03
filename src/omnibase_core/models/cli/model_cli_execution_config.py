@@ -13,6 +13,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .model_cli_execution_input_data import ModelCliExecutionInputData
 
@@ -158,8 +159,11 @@ class ModelCliExecutionConfig(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 # Export for use

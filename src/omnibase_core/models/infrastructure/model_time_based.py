@@ -12,10 +12,9 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 T = TypeVar("T", int, float)
 
@@ -69,7 +68,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             main_value = info.data["value"]
             if v >= main_value:
                 msg = "Warning threshold must be less than main value"
-                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     @field_validator("extension_limit_value")
@@ -78,7 +77,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def model_post_init(self, __context: object) -> None:
@@ -381,8 +380,11 @@ class ModelTimeBased(BaseModel, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -391,8 +393,11 @@ class ModelTimeBased(BaseModel, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

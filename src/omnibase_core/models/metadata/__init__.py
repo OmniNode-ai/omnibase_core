@@ -14,12 +14,12 @@ if TYPE_CHECKING:
         )
     except ImportError:
         # Structured fallback type for development when SPI unavailable
-        from omnibase_core.core.type_constraints import BasicValueType
+        from omnibase_core.types.constraints import BasicValueType
 
         ProtocolSupportedMetadataType = BasicValueType
 else:
     # Runtime fallback using structured type constraints
-    from omnibase_core.core.type_constraints import BasicValueType
+    from omnibase_core.types.constraints import BasicValueType
 
     ProtocolSupportedMetadataType = BasicValueType
 

@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import (
     ModelSemVer,
 )
@@ -87,7 +88,10 @@ class ModelExecutionMetadata(BaseModel):
         """Validate execution status is proper enum type."""
         if isinstance(v, EnumExecutionStatusV2):
             return v
-        raise ValueError(f"Status must be EnumExecutionStatusV2, got {type(v)}")
+        raise OnexError(
+            code=CoreErrorCode.VALIDATION_ERROR,
+            message=f"Status must be EnumExecutionStatusV2, got {type(v)}",
+        )
 
     @field_validator("environment", mode="before")
     @classmethod
@@ -95,7 +99,10 @@ class ModelExecutionMetadata(BaseModel):
         """Validate environment is proper enum type."""
         if isinstance(v, EnumEnvironment):
             return v
-        raise ValueError(f"Environment must be EnumEnvironment, got {type(v)}")
+        raise OnexError(
+            code=CoreErrorCode.VALIDATION_ERROR,
+            message=f"Environment must be EnumEnvironment, got {type(v)}",
+        )
 
     # Protocol method implementations
 
@@ -112,8 +119,9 @@ class ModelExecutionMetadata(BaseModel):
                 if isinstance(status_value, EnumExecutionStatusV2):
                     self.status = status_value
                 else:
-                    raise ValueError(
-                        f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
+                    raise OnexError(
+                        code=CoreErrorCode.VALIDATION_ERROR,
+                        message=f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
                     )
             if "end_time" in kwargs:
                 self.end_time = kwargs["end_time"]
@@ -127,33 +135,56 @@ class ModelExecutionMetadata(BaseModel):
             if "cpu_usage_percent" in kwargs:
                 self.cpu_usage_percent = kwargs["cpu_usage_percent"]
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.OPERATION_FAILED,
+                message=f"Failed to execute metadata update: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize execution metadata to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate execution metadata integrity (ProtocolValidatable protocol)."""
-        try:
-            # Validate required fields
-            if not self.execution_id:
-                return False
-            if not self.start_time:
-                return False
-            # Validate logical consistency
-            if self.end_time and self.end_time < self.start_time:
-                return False
-            if self.duration_ms < 0:
-                return False
-            if self.memory_usage_mb < 0 or self.cpu_usage_percent < 0:
-                return False
-            if self.error_count < 0 or self.warning_count < 0:
-                return False
-            return True
-        except Exception:
-            return False
+        """Validate execution metadata integrity (ProtocolValidatable protocol).
+
+        Raises:
+            OnexError: If validation fails with invalid field values
+            Exception: If validation logic fails
+        """
+        # Validate required fields
+        if not self.execution_id:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="execution_id is required",
+            )
+        if not self.start_time:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="start_time is required",
+            )
+        # Validate logical consistency
+        if self.end_time and self.end_time < self.start_time:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="end_time cannot be before start_time",
+            )
+        if self.duration_ms < 0:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="duration_ms cannot be negative",
+            )
+        if self.memory_usage_mb < 0 or self.cpu_usage_percent < 0:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="Resource usage values cannot be negative",
+            )
+        if self.error_count < 0 or self.warning_count < 0:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message="Error and warning counts cannot be negative",
+            )
+        return True
 
 
 # Export for use

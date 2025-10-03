@@ -19,6 +19,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TypedDict
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
 from .patterns import validate_patterns_directory
@@ -69,7 +71,10 @@ class ModelValidationSuite:
     ) -> ValidationResult:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
-            raise ValueError(f"Unknown validation type: {validation_type}")
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown validation type: {validation_type}",
+            )
 
         validator_info = self.validators[validation_type]
         validator_func = validator_info["func"]

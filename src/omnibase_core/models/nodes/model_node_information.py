@@ -11,13 +11,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.enums.enum_status import EnumStatus
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 from .model_node_capabilities_info import ModelNodeCapabilitiesInfo
@@ -330,7 +329,7 @@ class ModelNodeInformation(BaseModel):
                 if value is not None:
                     return str(value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

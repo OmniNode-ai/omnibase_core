@@ -10,8 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Note: Previously had type alias (CliDictValueType)
@@ -49,37 +48,37 @@ class ModelCliValue(BaseModel):
 
         if value_type == EnumCliValueType.STRING and not isinstance(v, str):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="String value type must contain str data",
             )
         if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Integer value type must contain int data",
             )
         if value_type == EnumCliValueType.FLOAT and not isinstance(v, float):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Float value type must contain float data",
             )
         if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Boolean value type must contain bool data",
             )
         if value_type == EnumCliValueType.DICT and not isinstance(v, dict):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Dict value type must contain dict data",
             )
         if value_type == EnumCliValueType.LIST and not isinstance(v, list):
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="List value type must contain list data",
             )
         if value_type == EnumCliValueType.NULL and v is not None:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Null value type must contain None",
             )
 
@@ -183,8 +182,11 @@ class ModelCliValue(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -194,8 +196,11 @@ class ModelCliValue(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -207,8 +212,11 @@ class ModelCliValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 # Export for use

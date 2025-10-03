@@ -13,9 +13,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -74,7 +73,7 @@ class ModelPropertyValue(BaseModel):
             # Type validation based on declared type
             if value_type == EnumPropertyType.STRING and not isinstance(v, str):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be string, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -86,7 +85,7 @@ class ModelPropertyValue(BaseModel):
                 )
             if value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be integer, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -101,7 +100,7 @@ class ModelPropertyValue(BaseModel):
                 (int, float),
             ):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be float, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -113,7 +112,7 @@ class ModelPropertyValue(BaseModel):
                 )
             if value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be boolean, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -129,7 +128,7 @@ class ModelPropertyValue(BaseModel):
                 EnumPropertyType.FLOAT_LIST,
             ) and not isinstance(v, list):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be list, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -144,7 +143,7 @@ class ModelPropertyValue(BaseModel):
                 datetime,
             ):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be datetime, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -156,7 +155,7 @@ class ModelPropertyValue(BaseModel):
                 )
             if value_type == EnumPropertyType.UUID and not isinstance(v, (UUID, str)):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be UUID or string, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -290,7 +289,7 @@ class ModelPropertyValue(BaseModel):
             uuid_value = UUID(value)
         except ValueError as e:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid UUID string format: {value}",
                 details=ModelErrorContext.with_context(
                     {
@@ -326,7 +325,7 @@ class ModelPropertyValue(BaseModel):
         if isinstance(self.value, str):
             return int(self.value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to int",
             details=ModelErrorContext.with_context(
                 {
@@ -348,7 +347,7 @@ class ModelPropertyValue(BaseModel):
         if isinstance(self.value, str):
             return float(self.value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to float",
             details=ModelErrorContext.with_context(
                 {
@@ -380,7 +379,7 @@ class ModelPropertyValue(BaseModel):
             ), f"Expected list type, got {type(self.value)}"
             return list(self.value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to list",
             details=ModelErrorContext.with_context(
                 {
@@ -402,7 +401,7 @@ class ModelPropertyValue(BaseModel):
             ), f"Expected string type for UUID conversion, got {type(self.value)}"
             return UUID(self.value)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to UUID",
             details=ModelErrorContext.with_context(
                 {
@@ -424,27 +423,30 @@ class ModelPropertyValue(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If configuration logic fails
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = ["ModelPropertyValue"]

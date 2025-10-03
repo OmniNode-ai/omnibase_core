@@ -40,28 +40,31 @@ class ModelFsmTransition(BaseModel):
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If execution logic fails
+        """
+        # Update any relevant execution fields
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 # Export for use

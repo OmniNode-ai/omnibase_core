@@ -16,8 +16,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -179,7 +178,7 @@ class ModelCachingSubcontract(BaseModel):
         if v > 16384:  # 16GB
             msg = "max_memory_mb cannot exceed 16GB for safety"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -199,7 +198,7 @@ class ModelCachingSubcontract(BaseModel):
         if v < 0.1:
             msg = "hit_ratio_threshold should be at least 0.1 (10%)"
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {
@@ -221,7 +220,7 @@ class ModelCachingSubcontract(BaseModel):
             if v <= l1_size:
                 msg = "l2_cache_size must be larger than l1_cache_size"
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                     details=ModelErrorContext.with_context(
                         {

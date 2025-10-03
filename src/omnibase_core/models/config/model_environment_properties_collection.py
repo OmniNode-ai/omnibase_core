@@ -10,6 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
 from .model_property_value import ModelPropertyValue
@@ -63,8 +64,11 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -76,8 +80,11 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = [

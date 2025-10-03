@@ -13,6 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -50,27 +51,41 @@ class ModelExampleMetadataSummary(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            OnexError: If configuration fails with details about the failure
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Configuration failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            OnexError: If validation fails with details about the failure
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Instance validation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelExampleMetadataSummary"]

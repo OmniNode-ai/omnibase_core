@@ -11,10 +11,9 @@ from typing import Any, Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelProgressCore(BaseModel):
@@ -76,7 +75,7 @@ class ModelProgressCore(BaseModel):
         """Validate current step doesn't exceed total steps."""
         if self.current_step > self.total_steps:
             msg = "Current step cannot exceed total steps"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return self
 
     def model_post_init(self, __context: object) -> None:
@@ -171,25 +170,29 @@ class ModelProgressCore(BaseModel):
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If execution logic fails
+        """
+        # Update any relevant execution fields
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def configure(self, **kwargs: Any) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception:
-            return False
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            AttributeError: If setting an attribute fails
+            Exception: If configuration logic fails
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

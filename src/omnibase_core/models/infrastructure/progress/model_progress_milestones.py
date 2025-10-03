@@ -11,9 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelProgressMilestones(BaseModel):
@@ -44,7 +43,7 @@ class ModelProgressMilestones(BaseModel):
         for name, percentage in v.items():
             if not 0.0 <= percentage <= 100.0:
                 msg = f"Milestone '{name}' percentage must be between 0.0 and 100.0"
-                raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def check_milestones(self, current_percentage: float) -> list[str]:
@@ -63,7 +62,7 @@ class ModelProgressMilestones(BaseModel):
         """Add a progress milestone."""
         if not 0.0 <= percentage <= 100.0:
             msg = "Milestone percentage must be between 0.0 and 100.0"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         self.milestones[name] = percentage
 
     def remove_milestone(self, name: str) -> bool:
@@ -193,8 +192,11 @@ class ModelProgressMilestones(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -203,8 +205,11 @@ class ModelProgressMilestones(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

@@ -56,7 +56,7 @@ types/
 ```python
 from typing_extensions import TypedDict, NotRequired
 from uuid import UUID
-from datetime import datetime
+from datetime import UTC, datetime
 
 class ContractRequest(TypedDict):
     """
@@ -79,7 +79,7 @@ class ContractRequest(TypedDict):
         ...     "contract_type": "processing",
         ...     "priority": "high",
         ...     "payload": {"data": "example"},
-        ...     "created_at": datetime.utcnow()
+        ...     "created_at": datetime.now(UTC)
         ... }
     """
     contract_id: str
@@ -151,7 +151,7 @@ class EventEnvelope(TypedDict):
         ...     "correlation_id": UUID("12345678-1234-1234-1234-123456789abc"),
         ...     "event_type": "contract.completed",
         ...     "source_node": "COMPUTE",
-        ...     "timestamp": datetime.utcnow(),
+        ...     "timestamp": datetime.now(UTC),
         ...     "payload": {"contract_result": "success"},
         ...     "priority": "normal"
         ... }
@@ -221,7 +221,7 @@ class ErrorContext(TypedDict):
         ...     "error_code": "CONTRACT_INVALID",
         ...     "message": "Invalid contract format",
         ...     "source_node": "EFFECT",
-        ...     "timestamp": datetime.utcnow()
+        ...     "timestamp": datetime.now(UTC)
         ... }
     """
     error_id: str
@@ -407,7 +407,7 @@ IntResponse = GenericResponse[int]
 import pytest
 from types.contract_types import ContractRequest
 from uuid import uuid4
-from datetime import datetime
+from datetime import UTC, datetime
 
 @pytest.fixture
 def valid_contract_request() -> ContractRequest:
@@ -418,7 +418,7 @@ def valid_contract_request() -> ContractRequest:
         "contract_type": "testing",
         "priority": "low",
         "payload": {"test": "data"},
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(UTC)
     })
 
 def test_contract_processing(valid_contract_request: ContractRequest):

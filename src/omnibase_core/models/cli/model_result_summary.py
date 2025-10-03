@@ -12,6 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
 
 class ModelResultSummary(BaseModel):
     """Restrictive model for result summary.
@@ -65,10 +67,17 @@ class ModelResultSummary(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            OnexError: If validation fails with details about the failure
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Instance validation failed: {e}",
+            ) from e

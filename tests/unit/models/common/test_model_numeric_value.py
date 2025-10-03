@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 

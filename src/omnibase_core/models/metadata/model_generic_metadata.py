@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, TypedDict, overload
 from uuid import UUID
 
 # Import simplified type constraint from core
-from omnibase_core.core.type_constraints import BasicValueType
+from omnibase_core.types.constraints import BasicValueType
 
 if TYPE_CHECKING:
     from . import ProtocolSupportedMetadataType
@@ -19,8 +19,7 @@ else:
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
@@ -197,7 +196,7 @@ class ModelGenericMetadata(BaseModel):
                 self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Value type {type(value)} not supported for metadata storage",
                 details=ModelErrorContext.with_context(
                     {
@@ -263,7 +262,7 @@ class ModelGenericMetadata(BaseModel):
                         if isinstance(value, (str, int, bool, float)):
                             self.set_field(key, value)
             return True
-        except Exception:
+        except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
@@ -290,7 +289,9 @@ class ModelGenericMetadata(BaseModel):
                         or self.version.patch < 0
                     ):
                         return False
-                except Exception:
+                except (
+                    Exception
+                ):  # fallback-ok: version validation, return False on any error
                     return False
 
             # Validate custom fields if present
@@ -301,9 +302,11 @@ class ModelGenericMetadata(BaseModel):
                     try:
                         # Test that we can convert to python value
                         cli_value.to_python_value()
-                    except Exception:
+                    except (
+                        Exception
+                    ):  # fallback-ok: field conversion test, return False on any error
                         return False
 
             return True
-        except Exception:
+        except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False

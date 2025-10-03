@@ -3,11 +3,45 @@ Type constraints and protocols for better generic programming.
 
 This module provides well-defined protocols, type variables with proper bounds,
 and type constraints to replace overly broad generic usage patterns.
+
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is part of a carefully managed import chain to avoid circular dependencies.
+
+Safe Runtime Imports:
+- typing, pydantic (standard library)
+- No imports from omnibase_core at module level (to break circular chain)
+
+Type-Only Imports (Protected by TYPE_CHECKING):
+- omnibase_core.errors.error_codes (used only for type hints)
+- omnibase_core.models.base (lazy loaded via __getattr__)
+
+Lazy Imports (Only loaded when functions are called):
+- errors.error_codes: Imported inside validate_primitive_value() and validate_context_value()
+- models.base: Loaded via __getattr__ when accessed
+
+Import Chain Position:
+1. types.core_types (no external deps)
+2. errors.error_codes → types.core_types
+3. models.common.model_schema_value → errors.error_codes
+4. THIS MODULE → TYPE_CHECKING import of errors.error_codes (NO runtime import!)
+5. models.* → THIS MODULE (runtime imports)
+6. THIS MODULE → models.base (lazy __getattr__ only)
+
+Critical Rules:
+- NEVER add runtime imports from errors.error_codes at module level
+- NEVER add runtime imports from models.* at module level
+- All imports from omnibase_core MUST be TYPE_CHECKING or lazy (inside functions/__getattr__)
 """
 
-from typing import Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 from pydantic import BaseModel
+
+# Type-only import - NEVER make this a runtime import!
+# Protected by TYPE_CHECKING to prevent circular dependency with errors.error_codes
+if TYPE_CHECKING:
+    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # Temporary local protocol definitions for validation purposes
 # TODO: Replace with actual omnibase_spi imports when available
@@ -119,9 +153,54 @@ ContextValueType = object  # Runtime validation required - see type guards below
 ComplexContextValueType = object  # Runtime validation required - see type guards below
 
 
-# Import abstract base classes from separate files (ONEX one-model-per-file)
-from .model_base_collection import BaseCollection
-from .model_base_factory import BaseFactory
+# LAZY IMPORT PATTERN: Import abstract base classes from separate files
+# Critical: This must remain a lazy import to break the circular dependency chain
+#
+# Import Chain:
+# 1. models.* imports from THIS MODULE (types.constraints)
+# 2. THIS MODULE needs ModelBaseCollection/ModelBaseFactory from models.base
+# 3. Solution: Use TYPE_CHECKING + lazy __getattr__ to defer runtime import
+#
+# Why this works:
+# - TYPE_CHECKING provides types for static analysis (mypy, IDEs)
+# - __getattr__ defers actual import until attribute is accessed
+# - By the time __getattr__ runs, models.* has already imported types.constraints
+# - This breaks the circular dependency at module import time
+if TYPE_CHECKING:
+    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
+    # Type aliases for test compatibility
+    BaseCollection = ModelBaseCollection
+    BaseFactory = ModelBaseFactory
+else:
+    # Lazy import at runtime to avoid circular dependencies
+    # WARNING: Do NOT change this to a regular import - it will break the import chain!
+    def __getattr__(name: str) -> object:
+        """
+        Lazy import for ModelBaseCollection and ModelBaseFactory to avoid circular imports.
+
+        This function is called when an attribute is not found in the module.
+        It imports the models.base module only when needed, which happens AFTER
+        models.* has already imported types.constraints, thus breaking the cycle.
+        """
+        if name in (
+            "ModelBaseCollection",
+            "ModelBaseFactory",
+            "BaseCollection",
+            "BaseFactory",
+        ):
+            from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
+            globals()["ModelBaseCollection"] = ModelBaseCollection
+            globals()["ModelBaseFactory"] = ModelBaseFactory
+            # Add test compatibility aliases
+            globals()["BaseCollection"] = ModelBaseCollection
+            globals()["BaseFactory"] = ModelBaseFactory
+            return globals()[name]
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        # error-ok: AttributeError is standard Python pattern for __getattr__
+        raise AttributeError(msg)
+
 
 # Type guards for runtime checking
 
@@ -194,23 +273,51 @@ def is_complex_context_value(obj: object) -> bool:
 
 
 def validate_primitive_value(obj: object) -> bool:
-    """Validate and ensure object is a primitive value."""
+    """
+    Validate and ensure object is a primitive value.
+
+    Uses lazy import of error_codes to avoid circular dependency.
+    This import happens inside the function, so it's only loaded when validation fails.
+
+    CRITICAL: Keep the import inside the function - moving it to module level
+    will create a circular import with errors.error_codes!
+    """
     if not is_primitive_value(obj):
+        # LAZY IMPORT: Only load error_codes when validation fails
+        # This prevents circular dependency at module import time
+        # Import chain: errors.error_codes → types.core_types (no models/constraints)
+        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
-        raise TypeError(
-            msg,
+        raise OnexError(
+            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message=msg,
         )
     return True
 
 
 def validate_context_value(obj: object) -> bool:
-    """Validate and ensure object is a valid context value."""
+    """
+    Validate and ensure object is a valid context value.
+
+    Uses lazy import of error_codes to avoid circular dependency.
+    This import happens inside the function, so it's only loaded when validation fails.
+
+    CRITICAL: Keep the import inside the function - moving it to module level
+    will create a circular import with errors.error_codes!
+    """
     if not is_context_value(obj):
+        # LAZY IMPORT: Only load error_codes when validation fails
+        # This prevents circular dependency at module import time
+        # Import chain: errors.error_codes → types.core_types (no models/constraints)
+        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
         obj_type = type(obj).__name__
         msg = f"Expected context value (primitive, list, or dict), got {obj_type}"
-        raise TypeError(
-            msg,
+        raise OnexError(
+            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message=msg,
         )
     return True
 
@@ -218,6 +325,9 @@ def validate_context_value(obj: object) -> bool:
 # Export all types and utilities
 __all__ = [
     # Abstract base classes
+    "ModelBaseCollection",
+    "ModelBaseFactory",
+    # Test compatibility aliases
     "BaseCollection",
     "BaseFactory",
     "BasicValueType",

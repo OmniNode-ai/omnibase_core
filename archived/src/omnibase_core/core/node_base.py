@@ -19,9 +19,6 @@ from omnibase_spi.protocols.core import protocol_workflow_reducer
 
 WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
 
-from omnibase_core.core.core_structured_logging import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.monadic.model_node_result import (
@@ -34,6 +31,7 @@ from omnibase_core.core.monadic.model_node_result import (
 )
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.mixin.mixin_event_listener import MixinEventListener
 from omnibase_core.mixin.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,

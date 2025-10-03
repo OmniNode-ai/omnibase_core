@@ -10,8 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -61,7 +60,7 @@ class ModelMetadataValue(BaseModel):
             # Type validation based on declared type
             if value_type == EnumCliValueType.STRING and not isinstance(v, str):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be string, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -73,7 +72,7 @@ class ModelMetadataValue(BaseModel):
                 )
             if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be integer, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -88,7 +87,7 @@ class ModelMetadataValue(BaseModel):
                 (int, float),
             ):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be numeric, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -100,7 +99,7 @@ class ModelMetadataValue(BaseModel):
                 )
             if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be boolean, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -165,7 +164,7 @@ class ModelMetadataValue(BaseModel):
         if isinstance(value, float):
             return cls.from_float(value, source)
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported value type: {type(value)}",
             details=ModelErrorContext.with_context(
                 {
@@ -189,7 +188,7 @@ class ModelMetadataValue(BaseModel):
         if self.value_type == EnumCliValueType.INTEGER:
             if not isinstance(self.value, (int, float, str)):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Expected numeric or string type, got {type(self.value)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -211,7 +210,7 @@ class ModelMetadataValue(BaseModel):
                 return int(self.value)
             except ValueError:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Cannot convert string '{self.value}' to int",
                     details=ModelErrorContext.with_context(
                         {
@@ -222,7 +221,7 @@ class ModelMetadataValue(BaseModel):
                     ),
                 )
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to int",
             details=ModelErrorContext.with_context(
                 {
@@ -238,7 +237,7 @@ class ModelMetadataValue(BaseModel):
         if self.value_type in (EnumCliValueType.FLOAT, EnumCliValueType.INTEGER):
             if not isinstance(self.value, (int, float, str)):
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Expected numeric or string type, got {type(self.value)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -260,7 +259,7 @@ class ModelMetadataValue(BaseModel):
                 return float(self.value)
             except ValueError:
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Cannot convert string '{self.value}' to float",
                     details=ModelErrorContext.with_context(
                         {
@@ -271,7 +270,7 @@ class ModelMetadataValue(BaseModel):
                     ),
                 )
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to float",
             details=ModelErrorContext.with_context(
                 {
@@ -328,8 +327,11 @@ class ModelMetadataValue(BaseModel):
                 ):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -341,8 +343,11 @@ class ModelMetadataValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 __all__ = ["ModelMetadataValue"]

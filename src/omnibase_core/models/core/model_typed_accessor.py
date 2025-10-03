@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_field_accessor import ModelFieldAccessor
@@ -50,8 +51,11 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -85,8 +89,11 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

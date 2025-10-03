@@ -31,11 +31,12 @@ class ModelValidationBase(BaseModel):
     )
 
     def validate_instance(self) -> bool:
-        """Check if model is valid (no validation errors) (ProtocolValidatable protocol)."""
-        try:
-            return self.validation.validate_instance()
-        except Exception:
-            return False
+        """Check if model is valid (no validation errors) (ProtocolValidatable protocol).
+
+        Raises:
+            Exception: If validation logic fails
+        """
+        return self.validation.validate_instance()
 
     def has_validation_errors(self) -> bool:
         """Check if there are validation errors."""
@@ -84,8 +85,8 @@ class ModelValidationBase(BaseModel):
                 "omnibase_core.enums.enum_core_error_code",
             )
             # Get error code strings with fallbacks
-            validation_error_code = enum_module.EnumCoreErrorCode.VALIDATION_ERROR.value
-            internal_error_code = enum_module.EnumCoreErrorCode.INTERNAL_ERROR.value
+            validation_error_code = enum_module.CoreErrorCode.VALIDATION_ERROR.value
+            internal_error_code = enum_module.CoreErrorCode.INTERNAL_ERROR.value
         except (ImportError, AttributeError):
             # Fallback if enum module not available or attributes missing
             validation_error_code = "validation_error"

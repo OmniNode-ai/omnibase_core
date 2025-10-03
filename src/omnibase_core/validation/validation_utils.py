@@ -108,7 +108,9 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
             f"line {e.lineno}, offset {e.offset}: {e.msg}",
         )
         return None
-    except Exception:
+    except (
+        Exception
+    ) as e:  # fallback-ok: File processing errors should not stop the entire validation process
         # This is a safety net for truly unexpected errors.
         # logger.exception provides a full stack trace.
         logger.exception(f"Unexpected error processing {file_path}. Skipping file.")

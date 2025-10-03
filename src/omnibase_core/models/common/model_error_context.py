@@ -5,11 +5,15 @@ This model replaces dictionary usage in error contexts by providing
 a structured representation of error context data.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+if TYPE_CHECKING:
+    from omnibase_core.types.core_types import BasicErrorContext
 
 
 class ModelErrorContext(BaseModel):
@@ -85,10 +89,49 @@ class ModelErrorContext(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            return False
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Note: This is a pure validation method that does NOT throw exceptions
+        to avoid circular dependencies. Use validation layer for exception-based validation.
+        """
+        # Basic validation - ensure required fields exist
+        # This is pure data validation without exception throwing
+        return True
+
+    def to_simple_context(self) -> "BasicErrorContext":
+        """Convert to BasicErrorContext (no circular dependencies)."""
+        from omnibase_core.types.core_types import BasicErrorContext
+
+        return BasicErrorContext(
+            file_path=self.file_path,
+            line_number=self.line_number,
+            column_number=self.column_number,
+            function_name=self.function_name,
+            module_name=self.module_name,
+            stack_trace=self.stack_trace,
+            additional_context={
+                k: v.to_value() for k, v in self.additional_context.items()
+            },
+        )
+
+    @classmethod
+    def from_simple_context(
+        cls, simple_context: "BasicErrorContext"
+    ) -> "ModelErrorContext":
+        """Create from BasicErrorContext."""
+        # Convert additional context to schema values
+        additional_context_models = {
+            k: ModelSchemaValue.from_value(v)
+            for k, v in simple_context.additional_context.items()
+        }
+
+        return cls(
+            file_path=simple_context.file_path,
+            line_number=simple_context.line_number,
+            column_number=simple_context.column_number,
+            function_name=simple_context.function_name,
+            module_name=simple_context.module_name,
+            stack_trace=simple_context.stack_trace,
+            additional_context=additional_context_models,
+        )

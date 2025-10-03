@@ -87,13 +87,13 @@ def get_value(data, key):
     def test_allows_onex_error_raise(self):
         """Test that OnexError raises are allowed."""
         code = """
-from omnibase_core.exceptions.onex_error import OnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode
 
 def validate_input(value):
     if value < 0:
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Value must be positive"
         )
     return value
@@ -137,15 +137,15 @@ def process_data(data):
     def test_allows_reraise_as_onex_error(self):
         """Test that re-raising as OnexError is allowed."""
         code = """
-from omnibase_core.exceptions.onex_error import OnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode
 
 def process_data(data):
     try:
         return int(data)
     except ValueError as e:
         raise OnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message="Invalid data format"
         ) from e
 """
@@ -261,11 +261,11 @@ def process():
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(
                 """
-from omnibase_core.exceptions.onex_error import OnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode
 
 def process():
-    raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message="Test")
+    raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message="Test")
 """
             )
             f.flush()

@@ -10,8 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 # Import only when needed to break circular dependencies
 
@@ -40,7 +39,7 @@ class ModelSemVer(BaseModel):
         """Validate version numbers are non-negative."""
         if v < 0:
             msg = "Version numbers must be non-negative"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def __str__(self) -> str:
@@ -83,7 +82,7 @@ class ModelSemVer(BaseModel):
         """Check if this version is less than another."""
         if not isinstance(other, ModelSemVer):
             msg = f"Cannot compare ModelSemVer with {type(other).__name__}"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return (self.major, self.minor, self.patch) < (
             other.major,
             other.minor,
@@ -98,7 +97,7 @@ class ModelSemVer(BaseModel):
         """Check if this version is greater than another."""
         if not isinstance(other, ModelSemVer):
             msg = f"Cannot compare ModelSemVer with {type(other).__name__}"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return (self.major, self.minor, self.patch) > (
             other.major,
             other.minor,
@@ -135,8 +134,11 @@ class ModelSemVer(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -148,8 +150,11 @@ class ModelSemVer(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
 
 def parse_semver_from_string(version_str: str) -> ModelSemVer:
@@ -181,7 +186,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     match: Match[str] | None = re.match(pattern, version_str)
     if match is None:
         msg = f"Invalid semantic version format: {version_str}"
-        raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+        raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
 
     # Use Pydantic's model validation instead of direct construction
     return ModelSemVer.model_validate(
@@ -220,14 +225,14 @@ def parse_input_state_version(
 
     if v is None:
         msg = "Version field is required in input state"
-        raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+        raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
 
     if isinstance(v, str):
         msg = (
             f"String versions are not allowed. Use structured format: "
             f"{{major: X, minor: Y, patch: Z}}. Got string: {v}"
         )
-        raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+        raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
 
     if isinstance(v, ModelSemVer):
         return v
@@ -240,10 +245,10 @@ def parse_input_state_version(
                 f"Invalid version dictionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"
             )
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg) from e
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg) from e
 
     msg = (
         f"Version must be a ModelSemVer instance or dictionary with {{major, minor, patch}} keys. "
         f"Got {type(v).__name__}: {v}"
     )
-    raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+    raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)

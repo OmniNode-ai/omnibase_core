@@ -4,7 +4,9 @@ Test suite for ONEX node services.
 Tests the base classes for EFFECT, COMPUTE, REDUCER, and ORCHESTRATOR nodes.
 """
 
-from omnibase_core.core.model_onex_container import ModelONEXContainer as ONEXContainer
+from omnibase_core.models.container.model_onex_container import (
+    ModelONEXContainer as ONEXContainer,
+)
 
 
 class TestNodeServices:

@@ -9,7 +9,6 @@ from typing import Any
 
 from omnibase_spi import ProtocolLogger
 
-from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_onex_event import (
@@ -18,6 +17,7 @@ from omnibase_core.models.core.model_onex_event import (
     OnexEvent,
 )
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
+from omnibase_core.utils.decorators import allow_dict_str_any
 
 
 class DiscoveryResponderMixin:

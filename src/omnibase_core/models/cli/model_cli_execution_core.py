@@ -19,6 +19,7 @@ from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
 )
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 from .model_cli_command_option import ModelCliCommandOption
 
@@ -225,13 +226,20 @@ class ModelCliExecutionCore(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Raises:
+            OnexError: If validation fails with details about the failure
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Instance validation failed: {e}",
+            ) from e
 
 
 # Export for use

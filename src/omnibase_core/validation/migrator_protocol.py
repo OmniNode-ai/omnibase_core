@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 from typing import cast
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
@@ -73,11 +74,15 @@ class ProtocolMigrator:
             # Validate that provided protocols have valid path format and required metadata
             for protocol in protocols:
                 if not protocol.file_path:
-                    msg = "Protocol must have a file_path specified"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=CoreErrorCode.VALIDATION_ERROR,
+                        message="Protocol must have a file_path specified",
+                    )
                 if not protocol.name:
-                    msg = "Protocol must have a name specified"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        code=CoreErrorCode.VALIDATION_ERROR,
+                        message="Protocol must have a name specified",
+                    )
                 # Note: File existence is not required for planning phase
                 # Actual file validation occurs during execution
             # Use the explicitly provided protocols
@@ -423,4 +428,8 @@ class ProtocolMigrator:
             )
 
         except Exception as e:
-            return ValidationResult(success=False, errors=[f"Rollback failed: {e}"])
+            # Re-raise rollback errors with context
+            raise OnexError(
+                code=CoreErrorCode.MIGRATION_ERROR,
+                message=f"Rollback failed: {e}",
+            ) from e

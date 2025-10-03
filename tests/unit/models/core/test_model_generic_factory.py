@@ -11,7 +11,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_generic_factory import ModelGenericFactory
 
@@ -122,7 +122,7 @@ class TestModelGenericFactory:
             factory.create("unknown_factory")
 
         error = exc_info.value
-        assert error.code.value == "not_found"
+        assert error.error_code.value == "not_found"
         assert "Unknown factory: unknown_factory" in str(error)
         assert "SampleResult" in str(error)
 
@@ -157,7 +157,7 @@ class TestModelGenericFactory:
             factory.build("unknown_builder", name="test", value="test")
 
         error = exc_info.value
-        assert error.code.value == "not_found"
+        assert error.error_code.value == "not_found"
         assert "Unknown builder: unknown_builder" in str(error)
         assert "SampleConfig" in str(error)
 

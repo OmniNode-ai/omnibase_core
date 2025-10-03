@@ -11,6 +11,7 @@ from typing import Any, TypeVar, Unpack
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types import TypedDictFactoryKwargs
 
 from .model_generic_factory import ModelGenericFactory
@@ -113,8 +114,11 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -131,8 +135,11 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

@@ -3,12 +3,32 @@ Model for representing schema values with proper type safety.
 
 This model replaces Any type usage in schema definitions by providing
 a structured representation of possible schema values.
+
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is part of a carefully managed import chain to avoid circular dependencies.
+
+Safe Runtime Imports:
+- omnibase_core.errors.error_codes (imports only from types.core_types and enums)
+- omnibase_core.models.common.model_numeric_value (no circular risk)
+- pydantic, typing (standard library)
+
+Import Chain Position:
+1. errors.error_codes → types.core_types
+2. THIS MODULE → errors.error_codes (OK - no circle)
+3. types.constraints → TYPE_CHECKING import of errors.error_codes
+4. models.* → types.constraints
+
+This module can safely import error_codes because error_codes only imports
+from types.core_types (not from models or types.constraints).
 """
 
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+# Safe runtime import - error_codes only imports from types.core_types
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
@@ -159,10 +179,22 @@ class ModelSchemaValue(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Note: This is a pure validation method that does NOT throw exceptions
+        to avoid circular dependencies. Use validation layer for exception-based validation.
+        """
+        # Basic validation - ensure value_type matches actual value
+        # This is pure data validation without exception throwing
+        if self.value_type == "string" and self.string_value is None:
             return False
+        if self.value_type == "number" and self.number_value is None:
+            return False
+        if self.value_type == "boolean" and self.boolean_value is None:
+            return False
+        if self.value_type == "array" and self.array_value is None:
+            return False
+        if self.value_type == "object" and self.object_value is None:
+            return False
+        return True

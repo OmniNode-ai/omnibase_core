@@ -15,6 +15,8 @@ import ast
 import sys
 from pathlib import Path
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
 from .validation_utils import ValidationResult
 
 
@@ -216,7 +218,13 @@ class UnionUsageChecker(ast.NodeVisitor):
 def validate_union_usage_file(
     file_path: Path,
 ) -> tuple[int, list[str], list[ModelUnionPattern]]:
-    """Validate Union usage in a Python file."""
+    """Validate Union usage in a Python file.
+
+    Raises:
+        FileNotFoundError: If the file cannot be found
+        SyntaxError: If the file has invalid Python syntax
+        Exception: If parsing or validation fails
+    """
     try:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
@@ -227,8 +235,16 @@ def validate_union_usage_file(
 
         return checker.union_count, checker.issues, checker.union_patterns
 
+    except (FileNotFoundError, SyntaxError):
+        # Re-raise file and syntax errors as-is
+        raise
     except Exception as e:
-        return 0, [f"Error parsing {file_path}: {e}"], []
+        # Re-raise with context for other errors
+        raise OnexError(
+            code=CoreErrorCode.OPERATION_FAILED,
+            message=f"Failed to validate union usage in {file_path}: {e}",
+            cause=e,
+        ) from e
 
 
 def validate_union_usage_directory(

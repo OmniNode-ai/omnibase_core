@@ -33,8 +33,8 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 
-from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import is_event_equal
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent

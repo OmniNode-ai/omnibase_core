@@ -13,6 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cloud_service_properties import ModelCloudServiceProperties
@@ -543,8 +544,11 @@ class ModelCustomConnectionProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
@@ -552,8 +556,11 @@ class ModelCustomConnectionProperties(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

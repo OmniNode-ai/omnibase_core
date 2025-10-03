@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.models.core.model_container import ModelContainer
 
 

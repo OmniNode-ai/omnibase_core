@@ -21,6 +21,8 @@ import yaml
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
 from .validation_utils import ValidationResult
 
 # Constants
@@ -28,13 +30,12 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
 VALIDATION_TIMEOUT = 300  # 5 minutes
 
 
-class TimeoutError(Exception):
-    """Raised when validation times out."""
-
-
 def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
-    raise TimeoutError("Validation timed out")
+    raise OnexError(
+        code=CoreErrorCode.TIMEOUT_ERROR,
+        message="Validation timed out",
+    )
 
 
 def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
@@ -96,14 +97,24 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             # Validation successful if we reach here
 
         except Exception as e:
-            errors.append(f"Contract validation failed: {e}")
-            return errors
+            # Re-raise validation errors with context
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Contract validation failed for {file_path}: {e}",
+            ) from e
 
         # All validation is now handled by Pydantic model
         # Legacy manual validation removed for ONEX compliance
 
+    except OnexError:
+        # Re-raise OnexError as-is
+        raise
     except Exception as e:
-        errors.append(f"Error reading file: {e}")
+        # Re-raise file reading errors with context
+        raise OnexError(
+            code=CoreErrorCode.FILE_ACCESS_ERROR,
+            message=f"Error reading file {file_path}: {e}",
+        ) from e
 
     return errors
 
@@ -253,8 +264,11 @@ def validate_contracts_cli() -> int:
         print("❌ Contract validation FAILED")
         return 1
 
-    except TimeoutError:
-        print(f"❌ Validation timed out after {args.timeout} seconds")
+    except OnexError as e:
+        if e.error_code == CoreErrorCode.TIMEOUT_ERROR:
+            print(f"❌ Validation timed out after {args.timeout} seconds")
+        else:
+            print(f"❌ Validation error: {e.message}")
         return 1
     except KeyboardInterrupt:
         print("❌ Validation interrupted by user")

@@ -7,7 +7,7 @@ allow_any_type and allow_dict_str_any decorators.
 
 from pydantic import BaseModel
 
-from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.utils.decorators import allow_any_type, allow_dict_str_any
 
 
 class TestAllowAnyTypeDecorator:

@@ -13,6 +13,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+
 
 class ModelTraceData(BaseModel):
     """Restrictive model for trace data.
@@ -67,5 +69,8 @@ class ModelTraceData(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e

@@ -18,6 +18,7 @@ from pydantic import (
     model_validator,
 )
 
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -59,7 +60,9 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             # Try to serialize objects with __dict__
             try:
                 return config_data.__dict__
-            except:
+            except (
+                Exception
+            ):  # fallback-ok: Serialization fallback to string representation
                 return str(config_data)
         return config_data
 
@@ -126,8 +129,11 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             if self.name is not None and len(self.name.strip()) == 0:
                 return False
             return base_valid
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_display_name(self) -> str:
         """Get display name, falling back to 'Unnamed Configuration'."""
@@ -177,8 +183,11 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
                     self.config_data = value
             self.update_timestamp()
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get configuration name (Nameable protocol)."""

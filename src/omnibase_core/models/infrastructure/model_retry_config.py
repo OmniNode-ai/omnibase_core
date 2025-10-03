@@ -11,9 +11,8 @@ from typing import Any, Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelRetryConfig(BaseModel):
@@ -88,7 +87,7 @@ class ModelRetryConfig(BaseModel):
         """
         if self.max_delay_seconds < self.base_delay_seconds:
             msg = "Max delay must be greater than or equal to base delay"
-            raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return self
 
     def get_strategy_name(self) -> str:

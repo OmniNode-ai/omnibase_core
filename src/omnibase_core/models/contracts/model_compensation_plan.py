@@ -13,9 +13,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 
 
 class ModelCompensationPlan(BaseModel):
@@ -177,7 +176,7 @@ class ModelCompensationPlan(BaseModel):
                 )
 
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message="Plan ID cannot be empty",
                     details=ModelErrorContext.with_context(
                         {
@@ -200,7 +199,7 @@ class ModelCompensationPlan(BaseModel):
                 )
 
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid plan_id '{v_str}'. Must be a valid UUID.",
                     details=ModelErrorContext.with_context(
                         {
@@ -236,7 +235,7 @@ class ModelCompensationPlan(BaseModel):
                 )
 
                 raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid action_id '{action_id}'. Must contain only alphanumeric characters, hyphens, and underscores.",
                     details=ModelErrorContext.with_context(
                         {
@@ -277,7 +276,7 @@ class ModelCompensationPlan(BaseModel):
                     )
 
                     raise OnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        code=CoreErrorCode.VALIDATION_ERROR,
                         message=f"Invalid dependency plan_id '{plan_id_str}'. Must be a valid UUID.",
                         details=ModelErrorContext.with_context(
                             {

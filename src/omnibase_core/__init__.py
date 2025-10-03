@@ -31,6 +31,8 @@ Validation Tools:
         python -m omnibase_core.validation all
 """
 
+from omnibase_core.errors import CoreErrorCode, OnexError
+
 # No typing imports needed for lazy loading
 
 
@@ -59,7 +61,11 @@ def __getattr__(name: str) -> object:
         # Return the requested attribute from validation module
         return locals()[name]
     msg = f"module '{__name__}' has no attribute '{name}'"
-    raise AttributeError(msg)
+    raise OnexError(
+        code=CoreErrorCode.IMPORT_ERROR,
+        message=msg,
+        details={"module": __name__, "attribute": name},
+    )
 
 
 __all__ = [

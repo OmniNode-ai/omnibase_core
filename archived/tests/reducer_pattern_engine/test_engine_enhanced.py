@@ -13,7 +13,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.core.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.models.state_transitions import (
     WorkflowState,
 )

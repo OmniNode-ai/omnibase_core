@@ -11,7 +11,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.core.errors.core_errors import OnexError
-from omnibase_core.core.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine import (
     ReducerPatternEngine,
 )

@@ -15,8 +15,7 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -168,7 +167,7 @@ class ModelContainer(BaseModel, Generic[T]):
             )
         except Exception as e:
             raise OnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -208,7 +207,7 @@ class ModelContainer(BaseModel, Generic[T]):
             self.is_validated = False
             self.validation_notes = error_message
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=error_message,
                 details=ModelErrorContext.with_context(
                     {
@@ -223,7 +222,7 @@ class ModelContainer(BaseModel, Generic[T]):
             if isinstance(e, OnexError):
                 raise
             raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation error: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -302,8 +301,11 @@ class ModelContainer(BaseModel, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -315,8 +317,11 @@ class ModelContainer(BaseModel, Generic[T]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

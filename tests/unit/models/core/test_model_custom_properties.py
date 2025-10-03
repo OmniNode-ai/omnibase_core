@@ -6,7 +6,7 @@ Tests the generic custom properties pattern that replaces repetitive custom fiel
 
 import pytest
 
-from omnibase_core.exceptions import OnexError
+from omnibase_core.errors import OnexError
 from omnibase_core.models.core import ModelCustomProperties
 
 

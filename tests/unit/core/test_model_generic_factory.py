@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.models.core import (
     ModelCapabilityFactory,
     ModelGenericFactory,
