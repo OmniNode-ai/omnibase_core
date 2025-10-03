@@ -16,15 +16,7 @@ from typing import TypeAlias
 
 # JSON-serializable value types (most common replacement for Any)
 # Recursive type alias for JSON-compatible data structures
-JsonSerializable: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | list["JsonSerializable"]
-    | dict[str, "JsonSerializable"]
-    | None
-)
+type JsonSerializable = str | int | float | bool | list["JsonSerializable"] | dict[str, "JsonSerializable"] | None
 
 # Property/metadata values (for generic containers)
 PropertyValue = str | int | float | bool | list[str] | dict[str, str]
@@ -37,15 +29,7 @@ MetadataValue = str | int | float | bool | list[str] | dict[str, str] | None
 
 # Validation field values (for validation errors)
 # Recursive type alias for validation error contexts
-ValidationValue: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | list["ValidationValue"]
-    | dict[str, "ValidationValue"]
-    | None
-)
+type ValidationValue = str | int | float | bool | list["ValidationValue"] | dict[str, "ValidationValue"] | None
 
 # Configuration values (for config models)
 ConfigValue = str | int | float | bool | list[str] | dict[str, str] | None
@@ -58,9 +42,7 @@ ParameterValue = PropertyValue
 
 # Result/output values (for result models)
 # Recursive type alias for result/output data
-ResultValue: TypeAlias = (
-    str | int | float | bool | list["ResultValue"] | dict[str, "ResultValue"] | None
-)
+type ResultValue = str | int | float | bool | list["ResultValue"] | dict[str, "ResultValue"] | None
 
 # ONEX Type Safety Guidelines:
 #

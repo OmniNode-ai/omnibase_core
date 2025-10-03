@@ -486,13 +486,7 @@ def _sanitize_data_dict(
         sanitized_value: Any | None
         if isinstance(value, str):
             sanitized_value = _sanitize_sensitive_data(value)
-        elif isinstance(value, bool):  # Check bool first (bool is subclass of int)
-            sanitized_value = value
-        elif isinstance(value, int):
-            sanitized_value = value
-        elif isinstance(value, float):
-            sanitized_value = value
-        elif value is None:
+        elif isinstance(value, bool) or isinstance(value, int) or isinstance(value, float) or value is None:  # Check bool first (bool is subclass of int)
             sanitized_value = value
         else:
             # Convert non-JSON-compatible types to string representation

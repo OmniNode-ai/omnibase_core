@@ -233,33 +233,32 @@ class ModelONEXContainer:
                     note="Requires omnibase-spi protocol integration",
                     correlation_id=final_correlation_id,
                 )
-            else:
-                # Map common protocol names to container providers
-                provider_map = {
-                    "ProtocolLogger": "enhanced_logger",
-                    "Logger": "enhanced_logger",
-                }
+            # Map common protocol names to container providers
+            provider_map = {
+                "ProtocolLogger": "enhanced_logger",
+                "Logger": "enhanced_logger",
+            }
 
-                if protocol_name in provider_map:
-                    provider_name = provider_map[protocol_name]
-                    provider = getattr(self._base_container, provider_name, None)
-                    if provider:
-                        service_instance = provider()
-                    else:
-                        raise OnexError(
-                            error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                            message=f"Provider not found: {provider_name}",
-                            protocol_type=protocol_name,
-                            correlation_id=final_correlation_id,
-                        )
+            if protocol_name in provider_map:
+                provider_name = provider_map[protocol_name]
+                provider = getattr(self._base_container, provider_name, None)
+                if provider:
+                    service_instance = provider()
                 else:
                     raise OnexError(
                         error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                        message=f"Unable to resolve service for protocol {protocol_name}",
+                        message=f"Provider not found: {provider_name}",
                         protocol_type=protocol_name,
-                        service_name=service_name or "",
                         correlation_id=final_correlation_id,
                     )
+            else:
+                raise OnexError(
+                    error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                    message=f"Unable to resolve service for protocol {protocol_name}",
+                    protocol_type=protocol_name,
+                    service_name=service_name or "",
+                    correlation_id=final_correlation_id,
+                )
 
             end_time = datetime.now()
             resolution_time_ms = int((end_time - start_time).total_seconds() * 1000)

@@ -68,7 +68,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             main_value = info.data["value"]
             if v >= main_value:
                 msg = "Warning threshold must be less than main value"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     @field_validator("extension_limit_value")
@@ -77,7 +77,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
-            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def model_post_init(self, __context: object) -> None:
@@ -382,7 +382,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -395,7 +395,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

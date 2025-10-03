@@ -49,10 +49,10 @@ class ModelEnvironmentVariables(BaseModel):
         for name in v:
             if not name.isidentifier() and not name.replace("_", "").isalnum():
                 msg = f"Invalid environment variable name: {name}"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message=msg)
             if name.startswith("__"):
                 msg = f"Environment variable name cannot start with double underscore: {name}"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def add_variable(self, name: str, value: str, secure: bool = False) -> None:

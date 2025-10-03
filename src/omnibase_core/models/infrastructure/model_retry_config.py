@@ -87,7 +87,7 @@ class ModelRetryConfig(BaseModel):
         """
         if self.max_delay_seconds < self.base_delay_seconds:
             msg = "Max delay must be greater than or equal to base delay"
-            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message=msg)
         return self
 
     def get_strategy_name(self) -> str:

@@ -9,6 +9,7 @@ Type constraints provide protocols and type variables for better generic program
 from typing import TYPE_CHECKING
 
 # Export all type constraints and protocols (except ModelBaseCollection/ModelBaseFactory)
+# Core types for breaking circular dependencies
 from .constraints import (
     BasicValueType,
     CollectionItemType,
@@ -51,8 +52,6 @@ from .constraints import (
 # ModelBaseCollection and ModelBaseFactory are lazily imported to avoid circular imports
 if TYPE_CHECKING:
     from .constraints import ModelBaseCollection, ModelBaseFactory
-
-# Core types for breaking circular dependencies
 from .core_types import (
     BasicErrorContext,
     ProtocolErrorContext,

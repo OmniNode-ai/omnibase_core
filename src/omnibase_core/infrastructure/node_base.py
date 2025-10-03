@@ -44,13 +44,11 @@ U = TypeVar("U")
 class ModelAction(BaseModel):
     """Stub action model for reducer pattern."""
 
-    pass
 
 
 class ModelState(BaseModel):
     """Stub state model for reducer pattern."""
 
-    pass
 
 
 @dataclass

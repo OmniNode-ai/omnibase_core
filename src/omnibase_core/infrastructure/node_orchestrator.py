@@ -149,7 +149,7 @@ class ModelOrchestratorInput(BaseModel):
     """
 
     workflow_id: UUID
-    steps: list[dict[str, ModelSchemaValue]]  # Simplified WorkflowStep representation
+    steps: list[WorkflowStep]  # WorkflowStep objects for execution
     operation_id: UUID = Field(default_factory=uuid4)
     execution_mode: ExecutionMode = ExecutionMode.SEQUENTIAL
     max_parallel_steps: int = 5
@@ -476,7 +476,7 @@ class NodeOrchestrator(NodeCoreBase):
                     caller_self = frame.f_locals["self"]
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
-                        if module and hasattr(module, "__file__"):
+                        if module and hasattr(module, "__file__") and module.__file__:
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
@@ -737,10 +737,10 @@ class NodeOrchestrator(NodeCoreBase):
             dependency_resolution_enabled=True,
             failure_strategy="rollback",
             metadata={
-                "ticket_id": str(ticket_id),
-                "current_state": current_state,
-                "target_state": target_state,
-                "rsd_operation": "ticket_lifecycle",
+                "ticket_id": ModelSchemaValue.from_value(str(ticket_id)),
+                "current_state": ModelSchemaValue.from_value(current_state),
+                "target_state": ModelSchemaValue.from_value(target_state),
+                "rsd_operation": ModelSchemaValue.from_value("ticket_lifecycle"),
             },
         )
 
@@ -1467,7 +1467,7 @@ class NodeOrchestrator(NodeCoreBase):
         self.condition_functions["has_previous_results"] = has_previous_results
         self.condition_functions["previous_step_success"] = previous_step_success
 
-    def get_introspection_data(self) -> dict:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get comprehensive introspection data for NodeOrchestrator.
 
@@ -1550,7 +1550,7 @@ class NodeOrchestrator(NodeCoreBase):
 
             # 5. Configuration Details
             configuration_details = {
-                "max_parallel_workflows": self.max_parallel_workflows,
+                "max_parallel_workflows": self.max_concurrent_workflows,
                 "default_step_timeout_ms": self.default_step_timeout_ms,
                 "max_thunk_queue_size": self.max_thunk_queue_size,
                 "workflow_configuration": {
@@ -1629,7 +1629,7 @@ class NodeOrchestrator(NodeCoreBase):
                 },
             }
 
-    def _extract_orchestrator_operations(self) -> list:
+    def _extract_orchestrator_operations(self) -> list[str]:
         """Extract available orchestrator operations."""
         operations = [
             "process",
@@ -1673,7 +1673,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         return operations  # fallback-ok: Return partial operations list on error rather than raising exception
 
-    def _extract_orchestrator_io_specifications(self) -> dict:
+    def _extract_orchestrator_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for orchestrator operations."""
         return {
             "input_model": "omnibase.core.node_orchestrator.ModelOrchestratorInput",
@@ -1693,11 +1693,11 @@ class NodeOrchestrator(NodeCoreBase):
             ],
         }
 
-    def _extract_orchestrator_performance_characteristics(self) -> dict:
+    def _extract_orchestrator_performance_characteristics(self) -> dict[str, Any]:
         """Extract performance characteristics specific to orchestrator operations."""
         return {
             "expected_response_time_ms": "varies_by_workflow_complexity_and_step_count",
-            "throughput_capacity": f"up_to_{self.max_parallel_workflows}_concurrent_workflows",
+            "throughput_capacity": f"up_to_{self.max_concurrent_workflows}_concurrent_workflows",
             "memory_usage_pattern": "workflow_state_tracking_with_thunk_queuing",
             "cpu_intensity": "low_to_medium_coordination_overhead",
             "supports_parallel_processing": True,
@@ -1710,11 +1710,11 @@ class NodeOrchestrator(NodeCoreBase):
             "dependency_resolution_efficiency": "topological_sorting_based",
         }
 
-    def _extract_workflow_configuration(self) -> dict:
+    def _extract_workflow_configuration(self) -> dict[str, Any]:
         """Extract workflow configuration from contract."""
         try:
             return {
-                "max_parallel_workflows": self.max_parallel_workflows,
+                "max_parallel_workflows": self.max_concurrent_workflows,
                 "default_step_timeout_ms": self.default_step_timeout_ms,
                 "max_thunk_queue_size": self.max_thunk_queue_size,
                 "thunk_emission_enabled": self.thunk_emission_enabled,
@@ -1728,16 +1728,16 @@ class NodeOrchestrator(NodeCoreBase):
                 f"Failed to extract workflow configuration: {e!s}",
                 {"node_id": self.node_id},
             )
-            return {"max_parallel_workflows": self.max_parallel_workflows}
+            return {"max_parallel_workflows": self.max_concurrent_workflows}
 
-    def _extract_coordination_constraints(self) -> dict:
+    def _extract_coordination_constraints(self) -> dict[str, Any]:
         """Extract coordination constraints and requirements."""
         return {
             "requires_container": True,
             "supports_nested_workflows": False,
             "supports_conditional_branching": True,
             "supports_parallel_execution": True,
-            "max_parallel_workflows": self.max_parallel_workflows,
+            "max_parallel_workflows": self.max_concurrent_workflows,
             "default_step_timeout_ms": self.default_step_timeout_ms,
             "thunk_emission_required_for_coordination": True,
             "dependency_resolution_automatic": True,
@@ -1781,7 +1781,7 @@ class NodeOrchestrator(NodeCoreBase):
             # fallback-ok: Health check should return status string, not raise exceptions
             return "unhealthy"
 
-    def _get_orchestration_metrics_sync(self) -> dict:
+    def _get_orchestration_metrics_sync(self) -> dict[str, Any]:
         """Get orchestration metrics synchronously for introspection."""
         try:
             return {
@@ -1808,12 +1808,12 @@ class NodeOrchestrator(NodeCoreBase):
             )
             return {"status": "unknown", "error": str(e)}
 
-    def _get_orchestrator_resource_usage(self) -> dict:
+    def _get_orchestrator_resource_usage(self) -> dict[str, Any]:
         """Get resource usage specific to orchestrator operations."""
         try:
             return {
                 "condition_functions_registered": len(self.condition_functions),
-                "max_parallel_workflows": self.max_parallel_workflows,
+                "max_parallel_workflows": self.max_concurrent_workflows,
                 "max_thunk_queue_size": self.max_thunk_queue_size,
                 "thunk_emission_enabled": self.thunk_emission_enabled,
                 "load_balancing_enabled": self.load_balancing_enabled,
@@ -1828,7 +1828,7 @@ class NodeOrchestrator(NodeCoreBase):
             )
             return {"status": "unknown"}
 
-    def _get_workflow_state(self) -> dict:
+    def _get_workflow_state(self) -> dict[str, Any]:
         """Get current workflow state information."""
         try:
             return {
@@ -1855,7 +1855,7 @@ class NodeOrchestrator(NodeCoreBase):
             )
             return {"status": "unknown", "error": str(e)}
 
-    def _get_thunk_emission_status(self) -> dict:
+    def _get_thunk_emission_status(self) -> dict[str, Any]:
         """Get thunk emission status."""
         return {
             "thunk_emission_enabled": self.thunk_emission_enabled,
@@ -1865,35 +1865,3 @@ class NodeOrchestrator(NodeCoreBase):
             "priority_based_emission": True,
             "timeout_configurable": True,
         }
-
-    def _validate_orchestrator_input(self, input_data: ModelOrchestratorInput) -> None:
-        """
-        Validate orchestrator input data (placeholder for actual validation).
-
-        Args:
-            input_data: Input data to validate
-
-        Raises:
-            OnexError: If validation fails
-        """
-        super()._validate_input_data(input_data)
-
-        if not hasattr(input_data, "workflow_id"):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Input data must have 'workflow_id' attribute",
-                context={
-                    "node_id": self.node_id,
-                    "input_type": type(input_data).__name__,
-                },
-            )
-
-        if not hasattr(input_data, "steps"):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Input data must have 'steps' attribute",
-                context={
-                    "node_id": self.node_id,
-                    "input_type": type(input_data).__name__,
-                },
-            )

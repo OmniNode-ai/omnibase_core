@@ -42,6 +42,7 @@ from pydantic import BaseModel
 # Protected by TYPE_CHECKING to prevent circular dependency with errors.error_codes
 if TYPE_CHECKING:
     from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
 # Temporary local protocol definitions for validation purposes
 # TODO: Replace with actual omnibase_spi imports when available
@@ -167,7 +168,6 @@ ComplexContextValueType = object  # Runtime validation required - see type guard
 # - By the time __getattr__ runs, models.* has already imported types.constraints
 # - This breaks the circular dependency at module import time
 if TYPE_CHECKING:
-    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
     # Type aliases for test compatibility
     BaseCollection = ModelBaseCollection

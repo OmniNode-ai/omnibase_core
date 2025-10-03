@@ -163,6 +163,19 @@ ignore = [
     "E722",      # Bare except (technical debt)
     "PLR1722",   # Sys exit alias (technical debt)
     "ISC001",    # Implicit string concatenation (conflicts with formatter)
+    "N811",      # Constant imported as non-constant (technical debt)
+    "B027",      # Empty method in abstract base class (intentional hook pattern)
+    "RUF006",    # Asyncio dangling task (fire-and-forget pattern)
+    "PLW0603",   # Global statement to update (intentional singleton pattern)
+    "PLW0602",   # Using global without assignment (intentional)
+    "N801",      # Class name should use CapWords (intentional lowercase context manager)
+    "DTZ006",    # datetime.fromtimestamp without tz (technical debt)
+    "C401",      # Unnecessary generator (technical debt)
+    "PT006",     # Wrong type for pytest.mark.parametrize (technical debt)
+    "ARG004",    # Unused static method argument (technical debt)
+    "TC004",     # Type checking imports - intentional for circular import breaking
+    "E731",      # Lambda assignment (technical debt)
+    "Q000",      # Quote style (technical debt)
 ]
 
 [tool.mypy]

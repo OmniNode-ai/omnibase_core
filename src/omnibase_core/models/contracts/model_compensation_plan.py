@@ -176,7 +176,7 @@ class ModelCompensationPlan(BaseModel):
                 )
 
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message="Plan ID cannot be empty",
                     details=ModelErrorContext.with_context(
                         {
@@ -199,7 +199,7 @@ class ModelCompensationPlan(BaseModel):
                 )
 
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid plan_id '{v_str}'. Must be a valid UUID.",
                     details=ModelErrorContext.with_context(
                         {
@@ -235,7 +235,7 @@ class ModelCompensationPlan(BaseModel):
                 )
 
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid action_id '{action_id}'. Must contain only alphanumeric characters, hyphens, and underscores.",
                     details=ModelErrorContext.with_context(
                         {
@@ -276,7 +276,7 @@ class ModelCompensationPlan(BaseModel):
                     )
 
                     raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                        error_code=CoreErrorCode.VALIDATION_ERROR,
                         message=f"Invalid dependency plan_id '{plan_id_str}'. Must be a valid UUID.",
                         details=ModelErrorContext.with_context(
                             {

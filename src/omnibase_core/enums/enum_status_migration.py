@@ -29,14 +29,14 @@ if TYPE_CHECKING:
     from .enum_base_status import EnumBaseStatus
 
 
-def _get_core_error_code() -> type["CoreErrorCode"]:
+def _get_core_error_code() -> type[CoreErrorCode]:
     """Get CoreErrorCode class at runtime to avoid circular import."""
     from omnibase_core.errors.error_codes import CoreErrorCode
 
     return CoreErrorCode
 
 
-def _get_onex_error() -> type["OnexError"]:
+def _get_onex_error() -> type[OnexError]:
     """Get OnexError class at runtime to avoid circular import."""
     from omnibase_core.errors.error_codes import OnexError
 
