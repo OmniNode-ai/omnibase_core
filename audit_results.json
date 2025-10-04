@@ -1,0 +1,2050 @@
+{
+  "summary": {
+    "total_models": 337,
+    "unique_model_names": 334,
+    "total_enums": 151,
+    "unique_enum_names": 150
+  },
+  "duplicate_models": {
+    "ModelOnexError": [
+      "/root/repo/src/omnibase_core/errors/error_codes.py",
+      "/root/repo/src/omnibase_core/models/common/model_onex_error.py"
+    ],
+    "ModelRetryPolicy": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_policy.py",
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_routing.py"
+    ],
+    "ModelGenericMetadata": [
+      "/root/repo/src/omnibase_core/models/metadata/model_generic_metadata.py",
+      "/root/repo/src/omnibase_core/models/results/model_generic_metadata.py"
+    ]
+  },
+  "duplicate_enums": {
+    "ModelComputationType": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py",
+      "/root/repo/src/omnibase_core/models/operations/model_computation_output_data.py"
+    ]
+  },
+  "basic_type_issues": [
+    {
+      "file": "/root/repo/src/omnibase_core/infrastructure/node_compute.py",
+      "model": "ModelComputeInput",
+      "field": "computation_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for computation_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/infrastructure/node_compute.py",
+      "model": "ModelComputeOutput",
+      "field": "computation_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for computation_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/cli/model_cli_action.py",
+      "model": "ModelCliAction",
+      "field": "action_display_name",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for action_display_name"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/common/model_schema_value.py",
+      "model": "ModelSchemaValue",
+      "field": "value_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for value_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/config/model_environment_properties.py",
+      "model": "ModelEnvironmentProperties",
+      "field": "property_metadata",
+      "current_type": "dict[str, TypedDictPropertyMetadata]",
+      "issue": "dict should use typed model",
+      "suggestion": "Create a Pydantic model instead of dict"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/config/model_environment_properties_collection.py",
+      "model": "ModelEnvironmentPropertiesCollection",
+      "field": "property_metadata",
+      "current_type": "dict[str, TypedDictPropertyMetadata]",
+      "issue": "dict should use typed model",
+      "suggestion": "Create a Pydantic model instead of dict"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/container/model_service.py",
+      "model": "ModelService",
+      "field": "service_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for service_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/container/model_service.py",
+      "model": "ModelService",
+      "field": "health_status",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for health_status"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_algorithm_config.py",
+      "model": "ModelAlgorithmConfig",
+      "field": "algorithm_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for algorithm_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_contract_base.py",
+      "model": "ModelContractBase",
+      "field": "input_model",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for input_model"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_contract_base.py",
+      "model": "ModelContractBase",
+      "field": "output_model",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for output_model"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_event_descriptor.py",
+      "model": "ModelEventDescriptor",
+      "field": "event_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for event_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_event_descriptor.py",
+      "model": "ModelEventDescriptor",
+      "field": "criticality_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for criticality_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_external_service_config.py",
+      "model": "ModelExternalServiceConfig",
+      "field": "service_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for service_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_io_operation_config.py",
+      "model": "ModelIOOperationConfig",
+      "field": "operation_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for operation_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_output_transformation_config.py",
+      "model": "ModelOutputTransformationConfig",
+      "field": "format_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for format_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_parallel_config.py",
+      "model": "ModelParallelConfig",
+      "field": "thread_pool_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for thread_pool_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_reduction_config.py",
+      "model": "ModelReductionConfig",
+      "field": "operation_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for operation_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_transaction_config.py",
+      "model": "ModelTransactionConfig",
+      "field": "isolation_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for isolation_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_workflow_config.py",
+      "model": "ModelWorkflowConfig",
+      "field": "execution_mode",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for execution_mode"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/core/model_configuration_base.py",
+      "model": "ModelConfigurationBase",
+      "field": "config_data",
+      "current_type": "Any",
+      "issue": "Any type is too permissive",
+      "suggestion": "Use specific type or Union"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/core/model_container.py",
+      "model": "ModelContainer",
+      "field": "container_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for container_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/core/model_yaml_schema_object.py",
+      "model": "ModelYamlSchemaObject",
+      "field": "object_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for object_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/fsm/model_fsm_data_primary.py",
+      "model": "ModelFsmData",
+      "field": "state_machine_name",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for state_machine_name"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/fsm/model_fsm_data_primary.py",
+      "model": "ModelFsmData",
+      "field": "initial_state",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for initial_state"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/fsm/model_fsm_transition.py",
+      "model": "ModelFsmTransition",
+      "field": "from_state",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for from_state"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/fsm/model_fsm_transition.py",
+      "model": "ModelFsmTransition",
+      "field": "to_state",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for to_state"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/infrastructure/model_result.py",
+      "model": "ModelResult",
+      "field": "value",
+      "current_type": "Any",
+      "issue": "Any type is too permissive",
+      "suggestion": "Use specific type or Union"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/infrastructure/model_result.py",
+      "model": "ModelResult",
+      "field": "error",
+      "current_type": "Any",
+      "issue": "Any type is too permissive",
+      "suggestion": "Use specific type or Union"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/model_version_union.py",
+      "model": "ModelVersionUnion",
+      "field": "version_dict",
+      "current_type": "TypedDictVersionDict | None",
+      "issue": "dict should use typed model",
+      "suggestion": "Create a Pydantic model instead of dict"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py",
+      "model": "ModelComputationOperationParameters",
+      "field": "optimization_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for optimization_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py",
+      "model": "ModelComputationOperationParameters",
+      "field": "validation_mode",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for validation_mode"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_event_metadata.py",
+      "model": "ModelEventMetadata",
+      "field": "event_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for event_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_event_payload.py",
+      "model": "ModelEventAttributeInfo",
+      "field": "category",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for category"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_message_payload.py",
+      "model": "ModelMessageHeaders",
+      "field": "content_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for content_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_operation_payload.py",
+      "model": "ModelOperationParametersBase",
+      "field": "priority_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for priority_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_system_metadata.py",
+      "model": "ModelSystemMetadata",
+      "field": "health_status",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for health_status"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_instance_metadata.py",
+      "model": "ModelWorkflowInstanceMetadata",
+      "field": "workflow_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for workflow_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py",
+      "model": "ModelWorkflowInputParameters",
+      "field": "execution_mode",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for execution_mode"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py",
+      "model": "ModelWorkflowInputParameters",
+      "field": "validation_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for validation_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py",
+      "model": "ModelConditionalWorkflowContext",
+      "field": "evaluation_mode",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for evaluation_mode"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/results/model_orchestrator_info.py",
+      "model": "ModelOrchestratorInfo",
+      "field": "orchestrator_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for orchestrator_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_aggregation_function.py",
+      "model": "ModelAggregationFunction",
+      "field": "function_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for function_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_aggregation_subcontract.py",
+      "model": "ModelAggregationSubcontract",
+      "field": "aggregation_mode",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for aggregation_mode"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_aggregation_subcontract.py",
+      "model": "ModelAggregationSubcontract",
+      "field": "output_format",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for output_format"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_cache_distribution.py",
+      "model": "ModelCacheDistribution",
+      "field": "consistency_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for consistency_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_configuration_source.py",
+      "model": "ModelConfigurationSource",
+      "field": "source_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for source_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_configuration_subcontract.py",
+      "model": "ModelConfigurationSubcontract",
+      "field": "default_source_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for default_source_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_definition.py",
+      "model": "ModelEventDefinition",
+      "field": "event_category",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for event_category"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_transformation.py",
+      "model": "ModelEventTransformation",
+      "field": "transformation_name",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for transformation_name"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_transformation.py",
+      "model": "ModelEventTransformation",
+      "field": "transformation_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for transformation_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_operation.py",
+      "model": "ModelFSMOperation",
+      "field": "operation_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for operation_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_state_definition.py",
+      "model": "ModelFSMStateDefinition",
+      "field": "state_name",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for state_name"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_state_definition.py",
+      "model": "ModelFSMStateDefinition",
+      "field": "state_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for state_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_state_transition.py",
+      "model": "ModelFSMStateTransition",
+      "field": "from_state",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for from_state"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_state_transition.py",
+      "model": "ModelFSMStateTransition",
+      "field": "to_state",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for to_state"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py",
+      "model": "ModelFSMSubcontract",
+      "field": "state_machine_name",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for state_machine_name"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py",
+      "model": "ModelFSMSubcontract",
+      "field": "initial_state",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for initial_state"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py",
+      "model": "ModelFSMTransitionAction",
+      "field": "action_name",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for action_name"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py",
+      "model": "ModelFSMTransitionAction",
+      "field": "action_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for action_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_condition.py",
+      "model": "ModelFSMTransitionCondition",
+      "field": "condition_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for condition_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_node_progress.py",
+      "model": "ModelNodeProgress",
+      "field": "status",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for status"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_windowing_strategy.py",
+      "model": "ModelWindowingStrategy",
+      "field": "window_type",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for window_type"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_error_summary.py",
+      "model": "ModelAnalyticsErrorSummary",
+      "field": "severity_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for severity_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py",
+      "model": "ModelAnalyticsPerformanceSummary",
+      "field": "performance_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for performance_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py",
+      "model": "ModelAnalyticsPerformanceSummary",
+      "field": "memory_usage_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for memory_usage_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py",
+      "model": "ModelNodePerformanceSummary",
+      "field": "performance_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for performance_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py",
+      "model": "ModelNodePerformanceSummary",
+      "field": "reliability_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for reliability_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py",
+      "model": "ModelNodePerformanceSummary",
+      "field": "memory_usage_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for memory_usage_level"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py",
+      "model": "ModelNodeQualitySummary",
+      "field": "quality_level",
+      "current_type": "str",
+      "issue": "str field might need enum",
+      "suggestion": "Consider creating/using enum for quality_level"
+    }
+  ],
+  "all_models": {
+    "ModelOnexError": [
+      "/root/repo/src/omnibase_core/errors/error_codes.py",
+      "/root/repo/src/omnibase_core/models/common/model_onex_error.py"
+    ],
+    "ModelOnexWarning": [
+      "/root/repo/src/omnibase_core/errors/error_codes.py"
+    ],
+    "ModelAction": [
+      "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+    ],
+    "ModelState": [
+      "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+    ],
+    "ModelComputeInput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_compute.py"
+    ],
+    "ModelComputeOutput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_compute.py"
+    ],
+    "ModelEffectInput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "ModelEffectResultDict": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "ModelEffectResultBool": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "ModelEffectResultStr": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "ModelEffectResultList": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "ModelEffectOutput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "ModelOrchestratorInput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_orchestrator.py"
+    ],
+    "ModelOrchestratorOutput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_orchestrator.py"
+    ],
+    "ModelReducerInput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_reducer.py"
+    ],
+    "ModelReducerOutput": [
+      "/root/repo/src/omnibase_core/infrastructure/node_reducer.py"
+    ],
+    "ModelYamlDumpOptions": [
+      "/root/repo/src/omnibase_core/models/model_yaml_dump_options.py"
+    ],
+    "ModelBaseCollection": [
+      "/root/repo/src/omnibase_core/models/base/model_collection.py"
+    ],
+    "ModelBaseFactory": [
+      "/root/repo/src/omnibase_core/models/base/model_factory.py"
+    ],
+    "ModelServiceBaseProcessor": [
+      "/root/repo/src/omnibase_core/models/base/model_processor.py"
+    ],
+    "ModelCliAction": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_action.py"
+    ],
+    "ModelCliAdvancedParams": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_advanced_params.py"
+    ],
+    "ModelCliCommandOption": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_command_option.py"
+    ],
+    "ModelCliDebugInfo": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_debug_info.py"
+    ],
+    "ModelCliExecution": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution.py"
+    ],
+    "ModelCliExecutionConfig": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_config.py"
+    ],
+    "ModelCliExecutionContext": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_context.py"
+    ],
+    "ModelCliExecutionCore": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_core.py"
+    ],
+    "ModelCliExecutionInputData": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_input_data.py"
+    ],
+    "ModelCliExecutionMetadata": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_metadata.py"
+    ],
+    "ModelCliExecutionResources": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_resources.py"
+    ],
+    "ModelCliExecutionSummary": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_execution_summary.py"
+    ],
+    "ModelCliNodeExecutionInput": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_node_execution_input.py"
+    ],
+    "ModelCliOutputData": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_output_data.py"
+    ],
+    "ModelCliResult": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_result.py"
+    ],
+    "ModelCliResultMetadata": [
+      "/root/repo/src/omnibase_core/models/cli/model_cli_result_metadata.py"
+    ],
+    "ModelOutputFormatOptions": [
+      "/root/repo/src/omnibase_core/models/cli/model_output_format_options.py"
+    ],
+    "ModelPerformanceMetrics": [
+      "/root/repo/src/omnibase_core/models/cli/model_performance_metrics.py"
+    ],
+    "ModelResultSummary": [
+      "/root/repo/src/omnibase_core/models/cli/model_result_summary.py"
+    ],
+    "ModelTraceData": [
+      "/root/repo/src/omnibase_core/models/cli/model_trace_data.py"
+    ],
+    "ModelErrorContext": [
+      "/root/repo/src/omnibase_core/models/common/model_error_context.py"
+    ],
+    "ModelFlexibleValue": [
+      "/root/repo/src/omnibase_core/models/common/model_flexible_value.py"
+    ],
+    "ModelNumericValue": [
+      "/root/repo/src/omnibase_core/models/common/model_numeric_value.py"
+    ],
+    "ModelSchemaValue": [
+      "/root/repo/src/omnibase_core/models/common/model_schema_value.py"
+    ],
+    "ModelArtifactTypeConfig": [
+      "/root/repo/src/omnibase_core/models/config/model_artifact_type_config.py"
+    ],
+    "ModelDataHandlingDeclaration": [
+      "/root/repo/src/omnibase_core/models/config/model_data_handling_declaration.py"
+    ],
+    "ModelEnvironmentProperties": [
+      "/root/repo/src/omnibase_core/models/config/model_environment_properties.py"
+    ],
+    "ModelEnvironmentPropertiesCollection": [
+      "/root/repo/src/omnibase_core/models/config/model_environment_properties_collection.py"
+    ],
+    "ModelExample": [
+      "/root/repo/src/omnibase_core/models/config/model_example.py"
+    ],
+    "ModelExampleContextData": [
+      "/root/repo/src/omnibase_core/models/config/model_example_context_data.py"
+    ],
+    "ModelExampleInputData": [
+      "/root/repo/src/omnibase_core/models/config/model_example_input_data.py"
+    ],
+    "ModelExampleMetadata": [
+      "/root/repo/src/omnibase_core/models/config/model_example_metadata.py"
+    ],
+    "ModelExampleMetadataSummary": [
+      "/root/repo/src/omnibase_core/models/config/model_example_metadata_summary.py"
+    ],
+    "ModelExampleOutputData": [
+      "/root/repo/src/omnibase_core/models/config/model_example_output_data.py"
+    ],
+    "ModelExampleSummary": [
+      "/root/repo/src/omnibase_core/models/config/model_example_summary.py"
+    ],
+    "ModelExamples": [
+      "/root/repo/src/omnibase_core/models/config/model_examples_collection.py"
+    ],
+    "ModelExamplesCollectionSummary": [
+      "/root/repo/src/omnibase_core/models/config/model_examples_collection_summary.py"
+    ],
+    "ModelFallbackMetadata": [
+      "/root/repo/src/omnibase_core/models/config/model_fallback_metadata.py"
+    ],
+    "ModelFallbackStrategy": [
+      "/root/repo/src/omnibase_core/models/config/model_fallback_strategy.py"
+    ],
+    "ModelNamespaceConfig": [
+      "/root/repo/src/omnibase_core/models/config/model_namespace_config.py"
+    ],
+    "ModelPropertyCollection": [
+      "/root/repo/src/omnibase_core/models/config/model_property_collection.py"
+    ],
+    "ModelPropertyMetadata": [
+      "/root/repo/src/omnibase_core/models/config/model_property_metadata.py"
+    ],
+    "ModelPropertyValue": [
+      "/root/repo/src/omnibase_core/models/config/model_property_value.py"
+    ],
+    "ModelSchemaExample": [
+      "/root/repo/src/omnibase_core/models/config/model_schema_example.py"
+    ],
+    "ModelTypedProperty": [
+      "/root/repo/src/omnibase_core/models/config/model_typed_property.py"
+    ],
+    "ModelOnexUri": [
+      "/root/repo/src/omnibase_core/models/config/model_uri.py"
+    ],
+    "ModelCloudServiceProperties": [
+      "/root/repo/src/omnibase_core/models/connections/model_cloud_service_properties.py"
+    ],
+    "ModelConnectionAuth": [
+      "/root/repo/src/omnibase_core/models/connections/model_connection_auth.py"
+    ],
+    "ModelConnectionEndpoint": [
+      "/root/repo/src/omnibase_core/models/connections/model_connection_endpoint.py"
+    ],
+    "ModelConnectionInfo": [
+      "/root/repo/src/omnibase_core/models/connections/model_connection_info.py"
+    ],
+    "ModelConnectionMetrics": [
+      "/root/repo/src/omnibase_core/models/connections/model_connection_metrics.py"
+    ],
+    "ModelConnectionPool": [
+      "/root/repo/src/omnibase_core/models/connections/model_connection_pool.py"
+    ],
+    "ModelConnectionSecurity": [
+      "/root/repo/src/omnibase_core/models/connections/model_connection_security.py"
+    ],
+    "ModelCustomConnectionProperties": [
+      "/root/repo/src/omnibase_core/models/connections/model_custom_connection_properties.py"
+    ],
+    "ModelDatabaseProperties": [
+      "/root/repo/src/omnibase_core/models/connections/model_database_properties.py"
+    ],
+    "ModelMessageQueueProperties": [
+      "/root/repo/src/omnibase_core/models/connections/model_message_queue_properties.py"
+    ],
+    "ModelPerformanceProperties": [
+      "/root/repo/src/omnibase_core/models/connections/model_performance_properties.py"
+    ],
+    "ModelService": [
+      "/root/repo/src/omnibase_core/models/container/model_service.py"
+    ],
+    "ModelAlgorithmConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_algorithm_config.py"
+    ],
+    "ModelAlgorithmFactorConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_algorithm_factor_config.py"
+    ],
+    "ModelBackupConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_backup_config.py"
+    ],
+    "ModelBranchingConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_branching_config.py"
+    ],
+    "ModelCachingConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_caching_config.py"
+    ],
+    "ModelCompensationPlan": [
+      "/root/repo/src/omnibase_core/models/contracts/model_compensation_plan.py"
+    ],
+    "ModelConditionValue": [
+      "/root/repo/src/omnibase_core/models/contracts/model_condition_value.py"
+    ],
+    "ModelConditionValueList": [
+      "/root/repo/src/omnibase_core/models/contracts/model_condition_value_list.py"
+    ],
+    "ModelConflictResolutionConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_conflict_resolution_config.py"
+    ],
+    "ModelContractBase": [
+      "/root/repo/src/omnibase_core/models/contracts/model_contract_base.py"
+    ],
+    "ModelDependency": [
+      "/root/repo/src/omnibase_core/models/contracts/model_dependency.py"
+    ],
+    "ModelEffectRetryConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_effect_retry_config.py"
+    ],
+    "ModelEventCoordinationConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_event_coordination_config.py"
+    ],
+    "ModelEventDescriptor": [
+      "/root/repo/src/omnibase_core/models/contracts/model_event_descriptor.py"
+    ],
+    "ModelEventRegistryConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_event_registry_config.py"
+    ],
+    "ModelEventSubscription": [
+      "/root/repo/src/omnibase_core/models/contracts/model_event_subscription.py"
+    ],
+    "ModelExternalServiceConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_external_service_config.py"
+    ],
+    "ModelFilterConditions": [
+      "/root/repo/src/omnibase_core/models/contracts/model_filter_conditions.py"
+    ],
+    "ModelInputValidationConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_input_validation_config.py"
+    ],
+    "ModelIOOperationConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_io_operation_config.py"
+    ],
+    "ModelLifecycleConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_lifecycle_config.py"
+    ],
+    "ModelMemoryManagementConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_memory_management_config.py"
+    ],
+    "ModelOutputTransformationConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_output_transformation_config.py"
+    ],
+    "ModelParallelConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_parallel_config.py"
+    ],
+    "ModelPerformanceRequirements": [
+      "/root/repo/src/omnibase_core/models/contracts/model_performance_requirements.py"
+    ],
+    "ModelReductionConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_reduction_config.py"
+    ],
+    "ModelStreamingConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_streaming_config.py"
+    ],
+    "ModelThunkEmissionConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_thunk_emission_config.py"
+    ],
+    "ModelTransactionConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_transaction_config.py"
+    ],
+    "ModelTriggerMappings": [
+      "/root/repo/src/omnibase_core/models/contracts/model_trigger_mappings.py"
+    ],
+    "ModelValidationRules": [
+      "/root/repo/src/omnibase_core/models/contracts/model_validation_rules.py"
+    ],
+    "ModelWorkflowCondition": [
+      "/root/repo/src/omnibase_core/models/contracts/model_workflow_condition.py"
+    ],
+    "ModelWorkflowConditions": [
+      "/root/repo/src/omnibase_core/models/contracts/model_workflow_conditions.py"
+    ],
+    "ModelWorkflowConfig": [
+      "/root/repo/src/omnibase_core/models/contracts/model_workflow_config.py"
+    ],
+    "ModelWorkflowDependency": [
+      "/root/repo/src/omnibase_core/models/contracts/model_workflow_dependency.py"
+    ],
+    "ModelWorkflowStep": [
+      "/root/repo/src/omnibase_core/models/contracts/model_workflow_step.py"
+    ],
+    "ModelYamlContract": [
+      "/root/repo/src/omnibase_core/models/contracts/model_yaml_contract.py"
+    ],
+    "ModelConfigurationBase": [
+      "/root/repo/src/omnibase_core/models/core/model_configuration_base.py"
+    ],
+    "ModelContainer": [
+      "/root/repo/src/omnibase_core/models/core/model_container.py"
+    ],
+    "ModelContractCache": [
+      "/root/repo/src/omnibase_core/models/core/model_contract_cache.py"
+    ],
+    "ModelContractContent": [
+      "/root/repo/src/omnibase_core/models/core/model_contract_content.py"
+    ],
+    "ModelContractDefinitions": [
+      "/root/repo/src/omnibase_core/models/core/model_contract_definitions.py"
+    ],
+    "ModelContractLoader": [
+      "/root/repo/src/omnibase_core/models/core/model_contract_loader.py"
+    ],
+    "ModelCustomProperties": [
+      "/root/repo/src/omnibase_core/models/core/model_custom_properties.py"
+    ],
+    "ModelFieldAccessor": [
+      "/root/repo/src/omnibase_core/models/core/model_field_accessor.py"
+    ],
+    "ModelGenericCollection": [
+      "/root/repo/src/omnibase_core/models/core/model_generic_collection.py"
+    ],
+    "ModelGenericCollectionSummary": [
+      "/root/repo/src/omnibase_core/models/core/model_generic_collection_summary.py"
+    ],
+    "ModelGenericYaml": [
+      "/root/repo/src/omnibase_core/models/core/model_generic_yaml.py"
+    ],
+    "ModelItemSummary": [
+      "/root/repo/src/omnibase_core/models/core/model_item_summary.py"
+    ],
+    "ModelLogContext": [
+      "/root/repo/src/omnibase_core/models/core/model_log_context.py"
+    ],
+    "ModelToolSpecification": [
+      "/root/repo/src/omnibase_core/models/core/model_tool_specification.py"
+    ],
+    "ModelYamlSchemaObject": [
+      "/root/repo/src/omnibase_core/models/core/model_yaml_schema_object.py"
+    ],
+    "ModelFsmData": [
+      "/root/repo/src/omnibase_core/models/fsm/model_fsm_data_primary.py"
+    ],
+    "ModelFsmState": [
+      "/root/repo/src/omnibase_core/models/fsm/model_fsm_state.py"
+    ],
+    "ModelFsmTransition": [
+      "/root/repo/src/omnibase_core/models/fsm/model_fsm_transition.py"
+    ],
+    "ModelCliResultData": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_cli_result_data.py"
+    ],
+    "ModelCliValue": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_cli_value.py"
+    ],
+    "ModelDuration": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_duration.py"
+    ],
+    "ModelEnvironmentVariables": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_environment_variables.py"
+    ],
+    "ModelErrorValue": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_error_value.py"
+    ],
+    "ModelExecutionDuration": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_execution_duration.py"
+    ],
+    "ModelExecutionSummary": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_execution_summary.py"
+    ],
+    "ModelMetric": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_metric.py"
+    ],
+    "ModelMetricsData": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_metrics_data.py"
+    ],
+    "ModelProgress": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_progress.py"
+    ],
+    "ModelRegexFlags": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_regex_flags.py"
+    ],
+    "ModelResult": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_result.py"
+    ],
+    "ModelResultDict": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_result_dict.py"
+    ],
+    "ModelRetryAdvanced": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_advanced.py"
+    ],
+    "ModelRetryConditions": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_conditions.py"
+    ],
+    "ModelRetryConfig": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_config.py"
+    ],
+    "ModelRetryExecution": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_execution.py"
+    ],
+    "ModelRetryFailureInfo": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_failure_info.py"
+    ],
+    "ModelRetryPolicy": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_retry_policy.py",
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_routing.py"
+    ],
+    "ModelTestResult": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_test_result.py"
+    ],
+    "ModelTestResults": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_test_results.py"
+    ],
+    "ModelTimeBased": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_time_based.py"
+    ],
+    "ModelTimeout": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_timeout.py"
+    ],
+    "ModelTimeoutData": [
+      "/root/repo/src/omnibase_core/models/infrastructure/model_timeout_data.py"
+    ],
+    "ModelLogNodeIdentifierUUID": [
+      "/root/repo/src/omnibase_core/models/logging/model_log_node_identifier.py"
+    ],
+    "ModelLogNodeIdentifierString": [
+      "/root/repo/src/omnibase_core/models/logging/model_log_node_identifier.py"
+    ],
+    "ModelFieldIdentity": [
+      "/root/repo/src/omnibase_core/models/metadata/model_field_identity.py"
+    ],
+    "ModelFieldValidationRules": [
+      "/root/repo/src/omnibase_core/models/metadata/model_field_validation_rules.py"
+    ],
+    "ModelFunctionNodeData": [
+      "/root/repo/src/omnibase_core/models/metadata/model_function_node_data.py"
+    ],
+    "ModelGenericMetadata": [
+      "/root/repo/src/omnibase_core/models/metadata/model_generic_metadata.py",
+      "/root/repo/src/omnibase_core/models/results/model_generic_metadata.py"
+    ],
+    "ModelInputState": [
+      "/root/repo/src/omnibase_core/models/metadata/model_input_state.py"
+    ],
+    "ModelMetadataAnalyticsSummary": [
+      "/root/repo/src/omnibase_core/models/metadata/model_metadata_analytics_summary.py"
+    ],
+    "ModelMetadataFieldInfo": [
+      "/root/repo/src/omnibase_core/models/metadata/model_metadata_field_info.py"
+    ],
+    "ModelMetadataNodeAnalytics": [
+      "/root/repo/src/omnibase_core/models/metadata/model_metadata_node_analytics.py"
+    ],
+    "ModelMetadataNodeInfo": [
+      "/root/repo/src/omnibase_core/models/metadata/model_metadata_node_info.py"
+    ],
+    "ModelMetadataUsageMetrics": [
+      "/root/repo/src/omnibase_core/models/metadata/model_metadata_usage_metrics.py"
+    ],
+    "ModelMetadataValue": [
+      "/root/repo/src/omnibase_core/models/metadata/model_metadata_value.py"
+    ],
+    "ModelNestedConfiguration": [
+      "/root/repo/src/omnibase_core/models/metadata/model_nested_configuration.py"
+    ],
+    "ModelNodeInfoContainer": [
+      "/root/repo/src/omnibase_core/models/metadata/model_node_info_container.py"
+    ],
+    "ModelNodeInfoSummary": [
+      "/root/repo/src/omnibase_core/models/metadata/model_node_info_summary.py"
+    ],
+    "ModelNodeUnion": [
+      "/root/repo/src/omnibase_core/models/metadata/model_node_union.py"
+    ],
+    "ModelSemVer": [
+      "/root/repo/src/omnibase_core/models/metadata/model_semver.py"
+    ],
+    "ModelStructuredDescription": [
+      "/root/repo/src/omnibase_core/models/metadata/model_structured_description.py"
+    ],
+    "ModelStructuredDisplayName": [
+      "/root/repo/src/omnibase_core/models/metadata/model_structured_display_name.py"
+    ],
+    "ModelStructuredTags": [
+      "/root/repo/src/omnibase_core/models/metadata/model_structured_tags.py"
+    ],
+    "ModelTypedMetrics": [
+      "/root/repo/src/omnibase_core/models/metadata/model_typed_metrics.py"
+    ],
+    "ModelVersionUnion": [
+      "/root/repo/src/omnibase_core/models/metadata/model_version_union.py"
+    ],
+    "ModelFunctionDeprecationInfo": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_deprecation_info.py"
+    ],
+    "ModelFunctionDocumentation": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_documentation.py"
+    ],
+    "ModelFunctionNode": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_node.py"
+    ],
+    "ModelFunctionNodeCore": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_node_core.py"
+    ],
+    "ModelFunctionNodeMetadata": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_node_metadata.py"
+    ],
+    "ModelFunctionNodePerformance": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_node_performance.py"
+    ],
+    "ModelFunctionNodeSummary": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_node_summary.py"
+    ],
+    "ModelFunctionRelationships": [
+      "/root/repo/src/omnibase_core/models/nodes/model_function_relationships.py"
+    ],
+    "ModelNodeCapabilitiesInfo": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_capabilities_info.py"
+    ],
+    "ModelNodeCapabilitiesSummary": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_capabilities_summary.py"
+    ],
+    "ModelNodeCapability": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_capability.py"
+    ],
+    "ModelNodeConfiguration": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_configuration.py"
+    ],
+    "ModelNodeConfigurationSummary": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_configuration_summary.py"
+    ],
+    "ModelNodeConfigurationStringValue": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_configuration_value.py"
+    ],
+    "ModelNodeConfigurationNumericValue": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_configuration_value.py"
+    ],
+    "ModelNodeConnectionSettings": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_connection_settings.py"
+    ],
+    "ModelNodeCoreInfo": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_core_info.py"
+    ],
+    "ModelNodeCoreInfoSummary": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_core_info_summary.py"
+    ],
+    "ModelNodeCoreMetadata": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_core_metadata.py"
+    ],
+    "ModelNodeStatusActive": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_core_metadata.py"
+    ],
+    "ModelNodeStatusMaintenance": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_core_metadata.py"
+    ],
+    "ModelNodeStatusError": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_core_metadata.py"
+    ],
+    "ModelNodeExecutionSettings": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_execution_settings.py"
+    ],
+    "ModelNodeFeatureFlags": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_feature_flags.py"
+    ],
+    "ModelNodeInformation": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_information.py"
+    ],
+    "ModelNodeInformationSummary": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_information_summary.py"
+    ],
+    "ModelNodeMetadataInfo": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_metadata_info.py"
+    ],
+    "ModelNodeOrganizationMetadata": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_organization_metadata.py"
+    ],
+    "ModelNodeResourceLimits": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_resource_limits.py"
+    ],
+    "ModelNodeType": [
+      "/root/repo/src/omnibase_core/models/nodes/model_node_type.py"
+    ],
+    "ModelStructuredInputValue": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelPrimitiveInputValue": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelMixedInputValue": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelComputationInputBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelComputationMetadataContext": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelComputationOperationParameters": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelComputationInputData": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelComputationOutputBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_output_data.py"
+    ],
+    "ModelComputationOutputData": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_output_data.py"
+    ],
+    "ModelEffectParameterValue": [
+      "/root/repo/src/omnibase_core/models/operations/model_effect_parameters.py"
+    ],
+    "ModelEffectParameters": [
+      "/root/repo/src/omnibase_core/models/operations/model_effect_parameters.py"
+    ],
+    "ModelEventMetadata": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_metadata.py"
+    ],
+    "ModelEventPayload": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_payload.py"
+    ],
+    "ModelEventDataBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_payload.py"
+    ],
+    "ModelEventRoutingInfo": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_payload.py"
+    ],
+    "ModelEventContextInfo": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_payload.py"
+    ],
+    "ModelEventAttributeInfo": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_payload.py"
+    ],
+    "ModelEventSourceInfo": [
+      "/root/repo/src/omnibase_core/models/operations/model_event_payload.py"
+    ],
+    "ModelExecutionMetadata": [
+      "/root/repo/src/omnibase_core/models/operations/model_execution_metadata.py"
+    ],
+    "ModelMessageHeaders": [
+      "/root/repo/src/omnibase_core/models/operations/model_message_payload.py"
+    ],
+    "ModelMessageContentBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_message_payload.py"
+    ],
+    "ModelMessagePayload": [
+      "/root/repo/src/omnibase_core/models/operations/model_message_payload.py"
+    ],
+    "ModelOperationParameterValue": [
+      "/root/repo/src/omnibase_core/models/operations/model_operation_parameters_base.py"
+    ],
+    "ModelOperationParameters": [
+      "/root/repo/src/omnibase_core/models/operations/model_operation_parameters_base.py"
+    ],
+    "ModelOperationParametersBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_operation_payload.py"
+    ],
+    "ModelOperationDataBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_operation_payload.py"
+    ],
+    "ModelOperationPayload": [
+      "/root/repo/src/omnibase_core/models/operations/model_operation_payload.py"
+    ],
+    "ModelSystemMetadata": [
+      "/root/repo/src/omnibase_core/models/operations/model_system_metadata.py"
+    ],
+    "ModelWorkflowInstanceMetadata": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_instance_metadata.py"
+    ],
+    "ModelBaseWorkflowParameter": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_parameters.py"
+    ],
+    "ModelWorkflowParameters": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_parameters.py"
+    ],
+    "ModelWorkflowExecutionContext": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelWorkflowInputParameters": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelWorkflowConfiguration": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelConditionalWorkflowContext": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelLoopWorkflowContext": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelWorkflowDataBase": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelWorkflowPayload": [
+      "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py"
+    ],
+    "ModelOnexMessage": [
+      "/root/repo/src/omnibase_core/models/results/model_onex_message.py"
+    ],
+    "ModelOnexMessageContext": [
+      "/root/repo/src/omnibase_core/models/results/model_onex_message_context.py"
+    ],
+    "ModelOnexResult": [
+      "/root/repo/src/omnibase_core/models/results/model_onex_result.py"
+    ],
+    "ModelOrchestratorInfo": [
+      "/root/repo/src/omnibase_core/models/results/model_orchestrator_info.py"
+    ],
+    "ModelOrchestratorMetrics": [
+      "/root/repo/src/omnibase_core/models/results/model_orchestrator_metrics.py"
+    ],
+    "ModelUnifiedSummary": [
+      "/root/repo/src/omnibase_core/models/results/model_unified_summary.py"
+    ],
+    "ModelUnifiedSummaryDetails": [
+      "/root/repo/src/omnibase_core/models/results/model_unified_summary_details.py"
+    ],
+    "ModelUnifiedVersion": [
+      "/root/repo/src/omnibase_core/models/results/model_unified_version.py"
+    ],
+    "ModelToolExecutionResult": [
+      "/root/repo/src/omnibase_core/models/tools/model_tool_execution_result.py"
+    ],
+    "ModelContractData": [
+      "/root/repo/src/omnibase_core/models/utils/model_subcontract_constraint_validator.py"
+    ],
+    "ModelValidationRulesInputValue": [
+      "/root/repo/src/omnibase_core/models/utils/model_validation_rules_converter.py"
+    ],
+    "ModelYamlOption": [
+      "/root/repo/src/omnibase_core/models/utils/model_yaml_option.py"
+    ],
+    "ModelYamlValue": [
+      "/root/repo/src/omnibase_core/models/utils/model_yaml_value.py"
+    ],
+    "ModelMigrationConflictUnion": [
+      "/root/repo/src/omnibase_core/models/validation/model_migration_conflict_union.py"
+    ],
+    "ModelValidationBase": [
+      "/root/repo/src/omnibase_core/models/validation/model_validation_base.py"
+    ],
+    "ModelValidationContainer": [
+      "/root/repo/src/omnibase_core/models/validation/model_validation_container.py"
+    ],
+    "ModelValidationError": [
+      "/root/repo/src/omnibase_core/models/validation/model_validation_error.py"
+    ],
+    "ModelValidationValue": [
+      "/root/repo/src/omnibase_core/models/validation/model_validation_value.py"
+    ],
+    "ModelWorkflowExecutionResult": [
+      "/root/repo/src/omnibase_core/models/workflows/model_workflow_execution_result.py"
+    ],
+    "ModelAggregationFunction": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_aggregation_function.py"
+    ],
+    "ModelAggregationPerformance": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_aggregation_performance.py"
+    ],
+    "ModelAggregationSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_aggregation_subcontract.py"
+    ],
+    "ModelCacheDistribution": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_cache_distribution.py"
+    ],
+    "ModelCacheInvalidation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_cache_invalidation.py"
+    ],
+    "ModelCacheKeyStrategy": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_cache_key_strategy.py"
+    ],
+    "ModelCachePerformance": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_cache_performance.py"
+    ],
+    "ModelCachingSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_caching_subcontract.py"
+    ],
+    "ModelCircuitBreaker": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_circuit_breaker.py"
+    ],
+    "ModelConfigurationSource": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_configuration_source.py"
+    ],
+    "ModelConfigurationSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_configuration_subcontract.py"
+    ],
+    "ModelConfigurationValidation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_configuration_validation.py"
+    ],
+    "ModelCoordinationResult": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_coordination_result.py"
+    ],
+    "ModelCoordinationRules": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_coordination_rules.py"
+    ],
+    "ModelDataGrouping": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_data_grouping.py"
+    ],
+    "ModelEventDefinition": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_definition.py"
+    ],
+    "ModelEventPersistence": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_persistence.py"
+    ],
+    "ModelEventRouting": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_routing.py"
+    ],
+    "ModelEventTransformation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_transformation.py"
+    ],
+    "ModelEventTypeSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_event_type_subcontract.py"
+    ],
+    "ModelExecutionGraph": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_execution_graph.py"
+    ],
+    "ModelFSMOperation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_operation.py"
+    ],
+    "ModelFSMStateDefinition": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_state_definition.py"
+    ],
+    "ModelFSMStateTransition": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_state_transition.py"
+    ],
+    "ModelFSMSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py"
+    ],
+    "ModelActionConfigValue": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py"
+    ],
+    "ModelFSMTransitionAction": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py"
+    ],
+    "ModelFSMTransitionCondition": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_condition.py"
+    ],
+    "ModelLoadBalancing": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_load_balancing.py"
+    ],
+    "ModelNodeAssignment": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_node_assignment.py"
+    ],
+    "ModelNodeProgress": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_node_progress.py"
+    ],
+    "ModelProgressStatus": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_progress_status.py"
+    ],
+    "ModelRequestTransformation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_request_transformation.py"
+    ],
+    "ModelRouteDefinition": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_route_definition.py"
+    ],
+    "ModelRoutingMetrics": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_routing_metrics.py"
+    ],
+    "ModelRoutingSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_routing_subcontract.py"
+    ],
+    "ModelStateManagementSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_state_management_subcontract.py"
+    ],
+    "ModelStatePersistence": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_state_persistence.py"
+    ],
+    "ModelStateSynchronization": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_state_synchronization.py"
+    ],
+    "ModelStateValidation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_state_validation.py"
+    ],
+    "ModelStateVersioning": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_state_versioning.py"
+    ],
+    "ModelStatisticalComputation": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_statistical_computation.py"
+    ],
+    "ModelSynchronizationPoint": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_synchronization_point.py"
+    ],
+    "ModelWindowingStrategy": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_windowing_strategy.py"
+    ],
+    "ModelWorkflowCoordinationSubcontract": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_coordination_subcontract.py"
+    ],
+    "ModelWorkflowDefinition": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_definition.py"
+    ],
+    "ModelWorkflowDefinitionMetadata": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_definition_metadata.py"
+    ],
+    "ModelWorkflowInstance": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_instance.py"
+    ],
+    "ModelWorkflowMetrics": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_metrics.py"
+    ],
+    "ModelWorkflowNode": [
+      "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_node.py"
+    ],
+    "ModelProgressCore": [
+      "/root/repo/src/omnibase_core/models/infrastructure/progress/model_progress_core.py"
+    ],
+    "ModelProgressMetrics": [
+      "/root/repo/src/omnibase_core/models/infrastructure/progress/model_progress_metrics.py"
+    ],
+    "ModelProgressMilestones": [
+      "/root/repo/src/omnibase_core/models/infrastructure/progress/model_progress_milestones.py"
+    ],
+    "ModelProgressTiming": [
+      "/root/repo/src/omnibase_core/models/infrastructure/progress/model_progress_timing.py"
+    ],
+    "ModelAnalyticsCore": [
+      "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_core.py"
+    ],
+    "ModelAnalyticsErrorSummary": [
+      "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_error_summary.py"
+    ],
+    "ModelAnalyticsErrorTracking": [
+      "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_error_tracking.py"
+    ],
+    "ModelAnalyticsPerformanceMetrics": [
+      "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_performance_metrics.py"
+    ],
+    "ModelAnalyticsPerformanceSummary": [
+      "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py"
+    ],
+    "ModelAnalyticsQualityMetrics": [
+      "/root/repo/src/omnibase_core/models/metadata/analytics/model_analytics_quality_metrics.py"
+    ],
+    "ModelNodeCategorization": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_categorization.py"
+    ],
+    "ModelNodeCore": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_core.py"
+    ],
+    "ModelNodePerformanceMetrics": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_performance_metrics.py"
+    ],
+    "ModelNodePerformanceSummary": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py"
+    ],
+    "ModelNodeQualityIndicators": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_quality_indicators.py"
+    ],
+    "ModelNodeQualitySummary": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py"
+    ],
+    "ModelNodeTimestamps": [
+      "/root/repo/src/omnibase_core/models/metadata/node_info/model_node_timestamps.py"
+    ]
+  },
+  "all_enums": {
+    "EnumActionCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_action_category.py"
+    ],
+    "EnumArtifactType": [
+      "/root/repo/src/omnibase_core/enums/enum_artifact_type.py"
+    ],
+    "EnumAuthType": [
+      "/root/repo/src/omnibase_core/enums/enum_auth_type.py"
+    ],
+    "EnumBaseStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_base_status.py"
+    ],
+    "EnumCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_category.py"
+    ],
+    "EnumCategoryFilter": [
+      "/root/repo/src/omnibase_core/enums/enum_category_filter.py"
+    ],
+    "EnumCellType": [
+      "/root/repo/src/omnibase_core/enums/enum_cell_type.py"
+    ],
+    "EnumCliAction": [
+      "/root/repo/src/omnibase_core/enums/enum_cli_action.py"
+    ],
+    "EnumCliContextValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_cli_context_value_type.py"
+    ],
+    "EnumCliInputValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_cli_input_value_type.py"
+    ],
+    "EnumCliOptionValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_cli_option_value_type.py"
+    ],
+    "EnumCliStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_cli_status.py"
+    ],
+    "EnumCliValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_cli_value_type.py"
+    ],
+    "EnumCollectionFormat": [
+      "/root/repo/src/omnibase_core/enums/enum_collection_format.py"
+    ],
+    "EnumCollectionPurpose": [
+      "/root/repo/src/omnibase_core/enums/enum_collection_purpose.py"
+    ],
+    "EnumColorScheme": [
+      "/root/repo/src/omnibase_core/enums/enum_color_scheme.py"
+    ],
+    "EnumCompensationStrategy": [
+      "/root/repo/src/omnibase_core/enums/enum_compensation_strategy.py"
+    ],
+    "EnumComplexity": [
+      "/root/repo/src/omnibase_core/enums/enum_complexity.py"
+    ],
+    "EnumComplexityLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_complexity_level.py"
+    ],
+    "EnumConceptualComplexity": [
+      "/root/repo/src/omnibase_core/enums/enum_conceptual_complexity.py"
+    ],
+    "EnumConditionOperator": [
+      "/root/repo/src/omnibase_core/enums/enum_condition_operator.py"
+    ],
+    "EnumConditionType": [
+      "/root/repo/src/omnibase_core/enums/enum_condition_type.py"
+    ],
+    "EnumConfigCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_config_category.py"
+    ],
+    "EnumConfigType": [
+      "/root/repo/src/omnibase_core/enums/enum_config_type.py"
+    ],
+    "EnumConnectionState": [
+      "/root/repo/src/omnibase_core/enums/enum_connection_state.py"
+    ],
+    "EnumConnectionType": [
+      "/root/repo/src/omnibase_core/enums/enum_connection_type.py"
+    ],
+    "EnumContextSource": [
+      "/root/repo/src/omnibase_core/enums/enum_context_source.py"
+    ],
+    "EnumContextType": [
+      "/root/repo/src/omnibase_core/enums/enum_context_type.py"
+    ],
+    "EnumContractDataType": [
+      "/root/repo/src/omnibase_core/enums/enum_contract_data_type.py"
+    ],
+    "EnumCoreErrorCode": [
+      "/root/repo/src/omnibase_core/enums/enum_core_error_code.py"
+    ],
+    "EnumDataClassification": [
+      "/root/repo/src/omnibase_core/enums/enum_data_classification.py"
+    ],
+    "EnumDataFormat": [
+      "/root/repo/src/omnibase_core/enums/enum_data_format.py"
+    ],
+    "EnumDataType": [
+      "/root/repo/src/omnibase_core/enums/enum_data_type.py"
+    ],
+    "EnumDebugLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_debug_level.py"
+    ],
+    "EnumDependencyType": [
+      "/root/repo/src/omnibase_core/enums/enum_dependency_type.py"
+    ],
+    "EnumDeprecationStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_deprecation_status.py"
+    ],
+    "EnumDifficultyLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_difficulty_level.py"
+    ],
+    "EnumDocumentFreshnessErrorCodes": [
+      "/root/repo/src/omnibase_core/enums/enum_document_freshness_errors.py"
+    ],
+    "EnumDocumentationQuality": [
+      "/root/repo/src/omnibase_core/enums/enum_documentation_quality.py"
+    ],
+    "EnumEditMode": [
+      "/root/repo/src/omnibase_core/enums/enum_edit_mode.py"
+    ],
+    "EnumEffectParameterType": [
+      "/root/repo/src/omnibase_core/enums/enum_effect_parameter_type.py"
+    ],
+    "EnumEntityType": [
+      "/root/repo/src/omnibase_core/enums/enum_entity_type.py"
+    ],
+    "EnumEnvironment": [
+      "/root/repo/src/omnibase_core/enums/enum_environment.py"
+    ],
+    "EnumErrorValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_error_value_type.py"
+    ],
+    "EnumEventType": [
+      "/root/repo/src/omnibase_core/enums/enum_event_type.py"
+    ],
+    "EnumExampleCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_example_category.py"
+    ],
+    "EnumExecutionMode": [
+      "/root/repo/src/omnibase_core/enums/enum_execution_mode.py"
+    ],
+    "EnumExecutionOrder": [
+      "/root/repo/src/omnibase_core/enums/enum_execution_order.py"
+    ],
+    "EnumExecutionPhase": [
+      "/root/repo/src/omnibase_core/enums/enum_execution_phase.py"
+    ],
+    "EnumExecutionStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_execution_status.py"
+    ],
+    "EnumExecutionStatusV2": [
+      "/root/repo/src/omnibase_core/enums/enum_execution_status_v2.py"
+    ],
+    "EnumFallbackStrategyType": [
+      "/root/repo/src/omnibase_core/enums/enum_fallback_strategy_type.py"
+    ],
+    "EnumFieldType": [
+      "/root/repo/src/omnibase_core/enums/enum_field_type.py"
+    ],
+    "EnumFilterType": [
+      "/root/repo/src/omnibase_core/enums/enum_filter_type.py"
+    ],
+    "EnumFlexibleValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_flexible_value_type.py"
+    ],
+    "EnumFunctionLifecycleStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_function_lifecycle_status.py"
+    ],
+    "EnumFunctionStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_function_status.py"
+    ],
+    "EnumFunctionType": [
+      "/root/repo/src/omnibase_core/enums/enum_function_type.py"
+    ],
+    "EnumGeneralStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_general_status.py"
+    ],
+    "EnumInstanceType": [
+      "/root/repo/src/omnibase_core/enums/enum_instance_type.py"
+    ],
+    "EnumIOType": [
+      "/root/repo/src/omnibase_core/enums/enum_io_type.py"
+    ],
+    "EnumItemType": [
+      "/root/repo/src/omnibase_core/enums/enum_item_type.py"
+    ],
+    "EnumLogLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_log_level.py"
+    ],
+    "EnumMemoryUsage": [
+      "/root/repo/src/omnibase_core/enums/enum_memory_usage.py"
+    ],
+    "EnumMetadataNodeComplexity": [
+      "/root/repo/src/omnibase_core/enums/enum_metadata_node_complexity.py"
+    ],
+    "EnumMetadataNodeStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_metadata_node_status.py"
+    ],
+    "EnumMetadataNodeType": [
+      "/root/repo/src/omnibase_core/enums/enum_metadata_node_type.py"
+    ],
+    "EnumMetricDataType": [
+      "/root/repo/src/omnibase_core/enums/enum_metric_data_type.py"
+    ],
+    "EnumMetricType": [
+      "/root/repo/src/omnibase_core/enums/enum_metric_type.py"
+    ],
+    "EnumMetricsCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_metrics_category.py"
+    ],
+    "EnumMigrationConflictType": [
+      "/root/repo/src/omnibase_core/enums/enum_migration_conflict_type.py"
+    ],
+    "EnumNamespaceStrategy": [
+      "/root/repo/src/omnibase_core/enums/enum_namespace_strategy.py"
+    ],
+    "EnumNodeArchitectureType": [
+      "/root/repo/src/omnibase_core/enums/enum_node_architecture_type.py"
+    ],
+    "EnumNodeCapability": [
+      "/root/repo/src/omnibase_core/enums/enum_node_capability.py"
+    ],
+    "EnumNodeHealthStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_node_health_status.py"
+    ],
+    "EnumNodeType": [
+      "/root/repo/src/omnibase_core/enums/enum_node_type.py"
+    ],
+    "EnumNodeUnionType": [
+      "/root/repo/src/omnibase_core/enums/enum_node_union_type.py"
+    ],
+    "EnumNumericType": [
+      "/root/repo/src/omnibase_core/enums/enum_numeric_type.py"
+    ],
+    "EnumOnexStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_onex_status.py"
+    ],
+    "EnumOperationParameterType": [
+      "/root/repo/src/omnibase_core/enums/enum_operation_parameter_type.py"
+    ],
+    "EnumOperationType": [
+      "/root/repo/src/omnibase_core/enums/enum_operation_type.py"
+    ],
+    "EnumOperationalComplexity": [
+      "/root/repo/src/omnibase_core/enums/enum_operational_complexity.py"
+    ],
+    "EnumOutputFormat": [
+      "/root/repo/src/omnibase_core/enums/enum_output_format.py"
+    ],
+    "EnumOutputMode": [
+      "/root/repo/src/omnibase_core/enums/enum_output_mode.py"
+    ],
+    "EnumOutputType": [
+      "/root/repo/src/omnibase_core/enums/enum_output_type.py"
+    ],
+    "EnumParameterType": [
+      "/root/repo/src/omnibase_core/enums/enum_parameter_type.py"
+    ],
+    "EnumPerformanceImpact": [
+      "/root/repo/src/omnibase_core/enums/enum_performance_impact.py"
+    ],
+    "EnumPropertyType": [
+      "/root/repo/src/omnibase_core/enums/enum_property_type.py"
+    ],
+    "EnumProtocolType": [
+      "/root/repo/src/omnibase_core/enums/enum_protocol_type.py"
+    ],
+    "EnumRegexFlagType": [
+      "/root/repo/src/omnibase_core/enums/enum_regex_flag_type.py"
+    ],
+    "EnumRegistryStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_registry_status.py"
+    ],
+    "EnumResultCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_result_category.py"
+    ],
+    "EnumResultType": [
+      "/root/repo/src/omnibase_core/enums/enum_result_type.py"
+    ],
+    "EnumRetentionPolicy": [
+      "/root/repo/src/omnibase_core/enums/enum_retention_policy.py"
+    ],
+    "EnumRetryBackoffStrategy": [
+      "/root/repo/src/omnibase_core/enums/enum_retry_backoff_strategy.py"
+    ],
+    "EnumReturnType": [
+      "/root/repo/src/omnibase_core/enums/enum_return_type.py"
+    ],
+    "EnumRuntimeCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_runtime_category.py"
+    ],
+    "EnumScenarioStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_scenario_status.py"
+    ],
+    "EnumScenarioStatusV2": [
+      "/root/repo/src/omnibase_core/enums/enum_scenario_status_v2.py"
+    ],
+    "EnumSecurityLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_security_level.py"
+    ],
+    "EnumSeverityLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_severity_level.py"
+    ],
+    "EnumStandardCategory": [
+      "/root/repo/src/omnibase_core/enums/enum_standard_category.py"
+    ],
+    "EnumStandardTag": [
+      "/root/repo/src/omnibase_core/enums/enum_standard_tag.py"
+    ],
+    "EnumStorageBackend": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumConsistencyLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumConflictResolution": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumVersionScheme": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumStateScope": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumStateLifecycle": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumLockingStrategy": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumIsolationLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumEncryptionAlgorithm": [
+      "/root/repo/src/omnibase_core/enums/enum_state_management.py"
+    ],
+    "EnumStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_status.py"
+    ],
+    "EnumStatusMessage": [
+      "/root/repo/src/omnibase_core/enums/enum_status_message.py"
+    ],
+    "EnumStopReason": [
+      "/root/repo/src/omnibase_core/enums/enum_stop_reason.py"
+    ],
+    "EnumTableAlignment": [
+      "/root/repo/src/omnibase_core/enums/enum_table_alignment.py"
+    ],
+    "EnumTimePeriod": [
+      "/root/repo/src/omnibase_core/enums/enum_time_period.py"
+    ],
+    "EnumTimeUnit": [
+      "/root/repo/src/omnibase_core/enums/enum_time_unit.py"
+    ],
+    "EnumTrendType": [
+      "/root/repo/src/omnibase_core/enums/enum_trend_type.py"
+    ],
+    "EnumTypeName": [
+      "/root/repo/src/omnibase_core/enums/enum_type_name.py"
+    ],
+    "EnumUriType": [
+      "/root/repo/src/omnibase_core/enums/enum_uri_type.py"
+    ],
+    "EnumValidationLevel": [
+      "/root/repo/src/omnibase_core/enums/enum_validation_level.py"
+    ],
+    "EnumValidationRulesInputType": [
+      "/root/repo/src/omnibase_core/enums/enum_validation_rules_input_type.py"
+    ],
+    "EnumValidationSeverity": [
+      "/root/repo/src/omnibase_core/enums/enum_validation_severity.py"
+    ],
+    "EnumValidationValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_validation_value_type.py"
+    ],
+    "EnumVersionUnionType": [
+      "/root/repo/src/omnibase_core/enums/enum_version_union_type.py"
+    ],
+    "EnumWorkflowStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_coordination.py"
+    ],
+    "EnumAssignmentStatus": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_coordination.py"
+    ],
+    "EnumExecutionPattern": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_coordination.py"
+    ],
+    "EnumFailureRecoveryStrategy": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_coordination.py"
+    ],
+    "EnumWorkflowDependencyType": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_dependency_type.py"
+    ],
+    "EnumWorkflowParameterType": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_parameter_type.py"
+    ],
+    "EnumWorkflowType": [
+      "/root/repo/src/omnibase_core/enums/enum_workflow_type.py"
+    ],
+    "EnumYamlOptionType": [
+      "/root/repo/src/omnibase_core/enums/enum_yaml_option_type.py"
+    ],
+    "EnumYamlValueType": [
+      "/root/repo/src/omnibase_core/enums/enum_yaml_value_type.py"
+    ],
+    "CLIExitCode": [
+      "/root/repo/src/omnibase_core/errors/error_codes.py"
+    ],
+    "OnexErrorCode": [
+      "/root/repo/src/omnibase_core/errors/error_codes.py"
+    ],
+    "EnumEffectType": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "TransactionState": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "CircuitBreakerState": [
+      "/root/repo/src/omnibase_core/infrastructure/node_effect.py"
+    ],
+    "WorkflowState": [
+      "/root/repo/src/omnibase_core/infrastructure/node_orchestrator.py"
+    ],
+    "ExecutionMode": [
+      "/root/repo/src/omnibase_core/infrastructure/node_orchestrator.py"
+    ],
+    "EnumThunkType": [
+      "/root/repo/src/omnibase_core/infrastructure/node_orchestrator.py"
+    ],
+    "BranchCondition": [
+      "/root/repo/src/omnibase_core/infrastructure/node_orchestrator.py"
+    ],
+    "EnumReductionType": [
+      "/root/repo/src/omnibase_core/infrastructure/node_reducer.py"
+    ],
+    "ConflictResolution": [
+      "/root/repo/src/omnibase_core/infrastructure/node_reducer.py"
+    ],
+    "StreamingMode": [
+      "/root/repo/src/omnibase_core/infrastructure/node_reducer.py"
+    ],
+    "ModelInputDataType": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py"
+    ],
+    "ModelComputationType": [
+      "/root/repo/src/omnibase_core/models/operations/model_computation_input_data.py",
+      "/root/repo/src/omnibase_core/models/operations/model_computation_output_data.py"
+    ],
+    "ModelMessageType": [
+      "/root/repo/src/omnibase_core/models/operations/model_message_payload.py"
+    ]
+  }
+}

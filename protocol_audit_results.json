@@ -1,0 +1,189 @@
+{
+  "protocol_usage": {
+    "total_files_using_protocols": 6,
+    "files_using_protocols": [
+      "/root/repo/src/omnibase_core/infrastructure/node_base.py",
+      "/root/repo/src/omnibase_core/logging/bootstrap_logger.py",
+      "/root/repo/src/omnibase_core/logging/structured.py",
+      "/root/repo/src/omnibase_core/utils/util_bootstrap.py",
+      "/root/repo/src/omnibase_core/models/container/model_onex_container.py",
+      "/root/repo/src/omnibase_core/models/metadata/__init__.py"
+    ],
+    "imports_by_protocol": {
+      "ProtocolWorkflowReducer": [
+        "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+      ],
+      "protocol_workflow_reducer": [
+        "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+      ],
+      "ProtocolLogger": [
+        "/root/repo/src/omnibase_core/logging/bootstrap_logger.py",
+        "/root/repo/src/omnibase_core/models/container/model_onex_container.py"
+      ],
+      "ProtocolLogContext": [
+        "/root/repo/src/omnibase_core/logging/structured.py"
+      ],
+      "get_spi_registry": [
+        "/root/repo/src/omnibase_core/utils/util_bootstrap.py"
+      ],
+      "ProtocolSupportedMetadataType": [
+        "/root/repo/src/omnibase_core/models/metadata/__init__.py"
+      ]
+    },
+    "all_imports": [
+      {
+        "module": "omnibase_spi.protocols.core.protocol_workflow_reducer",
+        "name": "ProtocolWorkflowReducer",
+        "alias": "WorkflowReducerInterface",
+        "file": "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+      },
+      {
+        "module": "omnibase_spi.protocols.core",
+        "name": "protocol_workflow_reducer",
+        "alias": null,
+        "file": "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+      },
+      {
+        "module": "omnibase_spi",
+        "name": "ProtocolLogger",
+        "alias": null,
+        "file": "/root/repo/src/omnibase_core/logging/bootstrap_logger.py"
+      },
+      {
+        "module": "omnibase_spi.protocols.types.core_types",
+        "name": "ProtocolLogContext",
+        "alias": "_ProtocolLogContext",
+        "file": "/root/repo/src/omnibase_core/logging/structured.py"
+      },
+      {
+        "module": "omnibase_spi.spi_registry",
+        "name": "get_spi_registry",
+        "alias": null,
+        "file": "/root/repo/src/omnibase_core/utils/util_bootstrap.py"
+      },
+      {
+        "module": "omnibase_spi",
+        "name": "ProtocolLogger",
+        "alias": null,
+        "file": "/root/repo/src/omnibase_core/models/container/model_onex_container.py"
+      },
+      {
+        "module": "omnibase_spi.protocols.types.protocol_core_types",
+        "name": "ProtocolSupportedMetadataType",
+        "alias": null,
+        "file": "/root/repo/src/omnibase_core/models/metadata/__init__.py"
+      }
+    ],
+    "type_checking_imports": [
+      {
+        "module": "omnibase_spi.protocols.core.protocol_workflow_reducer",
+        "name": "ProtocolWorkflowReducer",
+        "in_type_checking": true,
+        "file": "/root/repo/src/omnibase_core/infrastructure/node_base.py"
+      }
+    ]
+  },
+  "protocol_implementation_candidates": [
+    {
+      "file": "/root/repo/src/omnibase_core/infrastructure/node_reducer.py",
+      "type": "reducer",
+      "suggested_protocol": "ProtocolWorkflowReducer",
+      "reason": "Reducer class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_workflow_condition.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_workflow_conditions.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_workflow_config.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_workflow_dependency.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/model_workflow_step.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_instance_metadata.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_parameters.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/operations/model_workflow_payload.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/workflows/model_workflow_execution_result.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_coordination_subcontract.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_definition.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_definition_metadata.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_instance.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_metrics.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    },
+    {
+      "file": "/root/repo/src/omnibase_core/models/contracts/subcontracts/model_workflow_node.py",
+      "type": "workflow",
+      "suggested_protocol": "ProtocolWorkflowReducer or related",
+      "reason": "Workflow class found"
+    }
+  ],
+  "summary": {
+    "files_importing_protocols": 6,
+    "unique_protocols_imported": 6,
+    "protocol_implementation_candidates": 16
+  }
+}
