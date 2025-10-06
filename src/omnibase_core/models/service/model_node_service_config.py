@@ -182,7 +182,7 @@ class ModelNodeServiceConfig(BaseModel):
         """Get complete environment variables for deployment."""
         env = {
             "NODE_NAME": self.node_name,
-            "NODE_VERSION": self.node_version,
+            "NODE_VERSION": str(self.node_version),
             "NODE_ID": self.get_effective_node_id(),
             "LOG_LEVEL": self.log_level.value,
             "DEBUG_MODE": str(self.debug_mode).lower(),
@@ -206,8 +206,9 @@ class ModelNodeServiceConfig(BaseModel):
             if self.security.ca_file:
                 env["TLS_CA_FILE"] = str(self.security.ca_file)
 
-        # Add custom environment variables
-        env.update(self.environment_variables)
+        # Add custom environment variables (convert values to strings)
+        for key, value in self.environment_variables.items():
+            env[key] = str(value)
 
         return env
 
@@ -215,7 +216,7 @@ class ModelNodeServiceConfig(BaseModel):
         """Get Docker labels for the service."""
         return {
             "onex.node.name": self.node_name,
-            "onex.node.version": self.node_version,
+            "onex.node.version": str(self.node_version),
             "onex.service.mode": self.service_mode.value,
             "onex.service.type": "node_service",
         }
@@ -224,7 +225,7 @@ class ModelNodeServiceConfig(BaseModel):
         """Get Kubernetes labels for the service."""
         return {
             "app": self.node_name,
-            "version": self.node_version,
+            "version": str(self.node_version),
             "component": "onex-node",
             "service-mode": self.service_mode.value,
         }

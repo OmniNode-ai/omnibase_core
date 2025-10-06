@@ -68,7 +68,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     @classmethod
     def create_success_response(
         cls,
-        node_id: str,
+        node_id: UUID,
         requester_id: str,
         tools: list[ModelDiscoveredTool],
         request_correlation_id: str | None = None,
@@ -115,7 +115,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     @classmethod
     def create_timeout_response(
         cls,
-        node_id: str,
+        node_id: UUID,
         requester_id: str,
         partial_tools: list[ModelDiscoveredTool] | None = None,
         request_correlation_id: str | None = None,

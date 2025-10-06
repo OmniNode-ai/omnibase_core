@@ -2,6 +2,8 @@ from typing import Any, List
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.discovery.model_tool_parameter import ModelToolParameter
+
 
 class ModelToolParameters(BaseModel):
     """Tool parameters container with strong typing."""

@@ -396,10 +396,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Parse connection string back to configuration components."""
         parsed = urlparse(connection_string)
 
-        from typing import Any
-
-        config: dict[str, Any] = {
-            "driver": parsed.scheme,
+        config_data: dict[str, Any] = {
+            "scheme": parsed.scheme,
             "host": parsed.hostname,
             "port": parsed.port,
             "username": parsed.username,
@@ -414,7 +412,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
             # Map common parameters
             param_mapping = {
-                "ssl": "ssl_enabled",
+                "ssl": "ssl_mode",
                 "sslmode": "ssl_mode",
                 "connect_timeout": "connection_timeout",
                 "timeout": "connection_timeout",
@@ -422,11 +420,11 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
             for param, value in params.items():
                 mapped_param = param_mapping.get(param, param)
-                config[mapped_param] = (
+                config_data[mapped_param] = (
                     value[0] if isinstance(value, list) and value else value
                 )
 
-        return config
+        return ParsedConnectionInfo(**config_data)
 
     # === Security Assessment ===
 

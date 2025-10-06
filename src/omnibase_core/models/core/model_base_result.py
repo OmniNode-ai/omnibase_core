@@ -45,7 +45,7 @@ class ModelBaseResult(BaseModel):
             result["metadata"] = self.metadata.model_dump(exclude_none=True)
         return result
 
-    def dict[str, Any](self, **kwargs) -> dict[str, Any]:
+    def dict(self, **kwargs) -> dict[str, Any]:
         """Modern standards method that calls model_dump."""
         return self.model_dump(**kwargs)
 

@@ -11,6 +11,8 @@ a structured representation of advanced parameters.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 
 class ModelAdvancedParams(BaseModel):
     """
@@ -77,7 +79,7 @@ class ModelAdvancedParams(BaseModel):
     )
 
     # Configuration overrides
-    config_overrides: dict[str, str | int | float | bool] = Field(
+    config_overrides: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Configuration value overrides",
     )

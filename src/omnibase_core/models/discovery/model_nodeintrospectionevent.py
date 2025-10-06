@@ -1,4 +1,5 @@
 from typing import Any, List
+from uuid import UUID
 
 from pydantic import Field
 
@@ -57,7 +58,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
     @classmethod
     def create_from_node_info(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         version: ModelSemVer,
         actions: list[str],

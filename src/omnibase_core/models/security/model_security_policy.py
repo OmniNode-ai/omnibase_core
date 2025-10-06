@@ -119,7 +119,7 @@ class ModelSecurityPolicy(BaseModel):
         return cls(**data.typed_data)
 
     @field_serializer("created_at", "updated_at", "valid_from", "valid_until")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: Any) -> Any:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

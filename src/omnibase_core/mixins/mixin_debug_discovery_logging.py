@@ -25,6 +25,7 @@ class MixinDebugDiscoveryLogging:
     """
 
     def setup_discovery_debug_logging(
+        self,
         node_name: str,
         additional_context: dict[str, Any] | None = None,
     ):

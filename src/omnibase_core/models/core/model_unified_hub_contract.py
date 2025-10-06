@@ -78,7 +78,7 @@ class ModelUnifiedHubContract(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_contract_format(cls, values):
+    def validate_contract_format(cls, values: Any) -> None:
         """Validate that we have either hub_configuration or service_configuration."""
         if isinstance(values, dict):
             hub_config = values.get("hub_configuration")

@@ -61,7 +61,7 @@ class MixinNodeIdFromContract:
             "omnibase.",
         ]
 
-    def _get_node_dir(self) -> None:
+    def _get_node_dir(self) -> Path:
         """
         Get the directory containing the node module.
 
@@ -84,7 +84,7 @@ class MixinNodeIdFromContract:
         node_file = Path(module.__file__)
         return node_file.parent
 
-    def _load_node_id(self, contract_path: Path | None = None) -> None:
+    def _load_node_id(self, contract_path: Path | None = None) -> str:
         # Use explicit contract_path if provided
         contract_path = contract_path or getattr(self, "_explicit_contract_path", None)
         node_dir = self._get_node_dir()
@@ -98,4 +98,8 @@ class MixinNodeIdFromContract:
         # Load and validate YAML using Pydantic model
         contract_model = load_and_validate_yaml_model(contract_path, ModelGenericYaml)
         contract = contract_model.model_dump()
-        return contract.get("node_name") or contract.get("name")
+        node_name = contract.get("node_name") or contract.get("name")
+        if not node_name:
+            msg = f"Contract at {contract_path} must have 'node_name' or 'name' field"
+            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+        return str(node_name)

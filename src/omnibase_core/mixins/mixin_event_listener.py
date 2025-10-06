@@ -58,7 +58,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         super().__init__(**kwargs)
         self._event_listener_thread = None
         self._stop_event = threading.Event()
-        self._event_subscriptions = []
+        self._event_subscriptions: list[tuple[str, Any]] = []
 
         emit_log_event(
             LogLevel.DEBUG,

@@ -87,7 +87,9 @@ def validate_secret_configuration(config_type: str, **kwargs) -> dict[str, Any]:
             )
 
             config = ModelDatabaseSecureConfig(**kwargs)
-            return config.validate_credentials()
+            result = config.validate_credentials()
+            # Convert Pydantic model to dict
+            return result.model_dump()
         except (
             Exception
         ) as e:  # fallback-ok: validation returns structured error dict, caller handles

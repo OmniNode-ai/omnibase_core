@@ -171,7 +171,9 @@ class MixinLazyEvaluation:
         }
 
 
-def lazy_cached(cache_key: Optional[str] = None) -> None:
+def lazy_cached(
+    cache_key: Optional[str] = None,
+) -> Callable[[Callable[..., T]], Callable[..., MixinLazyValue[T]]]:
     """
     Decorator for creating lazy cached methods.
 

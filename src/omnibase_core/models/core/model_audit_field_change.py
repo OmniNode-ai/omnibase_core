@@ -8,8 +8,6 @@ Audit field change model for tracking individual field changes.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_schema_value import ModelSchemaValue
-
 
 class ModelAuditFieldChange(BaseModel):
     """Individual field change in an audit entry."""

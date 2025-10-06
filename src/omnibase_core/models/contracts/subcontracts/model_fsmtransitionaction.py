@@ -53,3 +53,6 @@ class ModelFSMTransitionAction(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+
+from omnibase_core.models.core.model_action_config_value import ModelActionConfigValue

@@ -387,15 +387,15 @@ class ModelToolCollection(BaseModel):
         """Support dict[str, Any]-like assignment."""
         self.register_tool(name, tool_class)
 
-    def keys(self) -> None:
+    def keys(self) -> Any:
         """Support dict[str, Any]-like keys() method."""
         return self.tools.keys()
 
-    def values(self) -> None:
+    def values(self) -> Any:
         """Support dict[str, Any]-like values() method."""
         return self.tools.values()
 
-    def items(self) -> None:
+    def items(self) -> Any:
         """Support dict[str, Any]-like items() method."""
         return self.tools.items()
 

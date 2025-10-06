@@ -93,4 +93,4 @@ class ModelErrorDetails(BaseModel):
     def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

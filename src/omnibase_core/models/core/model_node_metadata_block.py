@@ -323,7 +323,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ExtensionValueModel(value=val)
         return out
 
-    def model_dump(self, *args, **kwargs) -> None:
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d

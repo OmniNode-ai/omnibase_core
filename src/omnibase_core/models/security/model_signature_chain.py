@@ -23,7 +23,6 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, validator
 
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.security.model_chain_metrics import ModelChainMetrics
 from omnibase_core.models.security.model_node_signature import (
@@ -111,7 +110,7 @@ class ModelSignatureChain(BaseModel):
     )
 
     @validator("signatures")
-    def validate_signature_order(self, v):
+    def validate_signature_order(self, v: Any) -> Any:
         """Validate signatures are in correct hop order."""
         if not v:
             return v

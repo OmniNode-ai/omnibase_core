@@ -662,7 +662,9 @@ class MixinRequestResponseIntrospection:
         ):  # fallback-ok: performance metrics optional, returns None if unavailable
             return None
 
-    def _get_additional_introspection_info() -> ModelIntrospectionAdditionalInfo | None:
+    def _get_additional_introspection_info(
+        self,
+    ) -> ModelIntrospectionAdditionalInfo | None:
         """
         Get additional node-specific introspection information.
 

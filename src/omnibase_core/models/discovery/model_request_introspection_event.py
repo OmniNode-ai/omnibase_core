@@ -77,7 +77,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     def create_discovery_request(
         cls,
         requester_id: str,
-        node_id: str = "discovery_client",
+        node_id: UUID = "discovery_client",
         filters: ModelIntrospectionFilters | None = None,
         timeout_ms: int = 5000,
         include_resource_usage: bool = False,
@@ -109,7 +109,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     @classmethod
     def create_mcp_discovery_request(
         cls,
-        node_id: str = "mcp_server",
+        node_id: UUID = "mcp_server",
         protocols: list[str] | None = None,
         timeout_ms: int = 3000,
         **kwargs,
@@ -144,7 +144,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     def create_health_check_request(
         cls,
         requester_id: str = "health_monitor",
-        node_id: str = "health_monitor",
+        node_id: UUID = "health_monitor",
         timeout_ms: int = 2000,
         **kwargs,
     ) -> "ModelRequestIntrospectionEvent":

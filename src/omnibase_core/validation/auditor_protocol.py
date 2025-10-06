@@ -214,7 +214,7 @@ class ModelProtocolAuditor:
     ) -> list[DuplicationInfo]:
         """Find duplicate protocols within the same repository."""
         duplicates = []
-        by_signature = defaultdict(list[Any])
+        by_signature: dict[str, list[ModelProtocolInfo]] = defaultdict(list)
 
         for protocol in protocols:
             by_signature[protocol.signature_hash].append(protocol)

@@ -33,23 +33,25 @@ class ModelCustomFilters(BaseModel):
         | ModelComplexFilter,
     ] = Field(default_factory=dict, description="Named custom filters")
 
-    def add_string_filter(self, name: str, pattern: str, **kwargs) -> None:
+    def add_string_filter(self, name: str, pattern: str, **kwargs: Any) -> None:
         """Add a string filter."""
         self.filters[name] = ModelStringFilter(pattern=pattern, **kwargs)
 
-    def add_numeric_filter(self, name: str, **kwargs) -> None:
+    def add_numeric_filter(self, name: str, **kwargs: Any) -> None:
         """Add a numeric filter."""
         self.filters[name] = ModelNumericFilter(**kwargs)
 
-    def add_datetime_filter(self, name: str, **kwargs) -> None:
+    def add_datetime_filter(self, name: str, **kwargs: Any) -> None:
         """Add a datetime filter."""
         self.filters[name] = ModelDateTimeFilter(**kwargs)
 
-    def add_list_filter(self, name: str, values: list[Any], **kwargs) -> None:
+    def add_list_filter(self, name: str, values: list[Any], **kwargs: Any) -> None:
         """Add a list[Any]filter."""
         self.filters[name] = ModelListFilter(values=values, **kwargs)
 
-    def add_metadata_filter(self, name: str, key: str, value: Any, **kwargs) -> None:
+    def add_metadata_filter(
+        self, name: str, key: str, value: Any, **kwargs: Any
+    ) -> None:
         """Add a metadata filter."""
         self.filters[name] = ModelMetadataFilter(
             metadata_key=key,
@@ -57,7 +59,7 @@ class ModelCustomFilters(BaseModel):
             **kwargs,
         )
 
-    def add_status_filter(self, name: str, allowed: list[str], **kwargs) -> None:
+    def add_status_filter(self, name: str, allowed: list[str], **kwargs: Any) -> None:
         """Add a status filter."""
         self.filters[name] = ModelStatusFilter(allowed_statuses=allowed, **kwargs)
 

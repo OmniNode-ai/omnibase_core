@@ -39,7 +39,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumThunkType,
     EnumWorkflowState,
 )
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.load_balancer import LoadBalancer
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase

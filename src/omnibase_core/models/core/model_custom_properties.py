@@ -23,7 +23,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
-    ModelOnexError,
 )
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Dict, Generic, List, Optional, Union
 
 from pydantic import Field, field_validator

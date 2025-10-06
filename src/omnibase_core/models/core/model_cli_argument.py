@@ -1,14 +1,10 @@
-from pydantic import Field
-
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
 """
 CLI argument model for command specification.
 """
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_schema_value import ModelSchemaValue
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelCLIArgument(BaseModel):

@@ -27,7 +27,7 @@ class ModelExternalServiceCollection(BaseModel):
         description="External service configurations by service name",
     )
 
-    def get_service(self, service_name: str) -> ModelExternalServiceConfig:
+    def get_service(self, service_name: str) -> ModelExternalServiceConfig | None:
         """Get an external service configuration by name."""
         return self.services.get(service_name)
 

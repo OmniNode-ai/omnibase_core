@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelEnforcementAction: Enforcement action taken by policy engine.
 
@@ -8,6 +6,7 @@ with structured enforcement data.
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -16,8 +15,8 @@ class ModelEnforcementAction(BaseModel):
     """Enforcement action taken by policy engine."""
 
     timestamp: datetime = Field(default=..., description="When action was taken")
-    envelope_id: str = Field(default=..., description="Envelope ID")
-    policy_id: str = Field(default=..., description="Policy that triggered action")
+    envelope_id: UUID = Field(default=..., description="Envelope ID")
+    policy_id: UUID = Field(default=..., description="Policy that triggered action")
     decision: str = Field(default=..., description="Decision made (allow, deny, etc)")
     confidence: float = Field(default=..., description="Confidence in decision")
     reasons: list[str] = Field(default=..., description="Reasons for decision")

@@ -21,7 +21,7 @@ from .model_event_type import ModelEventType
 class ModelEventTypeRegistry:
     """Registry for dynamically discovered event types."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._event_types: dict[str, ModelEventType] = {}
         self._namespace_events: dict[str, set[str]] = {}
         self._qualified_events: dict[str, ModelEventType] = {}

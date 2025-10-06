@@ -47,3 +47,8 @@ class ModelCredentialsAnalysis(BaseModel):
                 "fallback_resilience": self.manager_assessment.fallback_resilience,
             },
         }
+
+
+from omnibase_core.models.security.model_manager_assessment import (
+    ModelManagerAssessment,
+)

@@ -1,5 +1,6 @@
 from typing import Any, Generic
 
+from omnibase_core.enums.enum_transition_type import ModelEnumTransitionType
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -16,7 +17,6 @@ from pathlib import Path
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
@@ -89,7 +89,7 @@ class MixinContractStateReducer:
                 return []
 
             # Load and validate contract using safe YAML loader
-            contract = load_and_validate_yaml_model()
+            contract: ModelGenericContract = load_and_validate_yaml_model()
 
             # Extract state_transitions section
             contract_dict = contract.model_dump()

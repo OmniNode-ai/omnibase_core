@@ -3,6 +3,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.discovery.model_hub_registration_event import (
+    ModelHubRegistrationEvent,
+)
+
 
 class ModelHubConsulRegistrationOutput(BaseModel):
     """Output model for Hub Consul Registration tool operations."""

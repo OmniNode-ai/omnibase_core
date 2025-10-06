@@ -26,7 +26,6 @@ from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
-    ModelOnexError,
 )
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 

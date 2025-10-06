@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from pydantic import Field
 
@@ -81,7 +81,7 @@ class ModelConnectionProperties(BaseModel):
         return cls(**data)
 
     @field_serializer("password")
-    def serialize_secret(self, value) -> None:
+    def serialize_secret(self, value) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         return value

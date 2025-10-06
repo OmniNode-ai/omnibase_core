@@ -14,7 +14,7 @@ class MixinIntrospectFromContract:
     Looks for node.onex.yaml or contract.yaml in the node's directory.
     """
 
-    def _get_node_dir(self) -> None:
+    def _get_node_dir(self) -> Path:
         # Security: validate module is within allowed namespaces
         allowed_prefixes = [
             "omnibase_core.",

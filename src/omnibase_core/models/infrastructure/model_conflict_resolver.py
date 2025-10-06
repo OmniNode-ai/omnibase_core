@@ -8,7 +8,6 @@ from collections.abc import Callable as CallableABC
 from typing import Any, Callable
 
 from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 

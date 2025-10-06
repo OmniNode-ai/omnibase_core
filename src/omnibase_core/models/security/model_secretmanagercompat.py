@@ -16,7 +16,7 @@ class ModelSecretManagerCompat:
         """Initialize with ModelSecretManager internally."""
         self._manager = ModelSecretManager(config=config)
 
-    def get_database_config(self):
+    def get_database_config(self) -> Any:
         """Get database configuration (legacy method)."""
         return self._manager.get_database_config()
 

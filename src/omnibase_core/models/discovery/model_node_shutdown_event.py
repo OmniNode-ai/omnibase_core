@@ -9,6 +9,7 @@ graceful deregistration from the service registry.
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 
@@ -96,7 +97,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     @classmethod
     def create_graceful_shutdown(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         uptime_seconds: int | None = None,
         requests_processed: int | None = None,
@@ -133,7 +134,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     @classmethod
     def create_error_shutdown(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         error_message: str,
         uptime_seconds: int | None = None,
@@ -166,7 +167,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     @classmethod
     def create_maintenance_shutdown(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         maintenance_reason: str,
         restart_delay_seconds: int | None = None,
@@ -203,7 +204,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     @classmethod
     def create_forced_shutdown(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         force_reason: str,
         **kwargs,

@@ -93,14 +93,14 @@ class ModelNamespace(BaseModel):
     def to_serializable_dict(self) -> str:
         return self.value
 
-    def __str__(self) -> None:
+    def __str__(self) -> str:
         return self.value
 
-    def model_dump(self, *args, **kwargs) -> None:
+    def model_dump(self, *args, **kwargs) -> str:
         # Always dump as a string for YAML/JSON
         return self.value
 
     @classmethod
-    def __get_pydantic_json_schema__(cls, core_schema, handler):
+    def __get_pydantic_json_schema__(cls, core_schema: Any, handler: Any) -> Any:
         # Ensure schema is string, not object
         return {"type": "string"}

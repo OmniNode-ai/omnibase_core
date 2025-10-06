@@ -128,7 +128,7 @@ class ModelOnexEvent(BaseModel):
     def create_core_event(
         cls,
         event_type: str,
-        node_id: str,
+        node_id: UUID,
         correlation_id: UUID | None = None,
         **kwargs,
     ) -> "ModelOnexEvent":
@@ -156,7 +156,7 @@ class ModelOnexEvent(BaseModel):
         cls,
         namespace: str,
         action: str,
-        node_id: str,
+        node_id: UUID,
         correlation_id: UUID | None = None,
         **kwargs,
     ) -> "ModelOnexEvent":
@@ -186,7 +186,7 @@ class ModelOnexEvent(BaseModel):
         cls,
         plugin_name: str,
         action: str,
-        node_id: str,
+        node_id: UUID,
         correlation_id: UUID | None = None,
         **kwargs,
     ) -> "ModelOnexEvent":

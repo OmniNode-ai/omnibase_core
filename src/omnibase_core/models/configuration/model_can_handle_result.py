@@ -17,5 +17,5 @@ class ModelCanHandleResult(BaseModel):
         description="Whether the handler can process the file/content.",
     )
 
-    def __bool__(self) -> None:
+    def __bool__(self) -> bool:
         return self.can_handle

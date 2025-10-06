@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -14,11 +14,12 @@ import functools
 from collections.abc import Callable as CallableABC
 from typing import Any, Callable
 
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
-def standard_error_handling(operation_name: str = "operation"):
+def standard_error_handling(
+    operation_name: str = "operation",
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator that provides standard error handling pattern for ONEX tools.
 
@@ -71,7 +72,9 @@ def standard_error_handling(operation_name: str = "operation"):
     return decorator
 
 
-def validation_error_handling(operation_name: str = "validation"):
+def validation_error_handling(
+    operation_name: str = "validation",
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator for validation operations that may throw ValidationError.
 
@@ -119,7 +122,9 @@ def validation_error_handling(operation_name: str = "validation"):
     return decorator
 
 
-def io_error_handling(operation_name: str = "I/O operation"):
+def io_error_handling(
+    operation_name: str = "I/O operation",
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator for I/O operations (file/network) with appropriate error codes.
 

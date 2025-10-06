@@ -44,7 +44,6 @@ from typing import Any, Dict, Optional
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelExamples
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -63,7 +62,7 @@ StateSchemaModel = ModelStateSchema
 ErrorModelState = ModelErrorState
 
 # Current schema version for state contracts
-STATE_CONTRACT_SCHEMA_VERSION = ModelSemVer.parse("1.0.0")
+STATE_CONTRACT_SCHEMA_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class ModelStateContract(BaseModel):
@@ -102,7 +101,7 @@ class ModelStateContract(BaseModel):
     )
 
     node_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer.parse("1.0.0"),
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the node",
         json_schema_extra={"example": "1.0.0"},
     )

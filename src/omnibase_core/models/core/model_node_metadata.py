@@ -105,7 +105,7 @@ NodeMetadataBlock = ModelNodeMetadataBlock
 # NOTE: The only difference between model_dump() and __dict__ is that model_dump() serializes entrypoint as a dict[str, Any], while __dict__ keeps it as an EntrypointBlock object. This is expected and not a source of non-determinism for YAML serialization, which uses model_dump or to_serializable_dict.
 
 
-def debug_compare_model_dump_vs_dict(model) -> None:
+def debug_compare_model_dump_vs_dict(model) -> list[str]:
     import difflib
     import pprint
 

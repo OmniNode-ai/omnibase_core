@@ -31,7 +31,7 @@ Event sent to invoke a tool on a specific node through the persistent service pa
 Enables distributed tool execution through event-driven routing.
 """
 
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from pydantic import Field
 
@@ -106,7 +106,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         default=...,
         description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
     )
-    requester_node_id: str = Field(
+    requester_node_id: UUID = Field(
         default=...,
         description="Node ID of the requester for response routing",
     )
@@ -124,8 +124,8 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         target_node_name: str,
         tool_name: str,
         action: str,
-        requester_id: str,
-        requester_node_id: str,
+        requester_id: UUID,
+        requester_node_id: UUID,
         parameters: ModelToolParameters = None,
         timeout_ms: int = 30000,
         priority: str = "normal",
@@ -187,14 +187,15 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         Returns:
             ModelToolInvocationEvent for MCP usage
         """
+        mcp_uuid = uuid5(NAMESPACE_DNS, "mcp_server")
         return cls(
-            node_id="mcp_server",
+            node_id=mcp_uuid,
             target_node_id=f"{target_node_name}_service",
             target_node_name=target_node_name,
             tool_name=tool_name,
             action=action,
             requester_id="mcp_server",
-            requester_node_id="mcp_server",
+            requester_node_id=mcp_uuid,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,
             priority="high",  # MCP requests are high priority
@@ -225,14 +226,15 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         Returns:
             ModelToolInvocationEvent for CLI usage
         """
+        cli_uuid = uuid5(NAMESPACE_DNS, "cli_client")
         return cls(
-            node_id="cli_client",
+            node_id=cli_uuid,
             target_node_id=f"{target_node_name}_service",
             target_node_name=target_node_name,
             tool_name=tool_name,
             action=action,
             requester_id="cli_client",
-            requester_node_id="cli_client",
+            requester_node_id=cli_uuid,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,
             priority="normal",

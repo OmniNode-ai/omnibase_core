@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field, field_validator
 
@@ -52,7 +52,8 @@ class ModelCustomFields(BaseModel):
 
     # Metadata
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer.parse("1.0"), description="Schema version"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Schema version",
     )
     last_modified: datetime = Field(
         default_factory=datetime.utcnow,
@@ -73,7 +74,7 @@ class ModelCustomFields(BaseModel):
 
     @field_validator("field_values")
     @classmethod
-    def validate_field_values(cls, v, info=None):
+    def validate_field_values(cls, v: Any, info: Any = None) -> Any:
         """Validate field values against definitions."""
         values = info.data if info and hasattr(info, "data") else {}
         definitions = values.get("field_definitions", {})
@@ -121,7 +122,7 @@ class ModelCustomFields(BaseModel):
         """Get a custom field value."""
         return self.field_values.get(name, default)
 
-    def set_field(self, name: str, value: Any):
+    def set_field(self, name: str, value: Any) -> None:
         """Set a custom field value."""
         if self.strict_validation and name in self.field_definitions:
             definition = self.field_definitions[name]
@@ -151,13 +152,13 @@ class ModelCustomFields(BaseModel):
         self.field_values[name] = value
         self.last_modified = datetime.utcnow()
 
-    def remove_field(self, name: str):
+    def remove_field(self, name: str) -> None:
         """Remove a custom field."""
         if name in self.field_values:
             del self.field_values[name]
             self.last_modified = datetime.utcnow()
 
-    def define_field(self, name: str, field_type: str, **kwargs):
+    def define_field(self, name: str, field_type: str, **kwargs: Any) -> None:
         """Define a new custom field."""
         self.field_definitions[name] = ModelCustomFieldDefinition(
             field_name=name,
@@ -166,7 +167,7 @@ class ModelCustomFields(BaseModel):
         )
 
     @field_serializer("last_modified")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: Any) -> Any:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

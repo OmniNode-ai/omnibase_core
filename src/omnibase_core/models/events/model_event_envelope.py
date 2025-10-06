@@ -376,9 +376,13 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         if not self.has_trace_context():
             return None
 
-        context = {
-            "trace_id": self.trace_id,  # type: ignore
-            "span_id": self.span_id,  # type: ignore
+        # At this point, trace_id and span_id are guaranteed to be non-None
+        assert self.trace_id is not None
+        assert self.span_id is not None
+
+        context: dict[str, str] = {
+            "trace_id": self.trace_id,
+            "span_id": self.span_id,
         }
         if self.request_id:
             context["request_id"] = self.request_id

@@ -24,7 +24,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
-    ModelOnexError,
 )
 
 

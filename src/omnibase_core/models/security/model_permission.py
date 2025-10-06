@@ -5,6 +5,7 @@ resource hierarchies, conditional access, approval workflows, and audit trails.
 Fully ONEX-compliant with proper error handling, validation, and business logic.
 """
 
+import fnmatch
 from datetime import UTC, datetime, timedelta
 from typing import Self
 from uuid import UUID, uuid4
@@ -120,7 +121,7 @@ class ModelPermission(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer.parse("1.0.0"),
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Permission definition version",
         pattern="^\\d+\\.\\d+\\.\\d+$",
     )

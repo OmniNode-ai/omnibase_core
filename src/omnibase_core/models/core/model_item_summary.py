@@ -22,7 +22,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_item_type import EnumItemType
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
-    ModelOnexError,
 )
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 

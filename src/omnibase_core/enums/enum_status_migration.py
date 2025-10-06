@@ -27,7 +27,6 @@ from omnibase_core.models.core.model_status_migrator import (
     ModelEnumStatusMigrator,
 )
 
-# Alias for backward compatibility
 EnumStatusMigrator = ModelEnumStatusMigrator
 from omnibase_core.models.core.model_status_protocol import (
     EnumStatusProtocol,
@@ -38,7 +37,6 @@ from omnibase_core.models.validation.model_status_migration_validator import (
     ModelEnumStatusMigrationValidator,
 )
 
-# Alias for backward compatibility
 EnumStatusMigrationValidator = ModelEnumStatusMigrationValidator
 
 # Public API exports

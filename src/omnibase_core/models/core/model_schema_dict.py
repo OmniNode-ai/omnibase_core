@@ -15,8 +15,6 @@ from typing import Any, Dict, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_schema_value import ModelSchemaValue
-
 
 class ModelSchemaDict(BaseModel):
     """

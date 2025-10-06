@@ -3,6 +3,10 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.discovery.model_output_metadata_item import (
+    ModelOutputMetadataItem,
+)
+
 
 class ModelOutputMetadata(BaseModel):
     """Output metadata container with strong typing."""

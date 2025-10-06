@@ -43,14 +43,14 @@ class ModelSerializableDict(BaseModel):
         """Get all values."""
         return list(self.data.values())
 
-    def items(self) -> None:
+    def items(self) -> Any:
         """Get all items."""
         return self.data.items()
 
-    def keys(self) -> None:
+    def keys(self) -> Any:
         """Get all keys."""
         return self.data.keys()
 
-    def values(self) -> None:
+    def values(self) -> Any:
         """Get all values."""
         return self.data.values()

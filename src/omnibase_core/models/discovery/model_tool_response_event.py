@@ -64,7 +64,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     )
 
     # Source node identification
-    source_node_id: str = Field(
+    source_node_id: UUID = Field(
         default=..., description="Node ID that executed the tool"
     )
     source_node_name: str = Field(
@@ -141,7 +141,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     def create_success_response(
         cls,
         correlation_id: UUID,
-        source_node_id: str,
+        source_node_id: UUID,
         source_node_name: str,
         tool_name: str,
         action: str,
@@ -192,7 +192,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     def create_error_response(
         cls,
         correlation_id: UUID,
-        source_node_id: str,
+        source_node_id: UUID,
         source_node_name: str,
         tool_name: str,
         action: str,
@@ -246,7 +246,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     def create_timeout_response(
         cls,
         correlation_id: UUID,
-        source_node_id: str,
+        source_node_id: UUID,
         source_node_name: str,
         tool_name: str,
         action: str,

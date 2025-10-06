@@ -18,7 +18,7 @@ from .model_cli_action import ModelCliAction
 class ModelActionRegistry:
     """Registry for dynamically discovered CLI actions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._actions: dict[str, ModelCliAction] = {}
         self._node_actions: dict[str, set[str]] = {}
         self._qualified_actions: dict[str, ModelCliAction] = {}

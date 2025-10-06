@@ -46,7 +46,7 @@ class ModelParseMetadata(BaseModel):
     )
 
     parser_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer.parse("1.0.0"),
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the parser used",
     )
 
@@ -166,7 +166,7 @@ class ModelParseMetadata(BaseModel):
         cls,
         source_command: str,
         raw_args: list[str],
-        command_definition_id: str | None = None,
+        command_definition_id: UUID | None = None,
         contract_source: str | None = None,
     ) -> "ModelParseMetadata":
         """Create metadata for a command parsing operation."""

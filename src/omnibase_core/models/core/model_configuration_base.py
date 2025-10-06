@@ -30,7 +30,6 @@ from pydantic import (
 
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
-    ModelOnexError,
 )
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult

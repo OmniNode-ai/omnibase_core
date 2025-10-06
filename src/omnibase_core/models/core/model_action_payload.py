@@ -12,6 +12,8 @@ from uuid import UUID
 
 from pydantic import Field
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 from .model_node_action import ModelNodeAction
 from .model_onex_base_state import ModelOnexInputState
 
@@ -28,13 +30,11 @@ class ModelActionPayload(ModelOnexInputState):
     """
 
     action: ModelNodeAction = Field(default=..., description="The action to execute")
-    parameters: dict[str, str | int | float | bool | list[str] | dict[str, str]] = (
-        Field(
-            default_factory=dict,
-            description="Action execution parameters with strong typing",
-        )
+    parameters: dict[str, ModelSchemaValue] = Field(
+        default_factory=dict,
+        description="Action execution parameters with strong typing",
     )
-    execution_context: dict[str, str | int | float | bool] = Field(
+    execution_context: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Execution context and environment metadata",
     )
@@ -54,7 +54,7 @@ class ModelActionPayload(ModelOnexInputState):
         default=None,
         description="Target service for action execution",
     )
-    routing_metadata: dict[str, str | int | float] = Field(
+    routing_metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Service routing and load balancing metadata",
     )
@@ -66,7 +66,7 @@ class ModelActionPayload(ModelOnexInputState):
     )
 
     # Tool-as-a-Service metadata with strong typing
-    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
+    service_metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Service discovery and composition metadata",
     )

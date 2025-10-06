@@ -37,7 +37,6 @@ from pydantic import BaseModel, Field
 
 # Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Import utilities for contract loading

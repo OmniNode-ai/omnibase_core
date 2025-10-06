@@ -223,8 +223,8 @@ class ModelSecurityEventCollection(BaseModel):
             }
 
         # Count by event type
-        event_types = {}
-        severity_distribution = {}
+        event_types: dict[str, int] = {}
+        severity_distribution: dict[str, int] = {}
         users_involved = set()
         nodes_involved = set()
 

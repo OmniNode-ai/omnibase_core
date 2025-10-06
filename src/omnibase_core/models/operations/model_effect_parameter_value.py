@@ -24,7 +24,6 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from omnibase_core.enums.enum_effect_parameter_type import EnumEffectParameterType
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
-    ModelOnexError,
 )
 
 

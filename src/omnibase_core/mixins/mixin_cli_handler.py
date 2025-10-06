@@ -73,11 +73,11 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             return self.description
         return f"{self.__class__.__name__} - ONEX Tool"
 
-    def add_custom_arguments(
-        self, parser: argparse.ArgumentParser
-    ) -> None:  # stub-ok: optional override hook for subclasses
+    def add_custom_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Add custom CLI arguments. Override to add tool-specific args."""
-        pass
+        # Default implementation - no custom arguments
+        # Override in subclasses to add tool-specific arguments
+        return
 
     def create_parser(self) -> argparse.ArgumentParser:
         """Create argument parser with standard ONEX flags."""

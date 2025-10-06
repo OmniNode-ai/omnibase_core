@@ -16,7 +16,6 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
 from omnibase_core.enums.enum_metadata import EnumLifecycle
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
 from omnibase_core.models.core.model_tool_collection import ToolCollection

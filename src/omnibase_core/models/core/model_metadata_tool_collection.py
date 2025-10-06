@@ -8,6 +8,7 @@ and compliance with one-model-per-file naming conventions.
 import hashlib
 from datetime import datetime
 from typing import Any, Optional, Union
+from uuid import UUID
 
 from pydantic import RootModel, computed_field, model_validator
 

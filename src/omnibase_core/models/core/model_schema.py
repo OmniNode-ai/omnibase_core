@@ -22,7 +22,6 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_examples import ModelExamples
-from omnibase_core.models.core.model_schema_value import ModelSchemaValue
 
 from .model_typedproperties import ModelTypedProperties
 

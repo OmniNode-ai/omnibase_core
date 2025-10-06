@@ -26,7 +26,6 @@ from omnibase_core.models.core.model_cli_execution_metadata import (
 from omnibase_core.models.core.model_execution_context import ModelExecutionContext
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.models.core.model_parsed_arguments import ModelParsedArguments
-from omnibase_core.models.core.model_schema_value import ModelSchemaValue
 
 
 class ModelCliExecution(BaseModel):

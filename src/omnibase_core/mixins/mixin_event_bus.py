@@ -24,7 +24,6 @@ from collections.abc import Callable as CallableABC
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
@@ -117,7 +116,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
     # --- Event Bus Access (Protocol-based) ----------------------------------
 
-    def _get_event_bus() -> "ProtocolAsyncEventBus | None":
+    def _get_event_bus(self) -> "ProtocolAsyncEventBus | None":
         """Resolve event bus using protocol-based polymorphism."""
         # Try registry first
         if hasattr(self, "registry") and hasattr(self.registry, "event_bus"):
@@ -172,7 +171,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
 
             # Wrap event in envelope before publishing
-            envelope = ModelEventEnvelope(payload=event)
+            envelope: ModelEventEnvelope = ModelEventEnvelope(payload=event)
             # Use publish_async for envelope publishing
             if hasattr(bus, "publish_async"):
                 bus.publish_async(envelope)
@@ -209,7 +208,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Wrap event in envelope before publishing
-            envelope = ModelEventEnvelope(payload=event)
+            envelope: ModelEventEnvelope = ModelEventEnvelope(payload=event)
 
             # Check if bus has async methods (async bus or hybrid bus)
             if hasattr(bus, "apublish") or hasattr(bus, "apublish_async"):

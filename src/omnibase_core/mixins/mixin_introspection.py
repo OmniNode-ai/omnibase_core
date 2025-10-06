@@ -63,7 +63,7 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     @abstractmethod
-    def get_metadata_loader(cls):
+    def get_metadata_loader(cls) -> Any:
         """
         Subclasses must implement this to provide a metadata loader instance.
         This enables dependency injection and avoids hardcoding.

@@ -2,6 +2,8 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
+
 
 class ModelCustomMetrics(BaseModel):
     """Custom metrics container with strong typing."""
