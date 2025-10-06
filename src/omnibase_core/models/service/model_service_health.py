@@ -2,6 +2,9 @@ from typing import Any, Generic, List, Optional
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Enterprise Service Health Monitoring Model.
 
@@ -19,6 +22,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStatus
 from omnibase_core.enums.enum_service_type import EnumServiceType
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
@@ -67,13 +71,13 @@ class ModelServiceHealth(BaseModel):
     )
 
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Detailed error message if service is unhealthy",
         max_length=1000,
     )
 
     error_code: str | None = Field(
-        None,
+        default=None,
         description="Specific error code for programmatic handling",
         max_length=50,
     )
@@ -101,10 +105,9 @@ class ModelServiceHealth(BaseModel):
         ge=0,
     )
 
-    version: str | None = Field(
+    version: ModelSemVer | None = Field(
         default=None,
         description="Service version if available",
-        max_length=50,
     )
 
     endpoint_url: str | None = Field(
@@ -132,12 +135,12 @@ class ModelServiceHealth(BaseModel):
     )
 
     configuration: Optional["ModelGenericProperties"] = Field(
-        None,
+        default=None,
         description="Service configuration summary",
     )
 
     metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None,
+        default=None,
         description="Performance and operational metrics",
     )
 
@@ -152,15 +155,19 @@ class ModelServiceHealth(BaseModel):
         """Validate service name format."""
         if not v or not v.strip():
             msg = "service_name cannot be empty or whitespace"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         v = v.strip()
 
         # Check for valid service name pattern
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_\-\.]*$", v):
             msg = "service_name must start with letter and contain only alphanumeric, underscore, hyphen, and dot characters"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         return v
@@ -171,7 +178,10 @@ class ModelServiceHealth(BaseModel):
         """Validate and sanitize connection string."""
         if not v or not v.strip():
             msg = "connection_string cannot be empty or whitespace"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         v = v.strip()
 
@@ -212,12 +222,16 @@ class ModelServiceHealth(BaseModel):
             parsed = urlparse(v)
             if not parsed.scheme or not parsed.netloc:
                 msg = "endpoint_url must be a valid URL with scheme and host"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
         except Exception:
             msg = "endpoint_url must be a valid URL"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return v
 
@@ -233,7 +247,10 @@ class ModelServiceHealth(BaseModel):
             return v
         except ValueError:
             msg = "last_check_time must be a valid ISO timestamp"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
     # === Health Status Analysis ===
 
@@ -421,20 +438,20 @@ class ModelServiceHealth(BaseModel):
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the service health."""
         from omnibase_core.models.core.model_business_impact import (
+            EnumImpactSeverity,
             ModelBusinessImpact,
-            ModelImpactSeverity,
         )
 
         severity = (
-            ModelImpactSeverity.CRITICAL
+            EnumImpactSeverity.CRITICAL
             if self.is_unhealthy()
             else (
-                ModelImpactSeverity.HIGH
+                EnumImpactSeverity.HIGH
                 if self.is_degraded()
                 else (
-                    ModelImpactSeverity.MEDIUM
+                    EnumImpactSeverity.MEDIUM
                     if self.requires_attention()
-                    else ModelImpactSeverity.MINIMAL
+                    else EnumImpactSeverity.MINIMAL
                 )
             )
         )

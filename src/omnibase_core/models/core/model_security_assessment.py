@@ -31,7 +31,9 @@ class ModelSecurityAssessment(BaseModel):
         ...,
         description="Overall security risk level",
     )
-    security_score: float | None = Field(None, description="Security score (0-100)")
+    security_score: float | None = Field(
+        default=None, description="Security score (0-100)"
+    )
     last_assessment_date: datetime = Field(
         default_factory=datetime.utcnow,
         description="Last assessment date",
@@ -49,36 +51,36 @@ class ModelSecurityAssessment(BaseModel):
 
     # Security controls
     authentication_enabled: bool | None = Field(
-        None,
+        default=None,
         description="Whether authentication is enabled",
     )
     authorization_enabled: bool | None = Field(
-        None,
+        default=None,
         description="Whether authorization is enabled",
     )
     encryption_at_rest: bool | None = Field(
-        None,
+        default=None,
         description="Whether data is encrypted at rest",
     )
     encryption_in_transit: bool | None = Field(
-        None,
+        default=None,
         description="Whether data is encrypted in transit",
     )
 
     # Access controls
     access_control_model: str | None = Field(
-        None,
+        default=None,
         description="Access control model (RBAC/ABAC/etc)",
     )
     privileged_accounts: int | None = Field(
-        None,
+        default=None,
         description="Number of privileged accounts",
     )
     service_accounts: int | None = Field(
-        None,
+        default=None,
         description="Number of service accounts",
     )
-    mfa_enabled: bool | None = Field(None, description="Whether MFA is enabled")
+    mfa_enabled: bool | None = Field(default=None, description="Whether MFA is enabled")
 
     # Compliance
     compliance_standards: list[str] = Field(
@@ -90,43 +92,43 @@ class ModelSecurityAssessment(BaseModel):
         description="Compliance violations found",
     )
     last_compliance_audit: datetime | None = Field(
-        None,
+        default=None,
         description="Last compliance audit date",
     )
 
     # Security monitoring
     security_monitoring_enabled: bool | None = Field(
-        None,
+        default=None,
         description="Whether monitoring is enabled",
     )
     intrusion_detection_enabled: bool | None = Field(
-        None,
+        default=None,
         description="Whether IDS is enabled",
     )
     anomaly_detection_enabled: bool | None = Field(
-        None,
+        default=None,
         description="Whether anomaly detection is enabled",
     )
     security_alerts_last_24h: int | None = Field(
-        None,
+        default=None,
         description="Security alerts in last 24 hours",
     )
 
     # Security practices
     security_training_compliance: float | None = Field(
-        None,
+        default=None,
         description="Security training compliance rate",
     )
     last_penetration_test: datetime | None = Field(
-        None,
+        default=None,
         description="Last penetration test date",
     )
     last_security_review: datetime | None = Field(
-        None,
+        default=None,
         description="Last security review date",
     )
     security_patches_pending: int | None = Field(
-        None,
+        default=None,
         description="Number of pending security patches",
     )
 
@@ -142,16 +144,18 @@ class ModelSecurityAssessment(BaseModel):
 
     # Metadata
     assessment_methodology: str | None = Field(
-        None,
+        default=None,
         description="Assessment methodology used",
     )
     assessment_tools: list[str] = Field(
         default_factory=list,
         description="Tools used for assessment",
     )
-    assessed_by: str | None = Field(None, description="Who performed the assessment")
+    assessed_by: str | None = Field(
+        default=None, description="Who performed the assessment"
+    )
     next_assessment_date: datetime | None = Field(
-        None,
+        default=None,
         description="Next scheduled assessment",
     )
 
@@ -169,7 +173,7 @@ class ModelSecurityAssessment(BaseModel):
         "last_security_review",
         "next_assessment_date",
     )
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

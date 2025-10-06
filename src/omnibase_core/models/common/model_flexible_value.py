@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import uuid
 from typing import Any, Dict, Union
+from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
+from .model_error_context import ModelErrorContext
+from .model_schema_value import ModelSchemaValue
 
 """
 Flexible Value Model - Discriminated Union for Mixed Type Values.
@@ -15,16 +19,6 @@ Flexible Value Model - Discriminated Union for Mixed Type Values.
 Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
 with structured discriminated union pattern for type safety.
 """
-
-from uuid import UUID
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
-
-from .model_error_context import ModelErrorContext
-from .model_schema_value import ModelSchemaValue
 
 # Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
 # These were removed to comply with ONEX strong typing standards.
@@ -56,7 +50,7 @@ class ModelFlexibleValue(BaseModel):
     uuid_value: UUID | None = None
 
     # Metadata
-    source: str | None = Field(None, description="Source of the value")
+    source: str | None = Field(default=None, description="Source of the value")
     is_validated: bool = Field(
         default=False,
         description="Whether value has been validated",

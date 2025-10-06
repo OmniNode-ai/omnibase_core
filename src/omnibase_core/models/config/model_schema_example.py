@@ -5,7 +5,7 @@ from typing import Dict, Optional, TypeVar
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Schema example model.
@@ -65,7 +65,7 @@ class ModelSchemaExample(BaseModel):
     )
 
     schema_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Schema version if available",
     )
 

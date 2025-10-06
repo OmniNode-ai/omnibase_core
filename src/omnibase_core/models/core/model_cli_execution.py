@@ -67,7 +67,9 @@ class ModelCliExecution(BaseModel):
         description="Execution start timestamp",
     )
 
-    end_time: datetime | None = Field(None, description="Execution end timestamp")
+    end_time: datetime | None = Field(
+        default=None, description="Execution end timestamp"
+    )
 
     correlation_id: UUID = Field(
         default_factory=uuid4,
@@ -75,27 +77,27 @@ class ModelCliExecution(BaseModel):
     )
 
     parent_execution_id: UUID | None = Field(
-        None,
+        default=None,
         description="Parent execution ID for nested commands",
     )
 
     user_id: str | None = Field(
-        None,
+        default=None,
         description="User ID for audit and permissions",
     )
 
     session_id: str | None = Field(
-        None,
+        default=None,
         description="Session ID for tracking related commands",
     )
 
     source_location: str | None = Field(
-        None,
+        default=None,
         description="Source location (CLI, API, script, etc.)",
     )
 
     execution_metadata: ModelCliExecutionMetadata = Field(
-        default_factory=ModelCliExecutionMetadata,
+        default_factory=lambda: ModelCliExecutionMetadata(),
         description="Execution metadata",
     )
 

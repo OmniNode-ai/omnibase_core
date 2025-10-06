@@ -9,17 +9,6 @@ from omnibase_core.models.core.model_node_info import ModelNodeInfo
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
 
 
-class ModelCliOutputDataError(ModelOnexError):
-    """Validation error for CLI output data operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_CLI_OUTPUT_DATA_ERROR",
-        )
-        self.field_name = field_name
-
-
 class ModelCliOutputData(BaseModel):
     """
     Enterprise-grade CLI output data model with comprehensive status tracking,
@@ -41,106 +30,108 @@ class ModelCliOutputData(BaseModel):
 
     # Common output fields
     message: str | None = Field(
-        None,
+        default=None,
         description="Human-readable output message",
         max_length=2000,
     )
 
     status: str | None = Field(
-        None,
+        default=None,
         description="Status indicator",
         max_length=50,
     )
 
     # Node-related output
     nodes: list[ModelNodeInfo] | None = Field(
-        None,
+        default=None,
         description="List of nodes (for discovery/list[Any]commands)",
     )
 
     node_info: ModelNodeInfo | None = Field(
-        None,
+        default=None,
         description="Single node information",
     )
 
     node_metadata: ModelNodeMetadataInfo | None = Field(
-        None,
+        default=None,
         description="Node metadata information",
     )
 
     # Registry-related output
     registry_count: int | None = Field(
-        None,
+        default=None,
         description="Number of items in registry",
     )
 
     registry_status: str | None = Field(
-        None,
+        default=None,
         description="Registry status information",
     )
 
     # Validation/test results
     validation_passed: bool | None = Field(
-        None,
+        default=None,
         description="Whether validation passed",
     )
 
     test_results: dict[str, bool] | None = Field(
-        None,
+        default=None,
         description="Test results by test name",
     )
 
     # Scenario results
-    scenario_name: str | None = Field(None, description="Name of executed scenario")
+    scenario_name: str | None = Field(
+        default=None, description="Name of executed scenario"
+    )
 
     scenario_status: str | None = Field(
-        None,
+        default=None,
         description="Scenario execution status",
     )
 
     # Config/settings output
     config_details: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Configuration values",
     )
 
     # File operation results
     files_processed: list[str] | None = Field(
-        None,
+        default=None,
         description="List of processed files",
     )
 
     files_created: list[str] | None = Field(
-        None,
+        default=None,
         description="List of created files",
     )
 
     files_modified: list[str] | None = Field(
-        None,
+        default=None,
         description="List of modified files",
     )
 
     # Numeric results
-    count: int | None = Field(None, description="Generic count value")
+    count: int | None = Field(default=None, description="Generic count value")
 
-    total: int | None = Field(None, description="Total items")
+    total: int | None = Field(default=None, description="Total items")
 
-    processed: int | None = Field(None, description="Items processed")
+    processed: int | None = Field(default=None, description="Items processed")
 
-    failed: int | None = Field(None, description="Items failed")
+    failed: int | None = Field(default=None, description="Items failed")
 
-    skipped: int | None = Field(None, description="Items skipped")
+    skipped: int | None = Field(default=None, description="Items skipped")
 
     # Extended fields for complex outputs
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Extensible custom fields for specific commands",
     )
 
     # Compatibility field for truly dynamic data
     # This should only be used when the structure is genuinely unknown
     raw_data: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Raw unstructured data (use sparingly)",
     )
 
@@ -152,7 +143,10 @@ class ModelCliOutputData(BaseModel):
             return v
 
         if not v or not v.strip():
-            raise ValueError("message cannot be empty or whitespace")
+            raise ModelOnexError(
+                message="message cannot be empty or whitespace",
+                error_code="ONEX_CLI_OUTPUT_DATA_ERROR",
+            )
 
         return v.strip()
 
@@ -169,8 +163,16 @@ class ModelCliOutputData(BaseModel):
 
         # Common status patterns
         valid_statuses = [
-            "success", "error", "failed", "warning", "info",
-            "pending", "running", "completed", "skipped", "timeout"
+            "success",
+            "error",
+            "failed",
+            "warning",
+            "info",
+            "pending",
+            "running",
+            "completed",
+            "skipped",
+            "timeout",
         ]
 
         if v not in valid_statuses:
@@ -187,7 +189,10 @@ class ModelCliOutputData(BaseModel):
             return v
 
         if v < 0:
-            raise ValueError("value must be non-negative")
+            raise ModelOnexError(
+                message="value must be non-negative",
+                error_code="ONEX_CLI_OUTPUT_DATA_ERROR",
+            )
 
         return v
 
@@ -257,17 +262,19 @@ class ModelCliOutputData(BaseModel):
 
     def has_data(self) -> bool:
         """Check if any meaningful data is present."""
-        return any([
-            self.message,
-            self.nodes,
-            self.files_processed,
-            self.files_created,
-            self.files_modified,
-            self.total is not None,
-            self.processed is not None,
-            self.custom_fields,
-            self.raw_data,
-        ])
+        return any(
+            [
+                self.message,
+                self.nodes,
+                self.files_processed,
+                self.files_created,
+                self.files_modified,
+                self.total is not None,
+                self.processed is not None,
+                self.custom_fields,
+                self.raw_data,
+            ]
+        )
 
     def get_field_value(self, field_name: str, default: Any = None) -> Any:
         """Get a field value by name, checking custom fields if not found."""

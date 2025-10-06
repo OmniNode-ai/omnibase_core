@@ -28,7 +28,7 @@ class ModelNodeReference(BaseModel):
     node_name: str = Field(..., description="Node name", pattern="^[a-z][a-z0-9_]*$")
 
     namespace: str | None = Field(
-        None,
+        default=None,
         description="Namespace for third-party isolation",
     )
 
@@ -42,10 +42,10 @@ class ModelNodeReference(BaseModel):
         description="Node type (local, remote, plugin)",
     )
 
-    endpoint: str | None = Field(None, description="Remote endpoint URL")
+    endpoint: str | None = Field(default=None, description="Remote endpoint URL")
 
     metadata: ModelNodeMetadata | None = Field(
-        None,
+        default=None,
         description="Additional node metadata",
     )
 

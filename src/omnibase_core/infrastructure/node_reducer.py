@@ -26,7 +26,8 @@ Author: ONEX Framework Team
 
 import time
 from collections import defaultdict
-from collections.abc import Callable as CallableABC, Iterable as IterableABC
+from collections.abc import Callable as CallableABC
+from collections.abc import Iterable as IterableABC
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, TypeVar
@@ -1093,10 +1094,17 @@ class NodeReducer(NodeCoreBase):
             # Handle group key - if it's a string, use it as a field name
             if input_data.group_key:
                 if isinstance(input_data.group_key, str):
-                    group_key_func = lambda x: x.get(input_data.group_key, "default") if hasattr(x, 'get') else "default"
+                    group_key_func = lambda x: (
+                        x.get(input_data.group_key, "default")
+                        if hasattr(x, "get")
+                        else "default"
+                    )
                 else:
                     # Handle list of group keys
-                    group_key_func = lambda x: tuple(x.get(field, "default") if hasattr(x, 'get') else "default" for field in input_data.group_key or [])
+                    group_key_func = lambda x: tuple(
+                        x.get(field, "default") if hasattr(x, "get") else "default"
+                        for field in input_data.group_key or []
+                    )
             else:
                 group_key_func = lambda x: "default"
 
@@ -1243,12 +1251,28 @@ class NodeReducer(NodeCoreBase):
         """
         # Built-in reducer functions
         builtin_functions = {
-            "sum": lambda x, y: x + y if isinstance(x, (int, float)) and isinstance(y, (int, float)) else x,
-            "max": lambda x, y: max(x, y) if isinstance(x, (int, float)) and isinstance(y, (int, float)) else x,
-            "min": lambda x, y: min(x, y) if isinstance(x, (int, float)) and isinstance(y, (int, float)) else x,
-            "concat": lambda x, y: f"{x}{y}" if isinstance(x, str) and isinstance(y, str) else x,
+            "sum": lambda x, y: (
+                x + y
+                if isinstance(x, (int, float)) and isinstance(y, (int, float))
+                else x
+            ),
+            "max": lambda x, y: (
+                max(x, y)
+                if isinstance(x, (int, float)) and isinstance(y, (int, float))
+                else x
+            ),
+            "min": lambda x, y: (
+                min(x, y)
+                if isinstance(x, (int, float)) and isinstance(y, (int, float))
+                else x
+            ),
+            "concat": lambda x, y: (
+                f"{x}{y}" if isinstance(x, str) and isinstance(y, str) else x
+            ),
             "append": lambda x, y: x + [y] if isinstance(x, list) else [x, y],
-            "extend": lambda x, y: x + y if isinstance(x, list) and isinstance(y, list) else x,
+            "extend": lambda x, y: (
+                x + y if isinstance(x, list) and isinstance(y, list) else x
+            ),
         }
 
         return builtin_functions.get(func_name)
@@ -1686,5 +1710,3 @@ class NodeReducer(NodeCoreBase):
                 "dict_merging": True,
             },
         }
-
-  

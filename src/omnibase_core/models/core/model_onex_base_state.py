@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from pydantic import field_validator
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 from .model_onex_output_state import ModelOnexOutputState
 
@@ -32,7 +32,7 @@ from pydantic import BaseModel, field_validator
 from omnibase_core.models.core.model_onex_internal_input_state import (
     ModelOnexInternalInputState,
 )
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelOnexInputState(BaseModel):
@@ -56,35 +56,47 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_input_version(cls, v):
+    def parse_input_version(cls, v: Any) -> Any:
         """Parse version from string, dict[str, Any], or ModelSemVer"""
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ValueError(msg)
+
+        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message="version must be a string, dict[str, Any], or ModelSemVer",
+        )
 
     @field_validator("node_version", mode="before")
     @classmethod
-    def parse_input_node_version(cls, v):
+    def parse_input_node_version(cls, v: Any) -> Any:
         """Parse node_version from string, dict[str, Any], or ModelSemVer"""
         if v is None:
             return v
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        msg = "node_version must be a string, dict[str, Any], or ModelSemVer"
-        raise ValueError(msg)
+
+        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message="node_version must be a string, dict[str, Any], or ModelSemVer",
+        )
 
     @field_validator("event_id", "correlation_id")
     @classmethod
-    def validate_input_uuid_fields(cls, v):
+    def validate_input_uuid_fields(cls, v: Any) -> Any:
         """Validate UUID fields - Pydantic handles UUID conversion automatically"""
         # Pydantic automatically converts string UUIDs to UUID objects
         # and validates format, so we just need to handle None
@@ -92,7 +104,7 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("timestamp")
     @classmethod
-    def validate_input_timestamp(cls, v):
+    def validate_input_timestamp(cls, v: Any) -> Any:
         """Validate timestamp - Pydantic handles datetime conversion automatically"""
         # Pydantic automatically converts ISO8601 strings to datetime objects
         # and validates format, so we just need to handle None

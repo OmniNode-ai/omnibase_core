@@ -19,11 +19,13 @@ class ModelGenericMetadata(BaseModel):
     """
 
     # Common metadata fields
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
-    created_by: str | None = Field(None, description="Creator identifier")
-    updated_by: str | None = Field(None, description="Last updater identifier")
-    version: str | None = Field(None, description="Version information")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
+    created_by: str | None = Field(default=None, description="Creator identifier")
+    updated_by: str | None = Field(default=None, description="Last updater identifier")
+    version: str | None = Field(default=None, description="Version information")
 
     # Flexible fields for various use cases
     tags: list[str] | None = Field(
@@ -47,7 +49,7 @@ class ModelGenericMetadata(BaseModel):
 
     # For complex nested data (last resort)
     extended_data: dict[str, BaseModel] | None = Field(
-        None,
+        default=None,
         description="Extended data with nested models",
     )
 
@@ -66,7 +68,7 @@ class ModelGenericMetadata(BaseModel):
         return cls(**data)
 
     @field_serializer("created_at", "updated_at")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

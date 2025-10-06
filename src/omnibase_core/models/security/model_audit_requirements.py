@@ -19,7 +19,7 @@ class ModelAuditRequirements(BaseModel):
     Defines audit logging and compliance requirements.
     """
 
-    enabled: bool = Field(True, description="Whether audit logging is enabled")
+    enabled: bool = Field(default=True, description="Whether audit logging is enabled")
 
     detail_level: str = Field(
         "standard",
@@ -73,7 +73,7 @@ class ModelAuditRequirements(BaseModel):
     )
 
     archive_after_days: int | None = Field(
-        None,
+        default=None,
         description="Days after which to archive logs",
         ge=30,
     )

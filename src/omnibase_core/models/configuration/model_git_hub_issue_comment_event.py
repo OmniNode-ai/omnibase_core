@@ -28,7 +28,7 @@ class ModelGitHubIssueCommentEvent(BaseModel):
     repository: ModelGitHubRepository = Field(..., description="Repository data")
     sender: ModelGitHubUser = Field(..., description="User who triggered the event")
     changes: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Changes made (for edited action)",
     )
 

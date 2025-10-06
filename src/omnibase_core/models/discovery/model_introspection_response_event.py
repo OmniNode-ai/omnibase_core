@@ -1,7 +1,7 @@
 import uuid
 from typing import Any, Optional
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Introspection Response Event Model
@@ -72,11 +72,11 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Optional detailed information
     resource_usage: ModelResourceUsage | None = Field(
-        None,
+        default=None,
         description="Current resource usage (if requested)",
     )
     performance_metrics: ModelPerformanceMetrics | None = Field(
-        None,
+        default=None,
         description="Performance metrics (if requested)",
     )
 
@@ -89,7 +89,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Discovery metadata
     health_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Health check endpoint if available",
     )
     tags: list[str] = Field(
@@ -99,7 +99,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Additional context
     additional_info: ModelIntrospectionAdditionalInfo | None = Field(
-        None,
+        default=None,
         description="Additional node-specific information",
     )
 

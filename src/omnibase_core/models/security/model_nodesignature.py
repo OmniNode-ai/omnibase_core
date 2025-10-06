@@ -7,30 +7,11 @@ from typing import Any, ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors import ModelOnexError
-from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
+from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_operation_details import ModelOperationDetails
 from omnibase_core.models.core.model_signature_metadata import ModelSignatureMetadata
-
-
-class ModelNodeSignatureError(ModelOnexError):
-    """Error for node signature operations."""
-
-    def __init__(self, message: str, node_id: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_NODE_SIGNATURE_ERROR",
-        )
-        self.node_id = node_id
-
-
-class ModelNodeSignatureValidationError(ModelNodeSignatureError):
-    """Validation error for node signature operations."""
-
-    def __init__(self, message: str, node_id: str | None = None, field_name: str | None = None) -> None:
-        super().__init__(message, node_id)
-        self.field_name = field_name
 
 
 class ModelNodeSignature(BaseModel):
@@ -59,7 +40,7 @@ class ModelNodeSignature(BaseModel):
         min_length=1,
     )
     node_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable name of the signing node",
     )
 
@@ -85,7 +66,7 @@ class ModelNodeSignature(BaseModel):
         min_length=1,
     )
     certificate_thumbprint: str | None = Field(
-        None,
+        default=None,
         description="SHA-256 thumbprint of the signing certificate",
     )
 
@@ -95,7 +76,7 @@ class ModelNodeSignature(BaseModel):
         description="Type of operation performed by this node",
     )
     operation_details: ModelOperationDetails | None = Field(
-        None,
+        default=None,
         description="Additional details about the operation performed",
     )
 
@@ -107,7 +88,7 @@ class ModelNodeSignature(BaseModel):
         le=MAX_HOP_INDEX,
     )
     previous_signature_hash: str | None = Field(
-        None,
+        default=None,
         description="Hash of the previous signature in the chain",
     )
     envelope_state_hash: str = Field(
@@ -118,23 +99,23 @@ class ModelNodeSignature(BaseModel):
 
     # Security context
     user_context: str | None = Field(
-        None,
+        default=None,
         description="User ID or service account that initiated the operation",
     )
     security_clearance: str | None = Field(
-        None,
+        default=None,
         description="Security clearance level required for this operation",
     )
 
     # Performance and debugging
     processing_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Time spent processing the envelope (milliseconds)",
         ge=0,
         le=MAX_PROCESSING_TIME_MS,
     )
     signature_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Time spent creating the signature (milliseconds)",
         ge=0,
         le=MAX_SIGNATURE_TIME_MS,
@@ -142,7 +123,7 @@ class ModelNodeSignature(BaseModel):
 
     # Error handling
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Error message if operation failed",
     )
     warning_messages: list[str] = Field(
@@ -152,7 +133,7 @@ class ModelNodeSignature(BaseModel):
 
     # Additional metadata
     signature_metadata: ModelSignatureMetadata | None = Field(
-        None,
+        default=None,
         description="Additional signature metadata",
     )
 
@@ -161,9 +142,9 @@ class ModelNodeSignature(BaseModel):
     def validate_hop_index(cls, v: int) -> int:
         """Validate hop index is reasonable."""
         if v > cls.MAX_HOP_INDEX:
-            raise ModelNodeSignatureValidationError(
-                f"Hop index too large - possible routing loop (max: {cls.MAX_HOP_INDEX})",
-                field_name="hop_index",
+            raise ModelOnexError(
+                message=f"Hop index too large - possible routing loop (max: {cls.MAX_HOP_INDEX})",
+                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
             )
         return v
 
@@ -174,9 +155,9 @@ class ModelNodeSignature(BaseModel):
         try:
             base64.b64decode(v, validate=True)
         except Exception as e:
-            raise ModelNodeSignatureValidationError(
-                f"Signature must be valid base64 encoding: {e!s}",
-                field_name="signature",
+            raise ModelOnexError(
+                message=f"Signature must be valid base64 encoding: {e!s}",
+                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
             )
         return v
 
@@ -185,16 +166,16 @@ class ModelNodeSignature(BaseModel):
     def validate_hash_format(cls, v: str) -> str:
         """Validate hash format."""
         if len(v) != 64:  # SHA-256 hash length
-            raise ModelNodeSignatureValidationError(
-                "Envelope state hash must be 64 characters (SHA-256)",
-                field_name="envelope_state_hash",
+            raise ModelOnexError(
+                message="Envelope state hash must be 64 characters (SHA-256)",
+                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
             )
         try:
             int(v, 16)  # Validate hex format
         except ValueError:
-            raise ModelNodeSignatureValidationError(
-                "Envelope state hash must be hexadecimal",
-                field_name="envelope_state_hash",
+            raise ModelOnexError(
+                message="Envelope state hash must be hexadecimal",
+                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
             )
         return v
 
@@ -234,9 +215,9 @@ class ModelNodeSignature(BaseModel):
     ) -> Self:
         """Create a routing signature for envelope forwarding."""
         if hop_index <= 0:
-            raise ModelNodeSignatureValidationError(
-                "Routing signature must have hop_index > 0",
-                node_id=node_id,
+            raise ModelOnexError(
+                message="Routing signature must have hop_index > 0",
+                error_code="ONEX_NODE_SIGNATURE_ERROR",
             )
 
         return cls(
@@ -265,9 +246,9 @@ class ModelNodeSignature(BaseModel):
     ) -> Self:
         """Create a destination signature for envelope delivery."""
         if hop_index <= 0:
-            raise ModelNodeSignatureValidationError(
-                "Destination signature must have hop_index > 0",
-                node_id=node_id,
+            raise ModelOnexError(
+                message="Destination signature must have hop_index > 0",
+                error_code="ONEX_NODE_SIGNATURE_ERROR",
             )
 
         return cls(
@@ -397,5 +378,9 @@ class ModelNodeSignature(BaseModel):
     def __str__(self) -> str:
         """Human-readable representation."""
         error_info = f" [ERROR: {self.error_message}]" if self.error_message else ""
-        warning_info = f" [WARNINGS: {len(self.warning_messages)}]" if self.warning_messages else ""
+        warning_info = (
+            f" [WARNINGS: {len(self.warning_messages)}]"
+            if self.warning_messages
+            else ""
+        )
         return f"Signature[{self.hop_index}] {self.node_id}:{self.operation.value}{error_info}{warning_info}"

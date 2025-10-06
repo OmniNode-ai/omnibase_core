@@ -3,6 +3,8 @@ from typing import Any, Generic
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Health Check Configuration Model for ONEX Configuration-Driven Registry System.
@@ -29,17 +31,17 @@ class ModelHealthCheck(BaseModel):
     )
 
     endpoint_path: str | None = Field(
-        None,
+        default=None,
         description="Health check endpoint path (for HTTP checks)",
     )
 
     full_url: HttpUrl | None = Field(
-        None,
+        default=None,
         description="Complete health check URL (alternative to endpoint_path)",
     )
 
     command: str | None = Field(
-        None,
+        default=None,
         description="Command to execute for health check (for command type)",
     )
 
@@ -51,7 +53,7 @@ class ModelHealthCheck(BaseModel):
     )
 
     expected_response_pattern: str | None = Field(
-        None,
+        default=None,
         description="Regex pattern that response must match",
     )
 
@@ -88,7 +90,10 @@ class ModelHealthCheck(BaseModel):
             check_type = info.data.get("check_type")
             if check_type == EnumHealthCheckType.COMMAND and not v:
                 msg = "command is required when check_type is COMMAND"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
         return v
 
     @field_validator("full_url", mode="before")
@@ -103,8 +108,9 @@ class ModelHealthCheck(BaseModel):
             ]:
                 if not v and not info.data.get("endpoint_path"):
                     msg = "Either full_url or endpoint_path required for HTTP checks"
-                    raise ValueError(
-                        msg,
+                    raise ModelOnexError(
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
                     )
         return v
 

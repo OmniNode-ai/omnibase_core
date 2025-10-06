@@ -36,7 +36,7 @@ class ModelExampleMetadata(BaseModel):
     )
 
     description: str | None = Field(
-        None,
+        default=None,
         description="Description of the examples collection",
     )
 
@@ -51,7 +51,7 @@ class ModelExampleMetadata(BaseModel):
     )
 
     category: EnumExampleCategory | None = Field(
-        None,
+        default=None,
         description="Category this collection belongs to",
     )
 

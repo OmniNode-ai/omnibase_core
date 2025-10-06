@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Internal Output State Model for ONEX.
@@ -59,7 +59,7 @@ class ModelOnexInternalOutputState(BaseModel):
     status: EnumOnexStatus = Field(..., description="Processing status")
     message: str = Field(..., description="Processing message")
     output_field: ModelOnexField | None = Field(
-        None,
+        default=None,
         description="Output field with processing results",
     )
 

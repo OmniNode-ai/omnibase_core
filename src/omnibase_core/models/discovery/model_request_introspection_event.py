@@ -47,7 +47,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
 
     # Request targeting
     filters: ModelIntrospectionFilters | None = Field(
-        None,
+        default=None,
         description="Optional filters for targeting specific nodes",
     )
 
@@ -67,7 +67,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         description="Whether to include performance metrics in responses",
     )
     max_responses: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of responses to collect",
         ge=1,
         le=1000,

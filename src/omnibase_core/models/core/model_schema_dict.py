@@ -27,111 +27,113 @@ class ModelSchemaDict(BaseModel):
     """
 
     # Core schema fields
-    type: str | None = Field(None, description="JSON Schema type")
+    type: str | None = Field(default=None, description="JSON Schema type")
     schema_uri: str | None = Field(
-        None,
+        default=None,
         alias="$schema",
         description="Schema version URI",
     )
-    title: str | None = Field(None, description="Schema title")
-    description: str | None = Field(None, description="Schema description")
+    title: str | None = Field(default=None, description="Schema title")
+    description: str | None = Field(default=None, description="Schema description")
     ref: str | None = Field(
-        None,
+        default=None,
         alias="$ref",
         description="Reference to another schema",
     )
 
     # String constraints
-    enum: list[str] | None = Field(None, description="Enumeration values")
-    pattern: str | None = Field(None, description="String pattern")
+    enum: list[str] | None = Field(default=None, description="Enumeration values")
+    pattern: str | None = Field(default=None, description="String pattern")
     min_length: int | None = Field(
-        None,
+        default=None,
         alias="minLength",
         description="Minimum string length",
     )
     max_length: int | None = Field(
-        None,
+        default=None,
         alias="maxLength",
         description="Maximum string length",
     )
 
     # Numeric constraints
-    minimum: int | float | None = Field(None, description="Minimum value")
-    maximum: int | float | None = Field(None, description="Maximum value")
+    minimum: int | float | None = Field(default=None, description="Minimum value")
+    maximum: int | float | None = Field(default=None, description="Maximum value")
     multiple_of: int | float | None = Field(
-        None,
+        default=None,
         alias="multipleOf",
         description="Multiple of constraint",
     )
 
     # Array constraints
-    items: Optional["ModelSchemaDict"] = Field(None, description="Array items schema")
+    items: Optional["ModelSchemaDict"] = Field(
+        default=None, description="Array items schema"
+    )
     min_items: int | None = Field(
-        None,
+        default=None,
         alias="minItems",
         description="Minimum array items",
     )
     max_items: int | None = Field(
-        None,
+        default=None,
         alias="maxItems",
         description="Maximum array items",
     )
     unique_items: bool | None = Field(
-        None,
+        default=None,
         alias="uniqueItems",
         description="Unique items constraint",
     )
 
     # Object constraints
     properties: dict[str, "ModelSchemaDict"] | None = Field(
-        None,
+        default=None,
         description="Object properties",
     )
-    required: list[str] | None = Field(None, description="Required properties")
+    required: list[str] | None = Field(default=None, description="Required properties")
     additional_properties: bool | "ModelSchemaDict" | None = Field(
-        None,
+        default=None,
         alias="additionalProperties",
         description="Additional properties constraint",
     )
     min_properties: int | None = Field(
-        None,
+        default=None,
         alias="minProperties",
         description="Minimum properties",
     )
     max_properties: int | None = Field(
-        None,
+        default=None,
         alias="maxProperties",
         description="Maximum properties",
     )
 
     # General constraints
-    nullable: bool | None = Field(None, description="Nullable constraint")
-    default: ModelSchemaValue | None = Field(None, description="Default value")
+    nullable: bool | None = Field(default=None, description="Nullable constraint")
+    default: ModelSchemaValue | None = Field(default=None, description="Default value")
 
     # Schema composition
     definitions: dict[str, "ModelSchemaDict"] | None = Field(
-        None,
+        default=None,
         description="Schema definitions",
     )
     all_of: list["ModelSchemaDict"] | None = Field(
-        None,
+        default=None,
         alias="allOf",
         description="All of composition",
     )
     any_of: list["ModelSchemaDict"] | None = Field(
-        None,
+        default=None,
         alias="anyOf",
         description="Any of composition",
     )
     one_of: list["ModelSchemaDict"] | None = Field(
-        None,
+        default=None,
         alias="oneOf",
         description="One of composition",
     )
 
     # Examples
     examples: list[ModelSchemaValue] | None = Field(
-        None,
+        default=None,
         description="Example values",
     )
 

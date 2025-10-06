@@ -6,7 +6,7 @@ from typing import Generic
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 CLI result metadata model.
@@ -47,7 +47,7 @@ class ModelCliResultMetadata(BaseModel):
 
     # Core metadata fields
     metadata_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Metadata schema version",
     )
 
@@ -57,30 +57,32 @@ class ModelCliResultMetadata(BaseModel):
         description="Type of result",
     )
     result_category: EnumResultCategory | None = Field(
-        None,
+        default=None,
         description="Result category",
     )
 
     # Source information
-    source_command: str | None = Field(None, description="Source command")
-    source_node: str | None = Field(None, description="Source node")
+    source_command: str | None = Field(default=None, description="Source command")
+    source_node: str | None = Field(default=None, description="Source node")
 
     # Processing metadata
     processed_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="When result was processed",
     )
-    processor_version: ModelSemVer | None = Field(None, description="Processor version")
+    processor_version: ModelSemVer | None = Field(
+        default=None, description="Processor version"
+    )
 
     # Quality metrics
     quality_score: float | None = Field(
-        None,
+        default=None,
         description="Quality score (0.0 to 1.0)",
         ge=0.0,
         le=1.0,
     )
     confidence_level: float | None = Field(
-        None,
+        default=None,
         description="Confidence level (0.0 to 1.0)",
         ge=0.0,
         le=1.0,
@@ -92,7 +94,7 @@ class ModelCliResultMetadata(BaseModel):
         description="Data classification level",
     )
     retention_policy: EnumRetentionPolicy | None = Field(
-        None,
+        default=None,
         description="Data retention policy",
     )
 
@@ -109,7 +111,7 @@ class ModelCliResultMetadata(BaseModel):
 
     # Performance metrics
     processing_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Processing time in milliseconds",
     )
     resource_usage: dict[str, float] = Field(

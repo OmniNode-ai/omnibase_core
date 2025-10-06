@@ -41,13 +41,13 @@ class ModelTrustLevel(BaseModel):
     )
 
     last_verified: datetime | None = Field(
-        None,
+        default=None,
         description="Last verification timestamp",
     )
 
-    expires_at: datetime | None = Field(None, description="When trust expires")
+    expires_at: datetime | None = Field(default=None, description="When trust expires")
 
-    issuer: str | None = Field(None, description="Trust issuer")
+    issuer: str | None = Field(default=None, description="Trust issuer")
 
     revocable: bool = Field(default=True, description="Can trust be revoked")
 
@@ -57,7 +57,7 @@ class ModelTrustLevel(BaseModel):
     )
 
     renewal_period_days: int | None = Field(
-        None,
+        default=None,
         description="Days between required renewals",
     )
 

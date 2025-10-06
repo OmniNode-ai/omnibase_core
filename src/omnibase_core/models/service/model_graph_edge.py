@@ -30,39 +30,41 @@ class ModelGraphEdge(BaseModel):
     target_node_id: str = Field(..., description="Target node ID")
 
     # Edge properties
-    label: str | None = Field(None, description="Edge label")
+    label: str | None = Field(default=None, description="Edge label")
     edge_type: str | None = Field(
-        None,
+        default=None,
         description="Type of edge (e.g., 'normal', 'conditional', 'error')",
     )
 
     # Conditional logic
     condition: str | None = Field(
-        None,
+        default=None,
         description="Condition expression for conditional edges",
     )
     priority: int | None = Field(
-        None,
+        default=None,
         description="Edge priority for multiple outgoing edges",
     )
 
     # Visual properties
-    color: str | None = Field(None, description="Edge color for visualization")
+    color: str | None = Field(default=None, description="Edge color for visualization")
     style: str | None = Field(
-        None,
+        default=None,
         description="Edge style (e.g., 'solid', 'dashed', 'dotted')",
     )
-    width: float | None = Field(None, description="Edge width for visualization")
+    width: float | None = Field(
+        default=None, description="Edge width for visualization"
+    )
 
     # Data flow
     data_mapping: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Map source outputs to target inputs",
     )
 
     # Metadata
-    description: str | None = Field(None, description="Edge description")
+    description: str | None = Field(default=None, description="Edge description")
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Custom fields for edge-specific data",
     )

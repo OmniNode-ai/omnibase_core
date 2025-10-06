@@ -39,7 +39,7 @@ class ModelDiscoveryRequest(BaseModel):
 
     # Discovery parameters
     filters: ModelDiscoveryFilters | None = Field(
-        None,
+        default=None,
         description="Discovery filters for tool matching",
     )
 
@@ -52,7 +52,7 @@ class ModelDiscoveryRequest(BaseModel):
     )
 
     max_results: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of results to return",
         ge=1,
         le=1000,
@@ -64,7 +64,9 @@ class ModelDiscoveryRequest(BaseModel):
     )
 
     # Retry configuration
-    retry_count: int = Field(0, description="Number of retries on timeout", ge=0, le=5)
+    retry_count: int = Field(
+        default=0, description="Number of retries on timeout", ge=0, le=5
+    )
 
     retry_delay: float = Field(
         1.0,
@@ -74,11 +76,13 @@ class ModelDiscoveryRequest(BaseModel):
     )
 
     # Client identification
-    client_id: str | None = Field(None, description="Client identifier for tracking")
+    client_id: str | None = Field(
+        default=None, description="Client identifier for tracking"
+    )
 
     # Request tracking
     correlation_id: str | None = Field(
-        None,
+        default=None,
         description="Correlation ID for request tracking",
     )
 

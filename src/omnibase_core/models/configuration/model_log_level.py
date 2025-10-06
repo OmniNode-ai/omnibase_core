@@ -23,7 +23,7 @@ class ModelLogLevel(BaseModel):
     )
     display_name: str = Field(..., description="Human-readable display name")
     color_code: str | None = Field(
-        None,
+        default=None,
         description="Terminal color code for console output",
     )
     output_destinations: list[ModelLogDestination] = Field(

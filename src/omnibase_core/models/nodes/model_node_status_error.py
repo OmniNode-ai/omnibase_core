@@ -19,7 +19,7 @@ class ModelNodeStatusError(BaseModel):
     error_code: str = Field(description="Error classification code")
     error_message: str = Field(description="Human-readable error description")
     recovery_suggestion: str | None = Field(
-        None,
+        default=None,
         description="Suggested recovery action",
     )
 

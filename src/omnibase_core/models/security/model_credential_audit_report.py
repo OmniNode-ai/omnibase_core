@@ -14,7 +14,9 @@ from pydantic import BaseModel, Field
 class ModelCredentialAuditReport(BaseModel):
     """Audit report for credential usage in data structures."""
 
-    total_fields: int = Field(0, description="Total number of fields audited", ge=0)
+    total_fields: int = Field(
+        default=0, description="Total number of fields audited", ge=0
+    )
 
     sensitive_fields: int = Field(
         0,

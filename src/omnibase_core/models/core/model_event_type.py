@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Dynamic Event Type Model.
@@ -39,16 +39,18 @@ class ModelEventType(BaseModel):
         description="Event schema version",
     )
     payload_schema: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Expected payload schema",
     )
     deprecated: bool = Field(
         default=False,
         description="Whether event type is deprecated",
     )
-    category: str | None = Field(None, description="Event category for grouping")
+    category: str | None = Field(
+        default=None, description="Event category for grouping"
+    )
     severity: str | None = Field(
-        None,
+        default=None,
         description="Event severity level",
         pattern="^(info|warning|error|critical)$",
     )

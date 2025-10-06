@@ -15,9 +15,9 @@ class ModelMetricValue(BaseModel):
     """Individual metric value with metadata."""
 
     value: int | float | str | bool = Field(..., description="Metric value")
-    unit: str | None = Field(None, description="Unit of measurement")
+    unit: str | None = Field(default=None, description="Unit of measurement")
     timestamp: datetime | None = Field(
-        None,
+        default=None,
         description="When the metric was captured",
     )
     labels: dict[str, str] | None = Field(
@@ -26,7 +26,7 @@ class ModelMetricValue(BaseModel):
     )
 
     @field_serializer("timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

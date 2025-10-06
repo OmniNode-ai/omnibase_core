@@ -2,6 +2,9 @@ from typing import Optional
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ONEX-Compliant Severity Model
 
@@ -79,14 +82,17 @@ class ModelSeverity(BaseModel):
 
     # ONEX validation constraints
     @validator("name")
-    def validate_name_consistency(cls, v, values):
+    def validate_name_consistency(cls, v, values) -> None:
         """Ensure name and value are consistent."""
         if "value" in values and v.lower() != values["value"]:
-            raise ValueError(f"Name '{v}' must match value '{values.get('value', '')}'")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Name '{v}' must match value '{values.get('value', '')}'",
+            )
         return v
 
     @validator("numeric_value")
-    def validate_severity_ranges(cls, v, values):
+    def validate_severity_ranges(cls, v, values) -> None:
         """Validate numeric values align with severity expectations."""
         name = values.get("name", "")
         expected_ranges = {
@@ -101,23 +107,33 @@ class ModelSeverity(BaseModel):
         if name in expected_ranges:
             min_val, max_val = expected_ranges[name]
             if not (min_val <= v <= max_val):
-                raise ValueError(
-                    f"Numeric value {v} for {name} must be in range [{min_val}, {max_val}]"
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Numeric value {v} for {name} must be in range [{min_val}, {max_val}]",
                 )
         return v
 
     @validator("is_critical")
-    def validate_critical_consistency(cls, v, values):
+    def validate_critical_consistency(cls, v, values) -> None:
         """Ensure critical flag aligns with severity level."""
         name = values.get("name", "")
         numeric = values.get("numeric_value", 0)
 
         if name in ["CRITICAL", "FATAL"] and not v:
-            raise ValueError(f"Severity {name} must have is_critical=True")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Severity {name} must have is_critical=True",
+            )
         if name in ["DEBUG", "INFO", "WARNING"] and v:
-            raise ValueError(f"Severity {name} cannot have is_critical=True")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Severity {name} cannot have is_critical=True",
+            )
         if numeric >= 45 and not v:
-            raise ValueError(f"Numeric value {numeric} requires is_critical=True")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Numeric value {numeric} requires is_critical=True",
+            )
 
         return v
 
@@ -134,25 +150,37 @@ class ModelSeverity(BaseModel):
     def __lt__(self, other: "ModelSeverity") -> bool:
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
-            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                message=f"Cannot compare ModelSeverity with {type(other)}",
+            )
         return self.numeric_value < other.numeric_value
 
     def __le__(self, other: "ModelSeverity") -> bool:
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
-            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                message=f"Cannot compare ModelSeverity with {type(other)}",
+            )
         return self.numeric_value <= other.numeric_value
 
     def __gt__(self, other: "ModelSeverity") -> bool:
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
-            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                message=f"Cannot compare ModelSeverity with {type(other)}",
+            )
         return self.numeric_value > other.numeric_value
 
     def __ge__(self, other: "ModelSeverity") -> bool:
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
-            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                message=f"Cannot compare ModelSeverity with {type(other)}",
+            )
         return self.numeric_value >= other.numeric_value
 
     def __hash__(self) -> int:

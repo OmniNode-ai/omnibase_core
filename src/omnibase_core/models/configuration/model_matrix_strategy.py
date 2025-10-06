@@ -14,10 +14,10 @@ class ModelMatrixStrategy(BaseModel):
 
     matrix: dict[str, list[Any]] = Field(..., description="Matrix dimensions")
     include: list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="Matrix inclusions",
     )
     exclude: list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="Matrix exclusions",
     )

@@ -43,7 +43,7 @@ class ModelValidationResult(BaseModel, Generic[T]):
 
     # Optional validated value with generic typing
     validated_value: T | None = Field(
-        None,
+        default=None,
         description="The validated and potentially normalized value",
     )
 
@@ -73,13 +73,13 @@ class ModelValidationResult(BaseModel, Generic[T]):
         description="Human-readable validation summary",
     )
     details: str | None = Field(
-        None,
+        default=None,
         description="Additional validation details",
     )
 
     # Metadata
     metadata: ModelValidationMetadata | None = Field(
-        None,
+        default=None,
         description="Structured metadata about the validation process",
     )
 

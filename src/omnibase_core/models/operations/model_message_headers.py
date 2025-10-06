@@ -1,4 +1,4 @@
-from typing import UUID
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 

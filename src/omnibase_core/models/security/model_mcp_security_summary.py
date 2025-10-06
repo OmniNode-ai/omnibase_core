@@ -12,8 +12,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
 
-from .model_config import ModelConfig
-
 
 class ModelMCPSecuritySummary(BaseModel):
     """MCP server security summary with strongly typed fields."""

@@ -39,7 +39,7 @@ class ModelRateLimitWindow(BaseModel):
     )
 
     sub_window_count: int | None = Field(
-        None,
+        default=None,
         description="Number of sub-windows for sliding window (granularity)",
         ge=1,
         le=3600,
@@ -63,21 +63,21 @@ class ModelRateLimitWindow(BaseModel):
     )
 
     token_refill_rate: float | None = Field(
-        None,
+        default=None,
         description="Token refill rate per second (for token bucket)",
         ge=0.1,
         le=10000.0,
     )
 
     bucket_capacity: int | None = Field(
-        None,
+        default=None,
         description="Bucket capacity (for token/leaky bucket)",
         ge=1,
         le=1000000,
     )
 
     leak_rate: float | None = Field(
-        None,
+        default=None,
         description="Leak rate per second (for leaky bucket)",
         ge=0.1,
         le=10000.0,

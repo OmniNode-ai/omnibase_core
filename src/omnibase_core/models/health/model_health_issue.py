@@ -52,7 +52,7 @@ class ModelHealthIssue(BaseModel):
     )
 
     recovery_action: str | None = Field(
-        None,
+        default=None,
         description="Recommended recovery action",
     )
 

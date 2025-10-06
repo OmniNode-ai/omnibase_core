@@ -18,19 +18,19 @@ class ModelToolInputData(BaseModel):
 
     operation: str = Field(..., description="Operation to perform")
     source_path: str | None = Field(
-        None,
+        default=None,
         description="Source file or directory path",
     )
     target_path: str | None = Field(
-        None,
+        default=None,
         description="Target file or directory path",
     )
     config: dict[str, str | int | float | bool] | None = Field(
-        None,
+        default=None,
         description="Configuration parameters",
     )
     metadata: dict[str, str | int | float | bool] | None = Field(
-        None,
+        default=None,
         description="Metadata for the operation",
     )
-    options: list[str] | None = Field(None, description="Additional options")
+    options: list[str] | None = Field(default=None, description="Additional options")

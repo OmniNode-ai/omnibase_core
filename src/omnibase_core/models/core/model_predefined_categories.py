@@ -26,7 +26,7 @@ def _create_and_register_category(
 # Predefined Categories
 LIFECYCLE = _create_and_register_category(
     "lifecycle",
-    "Lifecycle",
+    "EnumLifecycle",
     "Node lifecycle management actions (health, initialization, shutdown)",
 )
 

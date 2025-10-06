@@ -8,11 +8,13 @@ Audit entry model to replace Dict[str, Any] usage for audit trails.
 
 from datetime import datetime
 from typing import Any, Dict
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.enums.enum_audit_action import EnumAuditAction
 from omnibase_core.models.core.model_audit_value import ModelAuditValue
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelAuditEntry(BaseModel):
@@ -22,40 +24,46 @@ class ModelAuditEntry(BaseModel):
     """
 
     # Core audit fields
-    audit_id: str = Field(..., description="Unique audit entry ID")
+    audit_id: UUID = Field(..., description="Unique audit entry ID")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="When the action occurred",
     )
     action: EnumAuditAction = Field(..., description="Action performed")
     action_detail: str | None = Field(
-        None,
+        default=None,
         description="Detailed action description",
     )
 
     # Actor information
-    actor_id: str | None = Field(None, description="ID of the actor (user/service)")
+    actor_id: UUID | None = Field(
+        default=None, description="ID of the actor (user/service)"
+    )
     actor_type: str | None = Field(
-        None,
+        default=None,
         description="Type of actor (user/service/system)",
     )
-    actor_name: str | None = Field(None, description="Human-readable actor name")
-    actor_ip: str | None = Field(None, description="Actor IP address")
-    actor_user_agent: str | None = Field(None, description="Actor user agent")
+    actor_name: str | None = Field(
+        default=None, description="Human-readable actor name"
+    )
+    actor_ip: str | None = Field(default=None, description="Actor IP address")
+    actor_user_agent: str | None = Field(default=None, description="Actor user agent")
 
     # Target information
-    target_type: str | None = Field(None, description="Type of target resource")
-    target_id: str | None = Field(None, description="ID of target resource")
-    target_name: str | None = Field(None, description="Human-readable target name")
-    target_path: str | None = Field(None, description="Path to target resource")
+    target_type: str | None = Field(default=None, description="Type of target resource")
+    target_id: UUID | None = Field(default=None, description="ID of target resource")
+    target_name: str | None = Field(
+        default=None, description="Human-readable target name"
+    )
+    target_path: str | None = Field(default=None, description="Path to target resource")
 
     # Change information
     previous_value: ModelAuditValue | None = Field(
-        None,
+        default=None,
         description="Previous state (for updates)",
     )
     new_value: ModelAuditValue | None = Field(
-        None,
+        default=None,
         description="New state (for updates)",
     )
     changes_summary: list[str] | None = Field(
@@ -64,44 +72,50 @@ class ModelAuditEntry(BaseModel):
     )
 
     # Result information
-    success: bool = Field(True, description="Whether the action succeeded")
-    error_code: str | None = Field(None, description="Error code if failed")
-    error_message: str | None = Field(None, description="Error message if failed")
+    success: bool = Field(default=True, description="Whether the action succeeded")
+    error_code: str | None = Field(default=None, description="Error code if failed")
+    error_message: str | None = Field(
+        default=None, description="Error message if failed"
+    )
     duration_ms: float | None = Field(
-        None,
+        default=None,
         description="Operation duration in milliseconds",
     )
 
     # Context and metadata
-    session_id: str | None = Field(None, description="Session ID")
-    correlation_id: str | None = Field(
-        None,
+    session_id: UUID | None = Field(default=None, description="Session ID")
+    correlation_id: UUID | None = Field(
+        default=None,
         description="Correlation ID for tracing",
     )
-    request_id: str | None = Field(None, description="Request ID")
+    request_id: UUID | None = Field(default=None, description="Request ID")
     environment: str | None = Field(
-        None,
+        default=None,
         description="Environment (dev/staging/prod)",
     )
     service_name: str | None = Field(
-        None,
+        default=None,
         description="Service that generated the audit",
     )
-    service_version: str | None = Field(None, description="Service version")
+    service_version: ModelSemVer | None = Field(
+        default=None, description="Service version"
+    )
 
     # Security and compliance
-    risk_score: float | None = Field(None, description="Risk score of the action")
+    risk_score: float | None = Field(
+        default=None, description="Risk score of the action"
+    )
     compliance_tags: list[str] | None = Field(
         default_factory=list,
         description="Compliance-related tags",
     )
     requires_review: bool | None = Field(
-        None,
+        default=None,
         description="Whether this requires manual review",
     )
-    reviewed_by: str | None = Field(None, description="Who reviewed this entry")
+    reviewed_by: str | None = Field(default=None, description="Who reviewed this entry")
     review_timestamp: datetime | None = Field(
-        None,
+        default=None,
         description="When it was reviewed",
     )
 
@@ -119,7 +133,7 @@ class ModelAuditEntry(BaseModel):
         return cls(**data)
 
     @field_serializer("timestamp", "review_timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

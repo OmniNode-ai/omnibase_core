@@ -56,10 +56,12 @@ class ModelExampleOutputData(BaseModel):
 
     # Metrics
     processing_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Processing time in milliseconds",
     )
-    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
+    memory_usage_mb: float | None = Field(
+        default=None, description="Memory usage in MB"
+    )
 
     # Validation info
     is_expected: bool = Field(

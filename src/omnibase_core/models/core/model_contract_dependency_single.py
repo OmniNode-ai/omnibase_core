@@ -12,9 +12,11 @@ class ModelContractDependency(BaseModel):
     name: str = Field(..., description="Dependency service name")
     type: str = Field(..., description="Dependency type (utility, protocol, service)")
     class_name: str | None = Field(
-        None,
+        default=None,
         alias="class",
         description="Class name for the dependency",
     )
-    module: str | None = Field(None, description="Module path for the dependency")
-    description: str | None = Field(None, description="Dependency description")
+    module: str | None = Field(
+        default=None, description="Module path for the dependency"
+    )
+    description: str | None = Field(default=None, description="Dependency description")

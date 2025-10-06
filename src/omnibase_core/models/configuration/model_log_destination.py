@@ -19,22 +19,22 @@ class ModelLogDestination(BaseModel):
         description="Whether this destination is enabled",
     )
     file_path: str | None = Field(
-        None,
+        default=None,
         description="File path for file destinations",
     )
-    host: str | None = Field(None, description="Host for network destinations")
+    host: str | None = Field(default=None, description="Host for network destinations")
     port: int | None = Field(
-        None,
+        default=None,
         description="Port for network destinations",
         ge=1,
         le=65535,
     )
     connection_string: str | None = Field(
-        None,
+        default=None,
         description="Connection string for database destinations",
     )
     configuration: ModelLogDestinationConfig = Field(
-        default_factory=ModelLogDestinationConfig,
+        default_factory=lambda: ModelLogDestinationConfig(),
         description="Additional destination-specific configuration",
     )
     buffer_size: int = Field(

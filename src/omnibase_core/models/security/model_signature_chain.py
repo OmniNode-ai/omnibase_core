@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 
@@ -44,12 +45,12 @@ class ModelSignatureChain(BaseModel):
     """
 
     # Chain identification
-    chain_id: str = Field(
+    chain_id: UUID = Field(
         ...,
         description="Unique identifier for this signature chain",
         min_length=1,
     )
-    envelope_id: str = Field(
+    envelope_id: UUID = Field(
         ...,
         description="ID of the envelope this chain belongs to",
         min_length=1,
@@ -95,7 +96,7 @@ class ModelSignatureChain(BaseModel):
 
     # Policy compliance
     signing_policy: ModelSigningPolicy | None = Field(
-        None,
+        default=None,
         description="Signing policy requirements for this chain",
     )
     compliance_frameworks: list[EnumComplianceFramework] = Field(
@@ -105,7 +106,7 @@ class ModelSignatureChain(BaseModel):
 
     # Performance and debugging
     chain_metrics: ModelChainMetrics | None = Field(
-        None,
+        default=None,
         description="Performance metrics for chain operations",
     )
 
@@ -118,8 +119,9 @@ class ModelSignatureChain(BaseModel):
         for i, signature in enumerate(v):
             if signature.hop_index != i:
                 msg = f"Signature at position {i} has hop_index {signature.hop_index}"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
 
         return v

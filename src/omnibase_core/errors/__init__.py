@@ -6,7 +6,6 @@ from typing import Any
 from omnibase_core.errors.error_codes import (
     EnumCLIExitCode,
     ModelCoreErrorCode,
-    ModelOnexError,
     ModelRegistryErrorCode,
     get_core_error_description,
     get_error_codes_for_component,
@@ -40,11 +39,13 @@ from omnibase_core.errors.error_document_freshness_system import (
 from omnibase_core.errors.error_document_freshness_validation import (
     DocumentFreshnessValidationError,
 )
-from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
-from omnibase_core.models.common.model_registry_error import ModelRegistryError
 
-# Import extracted classes
-from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
+# ModelOnexError is imported via lazy import to avoid circular dependency
+# It's available as: from omnibase_core.errors.error_codes import ModelOnexError
+
+
+# ModelOnexWarning, ModelRegistryError, and ModelCLIAdapter are imported via lazy import
+# to avoid circular dependencies
 
 __all__ = [
     # Base error classes
@@ -76,3 +77,29 @@ __all__ = [
     "DocumentFreshnessValidationError",
     "DocumentFreshnessSystemError",
 ]
+
+
+# Lazy import to avoid circular dependencies
+def __getattr__(name: str) -> Any:
+    """Lazy import mechanism to avoid circular dependencies."""
+    if name == "ModelOnexError":
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        return ModelOnexError
+    if name == "ModelOnexWarning":
+        from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
+
+        return ModelOnexWarning
+    if name == "ModelRegistryError":
+        from omnibase_core.models.common.model_registry_error import ModelRegistryError
+
+        return ModelRegistryError
+    if name == "ModelCLIAdapter":
+        from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
+
+        return ModelCLIAdapter
+    msg = f"module '{__name__}' has no attribute '{name}'"
+    raise ModelOnexError(
+        error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+        message=msg,
+    )

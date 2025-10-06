@@ -32,7 +32,7 @@ class ModelRiskAssessment(BaseModel):
     )
 
     data_classification_required: str | None = Field(
-        None,
+        default=None,
         description="Required data classification level",
         pattern="^(public|internal|confidential|restricted|top_secret)$",
     )
@@ -58,7 +58,7 @@ class ModelRiskAssessment(BaseModel):
     )
 
     risk_owner: str | None = Field(
-        None,
+        default=None,
         description="Person/role responsible for this risk",
     )
 
@@ -70,11 +70,11 @@ class ModelRiskAssessment(BaseModel):
     )
 
     last_review_date: str | None = Field(
-        None,
+        default=None,
         description="Date of last risk review (ISO format)",
     )
 
     next_review_date: str | None = Field(
-        None,
+        default=None,
         description="Date of next scheduled review (ISO format)",
     )

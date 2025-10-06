@@ -9,7 +9,9 @@ class ModelYamlPolicy(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common policy patterns
-    policy: dict[str, Any] | None = Field(None, description="Policy definition")
-    rules: list[dict[str, Any]] | None = Field(None, description="Policy rules")
-    permissions: dict[str, Any] | None = Field(None, description="Permissions")
-    restrictions: dict[str, Any] | None = Field(None, description="Restrictions")
+    policy: dict[str, Any] | None = Field(default=None, description="Policy definition")
+    rules: list[dict[str, Any]] | None = Field(default=None, description="Policy rules")
+    permissions: dict[str, Any] | None = Field(default=None, description="Permissions")
+    restrictions: dict[str, Any] | None = Field(
+        default=None, description="Restrictions"
+    )

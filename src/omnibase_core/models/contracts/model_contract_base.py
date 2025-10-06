@@ -3,7 +3,7 @@ from typing import Dict, List, Literal
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Contract Model Base - ONEX Standards Compliant.
@@ -87,10 +87,10 @@ class ModelContractBase(BaseModel, ABC):
         description="Performance SLA specifications",
     )
 
-    # Lifecycle management
+    # EnumLifecycle management
     lifecycle: ModelLifecycleConfig = Field(
         default_factory=ModelLifecycleConfig,
-        description="Lifecycle management configuration",
+        description="EnumLifecycle management configuration",
     )
 
     # Dependencies and protocols

@@ -17,18 +17,18 @@ class ModelHealthCheckComponent(BaseModel):
         ...,
         description="Component status (healthy/unhealthy/degraded)",
     )
-    message: str | None = Field(None, description="Status message")
+    message: str | None = Field(default=None, description="Status message")
     last_check: datetime = Field(
         default_factory=datetime.utcnow,
         description="Last check time",
     )
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Response time in milliseconds",
     )
 
     @field_serializer("last_check")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

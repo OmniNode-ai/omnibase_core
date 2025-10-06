@@ -1,5 +1,8 @@
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelTrustLevel: Trust level configuration for signature chains.
 
@@ -55,8 +58,9 @@ class ModelTrustLevel(BaseModel):
         }
         if v not in valid_levels:
             msg = f"Invalid trust level: {v}. Must be one of: {valid_levels}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 

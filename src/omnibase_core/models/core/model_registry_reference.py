@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import Field
 
 """
@@ -19,7 +21,7 @@ class ModelRegistryReference(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    node_id: str = Field(..., description="Node identifier for this registry")
+    node_id: UUID = Field(..., description="Node identifier for this registry")
     registry_class_name: str = Field(..., description="Registry class name")
     registry_type: str = Field(..., description="Registry type classification")
     is_initialized: bool = Field(

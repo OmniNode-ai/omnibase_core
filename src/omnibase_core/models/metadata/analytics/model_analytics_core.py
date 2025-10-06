@@ -38,7 +38,7 @@ class ModelAnalyticsCore(BaseModel):
         description="Unique identifier for the collection",
     )
     collection_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable collection name",
     )
 

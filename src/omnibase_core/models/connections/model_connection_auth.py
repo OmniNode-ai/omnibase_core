@@ -36,31 +36,33 @@ class ModelConnectionAuth(BaseModel):
     """
 
     # Authentication type
-    auth_type: EnumAuthType | None = Field(None, description="Authentication type")
+    auth_type: EnumAuthType | None = Field(
+        default=None, description="Authentication type"
+    )
 
     # Basic authentication
-    user_id: UUID | None = Field(None, description="UUID for user identity")
+    user_id: UUID | None = Field(default=None, description="UUID for user identity")
     user_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable username",
         min_length=1,
         max_length=255,
         pattern=r"^[a-zA-Z0-9._@-]+$",
     )
     password: SecretStr | None = Field(
-        None,
+        default=None,
         description="Password (encrypted)",
         min_length=1,
     )
 
     # Token-based authentication
     api_key: SecretStr | None = Field(
-        None,
+        default=None,
         description="API key (encrypted)",
         min_length=1,
     )
     token: SecretStr | None = Field(
-        None,
+        default=None,
         description="Auth token (encrypted)",
         min_length=1,
     )

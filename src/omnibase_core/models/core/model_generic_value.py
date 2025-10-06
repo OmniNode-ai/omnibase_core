@@ -1,9 +1,3 @@
-from typing import Any, Dict, Generic, List
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_value_type import EnumValueType
-
 #!/usr/bin/env python3
 """
 ONEX Generic Value Model
@@ -13,9 +7,14 @@ different data types in a type-safe manner for validation and testing.
 """
 
 import json
-from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import ValidationInfo
+
+from omnibase_core.enums.enum_value_type import EnumValueType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelGenericValue(BaseModel):
@@ -46,112 +45,148 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("string_value")
     @classmethod
-    def validate_string_value(cls, v, info):
+    def validate_string_value(cls, v: str | None, info: ValidationInfo) -> str | None:
         """Validate string value is set when type is STRING"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.STRING and v is None:
             msg = "string_value must be set when value_type is STRING"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if data.get("value_type") != EnumValueType.STRING and v is not None:
             msg = "string_value should only be set when value_type is STRING"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("integer_value")
     @classmethod
-    def validate_integer_value(cls, v, info):
+    def validate_integer_value(cls, v: int | None, info: ValidationInfo) -> int | None:
         """Validate integer value is set when type is INTEGER"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.INTEGER and v is None:
             msg = "integer_value must be set when value_type is INTEGER"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if data.get("value_type") != EnumValueType.INTEGER and v is not None:
             msg = "integer_value should only be set when value_type is INTEGER"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("float_value")
     @classmethod
-    def validate_float_value(cls, v, info):
+    def validate_float_value(
+        cls, v: float | None, info: ValidationInfo
+    ) -> float | None:
         """Validate float value is set when type is FLOAT"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.FLOAT and v is None:
             msg = "float_value must be set when value_type is FLOAT"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if data.get("value_type") != EnumValueType.FLOAT and v is not None:
             msg = "float_value should only be set when value_type is FLOAT"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("boolean_value")
     @classmethod
-    def validate_boolean_value(cls, v, info):
+    def validate_boolean_value(
+        cls, v: bool | None, info: ValidationInfo
+    ) -> bool | None:
         """Validate boolean value is set when type is BOOLEAN"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.BOOLEAN and v is None:
             msg = "boolean_value must be set when value_type is BOOLEAN"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if data.get("value_type") != EnumValueType.BOOLEAN and v is not None:
             msg = "boolean_value should only be set when value_type is BOOLEAN"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("list_string_value")
     @classmethod
-    def validate_list_string_value(cls, v, info):
+    def validate_list_string_value(
+        cls, v: list[str] | None, info: ValidationInfo
+    ) -> list[str] | None:
         """Validate list[Any]string value is set when type is LIST_STRING"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.LIST_STRING and v is None:
             msg = "list_string_value must be set when value_type is LIST_STRING"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         if data.get("value_type") != EnumValueType.LIST_STRING and v is not None:
             msg = "list_string_value should only be set when value_type is LIST_STRING"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("list_integer_value")
     @classmethod
-    def validate_list_integer_value(cls, v, info):
+    def validate_list_integer_value(
+        cls, v: list[int] | None, info: ValidationInfo
+    ) -> list[int] | None:
         """Validate list[Any]integer value is set when type is LIST_INTEGER"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.LIST_INTEGER and v is None:
             msg = "list_integer_value must be set when value_type is LIST_INTEGER"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         if data.get("value_type") != EnumValueType.LIST_INTEGER and v is not None:
             msg = (
                 "list_integer_value should only be set when value_type is LIST_INTEGER"
             )
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("dict_value")
     @classmethod
-    def validate_dict_value(cls, v, info):
+    def validate_dict_value(cls, v: str | None, info: ValidationInfo) -> str | None:
         """Validate dict[str, Any]value is set when type is DICT"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.DICT and v is None:
             msg = "dict_value must be set when value_type is DICT"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if data.get("value_type") != EnumValueType.DICT and v is not None:
             msg = "dict_value should only be set when value_type is DICT"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
-    def get_python_value(self):
+    def get_python_value(self) -> Any:
         """Get the actual Python value based on the type"""
         if self.value_type == EnumValueType.STRING:
             return self.string_value
@@ -170,10 +205,13 @@ class ModelGenericValue(BaseModel):
         if self.value_type == EnumValueType.NULL:
             return None
         msg = f"Unknown value type: {self.value_type}"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     @classmethod
-    def from_python_value(cls, value):
+    def from_python_value(cls, value: Any) -> "ModelGenericValue":
         """Create ModelGenericValue from a Python value"""
         if value is None:
             return cls(value_type=EnumValueType.NULL)
@@ -199,13 +237,17 @@ class ModelGenericValue(BaseModel):
             msg = (
                 f"Unsupported list[Any]type with mixed or unsupported elements: {value}"
             )
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         if isinstance(value, dict):
             return cls(value_type=EnumValueType.DICT, dict_value=json.dumps(value))
         msg = f"Unsupported value type: {type(value)}"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     model_config = ConfigDict(
         json_schema_extra={

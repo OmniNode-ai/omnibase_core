@@ -25,54 +25,64 @@ class ModelMonitoringMetrics(BaseModel):
 
     # Performance metrics
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Response time in milliseconds",
     )
     throughput_rps: float | None = Field(
-        None,
+        default=None,
         description="Throughput in requests per second",
     )
-    error_rate: float | None = Field(None, description="Error rate percentage")
-    success_rate: float | None = Field(None, description="Success rate percentage")
+    error_rate: float | None = Field(default=None, description="Error rate percentage")
+    success_rate: float | None = Field(
+        default=None, description="Success rate percentage"
+    )
 
     # Resource utilization
-    cpu_usage_percent: float | None = Field(None, description="CPU usage percentage")
-    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
-    disk_usage_gb: float | None = Field(None, description="Disk usage in GB")
+    cpu_usage_percent: float | None = Field(
+        default=None, description="CPU usage percentage"
+    )
+    memory_usage_mb: float | None = Field(
+        default=None, description="Memory usage in MB"
+    )
+    disk_usage_gb: float | None = Field(default=None, description="Disk usage in GB")
     network_bandwidth_mbps: float | None = Field(
-        None,
+        default=None,
         description="Network bandwidth in Mbps",
     )
 
     # Queue/processing metrics
-    queue_depth: int | None = Field(None, description="Current queue depth")
-    items_processed: int | None = Field(None, description="Total items processed")
-    items_failed: int | None = Field(None, description="Total items failed")
+    queue_depth: int | None = Field(default=None, description="Current queue depth")
+    items_processed: int | None = Field(
+        default=None, description="Total items processed"
+    )
+    items_failed: int | None = Field(default=None, description="Total items failed")
     processing_lag_ms: float | None = Field(
-        None,
+        default=None,
         description="Processing lag in milliseconds",
     )
 
     # Health indicators
     health_score: float | None = Field(
-        None,
+        default=None,
         description="Overall health score (0-100)",
     )
     compliance_score: float | None = Field(
-        None,
+        default=None,
         description="Compliance score (0-100)",
     )
     reliability_score: float | None = Field(
-        None,
+        default=None,
         description="Reliability score (0-100)",
     )
     availability_percent: float | None = Field(
-        None,
+        default=None,
         description="Service availability percentage",
     )
-    uptime_seconds: int | None = Field(None, description="Service uptime in seconds")
+    uptime_seconds: int | None = Field(
+        default=None, description="Service uptime in seconds"
+    )
     last_error_timestamp: datetime | None = Field(
-        None,
+        default=None,
         description="Last error occurrence",
     )
 
@@ -83,8 +93,10 @@ class ModelMonitoringMetrics(BaseModel):
     )
 
     # Time window
-    start_time: datetime | None = Field(None, description="Metrics window start")
-    end_time: datetime | None = Field(None, description="Metrics window end")
+    start_time: datetime | None = Field(
+        default=None, description="Metrics window start"
+    )
+    end_time: datetime | None = Field(default=None, description="Metrics window end")
     collection_timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="When metrics were collected",
@@ -103,7 +115,7 @@ class ModelMonitoringMetrics(BaseModel):
         "end_time",
         "collection_timestamp",
     )
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

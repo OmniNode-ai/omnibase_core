@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generic
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 ContractLoader for ONEX Tool Generation Pattern Standardization.

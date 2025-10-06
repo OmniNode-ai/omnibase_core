@@ -1,5 +1,9 @@
+from uuid import UUID
+
 from pydantic import Field, field_validator, model_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_node_service_config import (
     ModelNodeServiceConfig,
 )
@@ -20,7 +24,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_events import EnumLogLevel as LogLevel
-from omnibase_core.enums.enum_service_mode import ModelServiceModeEnum
+from omnibase_core.enums.enum_service_mode import EnumServiceMode
 from omnibase_core.models.service.model_event_bus_config import ModelEventBusConfig
 from omnibase_core.models.service.model_health_check_config import (
     ModelHealthCheckConfig,
@@ -43,56 +47,56 @@ class ModelNodeServiceConfig(BaseModel):
 
     # Core service identification
     node_name: str = Field(..., description="Name of the ONEX node", min_length=1)
-    node_version: str = Field("1.0.0", description="Version of the node")
-    service_mode: ModelServiceModeEnum = Field(
-        ModelServiceModeEnum.STANDALONE,
+    node_version: ModelSemVer = Field("1.0.0", description="Version of the node")
+    service_mode: EnumServiceMode = Field(
+        EnumServiceMode.STANDALONE,
         description="Service deployment mode",
     )
 
     # Environment and runtime
-    node_id: str | None = Field(
-        None,
+    node_id: UUID | None = Field(
+        default=None,
         description="Override node ID for service instance",
     )
     log_level: LogLevel = Field(
         LogLevel.INFO,
         description="Logging level",
     )
-    debug_mode: bool = Field(False, description="Enable debug mode")
+    debug_mode: bool = Field(default=False, description="Enable debug mode")
 
     # Event bus configuration
     event_bus: ModelEventBusConfig = Field(
-        default_factory=ModelEventBusConfig,
+        default_factory=lambda: ModelEventBusConfig(),
         description="Event bus configuration",
     )
 
     # Network and deployment
     network: ModelNetworkConfig = Field(
-        default_factory=ModelNetworkConfig,
+        default_factory=lambda: ModelNetworkConfig(),
         description="Network configuration",
     )
 
     # Health monitoring
     health_check: ModelHealthCheckConfig = Field(
-        default_factory=ModelHealthCheckConfig,
+        default_factory=lambda: ModelHealthCheckConfig(),
         description="Health check configuration",
     )
 
     # Security
     security: ModelSecurityConfig = Field(
-        default_factory=ModelSecurityConfig,
+        default_factory=lambda: ModelSecurityConfig(),
         description="Security configuration",
     )
 
     # Monitoring and observability
     monitoring: ModelMonitoringConfig = Field(
-        default_factory=ModelMonitoringConfig,
+        default_factory=lambda: ModelMonitoringConfig(),
         description="Monitoring configuration",
     )
 
     # Resource management
     resources: ModelResourceLimits | None = Field(
-        None,
+        default=None,
         description="Resource limits for deployment",
     )
 
@@ -104,22 +108,22 @@ class ModelNodeServiceConfig(BaseModel):
 
     # Docker-specific configuration
     docker_image: str | None = Field(
-        None,
+        default=None,
         description="Docker image name for containerized deployment",
     )
     docker_tag: str | None = Field("latest", description="Docker image tag")
-    docker_registry: str | None = Field(None, description="Docker registry URL")
+    docker_registry: str | None = Field(default=None, description="Docker registry URL")
 
     # Kubernetes-specific configuration
     kubernetes_namespace: str = Field("default", description="Kubernetes namespace")
     kubernetes_service_account: str | None = Field(
-        None,
+        default=None,
         description="Kubernetes service account",
     )
 
     # Compose-specific configuration
     compose_project_name: str | None = Field(
-        None,
+        default=None,
         description="Docker Compose project name",
     )
     depends_on: list[str] = Field(
@@ -133,8 +137,9 @@ class ModelNodeServiceConfig(BaseModel):
         """Validate node name format."""
         if not v.replace("_", "").replace("-", "").isalnum():
             msg = "Node name must contain only alphanumeric characters, hyphens, and underscores"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
@@ -146,19 +151,22 @@ class ModelNodeServiceConfig(BaseModel):
 
         if network_port and metrics_port and network_port == metrics_port:
             msg = "Network port and metrics port cannot be the same"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return self
 
     def get_effective_node_id(self) -> str:
         """Get the effective node ID for this service instance."""
         if self.node_id:
-            return self.node_id
+            return str(self.node_id)
 
         # Generate service-specific node ID
         mode_suffix = (
             f"_{self.service_mode.value}"
-            if self.service_mode != ModelServiceModeEnum.STANDALONE
+            if self.service_mode != EnumServiceMode.STANDALONE
             else ""
         )
         return f"{self.node_name}_service{mode_suffix}"
@@ -223,8 +231,8 @@ class ModelNodeServiceConfig(BaseModel):
         """Check if this service configuration supports horizontal scaling."""
         # Services with persistent state or specific node IDs don't scale well
         return self.node_id is None and self.service_mode in [
-            ModelServiceModeEnum.DOCKER,
-            ModelServiceModeEnum.KUBERNETES,
+            EnumServiceMode.DOCKER,
+            EnumServiceMode.KUBERNETES,
         ]
 
     @classmethod

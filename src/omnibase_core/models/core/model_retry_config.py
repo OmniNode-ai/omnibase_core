@@ -3,6 +3,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 
 class ModelRetryConfig(BaseModel):
     """
@@ -42,12 +45,16 @@ class ModelRetryConfig(BaseModel):
         """Validate retry attempts with reasonable limits."""
         if v < 1:
             msg = "Must have at least 1 attempt"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         if v > 10:
             msg = "Too many retry attempts (max 10) - consider circuit breaker instead"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         return v
@@ -58,12 +65,16 @@ class ModelRetryConfig(BaseModel):
         """Validate backoff timing for practical use."""
         if v < 0.1:
             msg = "Backoff too short (min 0.1 seconds)"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         if v > 60.0:
             msg = "Backoff too long (max 60 seconds) - consider reducing retry attempts"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         return v
@@ -81,8 +92,9 @@ class ModelRetryConfig(BaseModel):
 
         if attempt_number > self.max_attempts:
             msg = f"Attempt {attempt_number} exceeds max attempts {self.max_attempts}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         if self.exponential_backoff:

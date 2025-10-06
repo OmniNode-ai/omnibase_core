@@ -5,7 +5,7 @@ import uuid
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Strongly-typed execution metadata structure.
@@ -48,7 +48,9 @@ class ModelExecutionMetadata(BaseModel):
         description="Unique execution identifier (UUID format)",
     )
     start_time: datetime = Field(..., description="Execution start timestamp")
-    end_time: datetime | None = Field(None, description="Execution end timestamp")
+    end_time: datetime | None = Field(
+        default=None, description="Execution end timestamp"
+    )
     duration_ms: int = Field(
         default=0,
         description="Execution duration in milliseconds",

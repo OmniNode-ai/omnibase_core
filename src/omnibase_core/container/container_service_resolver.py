@@ -1,5 +1,6 @@
 import uuid
 from typing import Callable, TypeVar
+from uuid import UUID
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 

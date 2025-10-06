@@ -4,7 +4,7 @@ from typing import Dict, Generic, Optional, TypeVar
 from pydantic import Field, field_validator
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Event Envelope Model
@@ -25,8 +25,6 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 from omnibase_core.models.core.model_semver import ModelSemVer
-
-from .model_config import ModelConfig
 
 T = TypeVar("T")  # For the wrapped event payload
 
@@ -89,13 +87,13 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     # ============================================================================
 
     correlation_id: UUID | None = Field(
-        None, description="Correlation ID for request tracing"
+        default=None, description="Correlation ID for request tracing"
     )
     source_tool: str | None = Field(
-        None, description="Identifier of the tool that created this event"
+        default=None, description="Identifier of the tool that created this event"
     )
     target_tool: str | None = Field(
-        None, description="Identifier of the intended recipient tool"
+        default=None, description="Identifier of the intended recipient tool"
     )
 
     # ============================================================================
@@ -106,7 +104,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         default_factory=dict, description="Additional envelope metadata"
     )
     security_context: dict[str, Any] | None = Field(
-        None, description="Security context for the event"
+        default=None, description="Security context for the event"
     )
 
     # ============================================================================
@@ -120,7 +118,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         description="Request priority (1-10, where 10 is highest)",
     )
     timeout_seconds: int | None = Field(
-        None, gt=0, description="Optional timeout in seconds"
+        default=None, gt=0, description="Optional timeout in seconds"
     )
     retry_count: int = Field(
         default=0, ge=0, description="Number of retry attempts (0 = first attempt)"
@@ -130,12 +128,15 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     # DISTRIBUTED TRACING
     # ============================================================================
 
-    request_id: str | None = Field(None, description="Request identifier for tracing")
+    request_id: str | None = Field(
+        default=None, description="Request identifier for tracing"
+    )
     trace_id: str | None = Field(
-        None, description="Distributed trace identifier (e.g., OpenTelemetry trace ID)"
+        default=None,
+        description="Distributed trace identifier (e.g., OpenTelemetry trace ID)",
     )
     span_id: str | None = Field(
-        None, description="Trace span identifier (e.g., OpenTelemetry span ID)"
+        default=None, description="Trace span identifier (e.g., OpenTelemetry span ID)"
     )
 
     # ============================================================================

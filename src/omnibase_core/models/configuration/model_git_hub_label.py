@@ -25,5 +25,5 @@ class ModelGitHubLabel(BaseModel):
     url: str = Field(..., description="Label API URL")
     name: str = Field(..., description="Label name")
     color: str = Field(..., description="Label color (hex without #)")
-    default: bool = Field(False, description="Whether this is a default label")
-    description: str | None = Field(None, description="Label description")
+    default: bool = Field(default=False, description="Whether this is a default label")
+    description: str | None = Field(default=None, description="Label description")

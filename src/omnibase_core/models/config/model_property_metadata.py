@@ -36,8 +36,12 @@ class ModelPropertyMetadata(BaseModel):
         default="",
         description="Regex pattern for validation",
     )
-    min_value: float | None = Field(None, description="Minimum value for numeric types")
-    max_value: float | None = Field(None, description="Maximum value for numeric types")
+    min_value: float | None = Field(
+        default=None, description="Minimum value for numeric types"
+    )
+    max_value: float | None = Field(
+        default=None, description="Maximum value for numeric types"
+    )
     allowed_values: list[str] = Field(
         default_factory=list,
         description="Allowed values for enum-like properties",

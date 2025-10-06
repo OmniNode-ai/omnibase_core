@@ -4,7 +4,7 @@ from pydantic import Field
 
 from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelNodeIntrospectionEvent(ModelOnexEvent):
@@ -33,7 +33,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
 
     # Discovery metadata
     health_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Health check endpoint if available",
     )
     tags: list[str] = Field(
@@ -43,11 +43,11 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
 
     # Consul-compatible fields for future adapter
     service_id: str | None = Field(
-        None,
+        default=None,
         description="Service ID for Consul compatibility (future)",
     )
     datacenter: str | None = Field(
-        None,
+        default=None,
         description="Datacenter for multi-DC discovery (future)",
     )
 

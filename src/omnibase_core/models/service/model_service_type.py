@@ -3,6 +3,8 @@ from typing import Any, Generic, List
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_service_type_category import EnumServiceTypeCategory
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Service Type Model for ONEX Configuration-Driven Registry System.
@@ -29,17 +31,17 @@ class ModelServiceType(BaseModel):
     )
 
     custom_type_name: str | None = Field(
-        None,
+        default=None,
         description="Custom service type name (required when type_category is CUSTOM)",
     )
 
     protocol: str | None = Field(
-        None,
+        default=None,
         description="Primary protocol used by this service type (http, tcp, kafka, etc.)",
     )
 
     default_port: int | None = Field(
-        None,
+        default=None,
         description="Default port for this service type",
         ge=1,
         le=65535,
@@ -78,8 +80,9 @@ class ModelServiceType(BaseModel):
             type_category = info.data.get("type_category")
             if type_category == EnumServiceTypeCategory.CUSTOM and not v:
                 msg = "custom_type_name is required when type_category is CUSTOM"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
         return v
 

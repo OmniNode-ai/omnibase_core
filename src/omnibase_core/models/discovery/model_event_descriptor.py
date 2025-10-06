@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from pydantic import Field
 
@@ -91,19 +92,21 @@ class ModelEventDescriptor(BaseModel):
     """
 
     # Core Event Identity
-    event_id: str = Field(..., description="Unique identifier for this event")
+    event_id: UUID = Field(..., description="Unique identifier for this event")
     event_type: EnumEventType = Field(..., description="Type of event being described")
     event_name: str = Field(..., description="Human-readable event name")
-    correlation_id: str | None = Field(
-        None,
+    correlation_id: UUID | None = Field(
+        default=None,
         description="Correlation ID for request/response matching",
     )
 
     # Service Identity
-    service_id: str = Field(..., description="Unique service identifier")
+    service_id: UUID = Field(..., description="Unique service identifier")
     service_name: str = Field(..., description="Service name for Consul registration")
-    service_version: str = Field(..., description="Service version")
-    node_id: str | None = Field(None, description="Node ID hosting the service")
+    service_version: ModelSemVer = Field(..., description="Service version")
+    node_id: UUID | None = Field(
+        default=None, description="Node ID hosting the service"
+    )
 
     # Discovery & Registry Information
     discovery_phase: EnumDiscoveryPhase = Field(
@@ -130,7 +133,7 @@ class ModelEventDescriptor(BaseModel):
         description="Current container/service status",
     )
     health_check_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Health check endpoint for Consul",
     )
 
@@ -149,7 +152,9 @@ class ModelEventDescriptor(BaseModel):
     )
 
     # Hub Integration
-    hub_domain: str | None = Field(None, description="Hub domain for integration")
+    hub_domain: str | None = Field(
+        default=None, description="Hub domain for integration"
+    )
     hub_registration_required: bool = Field(
         True,
         description="Whether hub should register in Consul",
@@ -165,7 +170,7 @@ class ModelEventDescriptor(BaseModel):
         description="Full mesh coordination data",
     )
     auto_provisioning_config: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Auto-provisioning configuration",
     )
 
@@ -178,7 +183,7 @@ class ModelEventDescriptor(BaseModel):
         True,
         description="Whether event requires validation",
     )
-    event_schema_version: str = Field(
+    event_schema_version: ModelSemVer = Field(
         "1.0.0",
         description="EventDescriptor schema version",
     )

@@ -38,6 +38,6 @@ class ModelOutputMetadataItem(BaseModel):
         },
     )
     category: str | None = Field(
-        None,
+        default=None,
         description="Metadata category for organization",
     )

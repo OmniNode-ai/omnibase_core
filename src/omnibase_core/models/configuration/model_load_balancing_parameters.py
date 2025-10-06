@@ -34,12 +34,12 @@ class ModelLoadBalancingParameters(BaseModel):
 
     # Connection limits
     max_connections_per_node: int | None = Field(
-        None,
+        default=None,
         description="Maximum connections per node",
         ge=1,
     )
     connection_threshold: int | None = Field(
-        None,
+        default=None,
         description="Connection count threshold for overflow",
         ge=1,
     )
@@ -89,11 +89,11 @@ class ModelLoadBalancingParameters(BaseModel):
 
     # Custom algorithm parameters
     custom_algorithm_class: str | None = Field(
-        None,
+        default=None,
         description="Fully qualified class name for custom algorithm",
     )
     custom_algorithm_config: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Configuration for custom algorithm",
     )
 

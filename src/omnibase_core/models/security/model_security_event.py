@@ -29,21 +29,27 @@ class ModelSecurityEvent(BaseModel):
     envelope_id: str = Field(..., description="Associated envelope ID")
 
     # Event-specific details
-    node_id: str | None = Field(None, description="Node that generated the event")
-    user_id: str | None = Field(None, description="User associated with event")
-    signature_id: str | None = Field(None, description="Signature ID if applicable")
+    node_id: str | None = Field(
+        default=None, description="Node that generated the event"
+    )
+    user_id: str | None = Field(default=None, description="User associated with event")
+    signature_id: str | None = Field(
+        default=None, description="Signature ID if applicable"
+    )
 
     # Detailed information
-    algorithm: str | None = Field(None, description="Algorithm used")
-    key_id: str | None = Field(None, description="Key identifier")
-    reason: str | None = Field(None, description="Reason for event")
+    algorithm: str | None = Field(default=None, description="Algorithm used")
+    key_id: str | None = Field(default=None, description="Key identifier")
+    reason: str | None = Field(default=None, description="Reason for event")
 
     # Status and results
     status: EnumSecurityEventStatus = Field(..., description="Event status")
-    verified: bool | None = Field(None, description="Verification result")
-    signature_count: int | None = Field(None, description="Number of signatures")
+    verified: bool | None = Field(default=None, description="Verification result")
+    signature_count: int | None = Field(
+        default=None, description="Number of signatures"
+    )
     verified_signatures: int | None = Field(
-        None,
+        default=None,
         description="Number of verified signatures",
     )
 
@@ -56,13 +62,15 @@ class ModelSecurityEvent(BaseModel):
     )
 
     # Hash values for integrity
-    expected_hash: str | None = Field(None, description="Expected hash value")
-    actual_hash: str | None = Field(None, description="Actual hash value")
+    expected_hash: str | None = Field(default=None, description="Expected hash value")
+    actual_hash: str | None = Field(default=None, description="Actual hash value")
 
     # Clearance information
-    user_clearance: str | None = Field(None, description="User security clearance")
+    user_clearance: str | None = Field(
+        default=None, description="User security clearance"
+    )
     required_clearance: str | None = Field(
-        None,
+        default=None,
         description="Required security clearance",
     )
 

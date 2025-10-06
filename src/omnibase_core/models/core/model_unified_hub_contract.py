@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_coordination_mode import EnumCoordinationMode
 from omnibase_core.enums.enum_hub_capability import EnumHubCapability
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_hub_configuration import ModelHubConfiguration
 from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
@@ -34,19 +36,19 @@ class ModelUnifiedHubContract(BaseModel):
 
     # Hub configuration (primary)
     hub_configuration: ModelHubConfiguration | None = Field(
-        None,
+        default=None,
         description="Hub configuration (Generation hub format)",
     )
 
     # Service configuration (AI hub format)
     service_configuration: ModelHubServiceConfiguration | None = Field(
-        None,
+        default=None,
         description="Service configuration (AI hub format)",
     )
 
     # Tool specification (AI hub format)
     tool_specification: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Tool specification from AI hub contracts",
     )
 
@@ -58,19 +60,19 @@ class ModelUnifiedHubContract(BaseModel):
 
     # Tool coordination (Generation hub format)
     tool_coordination: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Tool coordination configuration",
     )
 
     # Tool execution (Generation hub format)
     tool_execution: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Tool execution configuration",
     )
 
     # Contract metadata
     contract_metadata: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Contract metadata",
     )
 
@@ -84,8 +86,9 @@ class ModelUnifiedHubContract(BaseModel):
 
             if not hub_config and not service_config:
                 msg = "Contract must have either hub_configuration or service_configuration"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
 
         return values
@@ -229,6 +232,7 @@ class ModelUnifiedHubContract(BaseModel):
             # Use centralized YAML loading with full Pydantic validation
             return load_and_validate_yaml_model(contract_path, cls)
         except Exception as e:
-            raise ValueError(
-                f"Failed to load contract from {contract_path}: {e}"
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Failed to load contract from {contract_path}: {e}",
             ) from e

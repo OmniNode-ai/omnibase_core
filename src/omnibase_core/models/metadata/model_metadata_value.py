@@ -46,7 +46,7 @@ class ModelMetadataValue(BaseModel):
         default=False, description="Whether value has been validated"
     )
 
-    source: str | None = Field(None, description="Source of the metadata value")
+    source: str | None = Field(default=None, description="Source of the metadata value")
 
     @field_validator("value")
     @classmethod

@@ -34,15 +34,21 @@ class ModelOrchestratorStep(BaseModel):
 
     # Execution details
     node_name: str | None = Field(
-        None,
+        default=None,
         description="Node to execute (for node steps)",
     )
-    action: str | None = Field(None, description="Action to perform")
+    action: str | None = Field(default=None, description="Action to perform")
 
     # Step configuration
-    inputs: dict[str, Any] | None = Field(None, description="Step input parameters")
-    timeout_seconds: int | None = Field(None, description="Step timeout in seconds")
-    retry_count: int | None = Field(None, description="Number of retries allowed")
+    inputs: dict[str, Any] | None = Field(
+        default=None, description="Step input parameters"
+    )
+    timeout_seconds: int | None = Field(
+        default=None, description="Step timeout in seconds"
+    )
+    retry_count: int | None = Field(
+        default=None, description="Number of retries allowed"
+    )
 
     # Dependencies and flow control
     depends_on: list[str] = Field(
@@ -50,17 +56,17 @@ class ModelOrchestratorStep(BaseModel):
         description="List of step IDs this depends on",
     )
     condition: str | None = Field(
-        None,
+        default=None,
         description="Condition expression for conditional steps",
     )
     parallel_steps: list[str] | None = Field(
-        None,
+        default=None,
         description="Steps to run in parallel",
     )
 
     # Output handling
     output_mapping: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Map step outputs to plan variables",
     )
     continue_on_error: bool = Field(
@@ -69,8 +75,8 @@ class ModelOrchestratorStep(BaseModel):
     )
 
     # Metadata
-    description: str | None = Field(None, description="Step description")
+    description: str | None = Field(default=None, description="Step description")
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Custom fields for step-specific data",
     )

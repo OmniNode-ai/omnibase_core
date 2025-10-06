@@ -24,7 +24,7 @@ This module can safely import error_codes because error_codes only imports
 from types.core_types (not from models or types.constraints).
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -57,7 +57,7 @@ class ModelExamplesCollection(BaseModel):
 
     # Metadata for examples collection
     metadata: ModelExampleMetadata | None = Field(
-        None,
+        default=None,
         description="Metadata about the examples collection",
     )
 
@@ -115,7 +115,9 @@ class ModelExamplesCollection(BaseModel):
 
     @field_validator("last_validated", mode="before")
     @classmethod
-    def update_validation_timestamp(cls, v: datetime | None, info: dict[str, Any]) -> datetime | None:
+    def update_validation_timestamp(
+        cls, v: datetime | None, info: dict[str, Any]
+    ) -> datetime | None:
         """Update validation timestamp when examples change."""
         examples = info.data.get("examples", [])
         if examples and v is None:
@@ -139,16 +141,12 @@ class ModelExamplesCollection(BaseModel):
 
         # Handle different input formats
         if isinstance(data, list):
-            examples = [
-                cls._create_example_from_data(item)
-                for item in data
-            ]
+            examples = [cls._create_example_from_data(item) for item in data]
             return cls(examples=examples)
 
         if "examples" in data and isinstance(data["examples"], list):
             examples = [
-                cls._create_example_from_data(item)
-                for item in data["examples"]
+                cls._create_example_from_data(item) for item in data["examples"]
             ]
             return cls(
                 examples=examples,
@@ -305,7 +303,3 @@ class ModelExamplesCollection(BaseModel):
         except Exception:
             # fallback-ok: validation failure defaults to invalid state
             return False
-
-
-# Legacy alias for backward compatibility
-ModelExamples = ModelExamplesCollection

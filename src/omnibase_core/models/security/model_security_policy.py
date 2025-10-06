@@ -39,8 +39,8 @@ class ModelSecurityPolicy(BaseModel):
         default_factory=datetime.utcnow,
         description="Last update time",
     )
-    created_by: str | None = Field(None, description="Policy creator")
-    description: str | None = Field(None, description="Policy description")
+    created_by: str | None = Field(default=None, description="Policy creator")
+    description: str | None = Field(default=None, description="Policy description")
 
     # Access control
     access_control_model: str = Field(
@@ -56,12 +56,16 @@ class ModelSecurityPolicy(BaseModel):
     )
 
     # Authentication requirements
-    require_authentication: bool = Field(True, description="Require authentication")
+    require_authentication: bool = Field(
+        default=True, description="Require authentication"
+    )
     allowed_auth_methods: list[str] = Field(
         default_factory=list,
         description="Allowed authentication methods",
     )
-    require_mfa: bool = Field(False, description="Require multi-factor authentication")
+    require_mfa: bool = Field(
+        default=False, description="Require multi-factor authentication"
+    )
 
     # Session management
     session_timeout_minutes: int | None = Field(30, description="Session timeout")
@@ -81,10 +85,10 @@ class ModelSecurityPolicy(BaseModel):
     )
 
     # Time-based restrictions
-    valid_from: datetime | None = Field(None, description="Policy valid from")
-    valid_until: datetime | None = Field(None, description="Policy valid until")
+    valid_from: datetime | None = Field(default=None, description="Policy valid from")
+    valid_until: datetime | None = Field(default=None, description="Policy valid until")
     time_restrictions: ModelTimeRestrictions | None = Field(
-        None,
+        default=None,
         description="Time-based access restrictions",
     )
 
@@ -94,7 +98,7 @@ class ModelSecurityPolicy(BaseModel):
         description="Compliance frameworks (SOC2, HIPAA, etc)",
     )
     data_classification: str | None = Field(
-        None,
+        default=None,
         description="Data classification level",
     )
 

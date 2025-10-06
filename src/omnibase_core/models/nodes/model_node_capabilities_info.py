@@ -57,7 +57,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
 
     # Performance metrics (1 field, but structured)
     performance_metrics: dict[str, float] | None = Field(
-        None,
+        default=None,
         description="Performance metrics",
     )
 

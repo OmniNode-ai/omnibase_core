@@ -35,11 +35,11 @@ class ModelTrustState(BaseModel):
         description="Methods used to verify trust",
     )
     last_verified: datetime | None = Field(
-        None,
+        default=None,
         description="Last verification timestamp",
     )
-    expires_at: datetime | None = Field(None, description="When trust expires")
-    issuer: str | None = Field(None, description="Trust issuer identifier")
+    expires_at: datetime | None = Field(default=None, description="When trust expires")
+    issuer: str | None = Field(default=None, description="Trust issuer identifier")
     revocable: bool = Field(default=True, description="Whether trust can be revoked")
 
     def is_trusted(self, threshold: float = 0.5) -> bool:

@@ -64,13 +64,13 @@ class ModelLoadMetrics(BaseModel):
     )
 
     p95_task_duration_ms: float | None = Field(
-        None,
+        default=None,
         description="95th percentile task duration",
         ge=0.0,
     )
 
     p99_task_duration_ms: float | None = Field(
-        None,
+        default=None,
         description="99th percentile task duration",
         ge=0.0,
     )
@@ -90,7 +90,7 @@ class ModelLoadMetrics(BaseModel):
     )
 
     last_overload_timestamp: datetime | None = Field(
-        None,
+        default=None,
         description="Last time node was overloaded",
     )
 

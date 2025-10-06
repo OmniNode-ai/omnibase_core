@@ -3,29 +3,28 @@
 import uuid
 from datetime import UTC, datetime
 from typing import Any, ClassVar, Self
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.models.security.model_trust_level import ModelTrustLevel
-from omnibase_core.models.security.model_encryption_requirement import ModelEncryptionRequirement
-from omnibase_core.models.security.model_certificate_validation_level import ModelCertificateValidationLevel
+from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.security.model_certificate_validation_level import (
+    ModelCertificateValidationLevel,
+)
+from omnibase_core.models.security.model_encryption_requirement import (
+    ModelEncryptionRequirement,
+)
 from omnibase_core.models.security.model_policy_rule import ModelPolicyRule
-from omnibase_core.models.security.model_rule_condition import ModelRuleCondition
-from omnibase_core.models.security.model_signature_requirements import ModelSignatureRequirements
-from omnibase_core.models.security.model_policy_validation_result import ModelPolicyValidationResult
 from omnibase_core.models.security.model_policy_severity import ModelPolicySeverity
-
-
-class ModelTrustPolicyValidationError(ModelOnexError):
-    """Validation error for trust policy operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
-        )
-        self.field_name = field_name
+from omnibase_core.models.security.model_policy_validation_result import (
+    ModelPolicyValidationResult,
+)
+from omnibase_core.models.security.model_rule_condition import ModelRuleCondition
+from omnibase_core.models.security.model_signature_requirements import (
+    ModelSignatureRequirements,
+)
+from omnibase_core.models.security.model_trust_level import ModelTrustLevel
 
 
 class ModelTrustPolicy(BaseModel):
@@ -51,13 +50,15 @@ class ModelTrustPolicy(BaseModel):
     MAX_CACHE_TTL_SECONDS: ClassVar[int] = 86400  # 24 hours
 
     # Policy identification
-    policy_id: str = Field(
+    policy_id: UUID = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="Unique policy identifier",
     )
     name: str = Field(..., description="Policy name", min_length=1)
-    version: str = Field(default="1.0", description="Policy version", pattern=r"^\d+\.\d+$")
-    description: str | None = Field(None, description="Policy description")
+    version: ModelSemVer = Field(
+        default="1.0", description="Policy version", pattern=r"^\d+\.\d+$"
+    )
+    description: str | None = Field(default=None, description="Policy description")
 
     # Policy metadata
     created_at: datetime = Field(
@@ -65,7 +66,7 @@ class ModelTrustPolicy(BaseModel):
         description="When policy was created",
     )
     created_by: str = Field(..., description="Policy creator", min_length=1)
-    organization: str | None = Field(None, description="Organization name")
+    organization: str | None = Field(default=None, description="Organization name")
 
     # Global policy settings
     default_trust_level: str = Field(
@@ -195,7 +196,7 @@ class ModelTrustPolicy(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When policy becomes effective",
     )
-    expires_at: datetime | None = Field(None, description="When policy expires")
+    expires_at: datetime | None = Field(default=None, description="When policy expires")
     auto_renewal: bool = Field(
         default=False,
         description="Automatically renew policy",
@@ -206,14 +207,14 @@ class ModelTrustPolicy(BaseModel):
     def validate_minimum_signatures(cls, v: int) -> int:
         """Validate minimum signature count."""
         if v < 0:
-            raise ModelTrustPolicyValidationError(
-                "Minimum signatures cannot be negative",
-                field_name="global_minimum_signatures",
+            raise ModelOnexError(
+                message="Minimum signatures cannot be negative",
+                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
             )
         if v > cls.MAX_MINIMUM_SIGNATURES:
-            raise ModelTrustPolicyValidationError(
-                f"Minimum signatures cannot exceed {cls.MAX_MINIMUM_SIGNATURES}",
-                field_name="global_minimum_signatures",
+            raise ModelOnexError(
+                message=f"Minimum signatures cannot exceed {cls.MAX_MINIMUM_SIGNATURES}",
+                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
             )
         return v
 
@@ -223,23 +224,25 @@ class ModelTrustPolicy(BaseModel):
         """Validate enforcement mode."""
         valid_modes = ["strict", "permissive", "monitor"]
         if v not in valid_modes:
-            raise ModelTrustPolicyValidationError(
-                f"Invalid enforcement mode. Must be one of: {valid_modes}",
-                field_name="enforcement_mode",
+            raise ModelOnexError(
+                message=f"Invalid enforcement mode. Must be one of: {valid_modes}",
+                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
             )
         return v
 
     @field_validator("expires_at")
-    def validate_expiration_date(self, v: datetime | None, info: dict[str, Any]) -> datetime | None:
+    def validate_expiration_date(
+        self, v: datetime | None, info: dict[str, Any]
+    ) -> datetime | None:
         """Validate expiration date is after effective date."""
         if v is not None and "data" in info and isinstance(info["data"], dict):
             data = info["data"]
             if "effective_from" in data:
                 effective_from = data["effective_from"]
                 if v <= effective_from:
-                    raise ModelTrustPolicyValidationError(
-                        "Expiration date must be after effective date",
-                        field_name="expires_at",
+                    raise ModelOnexError(
+                        message="Expiration date must be after effective date",
+                        error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
                     )
         return v
 
@@ -256,8 +259,9 @@ class ModelTrustPolicy(BaseModel):
     def add_rule(self, rule: ModelPolicyRule) -> None:
         """Add a new policy rule."""
         if not self.is_active():
-            raise ModelTrustPolicyValidationError(
-                "Cannot add rules to inactive policy",
+            raise ModelOnexError(
+                message="Cannot add rules to inactive policy",
+                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
             )
         self.rules.append(rule)
 
@@ -321,8 +325,9 @@ class ModelTrustPolicy(BaseModel):
     ) -> ModelPolicyValidationResult:
         """Validate signature chain against policy."""
         if not self.is_active():
-            raise ModelTrustPolicyValidationError(
-                "Cannot validate with inactive policy",
+            raise ModelOnexError(
+                message="Cannot validate with inactive policy",
+                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
             )
 
         if context is None:
@@ -379,7 +384,9 @@ class ModelTrustPolicy(BaseModel):
                 operation_type=None,
                 security_level=None,
                 environment=None,
-                operation_type_condition=ModelRuleConditionValue(in_values=["high_security"]),
+                operation_type_condition=ModelRuleConditionValue(
+                    in_values=["high_security"]
+                ),
                 security_level_condition=ModelRuleConditionValue(gte=3),
                 source_node_id=None,
                 destination=None,

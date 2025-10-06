@@ -26,9 +26,11 @@ class ModelUsageExample(GenericModel, Generic[InputT, OutputT]):
         description="Description of what this example demonstrates",
     )
     command: str | None = Field(
-        None,
+        default=None,
         description="Command line example if applicable",
     )
-    input_data: InputT | None = Field(None, description="Example input data")
-    output_data: OutputT | None = Field(None, description="Expected output data")
-    code_snippet: str | None = Field(None, description="Python code example")
+    input_data: InputT | None = Field(default=None, description="Example input data")
+    output_data: OutputT | None = Field(
+        default=None, description="Expected output data"
+    )
+    code_snippet: str | None = Field(default=None, description="Python code example")

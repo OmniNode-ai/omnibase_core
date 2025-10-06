@@ -51,19 +51,19 @@ class ModelToolMetadata(BaseModel):
 
     # Performance and usage tracking
     performance_metrics: ModelToolPerformanceMetrics = Field(
-        default_factory=ModelToolPerformanceMetrics,
+        default_factory=lambda: ModelToolPerformanceMetrics(),
         description="Performance metrics",
     )
     validation_result: ModelToolValidationResult = Field(
-        default_factory=ModelToolValidationResult,
+        default_factory=lambda: ModelToolValidationResult(),
         description="Validation results",
     )
 
     # Documentation and configuration
-    description: str = Field("", description="Tool description")
+    description: str = Field(default="", description="Tool description")
     version: str = Field("1.0.0", description="Tool version")
     author: str = Field("Unknown", description="Tool author")
-    documentation_url: str | None = Field(None, description="Documentation URL")
+    documentation_url: str | None = Field(default=None, description="Documentation URL")
     configuration_schema: ModelSchema = Field(
         default_factory=dict,
         description="Configuration schema",

@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from .model_audit_entry import ModelAuditEntry
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
+from .model_semver import ModelSemVer
 
 
 class ModelMetadataToolInfo(BaseModel):
@@ -36,10 +37,13 @@ class ModelMetadataToolInfo(BaseModel):
     )
 
     # Documentation and metadata
-    description: str = Field("", description="Tool description")
-    documentation: str = Field("", description="Detailed documentation")
+    description: str = Field(default="", description="Tool description")
+    documentation: str = Field(default="", description="Detailed documentation")
     author: str = Field("Unknown", description="Tool author")
-    version: str = Field("1.0.0", description="Tool version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: parse_semver_from_string("1.0.0"),
+        description="Tool version",
+    )
     tags: list[str] = Field(
         default_factory=list,
         description="Tool tags for categorization",
@@ -47,7 +51,7 @@ class ModelMetadataToolInfo(BaseModel):
 
     # Usage and performance
     usage_metrics: ModelMetadataToolUsageMetrics = Field(
-        default_factory=ModelMetadataToolUsageMetrics,
+        default_factory=lambda: ModelMetadataToolUsageMetrics(),
         description="Usage metrics",
     )
 
@@ -58,7 +62,7 @@ class ModelMetadataToolInfo(BaseModel):
     )
     related_tools: list[str] = Field(default_factory=list, description="Related tools")
     replaces: str | None = Field(
-        None,
+        default=None,
         description="Tool this replaces (for deprecation)",
     )
 

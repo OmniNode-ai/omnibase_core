@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class ModelPerformanceOptimizationConfig(BaseModel):
     """Performance optimization configuration for secret backends."""
 
-    cache_enabled: bool = Field(True, description="Whether caching is enabled")
+    cache_enabled: bool = Field(default=True, description="Whether caching is enabled")
 
     cache_ttl_seconds: int = Field(
         300,

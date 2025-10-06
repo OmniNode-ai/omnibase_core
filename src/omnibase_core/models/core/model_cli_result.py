@@ -27,7 +27,7 @@ This module can safely import error_codes because error_codes only imports
 from types.core_types (not from models or types.constraints).
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -94,16 +94,18 @@ class ModelCliResult(BaseModel):
         description="Structured output data from execution",
     )
 
-    output_text: str | None = Field(None, description="Human-readable output text")
+    output_text: str | None = Field(
+        default=None, description="Human-readable output text"
+    )
 
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Primary error message if execution failed",
         max_length=1000,
     )
 
     error_details: str | None = Field(
-        None,
+        default=None,
         description="Detailed error information",
         max_length=5000,
     )

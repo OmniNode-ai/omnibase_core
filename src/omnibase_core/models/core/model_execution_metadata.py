@@ -27,12 +27,12 @@ class ModelExecutionMetadata(ModelMetadataBase):
         description="Execution timeout",
     )
     retry_policy: ModelRetryPolicy | None = Field(
-        None,
+        default=None,
         description="Retry policy for failures",
     )
     trace_enabled: bool = Field(default=False, description="Enable execution tracing")
     debug_level: EnumDebugLevel | None = Field(
-        None,
+        default=None,
         description="Debug verbosity level",
     )
     profiling_enabled: bool = Field(

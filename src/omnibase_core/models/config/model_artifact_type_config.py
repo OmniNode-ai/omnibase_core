@@ -32,12 +32,12 @@ class ModelArtifactTypeConfig(BaseModel):
     )
 
     metadata_file: Path | None = Field(
-        None,
+        default=None,
         description="Path to metadata file for this artifact type",
     )
 
     version_pattern: str | None = Field(
-        None,
+        default=None,
         description="Version pattern for artifact naming/validation",
     )
 

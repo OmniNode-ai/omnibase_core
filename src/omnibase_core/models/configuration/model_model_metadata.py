@@ -16,9 +16,11 @@ class ModelMetadata(BaseModel):
     author: str = Field(..., description="Author of the file")
     created_at: datetime = Field(..., description="Creation timestamp")
     last_modified_at: datetime = Field(..., description="Last modification timestamp")
-    description: str | None = Field(None, description="Description of the file")
-    state_contract: str | None = Field(None, description="State contract reference")
-    lifecycle: str | None = Field(None, description="Lifecycle state")
+    description: str | None = Field(default=None, description="Description of the file")
+    state_contract: str | None = Field(
+        default=None, description="State contract reference"
+    )
+    lifecycle: str | None = Field(default=None, description="EnumLifecycle state")
     hash: str = Field(..., description="Canonical content hash")
-    entrypoint: str | None = Field(None, description="Entrypoint information")
-    namespace: str | None = Field(None, description="Namespace for the file")
+    entrypoint: str | None = Field(default=None, description="Entrypoint information")
+    namespace: str | None = Field(default=None, description="Namespace for the file")

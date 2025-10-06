@@ -35,13 +35,13 @@ class ModelPerformanceHints(BaseModel):
         description="Whether operations are network intensive",
     )
     preferred_batch_size: int | None = Field(
-        None,
+        default=None,
         description="Preferred batch size for operations",
         ge=1,
         le=10000,
     )
     max_concurrent_operations: int | None = Field(
-        None,
+        default=None,
         description="Maximum concurrent operations",
         ge=1,
         le=1000,
@@ -55,7 +55,7 @@ class ModelPerformanceHints(BaseModel):
         description="Whether operations are stateless",
     )
     warm_up_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Time needed for warm-up in milliseconds",
         ge=0,
     )

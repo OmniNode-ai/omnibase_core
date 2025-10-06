@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from pydantic import Field
 
 from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -172,7 +172,9 @@ class MixinIntrospectionPublisher:
                 health_endpoint=health_endpoint,
             )
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: introspection is non-critical, return minimal metadata with logging
             # Fallback to basic introspection
             node_id = getattr(self, "_node_id", "unknown")
             context = ModelLogContext(

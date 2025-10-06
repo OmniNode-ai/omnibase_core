@@ -18,7 +18,7 @@ class ModelCacheSettings(BaseModel):
     """
 
     # Basic settings
-    enabled: bool = Field(True, description="Whether caching is enabled")
+    enabled: bool = Field(default=True, description="Whether caching is enabled")
     cache_type: str = Field("memory", description="Cache type (memory/redis/disk)")
 
     # TTL settings
@@ -33,22 +33,24 @@ class ModelCacheSettings(BaseModel):
     eviction_policy: str = Field("LRU", description="Eviction policy (LRU/LFU/FIFO)")
 
     # Performance settings
-    compression_enabled: bool = Field(False, description="Enable compression")
+    compression_enabled: bool = Field(default=False, description="Enable compression")
     compression_level: int = Field(6, description="Compression level (1-9)")
 
     # Cache key settings
-    key_prefix: str | None = Field(None, description="Cache key prefix")
+    key_prefix: str | None = Field(default=None, description="Cache key prefix")
     key_hash_algorithm: str = Field("md5", description="Key hashing algorithm")
 
     # Invalidation
-    invalidation_enabled: bool = Field(True, description="Enable cache invalidation")
+    invalidation_enabled: bool = Field(
+        default=True, description="Enable cache invalidation"
+    )
     invalidation_patterns: list[str] = Field(
         default_factory=list,
         description="Invalidation patterns",
     )
 
     # Statistics
-    track_statistics: bool = Field(True, description="Track cache statistics")
+    track_statistics: bool = Field(default=True, description="Track cache statistics")
     statistics_interval_seconds: int = Field(
         60,
         description="Statistics collection interval",

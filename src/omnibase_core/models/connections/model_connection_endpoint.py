@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Connection Endpoint Model.
@@ -39,7 +39,9 @@ class ModelConnectionEndpoint(BaseModel):
         ...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
-    protocol_version: ModelSemVer | None = Field(None, description="Protocol version")
+    protocol_version: ModelSemVer | None = Field(
+        default=None, description="Protocol version"
+    )
 
     # Endpoint information
     host: str = Field(
@@ -51,7 +53,7 @@ class ModelConnectionEndpoint(BaseModel):
     )
     port: int = Field(..., description="Port number", ge=1, le=65535)
     path: str | None = Field(
-        None,
+        default=None,
         description="Connection path/endpoint",
         max_length=2048,
         pattern=r"^/.*$",

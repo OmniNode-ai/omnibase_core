@@ -1,6 +1,9 @@
 from typing import Any, Dict
+from uuid import UUID
 
 from pydantic import Field
+
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 """Hub Registration Event model for ONEX Discovery & Integration Event Registry.
 
@@ -16,14 +19,14 @@ class ModelHubRegistrationEvent(BaseModel):
     """Hub self-registration event for Consul service registry."""
 
     # Hub Identity
-    hub_id: str = Field(..., description="Unique hub identifier")
+    hub_id: UUID = Field(..., description="Unique hub identifier")
     hub_name: str = Field(..., description="Hub name")
     hub_domain: str = Field(..., description="Hub domain")
-    hub_version: str = Field(..., description="Hub version")
+    hub_version: ModelSemVer = Field(..., description="Hub version")
 
     # Consul Registration
     consul_service_name: str = Field(..., description="Consul service name for hub")
-    consul_service_id: str = Field(..., description="Consul service ID")
+    consul_service_id: UUID = Field(..., description="Consul service ID")
     consul_port: int = Field(..., description="Hub service port")
     consul_health_endpoint: str = Field("/health", description="Health check endpoint")
     consul_tags: list[str] = Field(

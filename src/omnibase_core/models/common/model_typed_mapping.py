@@ -4,6 +4,9 @@ from typing import Dict, Optional
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelTypedMapping
 
@@ -81,8 +84,9 @@ class ModelTypedMapping(BaseModel):
     def set_dict(self, key: str, value: dict[str, Any]) -> None:
         """Set a dict[str, Any]value with depth checking for security using ONEX-compliant direct __init__ calls."""
         if self.current_depth > self.MAX_DEPTH:
-            raise ValueError(
-                f"Maximum nesting depth ({self.MAX_DEPTH}) exceeded to prevent DoS attacks"
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Maximum nesting depth ({self.MAX_DEPTH}) exceeded to prevent DoS attacks",
             )
         self.data[key] = ModelValueContainer(value=value)
 
@@ -110,7 +114,10 @@ class ModelTypedMapping(BaseModel):
             # Skip None values for now - could add explicit None handling later
             pass
         else:
-            raise ValueError(f"Unsupported type for key '{key}': {type(value)}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unsupported type for key '{key}': {type(value)}",
+            )
 
     def get_value(self, key: str, default: Any = None) -> Any:
         """Get a value from the mapping."""
@@ -126,8 +133,9 @@ class ModelTypedMapping(BaseModel):
         if container is None:
             return default
         if not container.is_type(str):
-            raise ValueError(
-                f"Value for key '{key}' is not a string, got {container.type_name}"
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value for key '{key}' is not a string, got {container.type_name}",
             )
         return cast(str, container.value)
 
@@ -139,8 +147,9 @@ class ModelTypedMapping(BaseModel):
         if container is None:
             return default
         if not container.is_type(int):
-            raise ValueError(
-                f"Value for key '{key}' is not an int, got {container.type_name}"
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value for key '{key}' is not an int, got {container.type_name}",
             )
         return cast(int, container.value)
 
@@ -152,8 +161,9 @@ class ModelTypedMapping(BaseModel):
         if container is None:
             return default
         if not container.is_type(bool):
-            raise ValueError(
-                f"Value for key '{key}' is not a bool, got {container.type_name}"
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value for key '{key}' is not a bool, got {container.type_name}",
             )
         return cast(bool, container.value)
 
@@ -204,7 +214,9 @@ class ModelTypedMapping(BaseModel):
 
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: validation method, False indicates validation failure
             return False
 
     def get_errors(self) -> list[str]:
@@ -259,7 +271,9 @@ class ModelTypedMapping(BaseModel):
 
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: validation method, False indicates validation failure
             return False
 
     def _get_mapping_constraint_errors(self) -> list[str]:
@@ -342,6 +356,9 @@ class ModelTypedMapping(BaseModel):
             KeyError: If key does not exist
         """
         if key not in self.data:
-            raise KeyError(f"Key '{key}' not found in mapping")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                message=f"Key '{key}' not found in mapping",
+            )
 
         return self.data[key].is_valid()

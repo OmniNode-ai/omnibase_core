@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, Generic, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
 
 from pydantic import Field
 
@@ -28,7 +28,7 @@ PropertyValue = JsonSerializable
 T = TypeVar("T")
 
 # Import extracted lazy value class
-from .model_lazy_value import LazyValue
+from .mixin_lazy_value import MixinLazyValue
 
 
 class MixinLazyEvaluation:
@@ -41,11 +41,11 @@ class MixinLazyEvaluation:
 
     def __init__(self) -> None:
         super().__init__()
-        self._lazy_cache: Dict[str, LazyValue[Any]] = {}
+        self._lazy_cache: Dict[str, MixinLazyValue[Any]] = {}
 
     def lazy_property(
         self, key: str, func: Callable[[], T], cache: bool = True
-    ) -> LazyValue[T]:
+    ) -> MixinLazyValue[T]:
         """
         Create or get a lazy property.
 
@@ -55,15 +55,15 @@ class MixinLazyEvaluation:
             cache: Whether to cache the result
 
         Returns:
-            LazyValue instance for the property
+            MixinLazyValue instance for the property
         """
         if key not in self._lazy_cache:
-            self._lazy_cache[key] = LazyValue(func, cache)
-        return cast(LazyValue[T], self._lazy_cache[key])
+            self._lazy_cache[key] = MixinLazyValue(func, cache)
+        return cast(MixinLazyValue[T], self._lazy_cache[key])
 
     def lazy_model_dump(
         self, exclude: Optional[set[str]] = None, by_alias: bool = False
-    ) -> LazyValue[Dict[str, JsonSerializable]]:
+    ) -> MixinLazyValue[Dict[str, JsonSerializable]]:
         """
         Create lazy model dump for Pydantic models.
 
@@ -72,7 +72,7 @@ class MixinLazyEvaluation:
             by_alias: Use field aliases in output
 
         Returns:
-            LazyValue that computes model dump when accessed
+            MixinLazyValue that computes model dump when accessed
         """
 
         def _compute_dump() -> Dict[str, JsonSerializable]:
@@ -88,7 +88,7 @@ class MixinLazyEvaluation:
 
     def lazy_serialize_nested(
         self, obj: Optional[BaseModel], key: str
-    ) -> LazyValue[Optional[Dict[str, JsonSerializable]]]:
+    ) -> MixinLazyValue[Optional[Dict[str, JsonSerializable]]]:
         """
         Create lazy serialization for nested objects.
 
@@ -97,7 +97,7 @@ class MixinLazyEvaluation:
             key: Cache key for the operation
 
         Returns:
-            LazyValue that serializes nested object when accessed
+            MixinLazyValue that serializes nested object when accessed
         """
 
         def _serialize() -> Optional[Dict[str, JsonSerializable]]:
@@ -107,7 +107,7 @@ class MixinLazyEvaluation:
 
     def lazy_string_conversion(
         self, obj: Optional[BaseModel], key: str
-    ) -> LazyValue[str]:
+    ) -> MixinLazyValue[str]:
         """
         Create lazy string conversion for nested objects.
 
@@ -116,7 +116,7 @@ class MixinLazyEvaluation:
             key: Cache key for the operation
 
         Returns:
-            LazyValue that converts object to string when accessed
+            MixinLazyValue that converts object to string when accessed
         """
 
         def _convert() -> str:
@@ -170,7 +170,7 @@ class MixinLazyEvaluation:
         }
 
 
-def lazy_cached(cache_key: Optional[str] = None):
+def lazy_cached(cache_key: Optional[str] = None) -> None:
     """
     Decorator for creating lazy cached methods.
 
@@ -178,9 +178,9 @@ def lazy_cached(cache_key: Optional[str] = None):
         cache_key: Custom cache key (defaults to method name)
     """
 
-    def decorator(func: Callable[..., T]) -> Callable[..., LazyValue[T]]:
+    def decorator(func: Callable[..., T]) -> Callable[..., MixinLazyValue[T]]:
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs) -> LazyValue[T]:
+        def wrapper(self, *args, **kwargs) -> MixinLazyValue[T]:
             if not hasattr(self, "_lazy_cache"):
                 self._lazy_cache = {}
 
@@ -191,9 +191,9 @@ def lazy_cached(cache_key: Optional[str] = None):
                 def compute() -> T:
                     return func(self, *args, **kwargs)
 
-                self._lazy_cache[key] = LazyValue(compute)
+                self._lazy_cache[key] = MixinLazyValue(compute)
 
-            return cast(LazyValue[T], self._lazy_cache[key])
+            return cast(MixinLazyValue[T], self._lazy_cache[key])
 
         return wrapper
 

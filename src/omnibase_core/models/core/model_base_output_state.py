@@ -17,6 +17,6 @@ class ModelBaseOutputState(BaseModel):
         description="Timestamp when the output was created",
     )
     processing_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Time taken to process in milliseconds",
     )

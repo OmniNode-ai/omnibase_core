@@ -20,11 +20,11 @@ class ModelExtractedBlock(BaseModel):
     """
 
     metadata: Optional["NodeMetadataBlock"] = Field(
-        None,
+        default=None,
         description="Extracted metadata block (NodeMetadataBlock or None)",
     )
     body: str | None = Field(
-        None,
+        default=None,
         description="File content with metadata block removed",
     )
 

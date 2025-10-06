@@ -5,7 +5,7 @@ from typing import Dict, TypedDict
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Node Info Summary Model (Composed).
@@ -27,15 +27,15 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 
 from .model_semver import ModelSemVer
 from .model_typed_dict_categorization_update_data import (
-    ModelTypedDictCategorizationUpdateData,
+    TypedDictCategorizationUpdateData,
 )
-from .model_typed_dict_node_core_update_data import ModelTypedDictNodeCoreUpdateData
-from .model_typed_dict_node_info_summary_data import ModelTypedDictNodeInfoSummaryData
+from .model_typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
+from .model_typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
 from .model_typed_dict_performance_update_data import (
-    ModelTypedDictPerformanceUpdateData,
+    TypedDictPerformanceUpdateData,
 )
-from .model_typed_dict_quality_update_data import ModelTypedDictQualityUpdateData
-from .model_typed_dict_timestamp_update_data import ModelTypedDictTimestampUpdateData
+from .model_typed_dict_quality_update_data import TypedDictQualityUpdateData
+from .model_typed_dict_timestamp_update_data import TypedDictTimestampUpdateData
 from .node_info.model_node_categorization import ModelNodeCategorization
 from .node_info.model_node_core import ModelNodeCore
 from .node_info.model_node_performance_metrics import ModelNodePerformanceMetrics
@@ -302,7 +302,7 @@ class ModelNodeInfoSummary(BaseModel):
         self.performance.memory_usage_mb = value
 
     # Composite methods
-    def get_comprehensive_summary(self) -> ModelTypedDictNodeInfoSummaryData:
+    def get_comprehensive_summary(self) -> TypedDictNodeInfoSummaryData:
         """Get comprehensive summary from all components."""
         return {
             "core": {
@@ -324,11 +324,11 @@ class ModelNodeInfoSummary(BaseModel):
 
     def update_all_metrics(
         self,
-        core_data: ModelTypedDictNodeCoreUpdateData | None = None,
-        timestamp_data: ModelTypedDictTimestampUpdateData | None = None,
-        categorization_data: ModelTypedDictCategorizationUpdateData | None = None,
-        quality_data: ModelTypedDictQualityUpdateData | None = None,
-        performance_data: ModelTypedDictPerformanceUpdateData | None = None,
+        core_data: TypedDictNodeCoreUpdateData | None = None,
+        timestamp_data: TypedDictTimestampUpdateData | None = None,
+        categorization_data: TypedDictCategorizationUpdateData | None = None,
+        quality_data: TypedDictQualityUpdateData | None = None,
+        performance_data: TypedDictPerformanceUpdateData | None = None,
     ) -> None:
         """
         Update all component metrics with structured typing.

@@ -22,7 +22,9 @@ class ModelMetadataToolAnalytics(BaseModel):
         default_factory=datetime.now,
         description="Last modification time",
     )
-    total_tools: int = Field(0, description="Total number of tools in collection")
+    total_tools: int = Field(
+        default=0, description="Total number of tools in collection"
+    )
     tools_by_type: dict[str, int] = Field(
         default_factory=dict,
         description="Count of tools by type",
@@ -37,7 +39,9 @@ class ModelMetadataToolAnalytics(BaseModel):
     )
 
     # Performance analytics
-    total_invocations: int = Field(0, description="Total invocations across all tools")
+    total_invocations: int = Field(
+        default=0, description="Total invocations across all tools"
+    )
     overall_success_rate: float = Field(
         100.0,
         description="Overall success rate percentage",

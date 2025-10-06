@@ -34,7 +34,7 @@ class ModelCliResultData(BaseModel):
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
     output_data: ModelCliValue | None = Field(
-        None,
+        default=None,
         description="Output data if successful",
     )
     error_message: ModelSchemaValue = Field(

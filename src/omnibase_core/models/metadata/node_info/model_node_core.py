@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Node Core Model.
@@ -42,8 +42,10 @@ class ModelNodeCore(BaseModel):
         default_factory=lambda: uuid_from_string("default", "node"),
         description="Unique identifier for the node",
     )
-    node_display_name: str | None = Field(None, description="Human-readable node name")
-    description: str | None = Field(None, description="Node description")
+    node_display_name: str | None = Field(
+        default=None, description="Human-readable node name"
+    )
+    description: str | None = Field(default=None, description="Node description")
     node_type: EnumNodeType = Field(
         default=EnumNodeType.UNKNOWN,
         description="Type of node",

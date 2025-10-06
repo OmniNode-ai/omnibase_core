@@ -24,7 +24,7 @@ class ModelEventDiscoveryRequest(BaseModel):
 
     # Discovery Filters
     service_name_pattern: str | None = Field(
-        None,
+        default=None,
         description="Service name pattern to match",
     )
     event_types: list[EnumEventType] = Field(
@@ -45,7 +45,7 @@ class ModelEventDiscoveryRequest(BaseModel):
         default_factory=list,
         description="Container status filter",
     )
-    hub_domain_filter: str | None = Field(None, description="Hub domain filter")
+    hub_domain_filter: str | None = Field(default=None, description="Hub domain filter")
     trust_level_filter: list[str] = Field(
         default_factory=list,
         description="Trust level filter",

@@ -18,84 +18,84 @@ class ModelResourceLimits(BaseModel):
     """
 
     cpu_cores: float | None = Field(
-        None,
+        default=None,
         description="CPU core limit (e.g., 2.5 cores)",
         ge=0.1,
         le=1000.0,
     )
 
     memory_mb: int | None = Field(
-        None,
+        default=None,
         description="Memory limit in megabytes",
         ge=1,
         le=1048576,  # 1TB max
     )
 
     storage_gb: float | None = Field(
-        None,
+        default=None,
         description="Storage limit in gigabytes",
         ge=0.1,
         le=100000.0,  # 100TB max
     )
 
     max_file_descriptors: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of open file descriptors",
         ge=10,
         le=1000000,
     )
 
     max_processes: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of processes",
         ge=1,
         le=100000,
     )
 
     max_threads: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of threads",
         ge=1,
         le=100000,
     )
 
     network_bandwidth_mbps: float | None = Field(
-        None,
+        default=None,
         description="Network bandwidth limit in megabits per second",
         ge=0.1,
         le=100000.0,  # 100Gbps max
     )
 
     max_connections: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of network connections",
         ge=1,
         le=1000000,
     )
 
     max_requests_per_second: float | None = Field(
-        None,
+        default=None,
         description="Maximum requests per second",
         ge=0.1,
         le=1000000.0,
     )
 
     execution_time_seconds: int | None = Field(
-        None,
+        default=None,
         description="Maximum execution time in seconds",
         ge=1,
         le=86400,  # 24 hours max
     )
 
     queue_size: int | None = Field(
-        None,
+        default=None,
         description="Maximum queue size for pending operations",
         ge=1,
         le=1000000,
     )
 
     max_retries: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of retries for failed operations",
         ge=0,
         le=100,

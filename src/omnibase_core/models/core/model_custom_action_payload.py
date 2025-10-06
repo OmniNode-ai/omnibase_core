@@ -1,5 +1,8 @@
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Custom Action Payload Model.
 
@@ -28,5 +31,8 @@ class ModelCustomActionPayload(ModelActionPayloadBase):
         """Validate that action_type is a valid custom action."""
         if v.name != "custom":
             msg = f"Invalid custom action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

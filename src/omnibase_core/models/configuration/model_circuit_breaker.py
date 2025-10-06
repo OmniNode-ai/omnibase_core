@@ -78,14 +78,14 @@ class ModelCircuitBreaker(BaseModel):
     )
 
     slow_call_duration_threshold_ms: int | None = Field(
-        None,
+        default=None,
         description="Duration threshold for slow calls in milliseconds",
         ge=100,
         le=60000,
     )
 
     slow_call_rate_threshold: float | None = Field(
-        None,
+        default=None,
         description="Slow call rate threshold (0.0-1.0) to open circuit",
         ge=0.0,
         le=1.0,
@@ -98,12 +98,12 @@ class ModelCircuitBreaker(BaseModel):
     )
 
     last_failure_time: datetime | None = Field(
-        None,
+        default=None,
         description="Timestamp of last failure",
     )
 
     last_state_change: datetime | None = Field(
-        None,
+        default=None,
         description="Timestamp of last state change",
     )
 
@@ -132,7 +132,7 @@ class ModelCircuitBreaker(BaseModel):
     )
 
     circuit_breaker_metadata: ModelCircuitBreakerMetadata | None = Field(
-        None,
+        default=None,
         description="Additional circuit breaker metadata",
     )
 

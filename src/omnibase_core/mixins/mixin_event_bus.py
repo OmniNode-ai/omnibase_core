@@ -38,8 +38,8 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 # Local imports from extracted classes
-from .model_mixin_completion_data import ModelMixinCompletionData
-from .model_mixin_log_data import ModelMixinLogData
+from .mixin_completion_data import MixinCompletionData
+from .mixin_log_data import MixinLogData
 from .protocol_event_bus import ProtocolEventBus
 from .protocol_log_emitter import LogEmitter
 from .protocol_registry_with_bus import RegistryWithBus
@@ -96,7 +96,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     stop_event: threading.Event | None = Field(default=None, exclude=True)
     event_subscriptions: list[object] = Field(default_factory=list, exclude=True)
 
-    def model_post_init(self, __context):
+    def model_post_init(self, __context: Any) -> None:
         """Initialize threading objects after Pydantic validation."""
         self.event_listener_thread = None
         self.stop_event = threading.Event()
@@ -105,7 +105,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         emit_log_event(
             LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing unified MixinEventBus",
-            ModelMixinLogData(node_name=self.node_name),
+            MixinLogData(node_name=self.node_name),
         )
 
         # Auto-start listener if event bus is available after full initialization
@@ -148,7 +148,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     def publish_completion_event(
         self,
         event_type: str,
-        data: ModelMixinCompletionData,
+        data: MixinCompletionData,
     ) -> None:
         """
         Publish completion event using synchronous event bus.
@@ -165,10 +165,11 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
             return
 
-        if isinstance(bus, "ProtocolAsyncEventBus") and not isinstance(
-            bus,
-            ProtocolEventBus,
-        ):
+        # Check if bus is async-only (has async methods but not sync methods)
+        has_async = hasattr(bus, "apublish") or hasattr(bus, "apublish_async")
+        has_sync = hasattr(bus, "publish") or hasattr(bus, "publish_async")
+
+        if has_async and not has_sync:
             self._log_error(
                 "registry.event_bus is async-only; call 'await apublish_completion_event(...)' instead",
                 event_type,
@@ -206,7 +207,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     async def apublish_completion_event(
         self,
         event_type: str,
-        data: ModelMixinCompletionData,
+        data: MixinCompletionData,
     ) -> None:
         """
         Publish completion event using asynchronous event bus.
@@ -234,7 +235,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             # Wrap event in envelope before publishing
             envelope = ModelEventEnvelope(payload=event)
 
-            if isinstance(bus, "ProtocolAsyncEventBus"):
+            # Check if bus has async methods (async bus or hybrid bus)
+            if hasattr(bus, "apublish") or hasattr(bus, "apublish_async"):
                 if hasattr(bus, "publish_async"):
                     await bus.publish_async(envelope)
                 else:
@@ -272,7 +274,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
 
     def _build_event(
-        self, event_type: str, data: ModelMixinCompletionData
+        self, event_type: str, data: MixinCompletionData
     ) -> ModelOnexEvent:
         """Build ModelOnexEvent from completion data."""
         return ModelOnexEvent.create_core_event(
@@ -372,7 +374,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 error_code=ModelCoreErrorCode.VALIDATION_FAILED,
             ) from e
 
-    def start_event_listener(self):
+    def start_event_listener(self) -> None:
         """Start the event listener thread."""
         if not self._has_event_bus():
             self._log_warn(
@@ -395,7 +397,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
         self._log_info("Event listener started", "event_listener")
 
-    def stop_event_listener(self):
+    def stop_event_listener(self) -> None:
         """Stop the event listener thread."""
         if not self.event_listener_thread:
             return
@@ -422,7 +424,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
         self._log_info("Event listener stopped", "event_listener")
 
-    def _auto_start_listener(self):
+    def _auto_start_listener(self) -> None:
         """Auto-start listener after initialization delay."""
         try:
             if self._has_event_bus():
@@ -434,7 +436,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 error=e,
             )
 
-    def _event_listener_loop(self):
+    def _event_listener_loop(self) -> None:
         """Main event listener loop."""
         try:
             patterns = self.get_event_patterns()
@@ -478,7 +480,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     def _create_event_handler(self, pattern: str) -> Callable[..., Any]:
         """Create event handler for a specific pattern."""
 
-        def handler(envelope: "ModelEventEnvelope"):
+        def handler(envelope: "ModelEventEnvelope") -> None:
             """Handle incoming event envelope."""
             # Extract event from envelope
             event = envelope.payload if hasattr(envelope, "payload") else envelope
@@ -496,7 +498,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
                 # Publish completion event
                 completion_event_type = self.get_completion_event_type(event.event_type)
-                completion_data = ModelMixinCompletionData(
+                completion_data = MixinCompletionData(
                     message=f"Processing completed for {event.event_type}",
                     success=True,
                     tags=["processed", "completed"],
@@ -517,7 +519,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                     completion_event_type = self.get_completion_event_type(
                         event.event_type,
                     )
-                    error_data = ModelMixinCompletionData(
+                    error_data = MixinCompletionData(
                         message=f"Processing failed: {e!s}",
                         success=False,
                         tags=["error", "failed"],
@@ -581,7 +583,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         emit_log_event(
             LogLevel.INFO,
             msg,
-            ModelMixinLogData(pattern=pattern, node_name=self.get_node_name()),
+            MixinLogData(pattern=pattern, node_name=self.get_node_name()),
         )
 
     def _log_warn(self, msg: str, pattern: str) -> None:
@@ -589,7 +591,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         emit_log_event(
             LogLevel.WARNING,
             msg,
-            ModelMixinLogData(pattern=pattern, node_name=self.get_node_name()),
+            MixinLogData(pattern=pattern, node_name=self.get_node_name()),
         )
 
     def _log_error(
@@ -602,7 +604,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         emit_log_event(
             LogLevel.ERROR,
             msg,
-            ModelMixinLogData(
+            MixinLogData(
                 pattern=pattern,
                 node_name=self.get_node_name(),
                 error=None if error is None else repr(error),

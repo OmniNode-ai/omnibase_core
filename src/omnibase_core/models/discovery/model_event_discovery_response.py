@@ -25,8 +25,8 @@ class ModelEventDiscoveryResponse(BaseModel):
         default_factory=list,
         description="Discovered events",
     )
-    total_count: int = Field(0, description="Total number of matching events")
-    result_count: int = Field(0, description="Number of events returned")
+    total_count: int = Field(default=0, description="Total number of matching events")
+    result_count: int = Field(default=0, description="Number of events returned")
 
     # Response Metadata
     response_timestamp: datetime = Field(
@@ -34,7 +34,7 @@ class ModelEventDiscoveryResponse(BaseModel):
         description="Response timestamp",
     )
     consul_query_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Consul query time in milliseconds",
     )
     container_adapter_active: bool = Field(
@@ -43,9 +43,11 @@ class ModelEventDiscoveryResponse(BaseModel):
     )
 
     # Status Information
-    query_successful: bool = Field(True, description="Whether query was successful")
+    query_successful: bool = Field(
+        default=True, description="Whether query was successful"
+    )
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Error message if query failed",
     )
     partial_results: bool = Field(

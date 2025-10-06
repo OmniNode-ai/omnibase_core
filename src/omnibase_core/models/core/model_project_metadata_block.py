@@ -2,13 +2,16 @@ from typing import Any
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Project metadata block model.
 """
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_metadata import Lifecycle, MetaTypeEnum
+from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
 from omnibase_core.models.config.model_tree_generator_config import (
     ModelTreeGeneratorConfig,
 )
@@ -30,8 +33,8 @@ class ModelProjectMetadataBlock(BaseModel):
     """
     Canonical ONEX project-level metadata block.
     - tools: ModelToolCollection (not dict[str, Any])
-    - meta_type: MetaTypeEnum (not str)
-    - lifecycle: Lifecycle (not str)
+    - meta_type: EnumMetaType (not str)
+    - lifecycle: EnumLifecycle (not str)
     Entrypoint field must use the canonical URI format: '<type>://<target>'
     Example: 'python://main.py', 'yaml://project.onex.yaml', 'markdown://debug_log.md'
     """
@@ -41,7 +44,7 @@ class ModelProjectMetadataBlock(BaseModel):
     namespace: str
     description: str | None = None
     versions: ModelOnexVersionInfo
-    lifecycle: Lifecycle = Field(default=Lifecycle.ACTIVE)
+    lifecycle: EnumLifecycle = Field(default=EnumLifecycle.ACTIVE)
     created_at: str | None = None
     last_modified_at: str | None = None
     license: str | None = None
@@ -52,7 +55,7 @@ class ModelProjectMetadataBlock(BaseModel):
             target=PROJECT_ONEX_YAML_FILENAME,
         ),
     )
-    meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.PROJECT)
+    meta_type: EnumMetaType = Field(default=EnumMetaType.PROJECT)
     tools: ModelToolCollection | None = None
     copyright: str
     tree_generator: ModelTreeGeneratorConfig | None = None
@@ -68,8 +71,9 @@ class ModelProjectMetadataBlock(BaseModel):
         if hasattr(value, "type") and hasattr(value, "target"):
             return f"{value.type}://{value.target}"
         msg = f"Entrypoint must be a URI string or EntrypointBlock, got: {value}"
-        raise ValueError(
-            msg,
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
         )
 
     @classmethod
@@ -81,8 +85,9 @@ class ModelProjectMetadataBlock(BaseModel):
                 data[ENTRYPOINT_KEY] = EntrypointBlock.from_uri(entrypoint_val)
             elif not isinstance(entrypoint_val, EntrypointBlock):
                 msg = f"entrypoint must be a URI string or EntrypointBlock, got: {entrypoint_val}"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
         # Convert tools to ModelToolCollection if needed
         if TOOLS_KEY in data and isinstance(data[TOOLS_KEY], dict):
@@ -101,7 +106,10 @@ class ModelProjectMetadataBlock(BaseModel):
             )
         if COPYRIGHT_KEY not in data:
             msg = f"Missing required field: {COPYRIGHT_KEY}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return cls(**data)
 
     def to_serializable_dict(self) -> dict[str, Any]:

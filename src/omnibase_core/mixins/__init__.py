@@ -10,11 +10,18 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
+# Import protocols from omnibase_spi
+from omnibase_spi.protocols.types import ProtocolLogEmitter as LogEmitter
+from omnibase_spi.protocols.types import ProtocolRegistryWithBus as RegistryWithBus
+
 # Core mixins
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
 )
 from omnibase_core.mixins.mixin_cli_handler import MixinCLIHandler
+
+# Models and protocols extracted from mixin_event_bus
+from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
 from omnibase_core.mixins.mixin_contract_metadata import MixinContractMetadata
 from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractStateReducer
 from omnibase_core.mixins.mixin_debug_discovery_logging import (
@@ -37,6 +44,7 @@ from omnibase_core.mixins.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,
 )
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
+from omnibase_core.mixins.mixin_log_data import MixinLogData
 from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
 from omnibase_core.mixins.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
@@ -51,13 +59,7 @@ from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
 from omnibase_core.mixins.mixin_workflow_support import MixinDagSupport
 from omnibase_core.mixins.mixin_yaml_serialization import YAMLSerializationMixin
-
-# Models and protocols extracted from mixin_event_bus
-from omnibase_core.mixins.model_mixin_completion_data import ModelMixinCompletionData
-from omnibase_core.mixins.model_mixin_log_data import ModelMixinLogData
 from omnibase_core.mixins.protocol_event_bus import ProtocolEventBus
-from omnibase_core.mixins.protocol_log_emitter import LogEmitter
-from omnibase_core.mixins.protocol_registry_with_bus import RegistryWithBus
 
 __all__ = [
     "MixinCanonicalYAMLSerializer",
@@ -86,8 +88,8 @@ __all__ = [
     "MixinServiceRegistry",
     "MixinToolExecution",
     "MixinEventBus",
-    "ModelMixinCompletionData",
-    "ModelMixinLogData",
+    "MixinCompletionData",
+    "MixinLogData",
     "ProtocolEventBus",
     "LogEmitter",
     "RegistryWithBus",

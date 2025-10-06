@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class ModelToolValidationResult(BaseModel):
     """Result of tool validation checks."""
 
-    is_valid: bool = Field(True, description="Whether tool is valid")
+    is_valid: bool = Field(default=True, description="Whether tool is valid")
     validation_errors: list[str] = Field(
         default_factory=list,
         description="Validation error messages",
@@ -25,7 +25,9 @@ class ModelToolValidationResult(BaseModel):
         True,
         description="Whether tool complies with ProtocolTool interface",
     )
-    signature_valid: bool = Field(True, description="Whether tool signature is valid")
+    signature_valid: bool = Field(
+        default=True, description="Whether tool signature is valid"
+    )
     dependencies_satisfied: bool = Field(
         True,
         description="Whether tool dependencies are satisfied",

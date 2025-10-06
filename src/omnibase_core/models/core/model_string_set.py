@@ -20,7 +20,7 @@ class ModelStringSet(BaseModel):
         description="List of unique string elements",
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Ensure uniqueness of elements."""
         self.elements = list(dict[str, Any].fromkeys(self.elements))
 
@@ -91,6 +91,6 @@ class ModelStringSet(BaseModel):
         """Support len() function."""
         return self.size()
 
-    def __iter__(self):
+    def __iter__(self) -> None:
         """Support iteration."""
         return iter(self.elements)

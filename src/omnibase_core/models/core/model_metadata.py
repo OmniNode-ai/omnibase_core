@@ -2,8 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelMetadata(BaseModel):
@@ -31,8 +30,8 @@ class ModelMetadata(BaseModel):
     )
 
     @model_validator(mode="before")
-    def coerce_version(self, values):
+    def coerce_version(self, values) -> None:
         version = values.get("version")
         if version is not None and not isinstance(version, ModelSemVer):
-            values["version"] = ModelSemVer.parse(version)
+            values["version"] = parse_semver_from_string(version)
         return values

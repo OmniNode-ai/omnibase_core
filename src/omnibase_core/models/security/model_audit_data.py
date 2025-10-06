@@ -20,7 +20,7 @@ class ModelAuditData(BaseModel):
         default_factory=datetime.utcnow,
         description="Audit timestamp",
     )
-    user_id: str | None = Field(None, description="User identifier")
+    user_id: str | None = Field(default=None, description="User identifier")
     action: str = Field(..., description="Action performed")
     resource: str = Field(..., description="Resource accessed")
     result: str = Field(..., description="Action result")

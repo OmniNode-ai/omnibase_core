@@ -11,22 +11,22 @@ class ModelRuleConditionValue(BaseModel):
 
     # Comparison operators
     in_values: list[str] | None = Field(
-        None,
+        default=None,
         alias="$in",
         description="Values to match against",
     )
     regex: str | None = Field(
-        None,
+        default=None,
         alias="$regex",
         description="Regular expression pattern",
     )
     gte: int | None = Field(
-        None,
+        default=None,
         alias="$gte",
         description="Greater than or equal to value",
     )
     lte: int | None = Field(
-        None,
+        default=None,
         alias="$lte",
         description="Less than or equal to value",
     )

@@ -12,5 +12,5 @@ class ModelListFilter(ModelCustomFilterBase):
 
     filter_type: str = Field(default="list[Any]", description="Filter type identifier")
     values: list[Any] = Field(..., description="List of values to match")
-    match_all: bool = Field(False, description="Must match all values (vs any)")
-    exclude: bool = Field(False, description="Exclude matching items")
+    match_all: bool = Field(default=False, description="Must match all values (vs any)")
+    exclude: bool = Field(default=False, description="Exclude matching items")

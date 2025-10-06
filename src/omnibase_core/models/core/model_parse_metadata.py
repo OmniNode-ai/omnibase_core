@@ -1,4 +1,8 @@
+from uuid import UUID
+
 from pydantic import Field
+
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 """
 Parse Metadata Model
@@ -27,19 +31,19 @@ class ModelParseMetadata(BaseModel):
     )
 
     parse_end_time: datetime | None = Field(
-        None,
+        default=None,
         description="When parsing completed",
     )
 
     parse_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Parsing duration in milliseconds",
         ge=0,
     )
 
     source_command: str = Field(..., description="Original command that was parsed")
 
-    parser_version: str = Field(
+    parser_version: ModelSemVer = Field(
         default="1.0.0",
         description="Version of the parser used",
     )
@@ -80,12 +84,12 @@ class ModelParseMetadata(BaseModel):
     )
 
     contract_source: str | None = Field(
-        None,
+        default=None,
         description="Source of the contract used for parsing",
     )
 
-    command_definition_id: str | None = Field(
-        None,
+    command_definition_id: UUID | None = Field(
+        default=None,
         description="ID of the command definition used",
     )
 

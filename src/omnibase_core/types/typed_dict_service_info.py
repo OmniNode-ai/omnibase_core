@@ -5,7 +5,7 @@ TypedDict for service information.
 """
 
 
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from .typed_dict_sem_ver import TypedDictSemVer
 

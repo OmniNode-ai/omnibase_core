@@ -16,8 +16,6 @@ from omnibase_core.enums.enum_reduction_type import EnumReductionType
 from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-from .model_config import ModelConfig
-
 T_Input = TypeVar("T_Input")
 
 
@@ -41,17 +39,14 @@ class ModelReducerInput(BaseModel, Generic[T_Input]):
     # Additional fields for reducer operations
     reduction_type: EnumReductionType = Field(
         default=EnumReductionType.AGGREGATE,
-        description="Type of reduction operation to perform"
+        description="Type of reduction operation to perform",
     )
     reducer_function: str | None = Field(
-        default=None,
-        description="Name or path of the reducer function to use"
+        default=None, description="Name or path of the reducer function to use"
     )
     group_key: str | list[str] | None = Field(
-        default=None,
-        description="Field(s) to group by for grouped reductions"
+        default=None, description="Field(s) to group by for grouped reductions"
     )
     accumulator_init: Any = Field(
-        default=None,
-        description="Initial value for accumulator operations"
+        default=None, description="Initial value for accumulator operations"
     )

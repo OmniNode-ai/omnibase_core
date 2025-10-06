@@ -45,7 +45,7 @@ class ModelSecuritySummary(BaseModel):
     )
     security_events_count: int = Field(..., description="Number of security events")
     last_security_event: "ModelSecurityEventSummary" | None = Field(
-        None,
+        default=None,
         description="Most recent security event",
     )
 

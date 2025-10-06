@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 """
 Request-Response Introspection Mixin
@@ -18,7 +18,7 @@ from omnibase_core.enums.enum_node_current_status import (
     EnumNodeCurrentStatus,
 )
 from omnibase_core.logging.structured import emit_log_event_sync
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
@@ -58,7 +58,7 @@ class MixinRequestResponseIntrospection:
     - Request-response introspection for real-time "who's available now" discovery
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._introspection_request_subscription = None
         self._startup_time: float = time.time()
@@ -207,7 +207,9 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 return
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
             emit_log_event_sync(
                 LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
@@ -268,7 +270,7 @@ class MixinRequestResponseIntrospection:
                 correlation_id=request_event.correlation_id,
                 node_id=getattr(self, "node_id", "unknown_node"),
                 node_name=getattr(self, "node_name", "unknown_node"),
-                version=getattr(self, "version", ModelSemVer.parse("1.0.0")),
+                version=getattr(self, "version", parse_semver_from_string("1.0.0")),
                 current_status=current_status,
                 capabilities=capabilities,
                 response_time_ms=response_time_ms,
@@ -410,7 +412,7 @@ class MixinRequestResponseIntrospection:
                     correlation_id=event.correlation_id,
                     node_id=getattr(self, "node_id", "unknown_node"),
                     node_name=getattr(self, "node_name", "unknown_node"),
-                    version=getattr(self, "version", ModelSemVer.parse("1.0.0")),
+                    version=getattr(self, "version", parse_semver_from_string("1.0.0")),
                     error_message=str(e),
                     response_time_ms=response_time_ms,
                 )
@@ -544,7 +546,7 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except:
+        except:  # fallback-ok: status check returns DEGRADED on error, safe fallback for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY
@@ -636,7 +638,9 @@ class MixinRequestResponseIntrospection:
         except ImportError:
             # psutil not available
             return None
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: resource metrics optional, returns None if unavailable
             # Error getting resource usage
             return None
 
@@ -658,7 +662,9 @@ class MixinRequestResponseIntrospection:
                 error_rate_percent=0.0,  # Would need error tracking
                 queue_depth=0,  # Would need queue monitoring
             )
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: performance metrics optional, returns None if unavailable
             return None
 
     def _get_additional_introspection_info(

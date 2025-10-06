@@ -42,7 +42,11 @@ import enum
 from pathlib import Path
 
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
-from omnibase_core.enums.enum_metadata import EntrypointType, Lifecycle, MetaTypeEnum
+from omnibase_core.enums.enum_metadata import (
+    EnumEntrypointType,
+    EnumLifecycle,
+    EnumMetaType,
+)
 from omnibase_core.models.core.model_dependency_block import ModelDependencyBlock
 from omnibase_core.models.core.model_io_block import ModelIOBlock
 from omnibase_core.models.core.model_io_contract import ModelIOContract
@@ -51,7 +55,7 @@ from omnibase_core.models.core.model_trust_score_stub import ModelTrustScoreStub
 
 from .model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue
-from .model_logging_config import ModelLogFormat, ModelLoggingConfig
+from .model_logging_config import EnumLogFormat, ModelLogFormat, ModelLoggingConfig
 from .model_namespace import ModelNamespace
 from .model_node_metadata_block import (
     ModelNodeMetadataBlock,
@@ -69,10 +73,14 @@ from .model_testing_block import ModelTestingBlock
 _COMPONENT_NAME = Path(__file__).stem
 
 # Import extracted enums
-from .enum_architecture import ModelEnumArchitecture
+from omnibase_core.enums.enum_architecture import EnumArchitecture
 
 # DataClassification moved to omnibase.enums.enum_data_classification
 DataClassification = EnumDataClassification
+
+# Compatibility aliases for enums
+Architecture = EnumArchitecture
+LogFormat = EnumLogFormat
 
 
 # Compatibility aliases - existing models
@@ -97,7 +105,7 @@ NodeMetadataBlock = ModelNodeMetadataBlock
 # NOTE: The only difference between model_dump() and __dict__ is that model_dump() serializes entrypoint as a dict[str, Any], while __dict__ keeps it as an EntrypointBlock object. This is expected and not a source of non-determinism for YAML serialization, which uses model_dump or to_serializable_dict.
 
 
-def debug_compare_model_dump_vs_dict(model):
+def debug_compare_model_dump_vs_dict(model) -> None:
     import difflib
     import pprint
 
@@ -129,15 +137,15 @@ __all__ = [
     "DataClassification",
     "DataHandlingDeclaration",
     "DependencyBlock",
-    "EntrypointType",
+    "EnumEntrypointType",
     "ExtensionValueModel",
     "IOBlock",
     "IOContract",
-    "Lifecycle",
+    "EnumLifecycle",
     # Enums and utilities
     "LogFormat",
     "LoggingConfig",
-    "MetaTypeEnum",
+    "EnumMetaType",
     "ModelDataHandlingDeclaration",
     "ModelExtensionValue",
     "ModelLoggingConfig",

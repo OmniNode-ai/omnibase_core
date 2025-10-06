@@ -37,7 +37,7 @@ class ModelCustomSettings(BaseModel):
     # Metadata
     version: str = Field("1.0", description="Settings version")
     last_modified: datetime | None = Field(
-        None,
+        default=None,
         description="Last modification time",
     )
 
@@ -46,7 +46,7 @@ class ModelCustomSettings(BaseModel):
         False,
         description="Validate settings on modification",
     )
-    allow_unknown: bool = Field(True, description="Allow unknown settings")
+    allow_unknown: bool = Field(default=True, description="Allow unknown settings")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dict[str, Any]ionary for current standards."""
@@ -84,7 +84,7 @@ class ModelCustomSettings(BaseModel):
                 return settings[key]
         return default
 
-    def set_setting(self, key: str, value: Any, category: str = "general"):
+    def set_setting(self, key: str, value: Any, category: str = "general") -> None:
         """Set a setting value."""
         if category == "advanced":
             self.advanced_settings[key] = value

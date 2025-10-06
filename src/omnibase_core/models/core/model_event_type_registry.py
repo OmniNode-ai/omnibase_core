@@ -1,5 +1,8 @@
 from typing import Any, Generic
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Event Type Registry for Dynamic Event Type Discovery.
 
@@ -152,7 +155,10 @@ class ModelEventTypeRegistry:
 
         except Exception as e:
             msg = f"Failed to parse contract {contract_file}: {e}"
-            raise Exception(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.INTERNAL_ERROR,
+                message=msg,
+            )
 
         return events_discovered
 

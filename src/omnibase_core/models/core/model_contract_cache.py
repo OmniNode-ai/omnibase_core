@@ -53,15 +53,15 @@ class ModelContractCache(BaseModel):
         default=0, description="Number of times cache was accessed"
     )
     last_accessed_at: datetime | None = Field(
-        None, description="Timestamp of last access"
+        default=None, description="Timestamp of last access"
     )
 
     # === CACHE CONFIGURATION ===
     ttl_seconds: int | None = Field(
-        None, description="Time-to-live in seconds, None for no expiration"
+        default=None, description="Time-to-live in seconds, None for no expiration"
     )
     max_age_seconds: int | None = Field(
-        None, description="Maximum age in seconds before refresh"
+        default=None, description="Maximum age in seconds before refresh"
     )
 
     def is_expired(self) -> bool:

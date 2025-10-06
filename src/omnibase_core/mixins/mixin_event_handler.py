@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from omnibase_core.errors.error_codes import ModelOnexError
 
@@ -246,7 +246,9 @@ class MixinEventHandler:
             if not is_event_equal(event.event_type, discovery_request_type):
                 return
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: event handler returns early if type check fails, malformed events shouldn't crash
             # If we can't create the event type, skip
             return
 
@@ -315,15 +317,17 @@ class MixinEventHandler:
             # No specific filters, respond
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: filter error defaults to responding, safe fallback for event handling
             # On error, default to responding
             return True
 
     def _filter_introspection_data(
         self,
-        introspection_data: dict[str, str | list[str] | dict[str, str]],
+        introspection_data: dict[str, Any],
         requested_types: list[str],
-    ) -> dict[str, str | list[str] | dict[str, str]]:
+    ) -> dict[str, Any]:
         """
         Filter introspection data based on requested types.
 

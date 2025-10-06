@@ -29,7 +29,7 @@ class EnumGeneralStatus(str, Enum):
     - VALID, INVALID, UNKNOWN (quality)
 
     General Extensions:
-    - Lifecycle: CREATED, UPDATED, DELETED, ARCHIVED
+    - EnumLifecycle: CREATED, UPDATED, DELETED, ARCHIVED
     - Approval: APPROVED, REJECTED, UNDER_REVIEW
     - Availability: AVAILABLE, UNAVAILABLE, MAINTENANCE
     - Quality: DRAFT, PUBLISHED, DEPRECATED
@@ -47,7 +47,7 @@ class EnumGeneralStatus(str, Enum):
     INVALID = EnumBaseStatus.INVALID.value
     UNKNOWN = EnumBaseStatus.UNKNOWN.value
 
-    # Extended Lifecycle states
+    # Extended EnumLifecycle states
     CREATED = "created"
     UPDATED = "updated"
     DELETED = "deleted"
@@ -84,7 +84,7 @@ class EnumGeneralStatus(str, Enum):
         """Convert to base status enum for universal operations."""
         # Map general-specific values to base equivalents
         base_mapping = {
-            # Lifecycle mappings
+            # EnumLifecycle mappings
             self.CREATED: EnumBaseStatus.ACTIVE,
             self.UPDATED: EnumBaseStatus.ACTIVE,
             self.DELETED: EnumBaseStatus.INACTIVE,

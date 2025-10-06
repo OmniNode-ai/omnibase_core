@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Monitoring Action Payload Model.
 
@@ -22,11 +25,13 @@ class ModelMonitoringActionPayload(ModelActionPayloadBase):
         description="Metrics to monitor/collect",
     )
     interval_seconds: int | None = Field(
-        None,
+        default=None,
         description="Monitoring interval in seconds",
     )
-    threshold: float | None = Field(None, description="Threshold for alerts")
-    output_format: str | None = Field(None, description="Output format for reports")
+    threshold: float | None = Field(default=None, description="Threshold for alerts")
+    output_format: str | None = Field(
+        default=None, description="Output format for reports"
+    )
 
     @field_validator("action_type")
     @classmethod
@@ -36,5 +41,8 @@ class ModelMonitoringActionPayload(ModelActionPayloadBase):
 
         if v.category != QUERY:
             msg = f"Invalid monitoring action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

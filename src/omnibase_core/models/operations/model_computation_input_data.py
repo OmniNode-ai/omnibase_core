@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Union
+from uuid import UUID
 
 from pydantic import Field, ValidationInfo, field_validator
 

@@ -28,13 +28,13 @@ class ModelHubConfiguration(BaseModel):
     )
 
     domain_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable domain name (e.g., 'generation', 'ai')",
     )
 
     # Service configuration
     service_port: int | None = Field(
-        None,
+        default=None,
         description="Port for hub HTTP service",
         ge=1024,
         le=65535,

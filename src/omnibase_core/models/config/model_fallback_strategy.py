@@ -53,7 +53,7 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     fallback_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Alternative endpoint to use during fallback",
     )
 

@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails
 from omnibase_core.models.service.model_event_bus_output_field import (
     ModelEventBusOutputField,
@@ -17,17 +18,6 @@ if TYPE_CHECKING:
     from omnibase_core.models.core.model_monitoring_metrics import (
         ModelMonitoringMetrics,
     )
-
-
-class ModelEventBusOutputStateError(ModelOnexError):
-    """Validation error for event bus output state operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_EVENT_BUS_OUTPUT_STATE_ERROR",
-        )
-        self.field_name = field_name
 
 
 class ModelEventBusOutputState(BaseModel):
@@ -151,11 +141,14 @@ class ModelEventBusOutputState(BaseModel):
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
+            message=msg,
+        )
 
     @field_validator("status")
     @classmethod
@@ -169,7 +162,10 @@ class ModelEventBusOutputState(BaseModel):
         """Validate message content."""
         if not v or not v.strip():
             msg = "message cannot be empty or whitespace"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
+                message=msg,
+            )
 
         return v.strip()
 
@@ -188,9 +184,9 @@ class ModelEventBusOutputState(BaseModel):
         import re
 
         if not re.match(r"^[A-Z0-9_]+$", v):
-            msg = "error_code must contain only uppercase letters, numbers, and underscores"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
+                message="error_code must contain only uppercase letters, numbers, and underscores",
             )
 
         return v
@@ -340,10 +336,10 @@ class ModelEventBusOutputState(BaseModel):
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get metrics suitable for monitoring systems."""
+        from omnibase_core.models.core.model_metric_value import ModelMetricValue
         from omnibase_core.models.core.model_monitoring_metrics import (
             ModelMonitoringMetrics,
         )
-        from omnibase_core.models.core.model_metric_value import ModelMetricValue
 
         success_rate = 100.0 if self.is_successful() else 0.0
         error_rate = 100.0 if self.is_failed() else 0.0
@@ -360,9 +356,19 @@ class ModelEventBusOutputState(BaseModel):
                 else 50.0 if self.is_warning_only() else 0.0
             ),
             custom_metrics={
-                "status": ModelMetricValue(value=self.status.value, unit="enum", timestamp=datetime.utcnow()),
-                "severity": ModelMetricValue(value=self.get_severity_level(), unit="category", timestamp=datetime.utcnow()),
-                "retry_attempt": ModelMetricValue(value=self.retry_attempt or 0, unit="count", timestamp=datetime.utcnow()),
+                "status": ModelMetricValue(
+                    value=self.status.value, unit="enum", timestamp=datetime.utcnow()
+                ),
+                "severity": ModelMetricValue(
+                    value=self.get_severity_level(),
+                    unit="category",
+                    timestamp=datetime.utcnow(),
+                ),
+                "retry_attempt": ModelMetricValue(
+                    value=self.retry_attempt or 0,
+                    unit="count",
+                    timestamp=datetime.utcnow(),
+                ),
                 "warnings": ModelMetricValue(
                     value=len(self.warnings) if self.warnings else 0,
                     unit="count",
@@ -413,10 +419,10 @@ class ModelEventBusOutputState(BaseModel):
 
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the operation result."""
+        from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
         from omnibase_core.models.core.model_business_impact import (
             ModelBusinessImpact,
         )
-        from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
 
         severity = (
             EnumImpactSeverity.CRITICAL
@@ -545,12 +551,14 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create successful output state."""
         return cls(
-            version=ModelSemVer.parse(version),
+            version=parse_semver_from_string(version),
             status=EnumOnexStatus.SUCCESS,
             message=message,
             processing_time_ms=processing_time_ms,
             metrics=cls._create_metrics(
-                response_time_ms=float(processing_time_ms) if processing_time_ms else None,
+                response_time_ms=(
+                    float(processing_time_ms) if processing_time_ms else None
+                ),
                 success_rate=100.0,
                 error_rate=0.0,
                 health_score=100.0,
@@ -567,7 +575,7 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create error output state."""
         return cls(
-            version=ModelSemVer.parse(version),
+            version=parse_semver_from_string(version),
             status=EnumOnexStatus.ERROR,
             message=message,
             error_code=error_code,
@@ -589,13 +597,15 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create warning output state."""
         return cls(
-            version=ModelSemVer.parse(version),
+            version=parse_semver_from_string(version),
             status=EnumOnexStatus.WARNING,
             message=message,
             warnings=warnings,
             processing_time_ms=processing_time_ms,
             metrics=cls._create_metrics(
-                response_time_ms=float(processing_time_ms) if processing_time_ms else None,
+                response_time_ms=(
+                    float(processing_time_ms) if processing_time_ms else None
+                ),
                 success_rate=100.0,
                 error_rate=0.0,
                 health_score=50.0,
@@ -616,7 +626,7 @@ class ModelEventBusOutputState(BaseModel):
         ).isoformat()
 
         return cls(
-            version=ModelSemVer.parse(version),
+            version=parse_semver_from_string(version),
             status=EnumOnexStatus.ERROR,
             message=message,
             retry_attempt=retry_attempt,
@@ -640,14 +650,16 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create output state with full tracking information."""
         return cls(
-            version=ModelSemVer.parse(version),
+            version=parse_semver_from_string(version),
             status=EnumOnexStatus(status),
             message=message,
             correlation_id=correlation_id,
             event_id=event_id,
             processing_time_ms=processing_time_ms,
             metrics=cls._create_metrics(
-                response_time_ms=float(processing_time_ms) if processing_time_ms else None,
+                response_time_ms=(
+                    float(processing_time_ms) if processing_time_ms else None
+                ),
                 success_rate=100.0 if status == "success" else 0.0,
                 error_rate=0.0 if status == "success" else 100.0,
                 health_score=100.0 if status == "success" else 0.0,

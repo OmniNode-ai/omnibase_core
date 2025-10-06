@@ -13,6 +13,9 @@ from typing import Any, TypeVar
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 # Import extracted YAML model classes
 from omnibase_core.models.core.model_yaml_configuration import ModelYamlConfiguration
 from omnibase_core.models.core.model_yaml_dictionary import ModelYamlDictionary
@@ -33,7 +36,7 @@ class ModelGenericYaml(BaseModel):
 
     # Allow any additional fields for maximum flexibility
     root_list: list[Any] | None = Field(
-        None, description="Root level list for YAML arrays"
+        default=None, description="Root level list for YAML arrays"
     )
 
     @classmethod
@@ -53,10 +56,13 @@ class ModelGenericYaml(BaseModel):
                 return cls(root_list=data)
             return cls(**data)
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML content: {e}") from e
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid YAML content: {e}",
+            ) from e
 
 
-# Re-export all extracted YAML model classes for backward compatibility
+# Public API exports
 __all__ = [
     "ModelGenericYaml",
     "ModelYamlConfiguration",

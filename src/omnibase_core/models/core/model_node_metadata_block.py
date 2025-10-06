@@ -1,14 +1,10 @@
-import json
-import uuid
-from typing import Any, Dict, Generic, Optional
-
-from pydantic import Field, field_validator
-
 """
 Node metadata block model.
 """
 
 import enum
+import json
+import uuid
 from pathlib import Path
 from typing import (
     Annotated,
@@ -22,7 +18,9 @@ from typing import (
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
-from omnibase_core.enums import Lifecycle, MetaTypeEnum
+from omnibase_core.enums import EnumLifecycle, EnumMetaType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
 # Hash computation and YAML serialization are now available as utility functions
@@ -115,7 +113,7 @@ class ModelNodeMetadataBlock(BaseModel):
     state_contract: Annotated[str, StringConstraints(min_length=1)] = Field(
         default="state_contract://default",
     )
-    lifecycle: Lifecycle = Field(default=Lifecycle.ACTIVE)
+    lifecycle: EnumLifecycle = Field(default=EnumLifecycle.ACTIVE)
     hash: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^[a-fA-F0-9]{64}$"),
@@ -126,7 +124,7 @@ class ModelNodeMetadataBlock(BaseModel):
         ...,
         description="Namespace, e.g., <prefix>.tools.<name>",
     )
-    meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.TOOL)
+    meta_type: EnumMetaType = Field(default=EnumMetaType.TOOL)
     trust_score: float | None = None
     tags: list[str] | None = None
     capabilities: list[str] | None = None
@@ -190,7 +188,7 @@ class ModelNodeMetadataBlock(BaseModel):
         )
     )
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
     @classmethod
@@ -211,14 +209,6 @@ class ModelNodeMetadataBlock(BaseModel):
         if isinstance(policy, ModelCanonicalizationPolicy):
             return policy.get_canonicalizer()
         return None
-
-    def some_function(self) -> None:
-        # implementation
-        pass
-
-    def another_function(self) -> None:
-        # implementation
-        pass
 
     def to_serializable_dict(
         self,
@@ -293,7 +283,10 @@ class ModelNodeMetadataBlock(BaseModel):
             # Accept URI string and convert to EntrypointBlock
             return EntrypointBlock.from_uri(value)
         msg = "entrypoint must be an EntrypointBlock instance or URI string"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     @field_validator("namespace", mode="before")
     @classmethod
@@ -330,17 +323,17 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ExtensionValueModel(value=val)
         return out
 
-    def model_dump(self, *args, **kwargs):
+    def model_dump(self, *args, **kwargs) -> None:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d
 
 
-# Utility: Remove all volatile fields from a dict[str, Any]using NodeMetadataField.volatile()
+# Utility: Remove all volatile fields from a dict[str, Any]using EnumNodeMetadataField.volatile()
 def strip_volatile_fields_from_dict(d: dict[str, Any]) -> dict[str, Any]:
-    from omnibase_core.enums.enum_metadata import NodeMetadataField
+    from omnibase_core.enums.enum_metadata import EnumNodeMetadataField
 
-    volatile_keys = {f.value for f in NodeMetadataField.volatile()}
+    volatile_keys = {f.value for f in EnumNodeMetadataField.volatile()}
     return {k: v for k, v in d.items() if k not in volatile_keys}
 
 

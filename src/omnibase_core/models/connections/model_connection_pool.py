@@ -46,7 +46,7 @@ class ModelConnectionPool(BaseModel):
         le=60,
     )
     keepalive_interval: int | None = Field(
-        None,
+        default=None,
         description="Keepalive interval in seconds",
         ge=1,
         le=300,
@@ -54,19 +54,19 @@ class ModelConnectionPool(BaseModel):
 
     # Connection pooling
     pool_size: int | None = Field(
-        None,
+        default=None,
         description="Connection pool size",
         ge=1,
         le=1000,
     )
     pool_timeout: int | None = Field(
-        None,
+        default=None,
         description="Pool timeout in seconds",
         ge=1,
         le=3600,
     )
     max_overflow: int | None = Field(
-        None,
+        default=None,
         description="Maximum pool overflow",
         ge=0,
         le=100,

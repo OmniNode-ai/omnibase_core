@@ -1,8 +1,3 @@
-import json
-from typing import Dict
-
-from pydantic import Field
-
 """
 ModelRouteHop: Individual hop in routing audit trail
 
@@ -12,6 +7,7 @@ Follows AMQP envelope pattern for distributed event routing.
 
 from datetime import datetime
 from typing import Any, Dict
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,9 +21,11 @@ class ModelRouteHop(BaseModel):
     """
 
     # Hop identification
-    hop_id: str = Field(..., description="Unique identifier for this hop")
-    node_id: str = Field(..., description="ID of the node that processed this hop")
-    service_name: str | None = Field(None, description="Service name if applicable")
+    hop_id: UUID = Field(..., description="Unique identifier for this hop")
+    node_id: UUID = Field(..., description="ID of the node that processed this hop")
+    service_name: str | None = Field(
+        default=None, description="Service name if applicable"
+    )
 
     # Timing information
     timestamp: datetime = Field(
@@ -35,7 +33,7 @@ class ModelRouteHop(BaseModel):
         description="When this hop was processed",
     )
     processing_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Time spent processing at this hop in milliseconds",
     )
 
@@ -45,10 +43,10 @@ class ModelRouteHop(BaseModel):
         description="Type of hop: 'source', 'router', 'destination'",
     )
     routing_decision: str | None = Field(
-        None,
+        default=None,
         description="Routing decision made at this hop",
     )
-    next_hop: str | None = Field(None, description="Address of next hop chosen")
+    next_hop: str | None = Field(default=None, description="Address of next hop chosen")
 
     # Metadata and debugging
     metadata: dict[str, Any] = Field(
@@ -56,14 +54,14 @@ class ModelRouteHop(BaseModel):
         description="Additional hop-specific metadata",
     )
     error_info: str | None = Field(
-        None,
+        default=None,
         description="Error information if hop failed",
     )
 
     # Performance metrics
-    queue_depth: int | None = Field(None, description="Queue depth at this hop")
+    queue_depth: int | None = Field(default=None, description="Queue depth at this hop")
     load_factor: float | None = Field(
-        None,
+        default=None,
         description="Load factor (0.0-1.0) at this hop",
     )
 
@@ -72,13 +70,13 @@ class ModelRouteHop(BaseModel):
     @classmethod
     def create_source_hop(
         cls,
-        node_id: str,
+        node_id: UUID,
         service_name: str | None = None,
         **kwargs,
     ) -> "ModelRouteHop":
         """Create a source hop (where the event originated)."""
         return cls(
-            hop_id=f"source_{node_id}",
+            hop_id=uuid4(),
             node_id=node_id,
             service_name=service_name,
             hop_type="source",
@@ -88,14 +86,14 @@ class ModelRouteHop(BaseModel):
     @classmethod
     def create_router_hop(
         cls,
-        node_id: str,
+        node_id: UUID,
         routing_decision: str,
         next_hop: str,
         **kwargs,
     ) -> "ModelRouteHop":
         """Create a router hop (intermediate routing node)."""
         return cls(
-            hop_id=f"router_{node_id}",
+            hop_id=uuid4(),
             node_id=node_id,
             hop_type="router",
             routing_decision=routing_decision,
@@ -106,13 +104,13 @@ class ModelRouteHop(BaseModel):
     @classmethod
     def create_destination_hop(
         cls,
-        node_id: str,
+        node_id: UUID,
         service_name: str | None = None,
         **kwargs,
     ) -> "ModelRouteHop":
         """Create a destination hop (final recipient)."""
         return cls(
-            hop_id=f"destination_{node_id}",
+            hop_id=uuid4(),
             node_id=node_id,
             service_name=service_name,
             hop_type="destination",

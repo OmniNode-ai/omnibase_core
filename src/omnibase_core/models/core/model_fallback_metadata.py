@@ -7,11 +7,14 @@ class ModelFallbackMetadata(BaseModel):
     """Strongly-typed metadata model for fallback strategy configuration."""
 
     timeout_multiplier: float | None = Field(
-        None, description="Multiplier for timeout adjustments", ge=0.1, le=10.0
+        default=None, description="Multiplier for timeout adjustments", ge=0.1, le=10.0
     )
 
     retry_backoff_seconds: int | None = Field(
-        None, description="Backoff time between retries in seconds", ge=1, le=300
+        default=None,
+        description="Backoff time between retries in seconds",
+        ge=1,
+        le=300,
     )
 
     feature_flags: dict[str, bool] | None = Field(

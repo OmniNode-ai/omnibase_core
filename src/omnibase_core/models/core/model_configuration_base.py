@@ -6,7 +6,7 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Generic Configuration Base Class.
@@ -45,7 +45,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
 
     Provides standardized fields and methods found across configuration models:
     - Common metadata fields (name, description, version)
-    - Lifecycle fields (enabled, timestamps)
+    - EnumLifecycle fields (enabled, timestamps)
     - Generic typed configuration data
     - Common utility methods
 
@@ -97,7 +97,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         description="Configuration version",
     )
 
-    # Lifecycle control
+    # EnumLifecycle control
     enabled: bool = Field(default=True, description="Whether configuration is enabled")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

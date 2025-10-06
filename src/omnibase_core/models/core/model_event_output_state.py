@@ -27,18 +27,18 @@ class ModelEventOutputState(BaseModel):
         description="Execution status",
         pattern="^(success|failure|timeout|cancelled|pending)$",
     )
-    message: str | None = Field(None, description="Status message")
+    message: str | None = Field(default=None, description="Status message")
     data: dict[str, str | int | bool | float | list[str]] = Field(
         default_factory=dict,
         description="Output data",
     )
     execution_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Execution time in milliseconds",
         ge=0,
     )
     exit_code: int | None = Field(
-        None,
+        default=None,
         description="Process exit code",
         ge=0,
         le=255,

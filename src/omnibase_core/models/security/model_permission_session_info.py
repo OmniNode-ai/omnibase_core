@@ -30,7 +30,7 @@ class ModelPermissionSessionInfo(BaseModel):
 
     ip_address: str = Field(..., description="Client IP address")
 
-    user_agent: str | None = Field(None, description="Client user agent string")
+    user_agent: str | None = Field(default=None, description="Client user agent string")
 
     authentication_method: str = Field(
         "password",
@@ -44,13 +44,15 @@ class ModelPermissionSessionInfo(BaseModel):
     )
 
     mfa_verified_at: datetime | None = Field(
-        None,
+        default=None,
         description="When MFA was verified",
     )
 
-    location: str | None = Field(None, description="Geographic location of session")
+    location: str | None = Field(
+        default=None, description="Geographic location of session"
+    )
 
-    device_id: str | None = Field(None, description="Device identifier")
+    device_id: str | None = Field(default=None, description="Device identifier")
 
     device_trust_level: str = Field(
         "unknown",
@@ -68,4 +70,6 @@ class ModelPermissionSessionInfo(BaseModel):
         description="Cached permissions for this session",
     )
 
-    expires_at: datetime | None = Field(None, description="Session expiration time")
+    expires_at: datetime | None = Field(
+        default=None, description="Session expiration time"
+    )

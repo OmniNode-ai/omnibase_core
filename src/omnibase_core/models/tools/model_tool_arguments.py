@@ -16,9 +16,13 @@ class ModelToolArguments(BaseModel):
     )
     verbose: bool = Field(default=False, description="Enable verbose output")
     quiet: bool = Field(default=False, description="Enable quiet mode")
-    config_path: str | None = Field(None, description="Path to configuration file")
-    output_format: str | None = Field(None, description="Output format")
-    target_path: str | None = Field(None, description="Target path for operations")
+    config_path: str | None = Field(
+        default=None, description="Path to configuration file"
+    )
+    output_format: str | None = Field(default=None, description="Output format")
+    target_path: str | None = Field(
+        default=None, description="Target path for operations"
+    )
 
     # Additional tool-specific parameters
     parameters: list[str] = Field(

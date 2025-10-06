@@ -8,7 +8,7 @@ TypedDict for batch processing information.
 
 
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 from uuid import UUID
 
 

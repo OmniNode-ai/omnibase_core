@@ -22,19 +22,19 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.metadata.model_typed_dict_analytics_summary_data import (
-    ModelTypedDictAnalyticsSummaryData,
+    TypedDictAnalyticsSummaryData,
 )
 from omnibase_core.models.metadata.model_typed_dict_core_data import (
-    ModelTypedDictCoreData,
+    TypedDictCoreData,
 )
 from omnibase_core.models.metadata.model_typed_dict_error_data import (
-    ModelTypedDictErrorData,
+    TypedDictErrorData,
 )
 from omnibase_core.models.metadata.model_typed_dict_performance_data import (
-    ModelTypedDictPerformanceData,
+    TypedDictPerformanceData,
 )
 from omnibase_core.models.metadata.model_typed_dict_quality_data import (
-    ModelTypedDictQualityData,
+    TypedDictQualityData,
 )
 
 from .analytics.model_analytics_core import ModelAnalyticsCore
@@ -77,11 +77,11 @@ class ModelMetadataAnalyticsSummary(BaseModel):
 
     # Timestamps
     last_modified: datetime | None = Field(
-        None,
+        default=None,
         description="Last modification timestamp",
     )
     last_validated: datetime | None = Field(
-        None,
+        default=None,
         description="Last validation timestamp",
     )
 
@@ -244,10 +244,10 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     # Composite methods
     def update_all_metrics(
         self,
-        core_data: ModelTypedDictCoreData | None = None,
-        quality_data: ModelTypedDictQualityData | None = None,
-        error_data: ModelTypedDictErrorData | None = None,
-        performance_data: ModelTypedDictPerformanceData | None = None,
+        core_data: TypedDictCoreData | None = None,
+        quality_data: TypedDictQualityData | None = None,
+        error_data: TypedDictErrorData | None = None,
+        performance_data: TypedDictPerformanceData | None = None,
     ) -> None:
         """
         Update all component metrics with structured typing.
@@ -324,7 +324,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                 ),
             )
 
-    def get_comprehensive_summary(self) -> ModelTypedDictAnalyticsSummaryData:
+    def get_comprehensive_summary(self) -> TypedDictAnalyticsSummaryData:
         """Get comprehensive summary from all components."""
         return {
             "core": {

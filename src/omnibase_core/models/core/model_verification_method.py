@@ -28,11 +28,13 @@ class ModelVerificationMethod(BaseModel):
     )
 
     signature: str | None = Field(
-        None,
+        default=None,
         description="Cryptographic signature if applicable",
     )
 
-    details: str | None = Field(None, description="Additional verification details")
+    details: str | None = Field(
+        default=None, description="Additional verification details"
+    )
 
 
 # Compatibility alias

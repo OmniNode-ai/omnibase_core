@@ -2,6 +2,9 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Node Action Type Model.
 
@@ -39,7 +42,7 @@ class ModelNodeActionType(BaseModel):
         description="Whether this action requires user confirmation",
     )
     estimated_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Estimated execution time in milliseconds",
     )
 
@@ -77,7 +80,10 @@ class ModelNodeActionType(BaseModel):
         allowed_levels = {"public", "standard", "elevated", "restricted", "classified"}
         if v not in allowed_levels:
             msg = f"Security level must be one of: {allowed_levels}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("name")
@@ -86,11 +92,15 @@ class ModelNodeActionType(BaseModel):
         """Validate action name follows naming conventions."""
         if not v.islower():
             msg = "Action name must be lowercase"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if not v.replace("_", "").isalnum():
             msg = "Action name must contain only letters, numbers, and underscores"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 

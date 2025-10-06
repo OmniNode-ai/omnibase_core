@@ -16,5 +16,7 @@ class ModelCustomFilterBase(BaseModel, ABC):
     """Base class for all custom filters."""
 
     filter_type: str = Field(..., description="Type of custom filter")
-    enabled: bool = Field(True, description="Whether filter is active")
-    priority: int = Field(0, description="Filter priority (higher = applied first)")
+    enabled: bool = Field(default=True, description="Whether filter is active")
+    priority: int = Field(
+        default=0, description="Filter priority (higher = applied first)"
+    )

@@ -78,9 +78,9 @@ class NodeComputeEngine(
 
     def get_introspection_data(self) -> dict[str, Any]:  # type: ignore[override]
         """
-        Get introspection data (sync version for compatibility).
+        Get introspection data (synchronous version).
 
-        Provides a synchronous interface that's compatible with both
+        Provides a synchronous interface for both
         NodeCompute (async) and MixinEventDrivenNode (sync) expectations.
         """
         # Return basic introspection data

@@ -24,33 +24,35 @@ class ModelWorkflowMetricsDetails(BaseModel):
     """
 
     throughput_per_second: float | None = Field(
-        None,
+        default=None,
         description="Operations per second",
     )
-    success_rate: float | None = Field(None, description="Success rate percentage")
+    success_rate: float | None = Field(
+        default=None, description="Success rate percentage"
+    )
     average_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="Average latency in milliseconds",
     )
     peak_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="Peak latency in milliseconds",
     )
     queue_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Average queue time in milliseconds",
     )
-    retry_count: int | None = Field(None, description="Number of retries")
-    timeout_count: int | None = Field(None, description="Number of timeouts")
+    retry_count: int | None = Field(default=None, description="Number of retries")
+    timeout_count: int | None = Field(default=None, description="Number of timeouts")
     data_processed_bytes: int | None = Field(
-        None,
+        default=None,
         description="Total data processed in bytes",
     )
     parallel_executions: int | None = Field(
-        None,
+        default=None,
         description="Number of parallel executions",
     )
     cache_hit_rate: float | None = Field(
-        None,
+        default=None,
         description="Cache hit rate percentage",
     )

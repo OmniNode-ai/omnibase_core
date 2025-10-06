@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -23,12 +24,12 @@ from omnibase_core.models.operations.model_resource_limit_parameter import (
 from omnibase_core.models.operations.model_timeout_setting_parameter import (
     ModelTimeoutSettingParameter,
 )
-from omnibase_core.models.operations.model_workflow_config_parameter import (
-    ModelWorkflowConfigParameter,
-)
-from omnibase_core.models.operations.types_workflow_parameters import (
+from omnibase_core.models.operations.model_types_workflow_parameters import (
     ConfigExecutionParameterUnion,
     ModelWorkflowParameterValue,
+)
+from omnibase_core.models.operations.model_workflow_config_parameter import (
+    ModelWorkflowConfigParameter,
 )
 
 

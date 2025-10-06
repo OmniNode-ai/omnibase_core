@@ -15,22 +15,26 @@ class ModelConditionValue(BaseModel):
     """Strongly typed value for permission conditions."""
 
     # Only one of these should be set
-    string_value: str | None = Field(None, description="String value for comparison")
+    string_value: str | None = Field(
+        default=None, description="String value for comparison"
+    )
     integer_value: int | None = Field(
-        None,
+        default=None,
         description="Integer value for comparison",
     )
-    float_value: float | None = Field(None, description="Float value for comparison")
+    float_value: float | None = Field(
+        default=None, description="Float value for comparison"
+    )
     boolean_value: bool | None = Field(
-        None,
+        default=None,
         description="Boolean value for comparison",
     )
     list_string_value: list[str] | None = Field(
-        None,
+        default=None,
         description="List of strings for comparison",
     )
     list_integer_value: list[int] | None = Field(
-        None,
+        default=None,
         description="List of integers for comparison",
     )
 

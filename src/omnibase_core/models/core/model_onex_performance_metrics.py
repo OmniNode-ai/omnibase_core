@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_performance_metrics_config import ModelConfig
 
 if TYPE_CHECKING:
@@ -41,7 +43,10 @@ class ModelOnexPerformanceMetrics(BaseModel):
         """Validate processing time is non-negative."""
         if v < 0:
             msg = "Processing time cannot be negative"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("queue_time_ms")
@@ -50,7 +55,10 @@ class ModelOnexPerformanceMetrics(BaseModel):
         """Validate queue time is non-negative if specified."""
         if v is not None and v < 0:
             msg = "Queue time cannot be negative"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("network_time_ms")
@@ -59,7 +67,10 @@ class ModelOnexPerformanceMetrics(BaseModel):
         """Validate network time is non-negative if specified."""
         if v is not None and v < 0:
             msg = "Network time cannot be negative"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("memory_usage_mb")
@@ -68,7 +79,10 @@ class ModelOnexPerformanceMetrics(BaseModel):
         """Validate memory usage is non-negative if specified."""
         if v is not None and v < 0:
             msg = "Memory usage cannot be negative"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("cpu_usage_percent")
@@ -77,7 +91,10 @@ class ModelOnexPerformanceMetrics(BaseModel):
         """Validate CPU usage is between 0 and 100 if specified."""
         if v is not None and (v < 0 or v > 100):
             msg = "CPU usage must be between 0 and 100"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     def get_total_time_ms(self) -> float:

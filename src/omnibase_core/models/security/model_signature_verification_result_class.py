@@ -21,7 +21,7 @@ class ModelSignatureVerificationResult(BaseModel):
         description="Chain validation details",
     )
     policy_validation: ModelPolicyValidation | None = Field(
-        None,
+        default=None,
         description="Policy validation if applicable",
     )
     verified_at: str = Field(..., description="Verification timestamp")

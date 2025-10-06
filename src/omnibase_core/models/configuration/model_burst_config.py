@@ -61,7 +61,7 @@ class ModelBurstConfig(BaseModel):
     )
 
     max_burst_capacity: int | None = Field(
-        None,
+        default=None,
         description="Absolute maximum burst capacity regardless of multiplier",
         ge=1,
         le=1000000,

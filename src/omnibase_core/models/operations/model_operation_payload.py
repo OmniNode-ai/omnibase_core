@@ -71,7 +71,7 @@ class ModelOperationPayload(BaseModel):
         Field(discriminator="operation_type"),
     ] = Field(..., description="Operation-specific data with discriminated union")
     execution_metadata: ModelExecutionMetadata | None = Field(
-        None,
+        default=None,
         description="Execution metadata for the operation",
     )
 

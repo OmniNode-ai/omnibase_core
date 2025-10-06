@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+from uuid import UUID
 
 from pydantic import Field
 
@@ -28,11 +29,15 @@ class ModelErrorSummary(BaseModel):
         default_factory=datetime.utcnow,
         description="When error occurred",
     )
-    component: str | None = Field(None, description="Component where error occurred")
-    operation: str | None = Field(None, description="Operation that failed")
+    component: str | None = Field(
+        default=None, description="Component where error occurred"
+    )
+    operation: str | None = Field(default=None, description="Operation that failed")
 
     # Error details
-    stack_trace: str | None = Field(None, description="Stack trace if available")
+    stack_trace: str | None = Field(
+        default=None, description="Stack trace if available"
+    )
     inner_errors: list[dict[str, str]] | None = Field(
         default_factory=list,
         description="Nested/inner errors",
@@ -44,7 +49,7 @@ class ModelErrorSummary(BaseModel):
 
     # Impact and resolution
     impact_level: str | None = Field(
-        None,
+        default=None,
         description="Impact level (low/medium/high/critical)",
     )
     affected_resources: list[str] | None = Field(
@@ -57,12 +62,14 @@ class ModelErrorSummary(BaseModel):
     )
 
     # Tracking
-    error_id: str | None = Field(None, description="Unique error instance ID")
-    correlation_id: str | None = Field(
-        None,
+    error_id: UUID | None = Field(default=None, description="Unique error instance ID")
+    correlation_id: UUID | None = Field(
+        default=None,
         description="Correlation ID for tracing",
     )
-    has_been_reported: bool = Field(False, description="Whether error was reported")
+    has_been_reported: bool = Field(
+        default=False, description="Whether error was reported"
+    )
 
     model_config = ConfigDict()
 
@@ -74,7 +81,7 @@ class ModelErrorSummary(BaseModel):
         return cls(**data)
 
     @field_serializer("occurred_at")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

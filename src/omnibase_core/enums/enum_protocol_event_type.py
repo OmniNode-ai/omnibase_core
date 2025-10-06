@@ -8,7 +8,7 @@ from enum import Enum
 class EnumProtocolEventType(str, Enum):
     """Standard event types for protocol-based event publishing."""
 
-    # Lifecycle events
+    # EnumLifecycle events
     CREATED = "CREATED"
     UPDATED = "UPDATED"
     DELETED = "DELETED"

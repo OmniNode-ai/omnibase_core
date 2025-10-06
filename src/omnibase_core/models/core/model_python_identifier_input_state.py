@@ -11,4 +11,6 @@ class ModelPythonIdentifierInputState(ModelOnexInputState):
     """Input state for Python identifier validation operations."""
 
     identifier: str = Field(..., description="Identifier to validate/sanitize")
-    sanitize: bool = Field(False, description="Whether to sanitize invalid identifiers")
+    sanitize: bool = Field(
+        default=False, description="Whether to sanitize invalid identifiers"
+    )

@@ -1,10 +1,6 @@
 """Constants module for omnibase_core."""
 
 from omnibase_core.constants import constants_contract_fields
-from omnibase_core.constants.constants_contract_fields import (
-    NODE_INTROSPECTION_EVENT,
-    TOOL_DISCOVERY_REQUEST,
-)
 from omnibase_core.constants.event_types import (
     NODE_FAILURE,
     NODE_HEALTH_CHECK,

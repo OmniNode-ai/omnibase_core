@@ -19,11 +19,13 @@ class ModelOrchestratorResult(BaseModel):
     status: str = Field(..., description="Orchestration status")
 
     # Execution details
-    graph: ModelOrchestratorGraph | None = Field(None, description="Graph used")
-    plan: ModelOrchestratorPlan | None = Field(None, description="Plan executed")
+    graph: ModelOrchestratorGraph | None = Field(default=None, description="Graph used")
+    plan: ModelOrchestratorPlan | None = Field(
+        default=None, description="Plan executed"
+    )
 
     # Structured output
     output: ModelOrchestratorOutput | None = Field(
-        None,
+        default=None,
         description="Orchestration output",
     )

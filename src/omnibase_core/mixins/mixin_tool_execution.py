@@ -124,7 +124,9 @@ class MixinToolExecution:
 
             return input_state_class(**param_dict)
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: resilient input parsing, fallback to dict with logging
             emit_log_event(
                 LogLevel.WARNING,
                 f"⚠️ Failed to create typed input state, using dict[str, Any]: {e!s}",

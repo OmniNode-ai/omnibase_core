@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Function node summary model.
@@ -47,10 +47,10 @@ class ModelFunctionNodeSummary(BaseModel):
         description="Unique identifier for the function entity",
     )
     function_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable function name",
     )
-    description: str | None = Field(None, description="Function description")
+    description: str | None = Field(default=None, description="Function description")
     status: EnumFunctionStatus = Field(
         default=EnumFunctionStatus.ACTIVE,
         description="Function status",
@@ -67,7 +67,7 @@ class ModelFunctionNodeSummary(BaseModel):
     # Function signature summary
     parameter_count: int = Field(default=0, description="Number of parameters")
     return_type: EnumReturnType | None = Field(
-        None,
+        default=None,
         description="Return type annotation",
     )
 
@@ -91,11 +91,13 @@ class ModelFunctionNodeSummary(BaseModel):
     execution_count: int = Field(default=0, description="Number of executions")
 
     # Timestamps (essential only)
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     # Organization (condensed)
     primary_category: EnumActionCategory | None = Field(
-        None,
+        default=None,
         description="Primary function category",
     )
     tag_count: int = Field(default=0, description="Number of tags")

@@ -7,12 +7,14 @@ Strongly-typed model for checkpoint data in ONEX storage backends.
 
 from datetime import datetime
 from typing import Any, Dict
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_checkpoint_status import EnumCheckpointStatus
 from omnibase_core.enums.enum_checkpoint_type import EnumCheckpointType
 from omnibase_core.models.core.model_checkpoint_data_config import ModelConfig
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelCheckpointData(BaseModel):
@@ -23,9 +25,9 @@ class ModelCheckpointData(BaseModel):
     with comprehensive metadata and versioning support.
     """
 
-    checkpoint_id: str = Field(description="Unique checkpoint identifier")
+    checkpoint_id: UUID = Field(description="Unique checkpoint identifier")
 
-    workflow_id: str = Field(description="Associated workflow identifier")
+    workflow_id: UUID = Field(description="Associated workflow identifier")
 
     checkpoint_type: EnumCheckpointType = Field(
         description="Type of checkpoint",
@@ -56,7 +58,7 @@ class ModelCheckpointData(BaseModel):
         default_factory=datetime.now,
     )
 
-    version: str = Field(
+    version: ModelSemVer = Field(
         description="Checkpoint data format version",
         default="1.0.0",
     )

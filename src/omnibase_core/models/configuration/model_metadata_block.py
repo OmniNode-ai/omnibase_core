@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums import MetaTypeEnum, ProtocolVersionEnum, RuntimeLanguageEnum
-from omnibase_core.enums.enum_metadata import Lifecycle
+from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
+from omnibase_core.enums.enum_metadata import EnumLifecycle
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import ModelCoreErrorCode
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
@@ -28,8 +28,8 @@ class ModelMetadataBlock(BaseModel):
     """
     Canonical ONEX metadata block for validators/tools.
     - tools: ToolCollection (not dict[str, Any])
-    - meta_type: MetaTypeEnum (not str)
-    - lifecycle: Lifecycle (not str)
+    - meta_type: EnumMetaType (not str)
+    - lifecycle: EnumLifecycle (not str)
     """
 
     metadata_version: str = Field(
@@ -40,14 +40,14 @@ class ModelMetadataBlock(BaseModel):
     namespace: "Namespace"
     version: str = Field(..., description="Semantic version, e.g., 0.1.0")
     entrypoint: str | None = Field(
-        None,
+        default=None,
         description="Entrypoint URI string (e.g., python://file.py)",
     )
     protocols_supported: list[str] = Field(
         ...,
         description="List of supported protocols",
     )
-    protocol_version: ProtocolVersionEnum = Field(
+    protocol_version: EnumProtocolVersion = Field(
         ...,
         description="Protocol version, e.g., 0.1.0",
     )
@@ -57,28 +57,30 @@ class ModelMetadataBlock(BaseModel):
     created_at: str = Field(...)
     last_modified_at: str = Field(...)
     description: str | None = Field(
-        None,
+        default=None,
         description="Optional description of the validator/tool",
     )
-    tags: list[str] | None = Field(None, description="Optional list[Any]of tags")
+    tags: list[str] | None = Field(
+        default=None, description="Optional list[Any]of tags"
+    )
     dependencies: list[str] | None = Field(
-        None,
+        default=None,
         description="Optional list[Any]of dependencies",
     )
     config: ModelMetadataConfig | None = Field(
-        None,
+        default=None,
         description="Optional config model",
     )
-    meta_type: MetaTypeEnum = Field(
-        default=MetaTypeEnum.UNKNOWN,
+    meta_type: EnumMetaType = Field(
+        default=EnumMetaType.UNKNOWN,
         description="Meta type of the node/tool",
     )
-    runtime_language_hint: RuntimeLanguageEnum = Field(
-        RuntimeLanguageEnum.UNKNOWN,
+    runtime_language_hint: EnumRuntimeLanguage = Field(
+        EnumRuntimeLanguage.UNKNOWN,
         description="Runtime language hint",
     )
     tools: ToolCollection | None = None
-    lifecycle: Lifecycle = Field(default=Lifecycle.ACTIVE)
+    lifecycle: EnumLifecycle = Field(default=EnumLifecycle.ACTIVE)
 
     @field_validator("metadata_version")
     @classmethod

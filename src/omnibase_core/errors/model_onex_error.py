@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
 """
 ONEX Error Base Class
@@ -55,13 +55,14 @@ from omnibase_core.errors.error_codes import (
     get_exit_code_for_status,
 )
 
-# Import extracted models
-from omnibase_core.models.common.model_onex_error_data import _ModelOnexErrorData
+# Import basic types (no circular dependency risk)
 from omnibase_core.types.core_types import BasicErrorContext
 
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports
+# _ModelOnexErrorData moved here to break circular import chain
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_error_context import ModelErrorContext
+    from omnibase_core.models.common.model_onex_error_data import _ModelOnexErrorData
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -101,6 +102,11 @@ class ModelOnexError(Exception):
         """
         # Initialize the Exception
         super().__init__(message)
+
+        # Local import to avoid circular dependency
+        from omnibase_core.models.common.model_onex_error_data import (
+            _ModelOnexErrorData,
+        )
 
         # Handle correlation ID using UUID architecture pattern
         # ONEX principle: Use canonical UUID type throughout, not strings
@@ -239,6 +245,8 @@ class ModelOnexError(Exception):
     @property
     def correlation_id(self) -> UUID:
         """Get the correlation ID."""
+        # correlation_id is always set during initialization (never None)
+        assert self.model.correlation_id is not None
         return self.model.correlation_id
 
     @property
@@ -285,6 +293,11 @@ class ModelOnexError(Exception):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelOnexError":
         """Create ModelOnexError from dict[str, Any]ionary."""
+        # Local import to avoid circular dependency
+        from omnibase_core.models.common.model_onex_error_data import (
+            _ModelOnexErrorData,
+        )
+
         model = _ModelOnexErrorData.model_validate(data)
         return cls(
             message=model.message,
@@ -298,6 +311,11 @@ class ModelOnexError(Exception):
     @classmethod
     def from_json(cls, json_str: str) -> "ModelOnexError":
         """Create ModelOnexError from JSON string."""
+        # Local import to avoid circular dependency
+        from omnibase_core.models.common.model_onex_error_data import (
+            _ModelOnexErrorData,
+        )
+
         model = _ModelOnexErrorData.model_validate_json(json_str)
         return cls(
             message=model.message,
@@ -311,4 +329,9 @@ class ModelOnexError(Exception):
     @classmethod
     def model_json_schema(cls) -> dict[str, Any]:
         """Get the JSON schema for ModelOnexError."""
+        # Local import to avoid circular dependency
+        from omnibase_core.models.common.model_onex_error_data import (
+            _ModelOnexErrorData,
+        )
+
         return _ModelOnexErrorData.model_json_schema()

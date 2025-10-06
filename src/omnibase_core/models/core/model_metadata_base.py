@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Metadata Base Model.
@@ -27,7 +27,9 @@ class ModelMetadataBase(BaseModel):
         description="Creation timestamp",
     )
 
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),

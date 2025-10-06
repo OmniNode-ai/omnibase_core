@@ -30,9 +30,9 @@ class ModelPoolRecommendations(BaseModel):
     )
 
     # Current vs recommended analysis
-    current_pool_size: int | None = Field(None, description="Current pool size")
+    current_pool_size: int | None = Field(default=None, description="Current pool size")
     pool_size_delta: int | None = Field(
-        None,
+        default=None,
         description="Difference from recommended",
     )
 
@@ -48,20 +48,20 @@ class ModelPoolRecommendations(BaseModel):
 
     # Performance impact
     expected_connection_wait_reduction: float | None = Field(
-        None,
+        default=None,
         description="Expected wait time reduction percentage",
     )
     expected_throughput_increase: float | None = Field(
-        None,
+        default=None,
         description="Expected throughput increase percentage",
     )
 
     # Resource impact
     memory_impact_mb: float | None = Field(
-        None,
+        default=None,
         description="Additional memory usage in MB",
     )
     connection_overhead: int | None = Field(
-        None,
+        default=None,
         description="Additional database connections",
     )

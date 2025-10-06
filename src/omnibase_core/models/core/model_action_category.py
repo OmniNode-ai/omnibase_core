@@ -1,5 +1,8 @@
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Action Category Model.
 
@@ -34,11 +37,15 @@ class ModelActionCategory(BaseModel):
         """Validate category name follows naming conventions."""
         if not v.islower():
             msg = "Category name must be lowercase"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if not v.replace("_", "").isalnum():
             msg = "Category name must contain only letters, numbers, and underscores"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
@@ -69,7 +76,10 @@ class ModelActionCategory(BaseModel):
         category = cls._registry.get(name)
         if not category:
             msg = f"Unknown category: {name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return category
 
     @classmethod

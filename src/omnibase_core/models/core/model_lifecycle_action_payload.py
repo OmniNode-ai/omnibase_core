@@ -1,7 +1,10 @@
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
-Lifecycle Action Payload Model.
+EnumLifecycle Action Payload Model.
 
 Payload for lifecycle actions (health_check, initialize, shutdown, etc.).
 """
@@ -16,7 +19,7 @@ class ModelLifecycleActionPayload(ModelActionPayloadBase):
     """Payload for lifecycle actions (health_check, initialize, shutdown, etc.)."""
 
     timeout_seconds: int | None = Field(
-        None,
+        default=None,
         description="Timeout for the lifecycle action",
     )
     graceful: bool = Field(
@@ -32,5 +35,8 @@ class ModelLifecycleActionPayload(ModelActionPayloadBase):
 
         if v.category != LIFECYCLE:
             msg = f"Invalid lifecycle action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

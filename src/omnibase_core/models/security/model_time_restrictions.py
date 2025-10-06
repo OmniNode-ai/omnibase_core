@@ -13,19 +13,19 @@ class ModelTimeRestrictions(BaseModel):
     """Time-based access restrictions."""
 
     start_time: str | None = Field(
-        None,
+        default=None,
         description="Start time in HH:MM format",
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
     end_time: str | None = Field(
-        None,
+        default=None,
         description="End time in HH:MM format",
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
     allowed_days: str | None = Field(
-        None,
+        default=None,
         description="Allowed days (Monday-Sunday or Mon-Sun)",
         pattern=r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)(,(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun))*$",
     )

@@ -9,8 +9,11 @@ Strongly typed model for additional metadata fields.
 """
 
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelAdditionalFields(BaseModel):
@@ -29,15 +32,15 @@ class ModelAdditionalFields(BaseModel):
         default=None,
         description="Optional tools configuration",
     )
-    metadata_version: str | None = Field(
+    metadata_version: ModelSemVer | None = Field(
         default=None,
         description="Optional metadata version override",
     )
-    protocol_version: str | None = Field(
+    protocol_version: ModelSemVer | None = Field(
         default=None,
         description="Optional protocol version override",
     )
-    schema_version: str | None = Field(
+    schema_version: ModelSemVer | None = Field(
         default=None,
         description="Optional schema version override",
     )

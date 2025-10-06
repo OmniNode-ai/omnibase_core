@@ -93,10 +93,10 @@ class ModelNamespace(BaseModel):
     def to_serializable_dict(self) -> str:
         return self.value
 
-    def __str__(self):
+    def __str__(self) -> None:
         return self.value
 
-    def model_dump(self, *args, **kwargs):
+    def model_dump(self, *args, **kwargs) -> None:
         # Always dump as a string for YAML/JSON
         return self.value
 

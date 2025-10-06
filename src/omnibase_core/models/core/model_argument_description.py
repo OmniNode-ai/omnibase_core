@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI Argument Description Model
 
@@ -35,24 +38,24 @@ class ModelArgumentDescription(BaseModel):
     required: bool = Field(default=False, description="Whether argument is required")
 
     default_value: str | int | bool | float | list[str] | None = Field(
-        None,
+        default=None,
         description="Default value if not provided",
     )
 
     choices: list[str] | None = Field(
-        None,
+        default=None,
         description="Valid choices for enum-like arguments",
     )
 
     validation_pattern: str | None = Field(
-        None,
+        default=None,
         description="Regex validation pattern",
     )
 
     examples: list[str] = Field(default_factory=list, description="Usage examples")
 
     short_name: str | None = Field(
-        None,
+        default=None,
         description="Short argument name (single letter)",
         pattern=r"^[a-z]$",
     )
@@ -89,8 +92,9 @@ class ModelArgumentDescription(BaseModel):
         if self.type == EnumArgumentType.STRING:
             if self.choices and value not in self.choices:
                 msg = f"Value '{value}' not in valid choices: {self.choices}"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
             return value
 
@@ -99,14 +103,20 @@ class ModelArgumentDescription(BaseModel):
                 return int(value)
             except ValueError:
                 msg = f"Invalid integer value: '{value}'"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
         elif self.type == EnumArgumentType.FLOAT:
             try:
                 return float(value)
             except ValueError:
                 msg = f"Invalid float value: '{value}'"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
         elif self.type == EnumArgumentType.BOOLEAN:
             if value.lower() in ("true", "1", "yes", "on"):
@@ -114,7 +124,10 @@ class ModelArgumentDescription(BaseModel):
             if value.lower() in ("false", "0", "no", "off"):
                 return False
             msg = f"Invalid boolean value: '{value}'"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         elif self.type == EnumArgumentType.LIST:
             # Assume comma-separated values

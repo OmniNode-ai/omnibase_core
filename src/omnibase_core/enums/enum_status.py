@@ -29,7 +29,7 @@ class EnumStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-    # Lifecycle states
+    # EnumLifecycle states
     CREATED = "created"
     UPDATED = "updated"
     DELETED = "deleted"

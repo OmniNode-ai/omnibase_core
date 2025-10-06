@@ -21,16 +21,16 @@ class ModelNodeMetadata(BaseModel):
     This is the core model used across all ONEX systems.
     """
 
-    created_at: str | None = Field(None, description="Creation timestamp")
-    updated_at: str | None = Field(None, description="Last update timestamp")
-    author: str | None = Field(None, description="Node author")
-    license: str | None = Field(None, description="License information")
-    repository: str | None = Field(None, description="Source repository")
-    documentation_url: str | None = Field(None, description="Documentation URL")
+    created_at: str | None = Field(default=None, description="Creation timestamp")
+    updated_at: str | None = Field(default=None, description="Last update timestamp")
+    author: str | None = Field(default=None, description="Node author")
+    license: str | None = Field(default=None, description="License information")
+    repository: str | None = Field(default=None, description="Source repository")
+    documentation_url: str | None = Field(default=None, description="Documentation URL")
     tags: list[str] = Field(default_factory=list, description="Node tags")
-    version: str | None = Field(None, description="Node version")
-    description: str | None = Field(None, description="Node description")
-    category: str | None = Field(None, description="Node category")
+    version: str | None = Field(default=None, description="Node version")
+    description: str | None = Field(default=None, description="Node description")
+    category: str | None = Field(default=None, description="Node category")
     dependencies: list[str] = Field(
         default_factory=list,
         description="Node dependencies",

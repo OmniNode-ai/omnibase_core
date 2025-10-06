@@ -3,6 +3,9 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelRouteSpec: Routing specifications and strategy
 
@@ -73,13 +76,13 @@ class ModelRouteSpec(BaseModel):
         description="Delivery mode: 'best_effort', 'guaranteed', 'at_least_once'",
     )
     timeout_ms: int | None = Field(
-        None,
+        default=None,
         description="Maximum routing timeout in milliseconds",
     )
 
     @field_validator("final_destination")
     @classmethod
-    def validate_destination_address(cls, v):
+    def validate_destination_address(cls, v: str) -> str:
         """Validate destination address format."""
         valid_patterns = [
             r"^node://[a-f0-9-]+$",  # node://uuid
@@ -91,12 +94,15 @@ class ModelRouteSpec(BaseModel):
 
         if not any(re.match(pattern, v) for pattern in valid_patterns):
             msg = f"Invalid destination address format: {v}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("remaining_hops")
     @classmethod
-    def validate_hop_addresses(cls, v):
+    def validate_hop_addresses(cls, v: list[str]) -> list[str]:
         """Validate hop address formats."""
         for hop in v:
             # Use same validation as final_destination
@@ -107,53 +113,64 @@ class ModelRouteSpec(BaseModel):
             ]
             if not any(re.match(pattern, hop) for pattern in valid_patterns):
                 msg = f"Invalid hop address format: {hop}"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
         return v
 
     @field_validator("routing_strategy")
     @classmethod
-    def validate_routing_strategy(cls, v):
+    def validate_routing_strategy(cls, v: str) -> str:
         """Validate routing strategy."""
         valid_strategies = ["explicit", "dynamic", "anycast", "broadcast", "multicast"]
         if v not in valid_strategies:
             msg = f"Invalid routing strategy: {v}. Must be one of {valid_strategies}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("delivery_mode")
     @classmethod
-    def validate_delivery_mode(cls, v):
+    def validate_delivery_mode(cls, v: str) -> str:
         """Validate delivery mode."""
         valid_modes = ["best_effort", "guaranteed", "at_least_once", "at_most_once"]
         if v not in valid_modes:
             msg = f"Invalid delivery mode: {v}. Must be one of {valid_modes}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
     @field_validator("ttl")
     @classmethod
-    def validate_ttl(cls, v):
+    def validate_ttl(cls, v: int) -> int:
         """Validate TTL is reasonable."""
         if v < 1 or v > 255:
             msg = "TTL must be between 1 and 255"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("priority")
     @classmethod
-    def validate_priority(cls, v):
+    def validate_priority(cls, v: int) -> int:
         """Validate priority range."""
         if v < 1 or v > 10:
             msg = "Priority must be between 1 (highest) and 10 (lowest)"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @classmethod
-    def create_direct_route(cls, destination: str, **kwargs) -> "ModelRouteSpec":
+    def create_direct_route(cls, destination: str, **kwargs: Any) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
         return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)
 
@@ -162,7 +179,7 @@ class ModelRouteSpec(BaseModel):
         cls,
         destination: str,
         hops: list[str],
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRouteSpec":
         """Create an explicit route through specified hops."""
         return cls(
@@ -173,7 +190,9 @@ class ModelRouteSpec(BaseModel):
         )
 
     @classmethod
-    def create_anycast_route(cls, service_pattern: str, **kwargs) -> "ModelRouteSpec":
+    def create_anycast_route(
+        cls, service_pattern: str, **kwargs: Any
+    ) -> "ModelRouteSpec":
         """Create anycast route to any instance of a service."""
         return cls(
             final_destination=service_pattern,
@@ -182,7 +201,7 @@ class ModelRouteSpec(BaseModel):
         )
 
     @classmethod
-    def create_broadcast_route(cls, **kwargs) -> "ModelRouteSpec":
+    def create_broadcast_route(cls, **kwargs: Any) -> "ModelRouteSpec":
         """Create broadcast route to all nodes."""
         return cls(
             final_destination="broadcast://all",

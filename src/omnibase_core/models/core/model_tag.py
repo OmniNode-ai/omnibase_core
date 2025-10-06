@@ -31,15 +31,15 @@ class ModelTag(BaseModel):
 
     display_name: str = Field(..., description="Display name")
 
-    description: str | None = Field(None, description="Tag description")
+    description: str | None = Field(default=None, description="Tag description")
 
     color: str | None = Field(
-        None,
+        default=None,
         description="Hex color code",
         pattern="^#[0-9A-Fa-f]{6}$",
     )
 
-    icon: str | None = Field(None, description="Icon identifier")
+    icon: str | None = Field(default=None, description="Icon identifier")
 
     created_by: str = Field(..., description="Creator identifier")
 
@@ -51,7 +51,7 @@ class ModelTag(BaseModel):
     is_system: bool = Field(default=False, description="System-defined tag")
 
     parent_tag: str | None = Field(
-        None,
+        default=None,
         description="Parent tag for hierarchical organization",
     )
 

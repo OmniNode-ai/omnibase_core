@@ -11,12 +11,14 @@ class ModelConnectionMetrics(BaseModel):
     """Connection performance metrics."""
 
     latency_ms: float | None = Field(
-        None,
+        default=None,
         description="Connection latency in milliseconds",
     )
-    throughput_mbps: float | None = Field(None, description="Throughput in Mbps")
+    throughput_mbps: float | None = Field(
+        default=None, description="Throughput in Mbps"
+    )
     packet_loss_percent: float | None = Field(
-        None,
+        default=None,
         description="Packet loss percentage",
     )
-    jitter_ms: float | None = Field(None, description="Jitter in milliseconds")
+    jitter_ms: float | None = Field(default=None, description="Jitter in milliseconds")

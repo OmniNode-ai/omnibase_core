@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Example input data model.
@@ -55,7 +55,7 @@ class ModelExampleInputData(BaseModel):
 
     # Validation info
     schema_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Schema version for validation",
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")

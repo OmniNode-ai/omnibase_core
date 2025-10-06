@@ -2,6 +2,8 @@ import json
 
 from pydantic import Field
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 """
 Model for tool implementation references.
 
@@ -34,7 +36,7 @@ class ModelToolImplementation(BaseModel):
     )
 
     # Implementation metadata
-    version: str = Field(..., description="Version of the tool implementation")
+    version: ModelSemVer = Field(..., description="Version of the tool implementation")
     registry_source: str = Field(
         ...,
         description="Registry that provided this implementation",
@@ -55,9 +57,11 @@ class ModelToolImplementation(BaseModel):
     )
 
     # Health and validation
-    is_healthy: bool = Field(True, description="Whether the implementation is healthy")
+    is_healthy: bool = Field(
+        default=True, description="Whether the implementation is healthy"
+    )
     health_message: str | None = Field(
-        None,
+        default=None,
         description="Health status message if unhealthy",
     )
 

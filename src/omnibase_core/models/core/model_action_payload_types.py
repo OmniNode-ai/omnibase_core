@@ -1,5 +1,8 @@
 from typing import Union
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Action Payload Type Hierarchies.
 
@@ -111,4 +114,7 @@ def create_specific_action_payload(
         return payload_class(action_type=action_type, **kwargs)  # type: ignore
 
     msg = f"Unknown action type: {action_type.name}"
-    raise ValueError(msg)
+    raise ModelOnexError(
+        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+        message=msg,
+    )

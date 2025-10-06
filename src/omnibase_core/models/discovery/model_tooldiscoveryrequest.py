@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import Field
 
 from omnibase_core.constants.constants_contract_fields import TOOL_DISCOVERY_REQUEST
@@ -21,20 +23,20 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
     )
 
     # Request identification
-    requester_id: str = Field(
+    requester_id: UUID = Field(
         ...,
         description="ID of the service requesting discovery (e.g. 'mcp_server')",
     )
 
     # Query parameters
     filters: ModelDiscoveryFilters | None = Field(
-        None,
+        default=None,
         description="Filters to apply to the discovery request",
     )
 
     # Response control
     max_results: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of results to return",
     )
     timeout_ms: int | None = Field(
@@ -49,8 +51,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
     @classmethod
     def create_simple_request(
         cls,
-        node_id: str,
-        requester_id: str,
+        node_id: UUID,
+        requester_id: UUID,
         tags: list[str] | None = None,
         protocols: list[str] | None = None,
         correlation_id=None,
@@ -85,8 +87,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
     @classmethod
     def create_mcp_request(
         cls,
-        requester_id: str = "mcp_server",
-        node_id: str = "mcp_server",
+        requester_id: UUID = "mcp_server",
+        node_id: UUID = "mcp_server",
         correlation_id=None,
         **kwargs,
     ) -> "ModelToolDiscoveryRequest":

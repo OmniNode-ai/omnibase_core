@@ -2,6 +2,9 @@ from typing import Generic, List, Optional
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Enterprise Missing Tool Model.
 
@@ -151,14 +154,20 @@ class ModelMissingTool(BaseModel):
         """Validate tool name format."""
         if not v.strip():
             msg = "Tool name cannot be empty"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Check for valid Python identifier-like names
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v.strip()):
             # Allow some flexibility for tool names with dots or hyphens
             if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):
                 msg = "Tool name should be a valid identifier-like string"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
         return v.strip()
 
@@ -168,7 +177,10 @@ class ModelMissingTool(BaseModel):
         """Validate expected type format."""
         if not v.strip():
             msg = "Expected type cannot be empty"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Basic validation for Python type annotations
         # Allow common patterns like 'str', 'Optional[str]', 'Protocol[...]', etc.
@@ -186,7 +198,10 @@ class ModelMissingTool(BaseModel):
             return v
         except ValueError:
             msg = "first_detected must be a valid ISO timestamp"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
     # === Classification and Analysis ===
 

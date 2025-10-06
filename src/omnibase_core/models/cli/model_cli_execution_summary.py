@@ -43,7 +43,7 @@ class ModelCliExecutionSummary(BaseModel):
     execution_id: UUID = Field(..., description="Unique execution identifier")
     command_id: UUID = Field(..., description="UUID identifier for the CLI command")
     command_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable command name",
     )
     target_node_id: UUID | None = Field(

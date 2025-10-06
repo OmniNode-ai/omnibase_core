@@ -101,7 +101,7 @@ class ModelLogFormatting(BaseModel):
 
         field_map = {
             "timestamp": (
-                datetime.datetime.now().strftime(self.timestamp_format)
+                datetime.now().strftime(self.timestamp_format)
                 if self.include_timestamp
                 else None
             ),
@@ -127,7 +127,7 @@ class ModelLogFormatting(BaseModel):
         base_data = {"message": message}
 
         if self.include_timestamp:
-            base_data["timestamp"] = datetime.datetime.now().isoformat()
+            base_data["timestamp"] = datetime.now().isoformat()
         if self.include_level:
             base_data["level"] = level
         if self.include_logger_name:
@@ -149,7 +149,7 @@ class ModelLogFormatting(BaseModel):
         base_parts = []
         if self.include_timestamp:
             base_parts.append(
-                f"timestamp={datetime.datetime.now().strftime(self.timestamp_format)}"
+                f"timestamp={datetime.now().strftime(self.timestamp_format)}"
             )
         if self.include_level:
             base_parts.append(f"level={level}")

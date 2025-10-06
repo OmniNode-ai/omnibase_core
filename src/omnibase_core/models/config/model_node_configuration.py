@@ -5,6 +5,9 @@ from omnibase_spi.protocols.core import ProtocolNodeConfiguration
 from omnibase_spi.protocols.types.core_types import ContextValue
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 from .model_business_logic_config import ModelBusinessLogicConfig
 from .model_performance_config import ModelPerformanceConfig
 from .model_security_config import ModelSecurityConfig
@@ -120,7 +123,10 @@ class ModelNodeConfiguration(BaseModel):
             else:
                 if default is not None:
                     return default
-                raise KeyError(f"Configuration key '{key}' not found")
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                    message=f"Configuration key '{key}' not found",
+                )
 
         return current
 

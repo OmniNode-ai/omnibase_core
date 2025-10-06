@@ -7,9 +7,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
+from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Import base envelope and security models
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
@@ -19,16 +24,14 @@ from omnibase_core.models.security.model_policy_context import ModelPolicyContex
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
 from omnibase_core.models.security.model_security_summary import ModelSecuritySummary
-from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
-from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 
+from ..core.model_trust_level import ModelTrustLevel
 from .model_chain_metrics import ModelChainMetrics
 from .model_compliance_metadata import ModelComplianceMetadata
 from .model_encryption_metadata import ModelEncryptionMetadata
 from .model_node_signature import ModelNodeSignature
 from .model_signature_chain import ModelSignatureChain
 from .model_signing_policy import ModelSigningPolicy
-from ..core.model_trust_level import ModelTrustLevel
 from .model_trust_policy import ModelTrustPolicy
 
 if TYPE_CHECKING:
@@ -50,7 +53,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
 
     # Enhanced security context
     security_context: ModelSecurityContext | None = Field(
-        None,
+        default=None,
         description="Enhanced security context with JWT and RBAC",
     )
 
@@ -62,8 +65,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             content_hash="initial",  # Will be calculated from envelope content
             signing_policy=None,
             chain_metrics=ModelChainMetrics(
-                chain_build_time_ms=0.0,
-                cache_hit_rate=0.0
+                chain_build_time_ms=0.0, cache_hit_rate=0.0
             ),
         ),
         description="Cryptographic signature chain for audit trail",
@@ -71,7 +73,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
 
     # Trust and policy enforcement
     trust_policy: ModelTrustPolicy | None = Field(
-        None,
+        default=None,
         description="Trust policy governing signature requirements",
     )
     required_trust_level: ModelTrustLevel = Field(
@@ -93,26 +95,25 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         description="Whether payload is encrypted",
     )
     encryption_metadata: ModelEncryptionMetadata | None = Field(
-        None,
+        default=None,
         description="Encryption details if payload is encrypted",
     )
     encrypted_payload: str | None = Field(
-        None,
+        default=None,
         description="Base64-encoded encrypted payload",
     )
 
     # Compliance and regulatory
     compliance_metadata: ModelComplianceMetadata = Field(
         default_factory=lambda: ModelComplianceMetadata(
-            retention_period_days=365,
-            jurisdiction="US"
+            retention_period_days=365, jurisdiction="US"
         ),
         description="Compliance and regulatory metadata",
     )
 
     # Security clearance and access control
     security_clearance_required: str | None = Field(
-        None,
+        default=None,
         description="Required security clearance level",
     )
     authorized_roles: list[str] = Field(
@@ -174,10 +175,16 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         """Validate minimum signature count."""
         if v < 0:
             msg = "Minimum signatures cannot be negative"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if v > 50:
             msg = "Minimum signatures cannot exceed 50"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     def _update_content_hash(self) -> None:
@@ -236,7 +243,10 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         # Ensure signature includes current content hash
         if signature.envelope_state_hash != self.content_hash:
             msg = "Signature envelope state hash mismatch"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Add to signature chain
         self.signature_chain.add_signature(signature)
@@ -298,17 +308,37 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
                 chain_validation=ModelChainValidation(
                     chain_id=str(chain_summary["chain_id"]),
                     envelope_id=str(chain_summary["envelope_id"]),
-                    signature_count=int(chain_summary["signature_count"]) if isinstance(chain_summary["signature_count"], int) else 0,
-                    unique_signers=int(chain_summary["unique_signers"]) if isinstance(chain_summary["unique_signers"], int) else 0,
-                    operations=chain_summary["operations"] if isinstance(chain_summary["operations"], list) else [],
-                    algorithms=chain_summary["algorithms"] if isinstance(chain_summary["algorithms"], list) else [],
+                    signature_count=(
+                        int(chain_summary["signature_count"])
+                        if isinstance(chain_summary["signature_count"], int)
+                        else 0
+                    ),
+                    unique_signers=(
+                        int(chain_summary["unique_signers"])
+                        if isinstance(chain_summary["unique_signers"], int)
+                        else 0
+                    ),
+                    operations=(
+                        chain_summary["operations"]
+                        if isinstance(chain_summary["operations"], list)
+                        else []
+                    ),
+                    algorithms=(
+                        chain_summary["algorithms"]
+                        if isinstance(chain_summary["algorithms"], list)
+                        else []
+                    ),
                     has_complete_route=bool(chain_summary["has_complete_route"]),
                     validation_status=str(chain_summary["validation_status"]),
                     trust_level=str(chain_summary["trust_level"]),
                     created_at=str(chain_summary["created_at"]),
                     last_modified=str(chain_summary["last_modified"]),
                     chain_hash=str(chain_summary["chain_hash"]),
-                    compliance_frameworks=chain_summary["compliance_frameworks"] if isinstance(chain_summary["compliance_frameworks"], list) else [],
+                    compliance_frameworks=(
+                        chain_summary["compliance_frameworks"]
+                        if isinstance(chain_summary["compliance_frameworks"], list)
+                        else []
+                    ),
                 ),
                 policy_validation=None,
                 verified_at=datetime.utcnow().isoformat(),
@@ -343,17 +373,37 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             chain_validation=ModelChainValidation(
                 chain_id=str(chain_summary["chain_id"]),
                 envelope_id=str(chain_summary["envelope_id"]),
-                signature_count=int(chain_summary["signature_count"]) if isinstance(chain_summary["signature_count"], int) else 0,
-                unique_signers=int(chain_summary["unique_signers"]) if isinstance(chain_summary["unique_signers"], int) else 0,
-                operations=chain_summary["operations"] if isinstance(chain_summary["operations"], list) else [],
-                algorithms=chain_summary["algorithms"] if isinstance(chain_summary["algorithms"], list) else [],
+                signature_count=(
+                    int(chain_summary["signature_count"])
+                    if isinstance(chain_summary["signature_count"], int)
+                    else 0
+                ),
+                unique_signers=(
+                    int(chain_summary["unique_signers"])
+                    if isinstance(chain_summary["unique_signers"], int)
+                    else 0
+                ),
+                operations=(
+                    chain_summary["operations"]
+                    if isinstance(chain_summary["operations"], list)
+                    else []
+                ),
+                algorithms=(
+                    chain_summary["algorithms"]
+                    if isinstance(chain_summary["algorithms"], list)
+                    else []
+                ),
                 has_complete_route=bool(chain_summary["has_complete_route"]),
                 validation_status=str(chain_summary["validation_status"]),
                 trust_level=str(chain_summary["trust_level"]),
                 created_at=str(chain_summary["created_at"]),
                 last_modified=str(chain_summary["last_modified"]),
                 chain_hash=str(chain_summary["chain_hash"]),
-                compliance_frameworks=chain_summary["compliance_frameworks"] if isinstance(chain_summary["compliance_frameworks"], list) else [],
+                compliance_frameworks=(
+                    chain_summary["compliance_frameworks"]
+                    if isinstance(chain_summary["compliance_frameworks"], list)
+                    else []
+                ),
             ),
             policy_validation=policy_validation,
             verified_at=datetime.utcnow().isoformat(),
@@ -409,7 +459,10 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         """Encrypt the envelope payload."""
         if self.is_encrypted:
             msg = "Payload is already encrypted"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # AI_PROMPT: Implement actual encryption using cryptography library
         # This should use AES-256-GCM with proper key derivation
@@ -418,19 +471,23 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             "to implement AES-256-GCM encryption with proper IV generation "
             "and authentication tag creation"
         )
-        raise NotImplementedError(
-            msg,
-        )
+        raise NotImplementedError(msg)  # stub-ok: planned security feature
 
     def decrypt_payload(self, decryption_key: str) -> ModelOnexEvent:
         """Decrypt the envelope payload."""
         if not self.is_encrypted:
             msg = "Payload is not encrypted"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         if not self.encrypted_payload or not self.encryption_metadata:
             msg = "Missing encryption data"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # AI_PROMPT: Implement actual decryption using cryptography library
         # This should use AES-256-GCM with proper key derivation
@@ -439,13 +496,11 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             "to implement AES-256-GCM decryption with IV and authentication "
             "tag verification"
         )
-        raise NotImplementedError(
-            msg,
-        )
+        raise NotImplementedError(msg)  # stub-ok: planned security feature
 
     def check_authorization(
         self,
-        node_id: str,
+        node_id: UUID,
         user_context: ModelSecurityContext | None = None,
     ) -> bool:
         """Check if node/user is authorized to process this envelope."""
@@ -488,7 +543,9 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
 
         return True
 
-    def log_security_event(self, event_type: EnumSecurityEventType, **kwargs: Any) -> None:
+    def log_security_event(
+        self, event_type: EnumSecurityEventType, **kwargs: Any
+    ) -> None:
         """Log a security event for audit trail."""
         event = ModelSecurityEvent(
             event_id=str(uuid4()),
@@ -531,17 +588,37 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             signature_chain=ModelSignatureChainSummary(
                 chain_id=str(chain_summary["chain_id"]),
                 envelope_id=str(chain_summary["envelope_id"]),
-                signature_count=int(chain_summary["signature_count"]) if isinstance(chain_summary["signature_count"], int) else 0,
-                unique_signers=int(chain_summary["unique_signers"]) if isinstance(chain_summary["unique_signers"], int) else 0,
-                operations=chain_summary["operations"] if isinstance(chain_summary["operations"], list) else [],
-                algorithms=chain_summary["algorithms"] if isinstance(chain_summary["algorithms"], list) else [],
+                signature_count=(
+                    int(chain_summary["signature_count"])
+                    if isinstance(chain_summary["signature_count"], int)
+                    else 0
+                ),
+                unique_signers=(
+                    int(chain_summary["unique_signers"])
+                    if isinstance(chain_summary["unique_signers"], int)
+                    else 0
+                ),
+                operations=(
+                    chain_summary["operations"]
+                    if isinstance(chain_summary["operations"], list)
+                    else []
+                ),
+                algorithms=(
+                    chain_summary["algorithms"]
+                    if isinstance(chain_summary["algorithms"], list)
+                    else []
+                ),
                 has_complete_route=bool(chain_summary["has_complete_route"]),
                 validation_status=str(chain_summary["validation_status"]),
                 trust_level=str(chain_summary["trust_level"]),
                 created_at=str(chain_summary["created_at"]),
                 last_modified=str(chain_summary["last_modified"]),
                 chain_hash=str(chain_summary["chain_hash"]),
-                compliance_frameworks=chain_summary["compliance_frameworks"] if isinstance(chain_summary["compliance_frameworks"], list) else [],
+                compliance_frameworks=(
+                    chain_summary["compliance_frameworks"]
+                    if isinstance(chain_summary["compliance_frameworks"], list)
+                    else []
+                ),
             ),
             compliance=ModelComplianceSummary(
                 frameworks=self.compliance_metadata.frameworks,
@@ -564,7 +641,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         cls,
         payload: ModelOnexEvent,
         destination: str,
-        source_node_id: str,
+        source_node_id: UUID,
         security_context: ModelSecurityContext | None = None,
         trust_policy: ModelTrustPolicy | None = None,
         **kwargs: Any,
@@ -592,7 +669,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         cls,
         payload: ModelOnexEvent,
         destination: str,
-        source_node_id: str,
+        source_node_id: UUID,
         encryption_key: str,
         security_context: ModelSecurityContext | None = None,
         trust_policy: ModelTrustPolicy | None = None,

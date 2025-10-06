@@ -16,4 +16,4 @@ class ModelStateField(BaseModel):
     type: str = Field(..., description="Field type")
     required: bool = Field(..., description="Whether field is required")
     description: str = Field(..., description="Field description")
-    default: Any | None = Field(None, description="Default value if optional")
+    default: Any | None = Field(default=None, description="Default value if optional")

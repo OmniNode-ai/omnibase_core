@@ -14,6 +14,6 @@ class ModelTrendMetrics(BaseModel):
     max_value: float = Field(..., description="Maximum value in trend")
     avg_value: float = Field(..., description="Average value")
     median_value: float = Field(..., description="Median value")
-    std_deviation: float | None = Field(None, description="Standard deviation")
+    std_deviation: float | None = Field(default=None, description="Standard deviation")
     trend_direction: str = Field(..., description="Trend direction (up/down/stable)")
-    change_percent: float | None = Field(None, description="Percentage change")
+    change_percent: float | None = Field(default=None, description="Percentage change")

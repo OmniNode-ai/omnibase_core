@@ -7,7 +7,7 @@ Defines supported CPU architectures for ONEX nodes.
 import enum
 
 
-class ModelEnumArchitecture(enum.StrEnum):
+class EnumArchitecture(enum.StrEnum):
     """Supported CPU architectures."""
 
     AMD64 = "amd64"

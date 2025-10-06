@@ -30,12 +30,12 @@ class ModelHealthMetric(BaseModel):
     unit: str = Field(..., description="Metric unit (e.g., '%', 'ms', 'MB', 'req/s')")
 
     threshold_warning: float | None = Field(
-        None,
+        default=None,
         description="Warning threshold value",
     )
 
     threshold_critical: float | None = Field(
-        None,
+        default=None,
         description="Critical threshold value",
     )
 
@@ -50,12 +50,12 @@ class ModelHealthMetric(BaseModel):
         description="Last metric update timestamp",
     )
 
-    min_value: float | None = Field(None, description="Minimum recorded value")
+    min_value: float | None = Field(default=None, description="Minimum recorded value")
 
-    max_value: float | None = Field(None, description="Maximum recorded value")
+    max_value: float | None = Field(default=None, description="Maximum recorded value")
 
     average_value: float | None = Field(
-        None,
+        default=None,
         description="Average value over time period",
     )
 

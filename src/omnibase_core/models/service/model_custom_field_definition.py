@@ -19,10 +19,10 @@ class ModelCustomFieldDefinition(BaseModel):
         ...,
         description="Field type (string/number/boolean/date/json)",
     )
-    required: bool = Field(False, description="Whether field is required")
-    default_value: Any | None = Field(None, description="Default value")
-    description: str | None = Field(None, description="Field description")
+    required: bool = Field(default=False, description="Whether field is required")
+    default_value: Any | None = Field(default=None, description="Default value")
+    description: str | None = Field(default=None, description="Field description")
     validation_regex: str | None = Field(
-        None,
+        default=None,
         description="Validation regex pattern",
     )

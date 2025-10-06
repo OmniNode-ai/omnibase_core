@@ -12,6 +12,6 @@ class ModelGitHubUser(BaseModel):
 
     login: str = Field(..., description="Username")
     id: int = Field(..., description="User ID")
-    avatar_url: str | None = Field(None, description="Avatar URL")
-    url: str | None = Field(None, description="User API URL")
+    avatar_url: str | None = Field(default=None, description="Avatar URL")
+    url: str | None = Field(default=None, description="User API URL")
     type: str = Field("User", description="User type")

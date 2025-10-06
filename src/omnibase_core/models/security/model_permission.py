@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_permission_custom_fields import (
     ModelPermissionCustomFields,
 )
@@ -21,17 +22,6 @@ from omnibase_core.models.security.model_permission_evaluation_context import (
 from omnibase_core.models.security.model_permission_metadata import (
     ModelPermissionMetadata,
 )
-
-
-class ModelPermissionError(ModelOnexError):
-    """Validation error for permission operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_PERMISSION_ERROR",
-        )
-        self.field_name = field_name
 
 
 class ModelPermission(BaseModel):
@@ -123,13 +113,13 @@ class ModelPermission(BaseModel):
 
     # Namespace and versioning
     namespace: str | None = Field(
-        None,
+        default=None,
         description="Permission namespace for third-party isolation",
         pattern="^[a-z][a-z0-9_-]*$",
         max_length=50,
     )
 
-    version: str = Field(
+    version: ModelSemVer = Field(
         default="1.0.0",
         description="Permission definition version",
         pattern="^\\d+\\.\\d+\\.\\d+$",
@@ -142,19 +132,19 @@ class ModelPermission(BaseModel):
     )
 
     max_uses_total: int | None = Field(
-        None,
+        default=None,
         description="Maximum total uses",
         ge=0,
     )
 
     max_uses_per_day: int | None = Field(
-        None,
+        default=None,
         description="Maximum uses per day",
         ge=0,
     )
 
     max_uses_per_hour: int | None = Field(
-        None,
+        default=None,
         description="Maximum uses per hour",
         ge=0,
     )
@@ -197,23 +187,23 @@ class ModelPermission(BaseModel):
     )
 
     valid_from: datetime | None = Field(
-        None,
+        default=None,
         description="Permission valid from timestamp",
     )
 
     valid_until: datetime | None = Field(
-        None,
+        default=None,
         description="Permission valid until timestamp",
     )
 
     time_of_day_start: str | None = Field(
-        None,
+        default=None,
         description="Daily start time (HH:MM)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
     time_of_day_end: str | None = Field(
-        None,
+        default=None,
         description="Daily end time (HH:MM)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
@@ -272,7 +262,7 @@ class ModelPermission(BaseModel):
 
     # Metadata and extensions
     description: str | None = Field(
-        None,
+        default=None,
         description="Human-readable description",
         max_length=1000,
     )
@@ -301,18 +291,18 @@ class ModelPermission(BaseModel):
     )
 
     created_by: str | None = Field(
-        None,
+        default=None,
         description="Creator identifier",
         max_length=100,
     )
 
     updated_at: datetime | None = Field(
-        None,
+        default=None,
         description="Last update timestamp",
     )
 
     updated_by: str | None = Field(
-        None,
+        default=None,
         description="Last updater identifier",
         max_length=100,
     )
@@ -324,7 +314,7 @@ class ModelPermission(BaseModel):
             priority=None,
             source_system=None,
             external_id=None,
-            notes=None
+            notes=None,
         ),
         description="Additional metadata",
     )
@@ -336,7 +326,10 @@ class ModelPermission(BaseModel):
     def validate_resource_hierarchy(cls, v: list[str]) -> list[str]:
         """Validate resource hierarchy."""
         if len(v) > 10:
-            raise ModelPermissionError("Resource hierarchy cannot exceed 10 levels", "resource_hierarchy")
+            raise ModelOnexError(
+                message="Resource hierarchy cannot exceed 10 levels",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         return v
 
     @field_validator("resource_patterns")
@@ -344,7 +337,10 @@ class ModelPermission(BaseModel):
     def validate_resource_patterns(cls, v: list[str]) -> list[str]:
         """Validate resource patterns."""
         if len(v) > 20:
-            raise ModelPermissionError("Maximum 20 resource patterns allowed", "resource_patterns")
+            raise ModelOnexError(
+                message="Maximum 20 resource patterns allowed",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         return v
 
     @field_validator("conditions")
@@ -352,7 +348,10 @@ class ModelPermission(BaseModel):
     def validate_conditions(cls, v: list[str]) -> list[str]:
         """Validate conditions."""
         if len(v) > 50:
-            raise ModelPermissionError("Maximum 50 conditions allowed", "conditions")
+            raise ModelOnexError(
+                message="Maximum 50 conditions allowed",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         return v
 
     @field_validator("tags")
@@ -360,10 +359,16 @@ class ModelPermission(BaseModel):
     def validate_tags(cls, v: list[str]) -> list[str]:
         """Validate tags."""
         if len(v) > 20:
-            raise ModelPermissionError("Maximum 20 tags allowed", "tags")
+            raise ModelOnexError(
+                message="Maximum 20 tags allowed",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         for tag in v:
             if len(tag) > 50:
-                raise ModelPermissionError(f"Tag '{tag}' exceeds maximum length of 50", "tags")
+                raise ModelOnexError(
+                    message=f"Tag '{tag}' exceeds maximum length of 50",
+                    error_code="ONEX_PERMISSION_ERROR",
+                )
         return v
 
     @field_validator("approval_types")
@@ -371,7 +376,10 @@ class ModelPermission(BaseModel):
     def validate_approval_types(cls, v: list[str]) -> list[str]:
         """Validate approval types."""
         if len(v) > 10:
-            raise ModelPermissionError("Maximum 10 approval types allowed", "approval_types")
+            raise ModelOnexError(
+                message="Maximum 10 approval types allowed",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         return v
 
     @field_validator("allowed_countries")
@@ -379,7 +387,10 @@ class ModelPermission(BaseModel):
     def validate_allowed_countries(cls, v: list[str]) -> list[str]:
         """Validate allowed countries."""
         if len(v) > 50:
-            raise ModelPermissionError("Maximum 50 countries allowed", "allowed_countries")
+            raise ModelOnexError(
+                message="Maximum 50 countries allowed",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         return v
 
     @field_validator("allowed_ip_ranges")
@@ -387,7 +398,10 @@ class ModelPermission(BaseModel):
     def validate_allowed_ip_ranges(cls, v: list[str]) -> list[str]:
         """Validate allowed IP ranges."""
         if len(v) > 20:
-            raise ModelPermissionError("Maximum 20 IP ranges allowed", "allowed_ip_ranges")
+            raise ModelOnexError(
+                message="Maximum 20 IP ranges allowed",
+                error_code="ONEX_PERMISSION_ERROR",
+            )
         return v
 
     # === Resource Matching Methods ===
@@ -508,6 +522,7 @@ class ModelPermission(BaseModel):
                 if not self._evaluate_simple_condition(condition, context):
                     return False
             except Exception:
+                # fallback-ok: Security fail-safe - deny access on malformed conditions
                 return False  # Fail safe
 
         return True
@@ -630,6 +645,7 @@ class ModelPermission(BaseModel):
     def _matches_pattern(self, value: str, pattern: str) -> bool:
         """Check if value matches pattern."""
         import fnmatch
+
         return fnmatch.fnmatch(value, pattern)
 
     def _ip_in_cidr(self, ip_address: str, cidr: str) -> bool:
@@ -823,7 +839,9 @@ class ModelPermission(BaseModel):
         description: str | None = None,
     ) -> Self:
         """Create time-limited permission."""
-        valid_until = datetime.now(UTC).replace(microsecond=0) + timedelta(hours=valid_hours)
+        valid_until = datetime.now(UTC).replace(microsecond=0) + timedelta(
+            hours=valid_hours
+        )
 
         return cls(
             name=f"temp_{action}_{resource.replace('/', '_')}",

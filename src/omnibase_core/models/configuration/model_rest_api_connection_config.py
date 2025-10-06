@@ -38,11 +38,11 @@ class ModelRestApiConnectionConfig(BaseModel):
         max_length=500,
     )
     api_key: SecretStr | None = Field(
-        None,
+        default=None,
         description="API key for authentication (secured)",
     )
     bearer_token: SecretStr | None = Field(
-        None,
+        default=None,
         description="Bearer token for authentication (secured)",
     )
     timeout_seconds: int = Field(
@@ -53,7 +53,7 @@ class ModelRestApiConnectionConfig(BaseModel):
     )
     max_retries: int = Field(3, description="Maximum number of retries", ge=0, le=10)
     headers: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Additional HTTP headers",
     )
 

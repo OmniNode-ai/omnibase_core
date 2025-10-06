@@ -1,8 +1,10 @@
-from typing import Union
+from typing import Any, Union
 
 from pydantic import BaseModel, Field, validator
 
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelJsonField(BaseModel):
@@ -36,7 +38,7 @@ class ModelJsonField(BaseModel):
     )
 
     array_values: list[str] | None = Field(
-        None,
+        default=None,
         description="Array values when field_type=ARRAY",
     )
 
@@ -46,9 +48,15 @@ class ModelJsonField(BaseModel):
         """Ensure string_value is set only when field_type=STRING."""
         field_type = values.get("field_type")
         if field_type == EnumJsonValueType.STRING and v is None:
-            raise ValueError("string_value must be provided when field_type=STRING")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="string_value must be provided when field_type=STRING",
+            )
         if field_type != EnumJsonValueType.STRING and v is not None:
-            raise ValueError(f"string_value must be None when field_type={field_type}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"string_value must be None when field_type={field_type}",
+            )
         return v
 
     @validator("number_value")
@@ -56,9 +64,15 @@ class ModelJsonField(BaseModel):
         """Ensure number_value is set only when field_type=NUMBER."""
         field_type = values.get("field_type")
         if field_type == EnumJsonValueType.NUMBER and v is None:
-            raise ValueError("number_value must be provided when field_type=NUMBER")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="number_value must be provided when field_type=NUMBER",
+            )
         if field_type != EnumJsonValueType.NUMBER and v is not None:
-            raise ValueError(f"number_value must be None when field_type={field_type}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"number_value must be None when field_type={field_type}",
+            )
         return v
 
     @validator("boolean_value")
@@ -66,9 +80,15 @@ class ModelJsonField(BaseModel):
         """Ensure boolean_value is set only when field_type=BOOLEAN."""
         field_type = values.get("field_type")
         if field_type == EnumJsonValueType.BOOLEAN and v is None:
-            raise ValueError("boolean_value must be provided when field_type=BOOLEAN")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="boolean_value must be provided when field_type=BOOLEAN",
+            )
         if field_type != EnumJsonValueType.BOOLEAN and v is not None:
-            raise ValueError(f"boolean_value must be None when field_type={field_type}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"boolean_value must be None when field_type={field_type}",
+            )
         return v
 
     @validator("array_values")
@@ -76,12 +96,18 @@ class ModelJsonField(BaseModel):
         """Ensure array_values is set only when field_type=ARRAY."""
         field_type = values.get("field_type")
         if field_type == EnumJsonValueType.ARRAY and v is None:
-            raise ValueError("array_values must be provided when field_type=ARRAY")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="array_values must be provided when field_type=ARRAY",
+            )
         if field_type != EnumJsonValueType.ARRAY and v is not None:
-            raise ValueError(f"array_values must be None when field_type={field_type}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"array_values must be None when field_type={field_type}",
+            )
         return v
 
-    def get_typed_value(self) -> Union[str, float, bool, list[str], None]:
+    def get_typed_value(self) -> Any:
         """ONEX-compliant value accessor with strong typing."""
         match self.field_type:
             case EnumJsonValueType.STRING:
@@ -95,4 +121,7 @@ class ModelJsonField(BaseModel):
             case EnumJsonValueType.NULL:
                 return None
             case _:
-                raise ValueError(f"Unknown field_type: {self.field_type}")
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Unknown field_type: {self.field_type}",
+                )

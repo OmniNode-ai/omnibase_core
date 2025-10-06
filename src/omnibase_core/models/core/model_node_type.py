@@ -46,7 +46,7 @@ class ModelNodeType(BaseModel):
         description="Capabilities this type requires",
     )
     resource_requirements: ModelPerformanceConstraints = Field(
-        default_factory=ModelPerformanceConstraints,
+        default_factory=lambda: ModelPerformanceConstraints(),
         description="Resource requirements",
     )
     is_singleton: bool = Field(default=False, description="Only one instance allowed")
@@ -55,7 +55,7 @@ class ModelNodeType(BaseModel):
         description="Supports multiple instances",
     )
     version_compatibility: str | None = Field(
-        None,
+        default=None,
         description="Version compatibility pattern",
     )
 

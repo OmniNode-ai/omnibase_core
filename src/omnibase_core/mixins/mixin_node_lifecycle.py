@@ -22,7 +22,7 @@ from typing import Any, Optional
 # === /OmniNode:Metadata ===
 
 """
-Node Lifecycle Mixin.
+Node EnumLifecycle Mixin.
 
 This mixin handles:
 - Node registration on the event bus
@@ -39,7 +39,7 @@ from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
-from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
+from omnibase_core.enums.enum_registry_execution_mode import EnumRegistryExecutionMode
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_log_context import ModelLogContext
@@ -58,18 +58,11 @@ if TYPE_CHECKING:
 _COMPONENT_NAME = Path(__file__).stem
 
 
-def _ensure_uuid(value: UUID | str | None) -> UUID:
-    """Ensure value is a UUID, generate if None or invalid."""
+def _ensure_uuid(value: UUID | None) -> UUID:
+    """Ensure value is a UUID, generate if None."""
     if value is None:
         return uuid4()
-    if isinstance(value, UUID):
-        return value
-    if isinstance(value, str):
-        try:
-            return UUID(value)
-        except (ValueError, TypeError):
-            return uuid4()
-    return uuid4()
+    return value
 
 
 class MixinNodeLifecycle:
@@ -105,12 +98,14 @@ class MixinNodeLifecycle:
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
                 calling_line=67,
-                timestamp=datetime.datetime.now().isoformat(),
+                timestamp=datetime.now().isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -129,7 +124,7 @@ class MixinNodeLifecycle:
                 execution_mode=getattr(
                     self,
                     "execution_mode",
-                    RegistryExecutionModeEnum.MEMORY,
+                    EnumRegistryExecutionMode.MEMORY,
                 ),
                 inputs=getattr(self, "inputs", getattr(metadata_block, "inputs", None)),
                 outputs=getattr(
@@ -141,7 +136,7 @@ class MixinNodeLifecycle:
                 trust_state=getattr(self, "trust_state", None),
                 ttl=getattr(self, "ttl", None),
                 schema_version=getattr(metadata_block, "schema_version", "1.0.0"),
-                timestamp=datetime.datetime.now(),
+                timestamp=datetime.now(),
                 signature_block=getattr(self, "signature_block", None),
                 node_version=getattr(
                     self,
@@ -169,7 +164,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
                 calling_line=106,
-                timestamp=datetime.datetime.now().isoformat(),
+                timestamp=datetime.now().isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -183,7 +178,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
                 calling_line=118,
-                timestamp=datetime.datetime.now().isoformat(),
+                timestamp=datetime.now().isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -195,7 +190,7 @@ class MixinNodeLifecycle:
     def _register_shutdown_hook(self) -> None:
         """Register shutdown hook for cleanup."""
 
-        def shutdown_handler():
+        def shutdown_handler() -> None:
             self._publish_shutdown_event()
 
         atexit.register(shutdown_handler)
@@ -229,7 +224,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
                 calling_line=152,
-                timestamp=datetime.datetime.now().isoformat(),
+                timestamp=datetime.now().isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -243,7 +238,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
                 calling_line=164,
-                timestamp=datetime.datetime.now().isoformat(),
+                timestamp=datetime.now().isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -255,7 +250,7 @@ class MixinNodeLifecycle:
     def emit_node_start(
         self,
         metadata: dict[str, Any] | None = None,
-        correlation_id: str | UUID | None = None,
+        correlation_id: UUID | None = None,
     ) -> UUID:
         """
         Emit NODE_START event.
@@ -312,7 +307,7 @@ class MixinNodeLifecycle:
     def emit_node_success(
         self,
         metadata: dict[str, Any] | None = None,
-        correlation_id: str | UUID | None = None,
+        correlation_id: UUID | None = None,
     ) -> UUID:
         """
         Emit NODE_SUCCESS event.
@@ -373,7 +368,7 @@ class MixinNodeLifecycle:
     def emit_node_failure(
         self,
         metadata: dict[str, Any] | None = None,
-        correlation_id: str | UUID | None = None,
+        correlation_id: UUID | None = None,
     ) -> UUID:
         """
         Emit NODE_FAILURE event.
@@ -446,7 +441,7 @@ class MixinNodeLifecycle:
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_lifecycle_resources",
                     calling_line=283,
-                    timestamp=datetime.datetime.now().isoformat(),
+                    timestamp=datetime.now().isoformat(),
                     node_id=node_id,
                 )
                 emit_log_event_sync(

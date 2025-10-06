@@ -65,12 +65,12 @@ class ModelHealthStatus(BaseModel):
     )
 
     next_check: datetime | None = Field(
-        None,
+        default=None,
         description="Next scheduled health check",
     )
 
     check_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Health check duration in milliseconds",
         ge=0,
     )
@@ -82,13 +82,13 @@ class ModelHealthStatus(BaseModel):
     )
 
     uptime_seconds: int | None = Field(
-        None,
+        default=None,
         description="System uptime in seconds",
         ge=0,
     )
 
     metadata: ModelHealthMetadata | None = Field(
-        None,
+        default=None,
         description="Additional health metadata",
     )
 

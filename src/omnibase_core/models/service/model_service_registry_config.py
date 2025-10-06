@@ -4,6 +4,9 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Service Registry Configuration Model for ONEX Configuration-Driven Registry System.
 
@@ -52,7 +55,10 @@ class ModelServiceRegistryConfig(BaseModel):
     def validate_services_not_empty(cls, v, info):
         if not v:
             msg = "At least one service must be configured"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("registry_modes")
@@ -62,8 +68,9 @@ class ModelServiceRegistryConfig(BaseModel):
             default_mode = info.data.get("default_mode")
             if default_mode and default_mode not in v:
                 msg = f"Default mode '{default_mode}' not found in registry_modes"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
         return v
 

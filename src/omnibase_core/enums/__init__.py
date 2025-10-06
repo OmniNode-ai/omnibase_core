@@ -8,7 +8,7 @@ organized by functional domains for better maintainability.
 """
 
 # Architecture and system enums
-from .enum_architecture import ModelEnumArchitecture
+from .enum_architecture import EnumArchitecture
 
 # Artifact-related enums
 from .enum_artifact_type import EnumArtifactType
@@ -36,9 +36,6 @@ from .enum_detection_type import EnumDetectionType
 # Execution-related enums
 from .enum_execution import EnumExecutionMode, EnumOperationStatus
 
-# Function-related enums
-from .enum_function_language import EnumFunctionLanguage
-
 # GitHub Actions enums
 from .enum_github_action_event import EnumGitHubActionEvent
 from .enum_github_runner_os import EnumGitHubRunnerOS
@@ -57,7 +54,7 @@ from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMo
 
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
-from .enum_log_format import ModelEnumLogFormat
+from .enum_log_format import EnumLogFormat
 
 # Log level enum
 from .enum_log_level import EnumLogLevel
@@ -66,7 +63,9 @@ from .enum_log_level import EnumLogLevel
 from .enum_message_type import EnumMessageType
 
 # Metadata-related enums
+# Function-related enums
 from .enum_metadata import (
+    EnumFunctionLanguage,
     EnumLifecycle,
     EnumMetaType,
     EnumNodeMetadataField,
@@ -88,12 +87,13 @@ from .enum_onex_reply_status import EnumOnexReplyStatus
 
 # Registry-related enums
 from .enum_registry_health_status import EnumRegistryHealthStatus
-from .enum_registry_type import EnumRegistryType
+
+# from .enum_registry_type import EnumRegistryType  # MISSING MODULE
 from .enum_security_profile import EnumSecurityProfile
 
 # Service-related enums
 from .enum_service_health_status import EnumServiceHealthStatus
-from .enum_service_mode import ModelServiceModeEnum
+from .enum_service_mode import EnumServiceMode
 from .enum_service_status import EnumServiceStatus
 
 # Service architecture enums
@@ -101,24 +101,12 @@ from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
 from .enum_state_update_operation import EnumStateUpdateOperation
 
-# Status migration enums
-from .enum_status_migrator import ModelEnumStatusMigrator
-
-# Tool-related enums
-from .enum_tool_category import EnumToolCategory
-from .enum_tool_criticality import EnumToolCriticality
-from .enum_tool_health_status import EnumToolHealthStatus
-from .enum_tool_missing_reason import EnumToolMissingReason
-
 # Tool lifecycle enums
 from .enum_tool_status import EnumToolStatus
 from .enum_tool_type import EnumToolType
 
 # State management enums
 from .enum_transition_type import EnumTransitionType
-
-# Tree sync enums
-from .enum_tree_sync_status import EnumTreeSyncStatus
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
@@ -131,6 +119,20 @@ from .enum_version_status import EnumVersionStatus
 
 # Workflow-related enums
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
+
+# Status migration enums
+# from .enum_status_migrator import ModelEnumStatusMigrator  # MISSING MODULE
+
+# Tool-related enums
+# from .enum_tool_category import EnumToolCategory  # MISSING MODULE
+# from .enum_tool_criticality import EnumToolCriticality  # MISSING MODULE
+# from .enum_tool_health_status import EnumToolHealthStatus  # MISSING MODULE
+# from .enum_tool_missing_reason import EnumToolMissingReason  # MISSING MODULE
+
+
+# Tree sync enums
+# from .enum_tree_sync_status import EnumTreeSyncStatus  # MISSING MODULE
+
 
 # Event and logging enums
 # from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
@@ -180,8 +182,8 @@ __all__ = [
     # Audit and governance domain
     "EnumAuditAction",
     # Architecture and system domain
-    "ModelEnumArchitecture",
-    "ModelEnumLogFormat",
+    "EnumArchitecture",
+    "EnumLogFormat",
     # Communication domain
     "EnumMessageType",
     # Group and organization domain

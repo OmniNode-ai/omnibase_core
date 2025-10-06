@@ -4,10 +4,12 @@ Node information model.
 
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_node_configuration import ModelNodeConfiguration
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     pass
@@ -20,16 +22,18 @@ class ModelNodeInformation(BaseModel):
     """
 
     # Node identification
-    node_id: str = Field(..., description="Node identifier")
+    node_id: UUID = Field(..., description="Node identifier")
     node_name: str = Field(..., description="Node name")
     node_type: str = Field(..., description="Node type")
-    node_version: str = Field(..., description="Node version")
+    node_version: ModelSemVer = Field(..., description="Node version")
 
     # Node metadata
-    description: str | None = Field(None, description="Node description")
-    author: str | None = Field(None, description="Node author")
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    description: str | None = Field(default=None, description="Node description")
+    author: str | None = Field(default=None, description="Node author")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     # Node capabilities
     capabilities: list[str] = Field(
@@ -43,7 +47,7 @@ class ModelNodeInformation(BaseModel):
 
     # Node configuration
     configuration: ModelNodeConfiguration = Field(
-        default_factory=ModelNodeConfiguration,
+        default_factory=lambda: ModelNodeConfiguration(),
         description="Node configuration",
     )
 
@@ -53,7 +57,7 @@ class ModelNodeInformation(BaseModel):
 
     # Performance metrics
     performance_metrics: dict[str, float] | None = Field(
-        None,
+        default=None,
         description="Performance metrics",
     )
 

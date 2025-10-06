@@ -30,7 +30,7 @@ class ModelEncryptionAlgorithm(BaseModel):
     )
 
     mode: str | None = Field(
-        None,
+        default=None,
         description="Cipher mode: GCM, CBC, CTR, etc.",
         pattern=r"^[A-Z]+$",
     )
@@ -54,7 +54,9 @@ class ModelEncryptionAlgorithm(BaseModel):
         le=256,
     )
 
-    is_stream_cipher: bool = Field(False, description="Whether this is a stream cipher")
+    is_stream_cipher: bool = Field(
+        default=False, description="Whether this is a stream cipher"
+    )
 
     security_level: str = Field(
         "high",

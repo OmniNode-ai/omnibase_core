@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Union
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Version Union Type Enum.

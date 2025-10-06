@@ -30,14 +30,14 @@ class ModelDataHandlingDeclaration(BaseModel):
         description="Whether this component processes sensitive data requiring special handling",
     )
     data_residency_required: str | None = Field(
-        None,
+        default=None,
         description="Required data residency region (e.g., 'EU', 'US', 'GDPR-compliant')",
         min_length=2,
         max_length=50,
         pattern=r"^[A-Z][A-Z0-9_-]*$",
     )
     data_classification: EnumDataClassification | None = Field(
-        None,
+        default=None,
         description="Data classification level following security standards",
     )
 

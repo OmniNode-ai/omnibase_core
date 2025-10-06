@@ -23,17 +23,19 @@ class ModelGitHubIssue(BaseModel):
     user: ModelGitHubUser = Field(..., description="Issue author")
     labels: list[str] = Field(default_factory=list, description="Issue labels")
     state: str = Field("open", description="Issue state")
-    assignee: ModelGitHubUser | None = Field(None, description="Issue assignee")
+    assignee: ModelGitHubUser | None = Field(default=None, description="Issue assignee")
     assignees: list[ModelGitHubUser] = Field(
         default_factory=list,
         description="All assignees",
     )
     milestone: ModelGitHubMilestone | None = Field(
-        None,
+        default=None,
         description="Issue milestone",
     )
-    comments: int = Field(0, description="Number of comments")
+    comments: int = Field(default=0, description="Number of comments")
     created_at: datetime = Field(..., description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
-    closed_at: datetime | None = Field(None, description="Close timestamp")
-    body: str | None = Field(None, description="Issue description")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
+    closed_at: datetime | None = Field(default=None, description="Close timestamp")
+    body: str | None = Field(default=None, description="Issue description")

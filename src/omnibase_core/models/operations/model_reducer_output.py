@@ -14,8 +14,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_reduction_type import EnumReductionType
 from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode
 
-from .model_config import ModelConfig
-
 T_Output = TypeVar("T_Output")
 
 

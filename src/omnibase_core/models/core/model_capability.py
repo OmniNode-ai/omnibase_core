@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Capability Model
@@ -68,14 +68,18 @@ class ModelCapability(BaseModel):
 
     deprecated: bool = Field(default=False, description="Deprecation flag")
 
-    deprecation_message: str | None = Field(None, description="Deprecation message")
+    deprecation_message: str | None = Field(
+        default=None, description="Deprecation message"
+    )
 
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Creation timestamp",
     )
 
-    expires_at: datetime | None = Field(None, description="Expiration timestamp")
+    expires_at: datetime | None = Field(
+        default=None, description="Expiration timestamp"
+    )
 
     tags: list[str] = Field(default_factory=list, description="Capability tags")
 

@@ -15,21 +15,25 @@ class ModelNotificationSettings(BaseModel):
     """Notification settings for priority levels."""
 
     # Email notifications
-    email_enabled: bool = Field(False, description="Enable email notifications")
+    email_enabled: bool = Field(default=False, description="Enable email notifications")
     email_recipients: list[str] = Field(
         default_factory=list,
         description="Email recipients",
     )
-    email_on_failure: bool = Field(True, description="Send email on execution failure")
+    email_on_failure: bool = Field(
+        default=True, description="Send email on execution failure"
+    )
     email_on_completion: bool = Field(
         False,
         description="Send email on execution completion",
     )
 
     # Webhook notifications
-    webhook_enabled: bool = Field(False, description="Enable webhook notifications")
+    webhook_enabled: bool = Field(
+        default=False, description="Enable webhook notifications"
+    )
     webhook_url: str | None = Field(
-        None,
+        default=None,
         description="Webhook URL for notifications",
     )
     webhook_headers: dict[str, str] = Field(
@@ -44,12 +48,12 @@ class ModelNotificationSettings(BaseModel):
     )
 
     # Slack notifications
-    slack_enabled: bool = Field(False, description="Enable Slack notifications")
+    slack_enabled: bool = Field(default=False, description="Enable Slack notifications")
     slack_channel: str | None = Field(
-        None,
+        default=None,
         description="Slack channel for notifications",
     )
-    slack_webhook_url: str | None = Field(None, description="Slack webhook URL")
+    slack_webhook_url: str | None = Field(default=None, description="Slack webhook URL")
 
     # Notification rules
     min_severity: str = Field(
@@ -58,7 +62,7 @@ class ModelNotificationSettings(BaseModel):
         pattern="^(debug|info|warning|error|critical)$",
     )
     rate_limit_per_hour: int | None = Field(
-        None,
+        default=None,
         description="Maximum notifications per hour",
         ge=1,
     )

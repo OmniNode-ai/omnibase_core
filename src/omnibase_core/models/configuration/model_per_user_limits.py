@@ -39,7 +39,7 @@ class ModelPerUserLimits(BaseModel):
     )
 
     user_identification_header: str | None = Field(
-        None,
+        default=None,
         description="Header name for user identification (if using custom_header)",
     )
 
@@ -100,7 +100,7 @@ class ModelPerUserLimits(BaseModel):
     )
 
     burst_allowance_per_user: float | None = Field(
-        None,
+        default=None,
         description="Additional burst capacity multiplier per user",
         ge=1.0,
         le=5.0,

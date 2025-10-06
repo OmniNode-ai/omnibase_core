@@ -157,7 +157,9 @@ class MixinEventDrivenNode(
         try:
             # Use the method from MixinIntrospectionPublisher
             return self._gather_introspection_data()  # type: ignore
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: introspection is non-critical, return minimal metadata
             return {
                 "node_name": self.get_node_name(),
                 "version": self.get_node_version(),

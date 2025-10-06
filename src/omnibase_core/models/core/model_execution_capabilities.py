@@ -45,7 +45,7 @@ class ModelExecutionCapabilities(BaseModel):
     )
     timeout: ModelDuration = Field(..., description="Default execution timeout")
     performance_constraints: ModelPerformanceConstraints | None = Field(
-        None,
+        default=None,
         description="Performance constraints",
     )
     supports_streaming: bool = Field(

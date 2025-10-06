@@ -30,28 +30,30 @@ class ModelValidationIssue(BaseModel):
     )
     message: str = Field(..., description="Human-readable issue description")
     code: str | None = Field(
-        None,
+        default=None,
         description="Machine-readable error code for programmatic handling",
     )
     file_path: Path | None = Field(
-        None,
+        default=None,
         description="Path to file where issue was found (always Path object, never string)",
     )
     line_number: int | None = Field(
-        None,
+        default=None,
         description="Line number where issue was found",
     )
     column_number: int | None = Field(
-        None,
+        default=None,
         description="Column number where issue was found",
     )
     rule_name: str | None = Field(
-        None,
+        default=None,
         description="Name of validation rule that triggered this issue",
     )
-    suggestion: str | None = Field(None, description="Suggested fix for the issue")
+    suggestion: str | None = Field(
+        default=None, description="Suggested fix for the issue"
+    )
     context: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Additional string context data for the issue (no Any types)",
     )
 

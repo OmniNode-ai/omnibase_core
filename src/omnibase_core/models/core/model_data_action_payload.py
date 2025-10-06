@@ -1,5 +1,8 @@
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Data Action Payload Model.
 
@@ -17,14 +20,18 @@ from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 class ModelDataActionPayload(ModelActionPayloadBase):
     """Payload for data actions (read, write, create, update, delete, etc.)."""
 
-    target_path: str | None = Field(None, description="Path to the data target")
-    data: dict[str, Any] | None = Field(None, description="Data to be processed")
+    target_path: str | None = Field(default=None, description="Path to the data target")
+    data: dict[str, Any] | None = Field(
+        default=None, description="Data to be processed"
+    )
     filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Filters for data operations",
     )
-    limit: int | None = Field(None, description="Limit for list[Any]/search operations")
-    offset: int | None = Field(None, description="Offset for pagination")
+    limit: int | None = Field(
+        default=None, description="Limit for list[Any]/search operations"
+    )
+    offset: int | None = Field(default=None, description="Offset for pagination")
 
     @field_validator("action_type")
     @classmethod
@@ -37,5 +44,8 @@ class ModelDataActionPayload(ModelActionPayloadBase):
 
         if v.category not in [OPERATION, QUERY]:
             msg = f"Invalid data action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

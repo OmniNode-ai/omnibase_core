@@ -1,6 +1,10 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Model for Claude Code agent instance.
@@ -16,8 +20,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.agent.model_llm_agent_config import ModelLLMAgentConfig
 from omnibase_core.models.core.model_agent_status import (
+    EnumAgentStatusType,
     ModelAgentStatus,
-    ModelAgentStatusType,
 )
 
 
@@ -73,15 +77,15 @@ class ModelAgentInstance(BaseModel):
     def is_active(self) -> bool:
         """Check if agent is currently active."""
         return self.status.status in [
-            ModelAgentStatusType.IDLE,
-            ModelAgentStatusType.WORKING,
-            ModelAgentStatusType.STARTING,
+            EnumAgentStatusType.IDLE,
+            EnumAgentStatusType.WORKING,
+            EnumAgentStatusType.STARTING,
         ]
 
     @property
     def is_available(self) -> bool:
         """Check if agent is available for new work."""
-        return self.status.status == ModelAgentStatusType.IDLE
+        return self.status.status == EnumAgentStatusType.IDLE
 
     @property
     def uptime_seconds(self) -> int:
@@ -111,10 +115,16 @@ class ModelAgentInstance(BaseModel):
         # Validate task type format
         if not task_type.replace("_", "").isalnum():
             msg = "[Any]type must be alphanumeric with underscores only"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if task_type != task_type.lower():
             msg = "[Any]type must be lowercase"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Generate 8-character UUID suffix
         uuid_suffix = str(uuid.uuid4()).replace("-", "")[:8]

@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Filesystem Action Payload Model.
 
@@ -17,7 +20,7 @@ from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 class ModelFilesystemActionPayload(ModelActionPayloadBase):
     """Payload for filesystem actions (scan, watch, sync)."""
 
-    path: str | None = Field(None, description="Filesystem path to operate on")
+    path: str | None = Field(default=None, description="Filesystem path to operate on")
     patterns: list[str] = Field(
         default_factory=list,
         description="File patterns to match",
@@ -34,5 +37,8 @@ class ModelFilesystemActionPayload(ModelActionPayloadBase):
         """Validate that action_type is a valid filesystem action."""
         if v.name not in ["scan", "watch", "sync"]:
             msg = f"Invalid filesystem action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

@@ -22,12 +22,12 @@ class ModelJob(BaseModel):
     runs_on: str | list[str] = Field(..., alias="runs-on")
     steps: list[ModelStep]
     name: str | None = None
-    needs: str | list[str] | None = None
-    if_: str | None = Field(None, alias="if")
+    needs: Any = None
+    if_: str | None = Field(default=None, alias="if")
     env: dict[str, str] | None = None
-    timeout_minutes: int | None = Field(None, alias="timeout-minutes")
+    timeout_minutes: int | None = Field(default=None, alias="timeout-minutes")
     strategy: WorkflowStrategy | None = None
-    continue_on_error: bool | None = Field(None, alias="continue-on-error")
-    container: str | dict[str, Any] | None = None
+    continue_on_error: bool | None = Field(default=None, alias="continue-on-error")
+    container: Any = None
     services: WorkflowServices | None = None
     outputs: dict[str, str] | None = None

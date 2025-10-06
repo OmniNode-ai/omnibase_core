@@ -1,3 +1,5 @@
+from uuid import UUID, uuid4
+
 from pydantic import BaseModel, Field
 
 
@@ -9,7 +11,9 @@ class ModelVerificationDetails(BaseModel):
         description="Certificate validation details",
     )
     signature_algorithm: str = Field(default="", description="Signature algorithm used")
-    certificate_id: str = Field(default="", description="Certificate identifier")
+    certificate_id: UUID = Field(
+        default_factory=uuid4, description="Certificate identifier"
+    )
     security_level: str = Field(
         default="basic",
         description="Security level assessment",

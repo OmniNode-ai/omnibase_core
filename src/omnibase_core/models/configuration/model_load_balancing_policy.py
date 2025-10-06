@@ -1,4 +1,5 @@
 from typing import Any, Optional
+from uuid import UUID
 
 from pydantic import Field
 
@@ -42,7 +43,7 @@ class ModelLoadBalancingPolicy(BaseModel):
     display_name: str = Field(..., description="Human-readable policy name")
 
     description: str | None = Field(
-        None,
+        default=None,
         description="Policy description and usage guidelines",
     )
 
@@ -54,7 +55,7 @@ class ModelLoadBalancingPolicy(BaseModel):
     )
 
     node_weights: Optional["ModelNodeWeights"] = Field(
-        None,
+        default=None,
         description="Node weights for weighted algorithms",
     )
 
@@ -64,17 +65,17 @@ class ModelLoadBalancingPolicy(BaseModel):
     )
 
     session_affinity: ModelSessionAffinity | None = Field(
-        None,
+        default=None,
         description="Session affinity configuration",
     )
 
     circuit_breaker: ModelCircuitBreaker = Field(
-        default_factory=ModelCircuitBreaker,
+        default_factory=lambda: ModelCircuitBreaker(),
         description="Circuit breaker configuration",
     )
 
     retry_policy: ModelRetryPolicy = Field(
-        default_factory=ModelRetryPolicy,
+        default_factory=lambda: ModelRetryPolicy(),
         description="Retry policy for failed requests",
     )
 
@@ -94,7 +95,7 @@ class ModelLoadBalancingPolicy(BaseModel):
     )
 
     max_nodes_per_request: int | None = Field(
-        None,
+        default=None,
         description="Maximum nodes to consider per request",
         ge=1,
         le=100,
@@ -117,11 +118,11 @@ class ModelLoadBalancingPolicy(BaseModel):
         le=100,
     )
 
-    def is_node_excluded(self, node_id: str) -> bool:
+    def is_node_excluded(self, node_id: UUID) -> bool:
         """Check if a node is excluded from load balancing"""
         return node_id in self.excluded_nodes
 
-    def is_node_preferred(self, node_id: str) -> bool:
+    def is_node_preferred(self, node_id: UUID) -> bool:
         """Check if a node is in the preferred list[Any]"""
         return node_id in self.preferred_nodes
 
@@ -169,7 +170,7 @@ class ModelLoadBalancingPolicy(BaseModel):
         """Check if circuit breaker should be used"""
         return self.circuit_breaker.enabled
 
-    def get_node_weight(self, node_id: str) -> float:
+    def get_node_weight(self, node_id: UUID) -> float:
         """Get weight for a specific node"""
         if not self.should_use_weights():
             return 1.0

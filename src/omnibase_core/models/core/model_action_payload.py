@@ -41,7 +41,7 @@ class ModelActionPayload(ModelOnexInputState):
 
     # Execution tracking (in addition to base correlation_id)
     parent_correlation_id: UUID | None = Field(
-        None,
+        default=None,
         description="Parent action correlation ID for chaining",
     )
     execution_chain: list[str] = Field(
@@ -51,7 +51,7 @@ class ModelActionPayload(ModelOnexInputState):
 
     # Service composition with strong typing
     target_service: str | None = Field(
-        None,
+        default=None,
         description="Target service for action execution",
     )
     routing_metadata: dict[str, str | int | float] = Field(

@@ -2,7 +2,7 @@ from typing import Dict
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Model for contract content representation in ONEX NodeBase implementation.
@@ -57,147 +57,161 @@ class ModelContractContent(BaseModel):
     )
 
     # === OPTIONAL COMMON FIELDS ===
-    contract_name: str | None = Field(None, description="Contract name")
-    description: str | None = Field(None, description="Contract description")
-    name: str | None = Field(None, description="Node name alias")
-    version: ModelSemVer | None = Field(None, description="Version alias")
-    node_version: ModelSemVer | None = Field(None, description="Node version")
-    input_model: str | None = Field(None, description="Input model class name")
-    output_model: str | None = Field(None, description="Output model class name")
-    main_tool_class: str | None = Field(None, description="Main tool class name")
+    contract_name: str | None = Field(default=None, description="Contract name")
+    description: str | None = Field(default=None, description="Contract description")
+    name: str | None = Field(default=None, description="Node name alias")
+    version: ModelSemVer | None = Field(default=None, description="Version alias")
+    node_version: ModelSemVer | None = Field(default=None, description="Node version")
+    input_model: str | None = Field(default=None, description="Input model class name")
+    output_model: str | None = Field(
+        default=None, description="Output model class name"
+    )
+    main_tool_class: str | None = Field(
+        default=None, description="Main tool class name"
+    )
     dependencies: list[ModelContractDependency] | list[str] | None = Field(
-        None,
+        default=None,
         description="Contract dependencies (can be ModelContractDependency objects or strings)",
     )
     actions: list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="Available actions",
     )
-    primary_actions: list[str] | None = Field(None, description="Primary actions")
+    primary_actions: list[str] | None = Field(
+        default=None, description="Primary actions"
+    )
     validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="Validation rules (can be dict[str, Any]or list[Any]format)",
     )
 
     # === INFRASTRUCTURE FIELDS ===
     infrastructure: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Infrastructure configuration",
     )
     infrastructure_services: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Infrastructure services",
     )
     service_configuration: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Service configuration",
     )
     service_resolution: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Service resolution",
     )
     performance: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Performance configuration",
     )
 
     # === NODE-SPECIFIC FIELDS ===
     # These should only appear in specific node types - architectural validation will catch violations
     aggregation: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Aggregation configuration - COMPUTE nodes should not have this",
     )
     state_management: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="State management configuration - COMPUTE nodes should not have this",
     )
     reduction_operations: list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="Reduction operations - Only REDUCER nodes",
     )
     streaming: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Streaming configuration - Only REDUCER nodes",
     )
     conflict_resolution: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Conflict resolution - Only REDUCER nodes",
     )
     memory_management: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Memory management - Only REDUCER nodes",
     )
     state_transitions: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="State transitions - Only REDUCER nodes",
     )
     routing: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Routing configuration - Only ORCHESTRATOR nodes",
     )
     workflow_registry: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Workflow registry - Only ORCHESTRATOR nodes",
     )
 
     # === EFFECT NODE FIELDS ===
     io_operations: list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="I/O operations - Only EFFECT nodes",
     )
     interface: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Interface configuration - Only EFFECT nodes",
     )
 
     # === OPTIONAL METADATA FIELDS ===
-    metadata: dict[str, Any] | None = Field(None, description="Contract metadata")
-    capabilities: list[str] | None = Field(None, description="Node capabilities")
+    metadata: dict[str, Any] | None = Field(
+        default=None, description="Contract metadata"
+    )
+    capabilities: list[str] | None = Field(
+        default=None, description="Node capabilities"
+    )
     configuration: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="General configuration",
     )
     algorithm: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Algorithm configuration",
     )
-    caching: dict[str, Any] | None = Field(None, description="Caching configuration")
+    caching: dict[str, Any] | None = Field(
+        default=None, description="Caching configuration"
+    )
     error_handling: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Error handling configuration",
     )
     observability: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Observability configuration",
     )
     event_type: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Event type configuration for publish/subscribe patterns",
     )
 
     # === ONEX COMPLIANCE FLAGS ===
     contract_driven: bool | None = Field(
-        None,
+        default=None,
         description="Contract-driven compliance",
     )
     protocol_based: bool | None = Field(
-        None,
+        default=None,
         description="Protocol-based compliance",
     )
-    strong_typing: bool | None = Field(None, description="Strong typing compliance")
+    strong_typing: bool | None = Field(
+        default=None, description="Strong typing compliance"
+    )
     zero_any_types: bool | None = Field(
-        None,
+        default=None,
         description="Zero Any types compliance",
     )
 
     # === SUBCONTRACTS ===
     subcontracts: list[ModelSubcontractReference] | None = Field(
-        None,
+        default=None,
         description="Subcontract references for mixin functionality",
     )
 
     # === DEPRECATED/LEGACY FIELDS ===
     original_dependencies: list[dict[str, Any]] | None = Field(
-        None,
+        default=None,
         description="Original dependencies (deprecated)",
     )

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 """
 Mixin for Workflow event support in ONEX tools.
@@ -10,6 +10,7 @@ and Workflow context detection for tools participating in workflows.
 import os
 import uuid
 from typing import Any, Optional
+from uuid import UUID
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
@@ -28,7 +29,7 @@ class MixinDagSupport:
     - Supporting both Workflow and non-Workflow execution modes
     """
 
-    def __init__(self, event_bus: ProtocolEventBus | None = None, **kwargs):
+    def __init__(self, event_bus: ProtocolEventBus | None = None, **kwargs) -> None:
         """Initialize Workflow support mixin."""
         super().__init__(**kwargs)
         self._event_bus = event_bus
@@ -58,7 +59,7 @@ class MixinDagSupport:
 
         return workflow_context or has_correlation_id
 
-    def set_workflow_context(self, correlation_id: str, node_id: str) -> None:
+    def set_workflow_context(self, correlation_id: UUID, node_id: UUID) -> None:
         """
         Set Workflow execution context for this tool.
 
@@ -200,7 +201,9 @@ class MixinDagSupport:
                 return {k: str(v) for k, v in result.__dict__.items()}
             # Simple value
             return {"value": str(result)}
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: serialization returns error dict, caller handles gracefully
             return {"serialization_error": "Could not serialize result"}
 
     def _get_current_timestamp(self) -> str:

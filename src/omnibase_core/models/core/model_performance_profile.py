@@ -22,75 +22,75 @@ class ModelPerformanceProfile(BaseModel):
 
     # Overall performance
     overall_score: float | None = Field(
-        None,
+        default=None,
         description="Overall performance score (0-100)",
         ge=0,
         le=100,
     )
     performance_tier: str | None = Field(
-        None,
+        default=None,
         description="Performance tier classification",
     )
 
     # Latency metrics
     avg_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="Average latency in milliseconds",
         ge=0,
     )
     p50_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="50th percentile latency",
         ge=0,
     )
     p95_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="95th percentile latency",
         ge=0,
     )
     p99_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="99th percentile latency",
         ge=0,
     )
     max_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="Maximum observed latency",
         ge=0,
     )
 
     # Throughput metrics
     avg_throughput_rps: float | None = Field(
-        None,
+        default=None,
         description="Average throughput (requests/second)",
         ge=0,
     )
     peak_throughput_rps: float | None = Field(
-        None,
+        default=None,
         description="Peak throughput",
         ge=0,
     )
     sustained_throughput_rps: float | None = Field(
-        None,
+        default=None,
         description="Sustained throughput",
         ge=0,
     )
 
     # Resource efficiency (0-100 percentages)
     cpu_efficiency: float | None = Field(
-        None,
+        default=None,
         description="CPU efficiency ratio",
         ge=0,
         le=100,
     )
     memory_efficiency: float | None = Field(
-        None,
+        default=None,
         description="Memory efficiency ratio",
         ge=0,
         le=100,
     )
     io_efficiency: float | None = Field(
-        None,
+        default=None,
         description="I/O efficiency ratio",
         ge=0,
         le=100,
@@ -98,17 +98,17 @@ class ModelPerformanceProfile(BaseModel):
 
     # Scalability metrics
     linear_scalability_factor: float | None = Field(
-        None,
+        default=None,
         description="Linear scalability factor",
         ge=0,
     )
     max_concurrent_operations: int | None = Field(
-        None,
+        default=None,
         description="Maximum concurrent operations",
         ge=0,
     )
     saturation_point: int | None = Field(
-        None,
+        default=None,
         description="Load at which performance degrades",
         ge=0,
     )
@@ -131,12 +131,12 @@ class ModelPerformanceProfile(BaseModel):
 
     # Comparison metrics - better typed than Dict[str, Any]
     baseline_comparison_score: float | None = Field(
-        None,
+        default=None,
         description="Performance score compared to baseline",
         ge=0,
     )
     previous_version_comparison_score: float | None = Field(
-        None,
+        default=None,
         description="Performance score compared to previous version",
         ge=0,
     )
@@ -147,16 +147,16 @@ class ModelPerformanceProfile(BaseModel):
         description="When profile was generated",
     )
     profile_duration_seconds: int | None = Field(
-        None,
+        default=None,
         description="Duration of profiling session",
         ge=0,
     )
     environment: str | None = Field(
-        None,
+        default=None,
         description="Environment where profiling was done",
     )
     load_pattern: str | None = Field(
-        None,
+        default=None,
         description="Load pattern used for profiling",
     )
 
@@ -167,7 +167,7 @@ class ModelPerformanceProfile(BaseModel):
     # New pattern: ModelPerformanceProfile(**data)
 
     @field_serializer("profile_timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

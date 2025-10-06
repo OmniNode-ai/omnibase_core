@@ -1,3 +1,5 @@
+from typing import Any
+
 from .error_fail_fast import FailFastError
 
 
@@ -8,7 +10,7 @@ class ValidationFailedError(FailFastError):
         self,
         message: str,
         field: str | None = None,
-        value: str | int | float | None = None,
+        value: Any = None,
     ):
         details = {}
         if field:

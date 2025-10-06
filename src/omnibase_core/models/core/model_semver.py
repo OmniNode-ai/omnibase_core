@@ -1,16 +1,15 @@
 from typing import Any, Dict
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Semantic Version Model
 
 Pydantic model for semantic versioning following SemVer specification.
 """
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelSemVer(BaseModel):
@@ -28,7 +27,10 @@ class ModelSemVer(BaseModel):
         """Validate version numbers are non-negative."""
         if v < 0:
             msg = "Version numbers must be non-negative"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     def __str__(self) -> str:
@@ -130,7 +132,10 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     match = re.match(pattern, version_str)
     if not match:
         msg = f"Invalid semantic version format: {version_str}"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     # Use Pydantic's model validation instead of direct construction
     return ModelSemVer.model_validate(
@@ -159,15 +164,19 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
 
     if v is None:
         msg = "Version field is required in input state"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     if isinstance(v, str):
         msg = (
             f"String versions are not allowed. Use structured format: "
             f"{{major: X, minor: Y, patch: Z}}. Got string: {v}"
         )
-        raise ValueError(
-            msg,
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
         )
 
     if isinstance(v, ModelSemVer):
@@ -181,14 +190,16 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
                 f"Invalid version dict[str, Any]ionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"
             )
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             ) from e
 
     msg = (
         f"Version must be a ModelSemVer instance or dict[str, Any]ionary with {{major, minor, patch}} keys. "
         f"Got {type(v).__name__}: {v}"
     )
-    raise ValueError(
-        msg,
+    raise ModelOnexError(
+        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+        message=msg,
     )

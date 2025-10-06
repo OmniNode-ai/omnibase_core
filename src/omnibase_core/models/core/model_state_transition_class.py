@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_state_transition import EnumTransitionType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_conditional_transition import (
     ModelConditionalTransition,
 )
@@ -40,7 +42,7 @@ class ModelStateTransition(BaseModel):
     name: str = Field(..., description="Unique name for this transition")
 
     description: str | None = Field(
-        None,
+        default=None,
         description="Human-readable description of what this transition does",
     )
 
@@ -60,33 +62,33 @@ class ModelStateTransition(BaseModel):
 
     # Type-specific configuration (only one should be set)
     simple_config: ModelSimpleTransition | None = Field(
-        None,
+        default=None,
         description="Configuration for simple transitions",
     )
 
     tool_config: ModelToolBasedTransition | None = Field(
-        None,
+        default=None,
         description="Configuration for tool-based transitions",
     )
 
     conditional_config: ModelConditionalTransition | None = Field(
-        None,
+        default=None,
         description="Configuration for conditional transitions",
     )
 
     composite_config: list["ModelStateTransition"] | None = Field(
-        None,
+        default=None,
         description="Sub-transitions for composite transitions",
     )
 
     # Pre/post conditions
     preconditions: list[ModelStateTransitionCondition] | None = Field(
-        None,
+        default=None,
         description="Conditions that must be met before transition",
     )
 
     postconditions: list[ModelStateTransitionCondition] | None = Field(
-        None,
+        default=None,
         description="Conditions that must be met after transition",
     )
 
@@ -102,7 +104,7 @@ class ModelStateTransition(BaseModel):
     )
 
     emit_events: list[str] | None = Field(
-        None,
+        default=None,
         description="Event types to emit after successful transition",
     )
 
@@ -135,8 +137,9 @@ class ModelStateTransition(BaseModel):
             expected_value = getattr(self, expected_field)
             if expected_value is None:
                 msg = f"{expected_field} is required for {self.transition_type} transitions"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
 
         # Check that other configs are not set
@@ -148,8 +151,9 @@ class ModelStateTransition(BaseModel):
         ]:
             if field_name != expected_field and config_value is not None:
                 msg = f"{field_name} should not be set for {self.transition_type} transitions"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
 
         return self

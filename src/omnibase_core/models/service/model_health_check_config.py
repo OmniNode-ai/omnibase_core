@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 class ModelHealthCheckConfig(BaseModel):
     """Health check configuration for service monitoring."""
 
-    enabled: bool = Field(True, description="Enable health checks")
+    enabled: bool = Field(default=True, description="Enable health checks")
     interval_seconds: int = Field(
         30,
         description="Health check interval in seconds",

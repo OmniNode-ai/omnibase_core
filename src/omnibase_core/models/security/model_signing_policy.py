@@ -35,7 +35,9 @@ class ModelSigningPolicy(BaseModel):
         default_factory=list,
         description="Required signature algorithms",
     )
-    max_hop_count: int | None = Field(None, description="Maximum allowed hop count")
+    max_hop_count: int | None = Field(
+        default=None, description="Maximum allowed hop count"
+    )
     require_sequential_timestamps: bool = Field(
         default=True,
         description="Require sequential timestamps",

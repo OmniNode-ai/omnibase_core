@@ -49,11 +49,11 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         description="Final status of the node (stopping, stopped, error)",
     )
     uptime_seconds: int | None = Field(
-        None,
+        default=None,
         description="Total uptime of the node in seconds",
     )
     requests_processed: int | None = Field(
-        None,
+        default=None,
         description="Total requests processed during node lifetime",
     )
 
@@ -73,17 +73,17 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         description="Whether the node is expected to restart",
     )
     restart_delay_seconds: int | None = Field(
-        None,
+        default=None,
         description="Expected delay before restart in seconds",
     )
     replacement_node_id: str | None = Field(
-        None,
+        default=None,
         description="ID of replacement node if applicable",
     )
 
     # Consul compatibility
     service_id: str | None = Field(
-        None,
+        default=None,
         description="Service ID for Consul deregistration",
     )
 

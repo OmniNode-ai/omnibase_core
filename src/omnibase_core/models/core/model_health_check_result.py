@@ -43,36 +43,46 @@ class ModelHealthCheckResult(BaseModel):
 
     # Service information
     service_name: str = Field(..., description="Service name")
-    service_version: str | None = Field(None, description="Service version")
-    uptime_seconds: int | None = Field(None, description="Service uptime in seconds")
+    service_version: str | None = Field(default=None, description="Service version")
+    uptime_seconds: int | None = Field(
+        default=None, description="Service uptime in seconds"
+    )
 
     # Resource usage
-    cpu_usage_percent: float | None = Field(None, description="CPU usage percentage")
-    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
-    disk_usage_gb: float | None = Field(None, description="Disk usage in GB")
+    cpu_usage_percent: float | None = Field(
+        default=None, description="CPU usage percentage"
+    )
+    memory_usage_mb: float | None = Field(
+        default=None, description="Memory usage in MB"
+    )
+    disk_usage_gb: float | None = Field(default=None, description="Disk usage in GB")
 
     # Connection status
     database_connected: bool | None = Field(
-        None,
+        default=None,
         description="Database connection status",
     )
-    cache_connected: bool | None = Field(None, description="Cache connection status")
-    queue_connected: bool | None = Field(None, description="Queue connection status")
+    cache_connected: bool | None = Field(
+        default=None, description="Cache connection status"
+    )
+    queue_connected: bool | None = Field(
+        default=None, description="Queue connection status"
+    )
 
     # Performance metrics
     average_response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Average response time",
     )
     requests_per_second: float | None = Field(
-        None,
+        default=None,
         description="Current requests per second",
     )
-    error_rate: float | None = Field(None, description="Error rate percentage")
+    error_rate: float | None = Field(default=None, description="Error rate percentage")
 
     # Additional checks
-    checks_passed: int = Field(0, description="Number of checks passed")
-    checks_failed: int = Field(0, description="Number of checks failed")
+    checks_passed: int = Field(default=0, description="Number of checks passed")
+    checks_failed: int = Field(default=0, description="Number of checks failed")
     warnings: list[str] = Field(default_factory=list, description="Warning messages")
 
     model_config = ConfigDict()
@@ -88,7 +98,7 @@ class ModelHealthCheckResult(BaseModel):
         return self.status.lower() == "healthy"
 
     @field_serializer("timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

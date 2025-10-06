@@ -6,7 +6,7 @@ TypedDict for operation results.
 
 
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from .typed_dict_error_details import TypedDictErrorDetails
 

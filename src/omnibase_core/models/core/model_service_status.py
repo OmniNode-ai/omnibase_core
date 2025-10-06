@@ -13,23 +13,29 @@ class ModelServiceStatus(BaseModel):
     """Status of a system service."""
 
     service_name: str = Field(..., description="Name of the service")
-    service_type: str | None = Field(None, description="Type of service")
+    service_type: str | None = Field(default=None, description="Type of service")
     status: str = Field(..., description="Service status (running, stopped, error)")
     health: str | None = Field(
-        None,
+        default=None,
         description="Service health (healthy, degraded, unhealthy)",
     )
 
     # Service details
-    version: str | None = Field(None, description="Service version")
-    uptime_seconds: int | None = Field(None, description="Service uptime")
-    last_check: str | None = Field(None, description="Last health check timestamp")
+    version: str | None = Field(default=None, description="Service version")
+    uptime_seconds: int | None = Field(default=None, description="Service uptime")
+    last_check: str | None = Field(
+        default=None, description="Last health check timestamp"
+    )
 
     # Performance metrics
-    response_time_ms: float | None = Field(None, description="Average response time")
-    error_rate: float | None = Field(None, description="Error rate percentage")
-    request_count: int | None = Field(None, description="Total request count")
+    response_time_ms: float | None = Field(
+        default=None, description="Average response time"
+    )
+    error_rate: float | None = Field(default=None, description="Error rate percentage")
+    request_count: int | None = Field(default=None, description="Total request count")
 
     # Additional info
-    message: str | None = Field(None, description="Status message")
-    details: dict[str, str] | None = Field(None, description="Additional details")
+    message: str | None = Field(default=None, description="Status message")
+    details: dict[str, str] | None = Field(
+        default=None, description="Additional details"
+    )

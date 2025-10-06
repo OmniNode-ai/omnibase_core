@@ -35,7 +35,7 @@ class ModelFieldIdentity(BaseModel):
         description="UUID for field identity identifier",
     )
     identity_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable field name identifier (e.g., METADATA_VERSION)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
@@ -45,7 +45,7 @@ class ModelFieldIdentity(BaseModel):
         description="UUID for actual field name",
     )
     field_display_name: str | None = Field(
-        None,
+        default=None,
         description="Actual field name in models (e.g., metadata_version)",
     )
 

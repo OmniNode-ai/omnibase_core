@@ -1,5 +1,8 @@
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Parsed Arguments Model
 
@@ -54,7 +57,7 @@ class ModelParsedArguments(BaseModel):
     )
 
     parse_metadata: ModelParseMetadata | None = Field(
-        None,
+        default=None,
         description="Parsing metadata and performance information",
     )
 
@@ -136,7 +139,10 @@ class ModelParsedArguments(BaseModel):
         """Convert to dict[str, Any]ionary suitable for node execution."""
         if not self.is_valid():
             msg = "Cannot convert invalid arguments to execution dict[str, Any]"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Start with the argument map dict[str, Any]ionary
         result = self.arguments.to_dict()

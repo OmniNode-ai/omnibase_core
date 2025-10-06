@@ -53,17 +53,17 @@ class ModelExample(BaseModel):
 
     # Data fields
     input_data: ModelExampleInputData | None = Field(
-        None,
+        default=None,
         description="Input data for the example with type safety",
     )
 
     output_data: ModelExampleOutputData | None = Field(
-        None,
+        default=None,
         description="Expected output data for the example",
     )
 
     context: ModelExampleContextData | None = Field(
-        None,
+        default=None,
         description="Additional context information for the example",
     )
 

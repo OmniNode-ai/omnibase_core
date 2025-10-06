@@ -31,42 +31,42 @@ class ModelContainerAdapterInput(BaseModel):
 
     # Optional inputs based on action
     discovery_request: ModelEventDiscoveryRequest | None = Field(
-        None,
+        default=None,
         description="Discovery request for service queries",
     )
 
     event_descriptor: ModelEventDescriptor | None = Field(
-        None,
+        default=None,
         description="Event descriptor for registration/updates",
     )
 
     hub_registration: ModelHubRegistrationEvent | None = Field(
-        None,
+        default=None,
         description="Hub registration data for Consul",
     )
 
     service_id: str | None = Field(
-        None,
+        default=None,
         description="Service ID for status/health operations",
     )
 
     event_id: str | None = Field(
-        None,
+        default=None,
         description="Event ID for deregistration operations",
     )
 
     health_data: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Health data for service updates",
     )
 
     consul_query: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Direct Consul query parameters",
     )
 
     mesh_data: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Mesh coordination data (Phase 3)",
     )
 

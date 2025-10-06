@@ -2,6 +2,9 @@
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 
 class ModelDiscoveryConfig(BaseModel):
     """
@@ -16,7 +19,7 @@ class ModelDiscoveryConfig(BaseModel):
         description="Discovery mode identifier",
     )
     max_depth: int | None = Field(
-        None,
+        default=None,
         description="Maximum directory depth to traverse",
         ge=0,
         le=20,
@@ -112,7 +115,10 @@ class ModelDiscoveryConfig(BaseModel):
         valid_modes = {"standard", "recursive", "shallow", "deep", "cached", "fast"}
         if v not in valid_modes:
             msg = f"discovery_mode must be one of {valid_modes}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("include_patterns")
@@ -121,7 +127,10 @@ class ModelDiscoveryConfig(BaseModel):
         """Ensure include patterns is not empty."""
         if not v:
             msg = "include_patterns cannot be empty"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     @field_validator("max_depth")

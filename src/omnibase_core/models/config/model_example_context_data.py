@@ -5,7 +5,7 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Example context data model.
@@ -68,9 +68,9 @@ class ModelExampleContextData(BaseModel):
     )
 
     # User and session context
-    user_id: UUID | None = Field(None, description="UUID of the user")
+    user_id: UUID | None = Field(default=None, description="UUID of the user")
     user_display_name: str = Field(default="", description="Human-readable user name")
-    session_id: UUID | None = Field(None, description="Session identifier")
+    session_id: UUID | None = Field(default=None, description="Session identifier")
 
     # Additional metadata
     tags: list[str] = Field(default_factory=list, description="Context tags")
@@ -78,7 +78,7 @@ class ModelExampleContextData(BaseModel):
 
     # Version info
     schema_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Schema version for validation",
     )
 

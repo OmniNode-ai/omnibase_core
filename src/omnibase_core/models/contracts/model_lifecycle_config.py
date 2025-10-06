@@ -1,9 +1,9 @@
 from pydantic import Field
 
 """
-Lifecycle Configuration Model - ONEX Standards Compliant.
+EnumLifecycle Configuration Model - ONEX Standards Compliant.
 
-Lifecycle management configuration for node initialization and cleanup providing:
+EnumLifecycle management configuration for node initialization and cleanup providing:
 - Initialization, error handling, and state management policies
 - Health check and timeout configuration
 - Error recovery mechanisms and persistence settings
@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 class ModelLifecycleConfig(BaseModel):
     """
-    Lifecycle management configuration for node initialization and cleanup.
+    EnumLifecycle management configuration for node initialization and cleanup.
 
     Defines initialization, error handling, state management and cleanup
     policies for contract-driven lifecycle management.

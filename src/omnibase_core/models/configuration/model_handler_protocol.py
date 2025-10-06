@@ -2,7 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_handler_source import HandlerSourceEnum
+from omnibase_core.enums.enum_handler_source import EnumHandlerSource
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 from .model_can_handle_result import ModelCanHandleResult
 from .model_serialized_block import ModelSerializedBlock
@@ -17,7 +18,7 @@ class ModelHandlerMetadata(BaseModel):
     """
 
     handler_name: str = Field(..., description="Handler name.")
-    handler_version: str = Field(..., description="Handler version.")
+    handler_version: ModelSemVer = Field(..., description="Handler version.")
     handler_author: str = Field(..., description="Handler author.")
     handler_description: str = Field(..., description="Handler description.")
     supported_extensions: list[str] = Field(
@@ -36,7 +37,7 @@ class ModelHandlerMetadata(BaseModel):
         ...,
         description="Whether handler requires content analysis.",
     )
-    source: HandlerSourceEnum = Field(
+    source: EnumHandlerSource = Field(
         ...,
         description="Handler source (core, plugin, runtime, etc.)",
     )

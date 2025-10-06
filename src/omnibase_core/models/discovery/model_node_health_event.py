@@ -29,37 +29,41 @@ class ModelHealthMetrics(BaseModel):
 
     # Performance metrics
     cpu_usage_percent: float | None = Field(
-        None,
+        default=None,
         description="CPU usage percentage (0-100)",
     )
     memory_usage_percent: float | None = Field(
-        None,
+        default=None,
         description="Memory usage percentage (0-100)",
     )
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Average response time in milliseconds",
     )
 
     # Operational metrics
-    uptime_seconds: int | None = Field(None, description="Node uptime in seconds")
+    uptime_seconds: int | None = Field(
+        default=None, description="Node uptime in seconds"
+    )
     error_rate: float | None = Field(
-        None,
+        default=None,
         description="Error rate percentage (0-100)",
     )
-    request_count: int | None = Field(None, description="Total requests processed")
+    request_count: int | None = Field(
+        default=None, description="Total requests processed"
+    )
 
     # Health check details
     health_check_url: str | None = Field(
-        None,
+        default=None,
         description="URL for health check endpoint",
     )
     last_health_check: datetime | None = Field(
-        None,
+        default=None,
         description="When the last health check was performed",
     )
     health_check_duration_ms: float | None = Field(
-        None,
+        default=None,
         description="Duration of last health check in milliseconds",
     )
 

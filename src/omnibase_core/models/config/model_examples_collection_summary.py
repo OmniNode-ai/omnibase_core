@@ -47,7 +47,7 @@ class ModelExamplesCollectionSummary(BaseModel):
     )
 
     metadata: ModelExampleMetadataSummary | None = Field(
-        None,
+        default=None,
         description="Collection metadata summary",
     )
 
@@ -71,7 +71,9 @@ class ModelExamplesCollectionSummary(BaseModel):
         description="Percentage of valid examples",
     )
 
-    last_updated: datetime | None = Field(None, description="Last update timestamp")
+    last_updated: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
         """Calculate completion rate after initialization."""

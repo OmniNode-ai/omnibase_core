@@ -2,7 +2,7 @@ import uuid
 from typing import Any, Generic, Optional, TypeVar
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 NodeBase for ONEX ModelArchitecture.

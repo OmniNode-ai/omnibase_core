@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import Field, model_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelNodeWeights - Node weight configuration for load balancing
 
@@ -55,13 +58,15 @@ class ModelNodeWeights(BaseModel):
         for node_id, weight in self.weights.items():
             if weight < self.min_weight:
                 msg = f"Weight for {node_id} ({weight}) is below minimum ({self.min_weight})"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
             if weight > self.max_weight:
                 msg = f"Weight for {node_id} ({weight}) exceeds maximum ({self.max_weight})"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
         return self
 
@@ -73,10 +78,16 @@ class ModelNodeWeights(BaseModel):
         """Set weight for a specific node with validation"""
         if weight < self.min_weight:
             msg = f"Weight ({weight}) is below minimum ({self.min_weight})"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if weight > self.max_weight:
             msg = f"Weight ({weight}) exceeds maximum ({self.max_weight})"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         self.weights[node_id] = weight
 

@@ -5,7 +5,7 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Example metadata summary model.
@@ -34,12 +34,12 @@ class ModelExampleMetadataSummary(BaseModel):
     - Validatable: Validation and verification
     """
 
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Update timestamp")
-    version: ModelSemVer | None = Field(None, description="Metadata version")
-    author_id: UUID | None = Field(None, description="UUID of the author")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(default=None, description="Update timestamp")
+    version: ModelSemVer | None = Field(default=None, description="Metadata version")
+    author_id: UUID | None = Field(default=None, description="UUID of the author")
     author_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable author name",
     )
     tags: list[str] = Field(default_factory=list, description="Associated tags")

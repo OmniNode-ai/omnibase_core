@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 
@@ -19,8 +18,8 @@ class ModelSemVerConstraint(BaseModel):
     """
 
     # Range constraint fields
-    min_version: ModelSemVer | None = Field(None, alias="min")
-    max_version: ModelSemVer | None = Field(None, alias="max")
+    min_version: ModelSemVer | None = Field(default=None, alias="min")
+    max_version: ModelSemVer | None = Field(default=None, alias="max")
     min_inclusive: bool = True
     max_inclusive: bool = False
 

@@ -38,4 +38,4 @@ class ModelToolParameter(BaseModel):
         },
     )
     required: bool = Field(default=False, description="Whether parameter is required")
-    description: str | None = Field(None, description="Parameter description")
+    description: str | None = Field(default=None, description="Parameter description")

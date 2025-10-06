@@ -69,7 +69,7 @@ class ModelExternalServiceConfig(BaseModel):
         description="Whether this service is required for the scenario. If False, gracefully degrade if unavailable.",
     )
     retry_config: ModelRetryConfig | None = Field(
-        None,
+        default=None,
         description="Retry configuration for service operations",
     )
     tags: dict[str, str] = Field(

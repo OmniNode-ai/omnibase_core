@@ -9,28 +9,25 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_registry_health_status import EnumRegistryHealthStatus
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_examples import ModelNodeInformation
 from omnibase_core.models.core.model_generic_properties import ModelGenericProperties
 from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_trend_data import ModelTrendData
 from omnibase_core.models.health.model_tool_health import ModelToolHealth
-from omnibase_core.models.registry.model_registry_business_impact_summary import ModelRegistryBusinessImpactSummary
-from omnibase_core.models.registry.model_registry_component_performance import ModelRegistryComponentPerformance
-from omnibase_core.models.registry.model_registry_sla_compliance import ModelRegistrySlaCompliance
+from omnibase_core.models.registry.model_registry_business_impact_summary import (
+    ModelRegistryBusinessImpactSummary,
+)
+from omnibase_core.models.registry.model_registry_component_performance import (
+    ModelRegistryComponentPerformance,
+)
+from omnibase_core.models.registry.model_registry_sla_compliance import (
+    ModelRegistrySlaCompliance,
+)
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
-from omnibase_core.enums.enum_registry_health_status import EnumRegistryHealthStatus
-
-
-class ModelRegistryHealthReportError(ModelOnexError):
-    """Validation error for registry health report operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_REGISTRY_HEALTH_REPORT_ERROR",
-        )
-        self.field_name = field_name
 
 
 class ModelRegistryHealthReport(BaseModel):
@@ -74,13 +71,13 @@ class ModelRegistryHealthReport(BaseModel):
     )
 
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Error message if health check failed",
         max_length=1000,
     )
 
     error_code: str | None = Field(
-        None,
+        default=None,
         description="Specific error code for programmatic handling",
         max_length=50,
     )
@@ -96,24 +93,24 @@ class ModelRegistryHealthReport(BaseModel):
         ge=0,
     )
 
-    registry_version: str | None = Field(
+    registry_version: ModelSemVer | None = Field(
         default=None,
         description="Registry version information",
         max_length=50,
     )
 
     node_information: ModelNodeInformation | None = Field(
-        None,
+        default=None,
         description="Information about the node hosting this registry",
     )
 
     performance_metrics: ModelMonitoringMetrics | None = Field(
-        None,
+        default=None,
         description="Performance and operational metrics",
     )
 
     trends: ModelTrendData | None = Field(
-        None,
+        default=None,
         description="Historical trends and pattern analysis",
     )
 
@@ -133,9 +130,9 @@ class ModelRegistryHealthReport(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError as e:
-            raise ModelRegistryHealthReportError(
-                f"Invalid timestamp format: {e}",
-                "check_timestamp"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
+                message=f"Invalid timestamp format for check_timestamp: {e}",
             )
 
     # === Overall Health Analysis ===
@@ -252,7 +249,9 @@ class ModelRegistryHealthReport(BaseModel):
 
         return sum(response_times) / len(response_times)
 
-    def get_slowest_components(self, limit: int = 5) -> list[ModelRegistryComponentPerformance]:
+    def get_slowest_components(
+        self, limit: int = 5
+    ) -> list[ModelRegistryComponentPerformance]:
         """Get the slowest performing components."""
         components = []
 
@@ -435,36 +434,65 @@ class ModelRegistryHealthReport(BaseModel):
         # Build custom metrics
         now = datetime.now(UTC)
         custom_metrics = {
-            "registry_status": ModelMetricValue(value=self.status.value, unit="status", timestamp=now),
-            "is_healthy": ModelMetricValue(value=self.is_healthy(), unit="boolean", timestamp=now),
-            "is_critical": ModelMetricValue(value=self.is_critical(), unit="boolean", timestamp=now),
-            "is_operational": ModelMetricValue(value=self.is_operational(), unit="boolean", timestamp=now),
+            "registry_status": ModelMetricValue(
+                value=self.status.value, unit="status", timestamp=now
+            ),
+            "is_healthy": ModelMetricValue(
+                value=self.is_healthy(), unit="boolean", timestamp=now
+            ),
+            "is_critical": ModelMetricValue(
+                value=self.is_critical(), unit="boolean", timestamp=now
+            ),
+            "is_operational": ModelMetricValue(
+                value=self.is_operational(), unit="boolean", timestamp=now
+            ),
             "requires_attention": ModelMetricValue(
                 value=self.requires_immediate_attention(), unit="boolean", timestamp=now
             ),
-            "tools_total": ModelMetricValue(value=len(self.tools_health), unit="count", timestamp=now),
-            "tools_healthy": ModelMetricValue(value=self.get_healthy_tools_count(), unit="count", timestamp=now),
-            "tools_unhealthy": ModelMetricValue(value=self.get_unhealthy_tools_count(), unit="count", timestamp=now),
-            "tools_degraded": ModelMetricValue(value=self.get_degraded_tools_count(), unit="count", timestamp=now),
-            "tools_health_percentage": ModelMetricValue(
-                value=self.get_tools_health_percentage(), unit="percentage", timestamp=now
+            "tools_total": ModelMetricValue(
+                value=len(self.tools_health), unit="count", timestamp=now
             ),
-            "services_total": ModelMetricValue(value=len(self.services_health), unit="count", timestamp=now),
-            "services_healthy": ModelMetricValue(value=self.get_healthy_services_count(), unit="count", timestamp=now),
+            "tools_healthy": ModelMetricValue(
+                value=self.get_healthy_tools_count(), unit="count", timestamp=now
+            ),
+            "tools_unhealthy": ModelMetricValue(
+                value=self.get_unhealthy_tools_count(), unit="count", timestamp=now
+            ),
+            "tools_degraded": ModelMetricValue(
+                value=self.get_degraded_tools_count(), unit="count", timestamp=now
+            ),
+            "tools_health_percentage": ModelMetricValue(
+                value=self.get_tools_health_percentage(),
+                unit="percentage",
+                timestamp=now,
+            ),
+            "services_total": ModelMetricValue(
+                value=len(self.services_health), unit="count", timestamp=now
+            ),
+            "services_healthy": ModelMetricValue(
+                value=self.get_healthy_services_count(), unit="count", timestamp=now
+            ),
             "services_unhealthy": ModelMetricValue(
                 value=self.get_unhealthy_services_count(), unit="count", timestamp=now
             ),
             "services_health_percentage": ModelMetricValue(
-                value=self.get_services_health_percentage(), unit="percentage", timestamp=now
+                value=self.get_services_health_percentage(),
+                unit="percentage",
+                timestamp=now,
             ),
             "reliability_score": ModelMetricValue(
-                value=self.calculate_overall_reliability_score(), unit="score", timestamp=now
+                value=self.calculate_overall_reliability_score(),
+                unit="score",
+                timestamp=now,
             ),
-            "reliability_category": ModelMetricValue(value=self.get_reliability_category(), unit="category", timestamp=now),
+            "reliability_category": ModelMetricValue(
+                value=self.get_reliability_category(), unit="category", timestamp=now
+            ),
             "critical_components": ModelMetricValue(
-                value=len(self.get_critical_tools()) + len(self.get_critical_services()),
+                value=len(self.get_critical_tools())
+                + len(self.get_critical_services()),
                 unit="count",
-                timestamp=now
+                timestamp=now,
             ),
         }
 

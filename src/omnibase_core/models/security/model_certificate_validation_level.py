@@ -30,7 +30,9 @@ class ModelCertificateValidationLevel(BaseModel):
         description="Check certificate revocation status via CRL/OCSP",
     )
 
-    check_chain: bool = Field(True, description="Validate full certificate chain")
+    check_chain: bool = Field(
+        default=True, description="Validate full certificate chain"
+    )
 
     check_hostname: bool = Field(
         True,
@@ -54,7 +56,9 @@ class ModelCertificateValidationLevel(BaseModel):
         le=20,
     )
 
-    allow_self_signed: bool = Field(False, description="Allow self-signed certificates")
+    allow_self_signed: bool = Field(
+        default=False, description="Allow self-signed certificates"
+    )
 
     minimum_key_size: int = Field(
         2048,
@@ -71,11 +75,14 @@ class ModelCertificateValidationLevel(BaseModel):
     @classmethod
     def validate_level(cls, v: str) -> str:
         """Validate certificate validation level."""
+        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
         valid_levels = {"none", "basic", "standard", "strict", "paranoid"}
         if v not in valid_levels:
-            msg = f"Invalid validation level: {v}. Must be one of: {valid_levels}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid validation level: {v}. Must be one of: {valid_levels}",
             )
         return v
 

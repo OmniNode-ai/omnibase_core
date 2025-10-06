@@ -19,7 +19,9 @@ class ModelCLIArgument(BaseModel):
     required: bool = Field(..., description="Whether argument is required")
     description: str = Field(..., description="Human-readable argument description")
     default: ModelSchemaValue | None = Field(
-        None,
+        default=None,
         description="Default value if optional",
     )
-    choices: list[str] | None = Field(None, description="Valid choices for argument")
+    choices: list[str] | None = Field(
+        default=None, description="Valid choices for argument"
+    )

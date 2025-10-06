@@ -1,4 +1,4 @@
-from typing import Callable, Generic, List, TypeVar
+from typing import Any, Callable, Generic, List, TypeVar
 
 from omnibase_core.errors.error_codes import ModelOnexError
 
@@ -52,7 +52,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     self.start_event_listener()
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the event listener mixin."""
         super().__init__(**kwargs)
         self._event_listener_thread = None
@@ -109,7 +109,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         return getattr(self, "_event_bus", None)
 
     @event_bus.setter
-    def event_bus(self, value: ProtocolEventBus):
+    def event_bus(self, value: ProtocolEventBus) -> None:
         """Set event bus instance."""
         self._event_bus = value
 
@@ -248,7 +248,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         # Default: append .complete
         return f"{input_event_type}.complete"
 
-    def start_event_listener(self):
+    def start_event_listener(self) -> None:
         """Start listening for events in a background thread if event bus available."""
         emit_log_event(
             LogLevel.INFO,
@@ -300,7 +300,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
-    def stop_event_listener(self):
+    def stop_event_listener(self) -> None:
         """Stop the event listener thread."""
         if self._event_listener_thread and self._event_listener_thread.is_alive():
             emit_log_event(
@@ -333,7 +333,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 {"node_name": self.get_node_name()},
             )
 
-    def _event_listener_loop(self):
+    def _event_listener_loop(self) -> None:
         """Main event listener loop running in background thread."""
         emit_log_event(
             LogLevel.INFO,
@@ -447,7 +447,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             {"node_name": self.get_node_name(), "pattern": pattern},
         )
 
-        def handler(envelope):
+        def handler(envelope) -> None:
             """Handle incoming event envelope."""
             # Handle both envelope and direct event for current standards
             if hasattr(envelope, "payload"):
@@ -980,7 +980,9 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
-    def _publish_error_event(self, input_event: ModelOnexEvent, error_message: str):
+    def _publish_error_event(
+        self, input_event: ModelOnexEvent, error_message: str
+    ) -> None:
         """Publish error completion event."""
         completion_event_type = self.get_completion_event_type(input_event.event_type)
 

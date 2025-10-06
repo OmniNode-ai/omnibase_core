@@ -32,4 +32,4 @@ class ModelComplexFilter(ModelCustomFilterBase):
         | ModelStatusFilter
     ] = Field(..., description="List of sub-filters to apply")
     logic: str = Field("AND", description="Logical operator (AND/OR)")
-    negate: bool = Field(False, description="Negate the entire filter result")
+    negate: bool = Field(default=False, description="Negate the entire filter result")

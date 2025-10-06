@@ -24,8 +24,10 @@ class ModelHealthStatus(BaseModel):
     """
 
     status: EnumNodeHealthStatus = Field(description="Overall health status")
-    message: str | None = Field(None, description="Human-readable status message")
-    timestamp: str | None = Field(None, description="Timestamp of health check")
+    message: str | None = Field(
+        default=None, description="Human-readable status message"
+    )
+    timestamp: str | None = Field(default=None, description="Timestamp of health check")
 
     @field_validator("timestamp", mode="before")
     @classmethod
@@ -46,12 +48,16 @@ class ModelHealthStatus(BaseModel):
         return str(v)
 
     details: ModelHealthDetails = Field(
-        default_factory=ModelHealthDetails,
+        default_factory=lambda: ModelHealthDetails(),
         description="Additional health details",
     )
     uptime_seconds: float | None = Field(
-        None,
+        default=None,
         description="System uptime in seconds",
     )
-    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
-    cpu_usage_percent: float | None = Field(None, description="CPU usage percentage")
+    memory_usage_mb: float | None = Field(
+        default=None, description="Memory usage in MB"
+    )
+    cpu_usage_percent: float | None = Field(
+        default=None, description="CPU usage percentage"
+    )

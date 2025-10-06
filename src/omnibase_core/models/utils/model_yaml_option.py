@@ -28,9 +28,9 @@ class ModelYamlOption(BaseModel):
     option_type: EnumYamlOptionType = Field(
         description="Type discriminator for the option value",
     )
-    boolean_value: bool | None = Field(None, description="Boolean option value")
-    integer_value: int | None = Field(None, description="Integer option value")
-    string_value: str | None = Field(None, description="String option value")
+    boolean_value: bool | None = Field(default=None, description="Boolean option value")
+    integer_value: int | None = Field(default=None, description="Integer option value")
+    string_value: str | None = Field(default=None, description="String option value")
 
     @classmethod
     def from_bool(cls, value: bool) -> "ModelYamlOption":

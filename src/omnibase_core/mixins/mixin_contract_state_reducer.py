@@ -40,7 +40,7 @@ class MixinContractStateReducer:
                 return self.process_action_with_transitions(input_state)
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize contract state reducer mixin."""
         super().__init__(*args, **kwargs)
 
@@ -143,7 +143,9 @@ class MixinContractStateReducer:
             self._transitions_loaded = True
             return transitions
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: resilient loading, returns empty list with logging on failure
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,
@@ -153,7 +155,7 @@ class MixinContractStateReducer:
             self._transitions_loaded = True
             return []
 
-    def process_action_with_transitions(self, input_state):
+    def process_action_with_transitions(self, input_state: Any) -> Any:
         """
         Process action using contract-driven state transitions.
 
@@ -212,7 +214,9 @@ class MixinContractStateReducer:
                 ModelCoreErrorCode.OPERATION_FAILED,
             )
 
-    def _apply_transition(self, transition: ModelStateTransition, input_state) -> None:
+    def _apply_transition(
+        self, transition: ModelStateTransition, input_state: Any
+    ) -> None:
         """
         Apply a single state transition.
 
@@ -252,7 +256,7 @@ class MixinContractStateReducer:
     def _apply_simple_transition(
         self,
         transition: ModelStateTransition,
-        input_state,
+        input_state: Any,
     ) -> None:
         """Apply simple field update transition."""
         # Simple transitions update state fields using template expressions
@@ -272,7 +276,7 @@ class MixinContractStateReducer:
     def _apply_tool_based_transition(
         self,
         transition: ModelStateTransition,
-        input_state,
+        input_state: Any,
     ) -> None:
         """Apply tool-based transition by delegating to specified tool."""
         tool_name = getattr(self, "node_name", "unknown_tool")
@@ -296,7 +300,7 @@ class MixinContractStateReducer:
     def _apply_conditional_transition(
         self,
         transition: ModelStateTransition,
-        input_state,
+        input_state: Any,
     ) -> None:
         """Apply conditional transition based on state conditions."""
         tool_name = getattr(self, "node_name", "unknown_tool")
@@ -311,7 +315,7 @@ class MixinContractStateReducer:
             },
         )
 
-    def _create_default_output_state(self, input_state):
+    def _create_default_output_state(self, input_state: Any) -> dict[str, Any]:
         """Create a default output state when no main tool is available."""
         # This is a fallback - each tool should implement proper processing
         tool_name = getattr(self, "node_name", "unknown_tool")

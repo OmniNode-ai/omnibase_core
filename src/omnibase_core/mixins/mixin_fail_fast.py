@@ -42,7 +42,7 @@ class MixinFailFast:
 
     Usage:
         class MyTool(MixinFailFast, ProtocolReducer):
-            def process(self, input_state):
+            def process(self, input_state: Any) -> None:
                 # Validate required fields
                 self.validate_required(input_state.config, "config")
                 self.validate_not_empty(input_state.data, "data")
@@ -57,7 +57,7 @@ class MixinFailFast:
                     pass
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the fail fast mixin."""
         super().__init__(**kwargs)
 
@@ -120,9 +120,9 @@ class MixinFailFast:
 
     def validate_not_empty(
         self,
-        value: str | list[Any] | dict[str, Any],
+        value: Any,
         field_name: str,
-    ) -> str | list[Any] | dict[str, Any]:
+    ) -> Any:
         """
         Validate that a field is not empty.
 

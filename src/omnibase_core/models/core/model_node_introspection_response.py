@@ -53,7 +53,7 @@ class ModelNodeIntrospectionResponse(BaseModel):
         description="Node capabilities",
     )
     event_channels: ModelEventChannels | None = Field(
-        None,
+        default=None,
         description="Event channels this node subscribes to and publishes to",
     )
     introspection_version: str = Field(

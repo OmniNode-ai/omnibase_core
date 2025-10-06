@@ -50,7 +50,9 @@ class ModelMetricsData(BaseModel):
     )
 
     # Metadata
-    collection_id: UUID | None = Field(None, description="UUID for metrics collection")
+    collection_id: UUID | None = Field(
+        default=None, description="UUID for metrics collection"
+    )
     collection_display_name: ModelSchemaValue = Field(
         default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Human-readable name of the metrics collection",

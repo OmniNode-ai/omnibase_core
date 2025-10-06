@@ -28,19 +28,19 @@ class MixinContractMetadata:
 
     Usage:
         class MyTool(MixinContractMetadata, ProtocolReducer):
-            def __init__(self, **kwargs):
+            def __init__(self, **kwargs: Any) -> None:
                 super().__init__(**kwargs)
                 # Access metadata via self properties
                 print(f"Tool: {self.node_name} v{self.node_version}")
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the contract metadata mixin."""
         super().__init__(**kwargs)
 
         # Initialize properties
         self._node_metadata: ModelNodeMetadata | None = None
-        self._contract_data: dict[str, str | int | dict[str, Any]] | None = None
+        self._contract_data: dict[str, Any] | None = None
         self._node_name: str | None = None
         self._node_version: str | None = None
         self._description: str | None = None
@@ -210,7 +210,7 @@ class MixinContractMetadata:
         return self._tool_type or "generic"
 
     @property
-    def contract_data(self) -> dict[str, str | int | dict[str, Any]] | None:
+    def contract_data(self) -> dict[str, Any] | None:
         """Get full contract data."""
         return self._contract_data
 

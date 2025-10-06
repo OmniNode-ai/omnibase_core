@@ -13,8 +13,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.utils.decorators import allow_any_type, allow_dict_str_any
 
-from .model_config import ModelConfig
-
 
 @allow_dict_str_any("CLI execution results must handle diverse tool output types")
 @allow_any_type("CLI execution results need flexible typing for tool interoperability")
@@ -29,7 +27,7 @@ class ModelCliExecutionResult(BaseModel):
     # Core result information
     success: bool = Field(..., description="Whether the operation succeeded")
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Error message if operation failed",
     )
 
@@ -41,18 +39,18 @@ class ModelCliExecutionResult(BaseModel):
 
     # Execution metadata
     tool_name: str | None = Field(
-        None,
+        default=None,
         description="Name of the tool that was executed",
     )
     execution_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Execution time in milliseconds",
     )
 
     # Status information
-    status_code: int = Field(0, description="Numeric status code (0 = success)")
+    status_code: int = Field(default=0, description="Numeric status code (0 = success)")
     warning_message: str | None = Field(
-        None,
+        default=None,
         description="Warning message if applicable",
     )
 

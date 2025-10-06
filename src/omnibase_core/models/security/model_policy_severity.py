@@ -1,5 +1,8 @@
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelPolicySeverity: Policy violation severity configuration.
 
@@ -45,12 +48,12 @@ class ModelPolicySeverity(BaseModel):
     )
 
     remediation_action: str | None = Field(
-        None,
+        default=None,
         description="Automatic remediation action to take",
     )
 
     custom_message: str | None = Field(
-        None,
+        default=None,
         description="Custom message for this severity level",
     )
 
@@ -60,9 +63,9 @@ class ModelPolicySeverity(BaseModel):
         """Validate severity level."""
         valid_levels = {"info", "warning", "error", "critical"}
         if v not in valid_levels:
-            msg = f"Invalid severity level: {v}. Must be one of: {valid_levels}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid severity level: {v}. Must be one of: {valid_levels}",
             )
         return v
 

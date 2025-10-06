@@ -6,6 +6,8 @@ from pydantic import Field
 Permission action model for defining allowed actions in permission constraints.
 """
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -15,7 +17,7 @@ class ModelPermissionAction(BaseModel):
     Defines specific actions that can be performed on resources.
     """
 
-    action_id: str = Field(
+    action_id: UUID = Field(
         ...,
         description="Unique action identifier",
         pattern="^[a-z][a-z0-9_-]*$",
@@ -46,19 +48,19 @@ class ModelPermissionAction(BaseModel):
     )
 
     description: str | None = Field(
-        None,
+        default=None,
         description="Detailed description of the action",
     )
 
     # Constraints
     max_frequency_per_hour: int | None = Field(
-        None,
+        default=None,
         description="Maximum times this action can be performed per hour",
         ge=0,
     )
 
     cooldown_minutes: int | None = Field(
-        None,
+        default=None,
         description="Cooldown period between actions in minutes",
         ge=0,
     )

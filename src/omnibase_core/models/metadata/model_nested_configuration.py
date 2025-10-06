@@ -32,7 +32,7 @@ class ModelNestedConfiguration(BaseModel):
     # UUID-based entity references
     config_id: UUID = Field(..., description="Unique identifier for the configuration")
     config_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable configuration name",
     )
     config_type: EnumConfigType = Field(

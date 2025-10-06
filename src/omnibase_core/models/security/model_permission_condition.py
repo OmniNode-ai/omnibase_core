@@ -4,6 +4,8 @@ from pydantic import Field
 Permission condition model for defining conditional access rules.
 """
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
@@ -18,10 +20,9 @@ class ModelPermissionCondition(BaseModel):
     Defines conditions that must be met for permission to be granted.
     """
 
-    condition_id: str = Field(
+    condition_id: UUID = Field(
         ...,
         description="Unique condition identifier",
-        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     condition_type: str = Field(
@@ -45,40 +46,40 @@ class ModelPermissionCondition(BaseModel):
 
     # Time-based conditions
     time_window_start: str | None = Field(
-        None,
+        default=None,
         description="Start time for time-based conditions (HH:MM format)",
     )
 
     time_window_end: str | None = Field(
-        None,
+        default=None,
         description="End time for time-based conditions (HH:MM format)",
     )
 
     days_of_week: list[str] | None = Field(
-        None,
+        default=None,
         description="Days when condition applies (mon, tue, wed, thu, fri, sat, sun)",
     )
 
     # Location-based conditions
     allowed_locations: list[str] | None = Field(
-        None,
+        default=None,
         description="Allowed geographic locations",
     )
 
     ip_ranges: list[str] | None = Field(
-        None,
+        default=None,
         description="Allowed IP ranges (CIDR notation)",
     )
 
     # Attribute conditions
     required_attributes: ModelRequiredAttributes | None = Field(
-        None,
+        default=None,
         description="Required user/resource attributes",
     )
 
     # Logical operators
     combine_with: str | None = Field(
-        None,
+        default=None,
         description="How to combine with other conditions",
         pattern="^(and|or)$",
     )
@@ -87,11 +88,11 @@ class ModelPermissionCondition(BaseModel):
 
     # Metadata
     description: str | None = Field(
-        None,
+        default=None,
         description="Human-readable description of the condition",
     )
 
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Custom error message when condition fails",
     )

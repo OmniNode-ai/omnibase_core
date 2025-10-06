@@ -15,6 +15,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 

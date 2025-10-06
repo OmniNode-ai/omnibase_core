@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Function Lifecycle Status Enumeration - Unified Hierarchy Version.
+Function EnumLifecycle Status Enumeration - Unified Hierarchy Version.
 
 Function lifecycle status using the unified status hierarchy. This enum focuses
 on function/component lifecycle states rather than execution states, providing
@@ -26,7 +26,7 @@ class EnumFunctionLifecycleStatus(str, Enum):
     - ACTIVE (function is available and stable)
     - INACTIVE (function is not available)
 
-    Lifecycle-Specific States:
+    EnumLifecycle-Specific States:
     - DEPRECATED (function is marked for removal)
     - DISABLED (function is temporarily disabled)
     - EXPERIMENTAL (function is experimental/beta)
@@ -40,7 +40,7 @@ class EnumFunctionLifecycleStatus(str, Enum):
     ACTIVE = EnumBaseStatus.ACTIVE.value  # Production ready and available
     INACTIVE = EnumBaseStatus.INACTIVE.value  # Not available for use
 
-    # Lifecycle-specific states
+    # EnumLifecycle-specific states
     DEPRECATED = "deprecated"  # Marked for future removal
     DISABLED = "disabled"  # Temporarily disabled
     EXPERIMENTAL = "experimental"  # Experimental feature

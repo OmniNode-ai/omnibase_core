@@ -24,17 +24,17 @@ class ModelWorkflowExecutionArgs(BaseModel):
 
     workflow_name: str = Field(..., description="Name of the workflow to execute")
     parameters: ModelWorkflowParameters | None = Field(
-        None,
+        default=None,
         description="Workflow execution parameters",
     )
     dry_run: bool = Field(default=False, description="Whether to perform a dry run")
     timeout_seconds: int | None = Field(
-        None,
+        default=None,
         description="Execution timeout in seconds",
     )
-    priority: str | None = Field(None, description="Execution priority")
+    priority: str | None = Field(default=None, description="Execution priority")
     tags: list[str] | None = Field(
-        None,
+        default=None,
         description="Tags for the workflow execution",
     )
 

@@ -1,11 +1,12 @@
 import uuid
 from enum import Enum
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelFunctionDeprecationInfo(BaseModel):
@@ -14,7 +15,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
     Contains deprecation details:
     - Deprecation version and replacement info
-    - Lifecycle status
+    - EnumLifecycle status
     """
 
     # Deprecation information (2 fields, but minimal)

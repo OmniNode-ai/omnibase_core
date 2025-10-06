@@ -27,13 +27,13 @@ class ModelOrchestratorPlan(BaseModel):
     )
 
     # Plan metadata using structured fields
-    description: str | None = Field(None, description="Plan description")
-    version: str | None = Field(None, description="Plan version")
-    created_at: str | None = Field(None, description="Plan creation timestamp")
-    author: str | None = Field(None, description="Plan author")
+    description: str | None = Field(default=None, description="Plan description")
+    version: str | None = Field(default=None, description="Plan version")
+    created_at: str | None = Field(default=None, description="Plan creation timestamp")
+    author: str | None = Field(default=None, description="Plan author")
 
     # Custom metadata for extensibility
     custom_metadata: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Custom metadata fields",
     )

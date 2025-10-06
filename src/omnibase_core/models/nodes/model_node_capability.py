@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Node Capability Model
@@ -49,7 +49,7 @@ class ModelNodeCapability(BaseModel):
         description="Unique identifier for the capability entity",
     )
     capability_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable capability identifier (e.g., SUPPORTS_DRY_RUN)",
     )
 

@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Instance Metadata Model
@@ -27,7 +27,7 @@ class ModelInstanceMetadata(BaseModel):
     """
 
     deployment_id: str | None = Field(
-        None,
+        default=None,
         description="Deployment identifier",
         pattern="^[a-z][a-z0-9-]*$",
     )
@@ -39,7 +39,7 @@ class ModelInstanceMetadata(BaseModel):
     )
 
     deployment_region: str | None = Field(
-        None,
+        default=None,
         description="Deployment region or zone",
         pattern="^[a-z][a-z0-9-]*$",
     )
@@ -50,7 +50,7 @@ class ModelInstanceMetadata(BaseModel):
     )
 
     runtime_version: str | None = Field(
-        None,
+        default=None,
         description="Runtime version (e.g., Python 3.9.0)",
     )
 
@@ -74,9 +74,9 @@ class ModelInstanceMetadata(BaseModel):
         description="Tags for filtering and grouping",
     )
 
-    owner: str | None = Field(None, description="Owner or team responsible")
+    owner: str | None = Field(default=None, description="Owner or team responsible")
 
-    cost_center: str | None = Field(None, description="Cost center for billing")
+    cost_center: str | None = Field(default=None, description="Cost center for billing")
 
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
@@ -89,12 +89,12 @@ class ModelInstanceMetadata(BaseModel):
     )
 
     maintenance_window: str | None = Field(
-        None,
+        default=None,
         description="Maintenance window specification",
     )
 
     sla_tier: str | None = Field(
-        None,
+        default=None,
         description="SLA tier (e.g., gold, silver, bronze)",
     )
 

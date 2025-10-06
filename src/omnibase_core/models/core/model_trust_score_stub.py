@@ -12,4 +12,6 @@ class ModelTrustScoreStub(BaseModel):
 
     runs: int = Field(..., description="Number of runs")
     failures: int = Field(..., description="Number of failures")
-    trust_score: float | None = Field(None, description="Trust score (optional)")
+    trust_score: float | None = Field(
+        default=None, description="Trust score (optional)"
+    )

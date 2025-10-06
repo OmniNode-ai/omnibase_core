@@ -26,4 +26,4 @@ class ModelOnexInputState(BaseModel):
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
-    timestamp: float | None = Field(None, description="Optional timestamp")
+    timestamp: float | None = Field(default=None, description="Optional timestamp")

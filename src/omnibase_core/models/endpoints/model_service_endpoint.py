@@ -20,13 +20,13 @@ class ModelServiceEndpoint(BaseModel):
         description="Service endpoint URL (http/https/redis/postgresql/etc.)",
     )
     port: int | None = Field(
-        None,
+        default=None,
         description="Service port (extracted from URL if not specified)",
         ge=1,
         le=65535,
     )
     protocol: str | None = Field(
-        None,
+        default=None,
         description="Protocol scheme (extracted from URL if not specified)",
     )
 

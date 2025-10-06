@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+from uuid import UUID
 
 from pydantic import Field, model_validator
 
@@ -37,18 +38,18 @@ class ModelStateUpdate(BaseModel):
     )
 
     # Metadata about the update
-    update_id: str | None = Field(
-        None,
+    update_id: UUID | None = Field(
+        default=None,
         description="Unique identifier for this update (for tracking/debugging)",
     )
 
     update_source: str | None = Field(
-        None,
+        default=None,
         description="Tool or component that generated this update",
     )
 
     update_timestamp: str | None = Field(
-        None,
+        default=None,
         description="ISO timestamp when update was generated",
     )
 
@@ -59,18 +60,18 @@ class ModelStateUpdate(BaseModel):
     )
 
     validation_rules: list[str] | None = Field(
-        None,
+        default=None,
         description="Specific validation rules to run (None means run all)",
     )
 
     # Side effects and notifications
     emit_events: list[dict[str, str]] | None = Field(
-        None,
+        default=None,
         description="Events to emit after successful state update",
     )
 
     log_messages: list[str] | None = Field(
-        None,
+        default=None,
         description="Messages to log when applying update",
     )
 
@@ -81,7 +82,7 @@ class ModelStateUpdate(BaseModel):
     )
 
     error_strategy: str | None = Field(
-        None,
+        default=None,
         description="How to handle errors: 'fail', 'skip', 'retry'",
     )
 

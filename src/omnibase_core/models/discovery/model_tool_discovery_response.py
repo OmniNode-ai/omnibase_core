@@ -1,7 +1,9 @@
+from uuid import UUID
+
 from pydantic import Field
 
 from omnibase_core.constants.constants_contract_fields import TOOL_DISCOVERY_REQUEST
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Tool Discovery Response Event Model
@@ -26,7 +28,7 @@ class ModelDiscoveredTool(BaseModel):
     """Information about a discovered tool"""
 
     # Node identification
-    node_id: str = Field(..., description="Unique identifier for the node")
+    node_id: UUID = Field(..., description="Unique identifier for the node")
     node_name: str = Field(..., description="Name of the node (e.g. 'node_generator')")
     version: ModelSemVer = Field(..., description="Version of the node")
 
@@ -58,11 +60,11 @@ class ModelDiscoveredTool(BaseModel):
     )
 
     # Service discovery
-    service_id: str | None = Field(
-        None,
+    service_id: UUID | None = Field(
+        default=None,
         description="Service ID for Consul compatibility",
     )
     health_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Health check endpoint if available",
     )

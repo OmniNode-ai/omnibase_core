@@ -28,12 +28,12 @@ from types.core_types (not from models or types.constraints).
 
 import asyncio
 from collections.abc import Callable as CallableABC
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, Callable, Union
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_health_status import ModelHealthStatus
 
@@ -281,7 +281,10 @@ class MixinHealthCheck:
                         emit_log_event(
                             LogLevel.ERROR,
                             f"Health check {check_func.__name__} returned invalid type: {type(result)}",
-                            {"check_name": check_func.__name__, "type": str(type(result))},
+                            {
+                                "check_name": check_func.__name__,
+                                "type": str(type(result)),
+                            },
                         )
                         sync_result = ModelHealthStatus(
                             status=EnumNodeHealthStatus.UNHEALTHY,
@@ -384,7 +387,9 @@ class MixinHealthCheck:
                 cpu_usage_percent=0.0,
             )
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
             return ModelHealthStatus(
                 status=EnumNodeHealthStatus.UNHEALTHY,
                 message=f"{dependency_name} check failed: {e!s}",

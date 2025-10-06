@@ -73,23 +73,23 @@ class ModelPermissionScope(BaseModel):
     )
 
     valid_from: datetime | None = Field(
-        None,
+        default=None,
         description="Permission valid from this timestamp",
     )
 
     valid_until: datetime | None = Field(
-        None,
+        default=None,
         description="Permission valid until this timestamp",
     )
 
     time_of_day_start: str | None = Field(
-        None,
+        default=None,
         description="Daily validity start time (HH:MM format)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
     time_of_day_end: str | None = Field(
-        None,
+        default=None,
         description="Daily validity end time (HH:MM format)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
@@ -125,12 +125,12 @@ class ModelPermissionScope(BaseModel):
     )
 
     context_variables: ModelContextVariables = Field(
-        default_factory=ModelContextVariables,
+        default_factory=lambda: ModelContextVariables(),
         description="Context variables available for conditional evaluation",
     )
 
     metadata: ModelPermissionMetadata = Field(
-        default_factory=ModelPermissionMetadata,
+        default_factory=lambda: ModelPermissionMetadata(),
         description="Additional scope metadata",
     )
 
@@ -246,7 +246,9 @@ class ModelPermissionScope(BaseModel):
                 # Very basic evaluation - in production use ast.literal_eval or similar
                 if not self._evaluate_simple_expression(expression, full_context):
                     return False
-            except Exception:
+            except (
+                Exception
+            ):  # fallback-ok: expression evaluation fails safe, returns False on error
                 return False  # Fail safe on evaluation errors
 
         return True

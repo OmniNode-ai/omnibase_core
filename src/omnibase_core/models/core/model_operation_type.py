@@ -40,7 +40,7 @@ class ModelOperationType(BaseModel):
         description="Whether operation can be safely retried",
     )
     expected_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Expected operation duration",
         ge=0,
     )

@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Transformation Action Payload Model.
 
@@ -18,11 +21,11 @@ class ModelTransformationActionPayload(ModelActionPayloadBase):
     """Payload for transformation actions (transform, convert, parse, etc.)."""
 
     input_format: str | None = Field(
-        None,
+        default=None,
         description="Input format for transformation",
     )
     output_format: str | None = Field(
-        None,
+        default=None,
         description="Output format for transformation",
     )
     transformation_rules: list[str] = Field(
@@ -45,5 +48,8 @@ class ModelTransformationActionPayload(ModelActionPayloadBase):
 
         if v.category != TRANSFORMATION:
             msg = f"Invalid transformation action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

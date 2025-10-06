@@ -5,27 +5,9 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
-from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
-
-
-class ModelSecurityEventCollectionError(ModelOnexError):
-    """Error for security event collection operations."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_SECURITY_EVENT_COLLECTION_ERROR",
-        )
-
-
-class ModelSecurityEventCollectionValidationError(ModelSecurityEventCollectionError):
-    """Validation error for security event collection operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(message)
-        self.field_name = field_name
 
 
 class ModelSecurityEventCollection(BaseModel):
@@ -63,7 +45,7 @@ class ModelSecurityEventCollection(BaseModel):
         description="When this collection was last updated",
     )
     description: str | None = Field(
-        None,
+        default=None,
         description="Description of this collection",
     )
 
@@ -89,9 +71,9 @@ class ModelSecurityEventCollection(BaseModel):
     def validate_events(cls, v: list[ModelSecurityEvent]) -> list[ModelSecurityEvent]:
         """Validate events list."""
         if len(v) > cls.MAX_EVENTS:
-            raise ModelSecurityEventCollectionValidationError(
-                f"Events list cannot exceed {cls.MAX_EVENTS} events",
-                field_name="events",
+            raise ModelOnexError(
+                message=f"Events list cannot exceed {cls.MAX_EVENTS} events",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
         return v
 
@@ -100,9 +82,9 @@ class ModelSecurityEventCollection(BaseModel):
     def validate_retention_days(cls, v: int | None) -> int | None:
         """Validate retention days."""
         if v is not None and v < 1:
-            raise ModelSecurityEventCollectionValidationError(
-                "Retention days must be at least 1",
-                field_name="retention_days",
+            raise ModelOnexError(
+                message="Retention days must be at least 1",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
         return v
 
@@ -112,8 +94,9 @@ class ModelSecurityEventCollection(BaseModel):
             if self.auto_prune:
                 self._prune_oldest_events()
             else:
-                raise ModelSecurityEventCollectionValidationError(
-                    f"Cannot add event: collection has reached maximum size of {self.max_events}",
+                raise ModelOnexError(
+                    message=f"Cannot add event: collection has reached maximum size of {self.max_events}",
+                    error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
                 )
 
         self.events.append(event)
@@ -122,14 +105,14 @@ class ModelSecurityEventCollection(BaseModel):
     def get_recent_events(self, limit: int = 10) -> list[ModelSecurityEvent]:
         """Get the most recent security events."""
         if limit <= 0:
-            raise ModelSecurityEventCollectionValidationError(
-                "Limit must be greater than 0",
-                field_name="limit",
+            raise ModelOnexError(
+                message="Limit must be greater than 0",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
         if limit > self.MAX_RECENT_EVENTS:
-            raise ModelSecurityEventCollectionValidationError(
-                f"Limit cannot exceed {self.MAX_RECENT_EVENTS}",
-                field_name="limit",
+            raise ModelOnexError(
+                message=f"Limit cannot exceed {self.MAX_RECENT_EVENTS}",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
 
         # Sort by timestamp descending and return the most recent
@@ -150,9 +133,9 @@ class ModelSecurityEventCollection(BaseModel):
     def get_events_by_user(self, user_id: str) -> list[ModelSecurityEvent]:
         """Get events for a specific user."""
         if not user_id:
-            raise ModelSecurityEventCollectionValidationError(
-                "User ID cannot be empty",
-                field_name="user_id",
+            raise ModelOnexError(
+                message="User ID cannot be empty",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
         return [event for event in self.events if event.user_id == user_id]
 
@@ -163,9 +146,9 @@ class ModelSecurityEventCollection(BaseModel):
     ) -> list[ModelSecurityEvent]:
         """Get events within a specific time range."""
         if start_time and end_time and start_time >= end_time:
-            raise ModelSecurityEventCollectionValidationError(
-                "Start time must be before end time",
-                field_name="time_range",
+            raise ModelOnexError(
+                message="Start time must be before end time",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
 
         filtered_events = self.events
@@ -182,27 +165,29 @@ class ModelSecurityEventCollection(BaseModel):
     ) -> list[ModelSecurityEvent]:
         """Get events with specific severity levels."""
         if not severity_levels:
-            raise ModelSecurityEventCollectionValidationError(
-                "Severity levels cannot be empty",
-                field_name="severity_levels",
+            raise ModelOnexError(
+                message="Severity levels cannot be empty",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
         return [event for event in self.events if event.severity in severity_levels]
 
     def get_events_by_node(self, node_id: str) -> list[ModelSecurityEvent]:
         """Get events for a specific node."""
         if not node_id:
-            raise ModelSecurityEventCollectionValidationError(
-                "Node ID cannot be empty",
-                field_name="node_id",
+            raise ModelOnexError(
+                message="Node ID cannot be empty",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-        return [event for event in self.events if getattr(event, 'node_id', None) == node_id]
+        return [
+            event for event in self.events if getattr(event, "node_id", None) == node_id
+        ]
 
     def search_events(self, query: str) -> list[ModelSecurityEvent]:
         """Search events by content (case-insensitive)."""
         if not query:
-            raise ModelSecurityEventCollectionValidationError(
-                "Search query cannot be empty",
-                field_name="query",
+            raise ModelOnexError(
+                message="Search query cannot be empty",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
 
         query_lower = query.lower()
@@ -211,10 +196,10 @@ class ModelSecurityEventCollection(BaseModel):
         for event in self.events:
             # Search in various event fields
             searchable_content = [
-                getattr(event, 'description', ''),
-                getattr(event, 'user_id', ''),
-                getattr(event, 'node_id', ''),
-                getattr(event, 'details', ''),
+                getattr(event, "description", ""),
+                getattr(event, "user_id", ""),
+                getattr(event, "node_id", ""),
+                getattr(event, "details", ""),
             ]
 
             # Convert to strings and check if any contain the query
@@ -246,17 +231,21 @@ class ModelSecurityEventCollection(BaseModel):
         timestamps = []
         for event in self.events:
             # Count event types
-            event_type = event.event_type.value if hasattr(event.event_type, 'value') else str(event.event_type)
+            event_type = (
+                event.event_type.value
+                if hasattr(event.event_type, "value")
+                else str(event.event_type)
+            )
             event_types[event_type] = event_types.get(event_type, 0) + 1
 
             # Count severity
-            severity = getattr(event, 'severity', 'unknown')
+            severity = getattr(event, "severity", "unknown")
             severity_distribution[severity] = severity_distribution.get(severity, 0) + 1
 
             # Collect users and nodes
-            if hasattr(event, 'user_id') and event.user_id:
+            if hasattr(event, "user_id") and event.user_id:
                 users_involved.add(event.user_id)
-            if hasattr(event, 'node_id') and event.node_id:
+            if hasattr(event, "node_id") and event.node_id:
                 nodes_involved.add(event.node_id)
 
             # Collect timestamps
@@ -317,17 +306,17 @@ class ModelSecurityEventCollection(BaseModel):
     def export_events(self, format_type: str = "dict") -> list[dict[str, Any]]:
         """Export events in specified format."""
         if format_type not in ["dict", "json"]:
-            raise ModelSecurityEventCollectionValidationError(
-                "Format must be 'dict' or 'json'",
-                field_name="format_type",
+            raise ModelOnexError(
+                message="Format must be 'dict' or 'json'",
+                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
 
         event_data = []
         for event in self.events:
-            if hasattr(event, 'model_dump'):
+            if hasattr(event, "model_dump"):
                 event_dict = event.model_dump()
             else:
-                event_dict = event.dict() if hasattr(event, 'dict') else event.__dict__
+                event_dict = event.dict() if hasattr(event, "dict") else event.__dict__
 
             # Convert datetime objects to ISO format strings
             for key, value in event_dict.items():

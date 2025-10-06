@@ -19,32 +19,34 @@ class ModelPerformanceConstraints(BaseModel):
     """
 
     max_memory_mb: int | None = Field(
-        None,
+        default=None,
         description="Maximum memory usage in MB",
         ge=1,
     )
     max_cpu_cores: float | None = Field(
-        None,
+        default=None,
         description="Maximum CPU cores",
         ge=0.1,
         le=64.0,
     )
     max_disk_io_mb_per_sec: int | None = Field(
-        None,
+        default=None,
         description="Maximum disk I/O in MB/sec",
         ge=1,
     )
     max_network_mb_per_sec: int | None = Field(
-        None,
+        default=None,
         description="Maximum network bandwidth in MB/sec",
         ge=1,
     )
     max_execution_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Maximum execution time in milliseconds",
         ge=1,
     )
-    max_queue_size: int | None = Field(None, description="Maximum queue size", ge=1)
+    max_queue_size: int | None = Field(
+        default=None, description="Maximum queue size", ge=1
+    )
     priority_class: str = Field(
         default="normal",
         description="Priority class for resource allocation",

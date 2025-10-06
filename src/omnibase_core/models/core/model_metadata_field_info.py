@@ -6,7 +6,7 @@ from pydantic import Field
 """
 Metadata Field Info Model
 
-Replaces NodeMetadataField enum with a proper model that includes
+Replaces EnumNodeMetadataField enum with a proper model that includes
 field properties and categorization.
 """
 
@@ -19,7 +19,7 @@ class ModelMetadataFieldInfo(BaseModel):
     """
     Metadata field information model.
 
-    Replaces the NodeMetadataField enum to provide structured information
+    Replaces the EnumNodeMetadataField enum to provide structured information
     about each metadata field including requirements and properties.
     """
 

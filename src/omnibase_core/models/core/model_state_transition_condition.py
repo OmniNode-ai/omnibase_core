@@ -18,11 +18,11 @@ class ModelStateTransitionCondition(BaseModel):
     )
 
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Error message if condition fails",
     )
 
     required_fields: list[str] | None = Field(
-        None,
+        default=None,
         description="Fields that must exist in state for condition",
     )

@@ -31,7 +31,7 @@ class ModelInputState(BaseModel):
 
     # Version field (required for parsing) - structured discriminated union
     version: "ModelVersionUnion | None" = Field(
-        None,
+        default=None,
         description="Version information as discriminated union or None",
     )
 

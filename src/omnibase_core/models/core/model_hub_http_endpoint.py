@@ -13,4 +13,4 @@ class ModelHubHttpEndpoint(BaseModel):
 
     path: str = Field(..., description="Endpoint path")
     method: str = Field(default="GET", description="HTTP method")
-    description: str | None = Field(None, description="Endpoint description")
+    description: str | None = Field(default=None, description="Endpoint description")

@@ -1,28 +1,27 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.errors.error_codes import ModelOnexError
-
 """
 Numeric value model.
 
 Type-safe numeric value container that replaces int | float unions
 with structured validation and proper type handling.
+
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is part of a carefully managed import chain to avoid circular dependencies.
+To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
+and runtime imports in validators that need to raise errors.
 """
 
+from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
-# Import all dependencies only when needed to break circular imports
-
-# Forward reference for type alias - will be properly defined after the class
+if TYPE_CHECKING:
+    from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelNumericValue(BaseModel):
@@ -52,7 +51,7 @@ class ModelNumericValue(BaseModel):
     )
 
     source: str | None = Field(
-        None,
+        default=None,
         description="Source of the numeric value",
     )
 
@@ -65,6 +64,8 @@ class ModelNumericValue(BaseModel):
         Raises ModelOnexError with VALIDATION_ERROR code for non-numeric values.
         """
         if not isinstance(v, (int, float)):
+            from omnibase_core.errors.error_codes import ModelOnexError
+
             msg = f"Value must be numeric (int or float), got {type(v).__name__}"
             raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
         return float(v)

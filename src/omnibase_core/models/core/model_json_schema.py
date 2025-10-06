@@ -28,60 +28,68 @@ class ModelJsonSchema(BaseModel):
     """
 
     # Core schema properties
-    type: str | None = Field(None, description="JSON Schema type")
-    description: str | None = Field(None, description="Schema description")
-    title: str | None = Field(None, description="Schema title")
-    default: ModelSchemaValue | None = Field(None, description="Default value")
+    type: str | None = Field(default=None, description="JSON Schema type")
+    description: str | None = Field(default=None, description="Schema description")
+    title: str | None = Field(default=None, description="Schema title")
+    default: ModelSchemaValue | None = Field(default=None, description="Default value")
 
     # String validation
-    min_length: int | None = Field(None, alias="minLength")
-    max_length: int | None = Field(None, alias="maxLength")
-    pattern: str | None = Field(None, description="String pattern")
-    format: str | None = Field(None, description="String format")
+    min_length: int | None = Field(default=None, alias="minLength")
+    max_length: int | None = Field(default=None, alias="maxLength")
+    pattern: str | None = Field(default=None, description="String pattern")
+    format: str | None = Field(default=None, description="String format")
 
     # Numeric validation
-    minimum: int | float | None = Field(None, description="Minimum value")
-    maximum: int | float | None = Field(None, description="Maximum value")
-    exclusive_minimum: bool | None = Field(None, alias="exclusiveMinimum")
-    exclusive_maximum: bool | None = Field(None, alias="exclusiveMaximum")
-    multiple_of: int | float | None = Field(None, alias="multipleOf")
+    minimum: int | float | None = Field(default=None, description="Minimum value")
+    maximum: int | float | None = Field(default=None, description="Maximum value")
+    exclusive_minimum: bool | None = Field(default=None, alias="exclusiveMinimum")
+    exclusive_maximum: bool | None = Field(default=None, alias="exclusiveMaximum")
+    multiple_of: int | float | None = Field(default=None, alias="multipleOf")
 
     # Array validation
-    items: Optional["ModelJsonSchema"] = Field(None, description="Array items schema")
-    min_items: int | None = Field(None, alias="minItems")
-    max_items: int | None = Field(None, alias="maxItems")
-    unique_items: bool | None = Field(None, alias="uniqueItems")
+    items: Optional["ModelJsonSchema"] = Field(
+        default=None, description="Array items schema"
+    )
+    min_items: int | None = Field(default=None, alias="minItems")
+    max_items: int | None = Field(default=None, alias="maxItems")
+    unique_items: bool | None = Field(default=None, alias="uniqueItems")
 
     # Object validation
     properties: dict[str, "ModelJsonSchema"] | None = Field(
-        None, description="Object properties"
+        default=None, description="Object properties"
     )
-    required: list[str] | None = Field(None, description="Required properties")
+    required: list[str] | None = Field(default=None, description="Required properties")
     additional_properties: Union[bool, "ModelJsonSchema"] | None = Field(
-        None, alias="additionalProperties"
+        default=None, alias="additionalProperties"
     )
 
     # Composition
-    all_of: list["ModelJsonSchema"] | None = Field(None, alias="allOf")
-    any_of: list["ModelJsonSchema"] | None = Field(None, alias="anyOf")
-    one_of: list["ModelJsonSchema"] | None = Field(None, alias="oneOf")
-    not_schema: Optional["ModelJsonSchema"] = Field(None, alias="not")
+    all_of: list["ModelJsonSchema"] | None = Field(default=None, alias="allOf")
+    any_of: list["ModelJsonSchema"] | None = Field(default=None, alias="anyOf")
+    one_of: list["ModelJsonSchema"] | None = Field(default=None, alias="oneOf")
+    not_schema: Optional["ModelJsonSchema"] = Field(default=None, alias="not")
 
     # References
-    ref: str | None = Field(None, alias="$ref", description="Schema reference")
+    ref: str | None = Field(default=None, alias="$ref", description="Schema reference")
     definitions: dict[str, "ModelJsonSchema"] | None = Field(
-        None, description="Schema definitions"
+        default=None, description="Schema definitions"
     )
 
     # Enumeration
-    enum: list[ModelSchemaValue] | None = Field(None, description="Enumeration values")
-    const: ModelSchemaValue | None = Field(None, description="Constant value")
+    enum: list[ModelSchemaValue] | None = Field(
+        default=None, description="Enumeration values"
+    )
+    const: ModelSchemaValue | None = Field(default=None, description="Constant value")
 
     # Additional metadata
-    examples: list[ModelSchemaValue] | None = Field(None, description="Example values")
-    deprecated: bool | None = Field(None, description="Whether schema is deprecated")
-    read_only: bool | None = Field(None, alias="readOnly")
-    write_only: bool | None = Field(None, alias="writeOnly")
+    examples: list[ModelSchemaValue] | None = Field(
+        default=None, description="Example values"
+    )
+    deprecated: bool | None = Field(
+        default=None, description="Whether schema is deprecated"
+    )
+    read_only: bool | None = Field(default=None, alias="readOnly")
+    write_only: bool | None = Field(default=None, alias="writeOnly")
 
     @classmethod
     def from_dict(cls, schema_dict: dict[str, Any]) -> "ModelJsonSchema":

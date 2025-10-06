@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Dict, List
+from uuid import UUID
 
 from pydantic import Field
 
@@ -128,17 +129,17 @@ class EnumOnexErrorCode(str, Enum):
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         msg = "Subclasses must implement get_component()"
-        raise NotImplementedError(msg)
+        raise NotImplementedError(msg)  # stub-ok: abstract method
 
     def get_number(self) -> int:
         """Get the numeric identifier for this error code."""
         msg = "Subclasses must implement get_number()"
-        raise NotImplementedError(msg)
+        raise NotImplementedError(msg)  # stub-ok: abstract method
 
     def get_description(self) -> str:
         """Get a human-readable description for this error code."""
         msg = "Subclasses must implement get_description()"
-        raise NotImplementedError(msg)
+        raise NotImplementedError(msg)  # stub-ok: abstract method
 
     def get_exit_code(self) -> int:
         """

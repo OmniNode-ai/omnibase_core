@@ -18,6 +18,7 @@ excessive string fields in a single large model.
 
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 

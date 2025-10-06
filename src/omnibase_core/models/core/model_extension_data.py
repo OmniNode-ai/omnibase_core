@@ -2,6 +2,9 @@ from typing import Any, Dict, List
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Properly structured extension data model with validation.
 
@@ -122,18 +125,27 @@ class ModelExtensionData(BaseModel):
         if isinstance(v, list):
             if len(v) > 100:
                 msg = f"List values cannot exceed 100 items, got {len(v)}"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
         elif isinstance(v, dict):
             if len(v) > 50:
                 msg = f"Object values cannot exceed 50 keys, got {len(v)}"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
             # Ensure no nested structures
             for key, val in v.items():
                 if not isinstance(val, (str, int, float, bool)):
                     msg = f"Object values must be primitives, got {type(val).__name__} for key '{key}'"
-                    raise ValueError(msg)
+                    raise ModelOnexError(
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                    )
 
         return v
 

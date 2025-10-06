@@ -127,13 +127,13 @@ class ModelOutputFormatOptions(BaseModel):
 
     # Pagination options
     page_size: int | None = Field(
-        None,
+        default=None,
         description="Number of items per page",
         ge=1,
         le=1000,
     )
     max_items: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of items to display",
         ge=1,
     )

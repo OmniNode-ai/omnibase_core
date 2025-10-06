@@ -8,7 +8,7 @@ class ModelDiscoveryMetadata(BaseModel):
     """Additional metadata for node discovery operations."""
 
     discovery_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Time taken for discovery operation",
         ge=0,
     )
@@ -25,15 +25,15 @@ class ModelDiscoveryMetadata(BaseModel):
         description="Criteria used to filter discovery results",
     )
     discovery_scope: str | None = Field(
-        None,
+        default=None,
         description="Scope of discovery (local, cluster, global)",
     )
     last_refresh: datetime | None = Field(
-        None,
+        default=None,
         description="When discovery data was last refreshed",
     )
     next_refresh: datetime | None = Field(
-        None,
+        default=None,
         description="When discovery data should be refreshed next",
     )
     discovery_version: str = Field(

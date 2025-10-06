@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelPermissionEvaluationContext: Context for permission evaluation.
 
@@ -16,13 +19,17 @@ from pydantic import BaseModel, Field
 class ModelPermissionEvaluationContext(BaseModel):
     """Context for permission evaluation."""
 
-    user_id: str | None = Field(None, description="User identifier")
-    resource_path: str | None = Field(None, description="Resource being accessed")
-    requested_action: str | None = Field(None, description="Action being requested")
-    timestamp: datetime | None = Field(None, description="Request timestamp")
-    client_ip: str | None = Field(None, description="Client IP address")
-    user_agent: str | None = Field(None, description="Client user agent")
-    session_id: str | None = Field(None, description="Session identifier")
+    user_id: str | None = Field(default=None, description="User identifier")
+    resource_path: str | None = Field(
+        default=None, description="Resource being accessed"
+    )
+    requested_action: str | None = Field(
+        default=None, description="Action being requested"
+    )
+    timestamp: datetime | None = Field(default=None, description="Request timestamp")
+    client_ip: str | None = Field(default=None, description="Client IP address")
+    user_agent: str | None = Field(default=None, description="Client user agent")
+    session_id: str | None = Field(default=None, description="Session identifier")
 
     # Separate dict[str, Any]ionaries for different types to avoid Union
     string_attributes: dict[str, str] = Field(
@@ -81,5 +88,8 @@ class ModelPermissionEvaluationContext(BaseModel):
         """Get item with indexing (dict[str, Any]-like behavior)."""
         value = self.get(key)
         if value is None:
-            raise KeyError(f"Key '{key}' not found in context")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                message=f"Key '{key}' not found in context",
+            )
         return value

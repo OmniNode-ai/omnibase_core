@@ -38,7 +38,7 @@ def _create_and_register_action(
     return action_type
 
 
-# Lifecycle Actions
+# EnumLifecycle Actions
 HEALTH_CHECK = _create_and_register_action(
     "health_check",
     LIFECYCLE,

@@ -11,11 +11,13 @@ class ModelServiceContainer(BaseModel):
     """Service container configuration."""
 
     image: str = Field(..., description="Container image")
-    env: dict[str, str] | None = Field(None, description="Environment variables")
-    ports: list[str] | None = Field(None, description="Exposed ports")
-    volumes: list[str] | None = Field(None, description="Volume mounts")
-    options: str | None = Field(None, description="Container options")
+    env: dict[str, str] | None = Field(
+        default=None, description="Environment variables"
+    )
+    ports: list[str] | None = Field(default=None, description="Exposed ports")
+    volumes: list[str] | None = Field(default=None, description="Volume mounts")
+    options: str | None = Field(default=None, description="Container options")
     credentials: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Registry credentials",
     )

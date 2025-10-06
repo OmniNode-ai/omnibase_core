@@ -14,4 +14,4 @@ class ModelTelemetryOperationErrorMetadata(BaseModel):
     )
     error_type: str = Field(..., description="Type of the error that occurred")
     error_message: str = Field(..., description="Error message")
-    success: bool = Field(False, description="Whether the operation succeeded")
+    success: bool = Field(default=False, description="Whether the operation succeeded")

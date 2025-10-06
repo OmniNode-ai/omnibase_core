@@ -11,8 +11,10 @@ class ModelClassNameInputState(ModelOnexInputState):
     """Input state for class name generation operations."""
 
     base_name: str = Field(..., description="Base name to convert to class name")
-    add_model_prefix: bool = Field(False, description="Whether to add 'Model' prefix")
+    add_model_prefix: bool = Field(
+        default=False, description="Whether to add 'Model' prefix"
+    )
     class_type: str | None = Field(
-        None,
+        default=None,
         description="Type hint for naming (tool, model, enum)",
     )

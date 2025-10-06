@@ -15,4 +15,6 @@ class ModelNamingConventionInputState(ModelOnexInputState):
         ...,
         description="Target convention (pascal_case, snake_case, etc.)",
     )
-    source_convention: str | None = Field(None, description="Source convention hint")
+    source_convention: str | None = Field(
+        default=None, description="Source convention hint"
+    )

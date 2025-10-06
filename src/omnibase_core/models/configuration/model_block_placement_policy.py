@@ -44,7 +44,7 @@ class ModelBlockPlacementPolicy(BaseModel):
         description="Allow a license header above the metadata block.",
     )
     license_header_pattern: str | None = Field(
-        None,
+        default=None,
         description="Regex pattern for allowed license header lines.",
     )
     normalize_blank_lines: bool = Field(

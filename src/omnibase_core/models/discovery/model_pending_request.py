@@ -30,7 +30,7 @@ class ModelPendingRequest(BaseModel):
         description="Type of discovery request",
     )
     filters: ModelIntrospectionFilters | None = Field(
-        None,
+        default=None,
         description="Filters applied to the discovery request",
     )
     timeout_ms: int = Field(default=5000, description="Request timeout in milliseconds")

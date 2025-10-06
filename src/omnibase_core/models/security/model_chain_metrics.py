@@ -20,10 +20,10 @@ class ModelChainMetrics(BaseModel):
         description="Total verification time",
     )
     chain_build_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Time to build chain",
     )
     cache_hit_rate: float | None = Field(
-        None,
+        default=None,
         description="Cache hit rate percentage",
     )

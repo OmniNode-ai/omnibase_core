@@ -33,7 +33,9 @@ class ModelTraceData(BaseModel):
 
     trace_id: UUID = Field(description="Unique trace identifier")
     span_id: UUID = Field(description="Span identifier")
-    parent_span_id: UUID | None = Field(None, description="Parent span identifier")
+    parent_span_id: UUID | None = Field(
+        default=None, description="Parent span identifier"
+    )
     start_time: datetime = Field(description="Start timestamp")
     end_time: datetime = Field(description="End timestamp")
     duration_ms: float = Field(description="Duration in milliseconds")

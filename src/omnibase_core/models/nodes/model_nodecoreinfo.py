@@ -2,11 +2,12 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelNodeCoreInfo(BaseModel):
@@ -25,15 +26,17 @@ class ModelNodeCoreInfo(BaseModel):
         default_factory=uuid.uuid4,
         description="Node identifier",
     )
-    node_display_name: str | None = Field(None, description="Human-readable node name")
+    node_display_name: str | None = Field(
+        default=None, description="Human-readable node name"
+    )
     node_type: EnumMetadataNodeType = Field(..., description="Node type")
     node_version: ModelSemVer = Field(..., description="Node version")
 
     # Basic metadata (3 fields)
-    description: str | None = Field(None, description="Node description")
-    author_id: UUID | None = Field(None, description="UUID for node author")
+    description: str | None = Field(default=None, description="Node description")
+    author_id: UUID | None = Field(default=None, description="UUID for node author")
     author_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable node author",
     )
 
@@ -48,8 +51,10 @@ class ModelNodeCoreInfo(BaseModel):
     )
 
     # Timestamps (2 fields)
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     def is_active(self) -> bool:
         """Check if node is active."""

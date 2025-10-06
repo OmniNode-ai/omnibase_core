@@ -1634,5 +1634,3 @@ class NodeOrchestrator(NodeCoreBase):
             "priority_based_emission": True,
             "timeout_configurable": True,
         }
-
-    

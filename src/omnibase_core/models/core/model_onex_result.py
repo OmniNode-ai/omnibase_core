@@ -23,7 +23,7 @@ class ModelOnexResult(BaseModel):
 
     status: EnumOnexStatus
     target: str | None = Field(
-        None,
+        default=None,
         description="Target file or resource validated.",
     )
     messages: list[ModelOnexMessage] = Field(default_factory=list)

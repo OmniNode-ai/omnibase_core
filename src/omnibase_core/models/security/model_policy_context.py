@@ -24,8 +24,10 @@ class ModelPolicyContext(BaseModel):
     # Compliance information
     frameworks: list[str] = Field(..., description="Compliance frameworks")
     classification: str = Field(..., description="Data classification")
-    retention_period_days: int | None = Field(None, description="Retention period")
-    jurisdiction: str | None = Field(None, description="Legal jurisdiction")
+    retention_period_days: int | None = Field(
+        default=None, description="Retention period"
+    )
+    jurisdiction: str | None = Field(default=None, description="Legal jurisdiction")
     consent_required: bool = Field(..., description="Whether consent is required")
     audit_level: str = Field(..., description="Audit level required")
     contains_pii: bool = Field(..., description="Contains PII")
@@ -34,7 +36,9 @@ class ModelPolicyContext(BaseModel):
     export_controlled: bool = Field(..., description="Subject to export controls")
 
     # Security context
-    user_id: str | None = Field(None, description="User identifier")
+    user_id: str | None = Field(default=None, description="User identifier")
     roles: list[str] = Field(default_factory=list, description="User roles")
-    security_clearance: str | None = Field(None, description="Security clearance")
-    trust_level: int | None = Field(None, description="Trust level")
+    security_clearance: str | None = Field(
+        default=None, description="Security clearance"
+    )
+    trust_level: int | None = Field(default=None, description="Trust level")

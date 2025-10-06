@@ -3,6 +3,9 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 
 class ModelYamlWithExamples(BaseModel):
     """Model for YAML files that contain examples sections."""
@@ -10,7 +13,9 @@ class ModelYamlWithExamples(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # For schema files with examples
-    examples: list[dict[str, Any]] | None = Field(None, description="Examples section")
+    examples: list[dict[str, Any]] | None = Field(
+        default=None, description="Examples section"
+    )
 
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelYamlWithExamples":
@@ -29,4 +34,7 @@ class ModelYamlWithExamples(BaseModel):
                 return cls(examples=data if data else None)
             return cls(**data)
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML content: {e}") from e
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid YAML content: {e}",
+            ) from e

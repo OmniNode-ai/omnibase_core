@@ -5,7 +5,7 @@ from typing import Dict, Generic
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
@@ -27,11 +27,13 @@ class ModelGenericMetadata(BaseModel):
     """
 
     # Common metadata fields
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
-    created_by: str | None = Field(None, description="Creator identifier")
-    updated_by: str | None = Field(None, description="Last updater identifier")
-    version: ModelSemVer | None = Field(None, description="Version information")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
+    created_by: str | None = Field(default=None, description="Creator identifier")
+    updated_by: str | None = Field(default=None, description="Last updater identifier")
+    version: ModelSemVer | None = Field(default=None, description="Version information")
 
     # Flexible fields for various use cases
     tags: list[str] | None = Field(
@@ -57,7 +59,7 @@ class ModelGenericMetadata(BaseModel):
 
     # For complex nested data - use JSON string representation
     extended_data_json: str | None = Field(
-        None,
+        default=None,
         description="Extended data as JSON string (for nested structures)",
     )
 

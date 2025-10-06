@@ -17,27 +17,29 @@ class ModelConsulEventBridgeOutput(BaseModel):
 
     bridge_result: str = Field(..., description="Bridge operation result")
 
-    bridging_success: bool | None = Field(None, description="Event bridging success")
+    bridging_success: bool | None = Field(
+        default=None, description="Event bridging success"
+    )
 
     bridged_event_descriptor: ModelEventDescriptor | None = Field(
-        None,
+        default=None,
         description="Event descriptor created from Consul data",
     )
 
     sync_success: bool | None = Field(
-        None,
+        default=None,
         description="State synchronization success",
     )
 
     monitoring_started: bool | None = Field(
-        None,
+        default=None,
         description="Event monitoring started successfully",
     )
 
     operation_timestamp: str = Field(..., description="Operation timestamp")
 
     error_details: str | None = Field(
-        None,
+        default=None,
         description="Error details if operation failed",
     )
 

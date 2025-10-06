@@ -7,6 +7,7 @@ Strongly-typed model for connection information.
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
 
@@ -14,6 +15,7 @@ from omnibase_core.models.core.model_connection_metrics import ModelConnectionMe
 from omnibase_core.models.core.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 # Compatibility alias
 ConnectionMetrics = ModelConnectionMetrics
@@ -26,45 +28,51 @@ class ModelConnectionInfo(BaseModel):
     """
 
     # Connection identification
-    connection_id: str = Field(..., description="Unique connection identifier")
+    connection_id: UUID = Field(..., description="Unique connection identifier")
     connection_type: str = Field(
         ...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
-    protocol_version: str | None = Field(None, description="Protocol version")
+    protocol_version: ModelSemVer | None = Field(
+        default=None, description="Protocol version"
+    )
 
     # Endpoint information
     host: str = Field(..., description="Host address")
     port: int = Field(..., description="Port number")
-    path: str | None = Field(None, description="Connection path/endpoint")
+    path: str | None = Field(default=None, description="Connection path/endpoint")
 
     # Authentication
-    auth_type: str | None = Field(None, description="Authentication type")
-    username: str | None = Field(None, description="Username")
-    password: SecretStr | None = Field(None, description="Password (encrypted)")
-    api_key: SecretStr | None = Field(None, description="API key (encrypted)")
-    token: SecretStr | None = Field(None, description="Auth token (encrypted)")
+    auth_type: str | None = Field(default=None, description="Authentication type")
+    username: str | None = Field(default=None, description="Username")
+    password: SecretStr | None = Field(default=None, description="Password (encrypted)")
+    api_key: SecretStr | None = Field(default=None, description="API key (encrypted)")
+    token: SecretStr | None = Field(default=None, description="Auth token (encrypted)")
 
     # SSL/TLS
-    use_ssl: bool = Field(False, description="Whether to use SSL/TLS")
-    ssl_verify: bool = Field(True, description="Whether to verify SSL certificates")
-    ssl_cert_path: str | None = Field(None, description="SSL certificate path")
-    ssl_key_path: str | None = Field(None, description="SSL key path")
-    ssl_ca_path: str | None = Field(None, description="SSL CA bundle path")
+    use_ssl: bool = Field(default=False, description="Whether to use SSL/TLS")
+    ssl_verify: bool = Field(
+        default=True, description="Whether to verify SSL certificates"
+    )
+    ssl_cert_path: str | None = Field(default=None, description="SSL certificate path")
+    ssl_key_path: str | None = Field(default=None, description="SSL key path")
+    ssl_ca_path: str | None = Field(default=None, description="SSL CA bundle path")
 
     # Connection parameters
     timeout_seconds: int = Field(30, description="Connection timeout")
     retry_count: int = Field(3, description="Number of retry attempts")
     retry_delay_seconds: int = Field(1, description="Delay between retries")
     keepalive_interval: int | None = Field(
-        None,
+        default=None,
         description="Keepalive interval in seconds",
     )
 
     # Connection pooling
-    pool_size: int | None = Field(None, description="Connection pool size")
-    pool_timeout: int | None = Field(None, description="Pool timeout in seconds")
-    max_overflow: int | None = Field(None, description="Maximum pool overflow")
+    pool_size: int | None = Field(default=None, description="Connection pool size")
+    pool_timeout: int | None = Field(
+        default=None, description="Pool timeout in seconds"
+    )
+    max_overflow: int | None = Field(default=None, description="Maximum pool overflow")
 
     # Headers and metadata
     headers: dict[str, str] = Field(
@@ -78,10 +86,10 @@ class ModelConnectionInfo(BaseModel):
 
     # Connection state
     established_at: datetime | None = Field(
-        None,
+        default=None,
         description="Connection establishment time",
     )
-    last_used_at: datetime | None = Field(None, description="Last usage time")
+    last_used_at: datetime | None = Field(default=None, description="Last usage time")
     connection_state: str = Field(
         "disconnected",
         description="Current connection state",
@@ -89,13 +97,13 @@ class ModelConnectionInfo(BaseModel):
 
     # Metrics
     metrics: ModelConnectionMetrics | None = Field(
-        None,
+        default=None,
         description="Connection metrics",
     )
 
     # Custom properties
     custom_properties: ModelCustomConnectionProperties = Field(
-        default_factory=ModelCustomConnectionProperties,
+        default_factory=lambda: ModelCustomConnectionProperties(),
         description="Custom connection properties",
     )
 
@@ -174,13 +182,13 @@ class ModelConnectionInfo(BaseModel):
         return self.use_ssl or self.auth_type in ["oauth2", "jwt", "mtls"]
 
     @field_serializer("password", "api_key", "token")
-    def serialize_secret(self, value):
+    def serialize_secret(self, value) -> None:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         return value
 
     @field_serializer("established_at", "last_used_at")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

@@ -1,5 +1,8 @@
 from pydantic import BaseModel
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 
 class ModelEntrypointBlock(BaseModel):
     type: str
@@ -14,7 +17,10 @@ class ModelEntrypointBlock(BaseModel):
         """
         if "://" not in uri:
             msg = f"Invalid entrypoint URI: {uri}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         type_, target = uri.split("://", 1)
         return cls(type=type_, target=target)
 

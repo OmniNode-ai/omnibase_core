@@ -41,10 +41,14 @@ class ModelExampleSummary(BaseModel):
     )
     display_name: str = Field(..., description="Example display name")
 
-    description: str | None = Field(None, description="Example description")
+    description: str | None = Field(default=None, description="Example description")
     is_valid: bool = Field(default=True, description="Whether example is valid")
-    input_data: ModelExampleInputData | None = Field(None, description="Input data")
-    output_data: ModelExampleOutputData | None = Field(None, description="Output data")
+    input_data: ModelExampleInputData | None = Field(
+        default=None, description="Input data"
+    )
+    output_data: ModelExampleOutputData | None = Field(
+        default=None, description="Output data"
+    )
 
     model_config = {
         "extra": "ignore",

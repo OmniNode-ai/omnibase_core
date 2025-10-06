@@ -6,7 +6,7 @@ TypedDict for feature flags.
 
 
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
 class TypedDictFeatureFlags(TypedDict):

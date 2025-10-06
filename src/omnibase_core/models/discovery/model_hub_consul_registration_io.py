@@ -28,20 +28,22 @@ class ModelHubConsulRegistrationInput(BaseModel):
     )
 
     # Optional inputs based on action
-    hub_domain: str | None = Field(None, description="Hub domain for registration")
+    hub_domain: str | None = Field(
+        default=None, description="Hub domain for registration"
+    )
 
     hub_port: int | None = Field(
-        None,
+        default=None,
         description="Hub port for service registration",
     )
 
     registration_event: ModelHubRegistrationEvent | None = Field(
-        None,
+        default=None,
         description="Hub registration event for manual registration",
     )
 
     hub_id: str | None = Field(
-        None,
+        default=None,
         description="Hub ID for status/deregistration operations",
     )
 

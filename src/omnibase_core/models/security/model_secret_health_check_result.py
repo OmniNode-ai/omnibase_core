@@ -14,14 +14,16 @@ from pydantic import BaseModel, Field
 class ModelSecretHealthCheckResult(BaseModel):
     """Health check result for secret configuration."""
 
-    healthy: bool = Field(True, description="Overall health status")
+    healthy: bool = Field(default=True, description="Overall health status")
 
     backend_available: bool = Field(
         False,
         description="Whether the backend is available and accessible",
     )
 
-    config_valid: bool = Field(False, description="Whether the configuration is valid")
+    config_valid: bool = Field(
+        default=False, description="Whether the configuration is valid"
+    )
 
     issues: list[str] = Field(
         default_factory=list,

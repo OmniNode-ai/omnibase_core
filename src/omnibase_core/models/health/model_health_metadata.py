@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
+
 from .model_health_attributes import ModelHealthAttributes
 
 
@@ -27,7 +29,10 @@ class ModelHealthMetadata(BaseModel):
         description="Environment context (e.g., development, staging, production)",
     )
 
-    version: str = Field(default="1.0.0", description="Health system version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: parse_semver_from_string("1.0.0"),
+        description="Health system version",
+    )
 
     check_interval_seconds: int = Field(
         default=30,
@@ -70,7 +75,7 @@ class ModelHealthMetadata(BaseModel):
     )
 
     custom_attributes: ModelHealthAttributes | None = Field(
-        None,
+        default=None,
         description="Custom health attributes for extensibility",
     )
 

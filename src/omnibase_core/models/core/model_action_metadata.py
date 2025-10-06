@@ -3,6 +3,9 @@ from typing import Any
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Action Metadata Model.
 
@@ -42,11 +45,11 @@ class ModelActionMetadata(BaseModel):
         description="Correlation ID for tracking across system boundaries",
     )
     parent_correlation_id: UUID | None = Field(
-        None,
+        default=None,
         description="Parent correlation ID for action chaining",
     )
     session_id: UUID | None = Field(
-        None,
+        default=None,
         description="Session ID for grouping related actions",
     )
 
@@ -68,41 +71,41 @@ class ModelActionMetadata(BaseModel):
         description="When the action was created",
     )
     started_at: datetime | None = Field(
-        None,
+        default=None,
         description="When action execution started",
     )
     completed_at: datetime | None = Field(
-        None,
+        default=None,
         description="When action execution completed",
     )
     timeout_seconds: int | None = Field(
-        None,
+        default=None,
         description="Action timeout in seconds",
     )
 
     # Execution context
-    execution_context: dict[str, str | int | float | bool] = Field(
+    execution_context: dict[str, Any] = Field(
         default_factory=dict,
         description="Execution environment and context",
     )
-    parameters: dict[str, str | int | float | bool | list[str]] = Field(
+    parameters: dict[str, Any] = Field(
         default_factory=dict,
         description="Action parameters with strong typing",
     )
 
     # Results and status
     status: str = Field(default="created", description="Current action status")
-    result_data: dict[str, str | int | float | bool | list[str]] | None = Field(
-        None,
+    result_data: dict[str, Any] | None = Field(
+        default=None,
         description="Action result data",
     )
-    error_details: dict[str, str | int | bool] | None = Field(
-        None,
+    error_details: dict[str, Any] | None = Field(
+        default=None,
         description="Error details if action failed",
     )
 
     # Tool-as-a-service metadata
-    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
+    service_metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Service discovery and composition metadata",
     )
@@ -111,11 +114,11 @@ class ModelActionMetadata(BaseModel):
         description="Tags for tool discovery and categorization",
     )
     mcp_endpoint: str | None = Field(
-        None,
+        default=None,
         description="MCP endpoint for this action",
     )
     graphql_endpoint: str | None = Field(
-        None,
+        default=None,
         description="GraphQL endpoint for this action",
     )
 
@@ -136,7 +139,7 @@ class ModelActionMetadata(BaseModel):
 
     def mark_completed(
         self,
-        result_data: dict[str, str | int | float | bool | list[str]] | None = None,
+        result_data: dict[str, Any] | None = None,
     ) -> None:
         """Mark the action as completed with optional result data."""
         self.completed_at = datetime.utcnow()
@@ -144,7 +147,7 @@ class ModelActionMetadata(BaseModel):
         if result_data:
             self.result_data = result_data
 
-    def mark_failed(self, error_details: dict[str, str | int | bool]) -> None:
+    def mark_failed(self, error_details: dict[str, Any]) -> None:
         """Mark the action as failed with error details."""
         self.completed_at = datetime.utcnow()
         self.status = "failed"
@@ -163,8 +166,9 @@ class ModelActionMetadata(BaseModel):
                 f"Performance metric '{name}' is not supported. "
                 f"Use one of: {list[Any](self.performance_metrics.__fields__.keys())}"
             )
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         setattr(self.performance_metrics, name, value)
 
@@ -174,17 +178,7 @@ class ModelActionMetadata(BaseModel):
 
     def to_service_discovery_metadata(
         self,
-    ) -> dict[
-        str,
-        str
-        | bool
-        | list[str]
-        | int
-        | None
-        | float
-        | None
-        | dict[str, str | int | float | bool | list[str]],
-    ]:
+    ) -> dict[str, Any]:
         """Generate metadata for service discovery with strong typing."""
         return {
             "action_id": str(self.action_id),

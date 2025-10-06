@@ -49,4 +49,6 @@ class ModelRetryStrategy(BaseModel):
         le=60,
     )
 
-    jitter: bool = Field(True, description="Whether to add jitter to backoff times")
+    jitter: bool = Field(
+        default=True, description="Whether to add jitter to backoff times"
+    )

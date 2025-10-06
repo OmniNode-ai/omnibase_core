@@ -17,16 +17,16 @@ class ModelCurrentToolAvailability(BaseModel):
     tool_name: str = Field(..., description="Name of the tool")
     status: EnumNodeCurrentStatus = Field(..., description="Current tool status")
     last_execution: str | None = Field(
-        None,
+        default=None,
         description="ISO timestamp of last execution",
     )
     execution_count: int | None = Field(
-        None,
+        default=None,
         description="Total number of executions",
         ge=0,
     )
     average_execution_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Average execution time in milliseconds",
         ge=0.0,
     )

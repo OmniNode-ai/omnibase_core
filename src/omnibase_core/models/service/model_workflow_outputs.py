@@ -27,12 +27,14 @@ class ModelWorkflowOutputs(BaseModel):
     """
 
     # Common output fields
-    result: str | None = Field(None, description="Main result value")
+    result: str | None = Field(default=None, description="Main result value")
     status_message: str | None = Field(
-        None,
+        default=None,
         description="Human-readable status message",
     )
-    error_message: str | None = Field(None, description="Error message if failed")
+    error_message: str | None = Field(
+        default=None, description="Error message if failed"
+    )
 
     # Structured outputs
     generated_files: list[str] = Field(
@@ -46,31 +48,31 @@ class ModelWorkflowOutputs(BaseModel):
 
     # Metrics and statistics
     execution_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Execution time in milliseconds",
     )
     items_processed: int | None = Field(
-        None,
+        default=None,
         description="Number of items processed",
     )
     success_count: int | None = Field(
-        None,
+        default=None,
         description="Number of successful operations",
     )
     failure_count: int | None = Field(
-        None,
+        default=None,
         description="Number of failed operations",
     )
 
     # Structured data outputs
     data: dict[str, str | int | float | bool | list[str]] | None = Field(
-        None,
+        default=None,
         description="Structured data outputs",
     )
 
     # For extensibility - custom fields that don't fit above
     custom_outputs: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Custom output fields for workflow-specific data",
     )
 

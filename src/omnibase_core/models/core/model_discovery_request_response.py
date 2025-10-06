@@ -18,11 +18,11 @@ class ModelDiscoveryRequestModelMetadata(BaseModel):
 
     request_id: str = Field(..., description="Unique request identifier")
     node_types: list[str] | None = Field(
-        None, description="Filter by node types (COMPUTE, EFFECT, etc.)"
+        default=None, description="Filter by node types (COMPUTE, EFFECT, etc.)"
     )
     requested_capabilities: list[str] | None = Field(
-        None, description="Filter by required capabilities"
+        default=None, description="Filter by required capabilities"
     )
     filter_criteria: dict[str, Any] | None = Field(
-        None, description="Additional filter criteria"
+        default=None, description="Additional filter criteria"
     )

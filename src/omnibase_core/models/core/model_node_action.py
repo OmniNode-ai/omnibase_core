@@ -2,6 +2,9 @@ from typing import Optional
 
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Node Action Model.
 
@@ -53,7 +56,7 @@ class ModelNodeAction(ModelActionBase):
         description="Whether this action requires user confirmation",
     )
     estimated_duration_ms: int | None = Field(
-        None,
+        default=None,
         description="Estimated execution time in milliseconds",
     )
 
@@ -76,7 +79,7 @@ class ModelNodeAction(ModelActionBase):
     # Documentation and examples
     examples: list[str] = Field(default_factory=list, description="Usage examples")
     documentation_url: str | None = Field(
-        None,
+        default=None,
         description="URL to action documentation",
     )
     tags: list[str] = Field(
@@ -86,11 +89,11 @@ class ModelNodeAction(ModelActionBase):
 
     # Tool-as-a-Service enhancements
     mcp_endpoint: str | None = Field(
-        None,
+        default=None,
         description="MCP endpoint for executing this action",
     )
     graphql_endpoint: str | None = Field(
-        None,
+        default=None,
         description="GraphQL endpoint for executing this action",
     )
     composition_compatible: bool = Field(
@@ -108,8 +111,9 @@ class ModelNodeAction(ModelActionBase):
         """Validate that action_type is a valid ModelNodeActionType."""
         if not isinstance(v, ModelNodeActionType):
             msg = f"action_type must be a ModelNodeActionType, got {type(v)}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return v
 
@@ -125,8 +129,9 @@ class ModelNodeAction(ModelActionBase):
         """Create lifecycle actions like health_check."""
         if action_type.category != LIFECYCLE:
             msg = f"Action type {action_type.name} is not a lifecycle action"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return cls(
             action_name=action_name,
@@ -149,8 +154,9 @@ class ModelNodeAction(ModelActionBase):
         """Create validation actions."""
         if action_type.category != VALIDATION:
             msg = f"Action type {action_type.name} is not a validation action"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
         return cls(
             action_name=action_name,

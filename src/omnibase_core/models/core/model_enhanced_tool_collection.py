@@ -1,5 +1,8 @@
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Enhanced tool collection models.
 
@@ -11,10 +14,13 @@ import hashlib
 import inspect
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic_core import ValidationInfo
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 from .model_tool_metadata import (
     ModelToolCapabilityLevel,
@@ -52,12 +58,15 @@ class ModelToolCollection(BaseModel):
     )
 
     # Collection management
-    collection_id: str = Field(..., description="Unique collection identifier")
+    collection_id: UUID = Field(..., description="Unique collection identifier")
     collection_name: str = Field(
         "default",
         description="Human-readable collection name",
     )
-    collection_version: str = Field("1.0.0", description="Collection version")
+    collection_version: ModelSemVer = Field(
+        default_factory=lambda: parse_semver_from_string("1.0.0"),
+        description="Collection version",
+    )
     created_at: datetime = Field(
         default_factory=datetime.now,
         description="Collection creation time",
@@ -77,15 +86,19 @@ class ModelToolCollection(BaseModel):
         True,
         description="Whether to track performance metrics",
     )
-    strict_mode: bool = Field(False, description="Whether to enforce strict validation")
+    strict_mode: bool = Field(
+        default=False, description="Whether to enforce strict validation"
+    )
 
     # Analytics and insights
     total_registrations: int = Field(
         0,
         description="Total number of tool registrations",
     )
-    active_tool_count: int = Field(0, description="Number of active tools")
-    deprecated_tool_count: int = Field(0, description="Number of deprecated tools")
+    active_tool_count: int = Field(default=0, description="Number of active tools")
+    deprecated_tool_count: int = Field(
+        default=0, description="Number of deprecated tools"
+    )
     failed_registration_count: int = Field(
         0,
         description="Number of failed registrations",
@@ -105,7 +118,7 @@ class ModelToolCollection(BaseModel):
         description="Access control settings",
     )
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         # Generate collection_id if not provided
         if "collection_id" not in data:
             timestamp = datetime.now().isoformat()
@@ -176,11 +189,14 @@ class ModelToolCollection(BaseModel):
 
     @field_validator("max_tools")
     @classmethod
-    def validate_max_tools(cls, v, info):
+    def validate_max_tools(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate maximum tools limit."""
         if v < 1 or v > 1000:
             msg = "max_tools must be between 1 and 1000"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v
 
     def register_tool(self, name: str, tool_class: Any, **metadata_kwargs) -> bool:
@@ -227,7 +243,9 @@ class ModelToolCollection(BaseModel):
 
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: registration method, False indicates failure with metrics update
             self.failed_registration_count += 1
             return False
 
@@ -343,22 +361,25 @@ class ModelToolCollection(BaseModel):
         tool = self.get_tool(name)
         if tool is None:
             msg = f"Tool '{name}' not found in collection"
-            raise KeyError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                message=msg,
+            )
         return tool
 
     def __setitem__(self, name: str, tool_class: Any) -> None:
         """Support dict[str, Any]-like assignment."""
         self.register_tool(name, tool_class)
 
-    def keys(self):
+    def keys(self) -> None:
         """Support dict[str, Any]-like keys() method."""
         return self.tools.keys()
 
-    def values(self):
+    def values(self) -> None:
         """Support dict[str, Any]-like values() method."""
         return self.tools.values()
 
-    def items(self):
+    def items(self) -> None:
         """Support dict[str, Any]-like items() method."""
         return self.tools.items()
 

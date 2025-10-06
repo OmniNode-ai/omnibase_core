@@ -11,4 +11,6 @@ class ModelWordSplitInputState(ModelOnexInputState):
     """Input state for word splitting operations."""
 
     input_string: str = Field(..., description="String to split into words")
-    preserve_acronyms: bool = Field(True, description="Whether to preserve acronyms")
+    preserve_acronyms: bool = Field(
+        default=True, description="Whether to preserve acronyms"
+    )

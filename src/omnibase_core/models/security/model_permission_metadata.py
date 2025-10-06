@@ -15,13 +15,15 @@ class ModelPermissionMetadata(BaseModel):
     """Additional metadata for permissions."""
 
     tags: list[str] = Field(default_factory=list, description="Metadata tags")
-    category: str | None = Field(None, description="Permission category")
+    category: str | None = Field(default=None, description="Permission category")
     priority: int | None = Field(
-        None,
+        default=None,
         description="Permission priority",
         ge=1,
         le=10,
     )
-    source_system: str | None = Field(None, description="Originating system")
-    external_id: str | None = Field(None, description="External system identifier")
-    notes: str | None = Field(None, description="Additional notes")
+    source_system: str | None = Field(default=None, description="Originating system")
+    external_id: str | None = Field(
+        default=None, description="External system identifier"
+    )
+    notes: str | None = Field(default=None, description="Additional notes")

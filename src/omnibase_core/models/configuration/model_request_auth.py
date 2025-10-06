@@ -14,10 +14,12 @@ class ModelRequestAuth(BaseModel):
         ...,
         description="Authentication type (basic/bearer/oauth2/api_key)",
     )
-    username: str | None = Field(None, description="Username for basic auth")
-    password: SecretStr | None = Field(None, description="Password for basic auth")
-    token: SecretStr | None = Field(None, description="Bearer token")
-    api_key: SecretStr | None = Field(None, description="API key")
+    username: str | None = Field(default=None, description="Username for basic auth")
+    password: SecretStr | None = Field(
+        default=None, description="Password for basic auth"
+    )
+    token: SecretStr | None = Field(default=None, description="Bearer token")
+    api_key: SecretStr | None = Field(default=None, description="API key")
     api_key_header: str | None = Field(
         "X-API-Key",
         description="API key header name",

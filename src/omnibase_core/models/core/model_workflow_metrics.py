@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import Field
 
 from omnibase_core.models.core.model_workflow import ModelWorkflow
@@ -27,32 +29,34 @@ class ModelWorkflowMetrics(BaseModel):
     Used by hybrid execution mixins and workflow monitoring.
     """
 
-    workflow_id: str = Field(description="Unique workflow identifier")
+    workflow_id: UUID = Field(description="Unique workflow identifier")
     status: EnumWorkflowStatus = Field(description="Current workflow status")
-    start_time: str | None = Field(None, description="Workflow start timestamp")
-    end_time: str | None = Field(None, description="Workflow completion timestamp")
+    start_time: str | None = Field(default=None, description="Workflow start timestamp")
+    end_time: str | None = Field(
+        default=None, description="Workflow completion timestamp"
+    )
     duration_seconds: float | None = Field(
-        None,
+        default=None,
         description="Execution duration in seconds",
     )
     steps_total: int | None = Field(
-        None,
+        default=None,
         description="Total number of workflow steps",
     )
     steps_completed: int | None = Field(
-        None,
+        default=None,
         description="Number of completed steps",
     )
-    steps_failed: int | None = Field(None, description="Number of failed steps")
+    steps_failed: int | None = Field(default=None, description="Number of failed steps")
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Error message if workflow failed",
     )
     metrics: ModelWorkflowMetricsDetails = Field(
-        default_factory=ModelWorkflowMetricsDetails,
+        default_factory=lambda: ModelWorkflowMetricsDetails(),
         description="Additional workflow metrics",
     )
     resource_usage: ModelResourceUsageDetails = Field(
-        default_factory=ModelResourceUsageDetails,
+        default_factory=lambda: ModelResourceUsageDetails(),
         description="Resource usage metrics",
     )

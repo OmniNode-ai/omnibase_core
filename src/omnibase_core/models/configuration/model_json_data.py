@@ -2,6 +2,9 @@ from typing import Optional, Union
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ONEX-Compliant JSON Data Model for Configuration System
 
@@ -48,8 +51,9 @@ class ModelJsonData(BaseModel):
     def validate_field_consistency(cls, v, values):
         """Ensure field count matches actual fields."""
         if len(v) != values.get("total_field_count", 0):
-            raise ValueError(
-                f"Field count mismatch: expected {values.get('total_field_count', 0)}, got {len(v)}"
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Field count mismatch: expected {values.get('total_field_count', 0)}, got {len(v)}",
             )
         return v
 
@@ -59,12 +63,13 @@ class ModelJsonData(BaseModel):
         fields = values.get("fields", {})
         return len(fields) if isinstance(fields, dict) else v
 
-    def get_field_value(
-        self, field_name: str
-    ) -> Union[str, float, bool, list[str], None]:
+    def get_field_value(self, field_name: str) -> Any:
         """ONEX-compliant field value accessor."""
         if field_name not in self.fields:
-            raise KeyError(f"Field '{field_name}' not found")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                message=f"Field '{field_name}' not found",
+            )
         return self.fields[field_name].get_typed_value()
 
     def has_field(self, field_name: str) -> bool:
@@ -74,5 +79,8 @@ class ModelJsonData(BaseModel):
     def get_field_type(self, field_name: str) -> EnumJsonValueType:
         """Get the type of a specific field."""
         if field_name not in self.fields:
-            raise KeyError(f"Field '{field_name}' not found")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                message=f"Field '{field_name}' not found",
+            )
         return self.fields[field_name].field_type

@@ -44,7 +44,7 @@ class ModelThrottlingBehavior(BaseModel):
     )
 
     retry_after_seconds: int | None = Field(
-        None,
+        default=None,
         description="Value for Retry-After header (auto-calculated if None)",
         ge=1,
         le=3600,
@@ -137,7 +137,7 @@ class ModelThrottlingBehavior(BaseModel):
     )
 
     custom_response_body: str | None = Field(
-        None,
+        default=None,
         description="Custom response body for throttled requests",
     )
 

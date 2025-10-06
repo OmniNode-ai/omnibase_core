@@ -8,28 +8,18 @@ IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
-Safe Runtime Imports:
-- omnibase_core.errors.error_codes (imports only from types.core_types and enums)
-- omnibase_core.models.common.model_numeric_value (no circular risk)
-- pydantic, typing (standard library)
-
-Import Chain Position:
-1. errors.error_codes → types.core_types
-2. THIS MODULE → errors.error_codes (OK - no circle)
-3. types.constraints → TYPE_CHECKING import of errors.error_codes
-4. models.* → types.constraints
-
-This module can safely import error_codes because error_codes only imports
-from types.core_types (not from models or types.constraints).
+To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
+and runtime imports in methods that need to raise errors.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+
+if TYPE_CHECKING:
+    from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelSchemaValue(BaseModel):
@@ -44,16 +34,18 @@ class ModelSchemaValue(BaseModel):
     """
 
     # Value types (one of these will be set)
-    string_value: str | None = Field(None, description="String value")
-    number_value: ModelNumericValue | None = Field(None, description="Numeric value")
-    boolean_value: bool | None = Field(None, description="Boolean value")
-    null_value: bool | None = Field(None, description="True if value is null")
+    string_value: str | None = Field(default=None, description="String value")
+    number_value: ModelNumericValue | None = Field(
+        default=None, description="Numeric value"
+    )
+    boolean_value: bool | None = Field(default=None, description="Boolean value")
+    null_value: bool | None = Field(default=None, description="True if value is null")
     array_value: list["ModelSchemaValue"] | None = Field(
-        None,
+        default=None,
         description="Array of values",
     )
     object_value: dict[str, "ModelSchemaValue"] | None = Field(
-        None,
+        default=None,
         description="Object with key-value pairs",
     )
 
@@ -310,6 +302,11 @@ class ModelSchemaValue(BaseModel):
     def get_string(self) -> str:
         """Get string value, raising error if not a string."""
         if not self.is_string():
+            from omnibase_core.errors.error_codes import (
+                ModelCoreErrorCode,
+                ModelOnexError,
+            )
+
             msg = f"Expected string value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
         return self.string_value or ""
@@ -317,6 +314,11 @@ class ModelSchemaValue(BaseModel):
     def get_number(self) -> ModelNumericValue:
         """Get numeric value, raising error if not a number."""
         if not self.is_number():
+            from omnibase_core.errors.error_codes import (
+                ModelCoreErrorCode,
+                ModelOnexError,
+            )
+
             msg = f"Expected numeric value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
         return self.number_value or ModelNumericValue(value=0.0)
@@ -324,6 +326,11 @@ class ModelSchemaValue(BaseModel):
     def get_boolean(self) -> bool:
         """Get boolean value, raising error if not a boolean."""
         if not self.is_boolean():
+            from omnibase_core.errors.error_codes import (
+                ModelCoreErrorCode,
+                ModelOnexError,
+            )
+
             msg = f"Expected boolean value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
         return self.boolean_value or False
@@ -331,6 +338,11 @@ class ModelSchemaValue(BaseModel):
     def get_array(self) -> list["ModelSchemaValue"]:
         """Get array value, raising error if not an array."""
         if not self.is_array():
+            from omnibase_core.errors.error_codes import (
+                ModelCoreErrorCode,
+                ModelOnexError,
+            )
+
             msg = f"Expected array value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
         return self.array_value or []
@@ -338,6 +350,11 @@ class ModelSchemaValue(BaseModel):
     def get_object(self) -> dict[str, "ModelSchemaValue"]:
         """Get object value, raising error if not an object."""
         if not self.is_object():
+            from omnibase_core.errors.error_codes import (
+                ModelCoreErrorCode,
+                ModelOnexError,
+            )
+
             msg = f"Expected object value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
         return self.object_value or {}

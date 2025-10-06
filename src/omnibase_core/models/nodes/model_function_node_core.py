@@ -5,7 +5,7 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Function Node Core Model.
@@ -48,7 +48,7 @@ class ModelFunctionNodeCore(BaseModel):
         description="Unique identifier for the function entity",
     )
     function_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable function name",
     )
     description: str = Field(default="", description="Function description")

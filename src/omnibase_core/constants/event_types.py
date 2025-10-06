@@ -1,8 +1,3 @@
-from omnibase_core.constants.constants_contract_fields import (
-    NODE_INTROSPECTION_EVENT,
-    TOOL_DISCOVERY_REQUEST,
-)
-
 """Core event types for the ONEX system.
 
 This module defines the core event types used throughout the ONEX ecosystem

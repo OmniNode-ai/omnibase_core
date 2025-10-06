@@ -39,7 +39,7 @@ class ModelHealthCheckConfig(BaseModel):
         description="Expected HTTP status codes",
     )
     expected_response_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Maximum expected response time",
     )
 
@@ -49,15 +49,15 @@ class ModelHealthCheckConfig(BaseModel):
         description="Whether to check response body",
     )
     expected_response_contains: str | None = Field(
-        None,
+        default=None,
         description="Expected string in response",
     )
     expected_json_path: str | None = Field(
-        None,
+        default=None,
         description="JSON path to check (e.g., $.status)",
     )
     expected_json_value: Any | None = Field(
-        None,
+        default=None,
         description="Expected value at JSON path",
     )
 
@@ -68,5 +68,5 @@ class ModelHealthCheckConfig(BaseModel):
     )
 
     # Retry behavior
-    retry_on_failure: bool = Field(True, description="Retry on failure")
+    retry_on_failure: bool = Field(default=True, description="Retry on failure")
     max_retries: int = Field(2, description="Maximum retry attempts")

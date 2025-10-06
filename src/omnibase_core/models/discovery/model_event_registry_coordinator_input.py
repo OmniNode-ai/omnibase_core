@@ -21,16 +21,18 @@ class ModelEventRegistryCoordinatorInput(BaseModel):
     coordinator_action: str = Field(..., description="Coordinator action to perform")
 
     discovery_phase: EnumDiscoveryPhase | None = Field(
-        None,
+        default=None,
         description="Discovery phase to initialize",
     )
 
     event_descriptor: ModelEventDescriptor | None = Field(
-        None,
+        default=None,
         description="Event for routing/coordination",
     )
 
-    adapter_id: str | None = Field(None, description="Target Container Adapter ID")
+    adapter_id: str | None = Field(
+        default=None, description="Target Container Adapter ID"
+    )
 
     cross_adapter_coordination: bool = Field(
         False,

@@ -25,21 +25,27 @@ class ModelErrorContext(BaseModel):
     """
 
     # Common error context fields
-    file_path: str | None = Field(None, description="File path related to the error")
+    file_path: str | None = Field(
+        default=None, description="File path related to the error"
+    )
     line_number: int | None = Field(
-        None,
+        default=None,
         description="Line number where error occurred",
     )
     column_number: int | None = Field(
-        None,
+        default=None,
         description="Column number where error occurred",
     )
     function_name: str | None = Field(
-        None,
+        default=None,
         description="Function where error occurred",
     )
-    module_name: str | None = Field(None, description="Module where error occurred")
-    stack_trace: str | None = Field(None, description="Stack trace if available")
+    module_name: str | None = Field(
+        default=None, description="Module where error occurred"
+    )
+    stack_trace: str | None = Field(
+        default=None, description="Stack trace if available"
+    )
 
     # Additional context as schema values
     additional_context: dict[str, ModelSchemaValue] = Field(

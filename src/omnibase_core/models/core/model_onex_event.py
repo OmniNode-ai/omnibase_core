@@ -7,7 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import for event type validation
 from omnibase_core.constants.event_types import normalize_legacy_event_type
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_event_type import ModelEventType
 from .model_onex_event_metadata import ModelOnexEventMetadata
@@ -75,7 +76,7 @@ class ModelOnexEvent(BaseModel):
         description="Unique identifier of the node that generated this event",
     )
     metadata: ModelOnexEventMetadata | None = Field(
-        None,
+        default=None,
         description="Optional event metadata",
     )
     timestamp: datetime = Field(
@@ -84,10 +85,10 @@ class ModelOnexEvent(BaseModel):
     )
     event_id: UUID = Field(default_factory=uuid4, description="Unique event identifier")
     correlation_id: UUID | None = Field(
-        None,
+        default=None,
         description="Optional correlation ID for request/response patterns",
     )
-    data: dict[str, Any] | None = Field(None, description="Event payload data")
+    data: dict[str, Any] | None = Field(default=None, description="Event payload data")
 
     @field_validator("event_type")
     @classmethod
@@ -98,7 +99,7 @@ class ModelOnexEvent(BaseModel):
         Accepts:
         - ModelEventType objects (preferred)
         - String event types: "core.node.start"
-        - Legacy enum values: OnexEventTypeEnum.NODE_START (automatically converted)
+        - Legacy enum values: EnumOnexEventType.NODE_START (automatically converted)
 
         Args:
             v: Event type value (string, enum, or ModelEventType)
@@ -118,7 +119,10 @@ class ModelOnexEvent(BaseModel):
             return normalize_legacy_event_type(v)
         except ValueError as e:
             msg = f"Invalid event type: {e}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
     @classmethod
     def create_core_event(
@@ -237,7 +241,7 @@ try:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        from omnibase_core.enums.enum_events import OnexEventTypeEnum
+        from omnibase_core.enums.enum_events import EnumOnexEventType
 
     __all__ = [
         "ModelOnexEvent",
@@ -245,7 +249,7 @@ try:
         "ModelTelemetryOperationStartMetadata",
         "ModelTelemetryOperationSuccessMetadata",
         "OnexEvent",
-        "OnexEventTypeEnum",
+        "EnumOnexEventType",
     ]
 except ImportError:
     __all__ = [

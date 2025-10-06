@@ -14,7 +14,9 @@ from pydantic import BaseModel, Field
 class ModelConfigValidationResult(BaseModel):
     """Result of configuration validation."""
 
-    is_valid: bool = Field(True, description="Whether the configuration is valid")
+    is_valid: bool = Field(
+        default=True, description="Whether the configuration is valid"
+    )
 
     backend_valid: bool = Field(
         True,

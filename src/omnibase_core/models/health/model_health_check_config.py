@@ -70,7 +70,7 @@ class ModelHealthCheckConfig(BaseModel):
     )
 
     expected_response_body: str | None = Field(
-        None,
+        default=None,
         description="Expected response body content (substring match)",
     )
 
@@ -80,7 +80,7 @@ class ModelHealthCheckConfig(BaseModel):
     )
 
     check_body: str | None = Field(
-        None,
+        default=None,
         description="HTTP body to send with health checks (for POST)",
     )
 
@@ -95,12 +95,12 @@ class ModelHealthCheckConfig(BaseModel):
     )
 
     custom_validator: str | None = Field(
-        None,
+        default=None,
         description="Custom health check validator function name",
     )
 
     health_check_metadata: ModelHealthCheckMetadata | None = Field(
-        None,
+        default=None,
         description="Additional health check metadata",
     )
 

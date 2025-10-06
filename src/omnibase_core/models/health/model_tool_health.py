@@ -2,6 +2,10 @@ from typing import Any, Generic, List, Optional
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 """
 Enterprise Tool Health Monitoring Model.
 
@@ -10,7 +14,7 @@ performance monitoring, and operational insights for ONEX registry tools.
 """
 
 import re
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -21,7 +25,9 @@ from omnibase_core.enums.enum_tool_type import EnumToolType
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_error_summary import ModelErrorSummary
-    from omnibase_core.models.core.model_generic_properties import ModelGenericProperties
+    from omnibase_core.models.core.model_generic_properties import (
+        ModelGenericProperties,
+    )
     from omnibase_core.models.core.model_monitoring_metrics import (
         ModelMonitoringMetrics,
     )
@@ -61,13 +67,13 @@ class ModelToolHealth(BaseModel):
     )
 
     error_message: str | None = Field(
-        None,
+        default=None,
         description="Detailed error message if tool is unhealthy",
         max_length=1000,
     )
 
     error_code: str | None = Field(
-        None,
+        default=None,
         description="Specific error code for programmatic handling",
         max_length=50,
     )
@@ -95,19 +101,19 @@ class ModelToolHealth(BaseModel):
         ge=0,
     )
 
-    version: str | None = Field(
+    version: ModelSemVer | None = Field(
         default=None,
         description="Tool version if available",
         max_length=50,
     )
 
     configuration: Optional["ModelGenericProperties"] = Field(
-        None,
+        default=None,
         description="Tool configuration summary",
     )
 
     metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None,
+        default=None,
         description="Performance and operational metrics",
     )
 
@@ -122,15 +128,19 @@ class ModelToolHealth(BaseModel):
         """Validate tool name format."""
         if not v or not v.strip():
             msg = "tool_name cannot be empty or whitespace"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         v = v.strip()
 
         # Check for valid tool name pattern (alphanumeric, underscores, hyphens)
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_\-]*$", v):
             msg = "tool_name must start with letter and contain only alphanumeric, underscore, and hyphen characters"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         return v
@@ -149,8 +159,9 @@ class ModelToolHealth(BaseModel):
         # Basic format validation (alphanumeric with underscores)
         if not re.match(r"^[A-Z0-9_]+$", v):
             msg = "error_code must contain only uppercase letters, numbers, and underscores"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         return v
@@ -167,7 +178,10 @@ class ModelToolHealth(BaseModel):
             return v
         except ValueError:
             msg = "last_check_time must be a valid ISO timestamp"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
     # === Health Status Analysis ===
 
@@ -269,7 +283,7 @@ class ModelToolHealth(BaseModel):
         configuration: Optional["ModelGenericProperties"] = None,
         metrics: Optional["ModelMonitoringMetrics"] = None,
         uptime_seconds: int | None = None,
-        version: str | None = None,
+        version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
     ) -> "ModelToolHealth":
         """Create a healthy tool health status."""
@@ -302,7 +316,7 @@ class ModelToolHealth(BaseModel):
         configuration: Optional["ModelGenericProperties"] = None,
         metrics: Optional["ModelMonitoringMetrics"] = None,
         uptime_seconds: int | None = None,
-        version: str | None = None,
+        version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
     ) -> "ModelToolHealth":
         """Create an error tool health status."""
@@ -451,14 +465,26 @@ class ModelToolHealth(BaseModel):
             start_time=None,
             end_time=None,
             custom_metrics={
-                "tool_name": MetricValue(value=self.tool_name, unit="string", timestamp=datetime.now(UTC)),
-                "tool_type": MetricValue(value=self.tool_type.value, unit="string", timestamp=datetime.now(UTC)),
-                "is_callable": MetricValue(value=self.is_callable, unit="boolean", timestamp=datetime.now(UTC)),
-                "severity": MetricValue(value=self.get_severity_level(), unit="string", timestamp=datetime.now(UTC)),
+                "tool_name": MetricValue(
+                    value=self.tool_name, unit="string", timestamp=datetime.now(UTC)
+                ),
+                "tool_type": MetricValue(
+                    value=self.tool_type.value,
+                    unit="string",
+                    timestamp=datetime.now(UTC),
+                ),
+                "is_callable": MetricValue(
+                    value=self.is_callable, unit="boolean", timestamp=datetime.now(UTC)
+                ),
+                "severity": MetricValue(
+                    value=self.get_severity_level(),
+                    unit="string",
+                    timestamp=datetime.now(UTC),
+                ),
                 "consecutive_failures": MetricValue(
                     value=self.consecutive_failures or 0,
                     unit="count",
-                    timestamp=datetime.now(UTC)
+                    timestamp=datetime.now(UTC),
                 ),
             },
         )
@@ -498,7 +524,7 @@ class ModelToolHealth(BaseModel):
         configuration: Optional["ModelGenericProperties"] = None,
         metrics: Optional["ModelMonitoringMetrics"] = None,
         uptime_seconds: int | None = None,
-        version: str | None = None,
+        version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
     ) -> "ModelToolHealth":
         """Create a degraded tool health status."""
@@ -530,7 +556,7 @@ class ModelToolHealth(BaseModel):
         configuration: Optional["ModelGenericProperties"] = None,
         metrics: Optional["ModelMonitoringMetrics"] = None,
         uptime_seconds: int | None = None,
-        version: str | None = None,
+        version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
     ) -> "ModelToolHealth":
         """Create an unavailable tool health status."""
@@ -559,7 +585,7 @@ class ModelToolHealth(BaseModel):
         is_callable: bool,
         response_time_ms: int | None = None,
         uptime_seconds: int | None = None,
-        version: str | None = None,
+        version: ModelSemVer | None = None,
         *,
         error_message: str | None = None,
         error_code: str | None = None,

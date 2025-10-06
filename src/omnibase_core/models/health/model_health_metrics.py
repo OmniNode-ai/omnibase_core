@@ -77,7 +77,7 @@ class ModelHealthMetrics(BaseModel):
     uptime_seconds: int = Field(default=0, description="Uptime in seconds", ge=0)
 
     last_error_timestamp: datetime | None = Field(
-        None,
+        default=None,
         description="Timestamp of last error",
     )
 
@@ -88,7 +88,7 @@ class ModelHealthMetrics(BaseModel):
     )
 
     health_check_latency_ms: float | None = Field(
-        None,
+        default=None,
         description="Health check latency in milliseconds",
         ge=0.0,
     )

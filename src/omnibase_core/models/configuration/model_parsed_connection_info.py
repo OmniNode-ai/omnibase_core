@@ -19,14 +19,16 @@ class ModelParsedConnectionInfo(BaseModel):
 
     # Basic connection components
     scheme: str | None = Field(
-        None,
+        default=None,
         description="Database scheme (postgresql, mysql, etc)",
     )
-    host: str | None = Field(None, description="Database host")
-    port: int | None = Field(None, description="Database port")
-    username: str | None = Field(None, description="Username")
-    password: str | None = Field(None, description="Password (should be masked)")
-    database: str | None = Field(None, description="Database name")
+    host: str | None = Field(default=None, description="Database host")
+    port: int | None = Field(default=None, description="Database port")
+    username: str | None = Field(default=None, description="Username")
+    password: str | None = Field(
+        default=None, description="Password (should be masked)"
+    )
+    database: str | None = Field(default=None, description="Database name")
 
     # Additional parameters
     query_params: dict[str, str] = Field(
@@ -35,21 +37,21 @@ class ModelParsedConnectionInfo(BaseModel):
     )
 
     # SSL/TLS settings
-    ssl_mode: str | None = Field(None, description="SSL mode")
-    ssl_cert: str | None = Field(None, description="SSL certificate path")
-    ssl_key: str | None = Field(None, description="SSL key path")
-    ssl_ca: str | None = Field(None, description="SSL CA path")
+    ssl_mode: str | None = Field(default=None, description="SSL mode")
+    ssl_cert: str | None = Field(default=None, description="SSL certificate path")
+    ssl_key: str | None = Field(default=None, description="SSL key path")
+    ssl_ca: str | None = Field(default=None, description="SSL CA path")
 
     # Connection options
     connect_timeout: int | None = Field(
-        None,
+        default=None,
         description="Connection timeout in seconds",
     )
     command_timeout: int | None = Field(
-        None,
+        default=None,
         description="Command timeout in seconds",
     )
-    pool_size: int | None = Field(None, description="Connection pool size")
+    pool_size: int | None = Field(default=None, description="Connection pool size")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelParsedConnectionInfo":

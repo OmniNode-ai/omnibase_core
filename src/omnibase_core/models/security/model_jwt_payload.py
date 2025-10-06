@@ -15,15 +15,17 @@ class ModelJWTPayload(BaseModel):
     """Model for JWT token payload."""
 
     sub: str = Field(..., description="Subject (user ID)")
-    username: str | None = Field(None, description="Username")
+    username: str | None = Field(default=None, description="Username")
     roles: list[str] = Field(default_factory=list, description="User roles")
     permissions: list[str] = Field(default_factory=list, description="User permissions")
     groups: list[str] = Field(default_factory=list, description="User groups")
-    session_id: str | None = Field(None, description="Session ID")
-    iat: int | None = Field(None, description="Issued at timestamp")
-    exp: int | None = Field(None, description="Expiration timestamp")
-    iss: str | None = Field(None, description="Issuer")
-    mfa_verified: bool | None = Field(None, description="MFA verification status")
+    session_id: str | None = Field(default=None, description="Session ID")
+    iat: int | None = Field(default=None, description="Issued at timestamp")
+    exp: int | None = Field(default=None, description="Expiration timestamp")
+    iss: str | None = Field(default=None, description="Issuer")
+    mfa_verified: bool | None = Field(
+        default=None, description="MFA verification status"
+    )
 
     @classmethod
     def from_jwt_dict(cls, payload_dict: dict[str, Any]) -> "ModelJWTPayload":

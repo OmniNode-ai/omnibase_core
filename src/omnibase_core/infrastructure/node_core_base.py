@@ -45,7 +45,7 @@ class NodeCoreBase(ABC):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
 
-    Lifecycle: initialize → process → complete → cleanup
+    EnumLifecycle: initialize → process → complete → cleanup
 
     Core Capabilities:
     - Container-based dependency injection
@@ -123,7 +123,7 @@ class NodeCoreBase(ABC):
 
     async def initialize(self) -> None:
         """
-        Lifecycle initialization with dependency resolution.
+        EnumLifecycle initialization with dependency resolution.
 
         Performs startup tasks common to all node types:
         - Validates container dependencies

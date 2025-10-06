@@ -41,13 +41,13 @@ class ModelTrendData(BaseModel):
 
     # Analysis
     metrics: ModelTrendMetrics | None = Field(
-        None,
+        default=None,
         description="Trend analysis metrics",
     )
 
     # Metadata
-    unit: str | None = Field(None, description="Unit of measurement")
-    data_source: str | None = Field(None, description="Data source")
+    unit: str | None = Field(default=None, description="Unit of measurement")
+    data_source: str | None = Field(default=None, description="Data source")
     last_updated: datetime = Field(
         default_factory=datetime.utcnow,
         description="Last update time",
@@ -55,21 +55,21 @@ class ModelTrendData(BaseModel):
 
     # Forecast (optional)
     forecast_points: list[ModelTrendPoint] | None = Field(
-        None,
+        default=None,
         description="Forecasted data points",
     )
     confidence_interval: float | None = Field(
-        None,
+        default=None,
         description="Forecast confidence interval",
     )
 
     # Anomalies
     anomaly_points: list[ModelTrendPoint] | None = Field(
-        None,
+        default=None,
         description="Detected anomaly points",
     )
     anomaly_threshold: float | None = Field(
-        None,
+        default=None,
         description="Anomaly detection threshold",
     )
 
@@ -93,7 +93,7 @@ class ModelTrendData(BaseModel):
             ModelTrendPoint(timestamp=timestamp, value=value, label=label),
         )
 
-    def calculate_metrics(self):
+    def calculate_metrics(self) -> None:
         """Calculate trend metrics from data points."""
         if not self.data_points:
             return
@@ -134,7 +134,7 @@ class ModelTrendData(BaseModel):
         return ((values[-1] - values[0]) / values[0]) * 100
 
     @field_serializer("last_updated")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

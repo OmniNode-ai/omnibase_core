@@ -48,7 +48,7 @@ class ModelSessionAffinityMetadata(BaseModel):
         description="Persist affinity data across server restarts",
     )
     storage_backend: str | None = Field(
-        None,
+        default=None,
         description="Storage backend for persistent affinity",
         pattern="^(redis|memcached|dynamodb|custom)$",
     )
@@ -74,7 +74,9 @@ class ModelSessionAffinityMetadata(BaseModel):
     )
 
     # Monitoring
-    track_session_metrics: bool = Field(True, description="Track session-level metrics")
+    track_session_metrics: bool = Field(
+        default=True, description="Track session-level metrics"
+    )
     metrics_sampling_rate: float = Field(
         1.0,
         description="Sampling rate for session metrics",

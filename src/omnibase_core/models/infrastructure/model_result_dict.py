@@ -37,11 +37,11 @@ class ModelResultDict(BaseModel):
 
     success: bool = Field(..., description="Whether the operation succeeded")
     value: ModelCliValue | None = Field(
-        None,
+        default=None,
         description="Success value (if success=True)",
     )
     error: ModelErrorValue | None = Field(
-        None,
+        default=None,
         description="Error value (if success=False)",
     )
 

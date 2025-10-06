@@ -35,7 +35,7 @@ class ModelSystemInfoResult(ModelBaseResult):
         description="Status of system services",
     )
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="System info retrieval time in milliseconds",
     )
     format: str = Field(

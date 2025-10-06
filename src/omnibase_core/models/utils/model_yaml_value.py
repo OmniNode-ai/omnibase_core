@@ -32,12 +32,16 @@ class ModelYamlValue(BaseModel):
     value_type: EnumYamlValueType = Field(
         description="Type discriminator for the YAML value",
     )
-    schema_value: ModelSchemaValue | None = Field(None, description="Schema value data")
+    schema_value: ModelSchemaValue | None = Field(
+        default=None, description="Schema value data"
+    )
     dict_value: dict[str, "ModelYamlValue"] | None = Field(
-        None,
+        default=None,
         description="Dictionary data",
     )
-    list_value: list["ModelYamlValue"] | None = Field(None, description="List data")
+    list_value: list["ModelYamlValue"] | None = Field(
+        default=None, description="List data"
+    )
 
     @classmethod
     def from_schema_value(cls, value: ModelSchemaValue) -> "ModelYamlValue":

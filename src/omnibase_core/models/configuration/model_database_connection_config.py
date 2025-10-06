@@ -3,6 +3,8 @@ import re
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+
 
 class ModelDatabaseConnectionConfig(BaseModel):
     """
@@ -34,7 +36,9 @@ class ModelDatabaseConnectionConfig(BaseModel):
     )
     username: str = Field(..., description="Database username", max_length=100)
     password: SecretStr = Field(..., description="Database password (secured)")
-    ssl_enabled: bool = Field(False, description="Whether to use SSL connection")
+    ssl_enabled: bool = Field(
+        default=False, description="Whether to use SSL connection"
+    )
     connection_timeout: int = Field(
         30,
         description="Connection timeout in seconds",
@@ -48,7 +52,10 @@ class ModelDatabaseConnectionConfig(BaseModel):
         """Validate database host format."""
         if not v or not v.strip():
             msg = "Database host cannot be empty"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Remove leading/trailing whitespace
         v = v.strip()
@@ -56,16 +63,25 @@ class ModelDatabaseConnectionConfig(BaseModel):
         # Basic hostname validation
         if not re.match(r"^[a-zA-Z0-9\-\.]+$", v):
             msg = f"Invalid host format: {v}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         # Check for common invalid patterns
         if v.startswith("-") or v.endswith("-"):
             msg = f"Host cannot start or end with hyphen: {v}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         if ".." in v:
             msg = f"Host cannot contain consecutive dots: {v}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return v
 
@@ -75,7 +91,10 @@ class ModelDatabaseConnectionConfig(BaseModel):
         """Validate database name format."""
         if not v or not v.strip():
             msg = "Database name cannot be empty"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         v = v.strip()
 
@@ -95,8 +114,9 @@ class ModelDatabaseConnectionConfig(BaseModel):
         for pattern in dangerous_patterns:
             if pattern in v_upper:
                 msg = f"Database name contains potentially dangerous pattern: {pattern}"
-                raise ValueError(
-                    msg,
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
                 )
 
         return v
@@ -107,14 +127,20 @@ class ModelDatabaseConnectionConfig(BaseModel):
         """Validate database username."""
         if not v or not v.strip():
             msg = "Database username cannot be empty"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         v = v.strip()
 
         # Check for SQL injection patterns
         if any(pattern in v.upper() for pattern in ["--", ";", "'", '"']):
             msg = "Username contains potentially dangerous characters"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return v
 

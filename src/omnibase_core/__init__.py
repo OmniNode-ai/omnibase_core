@@ -1,4 +1,5 @@
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Omnibase Core - ONEX Four-Node ModelArchitecture Implementation
@@ -33,7 +34,8 @@ Validation Tools:
         python -m omnibase_core.validation all
 """
 
-from omnibase_core.errors import ModelCoreErrorCode, ModelOnexError
+# Import already done at top of file
+# from omnibase_core.errors import ModelCoreErrorCode, ModelOnexError
 
 # No typing imports needed for lazy loading
 

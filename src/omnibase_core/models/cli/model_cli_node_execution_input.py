@@ -42,21 +42,21 @@ class ModelCliNodeExecutionInput(BaseModel):
     # Core execution parameters
     action: EnumCliAction = Field(..., description="Action to perform with the node")
     node_id: UUID | None = Field(
-        None,
+        default=None,
         description="Node UUID for precise identification",
     )
     node_display_name: str | None = Field(
-        None,
+        default=None,
         description="Node display name for human-readable operations",
     )
 
     # Node-specific parameters
     target_node_id: UUID | None = Field(
-        None,
+        default=None,
         description="Target node UUID for precise node-info operations",
     )
     target_node_display_name: str | None = Field(
-        None,
+        default=None,
         description="Target node display name for node-info operations",
     )
 
@@ -76,13 +76,13 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Only include healthy nodes in results",
     )
     category_filter: EnumCategoryFilter | None = Field(
-        None,
+        default=None,
         description="Filter nodes by category",
     )
 
     # Performance and timeouts
     timeout_seconds: float | None = Field(
-        None,
+        default=None,
         description="Execution timeout in seconds",
     )
 
@@ -101,7 +101,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Execution context
     execution_context: UUID | None = Field(
-        None,
+        default=None,
         description="Execution context UUID for tracking operations",
     )
     request_id: UUID = Field(

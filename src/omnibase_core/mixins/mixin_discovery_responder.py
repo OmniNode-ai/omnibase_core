@@ -46,7 +46,7 @@ class MixinDiscoveryResponder:
     - Response time metrics
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._discovery_active = False
         self._last_response_time = 0
@@ -107,7 +107,7 @@ class MixinDiscoveryResponder:
                 ModelCoreErrorCode.DISCOVERY_SETUP_FAILED,
             )
 
-    def stop_discovery_responder(self, logger: ProtocolLogger | None = None):
+    def stop_discovery_responder(self, logger: ProtocolLogger | None = None) -> None:
         """
         Stop responding to discovery broadcasts.
 
@@ -123,7 +123,7 @@ class MixinDiscoveryResponder:
             logger.log("[DiscoveryResponder] Stopped discovery responder")
             logger.log(f"[DiscoveryResponder] Stats: {self._discovery_stats}")
 
-    def _handle_discovery_request(self, envelope: "ModelEventEnvelope"):
+    def _handle_discovery_request(self, envelope: "ModelEventEnvelope") -> None:
         """
         Handle incoming discovery requests.
 
@@ -385,7 +385,7 @@ class MixinDiscoveryResponder:
             "last_response_time": self._last_response_time,
         }
 
-    def reset_discovery_stats(self):
+    def reset_discovery_stats(self) -> None:
         """
         Reset discovery responder statistics.
         """

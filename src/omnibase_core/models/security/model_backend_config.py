@@ -15,49 +15,53 @@ class ModelBackendConfig(BaseModel):
     """Configuration parameters for secret backends."""
 
     # Environment backend config
-    env_prefix: str | None = Field(None, description="Environment variable prefix")
+    env_prefix: str | None = Field(
+        default=None, description="Environment variable prefix"
+    )
 
     # Dotenv backend config
-    dotenv_path: Path | None = Field(None, description="Path to .env file")
+    dotenv_path: Path | None = Field(default=None, description="Path to .env file")
 
     auto_load_dotenv: bool | None = Field(
-        None,
+        default=None,
         description="Automatically load .env file",
     )
 
     # Vault backend config
     vault_url: str | None = Field(
-        None,
+        default=None,
         description="Vault server URL",
         pattern=r"^https?://.*$",
     )
 
     vault_token: SecretStr | None = Field(
-        None,
+        default=None,
         description="Vault authentication token",
     )
 
-    vault_namespace: str | None = Field(None, description="Vault namespace")
+    vault_namespace: str | None = Field(default=None, description="Vault namespace")
 
-    vault_path: str | None = Field(None, description="Vault secret path prefix")
+    vault_path: str | None = Field(default=None, description="Vault secret path prefix")
 
-    vault_role: str | None = Field(None, description="Vault role for authentication")
+    vault_role: str | None = Field(
+        default=None, description="Vault role for authentication"
+    )
 
     # Kubernetes backend config
-    namespace: str | None = Field(None, description="Kubernetes namespace")
+    namespace: str | None = Field(default=None, description="Kubernetes namespace")
 
-    secret_name: str | None = Field(None, description="Kubernetes secret name")
+    secret_name: str | None = Field(default=None, description="Kubernetes secret name")
 
     # File backend config
-    file_path: Path | None = Field(None, description="Path to secret file")
+    file_path: Path | None = Field(default=None, description="Path to secret file")
 
     encryption_key: SecretStr | None = Field(
-        None,
+        default=None,
         description="Encryption key for file backend",
     )
 
     file_permissions: str | None = Field(
-        None,
+        default=None,
         description="File permissions (e.g., '600')",
         pattern=r"^[0-7]{3,4}$",
     )

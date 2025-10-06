@@ -25,7 +25,7 @@ class ModelAuditValue(BaseModel):
     # Object identification
     object_type: str = Field(..., description="Type of audited object")
     object_id: str = Field(..., description="ID of audited object")
-    object_name: str | None = Field(None, description="Name of audited object")
+    object_name: str | None = Field(default=None, description="Name of audited object")
 
     # Change details
     field_changes: list[ModelAuditFieldChange] = Field(
@@ -34,25 +34,27 @@ class ModelAuditValue(BaseModel):
     )
 
     # Metadata
-    version_before: str | None = Field(None, description="Version before change")
-    version_after: str | None = Field(None, description="Version after change")
+    version_before: str | None = Field(
+        default=None, description="Version before change"
+    )
+    version_after: str | None = Field(default=None, description="Version after change")
 
     # Serialized representations (for complex objects)
     serialized_before: str | None = Field(
-        None,
+        default=None,
         description="JSON serialized state before",
     )
     serialized_after: str | None = Field(
-        None,
+        default=None,
         description="JSON serialized state after",
     )
 
     # Summary
     change_summary: str | None = Field(
-        None,
+        default=None,
         description="Human-readable change summary",
     )
-    change_count: int = Field(0, description="Number of fields changed")
+    change_count: int = Field(default=0, description="Number of fields changed")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dict[str, Any]ionary for current standards."""

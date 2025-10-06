@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from omnibase_core.errors.error_codes import ModelOnexError
 from omnibase_core.utils.util_serialization import serialize_data_to_yaml
@@ -52,7 +52,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             sys.exit(tool.main())
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the CLI handler mixin."""
         super().__init__(**kwargs)
 
@@ -73,8 +73,11 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             return self.description
         return f"{self.__class__.__name__} - ONEX Tool"
 
-    def add_custom_arguments(self, parser: argparse.ArgumentParser) -> None:
+    def add_custom_arguments(
+        self, parser: argparse.ArgumentParser
+    ) -> None:  # stub-ok: optional override hook for subclasses
         """Add custom CLI arguments. Override to add tool-specific args."""
+        pass
 
     def create_parser(self) -> argparse.ArgumentParser:
         """Create argument parser with standard ONEX flags."""
@@ -314,7 +317,9 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             )
             return 130
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: CLI handler returns error exit code with logging, appropriate for CLI
             emit_log_event(
                 LogLevel.ERROR,
                 f"Tool execution failed: {e}",

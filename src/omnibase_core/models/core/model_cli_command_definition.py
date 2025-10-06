@@ -71,7 +71,7 @@ class ModelCliCommandDefinition(BaseModel):
     )
 
     deprecation_message: str | None = Field(
-        None,
+        default=None,
         description="Deprecation warning message",
     )
 

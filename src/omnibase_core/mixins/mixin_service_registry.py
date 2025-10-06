@@ -1,4 +1,5 @@
 from typing import Callable, List, Optional
+from uuid import UUID
 
 """
 Mixin for event-driven service registry and tool discovery.
@@ -11,8 +12,11 @@ and their capabilities.
 import logging
 import time
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -32,7 +36,7 @@ class MixinServiceRegistry:
     registries that maintain live catalogs of available tools.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the service registry mixin."""
         # Extract mixin-specific kwargs before passing to super()
         introspection_timeout = kwargs.pop("introspection_timeout", 30)
@@ -57,7 +61,7 @@ class MixinServiceRegistry:
 
         # Don't setup event handlers during init - defer until start_service_registry
 
-    def _setup_registry_event_handlers(self):
+    def _setup_registry_event_handlers(self) -> None:
         """Setup event handlers for service lifecycle events."""
         logger.info(
             f"🔧 Setting up registry event handlers - event_bus: {hasattr(self, 'event_bus')}, value: {getattr(self, 'event_bus', None)}",
@@ -104,7 +108,7 @@ class MixinServiceRegistry:
                 f"❌ Cannot setup event handlers - event_bus not available: hasattr={hasattr(self, 'event_bus')}, event_bus={getattr(self, 'event_bus', None)}",
             )
 
-    def start_service_registry(self, domain_filter: str | None = None):
+    def start_service_registry(self, domain_filter: str | None = None) -> None:
         """
         Start the service registry with optional domain filtering.
 
@@ -140,7 +144,7 @@ class MixinServiceRegistry:
 
         logger.info(f"🚀 Service registry started for domain: {domain_filter or 'all'}")
 
-    def stop_service_registry(self):
+    def stop_service_registry(self) -> None:
         """Stop the service registry."""
         self.registry_started = False
 
@@ -149,7 +153,7 @@ class MixinServiceRegistry:
 
         logger.info("🛑 Service registry stopped")
 
-    def _send_discovery_request(self):
+    def _send_discovery_request(self) -> None:
         """Send a discovery request to find active tools."""
         if not hasattr(self, "event_bus") or not self.event_bus:
             return
@@ -202,7 +206,7 @@ class MixinServiceRegistry:
 
             traceback.print_exc()
 
-    def _handle_node_start(self, envelope):
+    def _handle_node_start(self, envelope: "ModelEventEnvelope") -> None:
         """Handle node start events - new tools coming online."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -263,7 +267,7 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling node start event: {e}")
 
-    def _handle_node_stop(self, envelope):
+    def _handle_node_stop(self, envelope: "ModelEventEnvelope") -> None:
         """Handle node stop events - tools going offline."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -296,12 +300,12 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
 
-    def _handle_node_failure(self, envelope):
+    def _handle_node_failure(self, envelope: "ModelEventEnvelope") -> None:
         """Handle node failure events - tools failing."""
         # Same logic as stop for now
         self._handle_node_stop(envelope)
 
-    def _send_introspection_request(self, node_id: str):
+    def _send_introspection_request(self, node_id: UUID) -> None:
         """Send introspection request to a specific node."""
         if not hasattr(self, "event_bus") or not self.event_bus:
             return
@@ -348,7 +352,7 @@ class MixinServiceRegistry:
                 f"❌ Failed to send introspection request to {node_id}: {e}",
             )
 
-    def _handle_introspection_response(self, envelope):
+    def _handle_introspection_response(self, envelope: "ModelEventEnvelope") -> None:
         """Handle introspection responses from tools."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -376,7 +380,7 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
 
-    def _handle_discovery_request(self, envelope):
+    def _handle_discovery_request(self, envelope: "ModelEventEnvelope") -> None:
         """Handle discovery requests from other hubs/services."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -490,7 +494,7 @@ class MixinServiceRegistry:
                 matching_tools.append(entry)
         return matching_tools
 
-    def add_discovery_callback(self, callback: Callable[..., Any]):
+    def add_discovery_callback(self, callback: Callable[..., Any]) -> None:
         """
         Add a callback for discovery events.
 
@@ -499,7 +503,7 @@ class MixinServiceRegistry:
         """
         self.discovery_callbacks.append(callback)
 
-    def cleanup_stale_entries(self):
+    def cleanup_stale_entries(self) -> None:
         """Clean up stale registry entries based on TTL."""
         current_time = time.time()
         stale_entries = []
@@ -519,7 +523,7 @@ class MixinServiceRegistry:
                 {"stale_entries": stale_entries},
             )
 
-    def _schedule_cleanup(self):
+    def _schedule_cleanup(self) -> None:
         """Schedule periodic cleanup of stale entries."""
         if hasattr(self, "event_loop") and self.event_loop:
             try:
@@ -530,7 +534,7 @@ class MixinServiceRegistry:
             except Exception as e:
                 logger.debug(f"Could not schedule cleanup task: {e}")
 
-    def _cleanup_and_reschedule(self):
+    def _cleanup_and_reschedule(self) -> None:
         """Cleanup and reschedule next cleanup."""
         try:
             self.cleanup_stale_entries()

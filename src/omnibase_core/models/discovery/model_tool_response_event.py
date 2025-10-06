@@ -77,15 +77,15 @@ class ModelToolResponseEvent(ModelOnexEvent):
     # Execution result
     success: bool = Field(..., description="Whether the tool execution was successful")
     result: dict[str, str | int | float | bool | list[Any]] | None = Field(
-        None,
+        default=None,
         description="Tool execution result data (if successful)",
     )
     error: str | None = Field(
-        None,
+        default=None,
         description="Error message (if execution failed)",
     )
     error_code: str | None = Field(
-        None,
+        default=None,
         description="Specific error code for programmatic handling",
     )
 
@@ -96,7 +96,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         ge=0,
     )
     queue_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Time spent in queue before execution (if applicable)",
         ge=0,
     )
@@ -127,7 +127,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         description="Additional metadata about the execution",
     )
     resource_usage: ModelResourceUsage | None = Field(
-        None,
+        default=None,
         description="Resource usage during execution (CPU, memory, etc.)",
     )
 

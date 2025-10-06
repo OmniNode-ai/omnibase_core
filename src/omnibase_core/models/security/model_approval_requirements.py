@@ -18,7 +18,7 @@ class ModelApprovalRequirements(BaseModel):
     Defines approval workflow requirements for permissions.
     """
 
-    required: bool = Field(False, description="Whether approval is required")
+    required: bool = Field(default=False, description="Whether approval is required")
 
     types: list[str] = Field(
         default_factory=list,
@@ -33,7 +33,7 @@ class ModelApprovalRequirements(BaseModel):
     )
 
     timeout_hours: int | None = Field(
-        None,
+        default=None,
         description="Hours after which approval request expires",
         ge=1,
         le=168,  # Max 1 week
@@ -55,6 +55,6 @@ class ModelApprovalRequirements(BaseModel):
     )
 
     approval_message_template: str | None = Field(
-        None,
+        default=None,
         description="Template for approval request messages",
     )

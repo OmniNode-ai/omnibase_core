@@ -54,7 +54,9 @@ class ModelOrchestratorOutput(BaseModel):
     )
 
     # Final outputs
-    final_result: Any | None = Field(None, description="Final orchestration result")
+    final_result: Any | None = Field(
+        default=None, description="Final orchestration result"
+    )
     output_variables: dict[str, Any] = Field(
         default_factory=dict,
         description="Output variables from the orchestration",
@@ -74,6 +76,6 @@ class ModelOrchestratorOutput(BaseModel):
 
     # Custom outputs for extensibility
     custom_outputs: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Custom output fields for orchestrator-specific data",
     )

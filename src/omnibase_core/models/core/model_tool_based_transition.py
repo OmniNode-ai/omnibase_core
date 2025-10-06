@@ -19,17 +19,17 @@ class ModelToolBasedTransition(BaseModel):
     )
 
     tool_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable name of the tool (e.g., 'State Calculator Tool')",
     )
 
     tool_params: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Additional parameters to pass to the tool",
     )
 
     fallback_updates: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Updates to apply if tool invocation fails",
     )
 

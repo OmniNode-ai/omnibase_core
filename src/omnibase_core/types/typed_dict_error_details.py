@@ -6,7 +6,7 @@ TypedDict for error details.
 
 
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
 class TypedDictErrorDetails(TypedDict):

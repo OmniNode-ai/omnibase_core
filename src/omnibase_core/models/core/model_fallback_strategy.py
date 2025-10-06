@@ -32,7 +32,7 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     fallback_endpoint: str | None = Field(
-        None, description="Alternative endpoint to use during fallback"
+        default=None, description="Alternative endpoint to use during fallback"
     )
 
     degraded_features: dict[str, bool] | None = Field(
@@ -40,7 +40,7 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     metadata: ModelFallbackMetadata | None = Field(
-        default_factory=ModelFallbackMetadata,
+        default_factory=lambda: ModelFallbackMetadata(),
         description="Strongly-typed strategy-specific configuration",
     )
 

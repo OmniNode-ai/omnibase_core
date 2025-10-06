@@ -22,11 +22,11 @@ class ModelWorkflowStrategy(BaseModel):
     """
 
     matrix: ModelMatrixStrategy | None = Field(
-        None,
+        default=None,
         description="Matrix configuration",
     )
-    fail_fast: bool = Field(True, description="Fail fast on first error")
-    max_parallel: int | None = Field(None, description="Maximum parallel jobs")
+    fail_fast: bool = Field(default=True, description="Fail fast on first error")
+    max_parallel: int | None = Field(default=None, description="Maximum parallel jobs")
 
 
 # ONEX compliance remediation complete - factory method eliminated

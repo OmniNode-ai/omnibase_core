@@ -18,6 +18,6 @@ class ModelConditionalTransition(BaseModel):
     )
 
     default_transition: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Transition to apply if no conditions match",
     )

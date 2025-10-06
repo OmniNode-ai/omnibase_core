@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from omnibase_core.errors.error_codes import ModelOnexError
 
@@ -40,12 +40,12 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 super().__init__(**kwargs)
                 self.registry = registry
 
-            def process(self, input_state):
+            def process(self, input_state: Any) -> None:
                 # Registry is validated and ready to use
                 service = self.registry.get_service("my_service")
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the registry injection mixin."""
         super().__init__(**kwargs)
 
@@ -166,7 +166,9 @@ class MixinRegistryInjection(Generic[RegistryT]):
                     if hasattr(health, "status")
                     else EnumOnexStatus.SUCCESS
                 )
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # fallback-ok: health check should return ERROR status with logging, not crash
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Registry health check failed: {e}",
@@ -204,7 +206,9 @@ class MixinRegistryInjection(Generic[RegistryT]):
                     },
                 )
                 return service
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # fallback-ok: service retrieval returns None with logging, caller handles None
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Failed to get service from registry: {e}",
@@ -246,7 +250,9 @@ class MixinRegistryInjection(Generic[RegistryT]):
                     },
                 )
                 return True
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # fallback-ok: service registration returns False with logging, caller handles failure
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Failed to register service: {e}",

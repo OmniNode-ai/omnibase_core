@@ -11,11 +11,13 @@ from typing import Any, Optional, Union
 
 from pydantic import RootModel, computed_field, model_validator
 
-from omnibase_core.models.core.model_function_tool import ModelFunctionTool
-from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
+from omnibase_core.models.core.model_function_tool import ModelFunctionTool
 
 from .model_metadata_tool_analytics import ModelMetadataToolAnalytics
 from .model_metadata_tool_info import ModelMetadataToolInfo
@@ -113,7 +115,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
             # Validate function name
             if not name.isidentifier():
                 msg = f"Invalid function name: {name}"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
             tool_count += 1
 
@@ -259,7 +264,9 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: registration method, False indicates registration failure
             return False
 
     def remove_tool(self, name: str) -> bool:

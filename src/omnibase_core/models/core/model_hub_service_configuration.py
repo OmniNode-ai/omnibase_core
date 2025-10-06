@@ -33,4 +33,4 @@ class ModelHubServiceConfiguration(BaseModel):
         default_factory=list,
         description="WebSocket endpoints provided by hub",
     )
-    default_port: int | None = Field(None, description="Default service port")
+    default_port: int | None = Field(default=None, description="Default service port")

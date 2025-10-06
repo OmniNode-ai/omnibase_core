@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from omnibase_core.errors.error_codes import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
@@ -40,22 +40,22 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
     Usage:
         class MyTool(MixinHybridExecution, MixinContractMetadata, ProtocolReducer):
-            def determine_execution_mode(self, input_state) -> str:
+            def determine_execution_mode(self, input_state: Any) -> str:
                 # Override to customize mode selection
                 if input_state.operation_count > 10:
                     return ExecutionMode.WORKFLOW
                 return ExecutionMode.DIRECT
 
-            def process(self, input_state):
+            def process(self, input_state: Any) -> None:
                 # Direct execution logic
                 return output
 
-            def create_workflow(self, input_state):
+            def create_workflow(self, input_state: Any) -> None:
                 # Create LlamaIndex workflow
                 return MyWorkflow(input_state)
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the hybrid execution mixin."""
         super().__init__(**kwargs)
 
@@ -244,7 +244,9 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
             return result
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: workflow failure falls back to direct execution with logging
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",
@@ -319,7 +321,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         # Default modes
         return [ExecutionMode.DIRECT, ExecutionMode.WORKFLOW]
 
-    def create_workflow(self, input_state: InputStateT):
+    def create_workflow(self, input_state: InputStateT) -> None:
         """
         Create LlamaIndex workflow for complex operations.
 

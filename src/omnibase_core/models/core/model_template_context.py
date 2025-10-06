@@ -1,12 +1,12 @@
 import uuid
 from pathlib import Path
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.models.core.model_metadata import ModelMetadata
 from omnibase_core.models.core.model_regeneration_target import ModelRegenerationTarget
 from omnibase_core.models.core.model_rendered_template import ModelRenderedTemplate
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 # Re-export for current standards
@@ -21,7 +21,7 @@ class ModelTemplateContext(BaseModel):
 
     node_name: str
     node_class: str  # Main node class name
-    node_id: str  # Node ID string (lowercase, underscores)
+    node_id: UUID  # Node ID string (lowercase, underscores)
     node_id_upper: str  # Node ID in uppercase (for constants)
     author: str
     year: int  # Copyright year
@@ -38,8 +38,8 @@ class ModelTemplateContext(BaseModel):
 
     # Contract-derived fields for template token replacement
     contract_hash: str | None = None
-    contract_version: str | None = None
-    node_version: str | None = None
+    contract_version: ModelSemVer | None = None
+    node_version: ModelSemVer | None = None
     input_fields: str | None = None
     output_fields: str | None = None
     uuid: str | None = None

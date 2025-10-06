@@ -15,10 +15,10 @@ class ModelTrendPoint(BaseModel):
 
     timestamp: datetime = Field(..., description="Data point timestamp")
     value: float | int = Field(..., description="Data point value")
-    label: str | None = Field(None, description="Optional label")
+    label: str | None = Field(default=None, description="Optional label")
 
     @field_serializer("timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

@@ -26,7 +26,9 @@ class ModelCliAction(BaseModel):
     node_name: str = Field(..., description="Node that provides this action")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
-    category: str | None = Field(None, description="Action category for grouping")
+    category: str | None = Field(
+        default=None, description="Action category for grouping"
+    )
 
     @classmethod
     def from_contract_action(

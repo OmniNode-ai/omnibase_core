@@ -49,9 +49,11 @@ class ModelDirectoryProcessingResult(BaseModel):
     """
 
     # File statistics
-    processed_count: int = Field(0, description="Number of files processed")
-    failed_count: int = Field(0, description="Number of files that failed processing")
-    skipped_count: int = Field(0, description="Number of files skipped")
+    processed_count: int = Field(default=0, description="Number of files processed")
+    failed_count: int = Field(
+        default=0, description="Number of files that failed processing"
+    )
+    skipped_count: int = Field(default=0, description="Number of files skipped")
 
     # File sets
     processed_files: set[Path] = Field(
@@ -72,9 +74,11 @@ class ModelDirectoryProcessingResult(BaseModel):
         0,
         description="Total size of processed files in bytes",
     )
-    directory: Path | None = Field(None, description="Directory that was processed")
+    directory: Path | None = Field(
+        default=None, description="Directory that was processed"
+    )
     filter_config: Optional["ModelFileFilter"] = Field(
-        None,
+        default=None,
         description="Filter configuration used",
     )
 

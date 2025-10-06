@@ -1,6 +1,7 @@
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
+if TYPE_CHECKING:
+    from omnibase_core.errors.error_codes import ModelOnexError
 
 """
 Type constraints and protocols for better generic programming.
@@ -47,14 +48,18 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
-# Import extracted protocols from individual files
-from omnibase_core.types.protocol_configurable import Configurable
-from omnibase_core.types.protocol_executable import Executable
-from omnibase_core.types.protocol_identifiable import Identifiable
-from omnibase_core.types.protocol_metadata_provider import ProtocolMetadataProvider
-from omnibase_core.types.protocol_nameable import Nameable
-from omnibase_core.types.protocol_serializable import Serializable
-from omnibase_core.types.protocol_validatable import ProtocolValidatable
+# Import protocols from omnibase_spi (following ONEX SPI separation)
+from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
+from omnibase_spi.protocols.types import ProtocolExecutable as Executable
+from omnibase_spi.protocols.types import ProtocolIdentifiable as Identifiable
+from omnibase_spi.protocols.types import (
+    ProtocolMetadataProvider,
+)
+from omnibase_spi.protocols.types import ProtocolNameable as Nameable
+from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
+from omnibase_spi.protocols.types import (
+    ProtocolValidatable,
+)
 
 # Bounded type variables with proper constraints
 

@@ -31,20 +31,20 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     # Reporting metadata
     report_interval_seconds: int | None = Field(
-        None,
+        default=None,
         description="How often this node reports health (for scheduling)",
     )
     next_report_time: datetime | None = Field(
-        None,
+        default=None,
         description="When the next health report is expected",
     )
 
     # Consul compatibility
     service_id: str | None = Field(
-        None,
+        default=None,
         description="Service ID for Consul health checks",
     )
-    check_id: str | None = Field(None, description="Health check ID for Consul")
+    check_id: str | None = Field(default=None, description="Health check ID for Consul")
 
     @classmethod
     def create_healthy_report(

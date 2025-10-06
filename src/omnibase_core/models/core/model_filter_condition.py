@@ -14,7 +14,7 @@ class ModelFilterCondition(BaseModel):
 
     field: str = Field(..., description="Field to filter on")
     operator: ModelFilterOperator = Field(..., description="Filter operator")
-    negate: bool = Field(False, description="Negate the condition")
+    negate: bool = Field(default=False, description="Negate the condition")
 
 
 # Compatibility alias

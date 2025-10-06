@@ -12,4 +12,4 @@ class ModelHubWebSocketEndpoint(BaseModel):
     """WebSocket endpoint configuration for hubs."""
 
     path: str = Field(..., description="WebSocket path")
-    description: str | None = Field(None, description="WebSocket description")
+    description: str | None = Field(default=None, description="WebSocket description")

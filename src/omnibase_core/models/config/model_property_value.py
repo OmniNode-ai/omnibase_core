@@ -63,7 +63,7 @@ class ModelPropertyValue(BaseModel):
     )
 
     source: str | None = Field(
-        None,
+        default=None,
         description="Source of the property value",
     )
 

@@ -1,9 +1,9 @@
 from typing import Any, List
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_secret_config import ModelSecretConfig
 from omnibase_core.models.security.model_secret_manager import ModelSecretManager
-
-from .model_secretmanagercompat import ModelSecretManagerCompat
 
 """
 ONEX Secret Management Models and Utilities.
@@ -39,41 +39,6 @@ from .model_secret_manager import (
 )
 from .model_secure_credentials import ModelSecureCredentials
 
-# === Current Standards Layer ===
-
-
-# Provide compatibility for the original enum
-class ModelSecretBackendEnumCompat:
-    """
-    Current enum standards layer.
-
-    DEPRECATED: Use ModelSecretBackend instead for enhanced functionality.
-    This class provides compatibility for existing code.
-    """
-
-    ENVIRONMENT = "environment"
-    DOTENV = "dotenv"
-    VAULT = "vault"
-    KUBERNETES = "kubernetes"
-    FILE = "file"
-
-    @classmethod
-    def to_model(cls, enum_value: str) -> ModelSecretBackend:
-        """Convert enum value to ModelSecretBackend."""
-        return ModelSecretBackend(backend_type=enum_value)
-
-
-# Backward compatibility alias
-SecretBackendEnum = ModelSecretBackendEnumCompat
-
-
-# Provide compatibility for SecretManager
-
-
-# Backward compatibility alias
-SecretManager = ModelSecretManagerCompat
-
-
 # === Enhanced Global Functions ===
 
 
@@ -98,7 +63,10 @@ def create_secret_manager_for_environment(
     if environment == "kubernetes":
         return ModelSecretManager.create_for_kubernetes()
     msg = f"Unknown environment: {environment}"
-    raise ValueError(msg)
+    raise ModelOnexError(
+        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+        message=msg,
+    )
 
 
 def validate_secret_configuration(config_type: str, **kwargs) -> dict[str, Any]:
@@ -120,14 +88,18 @@ def validate_secret_configuration(config_type: str, **kwargs) -> dict[str, Any]:
 
             config = ModelDatabaseSecureConfig(**kwargs)
             return config.validate_credentials()
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: validation returns structured error dict, caller handles
             return {"is_valid": False, "error": str(e)}
 
     elif config_type == "backend":
         try:
             backend = ModelSecretBackend(**kwargs)
             return {"is_valid": True, "backend": backend}
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: validation returns structured error dict, caller handles
             return {"is_valid": False, "error": str(e)}
 
     else:
@@ -163,27 +135,22 @@ def get_security_recommendations(
 
         return [f"Unknown config type: {config_type}"]
 
-    except Exception as e:
+    except (
+        Exception
+    ) as e:  # fallback-ok: recommendations return error list, non-critical helper function
         return [f"Error getting recommendations: {e}"]
 
 
 # === Export All Models ===
 
 __all__ = [
-    # New enhanced models
+    # Core models
     "ModelSecretBackend",
     "ModelSecretConfig",
     "ModelSecretManager",
     "ModelSecureCredentials",
-    # ONEX-compliant compatibility layer (deprecated)
-    "ModelSecretBackendEnumCompat",
-    "ModelSecretManagerCompat",
-    # Backward compatibility aliases (deprecated)
-    "SecretBackendEnum",
-    "SecretManager",
-    # Enhanced utility functions
+    # Utility functions
     "create_secret_manager_for_environment",
-    # Global functions
     "get_secret_manager",
     "get_security_recommendations",
     "init_secret_manager",

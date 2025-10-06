@@ -3,7 +3,7 @@ from typing import Dict
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Event Input State Model.
@@ -28,20 +28,20 @@ class ModelEventInputState(BaseModel):
     and type safety.
     """
 
-    action: str | None = Field(None, description="Action being performed")
+    action: str | None = Field(default=None, description="Action being performed")
     parameters: dict[str, str | int | bool | float | list[str]] = Field(
         default_factory=dict,
         description="Action parameters",
     )
     node_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Node version for this input",
     )
     correlation_id: UUID | None = Field(
-        None,
+        default=None,
         description="Correlation ID for tracing",
     )
-    timeout_ms: int | None = Field(None, description="Execution timeout", ge=0)
+    timeout_ms: int | None = Field(default=None, description="Execution timeout", ge=0)
 
     def get_parameter(self, key: str, default: Any = None) -> Any:
         """Get parameter value with default."""

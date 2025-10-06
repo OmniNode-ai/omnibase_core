@@ -15,7 +15,7 @@ class ModelAuthorizationSummary(BaseModel):
     authorized_roles: list[str] = Field(..., description="Roles authorized to process")
     authorized_nodes: list[str] = Field(..., description="Nodes authorized to process")
     security_clearance_required: str | None = Field(
-        None,
+        default=None,
         description="Required security clearance",
     )
 

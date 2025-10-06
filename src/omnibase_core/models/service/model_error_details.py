@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+from uuid import UUID
 
 from pydantic import Field
 
@@ -24,24 +25,26 @@ class ModelErrorDetails(BaseModel):
     error_message: str = Field(..., description="Error message")
 
     # Error context
-    component: str | None = Field(None, description="Component where error occurred")
-    operation: str | None = Field(None, description="Operation being performed")
+    component: str | None = Field(
+        default=None, description="Component where error occurred"
+    )
+    operation: str | None = Field(default=None, description="Operation being performed")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Error timestamp",
     )
 
     # Error details
-    stack_trace: list[str] | None = Field(None, description="Stack trace lines")
+    stack_trace: list[str] | None = Field(default=None, description="Stack trace lines")
     inner_errors: list["ModelErrorDetails"] | None = Field(
-        None,
+        default=None,
         description="Nested errors",
     )
 
     # Contextual data
-    request_id: str | None = Field(None, description="Request ID")
-    user_id: str | None = Field(None, description="User ID")
-    session_id: str | None = Field(None, description="Session ID")
+    request_id: UUID | None = Field(default=None, description="Request ID")
+    user_id: UUID | None = Field(default=None, description="User ID")
+    session_id: UUID | None = Field(default=None, description="Session ID")
 
     # Additional context
     context_data: dict[str, Any] = Field(
@@ -50,12 +53,14 @@ class ModelErrorDetails(BaseModel):
     )
 
     # Recovery information
-    retry_after_seconds: int | None = Field(None, description="Retry after seconds")
+    retry_after_seconds: int | None = Field(
+        default=None, description="Retry after seconds"
+    )
     recovery_suggestions: list[str] | None = Field(
-        None,
+        default=None,
         description="Recovery suggestions",
     )
-    documentation_url: str | None = Field(None, description="Documentation URL")
+    documentation_url: str | None = Field(default=None, description="Documentation URL")
 
     model_config = ConfigDict()
 

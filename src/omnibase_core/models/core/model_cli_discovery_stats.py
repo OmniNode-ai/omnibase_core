@@ -40,27 +40,27 @@ class ModelCliDiscoveryStats(BaseModel):
         description="Number of tools currently cached in discovery registry",
     )
     cache_hit_rate: float | None = Field(
-        None,
+        default=None,
         description="Discovery cache hit rate as percentage (0-100)",
     )
 
     # Performance metrics
     last_discovery_duration_ms: float | None = Field(
-        None,
+        default=None,
         description="Duration of last discovery operation in milliseconds",
     )
     average_discovery_duration_ms: float | None = Field(
-        None,
+        default=None,
         description="Average discovery operation duration in milliseconds",
     )
 
     # Timestamp tracking
     last_refresh_timestamp: str | None = Field(
-        None,
+        default=None,
         description="ISO timestamp of last registry refresh",
     )
     last_health_check_timestamp: str | None = Field(
-        None,
+        default=None,
         description="ISO timestamp of last health check cycle",
     )
 
@@ -70,7 +70,7 @@ class ModelCliDiscoveryStats(BaseModel):
         description="Number of discovery errors since last reset",
     )
     last_error_message: str | None = Field(
-        None,
+        default=None,
         description="Message from most recent discovery error",
     )
 

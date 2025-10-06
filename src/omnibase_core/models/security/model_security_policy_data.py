@@ -18,8 +18,6 @@ from omnibase_core.models.common.model_typed_value import (
     ModelValueContainer,
 )
 
-from .model_config import ModelConfig
-
 
 class ModelSecurityPolicyData(BaseModel):
     """Security policy data container with strong typing."""

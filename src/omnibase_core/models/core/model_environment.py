@@ -70,13 +70,13 @@ class ModelEnvironment(BaseModel):
     )
 
     description: str | None = Field(
-        None,
+        default=None,
         description="Environment description",
         max_length=500,
     )
 
     configuration_url: HttpUrl | None = Field(
-        None,
+        default=None,
         description="Configuration endpoint URL",
     )
 
@@ -86,7 +86,7 @@ class ModelEnvironment(BaseModel):
     )
 
     security_level: "ModelSecurityLevel | None" = Field(
-        None,
+        default=None,
         description="Security requirements and configuration",
     )
 
@@ -117,7 +117,7 @@ class ModelEnvironment(BaseModel):
     )
 
     resource_limits: "ModelResourceLimits | None" = Field(
-        None,
+        default=None,
         description="Resource limits for this environment",
     )
 

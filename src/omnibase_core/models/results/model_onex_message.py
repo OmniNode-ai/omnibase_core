@@ -50,25 +50,31 @@ class ModelOnexMessage(BaseModel):
         EnumLogLevel.INFO,
         description="Message level: info, warning, error, etc.",
     )
-    file: str | None = Field(None, description="File path related to the message.")
+    file: str | None = Field(
+        default=None, description="File path related to the message."
+    )
     line: int | None = Field(
-        None,
+        default=None,
         description="Line number in the file, if applicable.",
     )
     column: int | None = None
-    details: str | None = Field(None, description="Detailed message or context.")
+    details: str | None = Field(
+        default=None, description="Detailed message or context."
+    )
     severity: EnumLogLevel | None = None
-    code: str | None = Field(None, description="Error or warning code, if any.")
+    code: str | None = Field(default=None, description="Error or warning code, if any.")
     context: ModelOnexMessageContext | None = Field(
-        None,
+        default=None,
         description="Additional context for the message.",
     )
-    timestamp: datetime | None = Field(None, description="Timestamp of the message.")
+    timestamp: datetime | None = Field(
+        default=None, description="Timestamp of the message."
+    )
     fixable: bool | None = None
     origin: str | None = None
     example: str | None = None
     localized_text: dict[str, str] | None = None
     type: str | None = Field(
-        None,
+        default=None,
         description="Type of message (error, warning, note, etc.)",
     )

@@ -3,25 +3,30 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 
 class ModelLogFilterConfig(BaseModel):
     """Configuration for custom log filters."""
 
     # Rate limiting
     max_matches_per_minute: int | None = Field(
-        None,
+        default=None,
         description="Maximum matches allowed per minute",
         ge=1,
     )
 
     # Advanced regex options
-    case_sensitive: bool = Field(False, description="Case sensitive matching")
-    multiline_mode: bool = Field(False, description="Multiline regex mode")
-    dot_matches_all: bool = Field(False, description="Dot matches all characters")
+    case_sensitive: bool = Field(default=False, description="Case sensitive matching")
+    multiline_mode: bool = Field(default=False, description="Multiline regex mode")
+    dot_matches_all: bool = Field(
+        default=False, description="Dot matches all characters"
+    )
 
     # Time-based filtering
     time_window_minutes: int | None = Field(
-        None,
+        default=None,
         description="Time window in minutes for filtering",
         ge=1,
     )
@@ -38,19 +43,21 @@ class ModelLogFilterConfig(BaseModel):
 
     # Performance tuning
     max_message_length: int | None = Field(
-        None,
+        default=None,
         description="Maximum message length to process",
         ge=1,
     )
-    use_compiled_regex: bool = Field(True, description="Use compiled regex patterns")
+    use_compiled_regex: bool = Field(
+        default=True, description="Use compiled regex patterns"
+    )
 
     # Custom filter logic
     custom_filter_function: str | None = Field(
-        None,
+        default=None,
         description="Fully qualified function name for custom filter",
     )
     custom_filter_config: dict[str, Any] | None = Field(
-        None,
+        default=None,
         description="Configuration for custom filter function",
     )
 
@@ -75,7 +82,10 @@ class ModelLogFilterConfig(BaseModel):
         try:
             return re.compile(pattern, flags)
         except re.error as e:
-            raise ValueError(f"Invalid regex pattern '{pattern}': {e}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid regex pattern '{pattern}': {e}",
+            )
 
     def should_sample(self) -> bool:
         """Determine if this message should be sampled."""

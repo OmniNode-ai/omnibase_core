@@ -6,7 +6,7 @@ class ModelCredentialsAnalysis(BaseModel):
 
     strength_score: int = Field(..., description="Overall strength score (0-100)")
     password_entropy: float | None = Field(
-        None,
+        default=None,
         description="Password entropy score",
     )
     common_patterns: list[str] = Field(

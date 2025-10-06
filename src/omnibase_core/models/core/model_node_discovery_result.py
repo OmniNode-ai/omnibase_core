@@ -32,7 +32,7 @@ class ModelNodeDiscoveryResult(ModelBaseResult):
         description="Discovery source (registry, filesystem, etc.)",
     )
     total_available: int | None = Field(
-        None,
+        default=None,
         description="Total nodes available in source",
     )
     discovery_metadata: dict[str, Any] = Field(
@@ -40,7 +40,7 @@ class ModelNodeDiscoveryResult(ModelBaseResult):
         description="Additional discovery metadata",
     )
     execution_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Discovery execution time in milliseconds",
     )
 

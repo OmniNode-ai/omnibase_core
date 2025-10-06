@@ -3,7 +3,7 @@ import inspect
 import os
 import sys
 from pathlib import Path
-from typing import Generic, List
+from typing import Any, Generic, List
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
@@ -28,7 +28,7 @@ class MixinNodeIdFromContract:
         "omnibase.",
     ]
 
-    def __init__(self, contract_path: Path | None = None, *args, **kwargs):
+    def __init__(self, contract_path: Path | None = None, *args, **kwargs) -> None:
         self._explicit_contract_path = contract_path
         super().__init__(*args, **kwargs)
 
@@ -60,7 +60,7 @@ class MixinNodeIdFromContract:
             "omnibase.",
         ]
 
-    def _get_node_dir(self):
+    def _get_node_dir(self) -> None:
         """
         Get the directory containing the node module.
 
@@ -83,7 +83,7 @@ class MixinNodeIdFromContract:
         node_file = Path(module.__file__)
         return node_file.parent
 
-    def _load_node_id(self, contract_path: Path | None = None):
+    def _load_node_id(self, contract_path: Path | None = None) -> None:
         # Use explicit contract_path if provided
         contract_path = contract_path or getattr(self, "_explicit_contract_path", None)
         node_dir = self._get_node_dir()

@@ -4,8 +4,10 @@ from typing import Dict, Optional
 
 from pydantic import Field
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Unified Schema Model for JSON Schema representation.
@@ -42,69 +44,73 @@ class ModelSchema(BaseModel):
         alias="type",
         description="JSON Schema type (string, object, array, etc.)",
     )
-    description: str | None = Field(None, description="Schema/property description")
+    description: str | None = Field(
+        default=None, description="Schema/property description"
+    )
     ref: str | None = Field(
-        None,
+        default=None,
         alias="$ref",
         description="JSON Schema $ref reference",
     )
 
     # Document-level metadata (used when this represents a full document)
     schema_version: str = Field("draft-07", description="JSON Schema version")
-    title: str | None = Field(None, description="Schema title")
+    title: str | None = Field(default=None, description="Schema title")
 
     # String validation constraints
     enum_values: list[str] | None = Field(
-        None,
+        default=None,
         alias="enum",
         description="Enum values for string types",
     )
-    pattern: str | None = Field(None, description="Regex pattern for strings")
+    pattern: str | None = Field(default=None, description="Regex pattern for strings")
     format: str | None = Field(
-        None,
+        default=None,
         description="String format specifier (e.g., date-time, date, uuid)",
     )
     min_length: int | None = Field(
-        None,
+        default=None,
         alias="minLength",
         description="Minimum string length",
     )
     max_length: int | None = Field(
-        None,
+        default=None,
         alias="maxLength",
         description="Maximum string length",
     )
 
     # Numeric validation constraints
     minimum: int | float | None = Field(
-        None,
+        default=None,
         description="Minimum numeric value",
     )
     maximum: int | float | None = Field(
-        None,
+        default=None,
         description="Maximum numeric value",
     )
     multiple_of: int | float | None = Field(
-        None,
+        default=None,
         description="Numeric multiple constraint",
     )
 
     # Array validation constraints
-    items: Optional["ModelSchema"] = Field(None, description="Array item schema")
-    min_items: int | None = Field(None, description="Minimum array length")
-    max_items: int | None = Field(None, description="Maximum array length")
+    items: Optional["ModelSchema"] = Field(
+        default=None, description="Array item schema"
+    )
+    min_items: int | None = Field(default=None, description="Minimum array length")
+    max_items: int | None = Field(default=None, description="Maximum array length")
     unique_items: bool | None = Field(
-        None,
+        default=None,
         description="Whether array items must be unique",
     )
 
     # Object structure and validation
     properties: dict[str, "ModelSchema"] | None = Field(
-        None,
+        default=None,
         description="Object properties",
     )
     required: list[str] | None = Field(
-        None,
+        default=None,
         description="Required properties for objects",
     )
     additional_properties: bool | None = Field(
@@ -112,39 +118,41 @@ class ModelSchema(BaseModel):
         description="Allow additional properties",
     )
     min_properties: int | None = Field(
-        None,
+        default=None,
         description="Minimum number of properties",
     )
     max_properties: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of properties",
     )
 
     # General property constraints
     nullable: bool = Field(default=False, description="Whether property can be null")
-    default_value: ModelSchemaValue | None = Field(None, description="Default value")
+    default_value: ModelSchemaValue | None = Field(
+        default=None, description="Default value"
+    )
 
     # Schema composition (used when this represents a full document)
     definitions: dict[str, "ModelSchema"] | None = Field(
-        None,
+        default=None,
         description="Reusable schema definitions",
     )
     all_of: list["ModelSchema"] | None = Field(
-        None,
+        default=None,
         description="All of constraints",
     )
     any_of: list["ModelSchema"] | None = Field(
-        None,
+        default=None,
         description="Any of constraints",
     )
     one_of: list["ModelSchema"] | None = Field(
-        None,
+        default=None,
         description="One of constraints",
     )
 
     # Documentation and examples
     examples: list[ModelExamples] | None = Field(
-        None,
+        default=None,
         description="Example valid instances",
     )
 
@@ -248,8 +256,9 @@ class ModelSchema(BaseModel):
 
             # FAIL FAST: If we can't resolve the reference, throw an error instead of returning placeholder
             msg = f"FAIL_FAST: Unresolved schema reference: {self.ref}. Available definitions: {list[Any](definitions.keys())}"
-            raise ValueError(
-                msg,
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
             )
 
         # Create a copy and resolve nested references

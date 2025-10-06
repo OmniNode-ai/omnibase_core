@@ -20,31 +20,33 @@ class ModelEventRegistryCoordinatorOutput(BaseModel):
     coordinator_result: str = Field(..., description="Coordinator operation result")
 
     phase_initialization_success: bool | None = Field(
-        None,
+        default=None,
         description="Phase initialization success",
     )
 
     active_adapters: list[str] | None = Field(
-        None,
+        default=None,
         description="List of active Container Adapter IDs",
     )
 
-    routing_success: bool | None = Field(None, description="Event routing success")
+    routing_success: bool | None = Field(
+        default=None, description="Event routing success"
+    )
 
     coordination_success: bool | None = Field(
-        None,
+        default=None,
         description="Cross-adapter coordination success",
     )
 
     adapter_health_status: dict[str, EnumServiceStatus] | None = Field(
-        None,
+        default=None,
         description="Health status of Container Adapters",
     )
 
     operation_timestamp: str = Field(..., description="Operation timestamp")
 
     error_details: str | None = Field(
-        None,
+        default=None,
         description="Error details if operation failed",
     )
 

@@ -52,7 +52,7 @@ class ModelCliExecutionCore(BaseModel):
     # Command information
     command_name_id: UUID = Field(..., description="UUID for command name")
     command_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable command name",
     )
     command_args: list[str] = Field(

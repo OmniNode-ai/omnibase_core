@@ -77,10 +77,10 @@ class ModelConnectionInfo(BaseModel):
 
     # Connection state
     established_at: datetime | None = Field(
-        None,
+        default=None,
         description="Connection establishment time",
     )
-    last_used_at: datetime | None = Field(None, description="Last usage time")
+    last_used_at: datetime | None = Field(default=None, description="Last usage time")
     connection_state: EnumConnectionState = Field(
         default=EnumConnectionState.DISCONNECTED,
         description="Current connection state",
@@ -88,7 +88,7 @@ class ModelConnectionInfo(BaseModel):
 
     # Metrics and custom properties
     metrics: ModelConnectionMetrics | None = Field(
-        None,
+        default=None,
         description="Connection metrics",
     )
     custom_properties: ModelCustomConnectionProperties = Field(

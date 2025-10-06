@@ -18,4 +18,6 @@ class ModelWorkflowStopArgs(BaseModel):
 
     workflow_id: str = Field(..., description="ID of the workflow to stop")
     force: bool = Field(default=False, description="Whether to force stop the workflow")
-    reason: str | None = Field(None, description="Reason for stopping the workflow")
+    reason: str | None = Field(
+        default=None, description="Reason for stopping the workflow"
+    )

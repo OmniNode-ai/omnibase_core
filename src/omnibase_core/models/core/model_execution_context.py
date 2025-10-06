@@ -56,7 +56,7 @@ class ModelExecutionContext(BaseModel):
     )
 
     working_directory: str | None = Field(
-        None,
+        default=None,
         description="Working directory for command execution",
     )
 
@@ -66,22 +66,22 @@ class ModelExecutionContext(BaseModel):
     )
 
     execution_metadata: ModelContextMetadata = Field(
-        default_factory=ModelContextMetadata,
+        default_factory=lambda: ModelContextMetadata(),
         description="Execution metadata",
     )
 
     user_id: str | None = Field(
-        None,
+        default=None,
         description="User ID for audit and permissions",
     )
 
     session_id: str | None = Field(
-        None,
+        default=None,
         description="Session ID for tracking related commands",
     )
 
     correlation_id: str | None = Field(
-        None,
+        default=None,
         description="Correlation ID for distributed tracing",
     )
 

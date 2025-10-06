@@ -22,12 +22,12 @@ class ModelCircuitBreakerMetadata(BaseModel):
 
     # Failure tracking
     last_error_message: str | None = Field(
-        None,
+        default=None,
         description="Last error message that triggered the circuit",
     )
 
     last_error_code: str | None = Field(
-        None,
+        default=None,
         description="Last error code encountered",
     )
 
@@ -38,30 +38,32 @@ class ModelCircuitBreakerMetadata(BaseModel):
 
     # Performance metrics
     average_response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Average response time in current window",
     )
 
     p95_response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="95th percentile response time",
     )
 
     p99_response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="99th percentile response time",
     )
 
     # Recovery information
-    recovery_attempts: int = Field(0, description="Number of recovery attempts made")
+    recovery_attempts: int = Field(
+        default=0, description="Number of recovery attempts made"
+    )
 
     last_recovery_timestamp: str | None = Field(
-        None,
+        default=None,
         description="Timestamp of last recovery attempt (ISO format)",
     )
 
     recovery_success_rate: float | None = Field(
-        None,
+        default=None,
         description="Success rate of recovery attempts",
         ge=0.0,
         le=1.0,
@@ -69,12 +71,12 @@ class ModelCircuitBreakerMetadata(BaseModel):
 
     # Service information
     service_name: str | None = Field(
-        None,
+        default=None,
         description="Name of the service protected by this circuit breaker",
     )
 
     service_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Endpoint being protected",
     )
 
@@ -84,10 +86,10 @@ class ModelCircuitBreakerMetadata(BaseModel):
     )
 
     # Alert information
-    alerts_triggered: int = Field(0, description="Number of alerts triggered")
+    alerts_triggered: int = Field(default=0, description="Number of alerts triggered")
 
     last_alert_timestamp: str | None = Field(
-        None,
+        default=None,
         description="Timestamp of last alert (ISO format)",
     )
 
@@ -104,6 +106,6 @@ class ModelCircuitBreakerMetadata(BaseModel):
 
     # Custom metadata for extensibility
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Additional custom metadata",
     )

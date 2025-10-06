@@ -34,20 +34,24 @@ class ModelSessionAffinity(BaseModel):
     )
 
     cookie_name: str | None = Field(
-        None,
+        default=None,
         description="Cookie name for cookie-based affinity",
     )
 
     cookie_ttl_seconds: int | None = Field(
-        None,
+        default=None,
         description="Cookie TTL in seconds",
         ge=60,
         le=86400,  # 24 hours max
     )
 
-    cookie_domain: str | None = Field(None, description="Cookie domain for affinity")
+    cookie_domain: str | None = Field(
+        default=None, description="Cookie domain for affinity"
+    )
 
-    cookie_path: str | None = Field(None, description="Cookie path for affinity")
+    cookie_path: str | None = Field(
+        default=None, description="Cookie path for affinity"
+    )
 
     cookie_secure: bool = Field(
         default=True,
@@ -60,12 +64,12 @@ class ModelSessionAffinity(BaseModel):
     )
 
     header_name: str | None = Field(
-        None,
+        default=None,
         description="Header name for header-based affinity",
     )
 
     query_param_name: str | None = Field(
-        None,
+        default=None,
         description="Query parameter name for query-based affinity",
     )
 
@@ -76,7 +80,7 @@ class ModelSessionAffinity(BaseModel):
     )
 
     session_timeout_seconds: int | None = Field(
-        None,
+        default=None,
         description="Session timeout in seconds",
         ge=300,  # 5 minutes minimum
         le=86400,  # 24 hours maximum
@@ -100,12 +104,12 @@ class ModelSessionAffinity(BaseModel):
     )
 
     custom_affinity_function: str | None = Field(
-        None,
+        default=None,
         description="Custom function name for affinity calculation",
     )
 
     affinity_metadata: ModelSessionAffinityMetadata = Field(
-        default_factory=ModelSessionAffinityMetadata,
+        default_factory=lambda: ModelSessionAffinityMetadata(),
         description="Additional affinity metadata",
     )
 

@@ -12,6 +12,7 @@ from pydantic import Field
 from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.core.model_contract_data import ModelContractData
 from omnibase_core.models.core.model_node_data import ModelNodeData
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelNodeInfoResult(ModelBaseResult):
@@ -23,7 +24,9 @@ class ModelNodeInfoResult(ModelBaseResult):
     """
 
     node_name: str = Field(..., description="Name of the node")
-    node_version: str | None = Field(None, description="Version of the node")
+    node_version: ModelSemVer | None = Field(
+        default=None, description="Version of the node"
+    )
     node_data: ModelNodeData = Field(
         default_factory=lambda: ModelNodeData(),
         description="Node information data",
@@ -33,11 +36,11 @@ class ModelNodeInfoResult(ModelBaseResult):
         description="Node capabilities",
     )
     contract_data: ModelContractData | None = Field(
-        None,
+        default=None,
         description="Node contract information",
     )
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Node info retrieval time in milliseconds",
     )
     format: str = Field(

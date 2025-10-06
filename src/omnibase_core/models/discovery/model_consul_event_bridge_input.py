@@ -18,12 +18,12 @@ class ModelConsulEventBridgeInput(BaseModel):
     bridge_action: str = Field(..., description="Bridge action to perform")
 
     event_descriptor: ModelEventDescriptor | None = Field(
-        None,
+        default=None,
         description="ONEX event to bridge to Consul",
     )
 
     consul_service_data: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Consul service data to bridge to ONEX event",
     )
 
@@ -33,7 +33,7 @@ class ModelConsulEventBridgeInput(BaseModel):
     )
 
     monitoring_callback: str | None = Field(
-        None,
+        default=None,
         description="Callback function name for monitoring",
     )
 

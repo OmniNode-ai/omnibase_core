@@ -5,7 +5,7 @@ Log format enumeration.
 import enum
 
 
-class ModelEnumLogFormat(enum.StrEnum):
+class EnumLogFormat(enum.StrEnum):
     """Log format enumeration."""
 
     JSON = "json"

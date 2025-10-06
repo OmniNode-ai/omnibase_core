@@ -20,6 +20,6 @@ class ModelMessageContentBase(BaseModel):
     )
     priority: str = Field(default="normal", description="Message priority level")
     expiration_time: datetime | None = Field(
-        None,
+        default=None,
         description="Message expiration time",
     )

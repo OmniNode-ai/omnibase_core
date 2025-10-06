@@ -29,28 +29,32 @@ class ModelAdditionalContext(BaseModel):
     instead of using primitive dict[str, Any]types.
     """
 
-    request_id: UUID | None = Field(None, description="Unique request identifier")
+    request_id: UUID | None = Field(
+        default=None, description="Unique request identifier"
+    )
     user_id: str | None = Field(
-        None,
+        default=None,
         description="User identifier",
         pattern="^[a-zA-Z0-9_-]+$",
     )
-    session_id: UUID | None = Field(None, description="Session identifier")
+    session_id: UUID | None = Field(default=None, description="Session identifier")
     environment: ModelEnvironment | None = Field(
-        None,
+        default=None,
         description="Execution environment",
     )
     feature_flags: ModelFeatureFlags | None = Field(
-        None,
+        default=None,
         description="Feature flag configuration",
     )
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Custom extension fields",
     )
-    trace_id: str | None = Field(None, description="Distributed tracing identifier")
+    trace_id: str | None = Field(
+        default=None, description="Distributed tracing identifier"
+    )
     parent_span_id: str | None = Field(
-        None,
+        default=None,
         description="Parent span identifier for tracing",
     )
 

@@ -43,34 +43,34 @@ class ModelRateLimitPolicy(BaseModel):
     )
 
     global_rate_limit: float | None = Field(
-        None,
+        default=None,
         description="Global requests per second limit (overrides all other limits)",
         gt=0,
         le=100000,
     )
 
     window_config: ModelRateLimitWindow = Field(
-        default_factory=ModelRateLimitWindow,
+        default_factory=lambda: ModelRateLimitWindow(),
         description="Time window configuration",
     )
 
     per_user_limits: ModelPerUserLimits | None = Field(
-        None,
+        default=None,
         description="Per-user rate limiting configuration",
     )
 
     throttling_behavior: ModelThrottlingBehavior = Field(
-        default_factory=ModelThrottlingBehavior,
+        default_factory=lambda: ModelThrottlingBehavior(),
         description="Behavior when rate limits are exceeded",
     )
 
     burst_config: ModelBurstConfig | None = Field(
-        None,
+        default=None,
         description="Burst handling configuration",
     )
 
     retry_policy: ModelRetryPolicy = Field(
-        default_factory=ModelRetryPolicy,
+        default_factory=lambda: ModelRetryPolicy(),
         description="Retry policy for rate limited requests",
     )
 

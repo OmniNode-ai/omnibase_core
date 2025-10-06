@@ -13,4 +13,4 @@ class ModelPullRequestTrigger(BaseModel):
     branches: list[str] | None = None
     types: list[str] | None = None
     paths: list[str] | None = None
-    paths_ignore: list[str] | None = Field(None, alias="paths-ignore")
+    paths_ignore: list[str] | None = Field(default=None, alias="paths-ignore")

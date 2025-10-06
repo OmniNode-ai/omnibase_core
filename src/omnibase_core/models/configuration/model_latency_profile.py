@@ -33,16 +33,18 @@ class ModelLatencyProfile(BaseModel):
 
     # Specific measurements
     avg_connection_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Average connection time",
     )
-    avg_query_time_ms: float | None = Field(None, description="Average query time")
+    avg_query_time_ms: float | None = Field(
+        default=None, description="Average query time"
+    )
     p95_connection_time_ms: float | None = Field(
-        None,
+        default=None,
         description="95th percentile connection time",
     )
     p95_query_time_ms: float | None = Field(
-        None,
+        default=None,
         description="95th percentile query time",
     )
 

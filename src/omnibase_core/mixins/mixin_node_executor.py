@@ -77,7 +77,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
     - Support asyncio event loop for concurrent operations
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize the executor mixin."""
         super().__init__(**kwargs)
 
@@ -500,7 +500,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum, frame):
+            def signal_handler(signum, frame) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown",
                 )

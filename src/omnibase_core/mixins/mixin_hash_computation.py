@@ -26,7 +26,7 @@ import hashlib
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums import NodeMetadataField
+from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.mixins.mixin_canonical_serialization import CanonicalYAMLSerializer
 
 
@@ -34,7 +34,7 @@ class MixinHashComputation:
     """
     Pure mixin for protocol-compliant hash computation for node metadata blocks.
     - Requires self to be a NodeMetadataBlock (Pydantic model).
-    - All field access and normalization is schema-driven using NodeMetadataBlock.model_fields and NodeMetadataField enum.
+    - All field access and normalization is schema-driven using NodeMetadataBlock.model_fields and EnumNodeMetadataField enum.
     - No hardcoded field names or types.
     - Compatible with Pydantic BaseModel inheritance.
     """
@@ -42,9 +42,9 @@ class MixinHashComputation:
     def compute_hash(
         self,
         body: str,
-        volatile_fields: tuple[NodeMetadataField, ...] = (
-            NodeMetadataField.HASH,
-            NodeMetadataField.LAST_MODIFIED_AT,
+        volatile_fields: tuple[EnumNodeMetadataField, ...] = (
+            EnumNodeMetadataField.HASH,
+            EnumNodeMetadataField.LAST_MODIFIED_AT,
         ),
         placeholder: str = "<PLACEHOLDER>",
         comment_prefix: str = "",

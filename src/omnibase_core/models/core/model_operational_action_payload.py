@@ -1,5 +1,8 @@
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Operational Action Payload Model.
 
@@ -26,7 +29,7 @@ class ModelOperationalActionPayload(ModelActionPayloadBase):
         description="Whether to execute asynchronously",
     )
     timeout_seconds: int | None = Field(
-        None,
+        default=None,
         description="Timeout for the operation",
     )
     retry_count: int = Field(
@@ -42,5 +45,8 @@ class ModelOperationalActionPayload(ModelActionPayloadBase):
 
         if v.category != OPERATION:
             msg = f"Invalid operational action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

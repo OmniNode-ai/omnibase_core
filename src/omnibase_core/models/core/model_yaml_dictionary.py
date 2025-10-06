@@ -9,6 +9,8 @@ class ModelYamlDictionary(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common dictionary patterns in YAML files
-    name: str | None = Field(None, description="Optional name field")
-    version: str | None = Field(None, description="Optional version field")
-    description: str | None = Field(None, description="Optional description field")
+    name: str | None = Field(default=None, description="Optional name field")
+    version: str | None = Field(default=None, description="Optional version field")
+    description: str | None = Field(
+        default=None, description="Optional description field"
+    )

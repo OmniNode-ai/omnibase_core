@@ -3,7 +3,7 @@ from typing import Dict, List
 from pydantic import Field
 
 from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Schema type enumeration for AST generation.

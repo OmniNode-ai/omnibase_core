@@ -17,7 +17,7 @@ Usage:
 """
 
 
-# Import the extracted classes for backward compatibility
+# Import status migration utilities
 from omnibase_core.models.core.model_status_migrator import (
     LEGACY_ENUM_STATUS_VALUES,
     LEGACY_EXECUTION_STATUS_VALUES,
@@ -35,7 +35,7 @@ from omnibase_core.models.validation.model_status_migration_validator import (
     EnumStatusMigrationValidator,
 )
 
-# Export for use - maintain backward compatibility
+# Public API exports
 __all__ = [
     "LEGACY_ENUM_STATUS_VALUES",
     "LEGACY_EXECUTION_STATUS_VALUES",

@@ -17,7 +17,7 @@ class ModelValidationResult(BaseModel):
     is_valid: bool = Field(..., description="Whether the validation passed")
 
     validated_value: str | None = Field(
-        None,
+        default=None,
         description="The validated and potentially normalized value",
     )
 
@@ -37,7 +37,7 @@ class ModelValidationResult(BaseModel):
     )
 
     metadata: dict[str, Any] | None = Field(
-        None, description="Additional validation metadata"
+        default=None, description="Additional validation metadata"
     )
 
     def add_error(self, error: str) -> None:

@@ -4,6 +4,9 @@ from typing import Dict, Generic, List, Optional, Union
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 ModelValueContainer
 
@@ -24,17 +27,17 @@ Safe Runtime Imports (OK to import at module level):
 import json
 from typing import Any, ClassVar
 
+# Import protocols from omnibase_spi
+from omnibase_spi.protocols.types import (
+    ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
+)
+from omnibase_spi.protocols.types import (
+    ProtocolModelValidatable as ModelProtocolValidatable,
+)
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.models.common.protocol_model_json_serializable import (
-    ModelProtocolJsonSerializable,
-)
-from omnibase_core.models.common.protocol_model_validatable import (
-    ModelProtocolValidatable,
-)
-
-# Type alias for JSON-serializable values
-SerializableValue = str | int | float | bool | list[Any] | dict[str, Any] | None
+# Import standard type alias from ONEX common types
+from omnibase_core.models.types.model_onex_common_types import JsonSerializable
 
 ValidatableValue = type("ValidatableValue", (object,), {})
 
@@ -47,7 +50,7 @@ class ModelValueContainer(BaseModel):
     No wrapper classes needed - uses Python's native types directly.
     """
 
-    value: SerializableValue = Field(..., description="The contained value")
+    value: JsonSerializable = Field(..., description="The contained value")
     metadata: dict[str, str] = Field(
         default_factory=dict, description="Optional string metadata"
     )
@@ -82,7 +85,10 @@ class ModelValueContainer(BaseModel):
             json.dumps(v)
             return v
         except (TypeError, ValueError) as e:
-            raise ValueError(f"Value is not JSON serializable: {e}")
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value is not JSON serializable: {e}",
+            )
 
     # ✅ Factory methods removed for ONEX compliance
     # Use direct __init__ calls: ModelValueContainer(value=data, metadata={})
@@ -118,7 +124,9 @@ class ModelValueContainer(BaseModel):
 
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: validation method, False indicates validation failure
             return False
 
     def get_errors(self) -> list[str]:
@@ -213,7 +221,9 @@ class ModelValueContainer(BaseModel):
 
             return True
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: validation method, False indicates validation failure
             return False
 
     def _get_type_specific_errors(self) -> list[str]:

@@ -2,7 +2,10 @@ from typing import Dict, Optional
 
 from pydantic import Field, field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 """
 Custom fields model to replace dict[str, Any]ionary usage for custom/extensible fields.
@@ -48,15 +51,17 @@ class ModelCustomFields(BaseModel):
     )
 
     # Metadata
-    schema_version: str = Field("1.0", description="Schema version")
+    schema_version: ModelSemVer = Field("1.0", description="Schema version")
     last_modified: datetime = Field(
         default_factory=datetime.utcnow,
         description="Last modification time",
     )
-    modified_by: str | None = Field(None, description="Last modifier")
+    modified_by: str | None = Field(default=None, description="Last modifier")
 
     # Validation settings
-    strict_validation: bool = Field(False, description="Enforce strict validation")
+    strict_validation: bool = Field(
+        default=False, description="Enforce strict validation"
+    )
     allow_undefined_fields: bool = Field(
         True,
         description="Allow fields not in definitions",
@@ -78,14 +83,20 @@ class ModelCustomFields(BaseModel):
             for name, definition in definitions.items():
                 if definition.required and name not in v:
                     msg = f"Required field '{name}' is missing"
-                    raise ValueError(msg)
+                    raise ModelOnexError(
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        message=msg,
+                    )
 
             # Check undefined fields
             if not allow_undefined:
                 for name in v:
                     if name not in definitions:
                         msg = f"Undefined field '{name}' not allowed"
-                        raise ValueError(msg)
+                        raise ModelOnexError(
+                            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                            message=msg,
+                        )
 
         return v
 
@@ -115,16 +126,25 @@ class ModelCustomFields(BaseModel):
             # Basic type validation
             if definition.field_type == "string" and not isinstance(value, str):
                 msg = f"Field '{name}' must be a string"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
             if definition.field_type == "number" and not isinstance(
                 value,
                 int | float,
             ):
                 msg = f"Field '{name}' must be a number"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
             if definition.field_type == "boolean" and not isinstance(value, bool):
                 msg = f"Field '{name}' must be a boolean"
-                raise ValueError(msg)
+                raise ModelOnexError(
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
 
         self.field_values[name] = value
         self.last_modified = datetime.utcnow()

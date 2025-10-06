@@ -52,19 +52,27 @@ class ModelOperationParameterValue(BaseModel):
     nested_value: ModelSchemaValue | None = None
 
     # Type-specific validation fields
-    pattern: str | None = Field(None, description="Regex pattern for string validation")
-    min_length: int | None = Field(None, description="Minimum string length")
-    max_length: int | None = Field(None, description="Maximum string length")
-    min_value: float | None = Field(None, description="Minimum numeric value")
-    max_value: float | None = Field(None, description="Maximum numeric value")
-    precision: int | None = Field(None, description="Decimal precision for numeric")
-    default_value: bool | None = Field(None, description="Default boolean value")
-    allowed_values: list[str] | None = Field(
-        None, description="Allowed list[Any]values"
+    pattern: str | None = Field(
+        default=None, description="Regex pattern for string validation"
     )
-    min_items: int | None = Field(None, description="Minimum list[Any]items")
-    max_items: int | None = Field(None, description="Maximum list[Any]items")
-    schema_type: str | None = Field(None, description="Schema type for nested values")
+    min_length: int | None = Field(default=None, description="Minimum string length")
+    max_length: int | None = Field(default=None, description="Maximum string length")
+    min_value: float | None = Field(default=None, description="Minimum numeric value")
+    max_value: float | None = Field(default=None, description="Maximum numeric value")
+    precision: int | None = Field(
+        default=None, description="Decimal precision for numeric"
+    )
+    default_value: bool | None = Field(
+        default=None, description="Default boolean value"
+    )
+    allowed_values: list[str] | None = Field(
+        default=None, description="Allowed list[Any]values"
+    )
+    min_items: int | None = Field(default=None, description="Minimum list[Any]items")
+    max_items: int | None = Field(default=None, description="Maximum list[Any]items")
+    schema_type: str | None = Field(
+        default=None, description="Schema type for nested values"
+    )
 
     @field_validator(
         "string_value",

@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, Union
 
 from pydantic import Field
 
-from omnibase_core.enums import NodeMetadataField
+from omnibase_core.enums import EnumNodeMetadataField
 
 from .mixin_canonical_serialization import CanonicalYAMLSerializer
 
@@ -37,9 +37,9 @@ if TYPE_CHECKING:
 
 def canonicalize_metadata_block(
     block: Union[dict[str, object], "NodeMetadataBlock"],
-    volatile_fields: tuple[NodeMetadataField, ...] = (
-        NodeMetadataField.HASH,
-        NodeMetadataField.LAST_MODIFIED_AT,
+    volatile_fields: tuple[EnumNodeMetadataField, ...] = (
+        EnumNodeMetadataField.HASH,
+        EnumNodeMetadataField.LAST_MODIFIED_AT,
     ),
     placeholder: str = "<PLACEHOLDER>",
     sort_keys: bool = True,

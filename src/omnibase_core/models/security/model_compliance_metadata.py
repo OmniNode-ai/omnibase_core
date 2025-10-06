@@ -18,10 +18,10 @@ class ModelComplianceMetadata(BaseModel):
         description="Data classification level",
     )
     retention_period_days: int | None = Field(
-        None,
+        default=None,
         description="Retention period in days",
     )
-    jurisdiction: str | None = Field(None, description="Legal jurisdiction")
+    jurisdiction: str | None = Field(default=None, description="Legal jurisdiction")
     consent_required: bool = Field(
         default=False,
         description="Explicit consent required",

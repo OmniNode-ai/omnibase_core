@@ -22,47 +22,53 @@ class ModelAdvancedParams(BaseModel):
 
     # Common advanced parameters
     parallel_execution: bool | None = Field(
-        None,
+        default=None,
         description="Enable parallel execution",
     )
     max_workers: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of parallel workers",
     )
-    retry_count: int | None = Field(None, description="Number of retry attempts")
+    retry_count: int | None = Field(
+        default=None, description="Number of retry attempts"
+    )
     retry_delay: float | None = Field(
-        None,
+        default=None,
         description="Delay between retries in seconds",
     )
 
     # Resource limits
     memory_limit_mb: int | None = Field(
-        None,
+        default=None,
         description="Memory limit in megabytes",
     )
     cpu_limit: float | None = Field(
-        None,
+        default=None,
         description="CPU limit as fraction (0.5 = 50%)",
     )
     time_limit_seconds: float | None = Field(
-        None,
+        default=None,
         description="Time limit for execution in seconds",
     )
 
     # Debugging and logging
-    debug_mode: bool | None = Field(None, description="Enable debug mode")
+    debug_mode: bool | None = Field(default=None, description="Enable debug mode")
     log_level: str | None = Field(
-        None,
+        default=None,
         description="Log level (DEBUG, INFO, WARNING, ERROR)",
     )
-    trace_enabled: bool | None = Field(None, description="Enable execution tracing")
+    trace_enabled: bool | None = Field(
+        default=None, description="Enable execution tracing"
+    )
 
     # Environment and context
     environment_vars: dict[str, str] = Field(
         default_factory=dict,
         description="Environment variables to set",
     )
-    working_directory: str | None = Field(None, description="Working directory path")
+    working_directory: str | None = Field(
+        default=None, description="Working directory path"
+    )
 
     # Feature flags
     feature_flags: dict[str, bool] = Field(

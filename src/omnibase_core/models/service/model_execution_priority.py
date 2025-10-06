@@ -54,18 +54,18 @@ class ModelExecutionPriority(BaseModel):
     )
 
     max_queue_time_ms: int | None = Field(
-        None,
+        default=None,
         description="Maximum time in queue before escalation",
         ge=0,
     )
 
     escalation_priority: Optional["ModelExecutionPriority"] = Field(
-        None,
+        default=None,
         description="Priority to escalate to after timeout",
     )
 
     metadata: ModelPriorityMetadata | None = Field(
-        None,
+        default=None,
         description="Additional priority metadata",
     )
 

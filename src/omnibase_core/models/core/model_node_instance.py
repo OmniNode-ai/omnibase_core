@@ -37,12 +37,12 @@ class ModelNodeInstance(BaseModel):
     node_type: ModelNodeType = Field(..., description="Type of this node instance")
 
     health_metrics: ModelHealthMetrics = Field(
-        default_factory=ModelHealthMetrics,
+        default_factory=lambda: ModelHealthMetrics(),
         description="Health metrics",
     )
 
     load_metrics: ModelLoadMetrics = Field(
-        default_factory=ModelLoadMetrics,
+        default_factory=lambda: ModelLoadMetrics(),
         description="Load metrics",
     )
 
@@ -62,12 +62,12 @@ class ModelNodeInstance(BaseModel):
     )
 
     instance_metadata: ModelInstanceMetadata | None = Field(
-        None,
+        default=None,
         description="Additional metadata",
     )
 
     connection_url: str | None = Field(
-        None,
+        default=None,
         description="Connection URL for remote instances",
     )
 

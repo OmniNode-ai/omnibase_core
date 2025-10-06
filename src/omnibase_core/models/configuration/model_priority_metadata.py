@@ -9,19 +9,12 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.models.configuration.model_monitoring_thresholds import ModelMonitoringThresholds
-from omnibase_core.models.configuration.model_notification_settings import ModelNotificationSettings
-
-
-class ModelPriorityMetadataError(ModelOnexError):
-    """Validation error for priority metadata operations."""
-
-    def __init__(self, message: str, field_name: str | None = None) -> None:
-        super().__init__(
-            message=message,
-            error_code="ONEX_PRIORITY_METADATA_ERROR",
-        )
-        self.field_name = field_name
+from omnibase_core.models.configuration.model_monitoring_thresholds import (
+    ModelMonitoringThresholds,
+)
+from omnibase_core.models.configuration.model_notification_settings import (
+    ModelNotificationSettings,
+)
 
 
 class ModelPriorityMetadata(BaseModel):
@@ -40,7 +33,7 @@ class ModelPriorityMetadata(BaseModel):
     )
 
     owner: str | None = Field(
-        None,
+        default=None,
         description="Owner or team responsible for this priority level",
         max_length=100,
     )
@@ -51,7 +44,7 @@ class ModelPriorityMetadata(BaseModel):
     )
 
     last_modified: datetime | None = Field(
-        None,
+        default=None,
         description="When this priority was last modified",
     )
 
@@ -62,31 +55,31 @@ class ModelPriorityMetadata(BaseModel):
     )
 
     sla_requirements: str | None = Field(
-        None,
+        default=None,
         description="SLA requirements for this priority level",
         max_length=500,
     )
 
     business_justification: str | None = Field(
-        None,
+        default=None,
         description="Business justification for this priority level",
         max_length=1000,
     )
 
     usage_guidelines: str | None = Field(
-        None,
+        default=None,
         description="Guidelines for when to use this priority",
         max_length=1000,
     )
 
     cost_per_hour: float | None = Field(
-        None,
+        default=None,
         description="Cost per hour for this priority level",
         ge=0,
     )
 
     max_daily_usage: int | None = Field(
-        None,
+        default=None,
         description="Maximum daily usage allowed",
         ge=0,
     )
@@ -151,11 +144,17 @@ class ModelPriorityMetadata(BaseModel):
     def validate_tags(cls, v: list[str]) -> list[str]:
         """Validate tags."""
         if len(v) > 20:
-            raise ModelPriorityMetadataError("Maximum 20 tags allowed", "tags")
+            raise ModelOnexError(
+                message="Maximum 20 tags allowed",
+                error_code="ONEX_PRIORITY_METADATA_ERROR",
+            )
 
         for tag in v:
             if len(tag) > 50:
-                raise ModelPriorityMetadataError(f"Tag '{tag}' exceeds maximum length of 50", "tags")
+                raise ModelOnexError(
+                    message=f"Tag '{tag}' exceeds maximum length of 50",
+                    error_code="ONEX_PRIORITY_METADATA_ERROR",
+                )
 
         return v
 
@@ -164,7 +163,10 @@ class ModelPriorityMetadata(BaseModel):
     def validate_approved_users(cls, v: list[str]) -> list[str]:
         """Validate approved users."""
         if len(v) > 1000:
-            raise ModelPriorityMetadataError("Maximum 1000 approved users allowed", "approved_users")
+            raise ModelOnexError(
+                message="Maximum 1000 approved users allowed",
+                error_code="ONEX_PRIORITY_METADATA_ERROR",
+            )
         return v
 
     @field_validator("approved_groups")
@@ -172,7 +174,10 @@ class ModelPriorityMetadata(BaseModel):
     def validate_approved_groups(cls, v: list[str]) -> list[str]:
         """Validate approved groups."""
         if len(v) > 100:
-            raise ModelPriorityMetadataError("Maximum 100 approved groups allowed", "approved_groups")
+            raise ModelOnexError(
+                message="Maximum 100 approved groups allowed",
+                error_code="ONEX_PRIORITY_METADATA_ERROR",
+            )
         return v
 
     # === User and Group Management ===
@@ -219,7 +224,10 @@ class ModelPriorityMetadata(BaseModel):
         """Add a tag to this priority."""
         if tag not in self.tags:
             if len(self.tags) >= 20:
-                raise ModelPriorityMetadataError("Maximum 20 tags allowed", "tags")
+                raise ModelOnexError(
+                    message="Maximum 20 tags allowed",
+                    error_code="ONEX_PRIORITY_METADATA_ERROR",
+                )
             self.tags.append(tag)
             self.update_last_modified()
 
@@ -280,19 +288,26 @@ class ModelPriorityMetadata(BaseModel):
 
     # === Validation Methods ===
 
-    def validate_for_use(self, user: str | None = None, groups: list[str] | None = None) -> bool:
+    def validate_for_use(
+        self, user: str | None = None, groups: list[str] | None = None
+    ) -> bool:
         """Validate if this priority can be used."""
         if groups is None:
             groups = []
 
         # Check user approval if required
         if self.approval_required and user:
-            if not (self.is_user_approved(user) or any(self.is_group_approved(group) for group in groups)):
+            if not (
+                self.is_user_approved(user)
+                or any(self.is_group_approved(group) for group in groups)
+            ):
                 return False
 
         return True
 
-    def get_validation_errors(self, user: str | None = None, groups: list[str] | None = None) -> list[str]:
+    def get_validation_errors(
+        self, user: str | None = None, groups: list[str] | None = None
+    ) -> list[str]:
         """Get validation errors for this priority."""
         errors = []
 
@@ -300,7 +315,11 @@ class ModelPriorityMetadata(BaseModel):
             groups = []
 
         if self.approval_required:
-            if user and not self.is_user_approved(user) and not any(self.is_group_approved(group) for group in groups):
+            if (
+                user
+                and not self.is_user_approved(user)
+                and not any(self.is_group_approved(group) for group in groups)
+            ):
                 errors.append("User is not approved for this priority level")
 
         return errors

@@ -37,15 +37,17 @@ class ModelNodeReferenceMetadata(ModelMetadataBase):
         description="Capabilities provided by this node",
     )
     performance_hints: ModelPerformanceHints | None = Field(
-        None,
+        default=None,
         description="Performance optimization hints",
     )
     routing_preferences: ModelRoutingPreferences | None = Field(
-        None,
+        default=None,
         description="Routing preferences for load balancing",
     )
-    description: str | None = Field(None, description="Human-readable description")
-    maintainer: str | None = Field(None, description="Node maintainer")
+    description: str | None = Field(
+        default=None, description="Human-readable description"
+    )
+    maintainer: str | None = Field(default=None, description="Node maintainer")
 
     def has_capability(self, capability: ModelCapability) -> bool:
         """Check if node provides a specific capability."""

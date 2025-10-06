@@ -3,8 +3,6 @@ from typing import Any
 
 from pydantic import Field
 
-from .model_config import ModelConfig
-
 """Effect input model for side effect operations."""
 
 from datetime import datetime

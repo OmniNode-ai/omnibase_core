@@ -29,7 +29,7 @@ class ModelActionPayloadBase(BaseModel):
         description="The rich action type being performed",
     )
     correlation_id: UUID | None = Field(
-        None,
+        default=None,
         description="Correlation ID for tracking this action",
     )
     metadata: dict[str, Any] = Field(

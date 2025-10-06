@@ -9,6 +9,7 @@ for ONEX Discovery & Integration Event Registry operations.
 """
 
 from typing import Dict, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,32 +29,32 @@ class ModelContainerAdapterOutput(BaseModel):
 
     # Optional outputs based on action
     discovery_response: ModelEventDiscoveryResponse | None = Field(
-        None,
+        default=None,
         description="Discovery query results",
     )
 
     service_status: EnumServiceStatus | None = Field(
-        None,
+        default=None,
         description="Service status information",
     )
 
     registration_success: bool | None = Field(
-        None,
+        default=None,
         description="Registration operation success",
     )
 
     deregistration_success: bool | None = Field(
-        None,
+        default=None,
         description="Deregistration operation success",
     )
 
     health_update_success: bool | None = Field(
-        None,
+        default=None,
         description="Health update operation success",
     )
 
     consul_services: list[dict[str, str]] | None = Field(
-        None,
+        default=None,
         description="Direct Consul query results",
     )
 
@@ -63,13 +64,13 @@ class ModelContainerAdapterOutput(BaseModel):
         description="Current discovery implementation phase",
     )
 
-    container_adapter_id: str = Field(..., description="Container Adapter instance ID")
+    container_adapter_id: UUID = Field(..., description="Container Adapter instance ID")
 
     operation_timestamp: str = Field(..., description="Operation timestamp")
 
     # Error handling
     error_details: str | None = Field(
-        None,
+        default=None,
         description="Error details if operation failed",
     )
 

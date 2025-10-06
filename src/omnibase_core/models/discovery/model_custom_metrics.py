@@ -36,7 +36,7 @@ class ModelMetricValue(BaseModel):
         },
     )
     unit: str | None = Field(
-        None,
+        default=None,
         description="Metric unit (e.g., 'ms', 'bytes', 'percent')",
     )
     tags: list[str] = Field(

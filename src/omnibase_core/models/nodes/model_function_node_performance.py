@@ -15,6 +15,7 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 

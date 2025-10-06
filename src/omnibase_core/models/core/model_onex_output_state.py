@@ -5,7 +5,9 @@ from typing import Any, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 """
 OnexOutputState model.
@@ -20,7 +22,7 @@ from pydantic import BaseModel, field_validator
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_output_field import ModelOnexField
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_internal_output_state import (
@@ -51,41 +53,47 @@ class ModelOnexOutputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_output_version(cls, v):
+    def parse_output_version(cls, v: Any) -> Any:
         """Parse version from string, dict[str, Any], or ModelSemVer"""
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     @field_validator("node_version", mode="before")
     @classmethod
-    def parse_output_node_version(cls, v):
+    def parse_output_node_version(cls, v: Any) -> Any:
         """Parse node_version from string, dict[str, Any], or ModelSemVer"""
         if v is None:
             return v
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "node_version must be a string, dict[str, Any], or ModelSemVer"
-        raise ValueError(msg)
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     @field_validator("event_id", "correlation_id")
     @classmethod
-    def validate_output_uuid_fields(cls, v):
+    def validate_output_uuid_fields(cls, v: Any) -> Any:
         """Validate UUID fields - Pydantic handles UUID conversion automatically"""
         return v
 
     @field_validator("timestamp")
     @classmethod
-    def validate_output_timestamp(cls, v):
+    def validate_output_timestamp(cls, v: Any) -> Any:
         """Validate timestamp - Pydantic handles datetime conversion automatically"""
         return v
 

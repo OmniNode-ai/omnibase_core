@@ -40,7 +40,7 @@ class ModelRoutingPreferences(BaseModel):
         description="Prefer local routing when available",
     )
     max_queue_size: int | None = Field(
-        None,
+        default=None,
         description="Maximum queue size before rejecting requests",
         ge=0,
     )
@@ -57,7 +57,7 @@ class ModelRoutingPreferences(BaseModel):
         description="Preferred zones for routing",
     )
     health_check_path: str | None = Field(
-        None,
+        default=None,
         description="Custom health check path",
     )
 

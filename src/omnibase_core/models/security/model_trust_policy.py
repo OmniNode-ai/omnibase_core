@@ -33,11 +33,11 @@ class ModelPolicyRule(BaseModel):
         description="Unique rule identifier",
     )
     name: str = Field(..., description="Human-readable rule name")
-    description: str | None = Field(None, description="Rule description")
+    description: str | None = Field(default=None, description="Rule description")
 
     # Rule conditions
     conditions: ModelRuleCondition = Field(
-        default_factory=ModelRuleCondition,
+        default_factory=lambda: ModelRuleCondition(),
         description="Conditions that trigger this rule",
     )
 
@@ -62,7 +62,7 @@ class ModelPolicyRule(BaseModel):
 
     # Violation handling
     violation_severity: ModelPolicySeverity = Field(
-        default_factory=ModelPolicySeverity,
+        default_factory=lambda: ModelPolicySeverity(),
         description="Severity of policy violations",
     )
     allow_override: bool = Field(
@@ -73,10 +73,12 @@ class ModelPolicyRule(BaseModel):
     # Rule lifecycle
     enabled: bool = Field(default=True, description="Whether rule is active")
     valid_from: datetime | None = Field(
-        None,
+        default=None,
         description="Rule effective start time",
     )
-    valid_until: datetime | None = Field(None, description="Rule expiration time")
+    valid_until: datetime | None = Field(
+        default=None, description="Rule expiration time"
+    )
 
     def is_active(self, check_time: datetime | None = None) -> bool:
         """Check if rule is currently active."""

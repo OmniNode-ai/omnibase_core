@@ -41,37 +41,37 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     max_uses_total: int | None = Field(
-        None,
+        default=None,
         description="Maximum total uses of this permission",
         ge=0,
     )
 
     max_uses_per_day: int | None = Field(
-        None,
+        default=None,
         description="Maximum uses per day",
         ge=0,
     )
 
     max_uses_per_hour: int | None = Field(
-        None,
+        default=None,
         description="Maximum uses per hour",
         ge=0,
     )
 
     max_concurrent_uses: int | None = Field(
-        None,
+        default=None,
         description="Maximum concurrent uses",
         ge=1,
     )
 
     cooldown_period_minutes: int | None = Field(
-        None,
+        default=None,
         description="Cooldown period between uses in minutes",
         ge=0,
     )
 
     usage_window_minutes: int | None = Field(
-        None,
+        default=None,
         description="Time window for usage tracking in minutes",
         ge=1,
     )
@@ -93,7 +93,7 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     approval_timeout_hours: int | None = Field(
-        None,
+        default=None,
         description="Hours after which approval request expires",
         ge=1,
     )
@@ -158,7 +158,7 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     notification_threshold: int | None = Field(
-        None,
+        default=None,
         description="Usage threshold that triggers notifications",
         ge=1,
     )
@@ -175,7 +175,7 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     data_classification_required: str | None = Field(
-        None,
+        default=None,
         description="Required data classification level for resources",
         pattern="^(public|internal|confidential|restricted|top_secret)$",
     )
@@ -201,13 +201,13 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     max_session_duration_minutes: int | None = Field(
-        None,
+        default=None,
         description="Maximum session duration in minutes",
         ge=1,
     )
 
     session_idle_timeout_minutes: int | None = Field(
-        None,
+        default=None,
         description="Session idle timeout in minutes",
         ge=1,
     )
@@ -218,7 +218,7 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     mfa_validity_minutes: int | None = Field(
-        None,
+        default=None,
         description="How long MFA verification is valid in minutes",
         ge=1,
     )
@@ -244,12 +244,12 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     custom_constraints: ModelPermissionCustomConstraints | None = Field(
-        None,
+        default=None,
         description="Custom constraint definitions",
     )
 
     constraint_metadata: ModelPermissionConstraintMetadata | None = Field(
-        None,
+        default=None,
         description="Additional constraint metadata",
     )
 

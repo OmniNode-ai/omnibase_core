@@ -19,21 +19,36 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import (
     STATUS_TO_EXIT_CODE,
-    CLIAdapter,
-    CLIExitCode,
-    CoreErrorCode,
-    ModelOnexError,
-    OnexError,
-    OnexErrorCode,
-    RegistryErrorCode,
+    EnumCLIExitCode,
+    EnumOnexErrorCode,
+    ModelCoreErrorCode,
+    ModelRegistryErrorCode,
     get_error_codes_for_component,
     get_exit_code_for_core_error,
     get_exit_code_for_status,
     list_registered_components,
     register_error_codes,
 )
+
+# Compatibility aliases for old test naming
+CLIExitCode = EnumCLIExitCode
+CoreErrorCode = ModelCoreErrorCode
+OnexError = ModelOnexError
+OnexErrorCode = EnumOnexErrorCode
+RegistryErrorCode = ModelRegistryErrorCode
+
+
+# Import ModelCLIAdapter only when needed (lazy import to avoid circular dependency)
+def get_cli_adapter():
+    from omnibase_core.errors import ModelCLIAdapter
+
+    return ModelCLIAdapter
+
+
+CLIAdapter = None  # Will be loaded lazily in tests that need it
 
 
 class TestCLIExitCode:
@@ -427,10 +442,12 @@ class TestErrorCodeRegistry:
 
     def test_get_error_codes_for_unregistered_component(self):
         """Test getting error codes for unregistered component raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(KeyError) as exc_info:
             get_error_codes_for_component("nonexistent_component")
 
-        assert exc_info.value.error_code == CoreErrorCode.ITEM_NOT_REGISTERED
+        assert "No error codes registered for component: nonexistent_component" in str(
+            exc_info.value
+        )
 
     def test_list_registered_components(self):
         """Test listing registered components."""

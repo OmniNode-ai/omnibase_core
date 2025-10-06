@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums import IgnorePatternSourceEnum, TraversalModeEnum
+from omnibase_core.enums import EnumIgnorePatternSource, EnumTraversalMode
 
 
 class ModelFileFilter(BaseModel):
@@ -22,8 +22,8 @@ class ModelFileFilter(BaseModel):
     including patterns, traversal mode, and ignore sources.
     """
 
-    traversal_mode: TraversalModeEnum = Field(
-        default=TraversalModeEnum.RECURSIVE,
+    traversal_mode: EnumTraversalMode = Field(
+        default=EnumTraversalMode.RECURSIVE,
         description="Mode for traversing directories",
     )
     include_patterns: list[str] = Field(
@@ -35,13 +35,13 @@ class ModelFileFilter(BaseModel):
         description="Glob patterns to exclude (e.g., ['**/.git/**'])",
     )
     ignore_file: Path | None = Field(
-        None,
+        default=None,
         description="Path to ignore file (e.g., .onexignore)",
     )
-    ignore_pattern_sources: list[IgnorePatternSourceEnum] = Field(
+    ignore_pattern_sources: list[EnumIgnorePatternSource] = Field(
         default_factory=lambda: [
-            IgnorePatternSourceEnum.FILE,
-            IgnorePatternSourceEnum.DEFAULT,
+            EnumIgnorePatternSource.FILE,
+            EnumIgnorePatternSource.DEFAULT,
         ],
         description="Sources to look for ignore patterns",
     )
@@ -50,10 +50,12 @@ class ModelFileFilter(BaseModel):
         description="Maximum file size in bytes to process",
     )
     max_files: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of files to process",
     )
-    follow_symlinks: bool = Field(False, description="Whether to follow symbolic links")
+    follow_symlinks: bool = Field(
+        default=False, description="Whether to follow symbolic links"
+    )
     case_sensitive: bool = Field(
         True,
         description="Whether pattern matching is case sensitive",

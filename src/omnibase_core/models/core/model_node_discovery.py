@@ -27,7 +27,7 @@ class ModelNodeDiscovery(BaseModel):
     total_nodes: int = Field(..., description="Total nodes discovered", ge=0)
     active_nodes: int = Field(..., description="Number of active nodes", ge=0)
     discovery_metadata: ModelDiscoveryMetadata | None = Field(
-        None,
+        default=None,
         description="Additional discovery metadata",
     )
 

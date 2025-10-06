@@ -24,22 +24,22 @@ class ModelLogFilter(BaseModel):
         pattern="^(include|exclude)$",
     )
     regex_pattern: str | None = Field(
-        None,
+        default=None,
         description="Regex pattern for regex filters",
     )
     field_name: str | None = Field(
-        None,
+        default=None,
         description="Field name for field-based filters",
     )
-    field_value: Any | None = Field(None, description="Field value to match")
+    field_value: Any | None = Field(default=None, description="Field value to match")
     min_level: int | None = Field(
-        None,
+        default=None,
         description="Minimum log level (numeric value)",
         ge=0,
         le=100,
     )
     max_level: int | None = Field(
-        None,
+        default=None,
         description="Maximum log level (numeric value)",
         ge=0,
         le=100,
@@ -53,7 +53,7 @@ class ModelLogFilter(BaseModel):
         description="Whether matching is case-sensitive",
     )
     configuration: ModelLogFilterConfig = Field(
-        default_factory=ModelLogFilterConfig,
+        default_factory=lambda: ModelLogFilterConfig(),
         description="Additional filter-specific configuration",
     )
 

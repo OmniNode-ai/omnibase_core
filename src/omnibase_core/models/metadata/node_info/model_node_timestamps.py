@@ -30,10 +30,10 @@ class ModelNodeTimestamps(BaseModel):
     """
 
     # Timestamps
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Update timestamp")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(default=None, description="Update timestamp")
     last_validated: datetime | None = Field(
-        None,
+        default=None,
         description="Last validation timestamp",
     )
 

@@ -29,7 +29,7 @@ class ModelResourceAllocation(BaseModel):
     )
 
     memory_limit_mb: int | None = Field(
-        None,
+        default=None,
         description="Memory limit in megabytes",
         ge=1,
     )
@@ -42,7 +42,7 @@ class ModelResourceAllocation(BaseModel):
     )
 
     max_concurrent_tasks: int | None = Field(
-        None,
+        default=None,
         description="Maximum concurrent tasks for this priority",
         ge=1,
     )

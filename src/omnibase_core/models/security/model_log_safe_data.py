@@ -14,12 +14,12 @@ from pydantic import BaseModel, Field
 class ModelLogSafeData(BaseModel):
     """Log-safe data representation."""
 
-    service_name: str | None = Field(None, description="Service name")
-    connection_status: str | None = Field(None, description="Connection status")
-    host_info: str | None = Field(None, description="Host information (masked)")
-    port_info: str | None = Field(None, description="Port information")
+    service_name: str | None = Field(default=None, description="Service name")
+    connection_status: str | None = Field(default=None, description="Connection status")
+    host_info: str | None = Field(default=None, description="Host information (masked)")
+    port_info: str | None = Field(default=None, description="Port information")
     username_info: str | None = Field(
-        None,
+        default=None,
         description="Username information (masked)",
     )
     additional_fields: dict[str, str] = Field(

@@ -21,9 +21,9 @@ class ModelCredentialStrengthAssessment(BaseModel):
         description="Overall strength level",
     )
 
-    score: int = Field(0, description="Numerical strength score", ge=0)
+    score: int = Field(default=0, description="Numerical strength score", ge=0)
 
-    length: int = Field(0, description="Character length of credential", ge=0)
+    length: int = Field(default=0, description="Character length of credential", ge=0)
 
     character_variety: int = Field(
         0,

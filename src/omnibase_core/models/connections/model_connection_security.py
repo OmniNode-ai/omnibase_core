@@ -41,9 +41,9 @@ class ModelConnectionSecurity(BaseModel):
     )
 
     # Certificate paths
-    ssl_cert_path: Path | None = Field(None, description="SSL certificate path")
-    ssl_key_path: Path | None = Field(None, description="SSL key path")
-    ssl_ca_path: Path | None = Field(None, description="SSL CA bundle path")
+    ssl_cert_path: Path | None = Field(default=None, description="SSL certificate path")
+    ssl_key_path: Path | None = Field(default=None, description="SSL key path")
+    ssl_ca_path: Path | None = Field(default=None, description="SSL CA bundle path")
 
     @model_validator(mode="after")
     def validate_ssl_configuration(self) -> ModelConnectionSecurity:

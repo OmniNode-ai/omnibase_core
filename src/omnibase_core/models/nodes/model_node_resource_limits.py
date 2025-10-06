@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import Dict, TypedDict
+from uuid import UUID
 
 from pydantic import Field
 

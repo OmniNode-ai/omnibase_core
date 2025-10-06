@@ -28,12 +28,12 @@ class EnumBaseStatus(str, Enum):
     these values to maintain consistency.
 
     Categories:
-    - Lifecycle: Basic object lifecycle states
+    - EnumLifecycle: Basic object lifecycle states
     - Execution: Universal execution states
     - Quality: Universal quality states
     """
 
-    # Core Lifecycle States (universal across all domains)
+    # Core EnumLifecycle States (universal across all domains)
     INACTIVE = "inactive"
     ACTIVE = "active"
     PENDING = "pending"

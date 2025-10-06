@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from omnibase_core.models.core.model_state_contract import load_state_contract_from_file
 
@@ -13,7 +14,7 @@ class MixinNodeSetup:
     """
 
     @property
-    def node_directory(self):
+    def node_directory(self) -> Path:
         # Allow override by setting self._node_directory in the node class
         if hasattr(self, "_node_directory"):
             return self._node_directory
@@ -45,27 +46,27 @@ class MixinNodeSetup:
         return Path(__file__).parent
 
     @property
-    def contract_path(self):
+    def contract_path(self) -> Path:
         return self.node_directory / "contract.yaml"
 
     @property
-    def node_onex_yaml_path(self):
+    def node_onex_yaml_path(self) -> Path:
         return self.node_directory / "node.onex.yaml"
 
     @property
-    def contract(self):
+    def contract(self) -> Any:
         if not hasattr(self, "_contract"):
             self._contract = load_state_contract_from_file(self.contract_path)
         return self._contract
 
     @property
-    def node_id(self):
+    def node_id(self) -> Any:
         return self.contract.node_name
 
     @property
-    def node_version(self):
+    def node_version(self) -> Any:
         return self.contract.node_version
 
     @property
-    def contract_version(self):
+    def contract_version(self) -> Any:
         return self.contract.contract_version

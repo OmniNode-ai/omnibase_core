@@ -1,5 +1,8 @@
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Registry Action Payload Model.
 
@@ -18,7 +21,7 @@ class ModelRegistryActionPayload(ModelActionPayloadBase):
     """Payload for registry actions (register, unregister, discover)."""
 
     service_name: str | None = Field(
-        None,
+        default=None,
         description="Name of the service to register/unregister",
     )
     service_config: dict[str, Any] = Field(
@@ -36,5 +39,8 @@ class ModelRegistryActionPayload(ModelActionPayloadBase):
         """Validate that action_type is a valid registry action."""
         if v.name not in ["register", "unregister", "discover"]:
             msg = f"Invalid registry action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

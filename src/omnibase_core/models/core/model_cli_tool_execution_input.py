@@ -24,13 +24,13 @@ class ModelCliToolExecutionInput(BaseModel):
     # Core execution parameters
     action: str = Field(..., description="Action to perform with the tool")
     tool_name: str | None = Field(
-        None,
+        default=None,
         description="Specific tool name for targeted operations",
     )
 
     # Tool-specific parameters
     target_tool: str | None = Field(
-        None,
+        default=None,
         description="Target tool name for tool-info operations",
     )
 
@@ -49,11 +49,13 @@ class ModelCliToolExecutionInput(BaseModel):
         True,
         description="Only include healthy tools in results",
     )
-    category_filter: str | None = Field(None, description="Filter tools by category")
+    category_filter: str | None = Field(
+        default=None, description="Filter tools by category"
+    )
 
     # Performance and timeouts
     timeout_seconds: float | None = Field(
-        None,
+        default=None,
         description="Execution timeout in seconds",
     )
 
@@ -62,21 +64,21 @@ class ModelCliToolExecutionInput(BaseModel):
         "default",
         description="Output format preference (default, json, table)",
     )
-    verbose: bool = Field(False, description="Enable verbose output")
+    verbose: bool = Field(default=False, description="Enable verbose output")
 
     # Advanced parameters (typed model for safety)
     advanced_params: ModelAdvancedParams = Field(
-        default_factory=ModelAdvancedParams,
+        default_factory=lambda: ModelAdvancedParams(),
         description="Advanced parameters specific to individual tools",
     )
 
     # Execution context
     execution_context: str | None = Field(
-        None,
+        default=None,
         description="Execution context identifier",
     )
     request_id: str | None = Field(
-        None,
+        default=None,
         description="Request identifier for tracking",
     )
 

@@ -50,12 +50,12 @@ class ModelGitHubIssuesEvent(BaseModel):
     )
 
     label: ModelGitHubLabel | None = Field(
-        None,
+        default=None,
         description="Label data for labeled/unlabeled actions",
     )
 
     assignee: ModelGitHubUser | None = Field(
-        None,
+        default=None,
         description="Assignee data for assigned/unassigned actions",
     )
 

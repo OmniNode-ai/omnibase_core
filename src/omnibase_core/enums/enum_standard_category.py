@@ -42,7 +42,7 @@ class EnumStandardCategory(str, Enum):
     MONITORING = "monitoring"
     CONFIGURATION = "configuration"
 
-    # Lifecycle categories
+    # EnumLifecycle categories
     DEVELOPMENT = "development"
     TESTING = "testing"
     STAGING = "staging"

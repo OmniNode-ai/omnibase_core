@@ -22,7 +22,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
 
     # Response identification
     request_correlation_id: str | None = Field(
-        None,
+        default=None,
         description="Correlation ID from the original request",
     )
     requester_id: str = Field(
@@ -41,9 +41,11 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         0,
         description="Total number of tools found (may be > len(tools) if limited)",
     )
-    filtered_count: int = Field(0, description="Number of tools after applying filters")
+    filtered_count: int = Field(
+        default=0, description="Number of tools after applying filters"
+    )
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Time taken to process the request in milliseconds",
     )
 
@@ -52,7 +54,9 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         False,
         description="True if some registries didn't respond in time",
     )
-    timeout_occurred: bool = Field(False, description="True if the request timed out")
+    timeout_occurred: bool = Field(
+        default=False, description="True if the request timed out"
+    )
     registry_errors: list[str] = Field(
         default_factory=list,
         description="List of errors from registries during discovery",

@@ -6,7 +6,7 @@ TypedDict for dependency information.
 
 
 from datetime import datetime
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from .typed_dict_sem_ver import TypedDictSemVer
 

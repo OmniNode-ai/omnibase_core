@@ -37,7 +37,7 @@ class ModelDiscoveryResponse(BaseModel):
     )
 
     message: str | None = Field(
-        None,
+        default=None,
         description="Status message or error description",
     )
 
@@ -53,26 +53,30 @@ class ModelDiscoveryResponse(BaseModel):
         description="Total number of tools found before filtering",
     )
 
-    filtered_count: int = Field(0, description="Number of tools after applying filters")
+    filtered_count: int = Field(
+        default=0, description="Number of tools after applying filters"
+    )
 
     # Performance metrics
     response_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Response time in milliseconds",
     )
 
     started_at: datetime | None = Field(
-        None,
+        default=None,
         description="When the operation started",
     )
 
     completed_at: datetime | None = Field(
-        None,
+        default=None,
         description="When the operation completed",
     )
 
     # Error handling
-    timeout_occurred: bool = Field(False, description="Whether the operation timed out")
+    timeout_occurred: bool = Field(
+        default=False, description="Whether the operation timed out"
+    )
 
     partial_response: bool = Field(
         False,
@@ -85,7 +89,7 @@ class ModelDiscoveryResponse(BaseModel):
     )
 
     # Client information
-    client_id: str | None = Field(None, description="Client identifier")
+    client_id: str | None = Field(default=None, description="Client identifier")
 
     client_stats: dict[str, str | int | float | bool] = Field(
         default_factory=dict,
@@ -94,7 +98,7 @@ class ModelDiscoveryResponse(BaseModel):
 
     # Request tracking
     correlation_id: str | None = Field(
-        None,
+        default=None,
         description="Correlation ID from the request",
     )
 

@@ -22,13 +22,13 @@ class ModelPermissionCustomConstraints(BaseModel):
 
     # Time-based constraints
     time_of_day_start: str | None = Field(
-        None,
+        default=None,
         description="Start time for daily access window (HH:MM)",
         pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
     time_of_day_end: str | None = Field(
-        None,
+        default=None,
         description="End time for daily access window (HH:MM)",
         pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
@@ -45,13 +45,13 @@ class ModelPermissionCustomConstraints(BaseModel):
 
     # Resource constraints
     max_resource_count: int | None = Field(
-        None,
+        default=None,
         description="Maximum number of resources that can be accessed",
         ge=1,
     )
 
     resource_name_pattern: str | None = Field(
-        None,
+        default=None,
         description="Regex pattern for allowed resource names",
     )
 
@@ -89,7 +89,7 @@ class ModelPermissionCustomConstraints(BaseModel):
 
     # Delegation constraints
     max_delegation_duration_hours: int | None = Field(
-        None,
+        default=None,
         description="Maximum duration for delegated permissions",
         ge=1,
     )
@@ -101,6 +101,6 @@ class ModelPermissionCustomConstraints(BaseModel):
 
     # Custom fields for extensibility
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Additional custom constraints",
     )

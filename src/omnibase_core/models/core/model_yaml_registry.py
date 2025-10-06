@@ -9,8 +9,16 @@ class ModelYamlRegistry(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common registry patterns
-    registry: dict[str, Any] | None = Field(None, description="Registry section")
-    items: list[dict[str, Any]] | None = Field(None, description="Items list")
-    entries: list[dict[str, Any]] | None = Field(None, description="Entries list")
-    actions: list[dict[str, Any]] | None = Field(None, description="Actions list")
-    commands: list[dict[str, Any]] | None = Field(None, description="Commands list")
+    registry: dict[str, Any] | None = Field(
+        default=None, description="Registry section"
+    )
+    items: list[dict[str, Any]] | None = Field(default=None, description="Items list")
+    entries: list[dict[str, Any]] | None = Field(
+        default=None, description="Entries list"
+    )
+    actions: list[dict[str, Any]] | None = Field(
+        default=None, description="Actions list"
+    )
+    commands: list[dict[str, Any]] | None = Field(
+        default=None, description="Commands list"
+    )

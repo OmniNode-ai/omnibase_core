@@ -4,8 +4,6 @@ from typing import Any, Dict, List
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
-
 # === OmniNode:Metadata ===
 # metadata_version: 0.1.0
 # protocol_version: 1.1.0
@@ -418,15 +416,6 @@ def get_core_error_description(error_code: ModelCoreErrorCode) -> str:
     return descriptions.get(error_code, "Unknown error")
 
 
-# Import extracted ModelOnexError class
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
-# Import extracted models
-from omnibase_core.models.common.model_onex_error_data import _ModelOnexErrorData
-from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
-from omnibase_core.models.common.model_registry_error import ModelRegistryError
-from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
-
 # Registry for component-specific error code mappings
 _ERROR_CODE_REGISTRIES: dict[str, type[EnumOnexErrorCode]] = {}
 
@@ -458,10 +447,11 @@ def get_error_codes_for_component(component: str) -> type[EnumOnexErrorCode]:
         ModelOnexError: If component is not registered
     """
     if component not in _ERROR_CODE_REGISTRIES:
-        msg = f"No error codes registered for component: {component}"
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
         raise ModelOnexError(
-            msg,
-            ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+            error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+            message=f"No error codes registered for component: {component}",
         )
     return _ERROR_CODE_REGISTRIES[component]
 
@@ -505,3 +495,23 @@ class ModelRegistryErrorCode(EnumOnexErrorCode):
 
     def get_exit_code(self) -> int:
         return EnumCLIExitCode.ERROR.value
+
+
+# Lazy import to avoid circular dependencies
+def __getattr__(name: str) -> Any:
+    """
+    Lazy import mechanism to avoid circular dependencies.
+
+    Provides ModelOnexError via lazy import to avoid circular dependencies.
+    """
+    if name == "ModelOnexError":
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        return ModelOnexError
+
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+
+    raise ModelOnexError(
+        error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+        message=f"module '{__name__}' has no attribute '{name}'",
+    )

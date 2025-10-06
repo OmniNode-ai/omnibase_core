@@ -1,5 +1,8 @@
 from pydantic import field_validator
 
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Management Action Payload Model.
 
@@ -22,7 +25,7 @@ class ModelManagementActionPayload(ModelActionPayloadBase):
         description="Configuration parameters",
     )
     environment: str | None = Field(
-        None,
+        default=None,
         description="Target environment for deployment",
     )
     force: bool = Field(default=False, description="Force the management action")
@@ -39,5 +42,8 @@ class ModelManagementActionPayload(ModelActionPayloadBase):
 
         if v.category != MANAGEMENT:
             msg = f"Invalid management action: {v.name}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         return v

@@ -29,19 +29,24 @@ from types.core_types (not from models or types.constraints).
 """
 
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Self, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Self
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Safe runtime imports
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.enums.enum_collection_purpose import EnumCollectionPurpose
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+
+# Safe runtime imports
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.models.metadata.model_typed_dict_metadata_dict import (
+    TypedDictMetadataDict,
+)
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 if TYPE_CHECKING:
@@ -50,16 +55,6 @@ if TYPE_CHECKING:
         ModelMetadataAnalyticsSummary,
     )
     from omnibase_core.types.constraints import BasicValueType
-
-
-# TypedDict for protocol method parameters
-class ModelTypedDictMetadataDict(TypedDict, total=False):
-    """Typed structure for metadata dictionary in protocol methods."""
-    name: str
-    description: str
-    version: str
-    tags: list[str]
-    metadata: dict[str, Any]
 
 
 def _create_default_metrics_data() -> ModelMetricsData:
@@ -345,9 +340,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> ModelTypedDictMetadataDict:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
-        metadata: ModelTypedDictMetadataDict = ModelTypedDictMetadataDict()
+        metadata: TypedDictMetadataDict = TypedDictMetadataDict()
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
             if hasattr(self, field):
@@ -361,7 +356,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
                         metadata[field] = str(value)  # type: ignore[literal-required]
         return metadata
 
-    def set_metadata(self, metadata: ModelTypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():

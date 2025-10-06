@@ -37,33 +37,35 @@ class ModelFilterCriteria(BaseModel):
 
     # Time-based filters
     time_range: dict[str, datetime] | None = Field(
-        None,
+        default=None,
         description="Time range filter with 'start' and 'end'",
     )
 
     # Field selection
     include_fields: list[str] | None = Field(
-        None,
+        default=None,
         description="Fields to include in results",
     )
     exclude_fields: list[str] | None = Field(
-        None,
+        default=None,
         description="Fields to exclude from results",
     )
 
     # Sorting
-    sort_by: str | None = Field(None, description="Field to sort by")
+    sort_by: str | None = Field(default=None, description="Field to sort by")
     sort_order: str = Field("asc", description="Sort order (asc/desc)")
 
     # Pagination
-    limit: int | None = Field(None, description="Maximum results to return")
-    offset: int | None = Field(None, description="Results offset for pagination")
+    limit: int | None = Field(default=None, description="Maximum results to return")
+    offset: int | None = Field(
+        default=None, description="Results offset for pagination"
+    )
 
     # Advanced filters
-    tags: list[str] | None = Field(None, description="Tag filters")
-    categories: list[str] | None = Field(None, description="Category filters")
+    tags: list[str] | None = Field(default=None, description="Tag filters")
+    categories: list[str] | None = Field(default=None, description="Category filters")
     severity_levels: list[str] | None = Field(
-        None,
+        default=None,
         description="Severity level filters",
     )
 
@@ -124,7 +126,7 @@ class ModelFilterCriteria(BaseModel):
 
         return cls(**data)
 
-    def add_condition(self, field: str, operator: str, value: Any):
+    def add_condition(self, field: str, operator: str, value: Any) -> None:
         """Add a filter condition."""
         self.conditions.append(
             ModelFilterCondition(

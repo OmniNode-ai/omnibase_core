@@ -74,7 +74,9 @@ class MixinDebugDiscoveryLogging:
                 {"node_name": node_name},
             )
 
-    def _debug_handle_introspection_request(self, envelope_or_event, node_name: str):
+    def _debug_handle_introspection_request(
+        self, envelope_or_event, node_name: str
+    ) -> None:
         """
         Debug wrapper for introspection request handling.
 

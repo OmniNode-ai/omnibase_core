@@ -21,42 +21,48 @@ class ModelHealthAttributes(BaseModel):
     """
 
     # Infrastructure attributes
-    cluster_name: str | None = Field(None, description="Kubernetes cluster name")
-    region: str | None = Field(None, description="Cloud region")
+    cluster_name: str | None = Field(
+        default=None, description="Kubernetes cluster name"
+    )
+    region: str | None = Field(default=None, description="Cloud region")
     availability_zone: str | None = Field(
-        None,
+        default=None,
         description="Cloud availability zone",
     )
-    instance_type: str | None = Field(None, description="Instance/VM type")
+    instance_type: str | None = Field(default=None, description="Instance/VM type")
 
     # Monitoring attributes
     monitoring_backend: str | None = Field(
-        None,
+        default=None,
         description="Monitoring system (prometheus, datadog, etc.)",
     )
-    metrics_endpoint: str | None = Field(None, description="Metrics endpoint URL")
-    log_aggregator: str | None = Field(None, description="Log aggregation system")
+    metrics_endpoint: str | None = Field(
+        default=None, description="Metrics endpoint URL"
+    )
+    log_aggregator: str | None = Field(
+        default=None, description="Log aggregation system"
+    )
 
     # SLA/SLO attributes
     sla_tier: str | None = Field(
-        None,
+        default=None,
         description="SLA tier (basic, standard, premium)",
     )
     uptime_target: float | None = Field(
-        None,
+        default=None,
         description="Target uptime percentage",
         ge=0,
         le=100,
     )
     response_time_target_ms: int | None = Field(
-        None,
+        default=None,
         description="Target response time in milliseconds",
     )
 
     # Organization attributes
-    team_name: str | None = Field(None, description="Responsible team")
-    cost_center: str | None = Field(None, description="Cost center code")
-    project_code: str | None = Field(None, description="Project code")
+    team_name: str | None = Field(default=None, description="Responsible team")
+    cost_center: str | None = Field(default=None, description="Cost center code")
+    project_code: str | None = Field(default=None, description="Project code")
 
     # Feature flags
     feature_flags: list[str] = Field(
@@ -70,14 +76,16 @@ class ModelHealthAttributes(BaseModel):
 
     # Capacity planning
     max_concurrent_users: int | None = Field(
-        None,
+        default=None,
         description="Maximum concurrent users",
     )
-    max_requests_per_second: int | None = Field(None, description="Maximum RPS")
-    storage_quota_gb: float | None = Field(None, description="Storage quota in GB")
+    max_requests_per_second: int | None = Field(default=None, description="Maximum RPS")
+    storage_quota_gb: float | None = Field(
+        default=None, description="Storage quota in GB"
+    )
 
     # Custom fields for future extensibility
     custom_fields: ModelCustomFields | None = Field(
-        None,
+        default=None,
         description="Additional custom attributes",
     )

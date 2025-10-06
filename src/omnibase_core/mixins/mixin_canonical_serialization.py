@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 from omnibase_spi.protocols.core import ProtocolCanonicalSerializer
 from pydantic import Field
 
-from omnibase_core.enums import NodeMetadataField
+from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 
@@ -78,9 +78,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
     def canonicalize_metadata_block(
         self,
         block: Union[dict[str, object], "NodeMetadataBlock"],
-        volatile_fields: tuple[NodeMetadataField, ...] = (
-            NodeMetadataField.HASH,
-            NodeMetadataField.LAST_MODIFIED_AT,
+        volatile_fields: tuple[EnumNodeMetadataField, ...] = (
+            EnumNodeMetadataField.HASH,
+            EnumNodeMetadataField.LAST_MODIFIED_AT,
         ),
         placeholder: str = "<PLACEHOLDER>",
         sort_keys: bool = False,
@@ -127,8 +127,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         block_dict = block.model_dump(mode="json")
         # Protocol-compliant placeholders
         protocol_placeholders = {
-            NodeMetadataField.HASH.value: "0" * 64,
-            NodeMetadataField.LAST_MODIFIED_AT.value: "1970-01-01T00:00:00Z",
+            EnumNodeMetadataField.HASH.value: "0" * 64,
+            EnumNodeMetadataField.LAST_MODIFIED_AT.value: "1970-01-01T00:00:00Z",
         }
         # Dynamically determine string and list fields from the model
         string_fields = set()
@@ -166,8 +166,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             ):
                 normalized_dict[k] = protocol_placeholders[k]
                 continue
-            # Convert NodeMetadataField to .value
-            if isinstance(v, NodeMetadataField):
+            # Convert EnumNodeMetadataField to .value
+            if isinstance(v, EnumNodeMetadataField):
                 v = v.value
             # Normalize string fields
             if k in string_fields and (v is None or v == "null"):
@@ -289,9 +289,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         self,
         block: Union[dict[str, object], "NodeMetadataBlock"],
         body: str,
-        volatile_fields: tuple[NodeMetadataField, ...] = (
-            NodeMetadataField.HASH,
-            NodeMetadataField.LAST_MODIFIED_AT,
+        volatile_fields: tuple[EnumNodeMetadataField, ...] = (
+            EnumNodeMetadataField.HASH,
+            EnumNodeMetadataField.LAST_MODIFIED_AT,
         ),
         placeholder: str = "<PLACEHOLDER>",
         comment_prefix: str = "",
