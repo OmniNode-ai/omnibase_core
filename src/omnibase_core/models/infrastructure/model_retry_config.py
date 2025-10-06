@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Retry Configuration Model.
 
@@ -5,14 +11,13 @@ Core retry configuration settings grouped logically.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any, Self
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelRetryConfig(BaseModel):
@@ -83,11 +88,11 @@ class ModelRetryConfig(BaseModel):
             The validated model instance if validation passes.
 
         Raises:
-            OnexError: If max_delay_seconds is less than base_delay_seconds.
+            ModelOnexError: If max_delay_seconds is less than base_delay_seconds.
         """
         if self.max_delay_seconds < self.base_delay_seconds:
             msg = "Max delay must be greater than or equal to base delay"
-            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg)
         return self
 
     def get_strategy_name(self) -> str:
@@ -161,7 +166,7 @@ class ModelRetryConfig(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     model_config = {

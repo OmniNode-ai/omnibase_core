@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Progress Core Model.
 
@@ -5,7 +11,6 @@ Core progress tracking functionality with percentage, steps, and phase managemen
 Follows ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any, Self
 
@@ -13,7 +18,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelProgressCore(BaseModel):
@@ -75,7 +80,7 @@ class ModelProgressCore(BaseModel):
         """Validate current step doesn't exceed total steps."""
         if self.current_step > self.total_steps:
             msg = "Current step cannot exceed total steps"
-            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg)
         return self
 
     def model_post_init(self, __context: object) -> None:
@@ -195,7 +200,7 @@ class ModelProgressCore(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Explicit typing to ensure MyPy recognizes the return type
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result

@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import TypeVar
+
+from pydantic import Field, ValidationInfo, field_validator
+
 """
 Typed property model for environment properties.
 
@@ -5,7 +11,6 @@ This module provides the ModelTypedProperty class for storing a single
 typed property with validation in the environment property system.
 """
 
-from __future__ import annotations
 
 from typing import Any, TypeVar, cast
 
@@ -82,7 +87,7 @@ class ModelTypedProperty(BaseModel):
         return default
 
     def is_list_type(self) -> bool:
-        """Check if this property stores a list value."""
+        """Check if this property stores a list[Any]value."""
         return self.value.value_type in [
             EnumPropertyType.STRING_LIST,
             EnumPropertyType.INTEGER_LIST,
@@ -121,7 +126,7 @@ class ModelTypedProperty(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

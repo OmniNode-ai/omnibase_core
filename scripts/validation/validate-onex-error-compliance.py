@@ -99,17 +99,19 @@ class OnexErrorComplianceChecker:
             return False
 
     def _has_onex_error_import(self, tree: ast.AST) -> bool:
-        """Check if file imports OnexError."""
+        """Check if file imports ModelOnexError."""
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom):
                 if (
                     node.module
-                    and "onex_error" in node.module
-                    and any(alias.name == "OnexError" for alias in node.names or [])
+                    and "error_codes" in node.module
+                    and any(
+                        alias.name == "ModelOnexError" for alias in node.names or []
+                    )
                 ):
                     return True
             elif isinstance(node, ast.Import):
-                if any("onex_error" in alias.name for alias in node.names):
+                if any("ModelOnexError" in alias.name for alias in node.names):
                     return True
         return False
 
@@ -135,27 +137,21 @@ class OnexErrorComplianceChecker:
                 print(f"   • {error}")
 
             print("\n🔧 How to fix:")
-            print("   Replace standard Python exceptions with OnexError:")
+            print("   Replace standard Python exceptions with ModelOnexError:")
             print("   ")
             print("   ❌ BAD:")
             print("   raise ValueError('Invalid input value')")
             print("   ")
             print("   ✅ GOOD:")
-            print("   from omnibase_core.exceptions.onex_error import OnexError")
-            print(
-                "   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode"
-            )
-            print(
-                "   from omnibase_core.models.common.model_error_context import ModelErrorContext"
-            )
+            print("   from omnibase_core.errors.error_codes import ModelOnexError")
+            print("   from omnibase_core.errors.error_codes import ModelCoreErrorCode")
             print("   ")
-            print("   raise OnexError(")
-            print("       code=EnumCoreErrorCode.VALIDATION_ERROR,")
+            print("   raise ModelOnexError(")
             print("       message='Invalid input value',")
-            print("       details=ModelErrorContext.with_context({'input': value})")
+            print("       error_code=ModelCoreErrorCode.VALIDATION_ERROR")
             print("   )")
             print("   ")
-            print("   Benefits of OnexError:")
+            print("   Benefits of ModelOnexError:")
             print("   • Consistent error handling across ONEX framework")
             print("   • Structured error codes for programmatic handling")
             print("   • Rich error context for debugging")
@@ -194,28 +190,56 @@ class RaiseStatementChecker(ast.NodeVisitor):
             "YamlLoadingError",
         }
 
+        # Read file content to check for error-ok comments
+        with open(file_path, "r", encoding="utf-8") as f:
+            self.file_content = f.read()
+            self.file_lines = self.file_content.split("\n")
+
     def visit_Raise(self, node: ast.Raise) -> None:
         """Check raise statements for OnexError compliance."""
         if node.exc:
+            # Check for error-ok comment on the same line or previous line
+            if self._has_error_ok_comment(node.lineno):
+                return
+
             exception_name = self._get_exception_name(node.exc)
 
             if exception_name in self.forbidden_exceptions:
                 self.violations.append(
                     f"{self.file_path}:{node.lineno}: "
-                    f"Uses standard exception '{exception_name}' instead of OnexError"
+                    f"Uses standard exception '{exception_name}' instead of ModelOnexError"
                 )
-            elif exception_name and exception_name != "OnexError":
+            elif exception_name and exception_name not in [
+                "OnexError",
+                "ModelOnexError",
+            ]:
                 # Check if it's a known exception that should be converted
                 if (
                     exception_name.endswith("Error")
                     or exception_name.endswith("Exception")
-                ) and exception_name != "OnexError":
+                ) and exception_name not in ["OnexError", "ModelOnexError"]:
                     self.violations.append(
                         f"{self.file_path}:{node.lineno}: "
-                        f"Uses custom exception '{exception_name}' instead of OnexError"
+                        f"Uses custom exception '{exception_name}' instead of ModelOnexError"
                     )
 
         self.generic_visit(node)
+
+    def _has_error_ok_comment(self, line_num: int) -> bool:
+        """Check if there's an error-ok comment on or before the given line."""
+        # Check same line
+        if line_num <= len(self.file_lines):
+            line = self.file_lines[line_num - 1]
+            if "# error-ok" in line or "# stub-ok" in line:
+                return True
+
+        # Check previous line
+        if line_num > 1 and line_num - 1 <= len(self.file_lines):
+            prev_line = self.file_lines[line_num - 2]
+            if "# error-ok" in prev_line or "# stub-ok" in prev_line:
+                return True
+
+        return False
 
     def _get_exception_name(self, node: ast.expr) -> str | None:
         """Extract exception name from AST node."""

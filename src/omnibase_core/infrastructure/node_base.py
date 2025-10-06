@@ -1,5 +1,11 @@
+import uuid
+from typing import Any, Generic, Optional, TypeVar
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
-NodeBase for ONEX Architecture.
+NodeBase for ONEX ModelArchitecture.
 
 This module provides the NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
@@ -13,7 +19,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
@@ -30,10 +36,13 @@ from pydantic import BaseModel
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.infrastructure.model_action import ModelAction
+from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
+from omnibase_core.models.infrastructure.model_state import ModelState
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 T = TypeVar("T")
@@ -41,32 +50,7 @@ U = TypeVar("U")
 
 
 # Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
-class ModelAction(BaseModel):
-    """Stub action model for reducer pattern."""
-
-    pass
-
-
-class ModelState(BaseModel):
-    """Stub state model for reducer pattern."""
-
-    pass
-
-
-@dataclass
-class NodeState:
-    """Simple state holder for node metadata and configuration."""
-
-    contract_path: Path
-    node_id: UUID
-    contract_content: Any
-    registry_reference: Any | None
-    node_name: str
-    version: ModelSemVer
-    node_tier: int
-    node_classification: str
-    event_bus: object | None
-    initialization_metadata: dict[str, Any]
+# Import from separate files: ModelAction, ModelState, ModelNodeState
 
 
 class NodeBase(
@@ -156,8 +140,8 @@ class NodeBase(
 
         except Exception as e:
             self._emit_initialization_failure(e)
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to initialize NodeBase: {e!s}",
                 context={
                     "contract_path": str(contract_path),
@@ -241,7 +225,9 @@ class NodeBase(
         self._container = container
 
         # Store contract and configuration
-        business_logic_pattern = contract_content.tool_specification.business_logic_pattern
+        business_logic_pattern = (
+            contract_content.tool_specification.business_logic_pattern
+        )
         # Handle both string and enum cases
         pattern_value = (
             business_logic_pattern.value
@@ -249,7 +235,7 @@ class NodeBase(
             else str(business_logic_pattern)
         )
 
-        self.state = NodeState(
+        self.state = ModelNodeState(
             contract_path=contract_path,
             node_id=node_id,
             contract_content=contract_content,
@@ -288,8 +274,8 @@ class NodeBase(
             # Parse module and class name
             # Expected format: "module.path.ClassName"
             if "." not in main_tool_class:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid main_tool_class format: {main_tool_class}. Expected 'module.path.ClassName'",
                     context={
                         "main_tool_class": main_tool_class,
@@ -321,8 +307,8 @@ class NodeBase(
             return tool_instance
 
         except ImportError as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -332,8 +318,8 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
         except AttributeError as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -342,8 +328,8 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -371,7 +357,7 @@ class NodeBase(
             U: Tool-specific output state
 
         Raises:
-            OnexError: If execution fails
+            ModelOnexError: If execution fails
         """
         correlation_id = uuid4()
         start_time = datetime.now()
@@ -416,7 +402,7 @@ class NodeBase(
 
             return result
 
-        except OnexError:
+        except ModelOnexError:
             # Log and re-raise ONEX errors (fail-fast)
             emit_log_event(
                 LogLevel.ERROR,
@@ -442,8 +428,8 @@ class NodeBase(
                     "workflow_id": str(self.workflow_id),
                 },
             )
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Node execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -480,8 +466,8 @@ class NodeBase(
             main_tool = self._main_tool
 
             if main_tool is None:
-                raise OnexError(
-                    code=CoreErrorCode.OPERATION_FAILED,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.OPERATION_FAILED,
                     message="Main tool is not initialized",
                     context={
                         "node_name": self.state.node_name,
@@ -507,8 +493,8 @@ class NodeBase(
                     main_tool.run,
                     input_state,
                 )
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -518,7 +504,7 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             )
 
-        except OnexError:
+        except ModelOnexError:
             # Re-raise ONEX errors (fail-fast)
             raise
         except Exception as e:
@@ -533,9 +519,9 @@ class NodeBase(
                     "workflow_id": str(self.workflow_id),
                 },
             )
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"NodeBase processing error: {e!s}",
-                code=CoreErrorCode.OPERATION_FAILED,
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
@@ -558,7 +544,7 @@ class NodeBase(
             U: Tool-specific output state
 
         Raises:
-            OnexError: If execution fails
+            ModelOnexError: If execution fails
         """
         # Run async version and return the result directly
         return asyncio.run(self.run_async(input_state))
@@ -614,7 +600,7 @@ class NodeBase(
             ModelState: New state after transition
 
         Raises:
-            OnexError: If dispatch fails
+            ModelOnexError: If dispatch fails
         """
         try:
             new_state = self.dispatch(state, action)
@@ -644,8 +630,8 @@ class NodeBase(
                     "correlation_id": str(self.correlation_id),
                 },
             )
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"State dispatch failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -701,8 +687,8 @@ class NodeBase(
     def container(self) -> ModelONEXContainer:
         """Get the ModelONEXContainer instance for dependency injection."""
         if self._container is None:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message="Container is not initialized",
                 context={"node_id": str(self.node_id)},
             )
@@ -717,8 +703,8 @@ class NodeBase(
     def current_state(self) -> ModelState:
         """Get the current reducer state."""
         if self._reducer_state is None:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message="Reducer state is not initialized",
                 context={"node_id": str(self.node_id)},
             )

@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+
 """
 CLI advanced parameters model.
 
@@ -5,7 +12,6 @@ Clean, strongly-typed replacement for ModelCustomFields[Any] in CLI advanced par
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -18,7 +24,7 @@ CliConvertibleValue = object
 
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_output_format_options import ModelOutputFormatOptions
@@ -108,7 +114,7 @@ class ModelCliAdvancedParams(BaseModel):
 
     # Security parameters
     security_level: EnumSecurityLevel = Field(
-        default=EnumSecurityLevel.STANDARD,
+        default=EnumSecurityLevel.MEDIUM,
         description="Security level",
     )
     enable_sandbox: bool = Field(
@@ -142,9 +148,9 @@ class ModelCliAdvancedParams(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for node_config_overrides."""
         if not isinstance(v, dict):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="node_config_overrides must be a dictionary",
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="node_config_overrides must be a dict[str, Any]ionary",
             )
 
         result = {}
@@ -171,9 +177,9 @@ class ModelCliAdvancedParams(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_parameters."""
         if not isinstance(v, dict):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="custom_parameters must be a dictionary",
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="custom_parameters must be a dict[str, Any]ionary",
             )
 
         result = {}
@@ -200,8 +206,8 @@ class ModelCliAdvancedParams(BaseModel):
     def set_timeout(self, seconds: float) -> None:
         """Set timeout with validation."""
         if seconds <= 0:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Timeout must be positive",
             )
         self.timeout_seconds = seconds
@@ -209,8 +215,8 @@ class ModelCliAdvancedParams(BaseModel):
     def set_memory_limit(self, mb: int) -> None:
         """Set memory limit with validation."""
         if mb <= 0:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Memory limit must be positive",
             )
         self.memory_limit_mb = mb
@@ -218,8 +224,8 @@ class ModelCliAdvancedParams(BaseModel):
     def set_cpu_limit(self, percent: float) -> None:
         """Set CPU limit with validation."""
         if not 0.0 <= percent <= 100.0:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="CPU limit must be between 0.0 and 100.0",
             )
         self.cpu_limit_percent = percent
@@ -257,7 +263,7 @@ class ModelCliAdvancedParams(BaseModel):
 
     def enable_security_mode(self) -> None:
         """Enable strict security mode."""
-        self.security_level = EnumSecurityLevel.STRICT
+        self.security_level = EnumSecurityLevel.ENTERPRISE
         self.enable_sandbox = True
 
     # Export the model
@@ -265,7 +271,7 @@ class ModelCliAdvancedParams(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -293,8 +299,8 @@ class ModelCliAdvancedParams(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

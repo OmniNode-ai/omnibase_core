@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Literal
+
 """
 Stop Reason Enum.
 
@@ -5,7 +9,6 @@ Strongly typed enumeration for Anthropic API stop reasons.
 Replaces Literal["end_turn", "max_tokens", "stop_sequence"] patterns.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

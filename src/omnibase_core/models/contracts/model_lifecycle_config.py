@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Lifecycle Configuration Model - ONEX Standards Compliant.
 
@@ -9,6 +11,8 @@ Lifecycle management configuration for node initialization and cleanup providing
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 

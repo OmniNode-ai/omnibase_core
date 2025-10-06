@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+
 """
 Mixin for models that need validation capabilities.
 
@@ -5,7 +11,6 @@ This provides a standard validation container and common validation
 methods that can be inherited by any model requiring validation.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -85,8 +90,10 @@ class ModelValidationBase(BaseModel):
                 "omnibase_core.enums.enum_core_error_code",
             )
             # Get error code strings with fallbacks
-            validation_error_code = enum_module.CoreErrorCode.VALIDATION_ERROR.value
-            internal_error_code = enum_module.CoreErrorCode.INTERNAL_ERROR.value
+            validation_error_code = (
+                enum_module.ModelCoreErrorCode.VALIDATION_ERROR.value
+            )
+            internal_error_code = enum_module.ModelCoreErrorCode.INTERNAL_ERROR.value
         except (ImportError, AttributeError):
             # Fallback if enum module not available or attributes missing
             validation_error_code = "validation_error"
@@ -135,11 +142,11 @@ class ModelValidationBase(BaseModel):
             # Validate that model can be serialized (basic integrity check)
             try:
                 model_dict = self.model_dump(exclude={"validation"})
-                # Note: model_dump() always returns dict, so no need to check isinstance
+                # Note: model_dump() always returns dict[str, Any], so no need to check isinstance
                 # This is just to ensure the serialization process works
                 if not model_dict:
                     self.add_validation_error(
-                        message="Model serialization succeeded but returned empty dictionary",
+                        message="Model serialization succeeded but returned empty dict[str, Any]ionary",
                         field="model_integrity",
                         error_code=validation_error_code,
                     )
@@ -204,7 +211,7 @@ class ModelValidationBase(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     model_config = {

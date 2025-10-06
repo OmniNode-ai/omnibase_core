@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Callable, Generic, TypeVar
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Result Model.
 
@@ -5,14 +13,13 @@ Generic Result[T, E] pattern for CLI operations providing type-safe
 success/error handling with proper MyPy compliance.
 """
 
-from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Generic, TypeVar, cast
+from collections.abc import Callable as CallableABC
+from typing import Any, Callable, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 # Type variables for Result pattern
 T = TypeVar("T")  # Success type
@@ -82,23 +89,23 @@ class ModelResult(
 
         # Validate that exactly one of value or error is set
         if success and value is None:
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                ModelCoreErrorCode.VALIDATION_ERROR,
                 "Success result must have a value",
             )
         if not success and error is None:
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                ModelCoreErrorCode.VALIDATION_ERROR,
                 "Error result must have an error",
             )
         if success and error is not None:
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                ModelCoreErrorCode.VALIDATION_ERROR,
                 "Success result cannot have an error",
             )
         if not success and value is not None:
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                ModelCoreErrorCode.VALIDATION_ERROR,
                 "Error result cannot have a value",
             )
 
@@ -128,13 +135,13 @@ class ModelResult(
             ValueError: If result is an error
         """
         if not self.success:
-            raise OnexError(
-                CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                ModelCoreErrorCode.OPERATION_FAILED,
                 f"Called unwrap() on error result: {self.error}",
             )
         if self.value is None:
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                ModelCoreErrorCode.VALIDATION_ERROR,
                 "Success result has None value",
             )
         return cast(T, self.value)
@@ -143,8 +150,8 @@ class ModelResult(
         """Unwrap the value or return default if error."""
         if self.success:
             if self.value is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return cast(T, self.value)
@@ -154,14 +161,14 @@ class ModelResult(
         """Unwrap the value or compute from error using function."""
         if self.success:
             if self.value is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return cast(T, self.value)
         if self.error is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         return f(self.error)
@@ -177,13 +184,13 @@ class ModelResult(
             ValueError: If result is an error, with custom message
         """
         if not self.success:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"{msg}: {self.error}",
             )
         if self.value is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Success result has None value",
             )
         return cast(T, self.value)
@@ -198,8 +205,8 @@ class ModelResult(
         if self.success:
             try:
                 if self.value is None:
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
+                        code=ModelCoreErrorCode.VALIDATION_ERROR,
                         message="Success result has None value",
                     )
                 new_value = f(self.value)
@@ -208,8 +215,8 @@ class ModelResult(
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
         if self.error is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         # Return the original error without unsafe cast
@@ -224,15 +231,15 @@ class ModelResult(
         """
         if self.success:
             if self.value is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return ModelResult.ok(self.value)
         try:
             if self.error is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
             new_error = f(self.error)
@@ -251,8 +258,8 @@ class ModelResult(
         if self.success:
             try:
                 if self.value is None:
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
+                        code=ModelCoreErrorCode.VALIDATION_ERROR,
                         message="Success result has None value",
                     )
                 result = f(self.value)
@@ -262,8 +269,8 @@ class ModelResult(
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
         if self.error is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         # Return the original error without unsafe cast
@@ -278,15 +285,15 @@ class ModelResult(
         """
         if self.success:
             if self.value is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return ModelResult.ok(self.value)
         try:
             if self.error is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
             result = f(self.error)
@@ -323,8 +330,8 @@ class ModelResult(
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -336,13 +343,13 @@ class ModelResult(
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 
@@ -380,10 +387,10 @@ def try_result(f: Callable[[], T]) -> ModelResult[T, Exception]:
 
 def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], list[E]]:
     """
-    Collect a list of Results into a Result of lists.
+    Collect a list[Any]of Results into a Result of list[Any]s.
 
-    If all Results are Ok, returns Ok with list of values.
-    If any Result is Err, returns Err with list of all errors.
+    If all Results are Ok, returns Ok with list[Any]of values.
+    If any Result is Err, returns Err with list[Any]of all errors.
     """
     values: list[T] = []
     errors: list[E] = []
@@ -393,8 +400,8 @@ def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], li
             values.append(result.unwrap())
         else:
             if result.error is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
             errors.append(result.error)

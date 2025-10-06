@@ -1,3 +1,8 @@
+import uuid
+from typing import Any
+
+from pydantic import Field
+
 """
 Simple Tool Execution Result Model - ONEX Standards Compliant.
 

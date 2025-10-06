@@ -1,46 +1,37 @@
 """
 Action Category Enum
 
-Categories for organizing different types of CLI actions.
+Categories for organizing different types of actions across tools.
 """
 
-from __future__ import annotations
-
-from enum import Enum, unique
+from enum import Enum
 
 
-@unique
 class EnumActionCategory(str, Enum):
     """
-    Categories for organizing different types of CLI actions.
+    Categories for organizing different types of actions across tools.
 
     Provides consistent categorization for action organization and filtering.
     """
 
-    LIFECYCLE = "lifecycle"
-    VALIDATION = "validation"
-    INTROSPECTION = "introspection"
-    CONFIGURATION = "configuration"
-    EXECUTION = "execution"
-    REGISTRY = "registry"
-    WORKFLOW = "workflow"
     SYSTEM = "system"
+    DATABASE = "database"
+    RESOURCE = "resource"
+    NETWORK = "network"
+    SECURITY = "security"
+    MONITORING = "monitoring"
+    MAINTENANCE = "maintenance"
+    CONFIGURATION = "configuration"
+    DEVELOPMENT = "development"
 
     def __str__(self) -> str:
         """Return the string value of the category."""
         return self.value
 
-    def is_management_category(self) -> bool:
-        """Check if this category involves management operations."""
-        return self in [self.LIFECYCLE, self.CONFIGURATION, self.REGISTRY]
+    def is_system_level(self) -> bool:
+        """Check if this category involves system-level operations."""
+        return self in [self.SYSTEM, self.RESOURCE, self.SECURITY, self.CONFIGURATION]
 
-    def is_execution_category(self) -> bool:
-        """Check if this category involves execution operations."""
-        return self in [self.EXECUTION, self.WORKFLOW, self.SYSTEM]
-
-    def is_inspection_category(self) -> bool:
-        """Check if this category involves inspection operations."""
-        return self in [self.VALIDATION, self.INTROSPECTION]
-
-
-__all__ = ["EnumActionCategory"]
+    def is_infrastructure(self) -> bool:
+        """Check if this category involves infrastructure operations."""
+        return self in [self.DATABASE, self.NETWORK, self.MONITORING, self.MAINTENANCE]

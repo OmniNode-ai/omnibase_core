@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import json
+import uuid
+from datetime import datetime
+from typing import Any, Optional
+
+from pydantic import Field
+
 """
 Field type enumeration for metadata field information.
 
@@ -5,7 +14,6 @@ Provides strongly typed field types for metadata fields.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -36,8 +44,8 @@ class EnumFieldType(str, Enum):
     UUID4 = "uuid4"
 
     # Collections
-    LIST = "list"
-    DICT = "dict"
+    LIST = "list[Any]"
+    DICT = "dict[str, Any]"
     SET = "set"
 
     # Optional versions

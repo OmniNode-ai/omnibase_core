@@ -1,3 +1,10 @@
+from typing import Any, Dict, Optional
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 YAML Contract Validation Model - ONEX Standards Compliant.
 
@@ -13,7 +20,7 @@ This replaces manual YAML field validation with proper Pydantic validation.
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -70,7 +77,7 @@ class ModelYamlContract(BaseModel):
             EnumNodeType: Validated enum value
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         if isinstance(value, EnumNodeType):
             return value
@@ -110,9 +117,9 @@ class ModelYamlContract(BaseModel):
                     },
                 )
 
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=error_context,
                 )
 
@@ -128,9 +135,9 @@ class ModelYamlContract(BaseModel):
             },
         )
 
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"node_type must be an EnumNodeType enum or valid string, got {type(value).__name__}",
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             details=error_context,
         )
 
@@ -150,14 +157,14 @@ class ModelYamlContract(BaseModel):
 
         Raises:
             ValidationError: If validation fails
-            OnexError: For custom validation errors
+            ModelOnexError: For custom validation errors
         """
         return cls.model_validate(yaml_data)
 
     @classmethod
     def from_yaml_dict(cls, yaml_data: dict[str, object]) -> "ModelYamlContract":
         """
-        Alternative constructor for YAML dictionary data.
+        Alternative constructor for YAML dict[str, Any]ionary data.
 
         Args:
             yaml_data: Dictionary loaded from YAML file

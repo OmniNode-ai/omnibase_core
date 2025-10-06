@@ -1,3 +1,9 @@
+from typing import List, Literal
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 FSM Transition Action Model - ONEX Standards Compliant.
 
@@ -11,7 +17,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+
+from .model_fsmtransitionaction import ModelFSMTransitionAction
 
 
 class ModelActionConfigValue(BaseModel):
@@ -21,7 +29,7 @@ class ModelActionConfigValue(BaseModel):
     Replaces dict[str, PrimitiveValueType | list[str]] with proper type safety.
     """
 
-    value_type: Literal["scalar", "list"] = Field(
+    value_type: Literal["scalar", "list[Any]"] = Field(
         ...,
         description="Type of configuration value",
     )
@@ -33,7 +41,7 @@ class ModelActionConfigValue(BaseModel):
 
     list_value: list[str] | None = Field(
         default=None,
-        description="List of string values (when value_type='list')",
+        description="List of string values (when value_type='list[Any]')",
     )
 
     @field_validator("scalar_value", "list_value", mode="after")
@@ -48,27 +56,27 @@ class ModelActionConfigValue(BaseModel):
 
         if value_type == "scalar" and field_name == "scalar_value":
             if v is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message="scalar_value must be provided when value_type='scalar'",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 )
         elif value_type == "scalar" and field_name == "list_value":
             if v is not None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message="list_value must be None when value_type='scalar'",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 )
-        elif value_type == "list" and field_name == "list_value":
+        elif value_type == "list[Any]" and field_name == "list_value":
             if v is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message="list_value must be provided when value_type='list'",
+                raise ModelOnexError(
+                    message="list_value must be provided when value_type='list[Any]'",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 )
-        elif value_type == "list" and field_name == "scalar_value":
+        elif value_type == "list[Any]" and field_name == "scalar_value":
             if v is not None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message="scalar_value must be None when value_type='list'",
+                raise ModelOnexError(
+                    message="scalar_value must be None when value_type='list[Any]'",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -77,63 +85,9 @@ class ModelActionConfigValue(BaseModel):
         """Get the actual value based on the value type."""
         if self.value_type == "scalar":
             return self.scalar_value or ""
-        if self.value_type == "list":
+        if self.value_type == "list[Any]":
             return self.list_value or []
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"Invalid value_type: {self.value_type}",
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
         )
-
-
-class ModelFSMTransitionAction(BaseModel):
-    """
-    Action specification for FSM state transitions.
-
-    Defines actions to execute during state transitions,
-    including logging, validation, and state modifications.
-    """
-
-    action_name: str = Field(
-        ...,
-        description="Unique name for the action",
-        min_length=1,
-    )
-
-    action_type: str = Field(
-        ...,
-        description="Type of action (log, validate, modify, event, cleanup)",
-        min_length=1,
-    )
-
-    action_config: dict[str, ModelActionConfigValue] = Field(
-        default_factory=dict,
-        description="Strongly-typed configuration parameters for the action",
-    )
-
-    execution_order: int = Field(
-        default=1,
-        description="Order of execution relative to other actions",
-        ge=1,
-    )
-
-    is_critical: bool = Field(
-        default=False,
-        description="Whether action failure should abort transition",
-    )
-
-    rollback_action: str | None = Field(
-        default=None,
-        description="Action to execute if rollback is needed",
-    )
-
-    timeout_ms: int | None = Field(
-        default=None,
-        description="Timeout for action execution",
-        ge=1,
-    )
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }

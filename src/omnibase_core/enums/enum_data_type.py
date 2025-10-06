@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+import json
+
 """
 Data Type Enum.
 
 Strongly typed data type values for configuration and processing.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

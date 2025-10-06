@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from pydantic import Field
+
 """
 Analytics Performance Summary Model.
 
@@ -5,7 +9,6 @@ Structured performance summary data for analytics.
 Follows ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -71,7 +74,7 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
         return "Poor"
 
     def get_performance_metrics(self) -> dict[str, float]:
-        """Get core performance metrics as a dictionary."""
+        """Get core performance metrics as a dict[str, Any]ionary."""
         return {
             "execution_time_ms": self.average_execution_time_ms,
             "execution_time_seconds": self.average_execution_time_seconds,
@@ -112,7 +115,7 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -125,7 +128,7 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -137,7 +140,7 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

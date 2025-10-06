@@ -1,3 +1,11 @@
+import uuid
+from typing import Any, Dict
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
 
@@ -18,7 +26,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -167,14 +175,14 @@ class ModelFSMSubcontract(BaseModel):
         v: list[ModelFSMStateDefinition],
         info: ValidationInfo,
     ) -> list[ModelFSMStateDefinition]:
-        """Validate that initial state is defined in states list."""
+        """Validate that initial state is defined in states list[Any]."""
         if info.data and "initial_state" in info.data:
             state_names = [state.state_name for state in v]
             if info.data["initial_state"] not in state_names:
-                msg = f"Initial state '{info.data['initial_state']}' not found in states list"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                msg = f"Initial state '{info.data['initial_state']}' not found in states list[Any]"
+                raise ModelOnexError(
                     message=msg,
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -193,15 +201,15 @@ class ModelFSMSubcontract(BaseModel):
         v: list[str],
         info: ValidationInfo,
     ) -> list[str]:
-        """Validate that terminal and error states are defined in states list."""
+        """Validate that terminal and error states are defined in states list[Any]."""
         if info.data and "states" in info.data and v:
             state_names = [state.state_name for state in info.data["states"]]
             for state_name in v:
                 if state_name not in state_names:
-                    msg = f"State '{state_name}' not found in states list"
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    msg = f"State '{state_name}' not found in states list[Any]"
+                    raise ModelOnexError(
                         message=msg,
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -229,10 +237,10 @@ class ModelFSMSubcontract(BaseModel):
             for transition in v:
                 # Support wildcard transitions (from_state: '*')
                 if transition.from_state not in state_names_with_wildcard:
-                    msg = f"Transition from_state '{transition.from_state}' not found in states list"
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    msg = f"Transition from_state '{transition.from_state}' not found in states list[Any]"
+                    raise ModelOnexError(
                         message=msg,
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -243,10 +251,10 @@ class ModelFSMSubcontract(BaseModel):
                         ),
                     )
                 if transition.to_state not in state_names:
-                    msg = f"Transition to_state '{transition.to_state}' not found in states list"
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    msg = f"Transition to_state '{transition.to_state}' not found in states list[Any]"
+                    raise ModelOnexError(
                         message=msg,
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),

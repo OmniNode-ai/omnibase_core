@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Timeout Model.
 
@@ -5,7 +11,6 @@ Clean timeout wrapper that delegates to ModelTimeBased with proper ONEX patterns
 This provides a convenient timeout interface built on the unified time-based model.
 """
 
-from __future__ import annotations
 
 from datetime import datetime, timedelta
 from functools import cached_property, lru_cache
@@ -15,7 +20,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
@@ -67,8 +72,8 @@ class ModelTimeout(BaseModel):
 
         # Type validation and conversion
         if not isinstance(timeout_seconds_raw, (int, float)):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="timeout_seconds must be a number",
                 details=ModelErrorContext.with_context(
                     {
@@ -84,8 +89,8 @@ class ModelTimeout(BaseModel):
         warning_threshold_seconds = None
         if warning_threshold_seconds_raw is not None:
             if not isinstance(warning_threshold_seconds_raw, (int, float)):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="warning_threshold_seconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -99,8 +104,8 @@ class ModelTimeout(BaseModel):
             warning_threshold_seconds = int(warning_threshold_seconds_raw)
 
         if not isinstance(is_strict_raw, bool):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="is_strict must be a boolean",
                 details=ModelErrorContext.with_context(
                     {
@@ -114,8 +119,8 @@ class ModelTimeout(BaseModel):
         is_strict = is_strict_raw
 
         if not isinstance(allow_extension_raw, bool):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="allow_extension must be a boolean",
                 details=ModelErrorContext.with_context(
                     {
@@ -131,8 +136,8 @@ class ModelTimeout(BaseModel):
         extension_limit_seconds = None
         if extension_limit_seconds_raw is not None:
             if not isinstance(extension_limit_seconds_raw, (int, float)):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="extension_limit_seconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -148,8 +153,8 @@ class ModelTimeout(BaseModel):
         runtime_category = None
         if runtime_category_raw is not None:
             if not isinstance(runtime_category_raw, EnumRuntimeCategory):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="runtime_category must be an EnumRuntimeCategory",
                     details=ModelErrorContext.with_context(
                         {
@@ -165,8 +170,8 @@ class ModelTimeout(BaseModel):
         description = None
         if description_raw is not None:
             if not isinstance(description_raw, str):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="description must be a string",
                     details=ModelErrorContext.with_context(
                         {
@@ -188,9 +193,9 @@ class ModelTimeout(BaseModel):
                 else:
                     processed_metadata[key] = ModelSchemaValue.from_value(value)
         elif custom_metadata_raw != {}:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="custom_metadata must be a dictionary",
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message="custom_metadata must be a dict[str, Any]ionary",
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),
@@ -511,7 +516,7 @@ class ModelTimeout(BaseModel):
     @classmethod
     def model_validate_typed(cls, data: ModelTimeoutData) -> ModelTimeout:
         """Create ModelTimeout from typed data using Pydantic validation."""
-        # Convert ModelTimeoutData to dict for initialization
+        # Convert ModelTimeoutData to dict[str, Any]for initialization
         init_data = data.model_dump()
 
         # Convert custom_properties to custom_metadata format
@@ -547,7 +552,7 @@ class ModelTimeout(BaseModel):
         """Execute or update execution status (Executable protocol).
 
         Raises:
-            OnexError: If execution fails with details about the failure
+            ModelOnexError: If execution fails with details about the failure
         """
         try:
             # Update any relevant execution fields
@@ -556,8 +561,8 @@ class ModelTimeout(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Execution failed: {e}",
             ) from e
 
@@ -565,7 +570,7 @@ class ModelTimeout(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            OnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails with details about the failure
         """
         try:
             for key, value in kwargs.items():
@@ -573,28 +578,28 @@ class ModelTimeout(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 External Service Configuration Model.
 

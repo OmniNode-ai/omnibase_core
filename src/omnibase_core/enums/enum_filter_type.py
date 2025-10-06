@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
 """
 Filter Type Enum.
 
 Strongly typed filter type values.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -16,7 +20,7 @@ class EnumFilterType(str, Enum):
     STRING = "string"
     NUMERIC = "numeric"
     DATETIME = "datetime"
-    LIST = "list"
+    LIST = "list[Any]"
     METADATA = "metadata"
     STATUS = "status"
     COMPLEX = "complex"

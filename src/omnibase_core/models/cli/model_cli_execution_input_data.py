@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+from typing import List
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 CLI Execution Input Data Model.
 
@@ -5,7 +14,6 @@ Represents input data for CLI execution with proper validation.
 Replaces dict[str, Any] for input data with structured typing.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
@@ -17,7 +25,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
 from omnibase_core.enums.enum_data_type import EnumDataType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 # Input data values use discriminated union pattern with runtime validation
 
@@ -68,40 +76,40 @@ class ModelCliExecutionInputData(BaseModel):
         value_type = info.data["value_type"]
 
         if value_type == EnumCliInputValueType.STRING and not isinstance(v, str):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="String value type must contain str data",
             )
         if value_type == EnumCliInputValueType.INTEGER and not isinstance(v, int):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Integer value type must contain int data",
             )
         if value_type == EnumCliInputValueType.FLOAT and not isinstance(v, float):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Float value type must contain float data",
             )
         if value_type == EnumCliInputValueType.BOOLEAN and not isinstance(v, bool):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean value type must contain bool data",
             )
         if value_type == EnumCliInputValueType.PATH and not isinstance(v, Path):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Path value type must contain Path data",
             )
         if value_type == EnumCliInputValueType.UUID and not isinstance(v, UUID):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="UUID value type must contain UUID data",
             )
         if value_type == EnumCliInputValueType.STRING_LIST and not (
             isinstance(v, list) and all(isinstance(item, str) for item in v)
         ):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="StringList value type must contain list[str] data",
             )
 
@@ -362,7 +370,7 @@ class ModelCliExecutionInputData(BaseModel):
         value: list[str],
         **kwargs: object,
     ) -> ModelCliExecutionInputData:
-        """Create input data from string list value."""
+        """Create input data from string list[Any]value."""
         # Extract known fields with proper types from kwargs
         data_type = kwargs.get("data_type", EnumDataType.TEXT)
         is_sensitive = kwargs.get("is_sensitive", False)
@@ -402,7 +410,7 @@ class ModelCliExecutionInputData(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -430,8 +438,8 @@ class ModelCliExecutionInputData(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

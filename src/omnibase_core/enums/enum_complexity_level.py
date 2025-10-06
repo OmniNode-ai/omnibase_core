@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Complexity Level Enum.
 
 Defines complexity levels for functions and operations.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

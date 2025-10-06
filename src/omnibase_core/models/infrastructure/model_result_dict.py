@@ -1,16 +1,23 @@
+from __future__ import annotations
+
+from typing import Dict
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Result Dictionary Model.
 
 Clean Pydantic model for Result serialization following ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 from .model_cli_value import ModelCliValue
 from .model_error_value import ModelErrorValue
@@ -20,8 +27,8 @@ class ModelResultDict(BaseModel):
     """
     Clean Pydantic model for Result serialization.
 
-    Represents the dictionary structure when converting Results
-    to/from dictionary format with proper type safety.
+    Represents the dict[str, Any]ionary structure when converting Results
+    to/from dict[str, Any]ionary format with proper type safety.
     Implements omnibase_spi protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
@@ -54,8 +61,8 @@ class ModelResultDict(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -67,18 +74,20 @@ class ModelResultDict(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 
-# Type alias for dictionary-based data structures
-ModelResultData = dict[str, ModelCliValue]  # Strongly-typed dict for common data
+# Type alias for dict[str, Any]ionary-based data structures
+ModelResultData = dict[
+    str, ModelCliValue
+]  # Strongly-typed dict[str, Any]for common data
 
 
 # Export for use

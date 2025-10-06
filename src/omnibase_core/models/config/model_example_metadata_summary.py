@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Example metadata summary model.
 
@@ -5,7 +14,6 @@ This module provides the ModelExampleMetadataSummary class for clean
 metadata summary following ONEX naming conventions.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
@@ -13,7 +21,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -54,7 +62,7 @@ class ModelExampleMetadataSummary(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            OnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails with details about the failure
         """
         try:
             for key, value in kwargs.items():
@@ -62,28 +70,28 @@ class ModelExampleMetadataSummary(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

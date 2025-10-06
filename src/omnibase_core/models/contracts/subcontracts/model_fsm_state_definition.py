@@ -1,3 +1,7 @@
+from typing import Any, Optional
+
+from pydantic import Field
+
 """
 FSM State Definition Model - ONEX Standards Compliant.
 

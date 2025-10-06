@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Connection state enumeration for connection lifecycle tracking.
 
@@ -5,7 +7,6 @@ Provides strongly typed connection state values for monitoring connection status
 Follows ONEX one-enum-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

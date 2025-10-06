@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Metrics Category Enum.
 
 Strongly typed metrics category values for organizing metric collections.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

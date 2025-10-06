@@ -1,0 +1,639 @@
+Total violations: 159
+
+Violations by category:
+
+  1. src/omnibase_core/models/security/model_metadata.py
+     Classes: 11, Enums: 0
+     Classes: ModelSignatureRequirements, ModelVerificationResult, ModelComplianceStatus, ModelEnforcementAction, ModelVerificationDetails, ModelTimeBreakdown, ModelPerformanceOptimizations, ModelVerificationMetrics, ModelCacheSizes, ModelTrustedNodesInfo, ModelPerformanceSettings
+
+  2. src/omnibase_core/models/operations/model_workflow_payload.py
+     Classes: 11, Enums: 0
+     Classes: ModelWorkflowExecutionContext, ModelWorkflowInputParameters, ModelWorkflowConfiguration, ModelConditionalWorkflowContext, ModelLoopWorkflowContext, ModelWorkflowDataBase, ModelSequentialWorkflowData, ModelParallelWorkflowData, ModelConditionalWorkflowData, ModelLoopWorkflowData, ModelWorkflowPayload
+
+  3. src/omnibase_core/models/operations/model_event_payload.py
+     Classes: 10, Enums: 0
+     Classes: ModelEventPayload, ModelEventDataBase, ModelSystemEventData, ModelUserEventData, ModelWorkflowEventData, ModelErrorEventData, ModelEventRoutingInfo, ModelEventContextInfo, ModelEventAttributeInfo, ModelEventSourceInfo
+
+  4. src/omnibase_core/models/core/model_version_manifest.py
+     Classes: 9, Enums: 2
+     Classes: ModelVersionFile, ModelVersionContract, ModelVersionImplementation, ModelVersionTesting, ModelVersionDeployment, ModelVersionSecurity, ModelVersionDocumentation, ModelVersionManifest, ModelConfig, EnumVersionStatus, EnumContractCompliance
+
+  5. src/omnibase_core/models/core/model_generic_yaml.py
+     Classes: 9, Enums: 0
+     Classes: ModelGenericYaml, ModelYamlDictionary, ModelYamlConfiguration, ModelYamlMetadata, ModelYamlRegistry, ModelYamlWithExamples, ModelYamlPolicy, ModelYamlState, ModelYamlList
+
+  6. src/omnibase_core/validation/exceptions.py
+     Classes: 8, Enums: 0
+     Classes: ValidationFrameworkError, ConfigurationError, FileProcessingError, ProtocolParsingError, AuditError, MigrationError, InputValidationError, PathTraversalError
+
+  7. src/omnibase_core/models/core/model_storage_result.py
+     Classes: 8, Enums: 0
+     Classes: ModelStorageResult, ModelStorageListResult, ModelStorageConfiguration, ModelStorageHealthStatus, ModelConfig, ModelConfig, ModelConfig, ModelConfig
+
+  8. src/omnibase_core/models/core/model_tool_manifest.py
+     Classes: 8, Enums: 4
+     Classes: ModelToolVersion, ModelToolDependency, ModelToolCapability, ModelToolIntegration, ModelToolTesting, ModelToolSecurity, ModelToolManifest, ModelConfig, EnumToolStatus, EnumVersionStatus, EnumNodeType, EnumBusinessLogicPattern
+
+  9. src/omnibase_core/types/constraints.py
+     Classes: 7, Enums: 0
+     Classes: Configurable, Executable, Identifiable, ProtocolMetadataProvider, Nameable, Serializable, ProtocolValidatable
+
+ 10. src/omnibase_core/models/operations/model_message_payload.py
+     Classes: 7, Enums: 1
+     Classes: ModelMessageHeaders, ModelMessageContentBase, ModelCommandMessageContent, ModelDataMessageContent, ModelNotificationMessageContent, ModelQueryMessageContent, ModelMessagePayload, EnumMessageType
+
+ 11. src/omnibase_core/models/operations/model_workflow_parameters.py
+     Classes: 7, Enums: 0
+     Classes: ModelBaseWorkflowParameter, ModelWorkflowConfigParameter, ModelExecutionSettingParameter, ModelTimeoutSettingParameter, ModelResourceLimitParameter, ModelEnvironmentVariableParameter, ModelWorkflowParameters
+
+ 12. src/omnibase_core/models/configuration/model_cli_config.py
+     Classes: 6, Enums: 0
+     Classes: ModelTierConfig, ModelOutputConfig, ModelAPIConfig, ModelDatabaseConfig, ModelMonitoringConfig, ModelCLIConfig
+
+ 13. src/omnibase_core/models/core/model_group_manifest.py
+     Classes: 6, Enums: 2
+     Classes: ModelGroupServiceEndpoint, ModelGroupServiceConfiguration, ModelGroupDependency, ModelGroupTool, ModelGroupManifest, ModelConfig, EnumSecurityProfile, EnumGroupStatus
+
+ 14. src/omnibase_core/models/core/model_onex_reply.py
+     Classes: 6, Enums: 1
+     Classes: ModelOnexErrorDetails, ModelOnexPerformanceMetrics, ModelOnexReply, ModelConfig, ModelConfig, ModelConfig, EnumOnexReplyStatus
+
+ 15. src/omnibase_core/models/operations/model_computation_output_data.py
+     Classes: 6, Enums: 1
+     Classes: ModelComputationOutputBase, ModelNumericComputationOutput, ModelTextComputationOutput, ModelBinaryComputationOutput, ModelStructuredComputationOutput, ModelComputationOutputData, EnumComputationType
+
+ 16. src/omnibase_core/mixins/mixin_fail_fast.py
+     Classes: 5, Enums: 0
+     Classes: FailFastError, ValidationFailedError, DependencyFailedError, ContractViolationError, MixinFailFast
+
+ 17. src/omnibase_core/models/core/model_state_transition.py
+     Classes: 5, Enums: 1
+     Classes: ModelStateTransitionCondition, ModelSimpleTransition, ModelToolBasedTransition, ModelConditionalTransition, ModelStateTransition, EnumTransitionType
+
+ 18. src/omnibase_core/models/core/model_hub_contract_config.py
+     Classes: 5, Enums: 2
+     Classes: ModelHubHttpEndpoint, ModelHubWebSocketEndpoint, ModelHubServiceConfiguration, ModelHubConfiguration, ModelUnifiedHubContract, EnumHubCapability, EnumCoordinationMode
+
+ 19. src/omnibase_core/models/config/model_node_configuration.py
+     Classes: 5, Enums: 0
+     Classes: ModelSecurityConfig, ModelTimeoutConfig, ModelPerformanceConfig, ModelBusinessLogicConfig, ModelNodeConfiguration
+
+ 20. src/omnibase_core/models/security/model_security_summary.py
+     Classes: 5, Enums: 0
+     Classes: ModelComplianceSummary, ModelAuthorizationSummary, ModelSignatureChainSummary, ModelSecurityEventSummary, ModelSecuritySummary
+
+ 21. src/omnibase_core/types/typed_dict_factory_kwargs.py
+     Classes: 4, Enums: 0
+     Classes: TypedDictExecutionParams, TypedDictMetadataParams, TypedDictMessageParams, TypedDictFactoryKwargs
+
+ 22. src/omnibase_core/validation/patterns.py
+     Classes: 4, Enums: 0
+     Classes: PatternChecker, PydanticPatternChecker, NamingConventionChecker, GenericPatternChecker
+
+ 23. src/omnibase_core/validation/migration_types.py
+     Classes: 4, Enums: 0
+     Classes: TypedDictMigrationConflictBaseDict, TypedDictMigrationNameConflictDict, TypedDictMigrationDuplicateConflictDict, TypedDictMigrationStepDict
+
+ 24. src/omnibase_core/models/configuration/model_agent_config.py
+     Classes: 4, Enums: 0
+     Classes: ModelAgentPermissions, ModelAgentSafety, ModelAgentOnexSettings, ModelAgentConfig
+
+ 25. src/omnibase_core/models/core/model_onex_security_context.py
+     Classes: 4, Enums: 3
+     Classes: ModelOnexAuditEvent, ModelOnexSecurityContext, ModelConfig, ModelConfig, EnumSecurityProfile, EnumAuthenticationMethod, EnumDataClassification
+
+ 26. src/omnibase_core/models/core/model_container_instance.py
+     Classes: 4, Enums: 0
+     Classes: ModelServiceRegistration, ModelProtocolRegistration, ModelContainerInstance, ModelConfig
+
+ 27. src/omnibase_core/models/security/model_masked_data.py
+     Classes: 4, Enums: 0
+     Classes: ModelMaskedDataDict, ModelMaskedDataList, ModelMaskedData, ModelConfig
+
+ 28. src/omnibase_core/models/nodes/model_node_core_metadata.py
+     Classes: 4, Enums: 0
+     Classes: ModelNodeCoreMetadata, ModelNodeStatusActive, ModelNodeStatusMaintenance, ModelNodeStatusError
+
+ 29. src/omnibase_core/models/operations/model_effect_result.py
+     Classes: 4, Enums: 0
+     Classes: ModelEffectResultDict, ModelEffectResultBool, ModelEffectResultStr, ModelEffectResultList
+
+ 30. src/omnibase_core/models/container/model_base_model_onex_container.py
+     Classes: 4, Enums: 0
+     Classes: _BaseModelONEXContainer, ModelEnhancedLogger, ModelWorkflowFactory, ModelWorkflowCoordinator
+
+ 31. src/omnibase_core/models/common/model_typed_value.py
+     Classes: 4, Enums: 0
+     Classes: ModelProtocolJsonSerializable, ModelProtocolValidatable, ModelValueContainer, ModelTypedMapping
+
+ 32. src/omnibase_core/models/service/model_docker_deploy_config.py
+     Classes: 4, Enums: 0
+     Classes: ModelDockerResourceLimits, ModelDockerResourceReservations, ModelDockerResources, ModelDockerDeployConfig
+
+ 33. src/omnibase_core/models/service/model_docker_compose_generator.py
+     Classes: 4, Enums: 1
+     Classes: ModelDockerComposeConfig, ModelServiceDependency, ModelComposeServiceDefinition, ModelDockerComposeGenerator, EnumServiceTier
+
+ 34. src/omnibase_core/types/core_types.py
+     Classes: 3, Enums: 0
+     Classes: BasicErrorContext, ProtocolErrorContext, ProtocolSchemaValue
+
+ 35. src/omnibase_core/utils/util_bootstrap.py
+     Classes: 3, Enums: 0
+     Classes: ServiceMinimalLogging, ToolLoggerCodeBlock, ServiceLogging
+
+ 36. src/omnibase_core/errors/error_codes.py
+     Classes: 3, Enums: 2
+     Classes: ModelCoreErrorCode, ModelOnexError, ModelRegistryErrorCode, EnumCLIExitCode, EnumOnexErrorCode
+
+ 37. src/omnibase_core/validation/validation_utils.py
+     Classes: 3, Enums: 0
+     Classes: ValidationMetadataType, ValidationResult, DuplicationInfo
+
+ 38. src/omnibase_core/models/core/model_core_errors.py
+     Classes: 3, Enums: 2
+     Classes: ModelCoreErrorCode, ModelRegistryErrorCode, ModelRegistryErrorModel, EnumCLIExitCode, EnumOnexErrorCode
+
+ 39. src/omnibase_core/models/core/model_agent_status.py
+     Classes: 3, Enums: 1
+     Classes: ModelResourceMetrics, ModelAgentActivity, ModelAgentStatus, EnumAgentStatusType
+
+ 40. src/omnibase_core/models/core/model_agent_health_status.py
+     Classes: 3, Enums: 1
+     Classes: ModelHealthCheck, ModelSystemMetrics, ModelAgentHealthStatus, EnumHealthStatusType
+
+ 41. src/omnibase_core/models/core/model_generic_contract.py
+     Classes: 3, Enums: 0
+     Classes: ModelContractMetadata, ModelGenericContract, ModelConfig
+
+ 42. src/omnibase_core/models/security/model_signature_verification_result.py
+     Classes: 3, Enums: 0
+     Classes: ModelChainValidation, ModelPolicyValidation, ModelSignatureVerificationResult
+
+ 43. src/omnibase_core/models/security/model_secure_event_envelope.py
+     Classes: 3, Enums: 0
+     Classes: ModelEncryptionMetadata, ModelComplianceMetadata, ModelSecureEventEnvelope
+
+ 44. src/omnibase_core/models/security/model_evaluation_models.py
+     Classes: 3, Enums: 0
+     Classes: ModelSignatureEvaluation, ModelComplianceEvaluation, ModelAuthorizationEvaluation
+
+ 45. src/omnibase_core/models/security/model_sensitive_info.py
+     Classes: 3, Enums: 1
+     Classes: ModelDetectionPattern, ModelDetectionRuleSet, ModelDetectionConfiguration, EnumLanguageCode
+
+ 46. src/omnibase_core/models/security/model_rule_condition.py
+     Classes: 3, Enums: 0
+     Classes: ModelRuleConditionValue, ModelRuleCondition, ModelConfig
+
+ 47. src/omnibase_core/models/nodes/model_function_node_metadata.py
+     Classes: 3, Enums: 0
+     Classes: ModelDocumentationSummaryFiltered, ModelFunctionMetadataSummary, ModelFunctionNodeMetadata
+
+ 48. src/omnibase_core/models/contracts/model_fast_imports.py
+     Classes: 3, Enums: 0
+     Classes: ModelPerformanceMetrics, ModelFastContractFactory, ModelPerformanceMonitor
+
+ 49. src/omnibase_core/models/utils/model_subcontract_constraint_validator.py
+     Classes: 3, Enums: 0
+     Classes: ModelContractData, TypedDictNodeRuleStructure, ModelSubcontractConstraintValidator
+
+ 50. src/omnibase_core/models/common/model_validation_result.py
+     Classes: 3, Enums: 0
+     Classes: ModelValidationIssue, ModelValidationMetadata, ModelValidationResult
+
+ 51. src/omnibase_core/models/metadata/model_input_state.py
+     Classes: 3, Enums: 0
+     Classes: ModelInputStateFieldsType, ModelInputStateSourceType, ModelInputState
+
+ 52. src/omnibase_core/models/validation/model_schema.py
+     Classes: 3, Enums: 0
+     Classes: ModelSchemaPropertiesModel, ModelRequiredFieldsModel, ModelSchema
+
+ 53. src/omnibase_core/types/typed_dict_collection_kwargs.py
+     Classes: 2, Enums: 0
+     Classes: TypedDictCollectionCreateKwargs, TypedDictCollectionFromItemsKwargs
+
+ 54. src/omnibase_core/mixins/mixin_registry_injection.py
+     Classes: 2, Enums: 0
+     Classes: ProtocolRegistryAware, MixinRegistryInjection
+
+ 55. src/omnibase_core/mixins/mixin_service_registry.py
+     Classes: 2, Enums: 0
+     Classes: MixinServiceRegistryEntry, MixinServiceRegistry
+
+ 56. src/omnibase_core/mixins/mixin_lazy_evaluation.py
+     Classes: 2, Enums: 0
+     Classes: MixinLazyValue, MixinLazyEvaluation
+
+ 57. src/omnibase_core/mixins/mixin_yaml_serialization.py
+     Classes: 2, Enums: 0
+     Classes: MixinYAMLSerialization, HasModelDump
+
+ 58. src/omnibase_core/mixins/mixin_event_driven_node.py
+     Classes: 2, Enums: 0
+     Classes: MixinEventDrivenNode, ProtocolEventDrivenNode
+
+ 59. src/omnibase_core/mixins/mixin_introspection_publisher.py
+     Classes: 2, Enums: 0
+     Classes: MixinNodeIntrospectionData, MixinIntrospectionPublisher
+
+ 60. src/omnibase_core/mixins/mixin_hybrid_execution.py
+     Classes: 2, Enums: 0
+     Classes: MixinExecutionMode, MixinHybridExecution
+
+ 61. src/omnibase_core/utils/model_field_converter.py
+     Classes: 2, Enums: 0
+     Classes: FieldConverter, ModelFieldConverterRegistry
+
+ 62. src/omnibase_core/validation/types.py
+     Classes: 2, Enums: 0
+     Classes: ModelUnionPattern, UnionUsageChecker
+
+ 63. src/omnibase_core/validation/cli.py
+     Classes: 2, Enums: 0
+     Classes: ValidatorInfo, ModelValidationSuite
+
+ 64. src/omnibase_core/models/configuration/model_generic_connection_config.py
+     Classes: 2, Enums: 0
+     Classes: ModelGenericConnectionConfig, ModelConfig
+
+ 65. src/omnibase_core/models/configuration/model_load_balancing_algorithm.py
+     Classes: 2, Enums: 0
+     Classes: ModelLoadBalancingParameters, ModelLoadBalancingAlgorithm
+
+ 66. src/omnibase_core/models/configuration/model_metadata.py
+     Classes: 2, Enums: 0
+     Classes: ModelOnexMetadata, ModelMetadata
+
+ 67. src/omnibase_core/models/configuration/model_log_filter.py
+     Classes: 2, Enums: 0
+     Classes: ModelLogFilterConfig, ModelLogFilter
+
+ 68. src/omnibase_core/models/configuration/model_json_data.py
+     Classes: 2, Enums: 1
+     Classes: ModelJsonField, ModelJsonData, EnumJsonValueType
+
+ 69. src/omnibase_core/models/configuration/model_session_affinity.py
+     Classes: 2, Enums: 0
+     Classes: ModelSessionAffinityMetadata, ModelSessionAffinity
+
+ 70. src/omnibase_core/models/configuration/model_log_destination.py
+     Classes: 2, Enums: 0
+     Classes: ModelLogDestinationConfig, ModelLogDestination
+
+ 71. src/omnibase_core/models/tools/model_tool_arguments.py
+     Classes: 2, Enums: 0
+     Classes: ModelToolArguments, ModelConfig
+
+ 72. src/omnibase_core/models/tools/model_tool_input_data.py
+     Classes: 2, Enums: 0
+     Classes: ModelToolInputData, ModelConfig
+
+ 73. src/omnibase_core/models/core/model_onex_input_state.py
+     Classes: 2, Enums: 0
+     Classes: ModelOnexInputState, ModelConfig
+
+ 74. src/omnibase_core/models/core/model_tool_implementation.py
+     Classes: 2, Enums: 0
+     Classes: ModelToolImplementation, ModelConfig
+
+ 75. src/omnibase_core/models/core/model_json_schema.py
+     Classes: 2, Enums: 0
+     Classes: ModelJsonSchema, ModelConfig
+
+ 76. src/omnibase_core/models/core/model_contract_dependency.py
+     Classes: 2, Enums: 0
+     Classes: ModelContractDependency, ModelContractDependencies
+
+ 77. src/omnibase_core/models/core/model_fallback_strategy.py
+     Classes: 2, Enums: 1
+     Classes: ModelFallbackMetadata, ModelFallbackStrategy, EnumFallbackStrategyType
+
+ 78. src/omnibase_core/models/core/model_introspection_runtime_info.py
+     Classes: 2, Enums: 0
+     Classes: ModelIntrospectionRuntimeInfo, ModelConfig
+
+ 79. src/omnibase_core/models/core/model_node_information.py
+     Classes: 2, Enums: 0
+     Classes: ModelNodeConfiguration, ModelNodeInformation
+
+ 80. src/omnibase_core/models/core/model_usage_example.py
+     Classes: 2, Enums: 0
+     Classes: ModelUsageExample, ModelConfig
+
+ 81. src/omnibase_core/models/core/model_introspection_result.py
+     Classes: 2, Enums: 0
+     Classes: ModelIntrospectionResult, ModelConfig
+
+ 82. src/omnibase_core/models/core/model_introspection_node_info.py
+     Classes: 2, Enums: 0
+     Classes: ModelIntrospectionNodeInfo, ModelConfig
+
+ 83. src/omnibase_core/models/core/model_introspection_contract_info.py
+     Classes: 2, Enums: 0
+     Classes: ModelIntrospectionContractInfo, ModelConfig
+
+ 84. src/omnibase_core/models/core/model_tool_health_metadata.py
+     Classes: 2, Enums: 0
+     Classes: ModelToolHealthMetadata, ModelConfig
+
+ 85. src/omnibase_core/models/core/model_state_update.py
+     Classes: 2, Enums: 1
+     Classes: ModelStateFieldUpdate, ModelStateUpdate, EnumStateUpdateOperation
+
+ 86. src/omnibase_core/models/core/model_cli_execution.py
+     Classes: 2, Enums: 0
+     Classes: ModelExecutionMetadata, ModelCliExecution
+
+ 87. src/omnibase_core/models/core/model_base_state.py
+     Classes: 2, Enums: 0
+     Classes: ModelBaseInputState, ModelBaseOutputState
+
+ 88. src/omnibase_core/models/core/model_introspection_metadata.py
+     Classes: 2, Enums: 0
+     Classes: ModelIntrospectionMetadata, ModelConfig
+
+ 89. src/omnibase_core/models/core/model_canonicalization_policy.py
+     Classes: 2, Enums: 0
+     Classes: ModelCanonicalizationPolicy, ModelConfig
+
+ 90. src/omnibase_core/models/core/model_checkpoint_data.py
+     Classes: 2, Enums: 0
+     Classes: ModelCheckpointData, ModelConfig
+
+ 91. src/omnibase_core/models/core/model_node_execution_result.py
+     Classes: 2, Enums: 0
+     Classes: ModelExecutionData, ModelNodeExecutionResult
+
+ 92. src/omnibase_core/models/core/model_cli_tool_execution_input.py
+     Classes: 2, Enums: 0
+     Classes: ModelCliToolExecutionInput, ModelConfig
+
+ 93. src/omnibase_core/models/core/model_connection_info.py
+     Classes: 2, Enums: 0
+     Classes: ModelCustomConnectionProperties, ModelConnectionInfo
+
+ 94. src/omnibase_core/models/core/model_execution_context.py
+     Classes: 2, Enums: 0
+     Classes: ModelContextMetadata, ModelExecutionContext
+
+ 95. src/omnibase_core/models/core/model_cli_discovery_stats.py
+     Classes: 2, Enums: 0
+     Classes: ModelCliDiscoveryStats, ModelConfig
+
+ 96. src/omnibase_core/models/core/model_introspection_validation.py
+     Classes: 2, Enums: 0
+     Classes: ModelIntrospectionValidation, ModelConfig
+
+ 97. src/omnibase_core/models/core/model_storage_credentials.py
+     Classes: 2, Enums: 0
+     Classes: ModelStorageCredentials, ModelConfig
+
+ 98. src/omnibase_core/models/core/model_service.py
+     Classes: 2, Enums: 0
+     Classes: ModelService, ModelConfig
+
+ 99. src/omnibase_core/models/core/model_workflow_parameter.py
+     Classes: 2, Enums: 0
+     Classes: ModelWorkflowParameter, ModelConfig
+
+100. src/omnibase_core/models/core/model_service_resolution_result.py
+     Classes: 2, Enums: 0
+     Classes: ModelServiceResolutionResult, ModelConfig
+
+101. src/omnibase_core/models/core/model_service_discovery_manager.py
+     Classes: 2, Enums: 0
+     Classes: ModelServiceDiscoveryManager, ModelConfig
+
+102. src/omnibase_core/models/core/model_tool_health_status.py
+     Classes: 2, Enums: 0
+     Classes: ModelToolHealthStatus, ModelConfig
+
+103. src/omnibase_core/models/core/model_logging_config.py
+     Classes: 2, Enums: 0
+     Classes: ModelEnumLogFormat, ModelLoggingConfig
+
+104. src/omnibase_core/models/core/model_discovery_request_response.py
+     Classes: 2, Enums: 0
+     Classes: ModelDiscoveryRequestModelMetadata, ModelDiscoveryResponseModelMetadata
+
+105. src/omnibase_core/models/core/model_cli_execution_result.py
+     Classes: 2, Enums: 0
+     Classes: ModelCliExecutionResult, ModelConfig
+
+106. src/omnibase_core/models/core/model_schema.py
+     Classes: 2, Enums: 0
+     Classes: ModelSchema, ModelTypedProperties
+
+107. src/omnibase_core/models/security/model_trust_policy.py
+     Classes: 2, Enums: 0
+     Classes: ModelPolicyRule, ModelTrustPolicy
+
+108. src/omnibase_core/models/security/model_detection_result.py
+     Classes: 2, Enums: 3
+     Classes: ModelDetectionMatch, ModelDetectionResult, EnumSensitivityLevel, EnumDetectionType, EnumDetectionMethod
+
+109. src/omnibase_core/models/security/model_policy_evaluation_details.py
+     Classes: 2, Enums: 0
+     Classes: ModelPolicyEvaluationDetails, ModelConfig
+
+110. src/omnibase_core/models/security/model_security_event.py
+     Classes: 2, Enums: 0
+     Classes: ModelSecurityEvent, ModelSecurityEventCollection
+
+111. src/omnibase_core/models/security/model_node_signature.py
+     Classes: 2, Enums: 2
+     Classes: ModelCertificateInfo, ModelNodeSignature, EnumSignatureAlgorithm, EnumNodeOperation
+
+112. src/omnibase_core/models/security/model_mcp_security_summary.py
+     Classes: 2, Enums: 0
+     Classes: ModelMCPSecuritySummary, ModelConfig
+
+113. src/omnibase_core/models/security/model_credentials_analysis.py
+     Classes: 2, Enums: 0
+     Classes: ModelManagerAssessment, ModelCredentialsAnalysis
+
+114. src/omnibase_core/models/security/model_security_policy_data.py
+     Classes: 2, Enums: 0
+     Classes: ModelSecurityPolicyData, ModelConfig
+
+115. src/omnibase_core/models/security/model_secret_management.py
+     Classes: 2, Enums: 0
+     Classes: ModelSecretBackendEnumCompat, ModelSecretManagerCompat
+
+116. src/omnibase_core/models/nodes/model_node_configuration_value.py
+     Classes: 2, Enums: 0
+     Classes: ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue
+
+117. src/omnibase_core/models/nodes/model_function_deprecation_info.py
+     Classes: 2, Enums: 0
+     Classes: ModelDeprecationSummary, ModelFunctionDeprecationInfo
+
+118. src/omnibase_core/models/nodes/model_node_core_info.py
+     Classes: 2, Enums: 0
+     Classes: ModelCoreSummary, ModelNodeCoreInfo
+
+119. src/omnibase_core/models/discovery/model_custom_metrics.py
+     Classes: 2, Enums: 0
+     Classes: ModelMetricValue, ModelCustomMetrics
+
+120. src/omnibase_core/models/discovery/model_tool_discovery_response.py
+     Classes: 2, Enums: 0
+     Classes: ModelDiscoveredTool, ModelToolDiscoveryResponse
+
+121. src/omnibase_core/models/discovery/model_node_health_event.py
+     Classes: 2, Enums: 0
+     Classes: ModelHealthMetrics, ModelNodeHealthEvent
+
+122. src/omnibase_core/models/discovery/model_output_metadata.py
+     Classes: 2, Enums: 0
+     Classes: ModelOutputMetadataItem, ModelOutputMetadata
+
+123. src/omnibase_core/models/discovery/model_tool_discovery_request.py
+     Classes: 2, Enums: 0
+     Classes: ModelDiscoveryFilters, ModelToolDiscoveryRequest
+
+124. src/omnibase_core/models/discovery/model_tool_parameters.py
+     Classes: 2, Enums: 0
+     Classes: ModelToolParameter, ModelToolParameters
+
+125. src/omnibase_core/models/discovery/model_node_introspection_event.py
+     Classes: 2, Enums: 0
+     Classes: ModelNodeCapabilities, ModelNodeIntrospectionEvent
+
+126. src/omnibase_core/models/discovery/model_hub_consul_registration_io.py
+     Classes: 2, Enums: 0
+     Classes: ModelHubConsulRegistrationInput, ModelHubConsulRegistrationOutput
+
+127. src/omnibase_core/models/workflows/model_workflow_input_state.py
+     Classes: 2, Enums: 0
+     Classes: ModelWorkflowInputState, ModelConfig
+
+128. src/omnibase_core/models/utils/model_validation_rules_converter.py
+     Classes: 2, Enums: 0
+     Classes: ModelValidationRulesInputValue, ModelValidationRulesConverter
+
+129. src/omnibase_core/models/operations/model_reducer_output.py
+     Classes: 2, Enums: 0
+     Classes: ModelReducerOutput, ModelConfig
+
+130. src/omnibase_core/models/operations/model_operation_parameters_base.py
+     Classes: 2, Enums: 0
+     Classes: ModelOperationParameterValue, ModelOperationParameters
+
+131. src/omnibase_core/models/operations/model_effect_input.py
+     Classes: 2, Enums: 0
+     Classes: ModelEffectInput, ModelConfig
+
+132. src/omnibase_core/models/operations/model_reducer_input.py
+     Classes: 2, Enums: 0
+     Classes: ModelReducerInput, ModelConfig
+
+133. src/omnibase_core/models/operations/model_effect_output.py
+     Classes: 2, Enums: 0
+     Classes: ModelEffectOutput, ModelConfig
+
+134. src/omnibase_core/models/service/model_workflow_list_result.py
+     Classes: 2, Enums: 0
+     Classes: ModelWorkflow, ModelWorkflowListResult
+
+135. src/omnibase_core/models/service/model_docker_template_generator.py
+     Classes: 2, Enums: 0
+     Classes: ModelDockerTemplateGenerator, ModelKubernetesTemplateGenerator
+
+136. src/omnibase_core/models/events/model_event_envelope.py
+     Classes: 2, Enums: 0
+     Classes: ModelEventEnvelope, ModelConfig
+
+137. src/omnibase_core/models/metadata/model_version_union.py
+     Classes: 2, Enums: 0
+     Classes: TypedDictVersionDict, ModelVersionUnion
+
+138. src/omnibase_core/models/metadata/model_generic_metadata.py
+     Classes: 2, Enums: 0
+     Classes: TypedDictGenericMetadataDict, ModelGenericMetadata
+
+139. src/omnibase_core/models/metadata/model_metadata_usage_metrics.py
+     Classes: 2, Enums: 0
+     Classes: TypedDictUsageMetadataDict, ModelMetadataUsageMetrics
+
+140. src/omnibase_core/models/metadata/model_metadata_node_analytics.py
+     Classes: 2, Enums: 0
+     Classes: TypedDictMetadataDict, ModelMetadataNodeAnalytics
+
+141. src/omnibase_core/models/logging/model_log_node_identifier.py
+     Classes: 2, Enums: 0
+     Classes: ModelLogNodeIdentifierUUID, ModelLogNodeIdentifierString
+
+142. src/omnibase_core/models/contracts/subcontracts/model_event_routing.py
+     Classes: 2, Enums: 0
+     Classes: ModelRetryPolicy, ModelEventRouting
+
+143. src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py
+     Classes: 2, Enums: 0
+     Classes: ModelActionConfigValue, ModelFSMTransitionAction
+
+144. src/omnibase_core/models/core/model_generic_value.py
+     Classes: 1, Enums: 1
+     Classes: ModelGenericValue, EnumValueType
+
+145. src/omnibase_core/models/core/model_metadata_tool_info.py
+     Classes: 1, Enums: 3
+     Classes: ModelMetadataToolInfo, EnumMetadataToolType, EnumMetadataToolStatus, EnumMetadataToolComplexity
+
+146. src/omnibase_core/models/core/model_business_impact.py
+     Classes: 1, Enums: 1
+     Classes: ModelBusinessImpact, EnumImpactSeverity
+
+147. src/omnibase_core/models/core/model_tool_metadata.py
+     Classes: 1, Enums: 4
+     Classes: ModelToolMetadata, EnumToolRegistrationStatus, EnumToolCapabilityLevel, EnumToolCategory, EnumToolCompatibilityMode
+
+148. src/omnibase_core/models/core/model_missing_tool.py
+     Classes: 1, Enums: 3
+     Classes: ModelMissingTool, EnumToolMissingReason, EnumToolCriticality, EnumToolCategory
+
+149. src/omnibase_core/models/core/model_audit_entry.py
+     Classes: 1, Enums: 1
+     Classes: ModelAuditEntry, EnumAuditAction
+
+150. src/omnibase_core/models/core/model_tree_sync_result.py
+     Classes: 1, Enums: 1
+     Classes: ModelTreeSyncResult, EnumTreeSyncStatus
+
+151. src/omnibase_core/models/core/model_function_tool.py
+     Classes: 1, Enums: 2
+     Classes: ModelFunctionTool, EnumToolType, EnumFunctionLanguage
+
+152. src/omnibase_core/models/core/model_registry_configuration.py
+     Classes: 1, Enums: 1
+     Classes: ModelRegistryConfiguration, EnumRegistryType
+
+153. src/omnibase_core/models/security/model_signature_chain.py
+     Classes: 1, Enums: 3
+     Classes: ModelSignatureChain, EnumChainValidationStatus, EnumTrustLevel, EnumComplianceFramework
+
+154. src/omnibase_core/models/health/model_tool_health.py
+     Classes: 1, Enums: 2
+     Classes: ModelToolHealth, EnumToolHealthStatus, EnumToolType
+
+155. src/omnibase_core/models/health/model_health_check.py
+     Classes: 1, Enums: 1
+     Classes: ModelHealthCheck, EnumHealthCheckType
+
+156. src/omnibase_core/models/discovery/model_event_descriptor.py
+     Classes: 1, Enums: 3
+     Classes: ModelEventDescriptor, EnumEventType, EnumServiceStatus, EnumDiscoveryPhase
+
+157. src/omnibase_core/models/registry/model_registry_health_report.py
+     Classes: 1, Enums: 1
+     Classes: ModelRegistryHealthReport, EnumRegistryHealthStatus
+
+158. src/omnibase_core/models/service/model_service_health.py
+     Classes: 1, Enums: 2
+     Classes: ModelServiceHealth, EnumServiceHealthStatus, EnumServiceType
+
+159. src/omnibase_core/models/service/model_service_type.py
+     Classes: 1, Enums: 1
+     Classes: ModelServiceType, EnumServiceTypeCategory

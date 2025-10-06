@@ -1,3 +1,7 @@
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 """
 OmniBase Core Models
 
@@ -12,6 +16,7 @@ from . import (
     connections,
     contracts,
     core,
+    events,
     infrastructure,
     metadata,
     nodes,
@@ -39,6 +44,7 @@ __all__ = [
     "connections",
     "contracts",
     "core",
+    "events",
     "infrastructure",
     "metadata",
     "nodes",

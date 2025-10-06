@@ -1,3 +1,8 @@
+import uuid
+from typing import Any, List
+
+from pydantic import Field
+
 """
 Coordination Result Model - ONEX Standards Compliant.
 

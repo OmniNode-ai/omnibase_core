@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Connection Authentication Model.
 
@@ -5,7 +13,6 @@ Authentication configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
@@ -13,7 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, SecretStr, field_serializer
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelConnectionAuth(BaseModel):
@@ -62,13 +69,13 @@ class ModelConnectionAuth(BaseModel):
         """Validate authentication configuration is complete."""
         if self.auth_type == EnumAuthType.BASIC:
             return bool(self.user_display_name and self.password)
-        if self.auth_type == EnumAuthType.BEARER:
+        elif self.auth_type == EnumAuthType.BEARER:
             return bool(self.token)
-        if self.auth_type == EnumAuthType.API_KEY:
+        elif self.auth_type == EnumAuthType.API_KEY_HEADER:
             return bool(self.api_key)
-        if self.auth_type is None:
-            return True  # No authentication required
-        return False
+        else:
+            # None or NONE - no authentication required
+            return True
 
     def has_credentials(self) -> bool:
         """Check if any credentials are configured."""
@@ -80,17 +87,15 @@ class ModelConnectionAuth(BaseModel):
         """Generate authentication header."""
         if self.auth_type == EnumAuthType.BEARER and self.token:
             return {"Authorization": f"Bearer {self.token.get_secret_value()}"}
-        if self.auth_type == EnumAuthType.API_KEY and self.api_key:
+        if self.auth_type == EnumAuthType.API_KEY_HEADER and self.api_key:
             return {"X-API-Key": self.api_key.get_secret_value()}
         return None
 
     def is_secure_auth(self) -> bool:
         """Check if authentication method is secure."""
         return self.auth_type in {
-            EnumAuthType.OAUTH2,
-            EnumAuthType.JWT,
-            EnumAuthType.MTLS,
             EnumAuthType.BEARER,
+            EnumAuthType.API_KEY_HEADER,
         }
 
     def clear_credentials(self) -> None:
@@ -173,7 +178,7 @@ class ModelConnectionAuth(BaseModel):
     ) -> ModelConnectionAuth:
         """Create API key authentication."""
         return cls(
-            auth_type=EnumAuthType.API_KEY,
+            auth_type=EnumAuthType.API_KEY_HEADER,
             user_id=None,
             user_display_name=None,
             password=None,
@@ -209,9 +214,9 @@ class ModelConnectionAuth(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -221,13 +226,13 @@ class ModelConnectionAuth(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

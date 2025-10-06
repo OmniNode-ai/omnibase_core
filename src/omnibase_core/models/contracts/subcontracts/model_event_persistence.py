@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Event Persistence Model - ONEX Standards Compliant.
 

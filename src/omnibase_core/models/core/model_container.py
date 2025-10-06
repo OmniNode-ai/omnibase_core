@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, Callable, Generic, Optional, TypeVar
+
+from pydantic import Field
+
 """
 Generic container pattern for single-value models with metadata.
 
@@ -6,16 +12,17 @@ specialized single-value containers across the codebase, reducing
 repetitive patterns while maintaining type safety.
 """
 
-from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar
+
+from omnibase_core.errors.error_codes import ModelOnexError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable as CallableABC
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -154,7 +161,7 @@ class ModelContainer(BaseModel, Generic[T]):
             New container with transformed value
 
         Raises:
-            OnexError: If the mapper function fails for any reason
+            ModelOnexError: If the mapper function fails for any reason
         """
         try:
             new_value = mapper(self.value)
@@ -166,8 +173,8 @@ class ModelContainer(BaseModel, Generic[T]):
                 validation_notes="Value transformed, requires re-validation",
             )
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -196,7 +203,7 @@ class ModelContainer(BaseModel, Generic[T]):
             True if validation passes
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         try:
             is_valid = validator(self.value)
@@ -206,8 +213,8 @@ class ModelContainer(BaseModel, Generic[T]):
                 return True
             self.is_validated = False
             self.validation_notes = error_message
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=error_message,
                 details=ModelErrorContext.with_context(
                     {
@@ -219,10 +226,10 @@ class ModelContainer(BaseModel, Generic[T]):
                 ),
             )
         except Exception as e:
-            if isinstance(e, OnexError):
+            if isinstance(e, ModelOnexError):
                 raise
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation error: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -302,13 +309,13 @@ class ModelContainer(BaseModel, Generic[T]):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -318,8 +325,8 @@ class ModelContainer(BaseModel, Generic[T]):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

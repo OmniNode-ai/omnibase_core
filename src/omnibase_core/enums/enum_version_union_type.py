@@ -1,10 +1,15 @@
+from __future__ import annotations
+
+from typing import Any, Dict, Union
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Version Union Type Enum.
 
 Strongly typed enumeration for version union type discriminators.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -36,7 +41,7 @@ class EnumVersionUnionType(str, Enum):
 
     @classmethod
     def is_version_dict(cls, version_type: EnumVersionUnionType) -> bool:
-        """Check if the version type represents a version dictionary."""
+        """Check if the version type represents a version dict[str, Any]ionary."""
         return version_type == cls.VERSION_DICT
 
     @classmethod

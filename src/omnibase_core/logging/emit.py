@@ -1,3 +1,7 @@
+import uuid
+from datetime import datetime
+from typing import Callable, Dict, TypeVar
+
 """
 Core emit_log_event utility for ONEX structured logging.
 
@@ -10,13 +14,13 @@ Python's logging module to maintain architectural purity and centralized process
 
 import inspect
 import os
-from collections.abc import Callable
+from collections.abc import Callable as CallableABC
 from datetime import UTC, datetime
-from typing import Any, TypeVar
+from typing import Any, Callable, Dict, TypeVar
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.models.core.model_log_context import LogModelContext
+from omnibase_core.models.core.model_log_context import ModelLogContext
 
 # Type aliases for logging infrastructure (BOUNDARY_LAYER_EXCEPTION)
 # These types support logging resilience by allowing flexible identifiers
@@ -466,13 +470,13 @@ def _sanitize_data_dict(
     data: dict[str, LogDataValue | None],
 ) -> dict[str, LogDataValue | None]:
     """
-    Sanitize sensitive data in a data dictionary and ensure JSON compatibility.
+    Sanitize sensitive data in a data dict[str, Any]ionary and ensure JSON compatibility.
 
     Args:
         data: Dictionary to sanitize
 
     Returns:
-        Sanitized dictionary with JSON-compatible values
+        Sanitized dict[str, Any]ionary with JSON-compatible values
     """
     if not isinstance(data, dict):
         return data  # type: ignore[unreachable, return-value]
@@ -510,7 +514,7 @@ def _get_or_generate_correlation_id() -> str:
     if correlation_id:
         return correlation_id
 
-    # UUID Architecture: Use centralized UUID service for consistent generation
+    # UUID ModelArchitecture: Use centralized UUID service for consistent generation
     return str(uuid4())[:8]
 
 
@@ -562,21 +566,21 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
         del original_frame
 
 
-def _create_log_context_from_frame() -> LogModelContext:
+def _create_log_context_from_frame() -> ModelLogContext:
     """Create log context from the calling frame."""
     frame = inspect.currentframe()
 
     # Walk up the stack to get the actual caller
     if frame and frame.f_back and frame.f_back.f_back:
         frame = frame.f_back.f_back
-        return LogModelContext(
+        return ModelLogContext(
             calling_function=frame.f_code.co_name,
             calling_module=frame.f_globals.get("__name__", "unknown"),
             calling_line=frame.f_lineno,
             timestamp=datetime.now(UTC).isoformat(),
             node_id=_detect_node_id_from_context(),
         )
-    return LogModelContext(
+    return ModelLogContext(
         calling_function="unknown",
         calling_module="unknown",
         calling_line=0,
@@ -614,7 +618,7 @@ def _route_to_logger_node(
     message: str,
     node_id: LogNodeIdentifier,
     correlation_id: UUID,
-    context: LogModelContext,
+    context: ModelLogContext,
     data: dict[str, LogDataValue | None],
     event_bus: Any | None,
 ) -> None:

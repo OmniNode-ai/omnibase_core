@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+from pydantic import Field
+
 """
 Progress Status Model - ONEX Standards Compliant.
 
 Model for overall workflow progress status in the ONEX workflow coordination system.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -20,10 +26,7 @@ class ModelProgressStatus(BaseModel):
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
     overall_progress_percent: float = Field(
-        ...,
-        description="Overall workflow progress percentage",
-        ge=0.0,
-        le=100.0,
+        ..., description="Overall workflow progress percentage", ge=0.0, le=100.0
     )
 
     current_stage: str = Field(..., description="Current stage of the workflow")
@@ -31,19 +34,15 @@ class ModelProgressStatus(BaseModel):
     stages_completed: int = Field(..., description="Number of stages completed", ge=0)
 
     stages_total: int = Field(
-        ...,
-        description="Total number of stages in the workflow",
-        ge=1,
+        ..., description="Total number of stages in the workflow", ge=1
     )
 
     estimated_completion: datetime | None = Field(
-        default=None,
-        description="Estimated completion time",
+        default=None, description="Estimated completion time"
     )
 
     node_progress: list[ModelNodeProgress] = Field(
-        default_factory=list,
-        description="Progress of individual nodes",
+        default_factory=list, description="Progress of individual nodes"
     )
 
     model_config = {

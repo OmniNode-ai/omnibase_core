@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Numeric value model.
 
@@ -5,7 +11,6 @@ Type-safe numeric value container that replaces int | float unions
 with structured validation and proper type handling.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -13,7 +18,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 # Import all dependencies only when needed to break circular imports
 
@@ -57,11 +62,11 @@ class ModelNumericValue(BaseModel):
         """
         Validate that value is numeric.
 
-        Raises OnexError with VALIDATION_ERROR code for non-numeric values.
+        Raises ModelOnexError with VALIDATION_ERROR code for non-numeric values.
         """
         if not isinstance(v, (int, float)):
             msg = f"Value must be numeric (int or float), got {type(v).__name__}"
-            raise OnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
         return float(v)
 
     @classmethod
@@ -175,7 +180,7 @@ class ModelNumericValue(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

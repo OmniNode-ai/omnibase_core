@@ -1,18 +1,27 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any, Dict, Union
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 """
 Flexible Value Model - Discriminated Union for Mixed Type Values.
 
-Replaces dict | None, list | None, and other mixed-type unions
+Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
 with structured discriminated union pattern for type safety.
 """
-
-from __future__ import annotations
 
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
@@ -26,7 +35,7 @@ class ModelFlexibleValue(BaseModel):
     """
     Discriminated union for values that can be multiple types.
 
-    Replaces lazy Union[str, dict, list, int, etc.] patterns with
+    Replaces lazy Union[str, dict[str, Any], list[Any], int, etc.] patterns with
     structured type safety and proper validation.
     Implements omnibase_spi protocols:
     - Serializable: Data serialization/deserialization
@@ -73,8 +82,8 @@ class ModelFlexibleValue(BaseModel):
         # For "none" type, all values should be None
         if self.value_type == EnumFlexibleValueType.NONE:
             if non_none_count > 0:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="No values should be set when value_type is 'none'",
                     details=ModelErrorContext.with_context(
                         {
@@ -88,8 +97,8 @@ class ModelFlexibleValue(BaseModel):
         else:
             # For other types, exactly one value should be set
             if non_none_count != 1:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"Exactly one value must be set for value_type '{self.value_type}'",
                     details=ModelErrorContext.with_context(
                         {
@@ -107,8 +116,8 @@ class ModelFlexibleValue(BaseModel):
             # Validate that the correct value is set for the type
             expected_value = values_map[self.value_type]
             if expected_value is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"Required value for type '{self.value_type}' is None",
                     details=ModelErrorContext.with_context(
                         {
@@ -168,7 +177,7 @@ class ModelFlexibleValue(BaseModel):
         value: dict[str, ModelSchemaValue],
         source: str | None = None,
     ) -> ModelFlexibleValue:
-        """Create flexible value from dictionary of ModelSchemaValue."""
+        """Create flexible value from dict[str, Any]ionary of ModelSchemaValue."""
         return cls(
             value_type=EnumFlexibleValueType.DICT,
             dict_value=value,
@@ -182,7 +191,7 @@ class ModelFlexibleValue(BaseModel):
         value: dict[str, object],
         source: str | None = None,
     ) -> ModelFlexibleValue:
-        """Create flexible value from raw dictionary, converting to ModelSchemaValue format."""
+        """Create flexible value from raw dict[str, Any]ionary, converting to ModelSchemaValue format."""
         converted_value = {
             key: ModelSchemaValue.from_value(val) for key, val in value.items()
         }
@@ -194,7 +203,7 @@ class ModelFlexibleValue(BaseModel):
         value: list[object],
         source: str | None = None,
     ) -> ModelFlexibleValue:
-        """Create flexible value from list."""
+        """Create flexible value from list[Any]."""
         return cls(
             value_type=EnumFlexibleValueType.LIST,
             list_value=[ModelSchemaValue.from_value(item) for item in value],
@@ -261,14 +270,14 @@ class ModelFlexibleValue(BaseModel):
             return self.uuid_value
         if self.value_type == EnumFlexibleValueType.NONE:
             return None
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            code=ModelCoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown value_type: {self.value_type}",
             details=ModelErrorContext.with_context(
                 {
                     "value_type": ModelSchemaValue.from_value(self.value_type),
                     "supported_types": ModelSchemaValue.from_value(
-                        "string, integer, float, boolean, dict, list, uuid, none",
+                        "string, integer, float, boolean, dict[str, Any], list[Any], uuid, none",
                     ),
                 },
             ),
@@ -281,8 +290,8 @@ class ModelFlexibleValue(BaseModel):
             EnumFlexibleValueType.INTEGER: int,
             EnumFlexibleValueType.FLOAT: float,
             EnumFlexibleValueType.BOOLEAN: bool,
-            EnumFlexibleValueType.DICT: dict,
-            EnumFlexibleValueType.LIST: list,
+            EnumFlexibleValueType.DICT: dict[str, Any],
+            EnumFlexibleValueType.LIST: list[Any],
             EnumFlexibleValueType.UUID: UUID,
             EnumFlexibleValueType.NONE: type(None),
         }
@@ -302,7 +311,7 @@ class ModelFlexibleValue(BaseModel):
         ]
 
     def is_collection(self) -> bool:
-        """Check if the value is a collection type (dict, list)."""
+        """Check if the value is a collection type (dict[str, Any], list[Any])."""
         return self.value_type in [
             EnumFlexibleValueType.DICT,
             EnumFlexibleValueType.LIST,
@@ -351,7 +360,7 @@ class ModelFlexibleValue(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

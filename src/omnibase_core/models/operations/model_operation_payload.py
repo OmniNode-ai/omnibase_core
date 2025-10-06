@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+
 """
 Strongly-typed operation payload structure.
 
@@ -5,159 +14,32 @@ Replaces dict[str, Any] usage in operation payloads with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.errors.error_codes import (
+    ModelCoreErrorCode,
+    ModelOnexError,
+)
+from omnibase_core.models.operations.model_compute_operation_data import (
+    ModelComputeOperationData,
+)
+from omnibase_core.models.operations.model_effect_operation_data import (
+    ModelEffectOperationData,
+)
 from omnibase_core.models.operations.model_execution_metadata import (
     ModelExecutionMetadata,
 )
-
-
-# Structured operation parameters to replace primitive soup patterns (defined first)
-class ModelOperationParametersBase(BaseModel):
-    """Structured base operation parameters."""
-
-    execution_timeout: int = Field(
-        default=30000,
-        description="Execution timeout in milliseconds",
-    )
-    retry_attempts: int = Field(default=3, description="Number of retry attempts")
-    priority_level: str = Field(
-        default="normal",
-        description="Operation priority level",
-    )
-    async_execution: bool = Field(
-        default=False,
-        description="Whether operation executes asynchronously",
-    )
-    validation_enabled: bool = Field(
-        default=True,
-        description="Whether input validation is enabled",
-    )
-    debug_mode: bool = Field(default=False, description="Whether debug mode is enabled")
-    trace_execution: bool = Field(
-        default=False,
-        description="Whether to trace execution steps",
-    )
-    resource_limits: dict[str, str] = Field(
-        default_factory=dict,
-        description="Resource limit specifications",
-    )
-    custom_settings: dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional custom settings",
-    )
-
-
-# ONEX 4-Node Architecture Operation Types - using EnumNodeType from enums package
-
-
-# Discriminated operation data types following ONEX 4-node architecture
-class ModelOperationDataBase(BaseModel):
-    """Base operation data with discriminator."""
-
-    operation_type: EnumNodeType = Field(
-        ...,
-        description="Operation type discriminator",
-    )
-    input_data: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
-        description="Operation input data with proper typing",
-    )
-    output_data: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
-        description="Operation output data with proper typing",
-    )
-    parameters: ModelOperationParametersBase = Field(
-        default_factory=ModelOperationParametersBase,
-        description="Structured operation parameters",
-    )
-
-
-class ModelComputeOperationData(ModelOperationDataBase):
-    """Compute node operation data for business logic and calculations."""
-
-    operation_type: Literal[EnumNodeType.COMPUTE] = Field(
-        default=EnumNodeType.COMPUTE,
-        description="Compute operation type",
-    )
-    algorithm_type: str = Field(..., description="Type of algorithm or computation")
-    computation_resources: dict[str, float] = Field(
-        default_factory=dict,
-        description="Required computation resources",
-    )
-    optimization_hints: dict[str, str] = Field(
-        default_factory=dict,
-        description="Performance optimization hints",
-    )
-    parallel_execution: bool = Field(
-        default=False,
-        description="Whether computation can be parallelized",
-    )
-
-
-class ModelEffectOperationData(ModelOperationDataBase):
-    """Effect node operation data for external interactions."""
-
-    operation_type: Literal[EnumNodeType.EFFECT] = Field(
-        default=EnumNodeType.EFFECT,
-        description="Effect operation type",
-    )
-    target_system: str = Field(..., description="Target external system")
-    interaction_type: str = Field(..., description="Type of external interaction")
-    retry_policy: dict[str, int] = Field(
-        default_factory=dict,
-        description="Retry policy configuration",
-    )
-    side_effect_tracking: bool = Field(
-        default=True,
-        description="Whether to track side effects",
-    )
-
-
-class ModelReducerOperationData(ModelOperationDataBase):
-    """Reducer node operation data for state management and aggregation."""
-
-    operation_type: Literal[EnumNodeType.REDUCER] = Field(
-        default=EnumNodeType.REDUCER,
-        description="Reducer operation type",
-    )
-    aggregation_type: str = Field(..., description="Type of data aggregation")
-    state_key: str = Field(..., description="State key for aggregation")
-    persistence_config: dict[str, str] = Field(
-        default_factory=dict,
-        description="Data persistence configuration",
-    )
-    consistency_level: str = Field(
-        default="eventual",
-        description="Data consistency requirements",
-    )
-
-
-class ModelOrchestratorOperationData(ModelOperationDataBase):
-    """Orchestrator node operation data for workflow coordination."""
-
-    operation_type: Literal[EnumNodeType.ORCHESTRATOR] = Field(
-        default=EnumNodeType.ORCHESTRATOR,
-        description="Orchestrator operation type",
-    )
-    workflow_definition: str = Field(..., description="Workflow definition identifier")
-    coordination_strategy: str = Field(..., description="Coordination strategy")
-    dependency_resolution: dict[str, list[str]] = Field(
-        default_factory=dict,
-        description="Dependency resolution configuration",
-    )
-    error_handling_strategy: str = Field(
-        default="stop_on_error",
-        description="Error handling strategy",
-    )
+from omnibase_core.models.operations.model_orchestrator_operation_data import (
+    ModelOrchestratorOperationData,
+)
+from omnibase_core.models.operations.model_reducer_operation_data import (
+    ModelReducerOperationData,
+)
 
 
 # Main operation payload class (defined after all dependencies)
@@ -229,15 +111,15 @@ class ModelOperationPayload(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

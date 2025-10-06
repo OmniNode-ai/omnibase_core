@@ -1,3 +1,8 @@
+import uuid
+from typing import Any
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Document Freshness Error Classes
 
@@ -24,7 +29,7 @@ from uuid import UUID
 from omnibase_core.enums.enum_document_freshness_errors import (
     EnumDocumentFreshnessErrorCodes,
 )
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 # Type-only imports - MUST stay under TYPE_CHECKING to prevent circular imports
 if TYPE_CHECKING:
@@ -32,7 +37,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
-class DocumentFreshnessError(OnexError):
+class DocumentFreshnessError(ModelOnexError):
     """
     Base error class for all document freshness monitoring errors.
 
@@ -66,21 +71,21 @@ class DocumentFreshnessError(OnexError):
         # Convert to appropriate core error code based on document freshness error type
         core_error_code = self._map_to_core_error_code(error_code)
 
-        # Build details dict using duck typing to avoid importing ModelErrorContext
+        # Build details dict[str, Any]using duck typing to avoid importing ModelErrorContext
         error_details: dict[str, Any] = {}
         if details:
             # Use duck typing - if it has model_dump(), call it
             if hasattr(details, "model_dump"):
                 error_details.update(details.model_dump())
             else:
-                # Otherwise assume it's dict-like and update directly
+                # Otherwise assume it's dict[str, Any]-like and update directly
                 error_details.update(details)  # type: ignore[arg-type]
         if correlation_id:
             error_details["correlation_id"] = str(correlation_id)
         if file_path:
             error_details["file_path"] = file_path
 
-        # Initialize the base OnexError with proper parameters
+        # Initialize the base ModelOnexError with proper parameters
         super().__init__(
             code=core_error_code,
             message=full_message,
@@ -100,7 +105,7 @@ class DocumentFreshnessError(OnexError):
     @staticmethod
     def _map_to_core_error_code(
         error_code: EnumDocumentFreshnessErrorCodes,
-    ) -> CoreErrorCode:
+    ) -> ModelCoreErrorCode:
         """
         Map document freshness error codes to appropriate core error codes.
 
@@ -114,63 +119,63 @@ class DocumentFreshnessError(OnexError):
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_PATH_NOT_FOUND,
         }:
-            return CoreErrorCode.NOT_FOUND
+            return ModelCoreErrorCode.NOT_FOUND
 
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_PATH_INVALID,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_PATH_TOO_LONG,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_PATH_FORBIDDEN_PATTERN,
         }:
-            return CoreErrorCode.VALIDATION_ERROR
+            return ModelCoreErrorCode.VALIDATION_ERROR
 
         # Permission and access errors -> PERMISSION_ERROR
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_PATH_ACCESS_DENIED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_PERMISSION_DENIED,
         }:
-            return CoreErrorCode.PERMISSION_ERROR
+            return ModelCoreErrorCode.PERMISSION_ERROR
 
         # Database errors -> INTERNAL_ERROR or CONFIGURATION_ERROR or DEPENDENCY_ERROR
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DATABASE_INIT_FAILED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DATABASE_CONNECTION_FAILED,
         }:
-            return CoreErrorCode.CONFIGURATION_ERROR
+            return ModelCoreErrorCode.CONFIGURATION_ERROR
 
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DATABASE_QUERY_FAILED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DATABASE_WRITE_FAILED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DATABASE_SCHEMA_INVALID,
         }:
-            return CoreErrorCode.INTERNAL_ERROR
+            return ModelCoreErrorCode.INTERNAL_ERROR
 
         # Analysis timeout and resource errors -> TIMEOUT_ERROR or RESOURCE_ERROR
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_ANALYSIS_TIMEOUT,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_OPERATION_CANCELLED,
         }:
-            return CoreErrorCode.TIMEOUT_ERROR
+            return ModelCoreErrorCode.TIMEOUT_ERROR
 
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_ANALYSIS_MEMORY_EXCEEDED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_ANALYSIS_FILE_TOO_LARGE,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_RESOURCE_EXHAUSTED,
         }:
-            return CoreErrorCode.RESOURCE_ERROR
+            return ModelCoreErrorCode.RESOURCE_ERROR
 
         # Configuration and validation errors -> CONFIGURATION_ERROR or VALIDATION_ERROR
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_CONFIG_INVALID,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_ANALYSIS_INVALID_CONFIG,
         }:
-            return CoreErrorCode.CONFIGURATION_ERROR
+            return ModelCoreErrorCode.CONFIGURATION_ERROR
 
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_VALIDATION_FAILED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_INPUT_INVALID,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_OUTPUT_VALIDATION_FAILED,
         }:
-            return CoreErrorCode.VALIDATION_ERROR
+            return ModelCoreErrorCode.VALIDATION_ERROR
 
         # AI service errors -> NETWORK_ERROR or DEPENDENCY_ERROR
         if error_code in {
@@ -178,13 +183,13 @@ class DocumentFreshnessError(OnexError):
             EnumDocumentFreshnessErrorCodes.FRESHNESS_AI_SERVICE_ERROR,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_AI_RATE_LIMIT_EXCEEDED,
         }:
-            return CoreErrorCode.NETWORK_ERROR
+            return ModelCoreErrorCode.NETWORK_ERROR
 
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_AI_CONTENT_TOO_LARGE,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_AI_QUALITY_THRESHOLD_NOT_MET,
         }:
-            return CoreErrorCode.DEPENDENCY_ERROR
+            return ModelCoreErrorCode.DEPENDENCY_ERROR
 
         # Git and change detection errors -> DEPENDENCY_ERROR
         if error_code in {
@@ -192,7 +197,7 @@ class DocumentFreshnessError(OnexError):
             EnumDocumentFreshnessErrorCodes.FRESHNESS_GIT_OPERATION_FAILED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_CHANGE_HISTORY_CORRUPTED,
         }:
-            return CoreErrorCode.DEPENDENCY_ERROR
+            return ModelCoreErrorCode.DEPENDENCY_ERROR
 
         # Dependency analysis errors -> DEPENDENCY_ERROR
         if error_code in {
@@ -201,27 +206,27 @@ class DocumentFreshnessError(OnexError):
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DEPENDENCY_DEPTH_EXCEEDED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_DEPENDENCY_PARSING_FAILED,
         }:
-            return CoreErrorCode.DEPENDENCY_ERROR
+            return ModelCoreErrorCode.DEPENDENCY_ERROR
 
         # General analysis and change detection failures -> OPERATION_FAILED
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_ANALYSIS_FAILED,
             EnumDocumentFreshnessErrorCodes.FRESHNESS_CHANGE_DETECTION_FAILED,
         }:
-            return CoreErrorCode.OPERATION_FAILED
+            return ModelCoreErrorCode.OPERATION_FAILED
 
         # System errors -> INTERNAL_ERROR
         if error_code in {
             EnumDocumentFreshnessErrorCodes.FRESHNESS_SYSTEM_ERROR,
         }:
-            return CoreErrorCode.INTERNAL_ERROR
+            return ModelCoreErrorCode.INTERNAL_ERROR
 
         # Default fallback for any unmapped errors
-        return CoreErrorCode.OPERATION_FAILED
+        return ModelCoreErrorCode.OPERATION_FAILED
 
     def to_dict(self) -> dict[str, "ModelSchemaValue"]:
         """
-        Convert error to dictionary for serialization.
+        Convert error to dict[str, Any]ionary for serialization.
 
         Uses lazy import of ModelSchemaValue to avoid circular dependencies.
         This import is only triggered when the method is called, not at module load time.
@@ -246,35 +251,3 @@ class DocumentFreshnessError(OnexError):
             ),
             "file_path": ModelSchemaValue.from_value(self.file_path),
         }
-
-
-class DocumentFreshnessPathError(DocumentFreshnessError):
-    """Error related to file path operations."""
-
-
-class ModelDocumentFreshnessDatabaseError(DocumentFreshnessError):
-    """Error related to database operations."""
-
-
-class DocumentFreshnessAnalysisError(DocumentFreshnessError):
-    """Error related to document analysis operations."""
-
-
-class DocumentFreshnessAIError(DocumentFreshnessError):
-    """Error related to AI operations."""
-
-
-class DocumentFreshnessDependencyError(DocumentFreshnessError):
-    """Error related to dependency analysis."""
-
-
-class DocumentFreshnessChangeDetectionError(DocumentFreshnessError):
-    """Error related to change detection."""
-
-
-class DocumentFreshnessValidationError(DocumentFreshnessError):
-    """Error related to input/output validation."""
-
-
-class DocumentFreshnessSystemError(DocumentFreshnessError):
-    """Error related to system-level operations."""

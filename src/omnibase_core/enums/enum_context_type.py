@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Context Type Enum.
 
 Strongly typed context type values for configuration and processing.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+from typing import List
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 CLI Command Option Model.
 
@@ -5,7 +14,6 @@ Represents command-line options and flags with proper validation.
 Replaces dict[str, Any] for command options with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -15,7 +23,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelCliCommandOption(BaseModel):
@@ -68,44 +76,44 @@ class ModelCliCommandOption(BaseModel):
             value_type = info.data["value_type"]
 
             if value_type == EnumCliOptionValueType.STRING and not isinstance(v, str):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"String value type must contain str data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.INTEGER and not isinstance(
                 v,
                 int,
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"Integer value type must contain int data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.BOOLEAN and not isinstance(
                 v,
                 bool,
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"Boolean value type must contain bool data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.FLOAT and not isinstance(
                 v,
                 (int, float),
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"Float value type must contain float data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.STRING_LIST and not (
                 isinstance(v, list) and all(isinstance(item, str) for item in v)
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"StringList value type must contain list[str] data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.UUID and not isinstance(v, UUID):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message=f"UUID value type must contain UUID data, got {type(v)}",
                 )
 
@@ -357,7 +365,7 @@ class ModelCliCommandOption(BaseModel):
         value: list[str],
         **kwargs: object,
     ) -> ModelCliCommandOption:
-        """Create command option from string list value."""
+        """Create command option from string list[Any]value."""
         # Extract known fields with proper types from kwargs
         option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
@@ -403,7 +411,7 @@ class ModelCliCommandOption(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

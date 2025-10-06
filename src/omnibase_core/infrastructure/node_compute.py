@@ -1,5 +1,12 @@
+import uuid
+from typing import Callable, Dict, Generic, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
-NodeCompute - Pure Computation Node for 4-Node Architecture.
+NodeCompute - Pure Computation Node for 4-Node ModelArchitecture.
 
 Specialized node type for pure computational operations with deterministic guarantees.
 Focuses on input → transform → output patterns with caching and parallel processing support.
@@ -19,19 +26,23 @@ Author: ONEX Framework Team
 
 import asyncio
 import time
-from collections.abc import Callable
+from collections.abc import Callable as CallableABC
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Generic, TypeVar
+from typing import Any, Callable, Dict, Generic, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums import EnumCoreErrorCode
+# Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
+
+# Import utilities for contract loading
+# Import models and cache from separate files
+from omnibase_core.infrastructure.computation_cache import ComputationCache
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -39,126 +50,12 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 
 # Import contract model for compute nodes
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
-
-# Import utilities for contract loading
+from omnibase_core.models.operations.model_compute_input import ModelComputeInput
+from omnibase_core.models.operations.model_compute_output import ModelComputeOutput
 
 # Type variables for generic computation
 T_Input = TypeVar("T_Input")
 T_Output = TypeVar("T_Output")
-
-
-class ModelComputeInput(BaseModel, Generic[T_Input]):
-    """
-    Input model for NodeCompute operations.
-
-    Strongly typed input wrapper that ensures type safety
-    and provides metadata for computation tracking.
-    """
-
-    data: T_Input
-    operation_id: UUID = Field(default_factory=uuid4)
-    computation_type: str = "default"
-    cache_enabled: bool = True
-    parallel_enabled: bool = False
-    metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-
-class ModelComputeOutput(BaseModel, Generic[T_Output]):
-    """
-    Output model for NodeCompute operations.
-
-    Strongly typed output wrapper that includes computation
-    metadata and performance metrics.
-    """
-
-    result: T_Output
-    operation_id: UUID
-    computation_type: str
-    processing_time_ms: float
-    cache_hit: bool = False
-    parallel_execution_used: bool = False
-    metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-
-class ComputationCache:
-    """
-    Caching layer for expensive computations with TTL and memory management.
-    """
-
-    def __init__(self, max_size: int = 1000, default_ttl_minutes: int = 30):
-        self.max_size = max_size
-        self.default_ttl_minutes = default_ttl_minutes
-        self._cache: dict[
-            str,
-            tuple[Any, datetime, int],
-        ] = {}  # key -> (value, expiry, access_count)
-
-    def get(self, cache_key: str) -> Any | None:
-        """Get cached value if valid and not expired."""
-        if cache_key not in self._cache:
-            return None
-
-        value, expiry, access_count = self._cache[cache_key]
-
-        # Check expiry
-        if datetime.now() > expiry:
-            del self._cache[cache_key]
-            return None
-
-        # Update access count
-        self._cache[cache_key] = (value, expiry, access_count + 1)
-        return value
-
-    def put(
-        self,
-        cache_key: str,
-        value: Any,
-        ttl_minutes: int | None = None,
-    ) -> None:
-        """Cache value with TTL."""
-        # Evict if at capacity
-        if len(self._cache) >= self.max_size:
-            self._evict_lru()
-
-        ttl = ttl_minutes or self.default_ttl_minutes
-        expiry = datetime.now() + timedelta(minutes=ttl)
-        self._cache[cache_key] = (value, expiry, 1)
-
-    def _evict_lru(self) -> None:
-        """Evict least recently used item."""
-        if not self._cache:
-            return
-
-        # Find item with lowest access count (simple LRU approximation)
-        lru_key = min(self._cache.keys(), key=lambda k: self._cache[k][2])
-        del self._cache[lru_key]
-
-    def clear(self) -> None:
-        """Clear all cached values."""
-        self._cache.clear()
-
-    def get_stats(self) -> dict[str, int]:
-        """Get cache statistics."""
-        now = datetime.now()
-        expired_count = sum(1 for _, expiry, _ in self._cache.values() if expiry <= now)
-
-        return {
-            "total_entries": len(self._cache),
-            "expired_entries": expired_count,
-            "valid_entries": len(self._cache) - expired_count,
-            "max_size": self.max_size,
-        }
 
 
 class NodeCompute(NodeCoreBase):
@@ -192,7 +89,7 @@ class NodeCompute(NodeCoreBase):
             container: ONEX container for dependency injection
 
         Raises:
-            OnexError: If container is invalid or initialization fails
+            ModelOnexError: If container is invalid or initialization fails
         """
         super().__init__(container)
 
@@ -235,7 +132,7 @@ class NodeCompute(NodeCoreBase):
             ModelContractCompute: Validated contract model for this node type
 
         Raises:
-            OnexError: If contract loading or validation fails
+            ModelOnexError: If contract loading or validation fails
         """
         try:
             # Load actual contract from file with subcontract resolution
@@ -286,8 +183,8 @@ class NodeCompute(NodeCoreBase):
 
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeCompute: {e!s}",
                 details={
                     "contract_model_type": "ModelContractCompute",
@@ -306,7 +203,7 @@ class NodeCompute(NodeCoreBase):
             Path: Path to the contract.yaml file
 
         Raises:
-            OnexError: If contract file cannot be found
+            ModelOnexError: If contract file cannot be found
         """
         import inspect
         from pathlib import Path
@@ -322,22 +219,22 @@ class NodeCompute(NodeCoreBase):
                     caller_self = frame.f_locals["self"]
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
-                        if module and hasattr(module, "__file__"):
+                        if module and hasattr(module, "__file__") and module.__file__:
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
                                 return contract_path
 
             # Fallback: this shouldn't happen but provide error
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for compute node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -354,7 +251,7 @@ class NodeCompute(NodeCoreBase):
         Enhanced to properly handle FSM subcontracts with Pydantic model validation.
 
         Args:
-            data: Contract data structure (dict, list, or primitive)
+            data: Contract data structure (dict[str, Any], list[Any], or primitive)
             base_path: Base directory path for resolving relative references
             reference_resolver: Reference resolver utility
 
@@ -362,7 +259,7 @@ class NodeCompute(NodeCoreBase):
             Any: Resolved contract data with all references loaded
 
         Raises:
-            OnexError: If reference resolution fails
+            ModelOnexError: If reference resolution fails
         """
         try:
             if isinstance(data, dict):
@@ -380,7 +277,7 @@ class NodeCompute(NodeCoreBase):
                         str(ref_path),
                         base_path,
                     )
-                # Recursively resolve nested dictionaries
+                # Recursively resolve nested dict[str, Any]ionaries
                 return {
                     key: self._resolve_contract_references(
                         value,
@@ -390,7 +287,7 @@ class NodeCompute(NodeCoreBase):
                     for key, value in data.items()
                 }
             if isinstance(data, list):
-                # Recursively resolve lists
+                # Recursively resolve list[Any]s
                 return [
                     self._resolve_contract_references(
                         item,
@@ -426,7 +323,7 @@ class NodeCompute(NodeCoreBase):
             Strongly typed computation output with performance metrics
 
         Raises:
-            OnexError: If computation fails or performance threshold exceeded
+            ModelOnexError: If computation fails or performance threshold exceeded
         """
         start_time = time.time()
 
@@ -449,7 +346,9 @@ class NodeCompute(NodeCoreBase):
                         processing_time_ms=0.0,  # Cache hit
                         cache_hit=True,
                         parallel_execution_used=False,
-                        metadata={"cache_retrieval": True},
+                        metadata={
+                            "cache_retrieval": ModelSchemaValue.from_value(True),
+                        },
                     )
 
             # Execute computation
@@ -498,9 +397,15 @@ class NodeCompute(NodeCoreBase):
                 cache_hit=False,
                 parallel_execution_used=parallel_used,
                 metadata={
-                    "input_data_size": len(str(input_data.data)),
-                    "cache_enabled": input_data.cache_enabled,
-                    "parallel_enabled": input_data.parallel_enabled,
+                    "input_data_size": ModelSchemaValue.from_value(
+                        len(str(input_data.data))
+                    ),
+                    "cache_enabled": ModelSchemaValue.from_value(
+                        input_data.cache_enabled
+                    ),
+                    "parallel_enabled": ModelSchemaValue.from_value(
+                        input_data.parallel_enabled
+                    ),
                 },
             )
 
@@ -529,8 +434,8 @@ class NodeCompute(NodeCoreBase):
             )
             await self._update_processing_metrics(processing_time, False)
 
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Computation failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -572,7 +477,7 @@ class NodeCompute(NodeCoreBase):
             Overall priority score (0.0-100.0)
 
         Raises:
-            OnexError: If calculation fails or inputs invalid
+            ModelOnexError: If calculation fails or inputs invalid
         """
         # Prepare computation input
         computation_input = ModelComputeInput(
@@ -587,14 +492,16 @@ class NodeCompute(NodeCoreBase):
             computation_type="rsd_priority_calculation",
             cache_enabled=True,
             metadata={
-                "algorithm_version": "2.1.0",
-                "factor_weights": {
-                    "dependency_distance": 0.40,
-                    "failure_surface": 0.25,
-                    "time_decay": 0.15,
-                    "agent_utility": 0.10,
-                    "user_weighting": 0.10,
-                },
+                "algorithm_version": ModelSchemaValue.from_value("2.1.0"),
+                "factor_weights": ModelSchemaValue.from_value(
+                    {
+                        "dependency_distance": 0.40,
+                        "failure_surface": 0.25,
+                        "time_decay": 0.15,
+                        "agent_utility": 0.10,
+                        "user_weighting": 0.10,
+                    }
+                ),
             },
         )
 
@@ -615,18 +522,18 @@ class NodeCompute(NodeCoreBase):
             computation_func: Pure function to register
 
         Raises:
-            OnexError: If computation type already registered or function invalid
+            ModelOnexError: If computation type already registered or function invalid
         """
         if computation_type in self.computation_registry:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Computation type already registered: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
 
         if not callable(computation_func):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Computation function must be callable: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
@@ -703,13 +610,13 @@ class NodeCompute(NodeCoreBase):
             input_data: Input data to validate
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         super()._validate_input_data(input_data)
 
         if not hasattr(input_data, "data"):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'data' attribute",
                 context={
                     "node_id": self.node_id,
@@ -718,8 +625,8 @@ class NodeCompute(NodeCoreBase):
             )
 
         if not hasattr(input_data, "computation_type"):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'computation_type' attribute",
                 context={
                     "node_id": self.node_id,
@@ -750,13 +657,13 @@ class NodeCompute(NodeCoreBase):
         if computation_type in self.computation_registry:
             computation_func = self.computation_registry[computation_type]
             return computation_func(input_data.data)
-        raise OnexError(
-            code=CoreErrorCode.OPERATION_FAILED,
+        raise ModelOnexError(
+            code=ModelCoreErrorCode.OPERATION_FAILED,
             message=f"Unknown computation type: {computation_type}",
             context={
                 "node_id": self.node_id,
                 "computation_type": computation_type,
-                "available_types": list(self.computation_registry.keys()),
+                "available_types": list[Any](self.computation_registry.keys()),
             },
         )
 
@@ -773,8 +680,8 @@ class NodeCompute(NodeCoreBase):
         computation_func = self.computation_registry.get(computation_type)
 
         if not computation_func:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Unknown computation type: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
@@ -829,7 +736,7 @@ class NodeCompute(NodeCoreBase):
             current_avg * (total_ops - 1) + processing_time_ms
         ) / total_ops
 
-    def get_introspection_data(self) -> dict:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get comprehensive introspection data for NodeCompute.
 
@@ -837,7 +744,7 @@ class NodeCompute(NodeCoreBase):
         caching configuration, parallel processing capabilities, and RSD computation details.
 
         Returns:
-            dict: Comprehensive introspection data with compute-specific information
+            dict[str, Any]: Comprehensive introspection data with compute-specific information
         """
         try:
             # Get base introspection data from NodeCoreBase
@@ -870,7 +777,7 @@ class NodeCompute(NodeCoreBase):
                 "contract_validation_status": "validated",
                 "algorithm_configuration": self._extract_algorithm_configuration(),
                 "computation_constraints": self._extract_computation_constraints(),
-                "supported_algorithms": list(self.computation_registry.keys()),
+                "supported_algorithms": list[Any](self.computation_registry.keys()),
             }
 
             # 3. Runtime Information (Compute-specific)
@@ -884,7 +791,7 @@ class NodeCompute(NodeCoreBase):
 
             # 4. Algorithm Information
             algorithm_info = {
-                "registered_algorithms": list(self.computation_registry.keys()),
+                "registered_algorithms": list[Any](self.computation_registry.keys()),
                 "rsd_algorithm_support": "rsd_priority_calculation"
                 in self.computation_registry,
                 "custom_algorithms": [
@@ -949,7 +856,7 @@ class NodeCompute(NodeCoreBase):
                 },
             }
 
-    def _extract_compute_operations(self) -> list:
+    def _extract_compute_operations(self) -> list[str]:
         """Extract available computation operations."""
         operations = [
             "process",
@@ -973,7 +880,7 @@ class NodeCompute(NodeCoreBase):
 
         return operations
 
-    def _extract_compute_io_specifications(self) -> dict:
+    def _extract_compute_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for compute operations."""
         return {
             "input_model": "omnibase.core.node_compute.ModelComputeInput",
@@ -981,7 +888,7 @@ class NodeCompute(NodeCoreBase):
             "supports_streaming": False,
             "supports_batch_processing": True,
             "supports_parallel_processing": True,
-            "computation_types": list(self.computation_registry.keys()),
+            "computation_types": list[Any](self.computation_registry.keys()),
             "input_requirements": ["data", "computation_type"],
             "output_guarantees": [
                 "result",
@@ -991,7 +898,7 @@ class NodeCompute(NodeCoreBase):
             ],
         }
 
-    def _extract_compute_performance_characteristics(self) -> dict:
+    def _extract_compute_performance_characteristics(self) -> dict[str, Any]:
         """Extract performance characteristics specific to computation operations."""
         return {
             "expected_response_time_ms": f"< {self.performance_threshold_ms}",
@@ -1005,7 +912,7 @@ class NodeCompute(NodeCoreBase):
             "side_effects": False,
         }
 
-    def _extract_algorithm_configuration(self) -> dict:
+    def _extract_algorithm_configuration(self) -> dict[str, Any]:
         """Extract algorithm configuration from contract."""
         try:
             return {
@@ -1024,7 +931,7 @@ class NodeCompute(NodeCoreBase):
             )
             return {"algorithm_type": "default_compute"}
 
-    def _extract_computation_constraints(self) -> dict:
+    def _extract_computation_constraints(self) -> dict[str, Any]:
         """Extract computation constraints and requirements."""
         return {
             "pure_function_requirement": True,
@@ -1055,7 +962,7 @@ class NodeCompute(NodeCoreBase):
             # provides meaningful signal for monitoring without disrupting actual compute operations
             return "unhealthy"
 
-    def _get_compute_resource_usage(self) -> dict:
+    def _get_compute_resource_usage(self) -> dict[str, Any]:
         """Get resource usage specific to compute operations."""
         try:
             cache_stats = self.computation_cache.get_stats()
@@ -1077,7 +984,7 @@ class NodeCompute(NodeCoreBase):
             )
             return {"status": "unknown"}
 
-    def _get_caching_status(self) -> dict:
+    def _get_caching_status(self) -> dict[str, Any]:
         """Get caching system status."""
         try:
             cache_stats = self.computation_cache.get_stats()
@@ -1099,7 +1006,7 @@ class NodeCompute(NodeCoreBase):
             )
             return {"enabled": False, "error": str(e)}
 
-    def _get_parallel_processing_status(self) -> dict:
+    def _get_parallel_processing_status(self) -> dict[str, Any]:
         """Get parallel processing status."""
         return {
             "enabled": True,
@@ -1109,7 +1016,7 @@ class NodeCompute(NodeCoreBase):
             "parallel_algorithm_support": True,
         }
 
-    def _get_computation_metrics_sync(self) -> dict:
+    def _get_computation_metrics_sync(self) -> dict[str, float]:
         """Get computation metrics synchronously for introspection."""
         try:
             # Add cache statistics

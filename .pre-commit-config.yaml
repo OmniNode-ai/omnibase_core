@@ -184,6 +184,15 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      - id: onex-single-class-per-file
+        name: ONEX Single Class Per File
+        entry: poetry run python scripts/validation/validate-single-class-per-file.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards

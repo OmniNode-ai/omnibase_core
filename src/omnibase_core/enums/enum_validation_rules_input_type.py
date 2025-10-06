@@ -1,3 +1,5 @@
+from typing import Any
+
 """
 Validation rules input type enumeration.
 

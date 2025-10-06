@@ -1,17 +1,22 @@
+from __future__ import annotations
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Error Value Model.
 
 Discriminated union for error values following ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_error_value_type import EnumErrorValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelErrorValue(BaseModel):
@@ -46,8 +51,8 @@ class ModelErrorValue(BaseModel):
         """Ensure only one error value is set based on type discriminator."""
         if self.error_type == EnumErrorValueType.STRING:
             if self.string_error is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be set when error_type is 'string'",
                 )
             if any(
@@ -57,19 +62,19 @@ class ModelErrorValue(BaseModel):
                     self.exception_traceback,
                 ],
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="exception fields must be None when error_type is 'string'",
                 )
         elif self.error_type == EnumErrorValueType.EXCEPTION:
             if self.exception_class is None or self.exception_message is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="exception_class and exception_message must be set when error_type is 'exception'",
                 )
             if self.string_error is not None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be None when error_type is 'exception'",
                 )
         elif self.error_type == EnumErrorValueType.NONE:
@@ -81,8 +86,8 @@ class ModelErrorValue(BaseModel):
                     self.exception_traceback,
                 ],
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="All error values must be None when error_type is 'none'",
                 )
 
@@ -158,8 +163,8 @@ class ModelErrorValue(BaseModel):
             return RuntimeError(f"{self.exception_class}: {self.exception_message}")
         except Exception as e:
             # If recreation fails, raise error with context about the failure
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to recreate exception {self.exception_class}: {e}",
             ) from e
 
@@ -193,7 +198,7 @@ class ModelErrorValue(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Explicit typing to ensure MyPy recognizes the return type
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result

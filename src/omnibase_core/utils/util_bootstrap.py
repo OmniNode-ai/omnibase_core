@@ -1,3 +1,5 @@
+from typing import List, TypeVar
+
 """
 Core Bootstrap for ONEX Service Discovery.
 
@@ -12,6 +14,9 @@ registry-centric architecture pattern.
 from typing import Any, TypeVar
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.utils.service_logging import ServiceLogging
+from omnibase_core.utils.service_minimal_logging import ServiceMinimalLogging
+from omnibase_core.utils.tool_logger_code_block import ToolLoggerCodeBlock
 
 # Type variable for protocol types
 T = TypeVar("T")
@@ -58,36 +63,6 @@ def get_logging_service() -> Any:
             logger_protocol = registry.get_protocol("logger")
             if logger_protocol:
                 # Return service with protocol-based access
-                class ServiceLogging:
-                    def __init__(self, protocol: Any) -> None:
-                        self._protocol = protocol
-
-                    def emit_log_event(self, *args: Any, **kwargs: Any) -> Any:
-                        return self._protocol.emit_log_event(*args, **kwargs)
-
-                    def emit_log_event_sync(self, *args: Any, **kwargs: Any) -> Any:
-                        return self._protocol.emit_log_event_sync(*args, **kwargs)
-
-                    def emit_log_event_async(self, *args: Any, **kwargs: Any) -> Any:
-                        return self._protocol.emit_log_event_async(*args, **kwargs)
-
-                    def trace_function_lifecycle(self, func: Any) -> Any:
-                        return self._protocol.trace_function_lifecycle(func)
-
-                    @property
-                    def ToolLoggerCodeBlock(self) -> Any:
-                        return self._protocol.ToolLoggerCodeBlock
-
-                    def tool_logger_performance_metrics(
-                        self,
-                        *args: Any,
-                        **kwargs: Any,
-                    ) -> Any:
-                        return self._protocol.tool_logger_performance_metrics(
-                            *args,
-                            **kwargs,
-                        )
-
                 return ServiceLogging(logger_protocol)
 
         # Fallback to minimal logging if registry unavailable
@@ -194,58 +169,6 @@ def _get_minimal_logging_service() -> Any:
         Minimal logging service implementation
     """
 
-    class ServiceMinimalLogging:
-        @staticmethod
-        def emit_log_event(  # stub-ok: Minimal logging service provides pass-through implementation
-            level: LogLevel,
-            event_type: str,
-            message: str,
-            **kwargs: Any,
-        ) -> None:
-            pass
-
-        @staticmethod
-        def emit_log_event_sync(  # stub-ok: Minimal logging service provides pass-through implementation
-            level: LogLevel,
-            message: str,
-            event_type: str = "generic",
-            **kwargs: Any,
-        ) -> None:
-            pass
-
-        @staticmethod
-        async def emit_log_event_async(  # stub-ok: Minimal logging service provides pass-through implementation
-            level: LogLevel,
-            message: str,
-            event_type: str = "generic",
-            **kwargs: Any,
-        ) -> None:
-            pass
-
-        @staticmethod
-        def trace_function_lifecycle(func: Any) -> Any:
-            # No-op decorator for bootstrap
-            return func
-
-        class ToolLoggerCodeBlock:
-            def __init__(  # stub-ok: Minimal logging service provides pass-through implementation
-                self, *args: Any, **kwargs: Any
-            ) -> None:
-                pass
-
-            def __enter__(self) -> Any:
-                return self
-
-            def __exit__(self, *args: Any) -> None:
-                pass
-
-        @staticmethod
-        def tool_logger_performance_metrics(threshold_ms: int = 1000) -> Any:
-            def decorator(func: Any) -> Any:
-                return func
-
-            return decorator
-
     return ServiceMinimalLogging()
 
 
@@ -264,7 +187,7 @@ def is_service_available(protocol_type: type[T]) -> bool:
 
 def get_available_services() -> list[str]:
     """
-    Get list of available services.
+    Get list[Any]of available services.
 
     Returns:
         List of available service types
@@ -276,5 +199,5 @@ def get_available_services() -> list[str]:
     except Exception:
         pass
 
-    # Return minimal list for bootstrap
+    # Return minimal list[Any]for bootstrap
     return ["logging"]

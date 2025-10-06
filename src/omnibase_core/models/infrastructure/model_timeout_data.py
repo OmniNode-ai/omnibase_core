@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Dict
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Timeout data model.
 
@@ -5,14 +13,13 @@ Typed data model for ModelTimeout serialization.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
@@ -51,7 +58,7 @@ class ModelTimeoutData(BaseModel):
     description: str = Field(default="", description="Timeout description")
     custom_properties: ModelCustomProperties = Field(
         default_factory=ModelCustomProperties,
-        description="Typed custom properties instead of dict",
+        description="Typed custom properties instead of dict[str, Any]",
     )
 
     model_config = {
@@ -71,8 +78,8 @@ class ModelTimeoutData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -84,13 +91,13 @@ class ModelTimeoutData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

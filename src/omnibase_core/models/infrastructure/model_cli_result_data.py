@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
 """
 CLI result data model.
 
@@ -5,7 +11,6 @@ CLI result data model with typed fields for command execution results.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
@@ -84,7 +89,7 @@ class ModelCliResultData(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

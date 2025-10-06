@@ -1,3 +1,9 @@
+from typing import Any, Optional
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Event Definition Model - ONEX Standards Compliant.
 

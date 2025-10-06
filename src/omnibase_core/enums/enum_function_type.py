@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Function Type Enum.
 
 Strongly typed function type values for configuration and processing.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,5 +1,7 @@
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
-Node Architecture Validation - 4-Node Implementation Verification.
+Node ModelArchitecture Validation - 4-Node Implementation Verification.
 
 Validation script to verify that the 4-node architecture implementation
 meets all requirements specified in the work ticket.
@@ -141,9 +143,7 @@ class NodeArchitectureValidator:
             }
 
             # Test 3: ModelONEXContainer integration
-            class TestNode(NodeCoreBase):  # type: ignore[abstract]
-                async def process(self, input_data: Any) -> dict[str, str]:
-                    return {"test": "success"}
+            from omnibase_core.infrastructure.test_node import TestNode
 
             test_node = TestNode(self.container)
             container_validation = {
@@ -401,7 +401,7 @@ class NodeArchitectureValidator:
         try:
             standards_checks = {
                 "uses_onex_container": True,  # All nodes use ModelONEXContainer
-                "proper_error_handling": True,  # Uses OnexError with chaining
+                "proper_error_handling": True,  # Uses ModelOnexError with chaining
                 "protocol_based_duck_typing": True,  # Uses container.get_service()
                 "structured_logging": True,  # Uses emit_log_event
                 "lifecycle_management": True,  # Initialize/cleanup pattern
@@ -467,10 +467,7 @@ class NodeArchitectureValidator:
 
     def _create_mock_container(self) -> ModelONEXContainer:
         """Create mock ModelONEXContainer for testing."""
-
-        class MockContainer:
-            def get_service(self, service_name: str) -> None:
-                return None  # Mock implementation
+        from omnibase_core.infrastructure.mock_container import MockContainer
 
         return MockContainer()  # type: ignore[return-value]
 

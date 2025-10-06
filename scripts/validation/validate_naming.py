@@ -74,6 +74,8 @@ class NamingConventionValidator:
         r".*Test$",  # Test classes
         r".*TestCase$",  # Test case classes
         r"^Test.*",  # Test classes
+        r".*Error$",  # Exception classes
+        r".*Exception$",  # Exception classes
     ]
 
     def __init__(self, repo_path: Path):
@@ -247,6 +249,16 @@ class NamingConventionValidator:
                 return True
         return False
 
+    def _is_protocol_class(self, node: ast.ClassDef) -> bool:
+        """Check if a class definition inherits from Protocol."""
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id == "Protocol":
+                return True
+            # Handle cases like typing.Protocol
+            if isinstance(base, ast.Attribute) and base.attr == "Protocol":
+                return True
+        return False
+
     def _contains_relevant_classes(self, content: str, pattern: str) -> bool:
         """Check if file contains classes that should match the pattern."""
         try:
@@ -286,6 +298,11 @@ class NamingConventionValidator:
         # Skip Enum classes when validating non-enum categories
         # Enum classes should only be validated in the enums category
         if category != "enums" and self._is_enum_class(node):
+            return
+
+        # Skip Protocol classes when validating non-protocol categories
+        # Protocol classes should only be validated in the protocols category
+        if category != "protocols" and self._is_protocol_class(node):
             return
 
         # Check if this file is in the right directory for this category

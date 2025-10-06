@@ -1,11 +1,19 @@
+from __future__ import annotations
+
+import json
+from typing import Dict, Generic
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 

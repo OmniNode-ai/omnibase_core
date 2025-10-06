@@ -1,3 +1,5 @@
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Type-safe YAML dump options model.
 
@@ -8,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelYamlDumpOptions(BaseModel):
@@ -37,7 +39,7 @@ class ModelYamlDumpOptions(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -47,8 +49,8 @@ class ModelYamlDumpOptions(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

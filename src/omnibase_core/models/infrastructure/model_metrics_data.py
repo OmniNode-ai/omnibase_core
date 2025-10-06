@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Metrics data model.
 
@@ -5,7 +13,6 @@ Clean, strongly-typed replacement for custom metrics union types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -16,7 +23,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
@@ -36,7 +43,7 @@ class ModelMetricsData(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    # Single list of universal metrics using discriminated union pattern
+    # Single list[Any]of universal metrics using discriminated union pattern
     metrics: list[ModelMetric] = Field(
         default_factory=list,
         description="Collection of typed metrics",
@@ -140,8 +147,8 @@ class ModelMetricsData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -153,13 +160,13 @@ class ModelMetricsData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

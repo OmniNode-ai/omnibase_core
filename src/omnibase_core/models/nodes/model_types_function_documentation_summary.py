@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for function documentation summary.
 
 Replaces dict[str, Any] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelFunctionDocumentationSummaryType(TypedDict):
     """
-    Typed dictionary for function documentation summary.
+    Typed dict[str, Any]ionary for function documentation summary.
 
     Replaces dict[str, Any] return type from get_documentation_summary()
     with proper type structure.

@@ -1,10 +1,18 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Node Metadata Info Model.
 
 Simple model for node metadata information used in CLI output.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
@@ -16,7 +24,7 @@ from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
@@ -369,15 +377,15 @@ class ModelNodeMetadataInfo(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            code=ModelCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
         )
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -390,7 +398,7 @@ class ModelNodeMetadataInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -402,7 +410,7 @@ class ModelNodeMetadataInfo(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

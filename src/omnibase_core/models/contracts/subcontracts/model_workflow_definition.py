@@ -1,3 +1,7 @@
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Definition Model - ONEX Standards Compliant.
 

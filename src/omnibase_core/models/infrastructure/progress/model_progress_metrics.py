@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Progress Metrics Model.
 
@@ -5,14 +13,13 @@ Custom metrics and tagging for progress tracking.
 Follows ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
@@ -96,7 +103,7 @@ class ModelProgressMetrics(BaseModel):
             self.add_tag(tag)
 
     def remove_tags(self, tags: list[str]) -> list[str]:
-        """Remove multiple tags. Returns list of tags that were actually removed."""
+        """Remove multiple tags. Returns list[Any]of tags that were actually removed."""
         removed = []
         for tag in tags:
             if self.remove_tag(tag):
@@ -209,8 +216,8 @@ class ModelProgressMetrics(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -222,13 +229,13 @@ class ModelProgressMetrics(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

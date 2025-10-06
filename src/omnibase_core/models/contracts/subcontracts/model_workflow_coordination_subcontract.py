@@ -1,3 +1,8 @@
+from pydantic import Field
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Coordination Subcontract Model - ONEX Standards Compliant.
 
@@ -13,6 +18,8 @@ providing clean separation between node logic and workflow coordination behavior
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 

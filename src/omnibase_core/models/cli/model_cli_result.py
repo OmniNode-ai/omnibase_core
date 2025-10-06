@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
 """
 CLI Result Model.
 
@@ -5,7 +11,6 @@ Universal CLI execution result model that captures the complete
 outcome of CLI command execution with proper typing.
 """
 
-from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
@@ -494,7 +499,7 @@ class ModelCliResult(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Generic
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 CLI result metadata model.
 
@@ -5,7 +15,6 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI result metadata.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
@@ -17,7 +26,7 @@ from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
@@ -145,13 +154,13 @@ class ModelCliResultMetadata(BaseModel):
                 return ModelSemVer(major=int(parts[0]), minor=int(parts[1]), patch=0)
             if len(parts) == 1:
                 return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Invalid version string: {v}",
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             )
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"Invalid processor version type: {type(v)}",
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
         )
 
     @field_validator("retention_policy", mode="before")
@@ -170,13 +179,13 @@ class ModelCliResultMetadata(BaseModel):
                 try:
                     return EnumRetentionPolicy(v.upper())
                 except ValueError:
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
                         message=f"Invalid retention policy: {v}",
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     )
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"Invalid retention policy type: {type(v)}",
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
         )
 
     @field_validator("custom_metadata", mode="before")
@@ -241,9 +250,9 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="Quality score must be between 0.0 and 1.0",
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             )
 
     def set_confidence_level(self, confidence: float) -> None:
@@ -251,9 +260,9 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="Confidence level must be between 0.0 and 1.0",
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             )
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
@@ -334,7 +343,7 @@ class ModelCliResultMetadata(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -362,9 +371,9 @@ class ModelCliResultMetadata(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
 

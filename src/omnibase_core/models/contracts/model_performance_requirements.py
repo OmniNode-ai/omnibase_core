@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Performance Requirements Model - ONEX Standards Compliant.
 
@@ -9,6 +11,8 @@ Performance SLA specifications for contract-driven behavior providing:
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 

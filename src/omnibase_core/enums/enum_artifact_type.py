@@ -1,26 +1,15 @@
-"""
-Artifact Type Enum.
+"""Artifact type enumeration for ONEX core."""
 
-Strongly typed artifact type values for configuration.
-"""
-
-from __future__ import annotations
-
-from enum import Enum, unique
+import enum
 
 
-@unique
-class EnumArtifactType(str, Enum):
-    """Strongly typed artifact type values."""
+class EnumArtifactType(enum.StrEnum):
+    """Artifact types for ONEX ecosystem."""
 
     TOOL = "tool"
-    VALIDATOR = "validator"
-    AGENT = "agent"
+    NODE = "node"
     MODEL = "model"
-    PLUGIN = "plugin"
     SCHEMA = "schema"
-    CONFIG = "config"
-
-
-# Export for use
-__all__ = ["EnumArtifactType"]
+    CONTRACT = "contract"
+    MANIFEST = "manifest"
+    TEMPLATE = "template"

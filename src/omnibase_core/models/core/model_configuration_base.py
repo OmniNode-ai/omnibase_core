@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Generic Configuration Base Class.
 
@@ -5,7 +15,6 @@ Standardizes common patterns found across Config domain models,
 eliminating field duplication and providing consistent configuration interfaces.
 """
 
-from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
@@ -18,7 +27,10 @@ from pydantic import (
     model_validator,
 )
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import (
+    ModelCoreErrorCode,
+    ModelOnexError,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -130,8 +142,8 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
                 return False
             return base_valid
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -170,7 +182,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize configuration to dictionary (Serializable protocol)."""
+        """Serialize configuration to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def configure(self, **kwargs: Any) -> bool:
@@ -184,8 +196,8 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             self.update_timestamp()
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 """
 Protocol auditor for detecting duplicates and violations across omni* ecosystem.
 """
 
-from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .exceptions import ConfigurationError, InputValidationError
+from .model_audit_result import ModelAuditResult
+from .model_duplication_report import ModelDuplicationReport
 from .validation_utils import (
     DuplicationInfo,
     ModelProtocolInfo,
@@ -20,41 +23,6 @@ from .validation_utils import (
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ModelAuditResult:
-    """Result of protocol audit operation."""
-
-    success: bool
-    repository: str
-    protocols_found: int
-    duplicates_found: int
-    conflicts_found: int
-    violations: list[str]
-    recommendations: list[str]
-    execution_time_ms: int = 0
-
-    def has_issues(self) -> bool:
-        """Check if audit found any issues."""
-        return (
-            self.duplicates_found > 0
-            or self.conflicts_found > 0
-            or len(self.violations) > 0
-        )
-
-
-@dataclass
-class ModelDuplicationReport:
-    """Report of protocol duplications between repositories."""
-
-    success: bool
-    source_repository: str
-    target_repository: str
-    exact_duplicates: list[DuplicationInfo]
-    name_conflicts: list[DuplicationInfo]
-    migration_candidates: list[ModelProtocolInfo]
-    recommendations: list[str]
 
 
 class ModelProtocolAuditor:
@@ -70,8 +38,7 @@ class ModelProtocolAuditor:
     def __init__(self, repository_path: str = "."):
         try:
             self.repository_path = validate_directory_path(
-                Path(repository_path),
-                "repository",
+                Path(repository_path), "repository"
             )
         except InputValidationError as e:
             msg = f"Invalid repository configuration: {e}"
@@ -80,7 +47,7 @@ class ModelProtocolAuditor:
         self.repository_name = determine_repository_name(self.repository_path)
         logger.info(
             f"ModelProtocolAuditor initialized for repository '{self.repository_name}' "
-            f"at {self.repository_path}",
+            f"at {self.repository_path}"
         )
 
     def check_current_repository(self) -> ModelAuditResult:
@@ -126,13 +93,13 @@ class ModelProtocolAuditor:
 
         if local_duplicates:
             violations.extend(
-                [f"Local duplicate: {dup.signature_hash}" for dup in local_duplicates],
+                [f"Local duplicate: {dup.signature_hash}" for dup in local_duplicates]
             )
 
         # Generate recommendations
         if protocols:
             recommendations.append(
-                f"Consider migrating {len(protocols)} protocols to omnibase_spi",
+                f"Consider migrating {len(protocols)} protocols to omnibase_spi"
             )
 
         return ModelAuditResult(
@@ -146,8 +113,7 @@ class ModelProtocolAuditor:
         )
 
     def check_against_spi(
-        self,
-        spi_path: str = "../omnibase_spi",
+        self, spi_path: str = "../omnibase_spi"
     ) -> ModelDuplicationReport:
         """
         Check current repository protocols against omnibase_spi for duplicates.
@@ -170,7 +136,7 @@ class ModelProtocolAuditor:
         # Validate SPI protocols directory exists
         if not spi_protocols_path.exists():
             logger.warning(f"SPI protocols directory not found: {spi_protocols_path}")
-            # Continue with empty SPI protocols list rather than failing
+            # Continue with empty SPI protocols list[Any]rather than failing
 
         # Get protocols from both repositories
         current_protocols = (
@@ -184,8 +150,7 @@ class ModelProtocolAuditor:
 
         # Analyze duplications
         duplications = self._analyze_cross_repo_duplicates(
-            current_protocols,
-            spi_protocols,
+            current_protocols, spi_protocols
         )
 
         # Find migration candidates (protocols that should move to SPI)
@@ -198,15 +163,15 @@ class ModelProtocolAuditor:
         recommendations = []
         if duplications["exact_duplicates"]:
             recommendations.append(
-                "Remove exact duplicates from current repository - use SPI versions",
+                "Remove exact duplicates from current repository - use SPI versions"
             )
         if duplications["name_conflicts"]:
             recommendations.append(
-                "Resolve name conflicts by renaming or merging protocols",
+                "Resolve name conflicts by renaming or merging protocols"
             )
         if migration_candidates:
             recommendations.append(
-                f"Consider migrating {len(migration_candidates)} unique protocols to SPI",
+                f"Consider migrating {len(migration_candidates)} unique protocols to SPI"
             )
 
         return ModelDuplicationReport(
@@ -245,12 +210,11 @@ class ModelProtocolAuditor:
         return results
 
     def _find_local_duplicates(
-        self,
-        protocols: list[ModelProtocolInfo],
+        self, protocols: list[ModelProtocolInfo]
     ) -> list[DuplicationInfo]:
         """Find duplicate protocols within the same repository."""
         duplicates = []
-        by_signature = defaultdict(list)
+        by_signature = defaultdict(list[Any])
 
         for protocol in protocols:
             by_signature[protocol.signature_hash].append(protocol)
@@ -263,14 +227,13 @@ class ModelProtocolAuditor:
                         protocols=protocol_group,
                         duplication_type="exact",
                         recommendation=f"Merge or remove duplicate {protocol_group[0].name} protocols",
-                    ),
+                    )
                 )
 
         return duplicates
 
     def _check_naming_conventions(
-        self,
-        protocols: list[ModelProtocolInfo],
+        self, protocols: list[ModelProtocolInfo]
     ) -> list[str]:
         """Check protocol naming conventions."""
         violations = []
@@ -279,7 +242,7 @@ class ModelProtocolAuditor:
             # Check class name starts with Protocol
             if not ("Protocol" in protocol.name and protocol.name[0].isupper()):
                 violations.append(
-                    f"Protocol {protocol.name} should start with 'Protocol'",
+                    f"Protocol {protocol.name} should start with 'Protocol'"
                 )
 
             # Check file name follows protocol_*.py pattern
@@ -288,10 +251,10 @@ class ModelProtocolAuditor:
                 f"protocol_{protocol.name[8:].lower()}.py"  # Remove "Protocol" prefix
             )
             if file_path.name != expected_filename and not file_path.name.startswith(
-                "protocol_",
+                "protocol_"
             ):
                 violations.append(
-                    f"File {file_path.name} should follow protocol_*.py naming pattern",
+                    f"File {file_path.name} should follow protocol_*.py naming pattern"
                 )
 
         return violations
@@ -304,13 +267,13 @@ class ModelProtocolAuditor:
             # Check for empty protocols
             if not protocol.methods:
                 issues.append(
-                    f"Protocol {protocol.name} has no methods - consider if it's needed",
+                    f"Protocol {protocol.name} has no methods - consider if it's needed"
                 )
 
             # Check for overly complex protocols
             if len(protocol.methods) > 20:
                 issues.append(
-                    f"Protocol {protocol.name} has {len(protocol.methods)} methods - consider splitting",
+                    f"Protocol {protocol.name} has {len(protocol.methods)} methods - consider splitting"
                 )
 
         return issues
@@ -338,7 +301,7 @@ class ModelProtocolAuditor:
                         protocols=[source_protocol, target_protocol],
                         duplication_type="exact",
                         recommendation=f"Remove {source_protocol.name} from source - use SPI version",
-                    ),
+                    )
                 )
 
             # Check for name conflicts (same name, different signature)
@@ -351,15 +314,13 @@ class ModelProtocolAuditor:
                             protocols=[source_protocol, target_protocol],
                             duplication_type="name_conflict",
                             recommendation=f"Resolve name conflict for {source_protocol.name}",
-                        ),
+                        )
                     )
 
         return {"exact_duplicates": exact_duplicates, "name_conflicts": name_conflicts}
 
     def _has_duplicate_in_spi(
-        self,
-        protocol: ModelProtocolInfo,
-        spi_protocols: list[ModelProtocolInfo],
+        self, protocol: ModelProtocolInfo, spi_protocols: list[ModelProtocolInfo]
     ) -> bool:
         """Check if protocol has a duplicate in SPI."""
         for spi_protocol in spi_protocols:

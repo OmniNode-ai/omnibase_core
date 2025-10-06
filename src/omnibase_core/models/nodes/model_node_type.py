@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+from typing import Dict, Optional
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Node Type Model
 
@@ -5,9 +14,8 @@ Replaces EnumNodeType with a proper model that includes metadata,
 descriptions, and categorization for each node type.
 """
 
-from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -15,7 +23,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.types.constraints import (
     Identifiable,
     ProtocolMetadataProvider,
@@ -447,7 +455,7 @@ class ModelNodeType(BaseModel):
             category, and capabilities for the specified node type.
 
         Raises:
-            OnexError: If the name is not a recognized node type and not
+            ModelOnexError: If the name is not a recognized node type and not
                 a valid EnumTypeName value. Error includes validation_error
                 code and suggestions for valid node types.
 
@@ -463,10 +471,10 @@ class ModelNodeType(BaseModel):
             node = ModelNodeType.from_string("VALIDATION_ENGINE")
             assert node.category == EnumConfigCategory.VALIDATION
 
-            # Invalid name raises OnexError
+            # Invalid name raises ModelOnexError
             try:
                 invalid_node = ModelNodeType.from_string("INVALID_TYPE")
-            except OnexError as e:
+            except ModelOnexError as e:
                 print(f"Unknown node type: {e.message}")
             ```
 
@@ -524,9 +532,9 @@ class ModelNodeType(BaseModel):
             )
         except ValueError:
             # If name is not in enum, we can't create it - this maintains type safety
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}",
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"Unknown node type: {name}. Must be one of {list[Any](EnumTypeName)}",
             )
 
     @property
@@ -687,8 +695,8 @@ class ModelNodeType(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            code=ModelCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
@@ -696,7 +704,7 @@ class ModelNodeType(BaseModel):
 
     def get_metadata(self) -> dict[str, Any]:
         """
-        Get node type metadata as a dictionary.
+        Get node type metadata as a dict[str, Any]ionary.
 
         Implements the ProtocolMetadataProvider protocol by extracting
         metadata from common fields. Useful for serialization, logging,
@@ -736,10 +744,10 @@ class ModelNodeType(BaseModel):
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """
-        Set node type metadata from a dictionary.
+        Set node type metadata from a dict[str, Any]ionary.
 
         Implements the ProtocolMetadataProvider protocol by updating
-        instance attributes from a metadata dictionary. Only updates
+        instance attributes from a metadata dict[str, Any]ionary. Only updates
         attributes that already exist on the instance.
 
         Args:
@@ -783,10 +791,10 @@ class ModelNodeType(BaseModel):
 
     def serialize(self) -> dict[str, Any]:
         """
-        Serialize the node type to a dictionary.
+        Serialize the node type to a dict[str, Any]ionary.
 
         Implements the Serializable protocol by converting the instance
-        to a dictionary representation suitable for JSON serialization,
+        to a dict[str, Any]ionary representation suitable for JSON serialization,
         storage, or transmission.
 
         Returns:

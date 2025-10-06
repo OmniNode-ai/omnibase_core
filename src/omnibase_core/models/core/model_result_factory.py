@@ -1,12 +1,15 @@
+from __future__ import annotations
+
+from typing import Dict, Generic, TypedDict
+
 """
 Result Factory Pattern for Model Creation.
 
 Specialized factory for result-type models with success/error patterns.
 """
 
-from __future__ import annotations
 
-from typing import TypeVar, Unpack
+from typing import Dict, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 

@@ -1,3 +1,9 @@
+from typing import Any
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Event Descriptor Model - ONEX Standards Compliant.
 

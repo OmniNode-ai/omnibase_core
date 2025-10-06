@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Callable, Dict, TypedDict, Union
+
+from pydantic import model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Unified CLI interface for all omnibase_core validation tools.
 
@@ -11,29 +19,21 @@ Usage:
     python -m omnibase_core.validation.cli all
 """
 
-from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Callable
+from collections.abc import Callable as CallableABC
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, Callable, TypedDict
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
+from .model_validator_info import ValidatorInfo
 from .patterns import validate_patterns_directory
 from .types import validate_union_usage_directory
 from .validation_utils import ValidationResult
-
-
-class ValidatorInfo(TypedDict):
-    """Type definition for validator information."""
-
-    func: Callable[..., ValidationResult]
-    description: str
-    args: list[str]
 
 
 class ModelValidationSuite:
@@ -71,8 +71,8 @@ class ModelValidationSuite:
     ) -> ValidationResult:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown validation type: {validation_type}",
             )
 
@@ -146,7 +146,14 @@ Examples:
 
     parser.add_argument(
         "validation_type",
-        choices=["architecture", "union-usage", "contracts", "patterns", "all", "list"],
+        choices=[
+            "architecture",
+            "union-usage",
+            "contracts",
+            "patterns",
+            "all",
+            "list[Any]",
+        ],
         help="Type of validation to run",
     )
 
@@ -164,7 +171,7 @@ Examples:
         help="Enable strict validation mode",
     )
 
-    # Architecture-specific arguments
+    # ModelArchitecture-specific arguments
     parser.add_argument(
         "--max-violations",
         type=int,
@@ -235,7 +242,7 @@ def run_validation_cli() -> int:
     suite = ModelValidationSuite()
 
     # Handle special commands
-    if args.validation_type == "list":
+    if args.validation_type == "list[Any]":
         suite.list_validators()
         return 0
 

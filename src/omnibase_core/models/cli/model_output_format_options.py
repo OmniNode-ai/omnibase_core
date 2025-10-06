@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import json
+from typing import Callable, Dict, TypedDict, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Output format options model for CLI operations.
 
@@ -5,10 +14,9 @@ Structured replacement for dict[str, str] output format options with proper typi
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, TypeVar, cast
+from collections.abc import Callable as CallableABC
+from typing import Any, Callable, Dict, TypedDict, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +39,7 @@ def allow_dict_any(func: F) -> F:
 
     This should only be used when:
     1. Converting untyped external data to typed internal models
-    2. Complex conversion functions where intermediate dicts need flexibility
+    2. Complex conversion functions where intermediate dict[str, Any]s need flexibility
     3. Legacy integration where gradual typing is being applied
 
     Justification: This function converts string-based configuration data
@@ -42,7 +50,7 @@ def allow_dict_any(func: F) -> F:
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
@@ -217,7 +225,7 @@ class ModelOutputFormatOptions(BaseModel):
         """Create instance from string-based configuration data."""
 
         # Create converter registry and register all known fields
-        # This replaces the large conditional field_mappings dictionary
+        # This replaces the large conditional field_mappings dict[str, Any]ionary
         registry = ModelFieldConverterRegistry()
 
         # Register boolean fields
@@ -296,7 +304,7 @@ class ModelOutputFormatOptions(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -324,8 +332,8 @@ class ModelOutputFormatOptions(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

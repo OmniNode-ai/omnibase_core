@@ -1,15 +1,22 @@
+from typing import Any, Dict
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+
 """
 Model for representing error context with proper type safety.
 
-This model replaces dictionary usage in error contexts by providing
+This model replaces dict[str, Any]ionary usage in error contexts by providing
 a structured representation of error context data.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 if TYPE_CHECKING:
@@ -85,7 +92,7 @@ class ModelErrorContext(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

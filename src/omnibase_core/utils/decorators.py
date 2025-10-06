@@ -1,3 +1,5 @@
+from typing import Callable, TypeVar
+
 """
 Core decorators for model configuration.
 
@@ -5,8 +7,8 @@ Provides decorators for configuring Pydantic models with flexible typing
 requirements for CLI and tool interoperability.
 """
 
-from collections.abc import Callable
-from typing import TypeVar
+from collections.abc import Callable as CallableABC
+from typing import Any, Callable, TypeVar
 
 from pydantic import BaseModel
 

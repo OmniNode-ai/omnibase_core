@@ -1,277 +1,234 @@
+from pydantic import Field
+
 """
-Omnibase Core - Enumerations
+Shared enums for ONEX ecosystem.
 
-Enumeration definitions for ONEX architecture with strong typing support.
+Domain-grouped enums used across multiple ONEX packages (omnibase_core, omnibase_spi, etc.)
+organized by functional domains for better maintainability.
 """
 
-from typing import TYPE_CHECKING
+# Architecture and system enums
+from .enum_architecture import ModelEnumArchitecture
 
-if TYPE_CHECKING:
-    from omnibase_core.errors import OnexError
-
-from .enum_action_category import EnumActionCategory
+# Artifact-related enums
 from .enum_artifact_type import EnumArtifactType
+
+# Audit and governance enums
+from .enum_audit_action import EnumAuditAction
+
+# Infrastructure-related enums
 from .enum_auth_type import EnumAuthType
+from .enum_authentication_method import EnumAuthenticationMethod
+from .enum_backoff_strategy import EnumBackoffStrategy
+from .enum_business_logic_pattern import EnumBusinessLogicPattern
 
-# Unified Status Hierarchy (v2)
-from .enum_base_status import EnumBaseStatus
-from .enum_category import EnumCategory
-from .enum_category_filter import EnumCategoryFilter
-from .enum_cell_type import EnumCellType
-from .enum_cli_action import EnumCliAction
-from .enum_cli_context_value_type import EnumCliContextValueType
-from .enum_cli_input_value_type import EnumCliInputValueType
-from .enum_cli_option_value_type import EnumCliOptionValueType
-from .enum_cli_status import EnumCliStatus
-from .enum_cli_value_type import EnumCliValueType
-from .enum_color_scheme import EnumColorScheme
-from .enum_compensation_strategy import EnumCompensationStrategy
-from .enum_complexity import EnumComplexity
-from .enum_complexity_level import EnumComplexityLevel
-from .enum_conceptual_complexity import EnumConceptualComplexity
-from .enum_config_category import EnumConfigCategory
-from .enum_config_type import EnumConfigType
-from .enum_connection_state import EnumConnectionState
-from .enum_connection_type import EnumConnectionType
-from .enum_context_type import EnumContextType
-from .enum_contract_data_type import EnumContractDataType
-from .enum_core_error_code import EnumCoreErrorCode
+# Computation and processing enums
+from .enum_computation_type import EnumComputationType
+from .enum_contract_compliance import EnumContractCompliance
+from .enum_coordination_mode import EnumCoordinationMode
+
+# Security-related enums
 from .enum_data_classification import EnumDataClassification
-from .enum_data_format import EnumDataFormat
-from .enum_data_type import EnumDataType
-from .enum_debug_level import EnumDebugLevel
-from .enum_difficulty_level import EnumDifficultyLevel
-from .enum_document_freshness_errors import EnumDocumentFreshnessErrorCodes
-from .enum_edit_mode import EnumEditMode
-from .enum_effect_parameter_type import EnumEffectParameterType
-from .enum_entity_type import EnumEntityType
-from .enum_environment import EnumEnvironment
-from .enum_error_value_type import EnumErrorValueType
-from .enum_event_type import EnumEventType
-from .enum_example_category import EnumExampleCategory
-from .enum_execution_mode import EnumExecutionMode
-from .enum_execution_order import EnumExecutionOrder
-from .enum_execution_phase import EnumExecutionPhase
-from .enum_execution_status_v2 import EnumExecutionStatusV2
 
-# Legacy enum removed - use EnumExecutionStatusV2 instead
-from .enum_fallback_strategy_type import EnumFallbackStrategyType
-from .enum_field_type import EnumFieldType
-from .enum_filter_type import EnumFilterType
-from .enum_flexible_value_type import EnumFlexibleValueType
-from .enum_function_lifecycle_status import EnumFunctionLifecycleStatus
-from .enum_function_status import EnumFunctionStatus
-from .enum_function_type import EnumFunctionType
-from .enum_general_status import EnumGeneralStatus
-from .enum_instance_type import EnumInstanceType
-from .enum_io_type import EnumIOType
-from .enum_item_type import EnumItemType
+# Detection and security enums
+from .enum_detection_type import EnumDetectionType
+
+# Execution-related enums
+from .enum_execution import EnumExecutionMode, EnumOperationStatus
+
+# Function-related enums
+from .enum_function_language import EnumFunctionLanguage
+
+# GitHub Actions enums
+from .enum_github_action_event import EnumGitHubActionEvent
+from .enum_github_runner_os import EnumGitHubRunnerOS
+
+# Group and organization enums
+from .enum_group_status import EnumGroupStatus
+
+# Health and status enums
+from .enum_health_status_type import EnumHealthStatusType
+
+# Hub and coordination enums
+from .enum_hub_capability import EnumHubCapability
+
+# File pattern enums
+from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMode
+
+# Language and localization enums
+from .enum_language_code import EnumLanguageCode
+from .enum_log_format import ModelEnumLogFormat
+
+# Log level enum
 from .enum_log_level import EnumLogLevel
-from .enum_memory_usage import EnumMemoryUsage
-from .enum_metadata_node_complexity import EnumMetadataNodeComplexity
-from .enum_metadata_node_status import EnumMetadataNodeStatus
-from .enum_metadata_node_type import EnumMetadataNodeType
-from .enum_metric_data_type import EnumMetricDataType
-from .enum_metric_type import EnumMetricType
-from .enum_metrics_category import EnumMetricsCategory
-from .enum_migration_conflict_type import EnumMigrationConflictType
-from .enum_namespace_strategy import EnumNamespaceStrategy
-from .enum_node_architecture_type import EnumNodeArchitectureType
-from .enum_node_capability import EnumNodeCapability
-from .enum_node_health_status import EnumNodeHealthStatus
-from .enum_node_type import EnumNodeType
-from .enum_node_union_type import EnumNodeUnionType
-from .enum_numeric_type import EnumNumericType
-from .enum_onex_status import EnumOnexStatus
-from .enum_operation_parameter_type import EnumOperationParameterType
-from .enum_operation_type import EnumOperationType
-from .enum_operational_complexity import EnumOperationalComplexity
-from .enum_output_format import EnumOutputFormat
-from .enum_output_mode import EnumOutputMode
-from .enum_output_type import EnumOutputType
-from .enum_parameter_type import EnumParameterType
-from .enum_performance_impact import EnumPerformanceImpact
-from .enum_property_type import EnumPropertyType
-from .enum_protocol_type import EnumProtocolType
-from .enum_regex_flag_type import EnumRegexFlagType
-from .enum_registry_status import EnumRegistryStatus
-from .enum_result_category import EnumResultCategory
-from .enum_result_type import EnumResultType
-from .enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from .enum_return_type import EnumReturnType
-from .enum_runtime_category import EnumRuntimeCategory
-from .enum_scenario_status import EnumScenarioStatus
-from .enum_scenario_status_v2 import EnumScenarioStatusV2
-from .enum_security_level import EnumSecurityLevel
-from .enum_severity_level import EnumSeverityLevel
-from .enum_status import EnumStatus
-from .enum_status_message import EnumStatusMessage
 
-# Lazy import to avoid circular dependency with error_codes
-# from .enum_status_migration import (
-#     EnumStatusMigrationValidator,
-#     EnumStatusMigrator,
-# )
-from .enum_stop_reason import EnumStopReason
+# Communication enums
+from .enum_message_type import EnumMessageType
 
-
-def __getattr__(name: str) -> type:
-    """Lazy import for enum_status_migration to avoid circular dependency."""
-    if name in ("EnumStatusMigrationValidator", "EnumStatusMigrator"):
-        from .enum_status_migration import (
-            EnumStatusMigrationValidator,
-            EnumStatusMigrator,
-        )
-
-        return (
-            EnumStatusMigrationValidator
-            if name == "EnumStatusMigrationValidator"
-            else EnumStatusMigrator
-        )
-    # Lazy import to avoid circular dependency
-    from omnibase_core.errors import OnexError
-
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise OnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
-
-
-from .enum_table_alignment import EnumTableAlignment
-from .enum_time_period import EnumTimePeriod
-from .enum_time_unit import EnumTimeUnit
-from .enum_trend_type import EnumTrendType
-from .enum_type_name import EnumTypeName
-from .enum_uri_type import EnumUriType
-from .enum_validation_level import EnumValidationLevel
-from .enum_validation_rules_input_type import EnumValidationRulesInputType
-from .enum_validation_severity import EnumValidationSeverity
-from .enum_version_union_type import EnumVersionUnionType
-from .enum_workflow_coordination import (
-    EnumAssignmentStatus,
-    EnumExecutionPattern,
-    EnumFailureRecoveryStrategy,
-    EnumWorkflowStatus,
+# Metadata-related enums
+from .enum_metadata import (
+    EnumLifecycle,
+    EnumMetaType,
+    EnumNodeMetadataField,
+    EnumProtocolVersion,
+    EnumRuntimeLanguage,
 )
+
+# Namespace-related enums
+from .enum_namespace_strategy import EnumNamespaceStrategy
+from .enum_node_health_status import EnumNodeHealthStatus
+from .enum_node_status import EnumNodeStatus
+
+# Node-related enums
+from .enum_node_type import EnumNodeType
+from .enum_notification_method import EnumNotificationMethod
+
+# Response and reply enums
+from .enum_onex_reply_status import EnumOnexReplyStatus
+
+# Registry-related enums
+from .enum_registry_health_status import EnumRegistryHealthStatus
+from .enum_registry_type import EnumRegistryType
+from .enum_security_profile import EnumSecurityProfile
+
+# Service-related enums
+from .enum_service_health_status import EnumServiceHealthStatus
+from .enum_service_mode import ModelServiceModeEnum
+from .enum_service_status import EnumServiceStatus
+
+# Service architecture enums
+from .enum_service_tier import EnumServiceTier
+from .enum_service_type_category import EnumServiceTypeCategory
+from .enum_state_update_operation import EnumStateUpdateOperation
+
+# Status migration enums
+from .enum_status_migrator import ModelEnumStatusMigrator
+
+# Tool-related enums
+from .enum_tool_category import EnumToolCategory
+from .enum_tool_criticality import EnumToolCriticality
+from .enum_tool_health_status import EnumToolHealthStatus
+from .enum_tool_missing_reason import EnumToolMissingReason
+
+# Tool lifecycle enums
+from .enum_tool_status import EnumToolStatus
+from .enum_tool_type import EnumToolType
+
+# State management enums
+from .enum_transition_type import EnumTransitionType
+
+# Tree sync enums
+from .enum_tree_sync_status import EnumTreeSyncStatus
+
+# URI-related enums
+from .enum_uri_type import EnumUriType
+
+# Validation-related enums
+from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
+
+# Version and contract enums
+from .enum_version_status import EnumVersionStatus
+
+# Workflow-related enums
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
-from .enum_workflow_parameter_type import EnumWorkflowParameterType
-from .enum_workflow_type import EnumWorkflowType
-from .enum_yaml_option_type import EnumYamlOptionType
-from .enum_yaml_value_type import EnumYamlValueType
+
+# Event and logging enums
+# from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
+
 
 __all__ = [
-    "EnumActionCategory",
+    # Artifact domain
     "EnumArtifactType",
-    "EnumAssignmentStatus",
-    "EnumAuthType",
-    "EnumBaseStatus",
-    "EnumCategory",
-    "EnumCategoryFilter",
-    "EnumCellType",
-    "EnumCliAction",
-    "EnumCliContextValueType",
-    "EnumCliInputValueType",
-    "EnumCliOptionValueType",
-    "EnumCliStatus",
-    "EnumCliValueType",
-    "EnumColorScheme",
-    "EnumCompensationStrategy",
-    "EnumComplexity",
-    "EnumComplexityLevel",
-    "EnumConceptualComplexity",
-    "EnumConfigCategory",
-    "EnumConfigType",
-    "EnumConnectionState",
-    "EnumConnectionType",
-    "EnumContextType",
-    "EnumContractDataType",
-    "EnumCoreErrorCode",
+    # Security domain
     "EnumDataClassification",
-    "EnumDataFormat",
-    "EnumDataType",
-    "EnumDebugLevel",
-    "EnumDifficultyLevel",
-    "EnumDocumentFreshnessErrorCodes",
-    "EnumEditMode",
-    "EnumEffectParameterType",
-    "EnumEntityType",
-    "EnumEnvironment",
-    "EnumErrorValueType",
-    "EnumEventType",
-    "EnumExampleCategory",
+    "EnumSecurityProfile",
+    "EnumAuthenticationMethod",
+    # Validation domain
+    "EnumErrorSeverity",
+    # Execution domain
     "EnumExecutionMode",
-    "EnumExecutionOrder",
-    "EnumExecutionPattern",
-    "EnumExecutionPhase",
-    # "EnumExecutionStatus",  # Legacy - use EnumExecutionStatusV2
-    "EnumExecutionStatusV2",
-    "EnumFailureRecoveryStrategy",
-    "EnumFallbackStrategyType",
-    "EnumFieldType",
-    "EnumFilterType",
-    "EnumFlexibleValueType",
-    "EnumFunctionLifecycleStatus",
-    "EnumFunctionStatus",
-    "EnumFunctionType",
-    "EnumGeneralStatus",
-    "EnumIOType",
-    "EnumInstanceType",
-    "EnumItemType",
+    # Events domain
     "EnumLogLevel",
-    "EnumMemoryUsage",
-    "EnumMetadataNodeComplexity",
-    "EnumMetadataNodeStatus",
-    "EnumMetadataNodeType",
-    "EnumMetricDataType",
-    "EnumMetricType",
-    "EnumMetricsCategory",
-    "EnumMigrationConflictType",
-    "EnumNamespaceStrategy",
-    "EnumNodeArchitectureType",
-    "EnumNodeCapability",
+    # Health and status domain
+    "EnumHealthStatusType",
     "EnumNodeHealthStatus",
+    "EnumNodeStatus",
+    # Node domain
     "EnumNodeType",
-    "EnumNodeUnionType",
-    "EnumNumericType",
-    "EnumOnexStatus",
-    "EnumOperationParameterType",
-    "EnumOperationType",
-    "EnumOperationalComplexity",
-    "EnumOutputFormat",
-    "EnumOutputMode",
-    "EnumOutputType",
-    "EnumParameterType",
-    "EnumPerformanceImpact",
-    "EnumPropertyType",
-    "EnumProtocolType",
-    "EnumRegexFlagType",
-    "EnumRegistryStatus",
-    "EnumResultCategory",
-    "EnumResultType",
-    "EnumRetryBackoffStrategy",
-    "EnumReturnType",
-    "EnumRuntimeCategory",
-    "EnumScenarioStatus",
-    "EnumScenarioStatusV2",
-    "EnumSecurityLevel",
-    "EnumSeverityLevel",
-    "EnumStatus",
-    "EnumStatusMessage",
-    "EnumStatusMigrationValidator",
-    "EnumStatusMigrator",
-    "EnumStopReason",
-    "EnumTableAlignment",
-    "EnumTimePeriod",
-    "EnumTimeUnit",
-    "EnumTrendType",
-    "EnumTypeName",
-    "EnumUriType",
+    "EnumOperationStatus",
     "EnumValidationLevel",
-    "EnumValidationRulesInputType",
-    "EnumValidationSeverity",
-    "EnumVersionUnionType",
+    "EnumValidationMode",
+    # File pattern domain
+    "EnumIgnorePatternSource",
+    "EnumTraversalMode",
+    # Metadata domain
+    "EnumLifecycle",
+    "EnumMetaType",
+    "EnumNodeMetadataField",
+    "EnumProtocolVersion",
+    "EnumRuntimeLanguage",
+    # Namespace domain
+    "EnumNamespaceStrategy",
+    # URI domain
+    "EnumUriType",
+    # Workflow domain
     "EnumWorkflowDependencyType",
-    "EnumWorkflowParameterType",
-    "EnumWorkflowStatus",
-    "EnumWorkflowType",
-    "EnumYamlOptionType",
-    "EnumYamlValueType",
+    # Infrastructure domain
+    "EnumAuthType",
+    "EnumBackoffStrategy",
+    "EnumNotificationMethod",
+    # Audit and governance domain
+    "EnumAuditAction",
+    # Architecture and system domain
+    "ModelEnumArchitecture",
+    "ModelEnumLogFormat",
+    # Communication domain
+    "EnumMessageType",
+    # Group and organization domain
+    "EnumGroupStatus",
+    # Version and contract domain
+    "EnumVersionStatus",
+    "EnumContractCompliance",
+    # State management domain
+    "EnumTransitionType",
+    "EnumStateUpdateOperation",
+    # Response and reply domain
+    "EnumOnexReplyStatus",
+    # Computation and processing domain
+    "EnumComputationType",
+    # Tool lifecycle domain
+    "EnumToolStatus",
+    "EnumBusinessLogicPattern",
+    # Service architecture domain
+    "EnumServiceTier",
+    # Hub and coordination domain
+    "EnumHubCapability",
+    "EnumCoordinationMode",
+    # Language and localization domain
+    "EnumLanguageCode",
+    # Detection and security domain
+    "EnumDetectionType",
+    # Function-related domain
+    "EnumFunctionLanguage",
+    # Registry-related domain
+    "EnumRegistryHealthStatus",
+    "EnumRegistryType",
+    # Service-related domain
+    "EnumServiceHealthStatus",
+    "ModelServiceModeEnum",
+    "EnumServiceStatus",
+    "EnumServiceTypeCategory",
+    # Status migration domain
+    "ModelEnumStatusMigrator",
+    # Tool-related domain
+    "EnumToolCategory",
+    "EnumToolCriticality",
+    "EnumToolHealthStatus",
+    "EnumToolMissingReason",
+    "EnumToolType",
+    # Tree sync domain
+    "EnumTreeSyncStatus",
+    # GitHub Actions domain
+    "EnumGitHubActionEvent",
+    "EnumGitHubRunnerOS",
 ]

@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Synchronization Point Model - ONEX Standards Compliant.
 

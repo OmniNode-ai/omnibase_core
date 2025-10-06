@@ -1,14 +1,24 @@
+from __future__ import annotations
+
+from typing import Generic, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+
 """
 Typed field accessor for specific value types.
 
 Provides type-safe field access with generic type support.
 """
 
-from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import (
+    ModelCoreErrorCode,
+    ModelOnexError,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_field_accessor import ModelFieldAccessor
@@ -52,13 +62,13 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Typed accessor classes don't have specific model fields - serialize accessible data
         result: dict[str, Any] = {
             "accessor_type": self.__class__.__name__,
@@ -90,8 +100,8 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

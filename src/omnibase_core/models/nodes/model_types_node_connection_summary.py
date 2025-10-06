@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for node connection summary.
 
 Replaces dict[str, Any] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelNodeConnectionSummaryType(TypedDict):
     """
-    Typed dictionary for node connection settings summary.
+    Typed dict[str, Any]ionary for node connection settings summary.
 
     Replaces dict[str, Any] return type from get_connection_summary()
     with proper type structure.

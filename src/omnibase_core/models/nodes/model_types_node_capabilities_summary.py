@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for node capabilities summary.
 
 Replaces dict[str, Any] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelNodeCapabilitiesSummaryType(TypedDict):
     """
-    Typed dictionary for node capabilities info summary.
+    Typed dict[str, Any]ionary for node capabilities info summary.
 
     Replaces dict[str, Any] return type from get_capabilities_summary()
     with proper type structure.

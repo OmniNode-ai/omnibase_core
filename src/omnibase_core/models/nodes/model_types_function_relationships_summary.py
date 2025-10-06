@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for function relationships summary.
 
 Replaces dict[str, Any] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelFunctionRelationshipsSummaryType(TypedDict):
     """
-    Typed dictionary for function relationships summary.
+    Typed dict[str, Any]ionary for function relationships summary.
 
     Replaces dict[str, Any] return type from get_relationships_summary()
     with proper type structure.

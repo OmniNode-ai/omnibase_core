@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+
 """
 Edit Mode Enum.
 
@@ -5,7 +9,6 @@ Strongly typed enumeration for edit operation modes.
 Replaces Literal["replace", "insert", "delete"] patterns.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -66,7 +69,7 @@ class EnumEditMode(str, Enum):
 
     @classmethod
     def get_required_parameters(cls, edit_mode: EnumEditMode) -> list[str]:
-        """Get list of required parameters for each edit mode."""
+        """Get list[Any]of required parameters for each edit mode."""
         requirements = {
             cls.REPLACE: ["target_identifier", "new_content"],
             cls.INSERT: ["position_identifier", "new_content"],

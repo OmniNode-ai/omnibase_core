@@ -1,17 +1,24 @@
+from __future__ import annotations
+
+from typing import Union
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Node Union Model.
 
 Discriminated union for function node types following ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
 
 from .model_function_node_data import ModelFunctionNodeData
@@ -41,24 +48,24 @@ class ModelNodeUnion(BaseModel):
         """Ensure only one node value is set based on type discriminator."""
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="function_node must be set when node_type is 'function_node'",
                 )
             if self.function_node_data is not None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="function_node_data must be None when node_type is 'function_node'",
                 )
         elif self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="function_node_data must be set when node_type is 'function_node_data'",
                 )
             if self.function_node is not None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="function_node must be None when node_type is 'function_node_data'",
                 )
 
@@ -90,7 +97,7 @@ class ModelNodeUnion(BaseModel):
                           Use isinstance() to check specific type.
 
         Raises:
-            OnexError: If discriminator state is invalid
+            ModelOnexError: If discriminator state is invalid
 
         Examples:
             node = union.get_node()
@@ -103,20 +110,20 @@ class ModelNodeUnion(BaseModel):
         """
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node is None but node_type is FUNCTION_NODE",
                 )
             return self.function_node
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node_data is None but node_type is FUNCTION_NODE_DATA",
                 )
             return self.function_node_data
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            code=ModelCoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown node_type: {self.node_type}",
         )
 
@@ -131,7 +138,7 @@ class ModelNodeUnion(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -144,7 +151,7 @@ class ModelNodeUnion(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -156,7 +163,7 @@ class ModelNodeUnion(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 General Status Enumeration - Unified Hierarchy Version.
 
@@ -6,7 +8,6 @@ original overly broad EnumStatus with a well-organized hierarchy that leverages
 base status values while adding commonly needed general status concepts.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

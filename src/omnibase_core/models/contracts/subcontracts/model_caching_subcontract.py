@@ -1,3 +1,9 @@
+from typing import Any, Dict
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Caching Subcontract Model - ONEX Standards Compliant.
 
@@ -16,7 +22,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -177,9 +183,9 @@ class ModelCachingSubcontract(BaseModel):
         """Validate memory allocation is reasonable."""
         if v > 16384:  # 16GB
             msg = "max_memory_mb cannot exceed 16GB for safety"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -197,9 +203,9 @@ class ModelCachingSubcontract(BaseModel):
         """Validate hit ratio threshold is reasonable."""
         if v < 0.1:
             msg = "hit_ratio_threshold should be at least 0.1 (10%)"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -219,9 +225,9 @@ class ModelCachingSubcontract(BaseModel):
             l1_size = info.data.get("l1_cache_size", 1000)
             if v <= l1_size:
                 msg = "l2_cache_size must be larger than l1_cache_size"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

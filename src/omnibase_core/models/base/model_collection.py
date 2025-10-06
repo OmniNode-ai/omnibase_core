@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Generic, TypeVar
+
 """
 Base Collection Model.
 
@@ -5,10 +9,9 @@ Abstract base class for typed collections following ONEX one-model-per-file
 architecture.
 """
 
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -44,7 +47,7 @@ class ModelBaseCollection(ABC, BaseModel, Generic[T]):
 
     @abstractmethod
     def get_items(self) -> list[T]:
-        """Get all items as a list."""
+        """Get all items as a list[Any]."""
         ...
 
     model_config = {

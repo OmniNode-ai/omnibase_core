@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+import uuid
+from typing import Generic
+
+from pydantic import Field
+
 """
 Generic typed metrics model.
 
@@ -5,16 +12,13 @@ Unified generic model replacing type-specific metrics variants.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any, Generic
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.constraints import (
-    SimpleValueType,
-)
+from omnibase_core.types.constraints import SimpleValueType
 
 # Use consolidated SimpleValueType instead of redundant TypeVar
 
@@ -143,7 +147,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -156,7 +160,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -168,7 +172,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

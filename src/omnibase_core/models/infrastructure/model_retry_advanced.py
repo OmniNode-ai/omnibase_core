@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import Field
+
 """
 Advanced Retry Features Model.
 
@@ -5,9 +11,8 @@ Circuit breaker and advanced retry features.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -193,7 +198,7 @@ class ModelRetryAdvanced(BaseModel):
         return True
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

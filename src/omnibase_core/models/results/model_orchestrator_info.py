@@ -1,9 +1,16 @@
+import uuid
+from typing import Dict
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer

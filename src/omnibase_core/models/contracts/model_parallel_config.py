@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Parallel Configuration Model - ONEX Standards Compliant.
 
@@ -6,6 +8,8 @@ and concurrency parameters for performance optimization.
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 

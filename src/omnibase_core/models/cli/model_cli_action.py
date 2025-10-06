@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field, field_validator, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Dynamic CLI Action Model.
 
@@ -5,19 +13,13 @@ Replaces hardcoded EnumNodeCliAction with extensible model that
 enables plugin extensibility and contract-driven action registration.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import (
-    BaseModel,
-    Field,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -82,8 +84,8 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                         f"Invalid category value: {v}. "
                         f"Must be one of {valid_values}"
                     )
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
+                        code=ModelCoreErrorCode.VALIDATION_ERROR,
                         message=message,
                         details=ModelErrorContext.with_context(
                             {
@@ -98,8 +100,8 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                     ) from None
 
             # Invalid type
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Category must be None or EnumActionCategory, got {type(v)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -128,8 +130,8 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 "lowercase letter and contain only lowercase letters, "
                 "numbers, and underscores"
             )
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=message,
                 details=ModelErrorContext.with_context(
                     {
@@ -267,7 +269,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -295,7 +297,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

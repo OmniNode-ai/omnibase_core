@@ -1,3 +1,7 @@
+from typing import Any, TypeVar
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Type constraints and protocols for better generic programming.
 
@@ -41,57 +45,16 @@ from pydantic import BaseModel
 # Type-only import - NEVER make this a runtime import!
 # Protected by TYPE_CHECKING to prevent circular dependency with errors.error_codes
 if TYPE_CHECKING:
-    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+    from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
-# Temporary local protocol definitions for validation purposes
-# TODO: Replace with actual omnibase_spi imports when available
-
-
-class Configurable(Protocol):
-    """Protocol for configurable objects."""
-
-    def configure(self, **kwargs: Any) -> bool: ...
-
-
-class Executable(Protocol):
-    """Protocol for executable objects."""
-
-    def execute(self, *args: Any, **kwargs: Any) -> Any: ...
-
-
-class Identifiable(Protocol):
-    """Protocol for identifiable objects."""
-
-    @property
-    def id(self) -> str: ...
-
-
-class ProtocolMetadataProvider(Protocol):
-    """Protocol for objects that provide metadata."""
-
-    @property
-    def metadata(self) -> dict[str, Any]: ...
-
-
-class Nameable(Protocol):
-    """Protocol for nameable objects."""
-
-    def get_name(self) -> str: ...
-
-    def set_name(self, name: str) -> None: ...
-
-
-class Serializable(Protocol):
-    """Protocol for serializable objects."""
-
-    def serialize(self) -> dict[str, Any]: ...
-
-
-class ProtocolValidatable(Protocol):
-    """Protocol for validatable objects."""
-
-    def validate_instance(self) -> bool: ...
-
+# Import extracted protocols from individual files
+from omnibase_core.types.protocol_configurable import Configurable
+from omnibase_core.types.protocol_executable import Executable
+from omnibase_core.types.protocol_identifiable import Identifiable
+from omnibase_core.types.protocol_metadata_provider import ProtocolMetadataProvider
+from omnibase_core.types.protocol_nameable import Nameable
+from omnibase_core.types.protocol_serializable import Serializable
+from omnibase_core.types.protocol_validatable import ProtocolValidatable
 
 # Bounded type variables with proper constraints
 
@@ -131,7 +94,7 @@ ErrorType = TypeVar("ErrorType", bound=Exception)
 
 # Collection types with simplified constraints
 CollectionItemType = TypeVar("CollectionItemType", bound=BaseModel)
-# Simplified dict value type - use more specific constraints
+# Simplified dict[str, Any]value type - use more specific constraints
 SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
 
 # Schema value types - standardized types for replacing hardcoded unions
@@ -145,7 +108,7 @@ SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
 PrimitiveValueType = object  # Runtime validation required - see type guards below
 
 # Context values - use object with runtime validation instead of open unions
-# Instead of primitive soup Union[str, int, float, bool, list, dict]
+# Instead of primitive soup Union[str, int, float, bool, list[Any], dict[str, Any]]
 ContextValueType = object  # Runtime validation required - see type guards below
 
 # Complex context - use object with runtime validation
@@ -257,7 +220,7 @@ def is_primitive_value(obj: object) -> bool:
 
 
 def is_context_value(obj: object) -> bool:
-    """Check if object is a valid context value (primitive, list, or dict)."""
+    """Check if object is a valid context value (primitive, list[Any], or dict[str, Any])."""
     if isinstance(obj, str | int | float | bool):
         return True
     if isinstance(obj, list):
@@ -286,12 +249,12 @@ def validate_primitive_value(obj: object) -> bool:
         # LAZY IMPORT: Only load error_codes when validation fails
         # This prevents circular dependency at module import time
         # Import chain: errors.error_codes → types.core_types (no models/constraints)
-        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+        from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
-        raise OnexError(
-            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
     return True
@@ -311,12 +274,12 @@ def validate_context_value(obj: object) -> bool:
         # LAZY IMPORT: Only load error_codes when validation fails
         # This prevents circular dependency at module import time
         # Import chain: errors.error_codes → types.core_types (no models/constraints)
-        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+        from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
         obj_type = type(obj).__name__
-        msg = f"Expected context value (primitive, list, or dict), got {obj_type}"
-        raise OnexError(
-            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+        msg = f"Expected context value (primitive, list[Any], or dict[str, Any]), got {obj_type}"
+        raise ModelOnexError(
+            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
     return True

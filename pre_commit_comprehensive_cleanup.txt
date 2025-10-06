@@ -1,0 +1,2214 @@
+yamlfmt..................................................................Passed
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+check for merge conflicts................................................Passed
+check for added large files..............................................Passed
+Black Python Formatter...................................................Failed
+- hook id: black
+- exit code: 123
+- files were modified by this hook
+
+reformatted src/omnibase_core/constants/__init__.py
+reformatted fix_mypy_errors.py
+reformatted src/omnibase_core/logging/core_logging.py
+reformatted scripts/validation/validate-single-class-per-file.py
+reformatted src/omnibase_core/infrastructure/node_base.py
+reformatted src/omnibase_core/models/connections/model_connection_pool.py
+reformatted src/omnibase_core/mixin/mixin_node_lifecycle.py
+reformatted src/omnibase_core/models/connections/model_connection_security.py
+reformatted src/omnibase_core/models/contracts/model_compensation_plan.py
+reformatted src/omnibase_core/models/contracts/model_contract_orchestrator.py
+reformatted src/omnibase_core/models/contracts/model_filter_conditions.py
+reformatted src/omnibase_core/models/contracts/model_trigger_mappings.py
+reformatted src/omnibase_core/infrastructure/node_compute.py
+reformatted src/omnibase_core/models/contracts/model_workflow_condition.py
+reformatted src/omnibase_core/models/contracts/model_contract_compute.py
+reformatted src/omnibase_core/models/contracts/model_workflow_conditions.py
+reformatted src/omnibase_core/models/contracts/model_contract_effect.py
+reformatted src/omnibase_core/infrastructure/node_effect.py
+reformatted src/omnibase_core/models/contracts/subcontracts/model_aggregation_subcontract.py
+reformatted src/omnibase_core/models/contracts/model_workflow_dependency.py
+reformatted src/omnibase_core/models/contracts/model_contract_reducer.py
+reformatted src/omnibase_core/models/contracts/model_yaml_contract.py
+reformatted src/omnibase_core/models/contracts/model_contract_base.py
+reformatted src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py
+error: cannot format src/omnibase_core/models/operations/model_event_payload.py: Cannot parse for target version Python 3.11: 83:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_execution_metadata.py: Cannot parse for target version Python 3.11: 92:24: Failed to parse: UnterminatedString
+reformatted src/omnibase_core/models/contracts/subcontracts/model_caching_subcontract.py
+error: cannot format src/omnibase_core/models/operations/model_effect_parameters.py: Cannot parse for target version Python 3.11: 324:12: Failed to parse: UnterminatedString
+reformatted src/omnibase_core/models/contracts/subcontracts/model_event_type_subcontract.py
+reformatted src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py
+reformatted src/omnibase_core/models/contracts/subcontracts/model_state_management_subcontract.py
+error: cannot format src/omnibase_core/models/operations/model_operation_parameters_base.py: Cannot parse for target version Python 3.11: 248:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_system_metadata.py: Cannot parse for target version Python 3.11: 108:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_workflow_instance_metadata.py: Cannot parse for target version Python 3.11: 103:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_operation_payload.py: Cannot parse for target version Python 3.11: 234:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_message_payload.py: Cannot parse for target version Python 3.11: 261:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_workflow_payload.py: Cannot parse for target version Python 3.11: 334:12: Failed to parse: UnterminatedString
+error: cannot format src/omnibase_core/models/operations/model_workflow_parameters.py: Cannot parse for target version Python 3.11: 313:12: Failed to parse: UnterminatedString
+reformatted src/omnibase_core/models/operations/model_event_metadata.py
+reformatted src/omnibase_core/models/contracts/subcontracts/model_configuration_subcontract.py
+reformatted src/omnibase_core/models/operations/model_computation_output_data.py
+reformatted src/omnibase_core/models/operations/model_computation_input_data.py
+reformatted src/omnibase_core/infrastructure/node_orchestrator.py
+reformatted src/omnibase_core/infrastructure/node_reducer.py
+
+Oh no! 💥 💔 💥
+34 files reformatted, 840 files left unchanged, 10 files failed to reformat.
+
+isort Import Sorter......................................................Failed
+- hook id: isort
+- files were modified by this hook
+
+Fixing /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/enums/__init__.py
+Fixing /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_contract_state_reducer.py
+Fixing /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_bus.py
+Fixing /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_fail_fast.py
+Fixing /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_registry_injection.py
+
+MyPy Type Checking (via Poetry)..........................................Failed
+- hook id: mypy-poetry
+- exit code: 2
+
+src/omnibase_core/models/operations/model_execution_metadata.py:92: error: Unterminated f-string literal (detected at line 92)  [syntax]
+src/omnibase_core/models/operations/model_execution_metadata.py:92: error: Unterminated f-string literal (detected at line 92)  [syntax]
+src/omnibase_core/models/operations/model_event_payload.py:83: error: Unterminated f-string literal (detected at line 83)  [syntax]
+src/omnibase_core/models/operations/model_operation_payload.py:234: error: Unterminated f-string literal (detected at line 234)  [syntax]
+src/omnibase_core/models/operations/model_execution_metadata.py:92: error: Unterminated f-string literal (detected at line 92)  [syntax]
+src/omnibase_core/models/operations/model_execution_metadata.py:92: error: Unterminated f-string literal (detected at line 92)  [syntax]
+src/omnibase_core/models/operations/model_workflow_payload.py:334: error: Unterminated f-string literal (detected at line 334)  [syntax]
+src/omnibase_core/models/operations/model_workflow_instance_metadata.py:103: error: Unterminated f-string literal (detected at line 103)  [syntax]
+src/omnibase_core/models/operations/model_system_metadata.py:108: error: Unterminated f-string literal (detected at line 108)  [syntax]
+src/omnibase_core/models/operations/model_message_payload.py:261: error: Unterminated f-string literal (detected at line 261)  [syntax]
+src/omnibase_core/models/operations/model_workflow_parameters.py:313: error: Unterminated f-string literal (detected at line 313)  [syntax]
+src/omnibase_core/models/operations/model_execution_metadata.py:92: error: Unterminated f-string literal (detected at line 92)  [syntax]
+
+ONEX Repository Structure Validation.....................................Failed
+- hook id: validate-repository-structure
+- exit code: 1
+
+🔍 Validating structure for repository: omnibase_core
+📁 Repository path: /Volumes/PRO-G40/Code/omnibase_core
+🎯 Source path: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core
+------------------------------------------------------------
+
+🚨 Repository 'omnibase_core' Structure Validation Report
+============================================================
+Summary: 1 errors, 0 warnings, 0 info
+❌ FAILURE: 1 structure violations must be fixed!
+
+📂 Forbidden Directory
+----------------------------------------
+🚨 ERROR: Found forbidden directory: /mixin/
+   📍 Path: src/omnibase_core/mixin
+   💡 Suggestion: Use /mixins/ (plural) instead
+
+ONEX Naming Convention Validation........................................Failed
+- hook id: validate-naming-conventions
+- exit code: 1
+
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py: unterminated f-string literal (detected at line 261) (model_message_payload.py, line 261)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_execution_metadata.py: unterminated f-string literal (detected at line 92) (model_execution_metadata.py, line 92)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py: unterminated f-string literal (detected at line 248) (model_operation_parameters_base.py, line 248)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py: unterminated f-string literal (detected at line 234) (model_operation_payload.py, line 234)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py: unterminated f-string literal (detected at line 334) (model_workflow_payload.py, line 334)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py: unterminated f-string literal (detected at line 324) (model_effect_parameters.py, line 324)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py: unterminated f-string literal (detected at line 83) (model_event_payload.py, line 83)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_instance_metadata.py: unterminated f-string literal (detected at line 103) (model_workflow_instance_metadata.py, line 103)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py: unterminated f-string literal (detected at line 313) (model_workflow_parameters.py, line 313)
+Warning: Could not parse /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py: unterminated f-string literal (detected at line 108) (model_system_metadata.py, line 108)
+🚨 Naming Convention Validation Report
+========================================
+
+Summary: 21 errors, 34 warnings
+
+🔴 NAMING ERRORS (Must Fix):
+==============================
+🔴 Config (Line 34)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_reducer_output.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 Config (Line 32)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_input.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 Config (Line 35)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_reducer_input.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 Config (Line 33)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_output.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 CircuitBreaker (Line 8)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_circuit_breaker.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 Transaction (Line 14)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_transaction.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 StreamingWindow (Line 8)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_streaming_window.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 ConflictResolver (Line 11)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_conflict_resolver.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 HasModelDump (Line 30)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_yaml_serialization.py
+   Expected Pattern: ^Model[A-Z][A-Za-z0-9]*$
+   Rule: Models must start with 'Model' (e.g., ModelUserAuth)
+
+🔴 ContractViolationError (Line 65)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_fail_fast.py
+   Expected Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+   Rule: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+
+🔴 EventDrivenNodeProtocol (Line 189)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_driven_node.py
+   Expected Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+   Rule: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+
+🔴 AsyncProtocolEventBus (Line 45)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_bus.py
+   Expected Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+   Rule: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+
+🔴 CoreEventTypes (Line 8)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/constants/event_types.py
+   Expected Pattern: ^Enum[A-Z][A-Za-z0-9]*$
+   Rule: Enums must start with 'Enum' (e.g., EnumWorkflowType)
+
+🔴 HashComputationMixin (Line 31)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_hash_computation.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 DiscoveryResponderMixin (Line 23)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_discovery_responder.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 SensitiveFieldRedactionMixin (Line 28)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_redaction.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 YAMLSerializationMixin (Line 34)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_yaml_serialization.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 SerializableMixin (Line 30)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_serializable.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 ModelMixinEventBus (Line 123)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_bus.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 NodeIntrospectionMixin (Line 61)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_introspection.py
+   Expected Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+   Rule: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+
+🔴 EventDrivenNodeProtocol (Line 189)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_driven_node.py
+   Expected Pattern: ^Node[A-Z][A-Za-z0-9]*$
+   Rule: Nodes must start with 'Node' (e.g., NodeEffectUserData)
+
+🟡 NAMING WARNINGS (Should Fix):
+================================
+🟡 ModelFieldConverterRegistry (Line 90)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/utils/model_field_converter.py
+   Issue: ModelFieldConverterRegistry should be in models/ directory
+
+🟡 ModelMigrationPlan (Line 18)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/validation/model_migration_plan.py
+   Issue: ModelMigrationPlan should be in models/ directory
+
+🟡 ModelMigrationResult (Line 11)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/validation/model_migration_result.py
+   Issue: ModelMigrationResult should be in models/ directory
+
+🟡 ModelProtocolInfo (Line 13)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/validation/model_protocol_info.py
+   Issue: ModelProtocolInfo should be in models/ directory
+
+🟡 MixinNodeSetup (Line 6)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_node_setup.py
+   Issue: MixinNodeSetup should be in mixins/ directory
+
+🟡 MixinFailFast (Line 76)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_fail_fast.py
+   Issue: MixinFailFast should be in mixins/ directory
+
+🟡 MixinRegistryInjection (Line 27)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_registry_injection.py
+   Issue: MixinRegistryInjection should be in mixins/ directory
+
+🟡 MixinServiceRegistry (Line 54)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_service_registry.py
+   Issue: MixinServiceRegistry should be in mixins/ directory
+
+🟡 MixinDebugDiscoveryLogging (Line 16)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_debug_discovery_logging.py
+   Issue: MixinDebugDiscoveryLogging should be in mixins/ directory
+
+🟡 MixinCLIHandler (Line 22)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_cli_handler.py
+   Issue: MixinCLIHandler should be in mixins/ directory
+
+🟡 MixinHealthCheck (Line 19)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_health_check.py
+   Issue: MixinHealthCheck should be in mixins/ directory
+
+🟡 MixinToolExecution (Line 17)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_tool_execution.py
+   Issue: MixinToolExecution should be in mixins/ directory
+
+🟡 MixinEventListener (Line 31)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_listener.py
+   Issue: MixinEventListener should be in mixins/ directory
+
+🟡 MixinEventHandler (Line 46)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_handler.py
+   Issue: MixinEventHandler should be in mixins/ directory
+
+🟡 MixinContractStateReducer (Line 26)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_contract_state_reducer.py
+   Issue: MixinContractStateReducer should be in mixins/ directory
+
+🟡 MixinDagSupport (Line 17)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_workflow_support.py
+   Issue: MixinDagSupport should be in mixins/ directory
+
+🟡 MixinContractMetadata (Line 20)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_contract_metadata.py
+   Issue: MixinContractMetadata should be in mixins/ directory
+
+🟡 MixinEventDrivenNode (Line 53)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_event_driven_node.py
+   Issue: MixinEventDrivenNode should be in mixins/ directory
+
+🟡 MixinNodeLifecycle (Line 67)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_node_lifecycle.py
+   Issue: MixinNodeLifecycle should be in mixins/ directory
+
+🟡 MixinIntrospectionPublisher (Line 68)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_introspection_publisher.py
+   Issue: MixinIntrospectionPublisher should be in mixins/ directory
+
+🟡 MixinNodeIdFromContract (Line 13)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_node_id_from_contract.py
+   Issue: MixinNodeIdFromContract should be in mixins/ directory
+
+🟡 MixinRequestResponseIntrospection (Line 42)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_request_response_introspection.py
+   Issue: MixinRequestResponseIntrospection should be in mixins/ directory
+
+🟡 MixinNodeService (Line 59)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_node_service.py
+   Issue: MixinNodeService should be in mixins/ directory
+
+🟡 MixinHybridExecution (Line 31)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_hybrid_execution.py
+   Issue: MixinHybridExecution should be in mixins/ directory
+
+🟡 MixinIntrospectFromContract (Line 10)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixin/mixin_introspect_from_contract.py
+   Issue: MixinIntrospectFromContract should be in mixins/ directory
+
+🟡 NodeComputeService (Line 18)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_compute_service.py
+   Issue: NodeComputeService should be in nodes/ directory
+
+🟡 NodeReducer (Line 62)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_reducer.py
+   Issue: NodeReducer should be in nodes/ directory
+
+🟡 NodeCoreBase (Line 33)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_core_base.py
+   Issue: NodeCoreBase should be in nodes/ directory
+
+🟡 NodeState (Line 57)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_base.py
+   Issue: NodeState should be in nodes/ directory
+
+🟡 NodeBase (Line 72)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_base.py
+   Issue: NodeBase should be in nodes/ directory
+
+🟡 NodeOrchestrator (Line 108)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_orchestrator.py
+   Issue: NodeOrchestrator should be in nodes/ directory
+
+🟡 NodeArchitectureValidator (Line 33)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_architecture_validation.py
+   Issue: NodeArchitectureValidator should be in nodes/ directory
+
+🟡 NodeEffect (Line 106)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_effect.py
+   Issue: NodeEffect should be in nodes/ directory
+
+🟡 NodeCompute (Line 164)
+   File: /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/infrastructure/node_compute.py
+   Issue: NodeCompute should be in nodes/ directory
+
+📚 NAMING CONVENTION REFERENCE:
+=================================
+• Models: Models must start with 'Model' (e.g., ModelUserAuth)
+  File Pattern: model_*.py
+  Class Pattern: ^Model[A-Z][A-Za-z0-9]*$
+
+• Protocols: Protocols must start with 'Protocol' (e.g., ProtocolEventBus)
+  File Pattern: protocol_*.py
+  Class Pattern: ^Protocol[A-Z][A-Za-z0-9]*$
+
+• Enums: Enums must start with 'Enum' (e.g., EnumWorkflowType)
+  File Pattern: enum_*.py
+  Class Pattern: ^Enum[A-Z][A-Za-z0-9]*$
+
+• Services: Services must start with 'Service' (e.g., ServiceAuth)
+  File Pattern: service_*.py
+  Class Pattern: ^Service[A-Z][A-Za-z0-9]*$
+
+• Mixins: Mixins must start with 'Mixin' (e.g., MixinHealthCheck)
+  File Pattern: mixin_*.py
+  Class Pattern: ^Mixin[A-Z][A-Za-z0-9]*$
+
+• Nodes: Nodes must start with 'Node' (e.g., NodeEffectUserData)
+  File Pattern: node_*.py
+  Class Pattern: ^Node[A-Z][A-Za-z0-9]*$
+
+• Typeddicts: TypedDict classes must start with 'TypedDict' (e.g., TypedDictUserParams)
+  File Pattern: Any .py file
+  Class Pattern: ^TypedDict[A-Z][A-Za-z0-9]*$
+
+
+
+❌ FAILURE: 21 naming violations must be fixed!
+
+ONEX String Version Anti-Pattern Detection...............................Failed
+- hook id: validate-string-versions
+- exit code: 1
+
+❌ ID/Version Validation FAILED
+==================================================
+Found 2 AST validation errors:
+📁 src/omnibase_core/mixin/mixin_workflow_support.py
+  ⚠️  Line 58:35 - Field 'correlation_id' (string_id)
+      💡 Use UUID instead of str for ID fields
+  ⚠️  Line 58:56 - Field 'node_id' (string_id)
+      💡 Use UUID instead of str for ID fields
+
+🔧 How to fix:
+   YAML files: Replace string versions with ModelSemVer format:
+   version: "1.0.0"  →  version: {major: 1, minor: 0, patch: 0}
+   contract_version: "2.1.3"  →  contract_version: {major: 2, minor: 1, patch: 3}
+   Python files: Remove __version__ from __init__.py - versions come from contracts only
+   Python models: Use UUID for ID fields, ModelSemVer for version fields
+   Example: node_id: str  →  node_id: UUID
+   Example: version: str  →  version: ModelSemVer
+✅ ID/Version Validation PASSED (72 files checked)
+❌ ID/Version Validation FAILED
+==================================================
+Found 3 AST validation errors:
+📁 src/omnibase_core/mixin/mixin_event_driven_node.py
+  ⚠️  Line 72:8 - Field 'node_id' (string_id)
+      💡 Use UUID instead of str for ID fields
+
+📁 src/omnibase_core/mixin/mixin_service_registry.py
+  ⚠️  Line 26:8 - Field 'node_id' (string_id)
+      💡 Use UUID instead of str for ID fields
+  ⚠️  Line 332:42 - Field 'node_id' (string_id)
+      💡 Use UUID instead of str for ID fields
+
+🔧 How to fix:
+   YAML files: Replace string versions with ModelSemVer format:
+   version: "1.0.0"  →  version: {major: 1, minor: 0, patch: 0}
+   contract_version: "2.1.3"  →  contract_version: {major: 2, minor: 1, patch: 3}
+   Python files: Remove __version__ from __init__.py - versions come from contracts only
+   Python models: Use UUID for ID fields, ModelSemVer for version fields
+   Example: node_id: str  →  node_id: UUID
+   Example: version: str  →  version: ModelSemVer
+✅ ID/Version Validation PASSED (72 files checked)
+✅ ID/Version Validation PASSED (70 files checked)
+✅ ID/Version Validation PASSED (72 files checked)
+✅ ID/Version Validation PASSED (72 files checked)
+✅ ID/Version Validation PASSED (70 files checked)
+✅ ID/Version Validation PASSED (72 files checked)
+✅ ID/Version Validation PASSED (68 files checked)
+✅ ID/Version Validation PASSED (72 files checked)
+❌ ID/Version Validation FAILED
+==================================================
+Found 1 AST validation errors:
+📁 src/omnibase_core/mixin/mixin_tool_execution.py
+  ⚠️  Line 155:8 - Field 'correlation_id' (string_id)
+      💡 Use UUID instead of str for ID fields
+
+🔧 How to fix:
+   YAML files: Replace string versions with ModelSemVer format:
+   version: "1.0.0"  →  version: {major: 1, minor: 0, patch: 0}
+   contract_version: "2.1.3"  →  contract_version: {major: 2, minor: 1, patch: 3}
+   Python files: Remove __version__ from __init__.py - versions come from contracts only
+   Python models: Use UUID for ID fields, ModelSemVer for version fields
+   Example: node_id: str  →  node_id: UUID
+   Example: version: str  →  version: ModelSemVer
+
+ONEX Archived Path Import Prevention.....................................Passed
+ONEX Backward Compatibility Anti-Pattern Detection.......................Failed
+- hook id: validate-no-backward-compatibility
+- exit code: 1
+
+❌ Backward Compatibility Detection FAILED
+=================================================================
+Found 10 backward compatibility violations in 602 files:
+
+   • src/omnibase_core/models/operations/model_message_payload.py: Python syntax error at line 261, column 13: unterminated f-string literal (detected at line 261)
+   • src/omnibase_core/models/operations/model_execution_metadata.py: Python syntax error at line 92, column 25: unterminated f-string literal (detected at line 92)
+   • src/omnibase_core/models/operations/model_operation_parameters_base.py: Python syntax error at line 248, column 13: unterminated f-string literal (detected at line 248)
+   • src/omnibase_core/models/operations/model_operation_payload.py: Python syntax error at line 234, column 13: unterminated f-string literal (detected at line 234)
+   • src/omnibase_core/models/operations/model_workflow_payload.py: Python syntax error at line 334, column 13: unterminated f-string literal (detected at line 334)
+   • src/omnibase_core/models/operations/model_effect_parameters.py: Python syntax error at line 324, column 13: unterminated f-string literal (detected at line 324)
+   • src/omnibase_core/models/operations/model_event_payload.py: Python syntax error at line 83, column 13: unterminated f-string literal (detected at line 83)
+   • src/omnibase_core/models/operations/model_workflow_instance_metadata.py: Python syntax error at line 103, column 13: unterminated f-string literal (detected at line 103)
+   • src/omnibase_core/models/operations/model_workflow_parameters.py: Python syntax error at line 313, column 13: unterminated f-string literal (detected at line 313)
+   • src/omnibase_core/models/operations/model_system_metadata.py: Python syntax error at line 108, column 13: unterminated f-string literal (detected at line 108)
+
+🔧 How to fix:
+   Remove ALL backward compatibility patterns:
+
+   ❌ BAD:
+   # Accept simple Protocol* names for backward compatibility
+   if dependency.startswith("Protocol"):
+       continue
+
+   def to_dict(self) -> dict:
+       """Convert to dictionary for backward compatibility."""
+       return self.model_dump()
+
+   ✅ GOOD:
+   # Only accept fully qualified protocol paths
+   if "protocol" in dependency.lower():
+       continue
+
+   # No wrapper methods - use model_dump() directly
+
+   💡 Remember:
+   • No consumers exist - backward compatibility = tech debt
+   • Remove legacy support code completely
+   • Use proper ONEX patterns from day one
+   • Clean code is better than compatible code
+
+ONEX Manual YAML Prevention..............................................Failed
+- hook id: validate-no-manual-yaml
+- exit code: 1
+
+❌ Manual YAML Validation Detection FAILED
+============================================================
+Found 1 manual YAML validation violations in 233 files:
+
+   • src/omnibase_core/models/operations/model_message_payload.py: Python syntax error at line 261, column 13: unterminated f-string literal (detected at line 261)
+
+🔧 How to fix:
+   Replace manual YAML validation with Pydantic model validation:
+
+   ❌ BAD:
+   yaml_data = yaml.safe_load(content)
+   if 'node_name' not in yaml_data:
+       # manual validation
+
+   ✅ GOOD:
+   model = ModelContract.model_validate(yaml_data)
+   # Pydantic handles all validation automatically
+
+   Benefits of Pydantic validation:
+   • Type safety and automatic validation
+   • Consistent error messages
+   • Single source of truth
+   • No validation bypass opportunities
+✅ Manual YAML Validation Check PASSED (234 files checked)
+✅ Manual YAML Validation Check PASSED (234 files checked)
+✅ Manual YAML Validation Check PASSED (234 files checked)
+❌ Manual YAML Validation Detection FAILED
+============================================================
+Found 1 manual YAML validation violations in 233 files:
+
+   • src/omnibase_core/models/operations/model_effect_parameters.py: Python syntax error at line 324, column 13: unterminated f-string literal (detected at line 324)
+
+🔧 How to fix:
+   Replace manual YAML validation with Pydantic model validation:
+
+   ❌ BAD:
+   yaml_data = yaml.safe_load(content)
+   if 'node_name' not in yaml_data:
+       # manual validation
+
+   ✅ GOOD:
+   model = ModelContract.model_validate(yaml_data)
+   # Pydantic handles all validation automatically
+
+   Benefits of Pydantic validation:
+   • Type safety and automatic validation
+   • Consistent error messages
+   • Single source of truth
+   • No validation bypass opportunities
+✅ Manual YAML Validation Check PASSED (234 files checked)
+✅ Manual YAML Validation Check PASSED (234 files checked)
+❌ Manual YAML Validation Detection FAILED
+============================================================
+Found 3 manual YAML validation violations in 231 files:
+
+   • src/omnibase_core/models/operations/model_workflow_instance_metadata.py: Python syntax error at line 103, column 13: unterminated f-string literal (detected at line 103)
+   • src/omnibase_core/models/operations/model_workflow_parameters.py: Python syntax error at line 313, column 13: unterminated f-string literal (detected at line 313)
+   • src/omnibase_core/models/operations/model_system_metadata.py: Python syntax error at line 108, column 13: unterminated f-string literal (detected at line 108)
+
+🔧 How to fix:
+   Replace manual YAML validation with Pydantic model validation:
+
+   ❌ BAD:
+   yaml_data = yaml.safe_load(content)
+   if 'node_name' not in yaml_data:
+       # manual validation
+
+   ✅ GOOD:
+   model = ModelContract.model_validate(yaml_data)
+   # Pydantic handles all validation automatically
+
+   Benefits of Pydantic validation:
+   • Type safety and automatic validation
+   • Consistent error messages
+   • Single source of truth
+   • No validation bypass opportunities
+❌ Manual YAML Validation Detection FAILED
+============================================================
+Found 2 manual YAML validation violations in 232 files:
+
+   • src/omnibase_core/models/operations/model_workflow_payload.py: Python syntax error at line 334, column 13: unterminated f-string literal (detected at line 334)
+   • src/omnibase_core/models/operations/model_event_payload.py: Python syntax error at line 83, column 13: unterminated f-string literal (detected at line 83)
+
+🔧 How to fix:
+   Replace manual YAML validation with Pydantic model validation:
+
+   ❌ BAD:
+   yaml_data = yaml.safe_load(content)
+   if 'node_name' not in yaml_data:
+       # manual validation
+
+   ✅ GOOD:
+   model = ModelContract.model_validate(yaml_data)
+   # Pydantic handles all validation automatically
+
+   Benefits of Pydantic validation:
+   • Type safety and automatic validation
+   • Consistent error messages
+   • Single source of truth
+   • No validation bypass opportunities
+✅ Manual YAML Validation Check PASSED (234 files checked)
+❌ Manual YAML Validation Detection FAILED
+============================================================
+Found 3 manual YAML validation violations in 231 files:
+
+   • src/omnibase_core/models/operations/model_operation_parameters_base.py: Python syntax error at line 248, column 13: unterminated f-string literal (detected at line 248)
+   • src/omnibase_core/models/operations/model_operation_payload.py: Python syntax error at line 234, column 13: unterminated f-string literal (detected at line 234)
+   • src/omnibase_core/models/operations/model_execution_metadata.py: Python syntax error at line 92, column 25: unterminated f-string literal (detected at line 92)
+
+🔧 How to fix:
+   Replace manual YAML validation with Pydantic model validation:
+
+   ❌ BAD:
+   yaml_data = yaml.safe_load(content)
+   if 'node_name' not in yaml_data:
+       # manual validation
+
+   ✅ GOOD:
+   model = ModelContract.model_validate(yaml_data)
+   # Pydantic handles all validation automatically
+
+   Benefits of Pydantic validation:
+   • Type safety and automatic validation
+   • Consistent error messages
+   • Single source of truth
+   • No validation bypass opportunities
+✅ Manual YAML Validation Check PASSED (233 files checked)
+
+ONEX Pydantic Pattern Validation.........................................Passed
+ONEX Union Usage Validation..............................................Failed
+- hook id: validate-union-usage
+- exit code: 1
+
+📈 Union Validation Results:
+   Total unions found: 1277
+   Legitimate unions: 1261
+   Invalid unions: 16
+
+❌ Union legitimacy issues found:
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 56: Complex union pattern needs review - Union[AsyncProtocolEventBus, None, ProtocolEventBus]
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 56: Suggestion - Consider using discriminated union or proper model
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Invalid union pattern: primitive_soup - Union[bool, int, list, str]
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Suggestion - Replace with specific type (str, int, etc.) if only one type is actually needed
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Suggestion - Use TypeVar for generic functions: T = TypeVar("T", str, int, float)
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Suggestion - Create discriminated union with Literal discriminator
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Suggestion - Consider using ModelSchemaValue with proper type field
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Invalid union pattern: primitive_soup - Union[bool, int, str]
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Suggestion - Replace with specific type (str, int, etc.) if only one type is actually needed
+   src/omnibase_core/mixin/mixin_event_bus.py: Line 103: Suggestion - Use TypeVar for generic functions: T = TypeVar("T", str, int, float)
+   ... and 56 more issues
+
+❌ Too many invalid unions: 16 > 8 (allowed)
+
+ONEX Contract Validation.................................................Passed
+ONEX Optional Type Usage Audit...........................................Passed
+ONEX Stub Implementation Detector........................................Failed
+- hook id: check-stub-implementations
+- exit code: 1
+
+⚠️  Syntax error in src/omnibase_core/models/operations/model_operation_parameters_base.py:248: unterminated f-string literal (detected at line 248)
+⚠️  Syntax error in src/omnibase_core/models/operations/model_workflow_parameters.py:313: unterminated f-string literal (detected at line 313)
+✅ Stub Implementation Check PASSED
+   Checked 49 file(s) - no stub implementations found
+⚠️  Syntax error in src/omnibase_core/models/operations/model_operation_payload.py:234: unterminated f-string literal (detected at line 234)
+⚠️  Syntax error in src/omnibase_core/models/operations/model_workflow_payload.py:334: unterminated f-string literal (detected at line 334)
+✅ Stub Implementation Check PASSED
+   Checked 49 file(s) - no stub implementations found
+⚠️  Syntax error in src/omnibase_core/models/operations/model_workflow_instance_metadata.py:103: unterminated f-string literal (detected at line 103)
+✅ Stub Implementation Check PASSED
+   Checked 49 file(s) - no stub implementations found
+✅ Stub Implementation Check PASSED
+   Checked 51 file(s) - no stub implementations found
+❌ Stub Implementation Detection FAILED
+================================================================================
+Found 1 stub implementation(s) in 51 file(s):
+
+
+📄 src/omnibase_core/mixin/mixin_hybrid_execution.py
+   Line 74: process()
+   ├─ Issue: Function raises NotImplementedError (stubbed)
+
+================================================================================
+🔧 How to Fix Stub Implementations:
+
+❌ BAD Examples:
+   def process_data(data):
+       '''Process the data.'''
+       pass  # Stub - needs implementation
+
+   def calculate(x, y):
+       ...  # Stub
+
+   def validate(value):
+       raise NotImplementedError('TODO: implement validation')
+
+✅ GOOD Examples:
+   def process_data(data):
+       '''Process the data by validating and transforming it.'''
+       if not data:
+           raise ValueError('Data cannot be empty')
+       return [item.strip() for item in data]
+
+   def calculate(x, y):
+       '''Calculate sum with validation.'''
+       if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+           raise TypeError('Arguments must be numeric')
+       return x + y
+
+💡 Tips:
+   • Replace pass/... with actual implementation logic
+   • Replace NotImplementedError with working code
+   • Remove TODO/FIXME comments after implementation
+   • Use '# stub-ok' comment to exclude legitimate stubs
+   • Protocol/ABC classes are automatically excluded
+❌ Stub Implementation Detection FAILED
+================================================================================
+Found 1 stub implementation(s) in 51 file(s):
+
+
+📄 src/omnibase_core/mixin/mixin_event_bus.py
+   Line 192: process()
+   ├─ Issue: Function raises NotImplementedError (stubbed)
+
+================================================================================
+🔧 How to Fix Stub Implementations:
+
+❌ BAD Examples:
+   def process_data(data):
+       '''Process the data.'''
+       pass  # Stub - needs implementation
+
+   def calculate(x, y):
+       ...  # Stub
+
+   def validate(value):
+       raise NotImplementedError('TODO: implement validation')
+
+✅ GOOD Examples:
+   def process_data(data):
+       '''Process the data by validating and transforming it.'''
+       if not data:
+           raise ValueError('Data cannot be empty')
+       return [item.strip() for item in data]
+
+   def calculate(x, y):
+       '''Calculate sum with validation.'''
+       if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+           raise TypeError('Arguments must be numeric')
+       return x + y
+
+💡 Tips:
+   • Replace pass/... with actual implementation logic
+   • Replace NotImplementedError with working code
+   • Remove TODO/FIXME comments after implementation
+   • Use '# stub-ok' comment to exclude legitimate stubs
+   • Protocol/ABC classes are automatically excluded
+⚠️  Syntax error in src/omnibase_core/models/operations/model_system_metadata.py:108: unterminated f-string literal (detected at line 108)
+✅ Stub Implementation Check PASSED
+   Checked 49 file(s) - no stub implementations found
+❌ Stub Implementation Detection FAILED
+================================================================================
+Found 1 stub implementation(s) in 51 file(s):
+
+
+📄 src/omnibase_core/mixin/mixin_event_listener.py
+   Line 114: process()
+   ├─ Issue: Function raises NotImplementedError (stubbed)
+
+================================================================================
+🔧 How to Fix Stub Implementations:
+
+❌ BAD Examples:
+   def process_data(data):
+       '''Process the data.'''
+       pass  # Stub - needs implementation
+
+   def calculate(x, y):
+       ...  # Stub
+
+   def validate(value):
+       raise NotImplementedError('TODO: implement validation')
+
+✅ GOOD Examples:
+   def process_data(data):
+       '''Process the data by validating and transforming it.'''
+       if not data:
+           raise ValueError('Data cannot be empty')
+       return [item.strip() for item in data]
+
+   def calculate(x, y):
+       '''Calculate sum with validation.'''
+       if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+           raise TypeError('Arguments must be numeric')
+       return x + y
+
+💡 Tips:
+   • Replace pass/... with actual implementation logic
+   • Replace NotImplementedError with working code
+   • Remove TODO/FIXME comments after implementation
+   • Use '# stub-ok' comment to exclude legitimate stubs
+   • Protocol/ABC classes are automatically excluded
+⚠️  Syntax error in src/omnibase_core/models/operations/model_event_payload.py:83: unterminated f-string literal (detected at line 83)
+⚠️  Syntax error in src/omnibase_core/models/operations/model_message_payload.py:261: unterminated f-string literal (detected at line 261)
+✅ Stub Implementation Check PASSED
+   Checked 49 file(s) - no stub implementations found
+⚠️  Syntax error in src/omnibase_core/models/operations/model_effect_parameters.py:324: unterminated f-string literal (detected at line 324)
+⚠️  Syntax error in src/omnibase_core/models/operations/model_execution_metadata.py:92: unterminated f-string literal (detected at line 92)
+✅ Stub Implementation Check PASSED
+   Checked 49 file(s) - no stub implementations found
+❌ Stub Implementation Detection FAILED
+================================================================================
+Found 2 stub implementation(s) in 51 file(s):
+
+
+📄 src/omnibase_core/mixin/mixin_cli_handler.py
+   Line 62: process()
+   ├─ Issue: Function raises NotImplementedError (stubbed)
+   Line 70: add_custom_arguments()
+   ├─ Issue: Function contains only docstring (no implementation)
+
+================================================================================
+🔧 How to Fix Stub Implementations:
+
+❌ BAD Examples:
+   def process_data(data):
+       '''Process the data.'''
+       pass  # Stub - needs implementation
+
+   def calculate(x, y):
+       ...  # Stub
+
+   def validate(value):
+       raise NotImplementedError('TODO: implement validation')
+
+✅ GOOD Examples:
+   def process_data(data):
+       '''Process the data by validating and transforming it.'''
+       if not data:
+           raise ValueError('Data cannot be empty')
+       return [item.strip() for item in data]
+
+   def calculate(x, y):
+       '''Calculate sum with validation.'''
+       if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+           raise TypeError('Arguments must be numeric')
+       return x + y
+
+💡 Tips:
+   • Replace pass/... with actual implementation logic
+   • Replace NotImplementedError with working code
+   • Remove TODO/FIXME comments after implementation
+   • Use '# stub-ok' comment to exclude legitimate stubs
+   • Protocol/ABC classes are automatically excluded
+✅ Stub Implementation Check PASSED
+   Checked 41 file(s) - no stub implementations found
+
+ONEX No Fallback Patterns Validation.....................................Failed
+- hook id: check-no-fallbacks
+- exit code: 1
+
+✅ No fallback patterns detected!
+
+❌ Found 4 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_event_handler.py
+----------------------------------------------
+
+Line 134: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 217: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 286: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+src/omnibase_core/mixin/mixin_node_lifecycle.py
+-----------------------------------------------
+
+Line 100: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 4
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+
+❌ Found 4 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_request_response_introspection.py
+---------------------------------------------------------------
+
+Line 206: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 543: silent_exception_return
+  Code: except:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 635: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 657: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 4
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+✅ No fallback patterns detected!
+
+❌ Found 2 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_hybrid_execution.py
+-------------------------------------------------
+
+Line 247: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+src/omnibase_core/mixin/mixin_tool_execution.py
+-----------------------------------------------
+
+Line 126: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 2
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+
+❌ Found 3 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_event_bus.py
+------------------------------------------
+
+Line 363: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 411: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 613: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 3
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+
+❌ Found 2 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_contract_state_reducer.py
+-------------------------------------------------------
+
+Line 142: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+src/omnibase_core/mixin/mixin_health_check.py
+---------------------------------------------
+
+Line 312: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 2
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+✅ No fallback patterns detected!
+
+❌ Found 4 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_event_driven_node.py
+--------------------------------------------------
+
+Line 157: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+src/omnibase_core/mixin/mixin_registry_injection.py
+---------------------------------------------------
+
+Line 163: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 201: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+Line 243: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 4
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+
+❌ Found 2 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_introspection_publisher.py
+--------------------------------------------------------
+
+Line 181: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+src/omnibase_core/mixin/mixin_workflow_support.py
+-------------------------------------------------
+
+Line 178: silent_exception_return
+  Code: except Exception:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 2
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+
+❌ Found 1 fallback pattern(s):
+
+
+src/omnibase_core/mixin/mixin_cli_handler.py
+--------------------------------------------
+
+Line 317: silent_exception_return
+  Code: except Exception as e:
+  Issue: Exception handler returns value without re-raising - swallows errors. Either re-raise with 'raise' or raise a new error with context.
+  Severity: ERROR
+
+================================================================================
+
+Fallback Pattern Summary:
+================================================================================
+  silent_exception_return: 1
+
+================================================================================
+
+To allow specific fallbacks, add comment:
+  # fallback-ok: reason for exception
+
+================================================================================
+✅ No fallback patterns detected!
+
+ONEX Error Raising Validation............................................Failed
+- hook id: check-error-raising
+- exit code: 1
+
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 2 error raising violations:
+
+   src/omnibase_core/models/operations/model_operation_parameters_base.py:248
+   ❌ Syntax error: unterminated f-string literal (detected at line 248)
+      Code:
+
+   src/omnibase_core/models/operations/model_workflow_parameters.py:313
+   ❌ Syntax error: unterminated f-string literal (detected at line 313)
+      Code:
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 5 error raising violations:
+
+   src/omnibase_core/mixin/mixin_canonical_serialization.py:424
+   ❌ Uses standard Python exception 'AssertionError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise AssertionError(
+
+   src/omnibase_core/mixin/mixin_node_service.py:312
+   ❌ Uses standard Python exception 'RuntimeError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise RuntimeError(msg)
+
+   src/omnibase_core/mixin/mixin_node_service.py:417
+   ❌ Uses standard Python exception 'RuntimeError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise RuntimeError(msg)
+
+   src/omnibase_core/models/operations/model_operation_payload.py:234
+   ❌ Syntax error: unterminated f-string literal (detected at line 234)
+      Code:
+
+   src/omnibase_core/models/operations/model_workflow_payload.py:334
+   ❌ Syntax error: unterminated f-string literal (detected at line 334)
+      Code:
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 1 error raising violations:
+
+   src/omnibase_core/models/operations/model_workflow_instance_metadata.py:103
+   ❌ Syntax error: unterminated f-string literal (detected at line 103)
+      Code:
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+✅ ONEX Error Raising Check PASSED (51 files checked)
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 1 error raising violations:
+
+   src/omnibase_core/mixin/mixin_hybrid_execution.py:74
+   ❌ Uses NotImplementedError without # stub-ok comment. Use OnexError instead or add # stub-ok: reason
+      Code: raise NotImplementedError(msg)
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 1 error raising violations:
+
+   src/omnibase_core/mixin/mixin_event_bus.py:192
+   ❌ Uses NotImplementedError without # stub-ok comment. Use OnexError instead or add # stub-ok: reason
+      Code: raise NotImplementedError(msg)
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 1 error raising violations:
+
+   src/omnibase_core/models/operations/model_system_metadata.py:108
+   ❌ Syntax error: unterminated f-string literal (detected at line 108)
+      Code:
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 3 error raising violations:
+
+   src/omnibase_core/mixin/mixin_event_listener.py:114
+   ❌ Uses NotImplementedError without # stub-ok comment. Use OnexError instead or add # stub-ok: reason
+      Code: raise NotImplementedError(msg)
+
+   src/omnibase_core/mixin/mixin_event_listener.py:749
+   ❌ Uses standard Python exception 'ValueError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise ValueError(msg)
+
+   src/omnibase_core/mixin/mixin_event_listener.py:761
+   ❌ Uses standard Python exception 'ValueError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise ValueError(
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 3 error raising violations:
+
+   src/omnibase_core/models/operations/model_event_payload.py:83
+   ❌ Syntax error: unterminated f-string literal (detected at line 83)
+      Code:
+
+   src/omnibase_core/mixin/mixin_registry_injection.py:122
+   ❌ Uses standard Python exception 'TypeError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise TypeError(error_msg)
+
+   src/omnibase_core/models/operations/model_message_payload.py:261
+   ❌ Syntax error: unterminated f-string literal (detected at line 261)
+      Code:
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 2 error raising violations:
+
+   src/omnibase_core/models/operations/model_effect_parameters.py:324
+   ❌ Syntax error: unterminated f-string literal (detected at line 324)
+      Code:
+
+   src/omnibase_core/models/operations/model_execution_metadata.py:92
+   ❌ Syntax error: unterminated f-string literal (detected at line 92)
+      Code:
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+❌ ONEX Error Raising Validation FAILED
+================================================================================
+Found 7 error raising violations:
+
+   src/omnibase_core/mixin/mixin_introspect_from_contract.py:27
+   ❌ Uses standard Python exception 'ValueError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise ValueError(
+
+   src/omnibase_core/mixin/mixin_introspect_from_contract.py:43
+   ❌ Uses standard Python exception 'FileNotFoundError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise FileNotFoundError(msg)
+
+   src/omnibase_core/mixin/mixin_node_id_from_contract.py:76
+   ❌ Uses standard Python exception 'ValueError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise ValueError(
+
+   src/omnibase_core/mixin/mixin_node_id_from_contract.py:95
+   ❌ Uses standard Python exception 'FileNotFoundError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise FileNotFoundError(msg)
+
+   src/omnibase_core/mixin/mixin_cli_handler.py:62
+   ❌ Uses NotImplementedError without # stub-ok comment. Use OnexError instead or add # stub-ok: reason
+      Code: raise NotImplementedError(msg)
+
+   src/omnibase_core/mixin/mixin_cli_handler.py:159
+   ❌ Uses standard Python exception 'ValueError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise ValueError(
+
+   src/omnibase_core/mixin/mixin_cli_handler.py:189
+   ❌ Uses standard Python exception 'ValueError' instead of OnexError. Use OnexError with EnumCoreErrorCode
+      Code: raise ValueError(msg)
+
+🔧 How to fix:
+   Replace standard Python exceptions with OnexError:
+
+   ❌ BAD:
+   raise ValueError('Invalid input value')
+
+   ✅ GOOD:
+   from omnibase_core.exceptions.onex_error import OnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise OnexError(
+       code=EnumCoreErrorCode.VALIDATION_ERROR,
+       message='Invalid input value'
+   )
+
+   To allow specific exceptions, add comment:
+   raise ValueError(...)  # error-ok: reason for exception
+
+   Benefits of OnexError:
+   • Consistent error handling across ONEX framework
+   • Structured error codes for programmatic handling
+   • Rich error context for debugging
+   • Standardized error reporting and logging
+✅ ONEX Error Raising Check PASSED (41 files checked)
+
+ONEX Enhancement Prefix Anti-Pattern Detection...........................Passed
+ONEX Single Class Per File...............................................Failed
+- hook id: onex-single-class-per-file
+- exit code: 1
+
+src/omnibase_core/models/contracts/model_fast_imports.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 25: PerformanceMetrics
+    Line 42: ModelFastContractFactory
+    Line 249: ModelPerformanceMonitor
+
+src/omnibase_core/validation/exceptions.py:
+  Found 8 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 9: ValidationFrameworkError
+    Line 13: ConfigurationError
+    Line 22: FileProcessingError
+    Line 41: ProtocolParsingError
+    Line 50: AuditError
+    Line 59: MigrationError
+    Line 68: InputValidationError
+    Line 77: PathTraversalError
+
+src/omnibase_core/validation/patterns.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 23: PatternChecker
+    Line 31: PydanticPatternChecker
+    Line 109: NamingConventionChecker
+    Line 164: GenericPatternChecker
+
+❌ Found 3 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/errors/error_codes.py:
+  Found 7 non-enum class(es) and 2 enum(s) in same file
+  Non-enum classes:
+    Line 167: CoreErrorCode
+    Line 413: ModelOnexError
+    Line 466: ModelOnexWarning
+    Line 521: OnexError
+    Line 776: CLIAdapter
+    Line 900: RegistryErrorCode
+    Line 931: ModelRegistryError
+  Enums:
+    Line 82: CLIExitCode
+    Line 131: OnexErrorCode
+
+src/omnibase_core/models/operations/model_effect_input.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 12: ModelEffectInput
+    Line 32: Config
+
+❌ Found 2 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/mixin/mixin_service_registry.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 21: ServiceRegistryEntry
+    Line 54: MixinServiceRegistry
+
+src/omnibase_core/models/metadata/model_metadata_analytics_summary.py:
+  Found 8 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 16: TypedDictCoreAnalytics
+    Line 33: TypedDictTimestampData
+    Line 40: TypedDictCoreData
+    Line 49: TypedDictQualityData
+    Line 57: TypedDictErrorData
+    Line 65: TypedDictPerformanceData
+    Line 73: TypedDictAnalyticsSummaryData
+    Line 97: ModelMetadataAnalyticsSummary
+
+src/omnibase_core/models/nodes/model_function_node_metadata.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 32: ModelDocumentationSummaryFiltered
+    Line 42: ModelFunctionMetadataSummary
+    Line 56: ModelFunctionNodeMetadata
+
+❌ Found 3 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/models/metadata/model_input_state.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 13: InputStateFieldsType
+    Line 24: InputStateSourceType
+    Line 43: ModelInputState
+
+❌ Found 1 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/errors/error_document_freshness.py:
+  Found 9 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 35: DocumentFreshnessError
+    Line 251: DocumentFreshnessPathError
+    Line 255: ModelDocumentFreshnessDatabaseError
+    Line 259: DocumentFreshnessAnalysisError
+    Line 263: DocumentFreshnessAIError
+    Line 267: DocumentFreshnessDependencyError
+    Line 271: DocumentFreshnessChangeDetectionError
+    Line 275: DocumentFreshnessValidationError
+    Line 279: DocumentFreshnessSystemError
+
+src/omnibase_core/infrastructure/node_architecture_validation.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 33: NodeArchitectureValidator
+    Line 144: TestNode
+    Line 471: MockContainer
+
+src/omnibase_core/mixin/mixin_hybrid_execution.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 22: ExecutionMode
+    Line 31: MixinHybridExecution
+
+src/omnibase_core/types/constraints.py:
+  Found 7 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 50: Configurable
+    Line 56: Executable
+    Line 62: Identifiable
+    Line 69: ProtocolMetadataProvider
+    Line 76: Nameable
+    Line 84: Serializable
+    Line 90: ProtocolValidatable
+
+src/omnibase_core/types/typed_dict_structured_definitions.py:
+  Found 24 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 30: TypedDictSemVer
+    Line 38: TypedDictExecutionStats
+    Line 49: TypedDictHealthStatus
+    Line 61: TypedDictResourceUsage
+    Line 72: TypedDictConfigurationSettings
+    Line 83: TypedDictValidationResult
+    Line 94: TypedDictMetrics
+    Line 104: TypedDictErrorDetails
+    Line 115: TypedDictOperationResult
+    Line 125: TypedDictWorkflowState
+    Line 137: TypedDictEventInfo
+    Line 148: TypedDictConnectionInfo
+    Line 160: TypedDictServiceInfo
+    Line 171: TypedDictDependencyInfo
+    Line 181: TypedDictCacheInfo
+    Line 193: TypedDictBatchProcessingInfo
+    Line 205: TypedDictSecurityContext
+    Line 216: TypedDictAuditInfo
+    Line 228: TypedDictFeatureFlags
+    Line 240: TypedDictStatsCollection
+    Line 249: TypedDictSystemState
+    Line 263: TypedDictLegacyStats
+    Line 274: TypedDictLegacyHealth
+    Line 286: TypedDictLegacyError
+
+src/omnibase_core/validation/auditor_protocol.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 26: ModelAuditResult
+    Line 48: ModelDuplicationReport
+    Line 60: ModelProtocolAuditor
+
+❌ Found 6 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/mixin/mixin_event_bus.py:
+  Found 7 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 36: ProtocolEventBus
+    Line 45: AsyncProtocolEventBus
+    Line 53: RegistryWithBus
+    Line 59: LogEmitter
+    Line 73: ModelCompletionData
+    Line 111: ModelLogData
+    Line 123: ModelMixinEventBus
+
+src/omnibase_core/models/contracts/subcontracts/model_event_routing.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 10: ModelRetryPolicy
+    Line 56: ModelEventRouting
+
+src/omnibase_core/models/nodes/model_function_deprecation_info.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 19: ModelDeprecationSummary
+    Line 29: ModelFunctionDeprecationInfo
+
+src/omnibase_core/models/nodes/model_node_core_info.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 24: ModelCoreSummary
+    Line 39: ModelNodeCoreInfo
+
+src/omnibase_core/models/operations/model_computation_output_data.py:
+  Found 6 non-enum class(es) and 1 enum(s) in same file
+  Non-enum classes:
+    Line 30: ModelComputationOutputBase
+    Line 55: ModelNumericComputationOutput
+    Line 77: ModelTextComputationOutput
+    Line 102: ModelBinaryComputationOutput
+    Line 127: ModelStructuredComputationOutput
+    Line 162: ModelComputationOutputData
+  Enums:
+    Line 20: ModelComputationType
+
+src/omnibase_core/utils/model_field_converter.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 25: FieldConverter
+    Line 90: ModelFieldConverterRegistry
+
+❌ Found 6 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/enums/enum_status_migration.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 46: EnumStatusProtocol
+    Line 61: ValidationResult
+    Line 142: EnumStatusMigrator
+    Line 331: EnumStatusMigrationValidator
+
+src/omnibase_core/models/metadata/model_version_union.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 19: TypedDictVersionDict
+    Line 27: ModelVersionUnion
+
+src/omnibase_core/models/nodes/model_node_configuration_value.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 18: ModelNodeConfigurationStringValue
+    Line 48: ModelNodeConfigurationNumericValue
+
+src/omnibase_core/types/typed_dict_collection_kwargs.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 13: TypedDictCollectionCreateKwargs
+    Line 20: TypedDictCollectionFromItemsKwargs
+
+src/omnibase_core/types/typed_dict_factory_kwargs.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 16: TypedDictExecutionParams
+    Line 31: TypedDictMetadataParams
+    Line 41: TypedDictMessageParams
+    Line 49: TypedDictFactoryKwargs
+
+src/omnibase_core/validation/migration_types.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 10: TypedDictMigrationConflictBaseDict
+    Line 20: TypedDictMigrationNameConflictDict
+    Line 27: TypedDictMigrationDuplicateConflictDict
+    Line 33: TypedDictMigrationStepDict
+
+src/omnibase_core/validation/types.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 23: ModelUnionPattern
+    Line 43: UnionUsageChecker
+
+❌ Found 7 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/infrastructure/node_base.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 44: ModelAction
+    Line 50: ModelState
+    Line 57: NodeState
+    Line 72: NodeBase
+
+src/omnibase_core/mixin/mixin_fail_fast.py:
+  Found 5 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 25: FailFastError
+    Line 40: ValidationFailedError
+    Line 58: DependencyFailedError
+    Line 65: ContractViolationError
+    Line 76: MixinFailFast
+
+src/omnibase_core/utils/util_bootstrap.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 61: ServiceLogging
+    Line 197: ServiceMinimalLogging
+    Line 230: ToolLoggerCodeBlock
+
+❌ Found 3 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/infrastructure/node_orchestrator.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 61: LoadBalancer
+    Line 108: NodeOrchestrator
+
+src/omnibase_core/mixin/mixin_event_driven_node.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 53: MixinEventDrivenNode
+    Line 189: EventDrivenNodeProtocol
+
+src/omnibase_core/mixin/mixin_registry_injection.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 21: ProtocolRegistryAware
+    Line 27: MixinRegistryInjection
+
+src/omnibase_core/models/logging/model_log_node_identifier.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 14: ModelLogNodeIdentifierUUID
+    Line 21: ModelLogNodeIdentifierString
+
+src/omnibase_core/models/metadata/model_metadata_node_analytics.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 41: TypedDictMetadataDict
+    Line 51: ModelMetadataNodeAnalytics
+
+src/omnibase_core/models/metadata/model_metadata_usage_metrics.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 19: TypedDictUsageMetadataDict
+    Line 29: ModelMetadataUsageMetrics
+
+src/omnibase_core/models/metadata/model_node_info_summary.py:
+  Found 8 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 30: TypedDictNodeCore
+    Line 49: TypedDictNodeCoreUpdateData
+    Line 59: TypedDictTimestampUpdateData
+    Line 68: TypedDictCategorizationUpdateData
+    Line 77: TypedDictQualityUpdateData
+    Line 86: TypedDictPerformanceUpdateData
+    Line 95: TypedDictNodeInfoSummaryData
+    Line 111: ModelNodeInfoSummary
+
+src/omnibase_core/models/operations/model_computation_input_data.py:
+  Found 11 non-enum class(es) and 2 enum(s) in same file
+  Non-enum classes:
+    Line 32: ModelStructuredInputValue
+    Line 39: ModelPrimitiveInputValue
+    Line 46: ModelMixedInputValue
+    Line 64: ModelComputationInputBase
+    Line 85: ModelNumericComputationInput
+    Line 110: ModelTextComputationInput
+    Line 132: ModelBinaryComputationInput
+    Line 154: ModelStructuredComputationInput
+    Line 177: ModelComputationMetadataContext
+    Line 206: ModelComputationOperationParameters
+    Line 239: ModelComputationInputData
+  Enums:
+    Line 23: ModelInputDataType
+    Line 54: ModelComputationType
+
+src/omnibase_core/validation/validation_utils.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 15: ValidationMetadataType
+    Line 47: ValidationResult
+    Line 63: DuplicationInfo
+
+❌ Found 9 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/infrastructure/node_compute.py:
+  Found 6 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 50: ModelComputeInput
+    Line 66: Config
+    Line 72: ModelComputeOutput
+    Line 88: Config
+    Line 94: ComputationCache
+    Line 164: NodeCompute
+
+src/omnibase_core/mixin/mixin_introspection_publisher.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 52: ModelNodeIntrospectionData
+    Line 68: MixinIntrospectionPublisher
+
+src/omnibase_core/mixin/mixin_yaml_serialization.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 30: HasModelDump
+    Line 34: YAMLSerializationMixin
+
+src/omnibase_core/models/metadata/model_generic_metadata.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 33: TypedDictGenericMetadataDict
+    Line 44: ModelGenericMetadata
+
+src/omnibase_core/models/nodes/model_node_core_metadata.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 25: ModelNodeCoreMetadata
+    Line 175: ModelNodeStatusActive
+    Line 186: ModelNodeStatusMaintenance
+    Line 199: ModelNodeStatusError
+
+src/omnibase_core/models/operations/model_effect_result.py:
+  Found 4 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 8: ModelEffectResultDict
+    Line 15: ModelEffectResultBool
+    Line 22: ModelEffectResultStr
+    Line 29: ModelEffectResultList
+
+src/omnibase_core/models/utils/model_subcontract_constraint_validator.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 24: ModelContractData
+    Line 95: NodeRuleStructure
+    Line 103: ModelSubcontractConstraintValidator
+
+src/omnibase_core/models/utils/model_validation_rules_converter.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 24: ModelValidationRulesInputValue
+    Line 119: ModelValidationRulesConverter
+
+❌ Found 8 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/logging/structured.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 27: _ProtocolLogContextFallback
+    Line 33: PydanticJSONEncoder
+
+src/omnibase_core/models/container/model_onex_container.py:
+  Found 5 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 64: _BaseModelONEXContainer
+    Line 90: ModelONEXContainer
+    Line 565: ModelEnhancedLogger
+    Line 615: ModelWorkflowFactory
+    Line 643: ModelWorkflowCoordinator
+
+src/omnibase_core/models/operations/model_reducer_output.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 15: ModelReducerOutput
+    Line 34: Config
+
+src/omnibase_core/types/core_types.py:
+  Found 3 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 21: BasicErrorContext
+    Line 92: ProtocolErrorContext
+    Line 106: ProtocolSchemaValue
+
+❌ Found 4 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)
+
+src/omnibase_core/models/contracts/subcontracts/model_fsm_transition_action.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 17: ModelActionConfigValue
+    Line 88: ModelFSMTransitionAction
+
+src/omnibase_core/models/operations/model_effect_output.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 14: ModelEffectOutput
+    Line 33: Config
+
+src/omnibase_core/models/operations/model_reducer_input.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 17: ModelReducerInput
+    Line 35: Config
+
+src/omnibase_core/validation/cli.py:
+  Found 2 non-enum class(es) and 0 enum(s) in same file
+  Non-enum classes:
+    Line 31: ValidatorInfo
+    Line 39: ModelValidationSuite
+
+❌ Found 4 file(s) violating single-class-per-file rule
+
+Guidance:
+  - Split files with multiple non-enum classes into separate files
+  - Each class should have its own file with matching name
+  - Multiple enums in one file are acceptable (enum collections)
+
+Examples:
+  ❌ node_orchestrator.py with 11 classes
+  ✓ node_orchestrator.py (main class only)
+  ✓ model_orchestrator_input.py (separate file)
+  ✓ enum_workflow_states.py (multiple enums OK)

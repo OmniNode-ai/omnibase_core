@@ -1,3 +1,9 @@
+from typing import Any, Dict, List
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Aggregation Subcontract Model - ONEX Standards Compliant.
 
@@ -16,7 +22,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -194,9 +200,9 @@ class ModelAggregationSubcontract(BaseModel):
         for func in v:
             if func not in supported_functions:
                 msg = f"Unsupported aggregation function: {func}"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

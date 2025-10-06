@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+import uuid
+from typing import Dict, TypedDict
+
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 TypedDict for node metadata summary.
 
 Replaces dict[str, Any] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 from uuid import UUID
@@ -14,7 +20,7 @@ from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 class ModelNodeMetadataSummaryType(TypedDict):
     """
-    Typed dictionary for node metadata info summary.
+    Typed dict[str, Any]ionary for node metadata info summary.
 
     Replaces dict[str, Any] return type from get_summary()
     with proper type structure.

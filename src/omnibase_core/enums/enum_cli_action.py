@@ -1,3 +1,5 @@
+from typing import Any
+
 """
 Enumeration for CLI actions.
 
@@ -5,13 +7,10 @@ Defines all valid CLI actions that can be processed
 by node_cli, replacing hardcoded string literals.
 """
 
-from __future__ import annotations
-
-from enum import Enum, unique
+from enum import Enum
 
 
-@unique
-class EnumCliAction(str, Enum):
+class EnumCliAction(Enum):
     """
     Enumeration of valid CLI actions.
 
@@ -44,9 +43,3 @@ class EnumCliAction(str, Enum):
     # Documentation and help
     CONTRACT_DATA = "contract_data"
     HELP_DATA = "help_data"
-
-    def __str__(self) -> str:
-        return self.value
-
-
-__all__ = ["EnumCliAction"]

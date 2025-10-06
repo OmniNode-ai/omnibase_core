@@ -1,5 +1,12 @@
+import uuid
+from typing import Callable, Dict, Generic, List, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
-NodeReducer - Data Aggregation Node for 4-Node Architecture.
+NodeReducer - Data Aggregation Node for 4-Node ModelArchitecture.
 
 Specialized node type for data transformation and state reduction operations.
 Focuses on streaming data processing, conflict resolution, and state aggregation.
@@ -18,226 +25,49 @@ Author: ONEX Framework Team
 """
 
 import time
-from collections import defaultdict, deque
-from collections.abc import Callable
-from datetime import datetime, timedelta
-from enum import Enum
+from collections import defaultdict
+from collections.abc import Callable as CallableABC, Iterable as IterableABC
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, TypeVar
-from uuid import UUID, uuid4
+from typing import Any, Callable, Dict, TypeVar
+from uuid import UUID
 
-from pydantic import BaseModel, Field
-
+from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.enums.enum_reduction_type import EnumReductionType
+from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Import contract model for reducer nodes
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
+
+# Import extracted models
+from omnibase_core.models.infrastructure.model_conflict_resolver import (
+    ModelConflictResolver,
+)
+from omnibase_core.models.infrastructure.model_streaming_window import (
+    ModelStreamingWindow,
+)
+from omnibase_core.models.operations.model_reducer_input import ModelReducerInput
+from omnibase_core.models.operations.model_reducer_output import ModelReducerOutput
 
 T_Input = TypeVar("T_Input")
 T_Output = TypeVar("T_Output")
 T_Accumulator = TypeVar("T_Accumulator")
 
 
-class EnumReductionType(Enum):
-    """Types of reduction operations supported."""
-
-    FOLD = "fold"  # Reduce collection to single value
-    ACCUMULATE = "accumulate"  # Build up result incrementally
-    MERGE = "merge"  # Combine multiple datasets
-    AGGREGATE = "aggregate"  # Statistical aggregation
-    NORMALIZE = "normalize"  # Score normalization and ranking
-    DEDUPLICATE = "deduplicate"  # Remove duplicates
-    SORT = "sort"  # Sort and rank operations
-    FILTER = "filter"  # Filter with conditions
-    GROUP = "group"  # Group by criteria
-    TRANSFORM = "transform"  # Data transformation
-
-
-class ConflictResolution(Enum):
-    """Strategies for resolving conflicts during reduction."""
-
-    FIRST_WINS = "first_wins"  # Keep first encountered value
-    LAST_WINS = "last_wins"  # Keep last encountered value
-    MERGE = "merge"  # Attempt to merge values
-    ERROR = "error"  # Raise error on conflict
-    CUSTOM = "custom"  # Use custom resolution function
-
-
-class StreamingMode(Enum):
-    """Streaming processing modes."""
-
-    BATCH = "batch"  # Process all data at once
-    INCREMENTAL = "incremental"  # Process data incrementally
-    WINDOWED = "windowed"  # Process in time windows
-    REAL_TIME = "real_time"  # Process as data arrives
-
-
-class ModelReducerInput(BaseModel, Generic[T_Input]):
-    """
-    Input model for NodeReducer operations.
-
-    Strongly typed input wrapper for data reduction operations
-    with streaming and conflict resolution configuration.
-    """
-
-    data: list[T_Input]  # Strongly typed data list
-    reduction_type: EnumReductionType
-    operation_id: UUID = Field(default_factory=uuid4)
-    conflict_resolution: ConflictResolution = ConflictResolution.LAST_WINS
-    streaming_mode: StreamingMode = StreamingMode.BATCH
-    batch_size: int = 1000
-    window_size_ms: int = 5000
-    metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-
-class ModelReducerOutput(BaseModel, Generic[T_Output]):
-    """
-    Output model for NodeReducer operations.
-
-    Strongly typed output wrapper with reduction statistics
-    and conflict resolution metadata.
-    """
-
-    result: T_Output
-    operation_id: UUID
-    reduction_type: EnumReductionType
-    processing_time_ms: float
-    items_processed: int
-    conflicts_resolved: int = 0
-    streaming_mode: StreamingMode = StreamingMode.BATCH
-    batches_processed: int = 1
-    metadata: dict[str, str] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-
-class StreamingWindow:
-    """
-    Time-based window for streaming data processing.
-    """
-
-    def __init__(self, window_size_ms: int, overlap_ms: int = 0):
-        self.window_size_ms = window_size_ms
-        self.overlap_ms = overlap_ms
-        self.buffer: deque[Any] = deque()
-        self.window_start = datetime.now()
-
-    def add_item(self, item: Any) -> bool:
-        """Add item to window, returns True if window is full."""
-        current_time = datetime.now()
-        self.buffer.append((item, current_time))
-
-        # Check if window is complete
-        window_duration = (current_time - self.window_start).total_seconds() * 1000
-        return window_duration >= self.window_size_ms
-
-    def get_window_items(self) -> list[Any]:
-        """Get all items in current window."""
-        return [item for item, timestamp in self.buffer]
-
-    def advance_window(self) -> None:
-        """Advance to next window with optional overlap."""
-        if self.overlap_ms > 0:
-            # Keep overlapping items
-            cutoff_time = self.window_start + timedelta(
-                milliseconds=self.window_size_ms - self.overlap_ms,
-            )
-            self.buffer = deque(
-                [
-                    (item, timestamp)
-                    for item, timestamp in self.buffer
-                    if timestamp >= cutoff_time
-                ],
-            )
-        else:
-            # Clear all items
-            self.buffer.clear()
-
-        self.window_start = datetime.now()
-
-
-class ConflictResolver:
-    """
-    Handles conflict resolution during data reduction.
-    """
-
-    def __init__(
-        self,
-        strategy: ConflictResolution,
-        custom_resolver: Callable[..., Any] | None = None,
-    ):
-        self.strategy = strategy
-        self.custom_resolver = custom_resolver
-        self.conflicts_count = 0
-
-    def resolve(
-        self,
-        existing_value: Any,
-        new_value: Any,
-        key: str | None = None,
-    ) -> Any:
-        """Resolve conflict between existing and new values."""
-        self.conflicts_count += 1
-
-        if self.strategy == ConflictResolution.FIRST_WINS:
-            return existing_value
-        if self.strategy == ConflictResolution.LAST_WINS:
-            return new_value
-        if self.strategy == ConflictResolution.MERGE:
-            return self._merge_values(existing_value, new_value)
-        if self.strategy == ConflictResolution.ERROR:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Conflict detected for key: {key}",
-                context={
-                    "existing_value": str(existing_value),
-                    "new_value": str(new_value),
-                    "key": key,
-                },
-            )
-        if self.strategy == ConflictResolution.CUSTOM and self.custom_resolver:
-            return self.custom_resolver(existing_value, new_value, key)
-        # Default to last wins
-        return new_value
-
-    def _merge_values(self, existing: Any, new: Any) -> Any:
-        """Attempt to merge two values intelligently."""
-        # Handle numeric values
-        if isinstance(existing, int | float) and isinstance(new, int | float):
-            return existing + new
-
-        # Handle string concatenation
-        if isinstance(existing, str) and isinstance(new, str):
-            return f"{existing}, {new}"
-
-        # Handle list merging
-        if isinstance(existing, list) and isinstance(new, list):
-            return existing + new
-
-        # Handle dict merging
-        if isinstance(existing, dict) and isinstance(new, dict):
-            merged = existing.copy()
-            merged.update(new)
-            return merged
-
-        # Default to new value if can't merge
-        return new
+# Note: Enums and models have been extracted to separate modules
+# - EnumReductionType → omnibase_core.enums.enum_reduction_type
+# - EnumConflictResolution → omnibase_core.enums.enum_conflict_resolution
+# - EnumStreamingMode → omnibase_core.enums.enum_streaming_mode
+# - ModelReducerInput → omnibase_core.models.operations.model_reducer_input
+# - ModelReducerOutput → omnibase_core.models.operations.model_reducer_output
+# - StreamingWindow → omnibase_core.models.infrastructure.model_streaming_window
+# - ConflictResolver → omnibase_core.models.infrastructure.model_conflict_resolver
 
 
 class NodeReducer(NodeCoreBase):
@@ -271,7 +101,7 @@ class NodeReducer(NodeCoreBase):
             container: ONEX container for dependency injection
 
         Raises:
-            OnexError: If container is invalid or initialization fails
+            ModelOnexError: If container is invalid or initialization fails
         """
         super().__init__(container)
 
@@ -290,7 +120,7 @@ class NodeReducer(NodeCoreBase):
         self.reduction_metrics: dict[str, dict[str, float]] = {}
 
         # Streaming windows for real-time processing
-        self.active_windows: dict[str, StreamingWindow] = {}
+        self.active_windows: dict[str, ModelStreamingWindow] = {}
 
         # Register built-in reduction functions
         self._register_builtin_reducers()
@@ -305,7 +135,7 @@ class NodeReducer(NodeCoreBase):
             Path: Path to the contract.yaml file
 
         Raises:
-            OnexError: If contract file cannot be found
+            ModelOnexError: If contract file cannot be found
         """
         import inspect
         from pathlib import Path
@@ -322,21 +152,21 @@ class NodeReducer(NodeCoreBase):
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
                         if module and hasattr(module, "__file__"):
-                            module_path = Path(module.__file__)
+                            module_path = Path(module.__file__ or "")
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
                                 return contract_path
 
             # Fallback: this shouldn't happen but provide error
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for reducer node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -353,7 +183,7 @@ class NodeReducer(NodeCoreBase):
         Enhanced to properly handle FSM subcontracts with Pydantic model validation.
 
         Args:
-            data: Contract data structure (dict, list, or primitive)
+            data: Contract data structure (dict[str, Any], list[Any], or primitive)
             base_path: Base directory path for resolving relative references
             reference_resolver: Reference resolver utility
 
@@ -458,7 +288,7 @@ class NodeReducer(NodeCoreBase):
                     # Reference resolution failed - keep original
                     return data
             else:
-                # Regular dict - recursively resolve all values
+                # Regular dict[str, Any]- recursively resolve all values
                 resolved_dict = {}
                 for key, value in data.items():
                     resolved_dict[key] = self._resolve_contract_references(
@@ -578,7 +408,7 @@ class NodeReducer(NodeCoreBase):
             ModelContractReducer: Validated contract model for this node type
 
         Raises:
-            OnexError: If contract loading or validation fails
+            ModelOnexError: If contract loading or validation fails
         """
         try:
             # Load actual contract from file with subcontract resolution
@@ -628,8 +458,8 @@ class NodeReducer(NodeCoreBase):
 
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeReducer: {e!s}",
                 details={
                     "contract_model_type": "ModelContractReducer",
@@ -652,7 +482,7 @@ class NodeReducer(NodeCoreBase):
             Strongly typed reduction output with processing statistics
 
         Raises:
-            OnexError: If reduction fails or memory limits exceeded
+            ModelOnexError: If reduction fails or memory limits exceeded
         """
         start_time = time.time()
 
@@ -661,29 +491,25 @@ class NodeReducer(NodeCoreBase):
             self._validate_reducer_input(input_data)
 
             # Initialize conflict resolver
-            conflict_resolver = ConflictResolver(
+            conflict_resolver = ModelConflictResolver(
                 input_data.conflict_resolution,
-                (
-                    input_data.reducer_function
-                    if input_data.conflict_resolution == ConflictResolution.CUSTOM
-                    else None
-                ),
+                None,  # reducer_function is a string, not a callable
             )
 
             # Execute reduction based on streaming mode
-            if input_data.streaming_mode == StreamingMode.BATCH:
+            if input_data.streaming_mode == EnumStreamingMode.BATCH:
                 result, items_processed = await self._process_batch(
                     input_data,
                     conflict_resolver,
                 )
                 batches_processed = 1
-            elif input_data.streaming_mode == StreamingMode.INCREMENTAL:
+            elif input_data.streaming_mode == EnumStreamingMode.INCREMENTAL:
                 (
                     result,
                     items_processed,
                     batches_processed,
                 ) = await self._process_incremental(input_data, conflict_resolver)
-            elif input_data.streaming_mode == StreamingMode.WINDOWED:
+            elif input_data.streaming_mode == EnumStreamingMode.WINDOWED:
                 (
                     result,
                     items_processed,
@@ -718,8 +544,8 @@ class NodeReducer(NodeCoreBase):
                 streaming_mode=input_data.streaming_mode,
                 batches_processed=batches_processed,
                 metadata={
-                    "batch_size": input_data.batch_size,
-                    "window_size_ms": input_data.window_size_ms,
+                    "batch_size": str(input_data.batch_size),
+                    "window_size_ms": str(input_data.window_size_ms),
                     "conflict_strategy": input_data.conflict_resolution.value,
                 },
             )
@@ -751,8 +577,8 @@ class NodeReducer(NodeCoreBase):
             )
             await self._update_processing_metrics(processing_time, False)
 
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"Reduction failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -776,7 +602,7 @@ class NodeReducer(NodeCoreBase):
         to compute summary statistics for each group.
 
         Args:
-            tickets: List of ticket dictionaries
+            tickets: List of ticket dict[str, Any]ionaries
             group_by: Field to group tickets by
             aggregation_functions: Functions to apply (count, sum, avg, min, max)
 
@@ -784,7 +610,7 @@ class NodeReducer(NodeCoreBase):
             Grouped and aggregated ticket data
 
         Raises:
-            OnexError: If aggregation fails
+            ModelOnexError: If aggregation fails
         """
         if aggregation_functions is None:
             aggregation_functions = {
@@ -798,7 +624,7 @@ class NodeReducer(NodeCoreBase):
         reduction_input = ModelReducerInput(
             data=tickets,
             reduction_type=EnumReductionType.AGGREGATE,
-            group_key=lambda ticket: ticket.get(group_by, "unknown"),
+            group_key=group_by,  # Use field name string instead of lambda
             metadata={
                 "group_by": group_by,
                 "aggregation_functions": aggregation_functions,
@@ -827,7 +653,7 @@ class NodeReducer(NodeCoreBase):
             Tickets with normalized scores and rankings
 
         Raises:
-            OnexError: If normalization fails
+            ModelOnexError: If normalization fails
         """
         reduction_input = ModelReducerInput(
             data=tickets_with_scores,
@@ -850,16 +676,16 @@ class NodeReducer(NodeCoreBase):
         Detect and resolve cycles in RSD dependency graphs.
 
         Args:
-            dependency_graph: Graph as adjacency list (ticket_id -> [dependent_tickets])
+            dependency_graph: Graph as adjacency list[Any](ticket_id -> [dependent_tickets])
 
         Returns:
             Analysis results with cycle detection and resolution suggestions
 
         Raises:
-            OnexError: If cycle detection fails
+            ModelOnexError: If cycle detection fails
         """
         reduction_input = ModelReducerInput(
-            data=list(dependency_graph.items()),
+            data=list[Any](dependency_graph.items()),
             reduction_type=EnumReductionType.MERGE,
             metadata={
                 "graph_operation": "cycle_detection",
@@ -883,11 +709,11 @@ class NodeReducer(NodeCoreBase):
             function: Reduction function to register
 
         Raises:
-            OnexError: If reduction type already registered or function invalid
+            ModelOnexError: If reduction type already registered or function invalid
         """
         if reduction_type in self.reduction_functions:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Reduction type already registered: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -896,8 +722,8 @@ class NodeReducer(NodeCoreBase):
             )
 
         if not callable(function):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Reduction function must be callable: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -963,13 +789,13 @@ class NodeReducer(NodeCoreBase):
             input_data: Input data to validate
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         super()._validate_input_data(input_data)
 
         if not isinstance(input_data.reduction_type, EnumReductionType):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Reduction type must be valid EnumReductionType enum",
                 context={
                     "node_id": self.node_id,
@@ -978,8 +804,8 @@ class NodeReducer(NodeCoreBase):
             )
 
         if input_data.data is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message="Data cannot be None for reduction",
                 context={
                     "node_id": self.node_id,
@@ -990,14 +816,14 @@ class NodeReducer(NodeCoreBase):
     async def _process_batch(
         self,
         input_data: ModelReducerInput[Any],
-        conflict_resolver: ConflictResolver,
+        conflict_resolver: ModelConflictResolver,
     ) -> tuple[Any, int]:
         """Process all data in a single batch."""
         reduction_type = input_data.reduction_type
 
         if reduction_type not in self.reduction_functions:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.OPERATION_FAILED,
                 message=f"No reduction function for type: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -1008,15 +834,20 @@ class NodeReducer(NodeCoreBase):
 
         reducer_func = self.reduction_functions[reduction_type]
 
-        # Convert data to list if needed
+        # Convert data to list[Any]if needed
         if hasattr(input_data.data, "__aiter__"):
             # Handle async iterator
             data_list = [item async for item in input_data.data]
-        elif hasattr(input_data.data, "__iter__") and not isinstance(
-            input_data.data,
-            str | bytes,
-        ):
-            data_list = list(input_data.data)
+        elif hasattr(input_data.data, "__iter__"):
+            # Use type() to avoid MyPy isinstance issues
+            data_type = type(input_data.data)
+            if data_type is str or data_type is bytes:  # type: ignore [comparison-overlap]
+                data_list = [input_data.data]
+            else:
+                try:
+                    data_list = list(input_data.data)
+                except TypeError:
+                    data_list = [input_data.data]
         else:
             data_list = [input_data.data]
 
@@ -1027,7 +858,7 @@ class NodeReducer(NodeCoreBase):
     async def _process_incremental(
         self,
         input_data: ModelReducerInput[Any],
-        conflict_resolver: ConflictResolver,
+        conflict_resolver: ModelConflictResolver,
     ) -> tuple[Any, int, int]:
         """Process data incrementally in batches."""
         batch_size = input_data.batch_size
@@ -1089,10 +920,10 @@ class NodeReducer(NodeCoreBase):
     async def _process_windowed(
         self,
         input_data: ModelReducerInput[Any],
-        conflict_resolver: ConflictResolver,
+        conflict_resolver: ModelConflictResolver,
     ) -> tuple[Any, int, int]:
         """Process data in time-based windows."""
-        window = StreamingWindow(input_data.window_size_ms)
+        window = ModelStreamingWindow(input_data.window_size_ms)
         total_processed = 0
         windows_processed = 0
         results = []
@@ -1218,20 +1049,29 @@ class NodeReducer(NodeCoreBase):
         async def fold_reducer(
             data: list[Any],
             input_data: ModelReducerInput[Any],
-            conflict_resolver: ConflictResolver,
+            conflict_resolver: ModelConflictResolver,
         ) -> Any:
             """Fold/reduce data to single value."""
             if not data:
                 return input_data.accumulator_init
 
             accumulator = input_data.accumulator_init
-            reducer_func = input_data.reducer_function
+            reducer_func_name = input_data.reducer_function
 
-            if not reducer_func:
+            if not reducer_func_name:
                 # Default sum for numeric data
                 if all(isinstance(x, int | float) for x in data):
                     return sum(data)
                 return data[-1] if data else accumulator
+
+            # Look up the reducer function by name
+            reducer_func = self._get_reducer_function(reducer_func_name)
+            if not reducer_func:
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Unknown reducer function: {reducer_func_name}",
+                    context={"node_id": self.node_id},
+                )
 
             for item in data:
                 accumulator = reducer_func(accumulator, item)
@@ -1241,18 +1081,29 @@ class NodeReducer(NodeCoreBase):
         async def aggregate_reducer(
             data: list[Any],
             input_data: ModelReducerInput[Any],
-            conflict_resolver: ConflictResolver,
+            conflict_resolver: ModelConflictResolver,
         ) -> dict[str, Any]:
             """Aggregate data by groups with statistics."""
             if not data:
                 return {}
 
             # Group data
-            groups = defaultdict(list)
-            group_key = input_data.group_key or (lambda x: "default")
+            groups: dict[str, list[Any]] = defaultdict(list)
+
+            # Handle group key - if it's a string, use it as a field name
+            if input_data.group_key:
+                if isinstance(input_data.group_key, str):
+                    group_key_func = lambda x: x.get(input_data.group_key, "default") if hasattr(x, 'get') else "default"
+                else:
+                    # Handle list of group keys
+                    group_key_func = lambda x: tuple(x.get(field, "default") if hasattr(x, 'get') else "default" for field in input_data.group_key or [])
+            else:
+                group_key_func = lambda x: "default"
 
             for item in data:
-                key = group_key(item)
+                key = group_key_func(item)
+                if isinstance(key, tuple):
+                    key = str(key)  # Convert tuple to string for dict key
                 groups[key].append(item)
 
             # Apply aggregation functions
@@ -1286,13 +1137,13 @@ class NodeReducer(NodeCoreBase):
         async def normalize_reducer(
             data: list[Any],
             input_data: ModelReducerInput[Any],
-            conflict_resolver: ConflictResolver,
+            conflict_resolver: ModelConflictResolver,
         ) -> list[Any]:
             """Normalize scores and create rankings."""
             if not data:
                 return []
 
-            metadata = input_data.metadata
+            metadata = input_data.metadata or {}
             score_field = metadata.get("score_field", "score")
             method = metadata.get("normalization_method", "min_max")
 
@@ -1340,14 +1191,14 @@ class NodeReducer(NodeCoreBase):
         async def merge_reducer(
             data: list[Any],
             input_data: ModelReducerInput[Any],
-            conflict_resolver: ConflictResolver,
+            conflict_resolver: ModelConflictResolver,
         ) -> Any:
             """Merge multiple datasets with conflict resolution."""
             if not data:
                 return {}
 
             # Handle dependency graph cycle detection
-            metadata = input_data.metadata
+            metadata = input_data.metadata or {}
             if metadata.get("graph_operation") == "cycle_detection":
                 return self._detect_dependency_cycles(data)
 
@@ -1379,6 +1230,28 @@ class NodeReducer(NodeCoreBase):
         self.reduction_functions[EnumReductionType.AGGREGATE] = aggregate_reducer
         self.reduction_functions[EnumReductionType.NORMALIZE] = normalize_reducer
         self.reduction_functions[EnumReductionType.MERGE] = merge_reducer
+
+    def _get_reducer_function(self, func_name: str) -> Callable[..., Any] | None:
+        """
+        Get a reducer function by name.
+
+        Args:
+            func_name: Name of the reducer function
+
+        Returns:
+            Callable[..., Any] | None: The reducer function or None if not found
+        """
+        # Built-in reducer functions
+        builtin_functions = {
+            "sum": lambda x, y: x + y if isinstance(x, (int, float)) and isinstance(y, (int, float)) else x,
+            "max": lambda x, y: max(x, y) if isinstance(x, (int, float)) and isinstance(y, (int, float)) else x,
+            "min": lambda x, y: min(x, y) if isinstance(x, (int, float)) and isinstance(y, (int, float)) else x,
+            "concat": lambda x, y: f"{x}{y}" if isinstance(x, str) and isinstance(y, str) else x,
+            "append": lambda x, y: x + [y] if isinstance(x, list) else [x, y],
+            "extend": lambda x, y: x + y if isinstance(x, list) and isinstance(y, list) else x,
+        }
+
+        return builtin_functions.get(func_name)
 
     def _detect_dependency_cycles(
         self,
@@ -1432,7 +1305,7 @@ class NodeReducer(NodeCoreBase):
             "analysis_timestamp": datetime.now().isoformat(),
         }
 
-    def get_introspection_data(self) -> dict:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get comprehensive introspection data for NodeReducer.
 
@@ -1440,7 +1313,7 @@ class NodeReducer(NodeCoreBase):
         conflict resolution strategies, reduction operations, and RSD data processing details.
 
         Returns:
-            dict: Comprehensive introspection data with reducer-specific information
+            dict[str, Any]: Comprehensive introspection data with reducer-specific information
         """
         try:
             # Get base introspection data from NodeCoreBase
@@ -1485,7 +1358,7 @@ class NodeReducer(NodeCoreBase):
                     reduction_type.value for reduction_type in self.reduction_functions
                 ],
                 "conflict_resolution_strategies": [
-                    strategy.value for strategy in ConflictResolution
+                    strategy.value for strategy in EnumConflictResolution
                 ],
             }
 
@@ -1500,7 +1373,9 @@ class NodeReducer(NodeCoreBase):
 
             # 4. Reduction Management Information
             reduction_management_info = {
-                "registered_reduction_functions": list(self.reduction_functions.keys()),
+                "registered_reduction_functions": list[Any](
+                    self.reduction_functions.keys()
+                ),
                 "reduction_function_count": len(self.reduction_functions),
                 "streaming_windows_active": len(self.active_windows),
                 "supports_custom_reducers": True,
@@ -1521,7 +1396,9 @@ class NodeReducer(NodeCoreBase):
                     "window_types": ["time_based", "count_based"],
                 },
                 "conflict_resolution_configuration": {
-                    "strategies": [strategy.value for strategy in ConflictResolution],
+                    "strategies": [
+                        strategy.value for strategy in EnumConflictResolution
+                    ],
                     "supports_custom_resolvers": True,
                     "merge_strategies": [
                         "numeric_sum",
@@ -1590,7 +1467,7 @@ class NodeReducer(NodeCoreBase):
                 },
             }
 
-    def _extract_reducer_operations(self) -> list:
+    def _extract_reducer_operations(self) -> list[Any]:
         """Extract available reducer operations."""
         operations = ["process", "reduce_data", "aggregate_data", "normalize_scores"]
 
@@ -1614,7 +1491,7 @@ class NodeReducer(NodeCoreBase):
 
         return operations
 
-    def _extract_reducer_io_specifications(self) -> dict:
+    def _extract_reducer_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for reducer operations."""
         return {
             "input_model": "omnibase.core.node_reducer.ModelReducerInput",
@@ -1625,9 +1502,9 @@ class NodeReducer(NodeCoreBase):
             "reduction_types": [
                 reduction_type.value for reduction_type in EnumReductionType
             ],
-            "streaming_modes": [mode.value for mode in StreamingMode],
+            "streaming_modes": [mode.value for mode in EnumStreamingMode],
             "conflict_resolution_strategies": [
-                strategy.value for strategy in ConflictResolution
+                strategy.value for strategy in EnumConflictResolution
             ],
             "input_requirements": ["data", "reduction_type"],
             "output_guarantees": [
@@ -1639,7 +1516,7 @@ class NodeReducer(NodeCoreBase):
             ],
         }
 
-    def _extract_reducer_performance_characteristics(self) -> dict:
+    def _extract_reducer_performance_characteristics(self) -> dict[str, Any]:
         """Extract performance characteristics specific to reducer operations."""
         return {
             "expected_response_time_ms": "varies_by_data_size_and_reduction_complexity",
@@ -1656,7 +1533,7 @@ class NodeReducer(NodeCoreBase):
             "supports_large_datasets": True,
         }
 
-    def _extract_reduction_configuration(self) -> dict:
+    def _extract_reduction_configuration(self) -> dict[str, Any]:
         """Extract reduction configuration from contract."""
         try:
             return {
@@ -1676,7 +1553,7 @@ class NodeReducer(NodeCoreBase):
             )
             return {"default_batch_size": self.default_batch_size}
 
-    def _extract_aggregation_configuration(self) -> dict:
+    def _extract_aggregation_configuration(self) -> dict[str, Any]:
         """Extract aggregation configuration from contract."""
         try:
             aggregation_ops = []
@@ -1698,7 +1575,7 @@ class NodeReducer(NodeCoreBase):
                 "supports_custom_aggregation": True,
             }
         except Exception as e:
-            # fallback-ok: aggregation config extraction is for introspection metrics - return empty operations list to maintain introspection stability
+            # fallback-ok: aggregation config extraction is for introspection metrics - return empty operations list[Any]to maintain introspection stability
             emit_log_event(
                 LogLevel.WARNING,
                 f"Failed to extract aggregation configuration: {e!s}",
@@ -1713,7 +1590,8 @@ class NodeReducer(NodeCoreBase):
             test_input = ModelReducerInput(
                 data=[1, 2, 3],
                 reduction_type=EnumReductionType.FOLD,
-                cache_enabled=False,
+                reducer_function="sum",
+                accumulator_init=0,
             )
 
             # For health check, we'll just validate the input without processing
@@ -1724,7 +1602,7 @@ class NodeReducer(NodeCoreBase):
             # fallback-ok: health status check is informational only - return unhealthy status rather than raising to allow introspection to continue
             return "unhealthy"
 
-    def _get_reduction_metrics_sync(self) -> dict:
+    def _get_reduction_metrics_sync(self) -> dict[str, Any]:
         """Get reduction metrics synchronously for introspection."""
         try:
             return {
@@ -1749,7 +1627,7 @@ class NodeReducer(NodeCoreBase):
             )
             return {"status": "unknown", "error": str(e)}
 
-    def _get_reducer_resource_usage(self) -> dict:
+    def _get_reducer_resource_usage(self) -> dict[str, Any]:
         """Get resource usage specific to reducer operations."""
         try:
             total_buffer_items = sum(
@@ -1772,7 +1650,7 @@ class NodeReducer(NodeCoreBase):
             )
             return {"status": "unknown"}
 
-    def _get_streaming_status(self) -> dict:
+    def _get_streaming_status(self) -> dict[str, Any]:
         """Get streaming processing status."""
         try:
             return {
@@ -1782,7 +1660,7 @@ class NodeReducer(NodeCoreBase):
                 "supports_real_time": True,
                 "supports_windowed": True,
                 "supports_incremental": True,
-                "streaming_modes_supported": [mode.value for mode in StreamingMode],
+                "streaming_modes_supported": [mode.value for mode in EnumStreamingMode],
             }
         except Exception as e:
             # fallback-ok: streaming status is for monitoring/introspection - return disabled status to prevent introspection failures
@@ -1793,11 +1671,13 @@ class NodeReducer(NodeCoreBase):
             )
             return {"streaming_enabled": False, "error": str(e)}
 
-    def _get_conflict_resolution_status(self) -> dict:
+    def _get_conflict_resolution_status(self) -> dict[str, Any]:
         """Get conflict resolution status."""
         return {
             "conflict_resolution_enabled": True,
-            "supported_strategies": [strategy.value for strategy in ConflictResolution],
+            "supported_strategies": [
+                strategy.value for strategy in EnumConflictResolution
+            ],
             "supports_custom_resolvers": True,
             "merge_capabilities": {
                 "numeric_merge": True,
@@ -1807,34 +1687,4 @@ class NodeReducer(NodeCoreBase):
             },
         }
 
-    def _validate_reducer_input(self, input_data: ModelReducerInput[Any]) -> None:
-        """
-        Validate reducer input data (placeholder for actual validation).
-
-        Args:
-            input_data: Input data to validate
-
-        Raises:
-            OnexError: If validation fails
-        """
-        super()._validate_input_data(input_data)
-
-        if not hasattr(input_data, "data"):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Input data must have 'data' attribute",
-                context={
-                    "node_id": self.node_id,
-                    "input_type": type(input_data).__name__,
-                },
-            )
-
-        if not hasattr(input_data, "reduction_type"):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Input data must have 'reduction_type' attribute",
-                context={
-                    "node_id": self.node_id,
-                    "input_type": type(input_data).__name__,
-                },
-            )
+  

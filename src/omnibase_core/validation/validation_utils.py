@@ -1,72 +1,24 @@
+from __future__ import annotations
+
 """
 Shared utilities for protocol validation across omni* ecosystem.
 """
 
-from __future__ import annotations
 
 import ast
 import hashlib
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
-
-
-class ValidationMetadataType(TypedDict, total=False):
-    """Type-safe validation metadata structure."""
-
-    protocols_found: int
-    recommendations: list[str]
-    signature_hashes: list[str]
-    file_count: int
-    duplication_count: int
-    suggestions: list[str]
-    total_unions: int
-    violations_found: int
-    message: str
-    validation_type: str
-    yaml_files_found: int
-    manual_yaml_violations: int
-    max_violations: int
-    files_with_violations: list[str]
-    strict_mode: bool
-    error: str
-    max_unions: int
-    complex_patterns: int
-
 
 from .exceptions import InputValidationError
+from .model_duplication_info import DuplicationInfo
 from .model_protocol_info import ModelProtocolInfo
 from .model_protocol_signature_extractor import ProtocolSignatureExtractor
+from .model_validation_result import ValidationResult
+from .typed_dict_validation_metadata_type import ValidationMetadataType
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ValidationResult:
-    """Result of a validation operation."""
-
-    success: bool
-    errors: list[str]
-    files_checked: int = 0
-    violations_found: int = 0
-    files_with_violations: int = 0
-    metadata: ValidationMetadataType | None = None
-
-    def __post_init__(self) -> None:
-        if self.metadata is None:
-            self.metadata = {}
-
-
-@dataclass
-class DuplicationInfo:
-    """Information about protocol duplications."""
-
-    signature_hash: str
-    protocols: list[ModelProtocolInfo]
-    duplication_type: str  # "exact", "name_conflict", "signature_match"
-    recommendation: str
 
 
 def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:

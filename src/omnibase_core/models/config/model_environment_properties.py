@@ -1,20 +1,27 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Environment Properties Model
 
 Type-safe custom environment properties with access methods.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypeVar, cast, get_origin
+from typing import Any, Dict, TypedDict, TypeVar, cast, get_origin
 
 from pydantic import BaseModel, Field
 
 # Type variable for generic property handling
 T = TypeVar("T")
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
 from .model_environment_properties_collection import (
@@ -61,8 +68,8 @@ class ModelEnvironmentProperties(BaseModel):
                 return cast(T, prop_value.as_float())
             if expected_type == bool:
                 return cast(T, prop_value.as_bool())
-            if expected_type == list or get_origin(expected_type) is list:
-                # Handle list types
+            if expected_type == list[Any] or get_origin(expected_type) is list[Any]:
+                # Handle list[Any]types
                 if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
                     return cast(T, [str(item) for item in prop_value.value])
                 # Try string conversion for comma-separated values
@@ -208,7 +215,7 @@ class ModelEnvironmentProperties(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            OnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails with details about the failure
         """
         try:
             for key, value in kwargs.items():
@@ -216,28 +223,28 @@ class ModelEnvironmentProperties(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

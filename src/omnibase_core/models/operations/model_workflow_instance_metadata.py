@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Strongly-typed workflow metadata structure.
 
@@ -5,7 +14,6 @@ Replaces dict[str, Any] usage in workflow metadata with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
@@ -13,7 +21,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import (
+    ModelCoreErrorCode,
+    ModelOnexError,
+)
 
 
 class ModelWorkflowInstanceMetadata(BaseModel):
@@ -98,15 +109,15 @@ class ModelWorkflowInstanceMetadata(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"{self.__class__.__name__} must have a valid ID field "
-            f"(type_id, id, uuid, identifier, etc.). "
+            f"(type_id, id, uuid, identifier, metadata_id, etc.). "
             f"Cannot generate stable ID without UUID field.",
+            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

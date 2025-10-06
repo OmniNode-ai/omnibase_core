@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for node feature flags summary.
 
 Replaces dict[str, str] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelNodeFeatureSummaryType(TypedDict):
     """
-    Typed dictionary for node feature flags summary.
+    Typed dict[str, Any]ionary for node feature flags summary.
 
     Replaces dict[str, str] return type from get_feature_summary()
     with proper type structure.

@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Transaction Configuration Model.
 

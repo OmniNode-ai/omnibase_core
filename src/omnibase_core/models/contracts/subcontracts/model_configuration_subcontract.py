@@ -1,3 +1,11 @@
+import uuid
+from typing import Any, List, Optional
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Configuration Management Subcontract Model - ONEX Standards Compliant.
 
@@ -21,7 +29,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Import individual configuration model components
@@ -77,7 +85,7 @@ class ModelConfigurationSubcontract(BaseModel):
     # Configuration sources
     configuration_sources: list[ModelConfigurationSource] = Field(
         default_factory=list,
-        description="Ordered list of configuration sources by priority",
+        description="Ordered list[Any]of configuration sources by priority",
     )
 
     default_source_type: str = Field(
@@ -212,9 +220,9 @@ class ModelConfigurationSubcontract(BaseModel):
             duplicate_priorities = [
                 p for p in required_priorities if required_priorities.count(p) > 1
             ]
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -232,9 +240,9 @@ class ModelConfigurationSubcontract(BaseModel):
         if required_set & optional_set:
             overlapping = required_set & optional_set
             msg = f"Keys cannot be both required and optional: {overlapping}"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -330,13 +338,13 @@ class ModelConfigurationSubcontract(BaseModel):
         Validate that runtime configuration updates are allowed.
 
         Raises:
-            OnexError: If runtime updates are not allowed
+            ModelOnexError: If runtime updates are not allowed
         """
         if not self.allow_runtime_updates:
             msg = "Runtime configuration updates are not allowed for this subcontract"
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
                 message=msg,
+                error_code=ModelCoreErrorCode.OPERATION_FAILED,
             )
 
     def create_configuration_source(
@@ -389,9 +397,9 @@ class ModelConfigurationSubcontract(BaseModel):
                     f"Required configuration source priority {source.priority} "
                     "already exists"
                 )
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 )
 
         self.configuration_sources.append(source)

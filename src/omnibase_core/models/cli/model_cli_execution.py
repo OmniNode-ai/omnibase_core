@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import Field
+
 """
 CLI Execution Model.
 
@@ -5,7 +13,6 @@ Represents CLI command execution context with timing, configuration,
 and state tracking for comprehensive command execution management.
 """
 
-from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -405,7 +412,7 @@ class ModelCliExecution(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

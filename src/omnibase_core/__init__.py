@@ -1,5 +1,7 @@
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+
 """
-Omnibase Core - ONEX Four-Node Architecture Implementation
+Omnibase Core - ONEX Four-Node ModelArchitecture Implementation
 
 Main module for the omnibase_core package following ONEX standards.
 
@@ -31,7 +33,7 @@ Validation Tools:
         python -m omnibase_core.validation all
 """
 
-from omnibase_core.errors import CoreErrorCode, OnexError
+from omnibase_core.errors import ModelCoreErrorCode, ModelOnexError
 
 # No typing imports needed for lazy loading
 
@@ -61,8 +63,8 @@ def __getattr__(name: str) -> object:
         # Return the requested attribute from validation module
         return locals()[name]
     msg = f"module '{__name__}' has no attribute '{name}'"
-    raise OnexError(
-        code=CoreErrorCode.IMPORT_ERROR,
+    raise ModelOnexError(
+        code=ModelCoreErrorCode.IMPORT_ERROR,
         message=msg,
         details={"module": __name__, "attribute": name},
     )

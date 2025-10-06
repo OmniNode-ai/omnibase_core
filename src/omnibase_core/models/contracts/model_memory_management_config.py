@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Memory Management Configuration Model - ONEX Standards Compliant.
 

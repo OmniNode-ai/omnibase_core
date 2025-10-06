@@ -1,3 +1,7 @@
+import uuid
+
+from pydantic import Field
+
 """
 Node Progress Model - ONEX Standards Compliant.
 

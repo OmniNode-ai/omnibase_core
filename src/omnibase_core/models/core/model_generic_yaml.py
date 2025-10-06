@@ -1,39 +1,70 @@
-"""Generic YAML model for ContractLoader."""
+"""
+Generic YAML models for common YAML structure patterns.
 
-from typing import Any
+These models provide type-safe validation for various YAML structures
+that appear throughout the codebase, ensuring proper validation without
+relying on yaml.safe_load() directly.
 
-from pydantic import BaseModel, Field
+Author: ONEX Framework Team
+"""
+
+from typing import Any, TypeVar
+
+import yaml
+from pydantic import BaseModel, ConfigDict, Field
+
+# Import extracted YAML model classes
+from omnibase_core.models.core.model_yaml_configuration import ModelYamlConfiguration
+from omnibase_core.models.core.model_yaml_dictionary import ModelYamlDictionary
+from omnibase_core.models.core.model_yaml_list import ModelYamlList
+from omnibase_core.models.core.model_yaml_metadata import ModelYamlMetadata
+from omnibase_core.models.core.model_yaml_policy import ModelYamlPolicy
+from omnibase_core.models.core.model_yaml_registry import ModelYamlRegistry
+from omnibase_core.models.core.model_yaml_state import ModelYamlState
+from omnibase_core.models.core.model_yaml_with_examples import ModelYamlWithExamples
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class ModelGenericYaml(BaseModel):
-    """Generic YAML content model for safe YAML loading."""
+    """Generic YAML model for unstructured YAML data."""
 
-    model_config = {
-        "extra": "allow",  # Allow any additional fields
-        "arbitrary_types_allowed": True,
-    }
+    model_config = ConfigDict(extra="allow")
 
-    # Allow any fields to be set dynamically
-    def __init__(self, **data: Any):
-        """Initialize with arbitrary data."""
-        super().__init__(**data)
+    # Allow any additional fields for maximum flexibility
+    root_list: list[Any] | None = Field(
+        None, description="Root level list for YAML arrays"
+    )
 
-    def __getitem__(self, key: str) -> Any:
-        """Support dict-like access."""
-        return getattr(self, key, None)
+    @classmethod
+    def from_yaml(cls, yaml_content: str) -> "ModelGenericYaml":
+        """
+        Create ModelGenericYaml from YAML content.
 
-    def get(self, key: str, default: Any = None) -> Any:
-        """Support dict-like get method."""
-        return getattr(self, key, default)
+        This is the only place where yaml.safe_load should be used
+        for the ModelGenericYaml class.
+        """
+        try:
+            data = yaml.safe_load(yaml_content)
+            if data is None:
+                data = {}
+            if isinstance(data, list):
+                # For root-level lists, wrap in a dict
+                return cls(root_list=data)
+            return cls(**data)
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML content: {e}") from e
 
-    def keys(self) -> list[str]:
-        """Get all keys."""
-        return list(self.model_dump().keys())
 
-    def values(self) -> list[Any]:
-        """Get all values."""
-        return list(self.model_dump().values())
-
-    def items(self) -> list[tuple[str, Any]]:
-        """Get all items."""
-        return list(self.model_dump().items())
+# Re-export all extracted YAML model classes for backward compatibility
+__all__ = [
+    "ModelGenericYaml",
+    "ModelYamlConfiguration",
+    "ModelYamlDictionary",
+    "ModelYamlList",
+    "ModelYamlMetadata",
+    "ModelYamlPolicy",
+    "ModelYamlRegistry",
+    "ModelYamlState",
+    "ModelYamlWithExamples",
+]

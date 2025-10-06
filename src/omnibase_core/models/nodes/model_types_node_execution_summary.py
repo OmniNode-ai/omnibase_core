@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for node execution settings summary.
 
 Replaces dict[str, int | bool | None] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelNodeExecutionSummaryType(TypedDict):
     """
-    Typed dictionary for node execution settings summary.
+    Typed dict[str, Any]ionary for node execution settings summary.
 
     Replaces dict[str, int | bool | None] return type from get_execution_summary()
     with proper type structure.

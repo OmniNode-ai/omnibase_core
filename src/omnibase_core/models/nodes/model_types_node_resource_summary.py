@@ -1,17 +1,20 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 TypedDict for node resource limits summary.
 
 Replaces dict[str, Any] return type with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class ModelNodeResourceSummaryType(TypedDict):
     """
-    Typed dictionary for node resource limits summary.
+    Typed dict[str, Any]ionary for node resource limits summary.
 
     Replaces dict[str, Any] return type from get_resource_summary()
     with proper type structure.

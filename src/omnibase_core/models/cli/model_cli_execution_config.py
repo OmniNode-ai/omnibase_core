@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 CLI Execution Configuration Model.
 
@@ -5,7 +11,6 @@ Configuration settings and parameters for CLI command execution.
 Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
@@ -13,7 +18,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 from .model_cli_execution_input_data import ModelCliExecutionInputData
 
@@ -132,7 +137,7 @@ class ModelCliExecutionConfig(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -160,8 +165,8 @@ class ModelCliExecutionConfig(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

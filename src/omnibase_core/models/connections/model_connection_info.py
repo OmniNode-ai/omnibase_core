@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Dict
+
+from pydantic import Field
+
 """
 Connection info model to replace Dict[str, Any] usage for connection_info fields.
 
@@ -5,11 +11,10 @@ Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
 
-from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_serializer
@@ -266,5 +271,5 @@ class ModelConnectionInfo(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

@@ -1,3 +1,8 @@
+import uuid
+from typing import Callable, TypeVar
+
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+
 """
 Container Service Resolver
 
@@ -6,11 +11,11 @@ Handles the get_service method functionality that gets lost during
 dependency-injector DynamicContainer transformation.
 """
 
-from collections.abc import Callable
-from typing import TypeVar
+from collections.abc import Callable as CallableABC
+from typing import Any, Callable, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
-from omnibase_core.errors import CoreErrorCode, OnexError
+from omnibase_core.errors import ModelCoreErrorCode, ModelOnexError
 
 # DELETED: not needed import create_hybrid_event_bus
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -117,9 +122,9 @@ def create_get_service_method(
                         health_status="healthy",
                     )
                 msg = f"Vault client not available in container: {protocol_name}"
-                raise OnexError(
+                raise ModelOnexError(
                     msg,
-                    CoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+                    ModelCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
                 )
 
         # Handle generation tool registries with registry pattern
@@ -138,9 +143,9 @@ def create_get_service_method(
 
         # If no protocol_type and service not found, raise error
         msg = f"Unable to resolve service: {service_name}"
-        raise OnexError(
+        raise ModelOnexError(
             msg,
-            error_code=CoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+            error_code=ModelCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
         )
 
     return get_service

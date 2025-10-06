@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
 """
 Retry Execution Model.
 
@@ -5,7 +11,6 @@ Execution tracking and state management for retries.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -195,7 +200,7 @@ class ModelRetryExecution(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

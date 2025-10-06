@@ -1,16 +1,19 @@
+from __future__ import annotations
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Metadata Node Collection Model.
 
 Clean, focused implementation with proper typing and single responsibility following ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
 from pydantic import Field, RootModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer
@@ -29,7 +32,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
     root: dict[str, Any] = Field(
         default_factory=dict,
-        description="Root dictionary containing metadata nodes and analytics data",
+        description="Root dict[str, Any]ionary containing metadata nodes and analytics data",
     )
 
     def __init__(
@@ -44,21 +47,21 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             root: Initial root data - accepts dict[str, Any] or None
 
         Raises:
-            OnexError: If root is not of expected type (VALIDATION_ERROR)
+            ModelOnexError: If root is not of expected type (VALIDATION_ERROR)
         """
         # Runtime validation for type safety
         if root is None:
             validated_root: dict[str, Any] = {}
         elif isinstance(root, dict):
-            # Validate dict structure if needed
+            # Validate dict[str, Any]structure if needed
             validated_root = root
         else:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"root must be dict or None, got {type(root).__name__}",
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                message=f"root must be dict[str, Any]or None, got {type(root).__name__}",
                 details={
                     "received_type": type(root).__name__,
-                    "expected_types": ["dict", "None"],
+                    "expected_types": ["dict[str, Any]", "None"],
                     "parameter": "root",
                 },
             )
@@ -81,7 +84,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -94,7 +97,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -105,7 +108,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result
 

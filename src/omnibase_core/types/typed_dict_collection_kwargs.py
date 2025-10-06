@@ -1,25 +1,12 @@
+"""Collection TypedDict definitions.
+
+Type-safe dict[str, Any]ionary definitions for collection creation parameters.
 """
-Collection TypedDict definitions.
 
-Type-safe dictionary definitions for collection creation parameters.
-"""
+from .typed_dict_collection_create_kwargs import TypedDictCollectionCreateKwargs
+from .typed_dict_collection_from_items_kwargs import TypedDictCollectionFromItemsKwargs
 
-from __future__ import annotations
-
-from typing import TypedDict
-from uuid import UUID
-
-
-class TypedDictCollectionCreateKwargs(TypedDict, total=False):
-    """Type-safe dictionary for collection creation parameters."""
-
-    collection_display_name: str
-    collection_id: UUID
-
-
-class TypedDictCollectionFromItemsKwargs(TypedDict, total=False):
-    """Type-safe dictionary for collection creation from items parameters."""
-
-    items: list[object]  # ONEX compliance - use object instead of Any
-    collection_display_name: str
-    collection_id: UUID
+__all__ = [
+    "TypedDictCollectionCreateKwargs",
+    "TypedDictCollectionFromItemsKwargs",
+]

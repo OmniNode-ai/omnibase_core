@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Protocol Type Enum.
 
 Defines communication protocols for node configurations.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

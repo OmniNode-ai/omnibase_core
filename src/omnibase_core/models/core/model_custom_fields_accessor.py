@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Generic, TypeVar
+
+from pydantic import model_validator
+
+from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+
 """
 Generic custom fields accessor with comprehensive field management.
 
@@ -5,7 +13,6 @@ Provides generic type support and comprehensive field operations for managing
 typed custom fields with automatic initialization and type safety.
 """
 
-from __future__ import annotations
 
 import copy
 from typing import Any, Generic, TypeVar
@@ -84,7 +91,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             elif isinstance(value, float):
                 result["float_fields"][key] = value
             elif isinstance(value, dict):
-                # Convert dict to string representation
+                # Convert dict[str, Any]to string representation
                 result["string_fields"][key] = str(value)
             else:
                 # Store as string fallback
@@ -221,7 +228,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
         return default
 
     def get_list(self, key: str, default: list[Any] | None = None) -> list[Any]:
-        """Get a list field value."""
+        """Get a list[Any]field value."""
         if default is None:
             default = []
         if key in self.list_fields:
@@ -359,7 +366,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
         if key in self.bool_fields:
             return "bool"
         if key in self.list_fields:
-            return "list"
+            return "list[Any]"
         if key in self.float_fields:
             return "float"
         if hasattr(self, "custom_fields") and key in getattr(
@@ -391,7 +398,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             return value_type is bool
         if field_type == "float":
             return value_type is float
-        if field_type == "list":
+        if field_type == "list[Any]":
             return isinstance(value, list)
         if field_type == "custom":
             return True  # Custom fields accept any type
@@ -405,7 +412,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             return dict(self.int_fields)
         if field_type == "bool":
             return dict(self.bool_fields)
-        if field_type == "list":
+        if field_type == "list[Any]":
             return dict(self.list_fields)
         if field_type == "float":
             return dict(self.float_fields)
@@ -500,7 +507,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
         try:
             # Initialize custom_fields if it's None with explicit type annotation
             if not hasattr(self, "custom_fields") or self.custom_fields is None:
-                # Explicitly type the dictionary to avoid MyPy inference issues
+                # Explicitly type the dict[str, Any]ionary to avoid MyPy inference issues
 
                 self.custom_fields: dict[str, PrimitiveValueType] = {}
 
@@ -559,7 +566,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

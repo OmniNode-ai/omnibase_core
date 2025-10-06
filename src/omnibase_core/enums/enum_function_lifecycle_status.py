@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Function Lifecycle Status Enumeration - Unified Hierarchy Version.
 
@@ -6,7 +8,6 @@ on function/component lifecycle states rather than execution states, providing
 clear separation from execution-oriented enums.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

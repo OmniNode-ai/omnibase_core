@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Category enumeration for general categorization.
 
 Provides standardized category values for classification across the system.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

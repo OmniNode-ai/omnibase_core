@@ -1,12 +1,17 @@
+from __future__ import annotations
+
+from typing import TypeVar
+
+from pydantic import Field
+
 """
 Environment field accessor with type coercion.
 
 Specialized accessor for environment properties with automatic type conversion.
 """
 
-from __future__ import annotations
 
-from typing import TypeVar, cast, get_origin
+from typing import Any, TypeVar, cast, get_origin
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -61,8 +66,8 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
                     )
                 if isinstance(raw_value, (int, float)):
                     return cast(T, bool(raw_value))
-            elif expected_type == list or get_origin(expected_type) is list:
-                # Handle list types
+            elif expected_type == list[Any] or get_origin(expected_type) is list[Any]:
+                # Handle list[Any]types
                 if isinstance(raw_value, list):
                     return cast(T, [str(item) for item in raw_value])
                 if isinstance(raw_value, str):
@@ -92,10 +97,10 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
         return self.get_typed_value(path, bool, default)
 
     def get_list(self, path: str, default: list[str] | None = None) -> list[str]:
-        """Get field value as list of strings with default."""
+        """Get field value as list[Any]of strings with default."""
         if default is None:
             default = []
-        return self.get_typed_value(path, list, default)
+        return self.get_typed_value(path, list[Any], default)
 
 
 # Export for use

@@ -1,3 +1,5 @@
+from typing import Generic
+
 """
 Results module - ONEX result models and related structures
 """

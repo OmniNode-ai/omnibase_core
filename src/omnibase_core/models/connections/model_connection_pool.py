@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Connection Pool Model.
 
@@ -5,13 +11,12 @@ Connection pooling and timeout configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelConnectionPool(BaseModel):
@@ -72,9 +77,9 @@ class ModelConnectionPool(BaseModel):
         """Validate pool configuration consistency."""
         if self.pool_size and self.max_overflow:
             if self.max_overflow > self.pool_size:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message="max_overflow cannot exceed pool_size",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 )
         return self
 
@@ -224,7 +229,7 @@ class ModelConnectionPool(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

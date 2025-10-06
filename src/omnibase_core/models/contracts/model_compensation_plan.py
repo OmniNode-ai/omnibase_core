@@ -1,20 +1,29 @@
+import uuid
+from typing import List, Literal
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 """
 Compensation Plan Model - ONEX Standards Compliant.
 
 Strongly-typed compensation plan model that replaces dict[str, str | list[str]] patterns
 with proper Pydantic validation and type safety for saga pattern workflows.
 
-ZERO TOLERANCE: No Any types or dict patterns allowed.
+ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelCompensationPlan(BaseModel):
@@ -24,7 +33,7 @@ class ModelCompensationPlan(BaseModel):
     Replaces dict[str, str | list[str]] patterns with proper Pydantic model
     providing runtime validation and type safety for compensation actions.
 
-    ZERO TOLERANCE: No Any types or dict patterns allowed.
+    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
     """
 
     # Plan identification
@@ -175,9 +184,9 @@ class ModelCompensationPlan(BaseModel):
                     ModelSchemaValue,
                 )
 
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message="Plan ID cannot be empty",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "onex_principle": ModelSchemaValue.from_value(
@@ -198,9 +207,9 @@ class ModelCompensationPlan(BaseModel):
                     ModelSchemaValue,
                 )
 
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid plan_id '{v_str}'. Must be a valid UUID.",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "plan_id": ModelSchemaValue.from_value(v_str),
@@ -219,7 +228,7 @@ class ModelCompensationPlan(BaseModel):
     )
     @classmethod
     def validate_action_lists(cls, v: list[str]) -> list[str]:
-        """Validate action identifier lists."""
+        """Validate action identifier list[Any]s."""
         validated = []
         for action_id in v:
             action_id = action_id.strip()
@@ -234,9 +243,9 @@ class ModelCompensationPlan(BaseModel):
                     ModelSchemaValue,
                 )
 
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid action_id '{action_id}'. Must contain only alphanumeric characters, hyphens, and underscores.",
+                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "action_id": ModelSchemaValue.from_value(action_id),
@@ -275,9 +284,9 @@ class ModelCompensationPlan(BaseModel):
                         ModelSchemaValue,
                     )
 
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
                         message=f"Invalid dependency plan_id '{plan_id_str}'. Must be a valid UUID.",
+                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "dependency_plan_id": ModelSchemaValue.from_value(

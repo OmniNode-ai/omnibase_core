@@ -1,16 +1,19 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 Trace info data type definition.
 
 TypedDict for trace information to replace loose Any typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
-class TypedDictModelTraceInfoData(TypedDict, total=False):
-    """Typed dictionary for trace information."""
+class TypedDictTraceInfoData(TypedDict, total=False):
+    """Typed dict[str, Any]ionary for trace information."""
 
     key: str
     value: str  # Trace values are typically displayed as strings
@@ -19,4 +22,4 @@ class TypedDictModelTraceInfoData(TypedDict, total=False):
 
 
 # Export for use
-__all__ = ["TypedDictModelTraceInfoData"]
+__all__ = ["TypedDictTraceInfoData"]

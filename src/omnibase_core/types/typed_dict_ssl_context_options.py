@@ -1,13 +1,13 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TypedDict
+
 """
 SSL Context Options TypedDict.
 
 SSL context options for connection libraries.
 """
-
-from __future__ import annotations
-
-from pathlib import Path
-from typing import TypedDict
 
 
 class TypedDictSSLContextOptions(TypedDict, total=False):

@@ -13,6 +13,7 @@ from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.models.cli.model_cli_result_metadata import (
     ModelCliResultMetadata,
 )
@@ -140,15 +141,15 @@ class TestModelCliResultMetadata:
         metadata.set_quality_score(1.0)
         assert metadata.quality_score == 1.0
 
-        # Invalid scores should raise ValueError
+        # Invalid scores should raise OnexError
         with pytest.raises(
-            ValueError,
+            OnexError,
             match="Quality score must be between 0.0 and 1.0",
         ):
             metadata.set_quality_score(-0.1)
 
         with pytest.raises(
-            ValueError,
+            OnexError,
             match="Quality score must be between 0.0 and 1.0",
         ):
             metadata.set_quality_score(1.1)
@@ -167,15 +168,15 @@ class TestModelCliResultMetadata:
         metadata.set_confidence_level(1.0)
         assert metadata.confidence_level == 1.0
 
-        # Invalid confidence levels should raise ValueError
+        # Invalid confidence levels should raise OnexError
         with pytest.raises(
-            ValueError,
+            OnexError,
             match="Confidence level must be between 0.0 and 1.0",
         ):
             metadata.set_confidence_level(-0.01)
 
         with pytest.raises(
-            ValueError,
+            OnexError,
             match="Confidence level must be between 0.0 and 1.0",
         ):
             metadata.set_confidence_level(1.01)

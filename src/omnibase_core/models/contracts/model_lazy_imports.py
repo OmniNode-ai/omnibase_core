@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 """
 Lazy Import Optimization Module
 
@@ -15,7 +17,7 @@ Usage:
 """
 
 import functools
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 # Type checking imports only - no runtime cost
 if TYPE_CHECKING:
@@ -135,7 +137,7 @@ class ModelLazyContractLoader:
             Dict containing cache hit information and loaded modules
         """
         return {
-            "cached_models": list(self._cache.keys()),
+            "cached_models": list[Any](self._cache.keys()),
             "cache_size": len(self._cache),
             "available_models": [
                 "ModelContractBase",

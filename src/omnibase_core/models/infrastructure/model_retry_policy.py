@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Retry Policy Model.
 
@@ -7,7 +13,6 @@ Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
 
-from __future__ import annotations
 
 import random
 from datetime import datetime
@@ -16,7 +21,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_retry_advanced import ModelRetryAdvanced
@@ -339,8 +344,8 @@ class ModelRetryPolicy(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -352,13 +357,13 @@ class ModelRetryPolicy(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

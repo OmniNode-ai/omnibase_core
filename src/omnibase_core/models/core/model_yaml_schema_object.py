@@ -1,20 +1,36 @@
-"""YAML schema object model for ContractLoader."""
+from typing import Any, Dict
 
-from typing import Any
+from pydantic import Field
 
-from pydantic import BaseModel, Field
+"""
+Model for YAML schema object representation in ONEX NodeBase implementation.
+
+This model supports the PATTERN-005 ContractLoader functionality for
+strongly typed YAML schema object definitions.
+
+Author: ONEX Framework Team
+"""
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.core.model_yaml_schema_property import ModelYamlSchemaProperty
 
 
 class ModelYamlSchemaObject(BaseModel):
-    """YAML schema object representation."""
+    """Model representing a YAML schema object definition."""
 
-    object_type: str = Field(default="object", description="Schema type")
-    description: str = Field(default="", description="Schema description")
-    properties: dict[str, Any] = Field(
-        default_factory=dict, description="Schema properties"
+    model_config = ConfigDict(extra="ignore")
+
+    object_type: str = Field(
+        ...,
+        description="Object type (always 'object' for schema objects)",
     )
-    required: list[str] = Field(default_factory=list, description="Required properties")
-
-    model_config = {
-        "extra": "allow",
-    }
+    properties: dict[str, ModelYamlSchemaProperty] = Field(
+        default_factory=dict,
+        description="Object properties",
+    )
+    required_properties: list[str] = Field(
+        default_factory=list,
+        description="Required property names",
+    )
+    description: str = Field(default="", description="Object description")

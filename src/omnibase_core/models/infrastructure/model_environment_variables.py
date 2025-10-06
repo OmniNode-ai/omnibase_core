@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import List, Optional
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import ModelOnexError
+
 """
 Environment Variables Model
 
@@ -5,14 +13,13 @@ Type-safe environment variable management with validation and security.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
 
 class ModelEnvironmentVariables(BaseModel):
@@ -49,10 +56,14 @@ class ModelEnvironmentVariables(BaseModel):
         for name in v:
             if not name.isidentifier() and not name.replace("_", "").isalnum():
                 msg = f"Invalid environment variable name: {name}"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg
+                )
             if name.startswith("__"):
                 msg = f"Environment variable name cannot start with double underscore: {name}"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise ModelOnexError(
+                    code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg
+                )
         return v
 
     def add_variable(self, name: str, value: str, secure: bool = False) -> None:
@@ -284,7 +295,7 @@ class ModelEnvironmentVariables(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

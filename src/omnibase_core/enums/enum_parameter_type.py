@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
 """
 Parameter Type Enum.
 
 Strongly typed parameter type values for ONEX architecture parameter validation.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -83,8 +87,8 @@ class EnumParameterType(str, Enum):
             cls.INTEGER: "int",
             cls.FLOAT: "float",
             cls.BOOLEAN: "bool",
-            cls.OBJECT: "dict",
-            cls.ARRAY: "list",
+            cls.OBJECT: "dict[str, Any]",
+            cls.ARRAY: "list[Any]",
             cls.UUID: "str",  # UUID as string representation
             cls.ENUM: "str",  # Enum as string value
         }

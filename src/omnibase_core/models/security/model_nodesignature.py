@@ -1,0 +1,401 @@
+"""ONEX-compliant node signature model for cryptographic operations."""
+
+import base64
+import hashlib
+from datetime import UTC, datetime
+from typing import Any, ClassVar, Self
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
+from omnibase_core.enums.enum_node_operation import EnumNodeOperation
+from omnibase_core.models.core.model_operation_details import ModelOperationDetails
+from omnibase_core.models.core.model_signature_metadata import ModelSignatureMetadata
+
+
+class ModelNodeSignatureError(ModelOnexError):
+    """Error for node signature operations."""
+
+    def __init__(self, message: str, node_id: str | None = None) -> None:
+        super().__init__(
+            message=message,
+            error_code="ONEX_NODE_SIGNATURE_ERROR",
+        )
+        self.node_id = node_id
+
+
+class ModelNodeSignatureValidationError(ModelNodeSignatureError):
+    """Validation error for node signature operations."""
+
+    def __init__(self, message: str, node_id: str | None = None, field_name: str | None = None) -> None:
+        super().__init__(message, node_id)
+        self.field_name = field_name
+
+
+class ModelNodeSignature(BaseModel):
+    """
+    Cryptographic signature from a single node in the envelope routing chain.
+
+    Provides non-repudiation, tamper detection, and audit trail capabilities
+    through PKI-based digital signatures.
+    """
+
+    # Class configuration
+    model_config = ConfigDict(
+        validate_assignment=True,
+        extra="forbid",
+    )
+
+    # Constants
+    MAX_HOP_INDEX: ClassVar[int] = 1000
+    MAX_PROCESSING_TIME_MS: ClassVar[int] = 300000  # 5 minutes
+    MAX_SIGNATURE_TIME_MS: ClassVar[int] = 60000  # 1 minute
+
+    # Node identification
+    node_id: str = Field(
+        ...,
+        description="Unique identifier of the signing node",
+        min_length=1,
+    )
+    node_name: str | None = Field(
+        None,
+        description="Human-readable name of the signing node",
+    )
+
+    # Signature metadata
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        description="When the signature was created (UTC)",
+    )
+    signature: str = Field(
+        ...,
+        description="Base64-encoded digital signature",
+        min_length=1,
+    )
+
+    # Cryptographic details
+    signature_algorithm: EnumSignatureAlgorithm = Field(
+        default=EnumSignatureAlgorithm.RS256,
+        description="Cryptographic algorithm used for signing",
+    )
+    key_id: str = Field(
+        ...,
+        description="Certificate fingerprint or key identifier",
+        min_length=1,
+    )
+    certificate_thumbprint: str | None = Field(
+        None,
+        description="SHA-256 thumbprint of the signing certificate",
+    )
+
+    # Operation context
+    operation: EnumNodeOperation = Field(
+        ...,
+        description="Type of operation performed by this node",
+    )
+    operation_details: ModelOperationDetails | None = Field(
+        None,
+        description="Additional details about the operation performed",
+    )
+
+    # Audit and compliance
+    hop_index: int = Field(
+        ...,
+        description="Position in the routing chain (0-based)",
+        ge=0,
+        le=MAX_HOP_INDEX,
+    )
+    previous_signature_hash: str | None = Field(
+        None,
+        description="Hash of the previous signature in the chain",
+    )
+    envelope_state_hash: str = Field(
+        ...,
+        description="Hash of envelope state when signature was created",
+        min_length=1,
+    )
+
+    # Security context
+    user_context: str | None = Field(
+        None,
+        description="User ID or service account that initiated the operation",
+    )
+    security_clearance: str | None = Field(
+        None,
+        description="Security clearance level required for this operation",
+    )
+
+    # Performance and debugging
+    processing_time_ms: int | None = Field(
+        None,
+        description="Time spent processing the envelope (milliseconds)",
+        ge=0,
+        le=MAX_PROCESSING_TIME_MS,
+    )
+    signature_time_ms: int | None = Field(
+        None,
+        description="Time spent creating the signature (milliseconds)",
+        ge=0,
+        le=MAX_SIGNATURE_TIME_MS,
+    )
+
+    # Error handling
+    error_message: str | None = Field(
+        None,
+        description="Error message if operation failed",
+    )
+    warning_messages: list[str] = Field(
+        default_factory=list,
+        description="Non-fatal warnings during processing",
+    )
+
+    # Additional metadata
+    signature_metadata: ModelSignatureMetadata | None = Field(
+        None,
+        description="Additional signature metadata",
+    )
+
+    @field_validator("hop_index")
+    @classmethod
+    def validate_hop_index(cls, v: int) -> int:
+        """Validate hop index is reasonable."""
+        if v > cls.MAX_HOP_INDEX:
+            raise ModelNodeSignatureValidationError(
+                f"Hop index too large - possible routing loop (max: {cls.MAX_HOP_INDEX})",
+                field_name="hop_index",
+            )
+        return v
+
+    @field_validator("signature")
+    @classmethod
+    def validate_signature_format(cls, v: str) -> str:
+        """Validate signature is properly base64 encoded."""
+        try:
+            base64.b64decode(v, validate=True)
+        except Exception as e:
+            raise ModelNodeSignatureValidationError(
+                f"Signature must be valid base64 encoding: {e!s}",
+                field_name="signature",
+            )
+        return v
+
+    @field_validator("envelope_state_hash")
+    @classmethod
+    def validate_hash_format(cls, v: str) -> str:
+        """Validate hash format."""
+        if len(v) != 64:  # SHA-256 hash length
+            raise ModelNodeSignatureValidationError(
+                "Envelope state hash must be 64 characters (SHA-256)",
+                field_name="envelope_state_hash",
+            )
+        try:
+            int(v, 16)  # Validate hex format
+        except ValueError:
+            raise ModelNodeSignatureValidationError(
+                "Envelope state hash must be hexadecimal",
+                field_name="envelope_state_hash",
+            )
+        return v
+
+    @classmethod
+    def create_source_signature(
+        cls,
+        node_id: str,
+        signature: str,
+        key_id: str,
+        envelope_state_hash: str,
+        user_context: str | None = None,
+        **kwargs: Any,
+    ) -> Self:
+        """Create a source signature for envelope origination."""
+        return cls(
+            node_id=node_id,
+            signature=signature,
+            key_id=key_id,
+            envelope_state_hash=envelope_state_hash,
+            operation=EnumNodeOperation.SOURCE,
+            hop_index=0,
+            user_context=user_context,
+            **kwargs,
+        )
+
+    @classmethod
+    def create_routing_signature(
+        cls,
+        node_id: str,
+        signature: str,
+        key_id: str,
+        envelope_state_hash: str,
+        hop_index: int,
+        previous_signature_hash: str,
+        routing_decision: str,
+        **kwargs: Any,
+    ) -> Self:
+        """Create a routing signature for envelope forwarding."""
+        if hop_index <= 0:
+            raise ModelNodeSignatureValidationError(
+                "Routing signature must have hop_index > 0",
+                node_id=node_id,
+            )
+
+        return cls(
+            node_id=node_id,
+            signature=signature,
+            key_id=key_id,
+            envelope_state_hash=envelope_state_hash,
+            operation=EnumNodeOperation.ROUTE,
+            hop_index=hop_index,
+            previous_signature_hash=previous_signature_hash,
+            operation_details=ModelOperationDetails(routing_decision=routing_decision),
+            **kwargs,
+        )
+
+    @classmethod
+    def create_destination_signature(
+        cls,
+        node_id: str,
+        signature: str,
+        key_id: str,
+        envelope_state_hash: str,
+        hop_index: int,
+        previous_signature_hash: str,
+        delivery_status: str,
+        **kwargs: Any,
+    ) -> Self:
+        """Create a destination signature for envelope delivery."""
+        if hop_index <= 0:
+            raise ModelNodeSignatureValidationError(
+                "Destination signature must have hop_index > 0",
+                node_id=node_id,
+            )
+
+        return cls(
+            node_id=node_id,
+            signature=signature,
+            key_id=key_id,
+            envelope_state_hash=envelope_state_hash,
+            operation=EnumNodeOperation.DESTINATION,
+            hop_index=hop_index,
+            previous_signature_hash=previous_signature_hash,
+            operation_details=ModelOperationDetails(delivery_status=delivery_status),
+            **kwargs,
+        )
+
+    def verify_signature_chain_continuity(
+        self,
+        previous_signature: Self | None,
+    ) -> bool:
+        """Verify this signature properly continues the chain."""
+        if self.hop_index == 0:
+            # Source signature should not have previous signature
+            return previous_signature is None and self.previous_signature_hash is None
+
+        if previous_signature is None:
+            return False
+
+        # Verify hop index sequence
+        if self.hop_index != previous_signature.hop_index + 1:
+            return False
+
+        # Verify hash chain continuity
+        previous_hash = hashlib.sha256(
+            previous_signature.signature.encode(),
+        ).hexdigest()
+        return self.previous_signature_hash == previous_hash
+
+    def mark_error(self, error_message: str) -> None:
+        """Mark this signature as having an error."""
+        self.error_message = error_message
+
+    def add_warning(self, warning_message: str) -> None:
+        """Add a warning to this signature."""
+        self.warning_messages.append(warning_message)
+
+    def ensure_metadata(self) -> ModelSignatureMetadata:
+        """Ensure metadata object exists and return it."""
+        if self.signature_metadata is None:
+            self.signature_metadata = ModelSignatureMetadata()
+        return self.signature_metadata
+
+    def get_signature_hash(self) -> str:
+        """Get SHA-256 hash of this signature for chain verification."""
+        return hashlib.sha256(self.signature.encode()).hexdigest()
+
+    def is_valid_operation_sequence(
+        self,
+        previous_operation: EnumNodeOperation | None,
+    ) -> bool:
+        """Verify this operation is valid given the previous operation."""
+        if previous_operation is None:
+            return self.operation == EnumNodeOperation.SOURCE
+
+        # Define valid operation transitions
+        valid_transitions = {
+            EnumNodeOperation.SOURCE: {
+                EnumNodeOperation.ROUTE,
+                EnumNodeOperation.TRANSFORM,
+                EnumNodeOperation.VALIDATE,
+                EnumNodeOperation.DESTINATION,
+                EnumNodeOperation.AUDIT,
+            },
+            EnumNodeOperation.ROUTE: {
+                EnumNodeOperation.ROUTE,
+                EnumNodeOperation.TRANSFORM,
+                EnumNodeOperation.VALIDATE,
+                EnumNodeOperation.DESTINATION,
+                EnumNodeOperation.AUDIT,
+            },
+            EnumNodeOperation.TRANSFORM: {
+                EnumNodeOperation.ROUTE,
+                EnumNodeOperation.VALIDATE,
+                EnumNodeOperation.DESTINATION,
+                EnumNodeOperation.AUDIT,
+            },
+            EnumNodeOperation.VALIDATE: {
+                EnumNodeOperation.ROUTE,
+                EnumNodeOperation.DESTINATION,
+                EnumNodeOperation.AUDIT,
+            },
+            EnumNodeOperation.ENCRYPTION: {
+                EnumNodeOperation.ROUTE,
+                EnumNodeOperation.DESTINATION,
+                EnumNodeOperation.AUDIT,
+            },
+            EnumNodeOperation.AUDIT: {EnumNodeOperation.DESTINATION},
+            EnumNodeOperation.DESTINATION: set(),  # Terminal operation
+        }
+
+        return self.operation in valid_transitions.get(previous_operation, set())
+
+    def has_errors(self) -> bool:
+        """Check if this signature has errors."""
+        return self.error_message is not None
+
+    def has_warnings(self) -> bool:
+        """Check if this signature has warnings."""
+        return len(self.warning_messages) > 0
+
+    def is_valid(self) -> bool:
+        """Check if this signature is valid (no errors)."""
+        return not self.has_errors()
+
+    def get_processing_summary(self) -> dict[str, Any]:
+        """Get a summary of processing information."""
+        return {
+            "node_id": self.node_id,
+            "operation": self.operation.value,
+            "hop_index": self.hop_index,
+            "timestamp": self.timestamp.isoformat(),
+            "processing_time_ms": self.processing_time_ms,
+            "signature_time_ms": self.signature_time_ms,
+            "has_errors": self.has_errors(),
+            "has_warnings": self.has_warnings(),
+            "error_count": len(self.warning_messages),
+        }
+
+    def __str__(self) -> str:
+        """Human-readable representation."""
+        error_info = f" [ERROR: {self.error_message}]" if self.error_message else ""
+        warning_info = f" [WARNINGS: {len(self.warning_messages)}]" if self.warning_messages else ""
+        return f"Signature[{self.hop_index}] {self.node_id}:{self.operation.value}{error_info}{warning_info}"

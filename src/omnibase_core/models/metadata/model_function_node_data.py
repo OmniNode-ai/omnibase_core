@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_sem_ver import ModelSemVer
+
 """
 Function node data model.
 
@@ -5,7 +14,6 @@ Clean, strongly-typed replacement for the horrible FunctionNodeData union type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
@@ -17,7 +25,7 @@ from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_nested_configuration import ModelNestedConfiguration
@@ -74,7 +82,7 @@ class ModelFunctionNodeData(BaseModel):
         description="Node version",
     )
 
-    # Structured tags (reduces string list)
+    # Structured tags (reduces string list[Any])
     tags: ModelStructuredTags = Field(
         default_factory=lambda: ModelStructuredTags.for_function_node(),
         description="Structured tags with standard and custom classifications",
@@ -243,7 +251,7 @@ class ModelFunctionNodeData(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -256,20 +264,20 @@ class ModelFunctionNodeData(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -279,8 +287,8 @@ class ModelFunctionNodeData(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

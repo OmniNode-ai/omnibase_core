@@ -1,16 +1,19 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 Debug info data type definition.
 
 TypedDict for debug information to replace loose Any typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
-class TypedDictModelDebugInfoData(TypedDict, total=False):
-    """Typed dictionary for debug information."""
+class TypedDictDebugInfoData(TypedDict, total=False):
+    """Typed dict[str, Any]ionary for debug information."""
 
     key: str
     value: str  # Debug values are typically displayed as strings
@@ -19,4 +22,4 @@ class TypedDictModelDebugInfoData(TypedDict, total=False):
 
 
 # Export for use
-__all__ = ["TypedDictModelDebugInfoData"]
+__all__ = ["TypedDictDebugInfoData"]

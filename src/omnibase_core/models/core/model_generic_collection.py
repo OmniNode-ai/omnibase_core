@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Callable, Dict, Generic, List, TypedDict, TypeVar
+
+from pydantic import Field
+
 """
 Generic collection management pattern for Omnibase Core.
 
@@ -5,11 +13,10 @@ This module provides a reusable, strongly-typed collection base class that
 can replace ad-hoc collection operations found across Config, Data, and other domains.
 """
 
-from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Generic, TypeVar
+from typing import Any, Dict, Generic, TypedDict, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -297,7 +304,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
 
     def get_item_names(self) -> list[str]:
         """
-        Get list of all item names.
+        Get list[Any]of all item names.
 
         Returns:
             List of names from items that have a 'name' attribute
@@ -433,7 +440,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         collection_id: UUID | None = None,
     ) -> ModelGenericCollection[T]:
         """
-        Create a collection from a list of items.
+        Create a collection from a list[Any]of items.
 
         Args:
             items: Initial items for the collection

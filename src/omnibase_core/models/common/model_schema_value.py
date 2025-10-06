@@ -25,10 +25,10 @@ from types.core_types (not from models or types.constraints).
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 
@@ -61,6 +61,12 @@ class ModelSchemaValue(BaseModel):
     value_type: str = Field(
         ...,
         description="Type of the value: string, number, boolean, null, array, object",
+    )
+
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
     )
 
     @classmethod
@@ -166,12 +172,6 @@ class ModelSchemaValue(BaseModel):
             return {k: v.to_value() for k, v in (self.object_value or {}).items()}
         return None
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
@@ -198,3 +198,153 @@ class ModelSchemaValue(BaseModel):
         if self.value_type == "object" and self.object_value is None:
             return False
         return True
+
+    # Factory methods for common schema values
+
+    @classmethod
+    def create_string(cls, value: str) -> "ModelSchemaValue":
+        """Create a string schema value."""
+        return cls(
+            value_type="string",
+            string_value=value,
+            number_value=None,
+            boolean_value=None,
+            null_value=None,
+            array_value=None,
+            object_value=None,
+        )
+
+    @classmethod
+    def create_number(cls, value: int | float) -> "ModelSchemaValue":
+        """Create a numeric schema value."""
+        return cls(
+            value_type="number",
+            string_value=None,
+            number_value=ModelNumericValue.from_numeric(value),
+            boolean_value=None,
+            null_value=None,
+            array_value=None,
+            object_value=None,
+        )
+
+    @classmethod
+    def create_boolean(cls, value: bool) -> "ModelSchemaValue":
+        """Create a boolean schema value."""
+        return cls(
+            value_type="boolean",
+            string_value=None,
+            number_value=None,
+            boolean_value=value,
+            null_value=None,
+            array_value=None,
+            object_value=None,
+        )
+
+    @classmethod
+    def create_null(cls) -> "ModelSchemaValue":
+        """Create a null schema value."""
+        return cls(
+            value_type="null",
+            string_value=None,
+            number_value=None,
+            boolean_value=None,
+            null_value=True,
+            array_value=None,
+            object_value=None,
+        )
+
+    @classmethod
+    def create_array(cls, values: list[object]) -> "ModelSchemaValue":
+        """Create an array schema value."""
+        return cls(
+            value_type="array",
+            string_value=None,
+            number_value=None,
+            boolean_value=None,
+            null_value=None,
+            array_value=[cls.from_value(item) for item in values],
+            object_value=None,
+        )
+
+    @classmethod
+    def create_object(cls, values: dict[str, object]) -> "ModelSchemaValue":
+        """Create an object schema value."""
+        return cls(
+            value_type="object",
+            string_value=None,
+            number_value=None,
+            boolean_value=None,
+            null_value=None,
+            array_value=None,
+            object_value={k: cls.from_value(v) for k, v in values.items()},
+        )
+
+    # Type checking utilities
+
+    def is_string(self) -> bool:
+        """Check if this is a string value."""
+        return self.value_type == "string"
+
+    def is_number(self) -> bool:
+        """Check if this is a numeric value."""
+        return self.value_type == "number"
+
+    def is_boolean(self) -> bool:
+        """Check if this is a boolean value."""
+        return self.value_type == "boolean"
+
+    def is_null(self) -> bool:
+        """Check if this is a null value."""
+        return self.value_type == "null"
+
+    def is_array(self) -> bool:
+        """Check if this is an array value."""
+        return self.value_type == "array"
+
+    def is_object(self) -> bool:
+        """Check if this is an object value."""
+        return self.value_type == "object"
+
+    # Value access with type safety
+
+    def get_string(self) -> str:
+        """Get string value, raising error if not a string."""
+        if not self.is_string():
+            msg = f"Expected string value, got {self.value_type}"
+            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+        return self.string_value or ""
+
+    def get_number(self) -> ModelNumericValue:
+        """Get numeric value, raising error if not a number."""
+        if not self.is_number():
+            msg = f"Expected numeric value, got {self.value_type}"
+            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+        return self.number_value or ModelNumericValue(value=0.0)
+
+    def get_boolean(self) -> bool:
+        """Get boolean value, raising error if not a boolean."""
+        if not self.is_boolean():
+            msg = f"Expected boolean value, got {self.value_type}"
+            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+        return self.boolean_value or False
+
+    def get_array(self) -> list["ModelSchemaValue"]:
+        """Get array value, raising error if not an array."""
+        if not self.is_array():
+            msg = f"Expected array value, got {self.value_type}"
+            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+        return self.array_value or []
+
+    def get_object(self) -> dict[str, "ModelSchemaValue"]:
+        """Get object value, raising error if not an object."""
+        if not self.is_object():
+            msg = f"Expected object value, got {self.value_type}"
+            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+        return self.object_value or {}
+
+
+# Fix forward references for Pydantic models
+try:
+    ModelSchemaValue.model_rebuild()
+except Exception:
+    pass  # Ignore rebuild errors during import

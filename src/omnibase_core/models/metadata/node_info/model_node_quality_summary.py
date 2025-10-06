@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import List
+
+from pydantic import Field
+
 """
 Node Quality Summary Model.
 
@@ -5,7 +11,6 @@ Structured quality summary data for nodes.
 Follows ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -102,7 +107,7 @@ class ModelNodeQualitySummary(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -115,7 +120,7 @@ class ModelNodeQualitySummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -127,7 +132,7 @@ class ModelNodeQualitySummary(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

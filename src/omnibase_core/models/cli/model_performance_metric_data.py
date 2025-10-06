@@ -1,16 +1,19 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
 """
 Performance metric data type definition.
 
 TypedDict for performance metric values to replace loose Any typing.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
-class TypedDictModelPerformanceMetricData(TypedDict, total=False):
-    """Typed dictionary for performance metric values."""
+class TypedDictPerformanceMetricData(TypedDict, total=False):
+    """Typed dict[str, Any]ionary for performance metric values."""
 
     name: str
     value: float  # All metrics can be represented as float
@@ -19,4 +22,4 @@ class TypedDictModelPerformanceMetricData(TypedDict, total=False):
 
 
 # Export for use
-__all__ = ["TypedDictModelPerformanceMetricData"]
+__all__ = ["TypedDictPerformanceMetricData"]
