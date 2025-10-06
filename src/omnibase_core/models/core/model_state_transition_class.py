@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_state_transition import EnumTransitionType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_conditional_transition import (
     ModelConditionalTransition,
@@ -140,7 +140,7 @@ class ModelStateTransition(BaseModel):
             if expected_value is None:
                 msg = f"{expected_field} is required for {self.transition_type} transitions"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -154,7 +154,7 @@ class ModelStateTransition(BaseModel):
             if field_name != expected_field and config_value is not None:
                 msg = f"{field_name} should not be set for {self.transition_type} transitions"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 

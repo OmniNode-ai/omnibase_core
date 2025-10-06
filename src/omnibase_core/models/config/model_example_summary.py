@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Example summary model.
@@ -19,7 +19,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 
@@ -73,7 +74,7 @@ class ModelExampleSummary(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
@@ -93,7 +94,7 @@ class ModelExampleSummary(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

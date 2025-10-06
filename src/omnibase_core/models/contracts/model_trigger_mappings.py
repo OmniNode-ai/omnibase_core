@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Trigger Mappings Model - ONEX Standards Compliant.
@@ -18,7 +18,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelTriggerMappings(BaseModel):
@@ -126,14 +127,14 @@ class ModelTriggerMappings(BaseModel):
             if len(key) > 500:
                 raise ModelOnexError(
                     message=f"Mapping key '{key}' too long. Maximum 500 characters.",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             # Validate value
             if not isinstance(value, str):
                 raise ModelOnexError(
                     message=f"Mapping value for key {key!r} must be a string, got {type(value)}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             value = value.strip()
@@ -143,7 +144,7 @@ class ModelTriggerMappings(BaseModel):
             if len(value) > 500:
                 raise ModelOnexError(
                     message=f"Mapping value '{value}' too long. Maximum 500 characters.",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated[key] = value
@@ -206,7 +207,7 @@ class ModelTriggerMappings(BaseModel):
         if category not in category_mapping:
             raise ModelOnexError(
                 message=f"Invalid mapping category '{category}'. Valid categories: {list[Any](category_mapping.keys())}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         category_mapping[category][event_pattern.strip()] = action.strip()

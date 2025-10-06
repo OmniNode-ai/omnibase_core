@@ -1,7 +1,7 @@
 from typing import Dict, Optional
+from uuid import UUID
 
 from pydantic import Field
-from uuid import UUID
 
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.

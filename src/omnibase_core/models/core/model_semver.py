@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -28,7 +28,7 @@ class ModelSemVer(BaseModel):
         if v < 0:
             msg = "Version numbers must be non-negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -133,7 +133,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     if not match:
         msg = f"Invalid semantic version format: {version_str}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -165,7 +165,7 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
     if v is None:
         msg = "Version field is required in input state"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -175,7 +175,7 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
             f"{{major: X, minor: Y, patch: Z}}. Got string: {v}"
         )
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -191,7 +191,7 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
                 f"Got: {v}. Error: {e}"
             )
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             ) from e
 
@@ -200,6 +200,6 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
         f"Got {type(v).__name__}: {v}"
     )
     raise ModelOnexError(
-        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         message=msg,
     )

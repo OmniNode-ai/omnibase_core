@@ -1,10 +1,10 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
 from omnibase_core.models.core.model_cli_tool_execution_config import ModelConfig
-from uuid import UUID
 
 """
 Model for CLI tool execution input parameters.

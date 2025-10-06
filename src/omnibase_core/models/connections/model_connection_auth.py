@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Connection Authentication Model.
@@ -20,7 +20,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, SecretStr, field_serializer
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelConnectionAuth(BaseModel):
@@ -217,7 +218,7 @@ class ModelConnectionAuth(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -229,7 +230,7 @@ class ModelConnectionAuth(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:

@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
@@ -62,7 +62,7 @@ class ModelOnexOutputState(BaseModel):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -80,7 +80,7 @@ class ModelOnexOutputState(BaseModel):
             return ModelSemVer(**v)
         msg = "node_version must be a string, dict[str, Any], or ModelSemVer"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 

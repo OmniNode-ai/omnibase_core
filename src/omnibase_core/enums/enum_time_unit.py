@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Time Unit Enumeration.
@@ -70,20 +71,20 @@ class EnumTimeUnit(str, Enum):
 
         if display_keys != all_members:
             from omnibase_core.errors.error_codes import (
-                ModelCoreErrorCode,
+                EnumCoreErrorCode,
                 ModelOnexError,
             )
 
             missing = all_members - display_keys
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Missing display names for: {missing}",
             )
 
         if multiplier_keys != all_members:
             missing = all_members - multiplier_keys
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Missing multipliers for: {missing}",
             )
 

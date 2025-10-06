@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -72,7 +72,7 @@ class ModelProjectMetadataBlock(BaseModel):
             return f"{value.type}://{value.target}"
         msg = f"Entrypoint must be a URI string or EntrypointBlock, got: {value}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -86,7 +86,7 @@ class ModelProjectMetadataBlock(BaseModel):
             elif not isinstance(entrypoint_val, EntrypointBlock):
                 msg = f"entrypoint must be a URI string or EntrypointBlock, got: {entrypoint_val}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         # Convert tools to ModelToolCollection if needed
@@ -107,7 +107,7 @@ class ModelProjectMetadataBlock(BaseModel):
         if COPYRIGHT_KEY not in data:
             msg = f"Missing required field: {COPYRIGHT_KEY}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return cls(**data)

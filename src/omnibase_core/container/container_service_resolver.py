@@ -2,7 +2,8 @@ import uuid
 from typing import Callable, TypeVar
 from uuid import UUID
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Container Service Resolver
@@ -16,7 +17,7 @@ from collections.abc import Callable as CallableABC
 from typing import Any, Callable, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
-from omnibase_core.errors import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors import EnumCoreErrorCode, ModelOnexError
 
 # DELETED: not needed import create_hybrid_event_bus
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -125,7 +126,7 @@ def create_get_service_method(
                 msg = f"Vault client not available in container: {protocol_name}"
                 raise ModelOnexError(
                     msg,
-                    ModelCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+                    EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
                 )
 
         # Handle generation tool registries with registry pattern
@@ -146,7 +147,7 @@ def create_get_service_method(
         msg = f"Unable to resolve service: {service_name}"
         raise ModelOnexError(
             msg,
-            error_code=ModelCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+            error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
         )
 
     return get_service

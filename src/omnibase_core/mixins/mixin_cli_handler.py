@@ -1,6 +1,6 @@
 from typing import Any, Generic, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_serialization import serialize_data_to_yaml
 
 """
@@ -16,7 +16,8 @@ import sys
 from pathlib import Path
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 
 # Type variables for input/output states
@@ -64,7 +65,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
     def process(self, input_state: InputStateT) -> OutputStateT:
         """Process method that should be implemented by the tool."""
         msg = "Tool must implement process method"
-        raise ModelOnexError(msg, ModelCoreErrorCode.METHOD_NOT_IMPLEMENTED)
+        raise ModelOnexError(msg, EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED)
 
     def get_cli_description(self) -> str:
         """Get CLI description. Override to customize."""
@@ -164,18 +165,18 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                     input_data = self._load_file(input_path)
                 else:
                     msg = f"Input is neither valid JSON nor existing file: {args.input}"
-                    raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+                    raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
 
         # Try --input-file
         elif args.input_file:
             input_path = Path(args.input_file)
             if not input_path.exists():
-                from omnibase_core.errors.core_error_code import ModelCoreErrorCode
+                from omnibase_core.errors.core_error_code import EnumCoreErrorCode
                 from omnibase_core.errors.onex_error import ModelOnexError
 
                 raise ModelOnexError(
                     message=f"Input file not found: {args.input_file}",
-                    error_code=ModelCoreErrorCode.FILE_NOT_FOUND,
+                    error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
                 )
             input_data = self._load_file(input_path)
 
@@ -192,7 +193,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                     )
                 except json.JSONDecodeError as e:
                     msg = f"Invalid JSON from stdin: {e}"
-                    raise ModelOnexError(msg, ModelCoreErrorCode.PARSING_ERROR)
+                    raise ModelOnexError(msg, EnumCoreErrorCode.PARSING_ERROR)
 
         return input_data
 

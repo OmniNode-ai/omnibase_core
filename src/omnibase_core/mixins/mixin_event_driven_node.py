@@ -1,4 +1,4 @@
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -40,7 +40,8 @@ from typing import Any, Protocol
 from omnibase_spi.protocols.core import ProtocolSchemaLoader
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # EnumToolNames removed - using direct string references
 from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
@@ -83,7 +84,7 @@ class MixinEventDrivenNode(
         # ProtocolEventBus is now mandatory - no fallbacks
         if not event_bus:
             raise ModelOnexError(
-                ModelCoreErrorCode.MISSING_REQUIRED_PARAMETER,
+                EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
                 "ProtocolEventBus is mandatory for MixinEventDrivenNode - must be provided via dependency injection",
             )
 
@@ -107,7 +108,7 @@ class MixinEventDrivenNode(
 
         if metadata_loader is None:
             raise ModelOnexError(
-                ModelCoreErrorCode.MISSING_REQUIRED_PARAMETER,
+                EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
                 "[MixinEventDrivenNode] metadata_loader (ProtocolSchemaLoader) must be provided via DI/registry per ONEX standards.",
             )
         self.metadata_loader: ProtocolSchemaLoader = metadata_loader
@@ -139,7 +140,7 @@ class MixinEventDrivenNode(
         except Exception as e:
             msg = f"Failed to load node version from metadata: {e}"
             raise ModelOnexError(
-                ModelCoreErrorCode.METADATA_LOAD_FAILED,
+                EnumCoreErrorCode.METADATA_LOAD_FAILED,
             )
 
     def get_capabilities(self) -> list[str]:

@@ -3,7 +3,7 @@ from typing import Dict
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 State Management Subcontract Model - ONEX Standards Compliant.
@@ -33,7 +33,8 @@ from omnibase_core.enums.enum_state_management import (
     EnumStateLifecycle,
     EnumStateScope,
 )
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -213,7 +214,7 @@ class ModelStateManagementSubcontract(BaseModel):
                 msg = "cache_size must be at least 10 when caching is enabled"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -234,7 +235,7 @@ class ModelStateManagementSubcontract(BaseModel):
                 msg = "cleanup_interval_ms must be at least 60000ms (1 minute)"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

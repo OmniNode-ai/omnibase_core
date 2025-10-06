@@ -235,7 +235,7 @@ def main():
         print(
             "  pre-commit run validate-string-versions --all-files 2>&1 | "
             "grep '📁' | awk '{print $2}' | while read f; do "
-            "python scripts/fix_string_versions_ast.py \"$f\" --backup; done"
+            'python scripts/fix_string_versions_ast.py "$f" --backup; done'
         )
         sys.exit(1)
 

@@ -1,9 +1,9 @@
 from typing import Any, Dict
+from uuid import UUID
 
 from pydantic import Field
 
 from omnibase_core.models.core.model_semver import ModelSemVer
-from uuid import UUID
 
 """
 Model for ModelNodeBase representation in ONEX ModelNodeBase implementation.

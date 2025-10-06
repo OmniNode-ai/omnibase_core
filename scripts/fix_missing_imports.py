@@ -6,14 +6,13 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Set
 
-
 # Mapping of undefined names to their import statements
 IMPORT_MAP = {
-    'ModelOnexError': 'from omnibase_core.errors.model_onex_error import ModelOnexError',
-    'ModelCoreErrorCode': 'from omnibase_core.errors.error_codes import ModelCoreErrorCode',
-    'UUID': 'from uuid import UUID',
-    'TYPE_CHECKING': 'from typing import TYPE_CHECKING',
-    'Any': 'from typing import Any',
+    "ModelOnexError": "from omnibase_core.errors.model_onex_error import ModelOnexError",
+    "ModelCoreErrorCode": "from omnibase_core.errors.error_codes import ModelCoreErrorCode",
+    "UUID": "from uuid import UUID",
+    "TYPE_CHECKING": "from typing import TYPE_CHECKING",
+    "Any": "from typing import Any",
 }
 
 
@@ -23,14 +22,14 @@ def find_files_with_missing_name(name: str) -> Set[str]:
         ["poetry", "run", "mypy", "src/omnibase_core/", "--no-error-summary"],
         capture_output=True,
         text=True,
-        cwd="/Volumes/PRO-G40/Code/omnibase_core"
+        cwd="/Volumes/PRO-G40/Code/omnibase_core",
     )
     output = result.stdout + result.stderr
 
     files = set()
     pattern = rf'^(.+?):\d+: error: Name "{re.escape(name)}" is not defined'
 
-    for line in output.split('\n'):
+    for line in output.split("\n"):
         match = re.match(pattern, line)
         if match:
             files.add(match.group(1))
@@ -41,22 +40,22 @@ def find_files_with_missing_name(name: str) -> Set[str]:
 def has_import(file_content: str, import_statement: str) -> bool:
     """Check if file already has the import."""
     # Extract the actual import part (after 'from ... import ')
-    import_name = import_statement.split(' import ')[-1]
+    import_name = import_statement.split(" import ")[-1]
 
     # Check for exact import
     if import_statement in file_content:
         return True
 
     # Check if it's imported from the same module but in a different way
-    if ' import ' in import_statement:
-        module = import_statement.split(' import ')[0].replace('from ', '')
+    if " import " in import_statement:
+        module = import_statement.split(" import ")[0].replace("from ", "")
         # Check if module is imported
-        if f'from {module} import' in file_content:
+        if f"from {module} import" in file_content:
             # Check if the specific name is in any import from this module
             module_imports = re.findall(
-                rf'from {re.escape(module)} import .*?(?:\n|$)',
+                rf"from {re.escape(module)} import .*?(?:\n|$)",
                 file_content,
-                re.MULTILINE
+                re.MULTILINE,
             )
             for imp in module_imports:
                 if import_name in imp:
@@ -78,7 +77,7 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
     if has_import(content, import_statement):
         return False
 
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Find where to insert the import
     insert_line = 0
@@ -101,31 +100,31 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
             continue
 
         # Skip comments and empty lines at the start
-        if stripped.startswith('#') or not stripped:
+        if stripped.startswith("#") or not stripped:
             continue
 
         # Found first non-comment, non-docstring line
-        if stripped.startswith('from ') or stripped.startswith('import '):
+        if stripped.startswith("from ") or stripped.startswith("import "):
             # Determine which group this import belongs to
-            if import_statement.startswith('from typing'):
+            if import_statement.startswith("from typing"):
                 # Insert after other typing imports
-                if 'from typing' in stripped:
+                if "from typing" in stripped:
                     insert_line = i + 1
                     continue
-            elif import_statement.startswith('from uuid'):
+            elif import_statement.startswith("from uuid"):
                 # Insert after typing imports but before pydantic
-                if 'from uuid' in stripped:
+                if "from uuid" in stripped:
                     insert_line = i + 1
                     continue
-                elif 'from typing' in stripped:
+                elif "from typing" in stripped:
                     insert_line = i + 1
                     continue
-            elif import_statement.startswith('from omnibase_core'):
+            elif import_statement.startswith("from omnibase_core"):
                 # Insert with other omnibase_core imports
-                if 'from omnibase_core' in stripped:
+                if "from omnibase_core" in stripped:
                     insert_line = i + 1
                     continue
-                elif 'from pydantic' in stripped or 'import pydantic' in stripped:
+                elif "from pydantic" in stripped or "import pydantic" in stripped:
                     insert_line = i + 1
                     continue
 
@@ -143,7 +142,7 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
     lines.insert(insert_line, import_statement)
 
     # Write back
-    path.write_text('\n'.join(lines))
+    path.write_text("\n".join(lines))
     return True
 
 
@@ -181,11 +180,11 @@ def main():
 
     # Fix imports in order of frequency
     priority_order = [
-        'ModelCoreErrorCode',
-        'ModelOnexError',
-        'UUID',
-        'TYPE_CHECKING',
-        'Any',
+        "ModelCoreErrorCode",
+        "ModelOnexError",
+        "UUID",
+        "TYPE_CHECKING",
+        "Any",
     ]
 
     for name in priority_order:
@@ -198,5 +197,5 @@ def main():
     print("=" * 80)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

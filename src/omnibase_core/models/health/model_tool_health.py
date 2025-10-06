@@ -2,7 +2,7 @@ from typing import Any, Generic, List, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
@@ -131,7 +131,7 @@ class ModelToolHealth(BaseModel):
         if not v or not v.strip():
             msg = "tool_name cannot be empty or whitespace"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -141,7 +141,7 @@ class ModelToolHealth(BaseModel):
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_\-]*$", v):
             msg = "tool_name must start with letter and contain only alphanumeric, underscore, and hyphen characters"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -162,7 +162,7 @@ class ModelToolHealth(BaseModel):
         if not re.match(r"^[A-Z0-9_]+$", v):
             msg = "error_code must contain only uppercase letters, numbers, and underscores"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -181,7 +181,7 @@ class ModelToolHealth(BaseModel):
         except ValueError:
             msg = "last_check_time must be a valid ISO timestamp"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

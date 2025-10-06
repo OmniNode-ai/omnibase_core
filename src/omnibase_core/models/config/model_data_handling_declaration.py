@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Data handling declaration model.
@@ -14,7 +14,8 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelDataHandlingDeclaration(BaseModel):
@@ -48,7 +49,7 @@ class ModelDataHandlingDeclaration(BaseModel):
         if self.processes_sensitive_data:
             if not self.data_classification and not self.data_residency_required:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="When processing sensitive data, either data_classification or "
                     "data_residency_required must be specified",
                 )
@@ -60,7 +61,7 @@ class ModelDataHandlingDeclaration(BaseModel):
             ]:
                 if not self.data_residency_required:
                     raise ModelOnexError(
-                        code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Data classification '{self.data_classification}' requires "
                         "data_residency_required to be specified",
                     )
@@ -88,7 +89,7 @@ class ModelDataHandlingDeclaration(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
@@ -108,6 +109,6 @@ class ModelDataHandlingDeclaration(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e

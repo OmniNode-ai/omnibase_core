@@ -1,6 +1,6 @@
 from typing import Any, Optional, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Registry Injection Mixin for ONEX Tool Nodes.
@@ -16,7 +16,7 @@ from omnibase_spi.protocols.container import ProtocolRegistry
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.mixins.protocol_registry_aware import ProtocolRegistryAware
 
@@ -120,7 +120,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 },
             )
             raise ModelOnexError(
-                ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
                 missing_methods=missing_methods,
             )
 
@@ -137,7 +137,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 },
             )
             raise ModelOnexError(
-                error_msg, error_code=ModelCoreErrorCode.SERVICE_UNHEALTHY
+                error_msg, error_code=EnumCoreErrorCode.SERVICE_UNHEALTHY
             )
 
         self._registry_validated = True

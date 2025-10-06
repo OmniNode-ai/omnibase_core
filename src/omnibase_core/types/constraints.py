@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
-    from omnibase_core.errors.error_codes import ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Type constraints and protocols for better generic programming.
@@ -46,7 +46,7 @@ from pydantic import BaseModel
 # Type-only import - NEVER make this a runtime import!
 # Protected by TYPE_CHECKING to prevent circular dependency with errors.error_codes
 if TYPE_CHECKING:
-    from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Import protocols from omnibase_spi (following ONEX SPI separation)
 from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
@@ -57,7 +57,11 @@ from omnibase_spi.protocols.types import (
 )
 from omnibase_spi.protocols.types import ProtocolNameable as Nameable
 from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
-from omnibase_spi.protocols.types import ProtocolValidatable
+from omnibase_spi.protocols.types import (
+    ProtocolValidatable,
+)
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Bounded type variables with proper constraints
 
@@ -255,7 +259,7 @@ def validate_primitive_value(obj: object) -> bool:
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
     return True
@@ -279,7 +283,7 @@ def validate_context_value(obj: object) -> bool:
         obj_type = type(obj).__name__
         msg = f"Expected context value (primitive, list[Any], or dict[str, Any]), got {obj_type}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
     return True

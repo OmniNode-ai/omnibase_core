@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -86,7 +86,7 @@ class ModelCustomFields(BaseModel):
                 if definition.required and name not in v:
                     msg = f"Required field '{name}' is missing"
                     raise ModelOnexError(
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=msg,
                     )
 
@@ -96,7 +96,7 @@ class ModelCustomFields(BaseModel):
                     if name not in definitions:
                         msg = f"Undefined field '{name}' not allowed"
                         raise ModelOnexError(
-                            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                             message=msg,
                         )
 
@@ -129,7 +129,7 @@ class ModelCustomFields(BaseModel):
             if definition.field_type == "string" and not isinstance(value, str):
                 msg = f"Field '{name}' must be a string"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
             if definition.field_type == "number" and not isinstance(
@@ -138,13 +138,13 @@ class ModelCustomFields(BaseModel):
             ):
                 msg = f"Field '{name}' must be a number"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
             if definition.field_type == "boolean" and not isinstance(value, bool):
                 msg = f"Field '{name}' must be a boolean"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 

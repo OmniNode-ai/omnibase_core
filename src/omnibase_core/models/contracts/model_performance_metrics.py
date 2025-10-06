@@ -1,9 +1,7 @@
 from typing import Any, Dict, TypedDict, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
-
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
-
 
 """
 Fast Import Module - Aggressive Performance Optimization

@@ -4,7 +4,6 @@ from typing import Any, List
 from pydantic import Field
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )

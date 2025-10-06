@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
@@ -46,14 +46,14 @@ class ModelRetryConfig(BaseModel):
         if v < 1:
             msg = "Must have at least 1 attempt"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         if v > 10:
             msg = "Too many retry attempts (max 10) - consider circuit breaker instead"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -66,14 +66,14 @@ class ModelRetryConfig(BaseModel):
         if v < 0.1:
             msg = "Backoff too short (min 0.1 seconds)"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         if v > 60.0:
             msg = "Backoff too long (max 60 seconds) - consider reducing retry attempts"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -93,7 +93,7 @@ class ModelRetryConfig(BaseModel):
         if attempt_number > self.max_attempts:
             msg = f"Attempt {attempt_number} exceeds max attempts {self.max_attempts}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

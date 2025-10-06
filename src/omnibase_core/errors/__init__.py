@@ -5,8 +5,8 @@ from typing import Any
 # Core error system - comprehensive implementation
 from omnibase_core.errors.error_codes import (
     EnumCLIExitCode,
-    ModelCoreErrorCode,
-    ModelRegistryErrorCode,
+    EnumCoreErrorCode,
+    EnumRegistryErrorCode,
     get_core_error_description,
     get_error_codes_for_component,
     get_exit_code_for_core_error,
@@ -41,7 +41,7 @@ from omnibase_core.errors.error_document_freshness_validation import (
 )
 
 # ModelOnexError is imported via lazy import to avoid circular dependency
-# It's available as: from omnibase_core.errors.error_codes import ModelOnexError
+# It's available as: from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 # ModelOnexWarning, ModelRegistryError, and ModelCLIAdapter are imported via lazy import
@@ -52,9 +52,9 @@ __all__ = [
     "ModelOnexError",
     "ModelOnexWarning",
     # Error codes and enums
-    "ModelCoreErrorCode",
+    "EnumCoreErrorCode",
     "EnumCLIExitCode",
-    "ModelRegistryErrorCode",
+    "EnumRegistryErrorCode",
     # CLI adapter and utilities
     "ModelCLIAdapter",
     "get_exit_code_for_status",
@@ -98,8 +98,5 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
         return ModelCLIAdapter
-    msg = f"module '{__name__}' has no attribute '{name}'"
-    raise ModelOnexError(
-        error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
-        message=msg,
-    )
+    # Use standard Python AttributeError to avoid circular imports
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

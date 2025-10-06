@@ -4,7 +4,7 @@ from typing import Literal, Union
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Node configuration value model.
@@ -18,7 +18,8 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Discriminator, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 from .model_nodeconfigurationnumericvalue import ModelNodeConfigurationNumericValue
@@ -47,7 +48,7 @@ class ModelNodeConfigurationStringValue(BaseModel):
             return int(self.value)
         except ValueError as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Cannot convert string '{self.value}' to int",
                 details={"value": self.value, "target_type": "int"},
                 cause=e,

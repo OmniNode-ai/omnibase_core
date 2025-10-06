@@ -4,7 +4,7 @@ from typing import Callable, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Property collection model for environment properties.
@@ -20,10 +20,11 @@ from typing import Any, Callable, TypeVar
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -129,7 +130,7 @@ class ModelPropertyCollection(BaseModel):
 
         # If no handler matches, raise error
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported property type: {type(value)}",
             details=ModelErrorContext.with_context(
                 {
@@ -188,7 +189,7 @@ class ModelPropertyCollection(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -204,6 +205,6 @@ class ModelPropertyCollection(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

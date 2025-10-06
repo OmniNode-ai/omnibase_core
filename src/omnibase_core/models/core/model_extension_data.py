@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -126,7 +126,7 @@ class ModelExtensionData(BaseModel):
             if len(v) > 100:
                 msg = f"List values cannot exceed 100 items, got {len(v)}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -134,7 +134,7 @@ class ModelExtensionData(BaseModel):
             if len(v) > 50:
                 msg = f"Object values cannot exceed 50 keys, got {len(v)}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -143,7 +143,7 @@ class ModelExtensionData(BaseModel):
                 if not isinstance(val, (str, int, float, bool)):
                     msg = f"Object values must be primitives, got {type(val).__name__} for key '{key}'"
                     raise ModelOnexError(
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=msg,
                     )
 

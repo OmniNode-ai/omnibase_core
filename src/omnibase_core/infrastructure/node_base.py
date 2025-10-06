@@ -1,7 +1,7 @@
 import uuid
 from typing import Any, Generic, Optional, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -37,7 +37,7 @@ from pydantic import BaseModel
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_action import ModelAction
@@ -141,7 +141,7 @@ class NodeBase(
         except Exception as e:
             self._emit_initialization_failure(e)
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to initialize NodeBase: {e!s}",
                 context={
                     "contract_path": str(contract_path),
@@ -275,7 +275,7 @@ class NodeBase(
             # Expected format: "module.path.ClassName"
             if "." not in main_tool_class:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid main_tool_class format: {main_tool_class}. Expected 'module.path.ClassName'",
                     context={
                         "main_tool_class": main_tool_class,
@@ -308,7 +308,7 @@ class NodeBase(
 
         except ImportError as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -319,7 +319,7 @@ class NodeBase(
             ) from e
         except AttributeError as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -329,7 +329,7 @@ class NodeBase(
             ) from e
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -429,7 +429,7 @@ class NodeBase(
                 },
             )
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Node execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -467,7 +467,7 @@ class NodeBase(
 
             if main_tool is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.OPERATION_FAILED,
+                    code=EnumCoreErrorCode.OPERATION_FAILED,
                     message="Main tool is not initialized",
                     context={
                         "node_name": self.state.node_name,
@@ -494,7 +494,7 @@ class NodeBase(
                     input_state,
                 )
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -521,7 +521,7 @@ class NodeBase(
             )
             raise ModelOnexError(
                 message=f"NodeBase processing error: {e!s}",
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
@@ -631,7 +631,7 @@ class NodeBase(
                 },
             )
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"State dispatch failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -688,7 +688,7 @@ class NodeBase(
         """Get the ModelONEXContainer instance for dependency injection."""
         if self._container is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Container is not initialized",
                 context={"node_id": str(self.node_id)},
             )
@@ -704,7 +704,7 @@ class NodeBase(
         """Get the current reducer state."""
         if self._reducer_state is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Reducer state is not initialized",
                 context={"node_id": str(self.node_id)},
             )

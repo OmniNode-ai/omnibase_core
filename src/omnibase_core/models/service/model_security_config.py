@@ -1,6 +1,6 @@
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -31,7 +31,7 @@ class ModelSecurityConfig(BaseModel):
         if self.enable_tls and (not self.cert_file or not self.key_file):
             msg = "TLS enabled but cert_file or key_file not provided"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

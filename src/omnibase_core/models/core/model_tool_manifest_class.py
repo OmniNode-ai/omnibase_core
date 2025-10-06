@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
@@ -135,7 +135,7 @@ class ModelToolManifest(BaseModel):
         if not v:
             msg = "versions list cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -144,7 +144,7 @@ class ModelToolManifest(BaseModel):
         if len(version_strings) != len(set(version_strings)):
             msg = "Duplicate versions found in versions list"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -157,7 +157,7 @@ class ModelToolManifest(BaseModel):
         if v <= 0:
             msg = "Value must be positive"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -169,7 +169,7 @@ class ModelToolManifest(BaseModel):
         if v.minimum_coverage_percentage < 0 or v.minimum_coverage_percentage > 100:
             msg = "Coverage percentage must be between 0 and 100"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v

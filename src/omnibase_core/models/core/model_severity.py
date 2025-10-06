@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -86,7 +86,7 @@ class ModelSeverity(BaseModel):
         """Ensure name and value are consistent."""
         if "value" in values and v.lower() != values["value"]:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Name '{v}' must match value '{values.get('value', '')}'",
             )
         return v
@@ -108,7 +108,7 @@ class ModelSeverity(BaseModel):
             min_val, max_val = expected_ranges[name]
             if not (min_val <= v <= max_val):
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Numeric value {v} for {name} must be in range [{min_val}, {max_val}]",
                 )
         return v
@@ -121,17 +121,17 @@ class ModelSeverity(BaseModel):
 
         if name in ["CRITICAL", "FATAL"] and not v:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Severity {name} must have is_critical=True",
             )
         if name in ["DEBUG", "INFO", "WARNING"] and v:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Severity {name} cannot have is_critical=True",
             )
         if numeric >= 45 and not v:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Numeric value {numeric} requires is_critical=True",
             )
 
@@ -151,7 +151,7 @@ class ModelSeverity(BaseModel):
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
                 message=f"Cannot compare ModelSeverity with {type(other)}",
             )
         return self.numeric_value < other.numeric_value
@@ -160,7 +160,7 @@ class ModelSeverity(BaseModel):
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
                 message=f"Cannot compare ModelSeverity with {type(other)}",
             )
         return self.numeric_value <= other.numeric_value
@@ -169,7 +169,7 @@ class ModelSeverity(BaseModel):
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
                 message=f"Cannot compare ModelSeverity with {type(other)}",
             )
         return self.numeric_value > other.numeric_value
@@ -178,7 +178,7 @@ class ModelSeverity(BaseModel):
         """ONEX-compliant severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
                 message=f"Cannot compare ModelSeverity with {type(other)}",
             )
         return self.numeric_value >= other.numeric_value

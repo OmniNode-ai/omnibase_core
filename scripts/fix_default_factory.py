@@ -13,14 +13,14 @@ def fix_default_factory_in_file(file_path: Path) -> bool:
 
     # Pattern to match: default_factory=ModelSomething,
     # Replace with: default_factory=lambda: ModelSomething(),
-    pattern = r'default_factory=([A-Z][a-zA-Z0-9_]+),'
-    replacement = r'default_factory=lambda: \1(),'
+    pattern = r"default_factory=([A-Z][a-zA-Z0-9_]+),"
+    replacement = r"default_factory=lambda: \1(),"
 
     content = re.sub(pattern, replacement, content)
 
     # Also handle cases without trailing comma
-    pattern_no_comma = r'default_factory=([A-Z][a-zA-Z0-9_]+)\s*\)'
-    replacement_no_comma = r'default_factory=lambda: \1()\)'
+    pattern_no_comma = r"default_factory=([A-Z][a-zA-Z0-9_]+)\s*\)"
+    replacement_no_comma = r"default_factory=lambda: \1()\)"
 
     content = re.sub(pattern_no_comma, replacement_no_comma, content)
 

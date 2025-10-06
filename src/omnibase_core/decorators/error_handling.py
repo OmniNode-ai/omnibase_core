@@ -1,6 +1,6 @@
 from typing import Callable
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Standard error handling decorators for ONEX framework.
@@ -15,7 +15,7 @@ from collections.abc import Callable as CallableABC
 from typing import Any, Callable
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 def standard_error_handling(operation_name: str = "operation"):
@@ -46,7 +46,7 @@ def standard_error_handling(operation_name: str = "operation"):
         except Exception as e:
             raise ModelOnexError(
                 f"{operation_name} failed: {str(e)}",
-                ModelCoreErrorCode.OPERATION_FAILED
+                EnumCoreErrorCode.OPERATION_FAILED
             ) from e
     """
 
@@ -63,7 +63,7 @@ def standard_error_handling(operation_name: str = "operation"):
                 msg = f"{operation_name} failed: {e!s}"
                 raise ModelOnexError(
                     msg,
-                    ModelCoreErrorCode.OPERATION_FAILED,
+                    EnumCoreErrorCode.OPERATION_FAILED,
                 ) from e
 
         return wrapper
@@ -105,13 +105,13 @@ def validation_error_handling(operation_name: str = "validation"):
                     msg = f"{operation_name} failed: {e!s}"
                     raise ModelOnexError(
                         msg,
-                        ModelCoreErrorCode.VALIDATION_ERROR,
+                        EnumCoreErrorCode.VALIDATION_ERROR,
                     ) from e
                 # Generic operation failure
                 msg = f"{operation_name} failed: {e!s}"
                 raise ModelOnexError(
                     msg,
-                    ModelCoreErrorCode.OPERATION_FAILED,
+                    EnumCoreErrorCode.OPERATION_FAILED,
                 ) from e
 
         return wrapper
@@ -150,9 +150,9 @@ def io_error_handling(operation_name: str = "I/O operation"):
                 raise ModelOnexError(
                     msg,
                     (
-                        ModelCoreErrorCode.FILE_NOT_FOUND
+                        EnumCoreErrorCode.FILE_NOT_FOUND
                         if isinstance(e, FileNotFoundError)
-                        else ModelCoreErrorCode.FILESYSTEM_ERROR
+                        else EnumCoreErrorCode.FILESYSTEM_ERROR
                     ),
                 ) from e
             except Exception as e:
@@ -160,7 +160,7 @@ def io_error_handling(operation_name: str = "I/O operation"):
                 msg = f"{operation_name} failed: {e!s}"
                 raise ModelOnexError(
                     msg,
-                    ModelCoreErrorCode.OPERATION_FAILED,
+                    EnumCoreErrorCode.OPERATION_FAILED,
                 ) from e
 
         return wrapper

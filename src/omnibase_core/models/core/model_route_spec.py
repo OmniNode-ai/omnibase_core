@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -95,7 +95,7 @@ class ModelRouteSpec(BaseModel):
         if not any(re.match(pattern, v) for pattern in valid_patterns):
             msg = f"Invalid destination address format: {v}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -114,7 +114,7 @@ class ModelRouteSpec(BaseModel):
             if not any(re.match(pattern, hop) for pattern in valid_patterns):
                 msg = f"Invalid hop address format: {hop}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         return v
@@ -127,7 +127,7 @@ class ModelRouteSpec(BaseModel):
         if v not in valid_strategies:
             msg = f"Invalid routing strategy: {v}. Must be one of {valid_strategies}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -140,7 +140,7 @@ class ModelRouteSpec(BaseModel):
         if v not in valid_modes:
             msg = f"Invalid delivery mode: {v}. Must be one of {valid_modes}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -152,7 +152,7 @@ class ModelRouteSpec(BaseModel):
         if v < 1 or v > 255:
             msg = "TTL must be between 1 and 255"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -164,7 +164,7 @@ class ModelRouteSpec(BaseModel):
         if v < 1 or v > 10:
             msg = "Priority must be between 1 (highest) and 10 (lowest)"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v

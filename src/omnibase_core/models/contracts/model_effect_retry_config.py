@@ -1,6 +1,6 @@
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Effect Retry Configuration Model.
@@ -14,7 +14,8 @@ from typing import Self
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -112,7 +113,7 @@ class ModelEffectRetryConfig(BaseModel):
             msg = "max_delay_ms must be greater than base_delay_ms"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 error_type="valueerror",
                 validation_context="model_validation",
             )

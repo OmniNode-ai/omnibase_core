@@ -75,13 +75,13 @@ class ModelCertificateValidationLevel(BaseModel):
     @classmethod
     def validate_level(cls, v: str) -> str:
         """Validate certificate validation level."""
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
         valid_levels = {"none", "basic", "standard", "strict", "paranoid"}
         if v not in valid_levels:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid validation level: {v}. Must be one of: {valid_levels}",
             )
         return v

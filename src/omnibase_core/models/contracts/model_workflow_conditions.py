@@ -3,7 +3,7 @@ from typing import Any, List
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
@@ -19,7 +19,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelWorkflowConditions(BaseModel):
@@ -186,7 +187,7 @@ class ModelWorkflowConditions(BaseModel):
             if len(parts) not in [5, 6]:
                 raise ModelOnexError(
                     message=f"Invalid schedule expression '{v}'. Must have 5 or 6 parts (minute hour day month weekday [second]).",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -206,7 +207,7 @@ class ModelWorkflowConditions(BaseModel):
             if env not in valid_environments:
                 raise ModelOnexError(
                     message=f"Invalid environment '{env}'. Must be one of: {', '.join(valid_environments)}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated.append(env)

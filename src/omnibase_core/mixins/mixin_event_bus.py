@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Unified Event Bus Mixin for ONEX Nodes
@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictStr
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
@@ -117,8 +117,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
     # --- Event Bus Access (Protocol-based) ----------------------------------
 
-    def _get_event_bus(
-    ) -> "ProtocolAsyncEventBus | None":
+    def _get_event_bus() -> "ProtocolAsyncEventBus | None":
         """Resolve event bus using protocol-based polymorphism."""
         # Try registry first
         if hasattr(self, "registry") and hasattr(self.registry, "event_bus"):
@@ -293,7 +292,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
             raise ModelOnexError(
                 f"Failed to get event patterns: {e!s}",
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             ) from e
 
     def get_completion_event_type(self, input_event_type: str) -> str:
@@ -344,7 +343,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
             raise ModelOnexError(
                 f"Failed to determine completion event type: {e!s}",
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             ) from e
 
     def start_event_listener(self) -> None:
@@ -512,7 +511,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             if not input_state_class:
                 msg = "Cannot determine input state class for event conversion"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
 
             # Extract data from event

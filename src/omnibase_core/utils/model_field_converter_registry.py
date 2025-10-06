@@ -4,7 +4,7 @@ from typing import Callable, Dict
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 ModelFieldConverterRegistry
@@ -27,7 +27,8 @@ from collections.abc import Callable as CallableABC
 from enum import Enum
 from typing import Any, Callable, Dict
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.utils.field_converter import FieldConverter
@@ -120,7 +121,7 @@ class ModelFieldConverterRegistry:
                 return default
 
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid {enum_class.__name__} value: {value}",
                 details=ModelErrorContext.with_context(
                     {
@@ -189,7 +190,7 @@ class ModelFieldConverterRegistry:
         """
         if field_name not in self._converters:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.NOT_FOUND,
+                code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"No converter registered for field: {field_name}",
                 details=ModelErrorContext.with_context(
                     {

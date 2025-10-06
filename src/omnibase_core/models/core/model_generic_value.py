@@ -12,7 +12,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_value_type import EnumValueType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
@@ -50,13 +50,13 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.STRING and v is None:
             msg = "string_value must be set when value_type is STRING"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.STRING and v is not None:
             msg = "string_value should only be set when value_type is STRING"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -69,13 +69,13 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.INTEGER and v is None:
             msg = "integer_value must be set when value_type is INTEGER"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.INTEGER and v is not None:
             msg = "integer_value should only be set when value_type is INTEGER"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -90,13 +90,13 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.FLOAT and v is None:
             msg = "float_value must be set when value_type is FLOAT"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.FLOAT and v is not None:
             msg = "float_value should only be set when value_type is FLOAT"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -111,13 +111,13 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.BOOLEAN and v is None:
             msg = "boolean_value must be set when value_type is BOOLEAN"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.BOOLEAN and v is not None:
             msg = "boolean_value should only be set when value_type is BOOLEAN"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -132,13 +132,13 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.LIST_STRING and v is None:
             msg = "list_string_value must be set when value_type is LIST_STRING"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.LIST_STRING and v is not None:
             msg = "list_string_value should only be set when value_type is LIST_STRING"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -153,7 +153,7 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.LIST_INTEGER and v is None:
             msg = "list_integer_value must be set when value_type is LIST_INTEGER"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.LIST_INTEGER and v is not None:
@@ -161,7 +161,7 @@ class ModelGenericValue(BaseModel):
                 "list_integer_value should only be set when value_type is LIST_INTEGER"
             )
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -174,13 +174,13 @@ class ModelGenericValue(BaseModel):
         if data.get("value_type") == EnumValueType.DICT and v is None:
             msg = "dict_value must be set when value_type is DICT"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if data.get("value_type") != EnumValueType.DICT and v is not None:
             msg = "dict_value should only be set when value_type is DICT"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -205,7 +205,7 @@ class ModelGenericValue(BaseModel):
             return None
         msg = f"Unknown value type: {self.value_type}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -237,14 +237,14 @@ class ModelGenericValue(BaseModel):
                 f"Unsupported list[Any]type with mixed or unsupported elements: {value}"
             )
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if isinstance(value, dict):
             return cls(value_type=EnumValueType.DICT, dict_value=json.dumps(value))
         msg = f"Unsupported value type: {type(value)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 

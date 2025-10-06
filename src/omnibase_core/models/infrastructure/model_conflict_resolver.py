@@ -1,6 +1,6 @@
 from typing import Callable
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """Conflict resolver model for handling data conflicts during reduction."""
 
@@ -9,7 +9,7 @@ from typing import Any, Callable
 
 from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelConflictResolver:
@@ -43,7 +43,7 @@ class ModelConflictResolver:
             return self._merge_values(existing_value, new_value)
         if self.strategy == EnumConflictResolution.ERROR:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Conflict detected for key: {key}",
                 context={
                     "existing_value": str(existing_value),

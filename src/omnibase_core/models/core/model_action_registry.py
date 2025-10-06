@@ -162,11 +162,11 @@ class ModelActionRegistry:
                     actions_discovered += 1
 
         except Exception as e:
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
             from omnibase_core.errors.model_onex_error import ModelOnexError
 
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.FILE_OPERATION_ERROR,
+                error_code=EnumCoreErrorCode.FILE_OPERATION_ERROR,
                 message=f"Failed to parse contract {contract_file}: {e}",
             ) from e
 

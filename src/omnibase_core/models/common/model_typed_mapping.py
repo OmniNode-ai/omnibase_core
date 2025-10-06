@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -85,7 +85,7 @@ class ModelTypedMapping(BaseModel):
         """Set a dict[str, Any]value with depth checking for security using ONEX-compliant direct __init__ calls."""
         if self.current_depth > self.MAX_DEPTH:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Maximum nesting depth ({self.MAX_DEPTH}) exceeded to prevent DoS attacks",
             )
         self.data[key] = ModelValueContainer(value=value)
@@ -115,7 +115,7 @@ class ModelTypedMapping(BaseModel):
             pass
         else:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unsupported type for key '{key}': {type(value)}",
             )
 
@@ -134,7 +134,7 @@ class ModelTypedMapping(BaseModel):
             return default
         if not container.is_type(str):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value for key '{key}' is not a string, got {container.type_name}",
             )
         return cast(str, container.value)
@@ -147,7 +147,7 @@ class ModelTypedMapping(BaseModel):
             return default
         if not container.is_type(int):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value for key '{key}' is not an int, got {container.type_name}",
             )
         return cast(int, container.value)
@@ -160,7 +160,7 @@ class ModelTypedMapping(BaseModel):
             return default
         if not container.is_type(bool):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value for key '{key}' is not a bool, got {container.type_name}",
             )
         return cast(bool, container.value)
@@ -355,7 +355,7 @@ class ModelTypedMapping(BaseModel):
         """
         if key not in self.data:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                 message=f"Key '{key}' not found in mapping",
             )
 

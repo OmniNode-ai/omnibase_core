@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 """
 ONEX Error Base Class
@@ -50,8 +50,8 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 # Import required enums from the same package
 from omnibase_core.errors.error_codes import (
     EnumCLIExitCode,
+    EnumCoreErrorCode,
     EnumOnexErrorCode,
-    ModelCoreErrorCode,
     get_exit_code_for_status,
 )
 

@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Cloud service connection properties sub-model.
@@ -19,7 +19,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelCloudServiceProperties(BaseModel):
@@ -73,7 +74,7 @@ class ModelCloudServiceProperties(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -85,7 +86,7 @@ class ModelCloudServiceProperties(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:

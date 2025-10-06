@@ -1,7 +1,7 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
-from uuid import UUID
 
 #!/usr/bin/env python3
 """

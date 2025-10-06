@@ -14,8 +14,7 @@ from omnibase_core.enums.enum_version_manifest import (
     EnumContractCompliance,
     EnumVersionStatus,
 )
-from omnibase_core.models.service.model_node_service_config import ModelVersionFile
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer, SemVerField
 from omnibase_core.models.core.model_version_contract import ModelVersionContract
@@ -29,6 +28,7 @@ from omnibase_core.models.core.model_version_implementation import (
 from omnibase_core.models.core.model_version_manifest_class_config import ModelConfig
 from omnibase_core.models.core.model_version_security import ModelVersionSecurity
 from omnibase_core.models.core.model_version_testing import ModelVersionTesting
+from omnibase_core.models.service.model_node_service_config import ModelVersionFile
 
 
 class ModelVersionManifest(BaseModel):
@@ -128,7 +128,7 @@ class ModelVersionManifest(BaseModel):
         if v.startup_timeout <= 0:
             msg = "startup_timeout must be positive"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -141,7 +141,7 @@ class ModelVersionManifest(BaseModel):
             if v.test_coverage_percentage < 0 or v.test_coverage_percentage > 100:
                 msg = "test_coverage_percentage must be between 0 and 100"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         return v

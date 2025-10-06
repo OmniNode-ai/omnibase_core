@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -140,7 +140,7 @@ class ModelParsedArguments(BaseModel):
         if not self.is_valid():
             msg = "Cannot convert invalid arguments to execution dict[str, Any]"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

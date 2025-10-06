@@ -19,14 +19,14 @@ class ComprehensiveStringVersionFixer:
 
     # ID field patterns (field names ending with _id or exactly "id")
     ID_PATTERNS = [
-        r'\b(\w+_id)\s*:\s*str\b',  # field_id: str
-        r'\bid\s*:\s*str\b',  # id: str
+        r"\b(\w+_id)\s*:\s*str\b",  # field_id: str
+        r"\bid\s*:\s*str\b",  # id: str
     ]
 
     # Version field patterns
     VERSION_PATTERNS = [
-        r'\b(\w+_version)\s*:\s*str\b',  # field_version: str
-        r'\bversion\s*:\s*str\b',  # version: str
+        r"\b(\w+_version)\s*:\s*str\b",  # field_version: str
+        r"\bversion\s*:\s*str\b",  # version: str
     ]
 
     def __init__(self, file_path: Path):
@@ -43,7 +43,7 @@ class ComprehensiveStringVersionFixer:
         # Fix ID patterns
         for pattern in self.ID_PATTERNS:
             self.content, id_changed = self._replace_pattern(
-                pattern, 'UUID', is_id=True
+                pattern, "UUID", is_id=True
             )
             if id_changed:
                 self.changes_made = True
@@ -52,7 +52,7 @@ class ComprehensiveStringVersionFixer:
         # Fix version patterns
         for pattern in self.VERSION_PATTERNS:
             self.content, ver_changed = self._replace_pattern(
-                pattern, 'ModelSemVer', is_id=False
+                pattern, "ModelSemVer", is_id=False
             )
             if ver_changed:
                 self.changes_made = True
@@ -69,7 +69,8 @@ class ComprehensiveStringVersionFixer:
 
         # Report changes
         lines_changed = sum(
-            1 for old, new in zip(original_content.split('\n'), self.content.split('\n'))
+            1
+            for old, new in zip(original_content.split("\n"), self.content.split("\n"))
             if old != new
         )
         print(f"  ✅ Fixed {lines_changed} lines in {self.file_path.name}")
@@ -86,19 +87,21 @@ class ComprehensiveStringVersionFixer:
         # Handle optional types (str | None or Optional[str])
         # Pattern 1: field: str | None
         if is_id:
-            pattern_with_optional = pattern.replace(r':\s*str\b', r':\s*str\s*\|\s*None')
+            pattern_with_optional = pattern.replace(
+                r":\s*str\b", r":\s*str\s*\|\s*None"
+            )
             result, opt_changed = re.subn(
                 pattern_with_optional,
-                lambda m: m.group(0).replace('str', replacement),
+                lambda m: m.group(0).replace("str", replacement),
                 result,
             )
             changed = changed or opt_changed > 0
 
             # Pattern 2: field: Optional[str]
-            pattern_optional = pattern.replace(r':\s*str\b', r':\s*Optional\[str\]')
+            pattern_optional = pattern.replace(r":\s*str\b", r":\s*Optional\[str\]")
             result, opt2_changed = re.subn(
                 pattern_optional,
-                lambda m: m.group(0).replace('str', replacement),
+                lambda m: m.group(0).replace("str", replacement),
                 result,
             )
             changed = changed or opt2_changed > 0
@@ -106,7 +109,7 @@ class ComprehensiveStringVersionFixer:
         # Basic pattern
         result, basic_changed = re.subn(
             pattern,
-            lambda m: m.group(0).replace('str', replacement),
+            lambda m: m.group(0).replace("str", replacement),
             result,
         )
         changed = changed or basic_changed > 0
@@ -115,29 +118,33 @@ class ComprehensiveStringVersionFixer:
 
     def _add_imports(self):
         """Add necessary imports to the file."""
-        lines = self.content.split('\n')
+        lines = self.content.split("\n")
 
         # Find import section
         import_end_idx = 0
         for i, line in enumerate(lines):
-            if line.strip().startswith(('import ', 'from ')):
+            if line.strip().startswith(("import ", "from ")):
                 import_end_idx = i + 1
-            elif import_end_idx > 0 and line.strip() and not line.strip().startswith('#'):
+            elif (
+                import_end_idx > 0 and line.strip() and not line.strip().startswith("#")
+            ):
                 break
 
         # Add imports if needed
         new_imports = []
 
-        if self.needs_uuid_import and 'from uuid import UUID' not in self.content:
-            new_imports.append('from uuid import UUID')
+        if self.needs_uuid_import and "from uuid import UUID" not in self.content:
+            new_imports.append("from uuid import UUID")
 
-        if self.needs_semver_import and 'ModelSemVer' not in self.content:
-            new_imports.append('from omnibase_core.models.metadata.model_semver import ModelSemVer')
+        if self.needs_semver_import and "ModelSemVer" not in self.content:
+            new_imports.append(
+                "from omnibase_core.models.metadata.model_semver import ModelSemVer"
+            )
 
         if new_imports:
             for imp in reversed(new_imports):
                 lines.insert(import_end_idx, imp)
-            self.content = '\n'.join(lines)
+            self.content = "\n".join(lines)
             print(f"  📦 Added imports: {', '.join(new_imports)}")
 
 
@@ -149,6 +156,7 @@ def fix_violations_in_file(file_path: Path) -> bool:
     except Exception as e:
         print(f"❌ Error fixing {file_path}: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         return False
 

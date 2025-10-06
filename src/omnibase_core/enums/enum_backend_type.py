@@ -1,4 +1,4 @@
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 EnumBackendType: Enumeration of secret backend types.
@@ -8,7 +8,8 @@ This enum defines the supported secret backend types in the system.
 
 from enum import Enum
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class EnumBackendType(Enum):
@@ -27,4 +28,4 @@ class EnumBackendType(Enum):
             return cls(value.lower())
         except ValueError:
             msg = f"Invalid backend type: {value}. Must be one of: {[e.value for e in cls]}"
-            raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)

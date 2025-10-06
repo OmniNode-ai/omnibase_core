@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -259,7 +259,7 @@ class ModelSchema(BaseModel):
             # FAIL FAST: If we can't resolve the reference, throw an error instead of returning placeholder
             msg = f"FAIL_FAST: Unresolved schema reference: {self.ref}. Available definitions: {list[Any](definitions.keys())}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

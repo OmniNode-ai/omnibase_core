@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
@@ -44,7 +44,7 @@ class ModelDuration(BaseModel):
         if v < 0:
             msg = "Duration must be non-negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -131,7 +131,7 @@ class ModelDuration(BaseModel):
             return self.milliseconds < other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -141,7 +141,7 @@ class ModelDuration(BaseModel):
             return self.milliseconds <= other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -151,7 +151,7 @@ class ModelDuration(BaseModel):
             return self.milliseconds > other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -161,7 +161,7 @@ class ModelDuration(BaseModel):
             return self.milliseconds >= other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -171,7 +171,7 @@ class ModelDuration(BaseModel):
             return ModelDuration(milliseconds=self.milliseconds + other.milliseconds)
         msg = f"Cannot add ModelDuration with {type(other)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -182,7 +182,7 @@ class ModelDuration(BaseModel):
             return ModelDuration(milliseconds=result_ms)
         msg = f"Cannot subtract {type(other)} from ModelDuration"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -192,7 +192,7 @@ class ModelDuration(BaseModel):
             return ModelDuration(milliseconds=int(self.milliseconds * other))
         msg = f"Cannot multiply ModelDuration with {type(other)}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=msg,
         )
 
@@ -201,13 +201,13 @@ class ModelDuration(BaseModel):
         if isinstance(other, int | float):
             if other == 0:
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.INVALID_OPERATION,
+                    error_code=EnumCoreErrorCode.INVALID_OPERATION,
                     message="Cannot divide duration by zero",
                 )
             return ModelDuration(milliseconds=int(self.milliseconds / other))
 
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message=f"Cannot divide ModelDuration by {type(other)}",
         )
 
@@ -258,7 +258,7 @@ class ModelDuration(BaseModel):
         if not matches:
             msg = f"Invalid duration format: {duration_str}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

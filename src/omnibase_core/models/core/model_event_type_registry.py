@@ -1,6 +1,6 @@
 from typing import Any, Generic
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -156,7 +156,7 @@ class ModelEventTypeRegistry:
         except Exception as e:
             msg = f"Failed to parse contract {contract_file}: {e}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.INTERNAL_ERROR,
+                error_code=EnumCoreErrorCode.INTERNAL_ERROR,
                 message=msg,
             )
 

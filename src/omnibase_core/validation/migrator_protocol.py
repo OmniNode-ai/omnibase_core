@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, TypedDict, Union
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Protocol migrator for safe migration of protocols to omnibase_spi.
@@ -13,7 +13,8 @@ import shutil
 from pathlib import Path
 from typing import Dict, TypedDict, cast
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
@@ -80,12 +81,12 @@ class ProtocolMigrator:
             for protocol in protocols:
                 if not protocol.file_path:
                     raise ModelOnexError(
-                        code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Protocol must have a file_path specified",
                     )
                 if not protocol.name:
                     raise ModelOnexError(
-                        code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Protocol must have a name specified",
                     )
                 # Note: File existence is not required for planning phase
@@ -435,6 +436,6 @@ class ProtocolMigrator:
         except Exception as e:
             # Re-raise rollback errors with context
             raise ModelOnexError(
-                code=ModelCoreErrorCode.MIGRATION_ERROR,
+                code=EnumCoreErrorCode.MIGRATION_ERROR,
                 message=f"Rollback failed: {e}",
             ) from e

@@ -1,6 +1,6 @@
 from pydantic import field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -36,7 +36,7 @@ class ModelLifecycleActionPayload(ModelActionPayloadBase):
         if v.category != LIFECYCLE:
             msg = f"Invalid lifecycle action: {v.name}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v

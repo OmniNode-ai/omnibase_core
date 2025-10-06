@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Node configuration model for node settings and parameters.
@@ -18,7 +18,8 @@ from typing import Any, Dict, TypedDict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.types.typed_dict_node_configuration_summary import (
     TypedDictNodeConfigurationSummary,
@@ -310,7 +311,7 @@ class ModelNodeConfiguration(BaseModel):
                 if value is not None:
                     return str(value)
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

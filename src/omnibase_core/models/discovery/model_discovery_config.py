@@ -1,9 +1,10 @@
 """Tool discovery configuration model with caching, depth control, and filtering options."""
 
 from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
@@ -117,7 +118,7 @@ class ModelDiscoveryConfig(BaseModel):
         if v not in valid_modes:
             msg = f"discovery_mode must be one of {valid_modes}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -129,7 +130,7 @@ class ModelDiscoveryConfig(BaseModel):
         if not v:
             msg = "include_patterns cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v

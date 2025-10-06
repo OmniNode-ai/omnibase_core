@@ -43,7 +43,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_latency_level import EnumLatencyLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_config_validation_result import ModelConfigValidationResult
 from .model_performance_optimization_config import (
@@ -182,7 +183,7 @@ class ModelSecretConfig(BaseModel):
             if not v.startswith(("http://", "https://")):
                 msg = "Vault URL must start with http:// or https://"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -198,7 +199,7 @@ class ModelSecretConfig(BaseModel):
         if not v:
             msg = "Environment prefix cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -211,7 +212,7 @@ class ModelSecretConfig(BaseModel):
         if not v.replace("_", "").isalnum():
             msg = "Environment prefix must be alphanumeric with underscores"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -369,7 +370,7 @@ class ModelSecretConfig(BaseModel):
                     msg = f"Failed to read Kubernetes namespace file: {e}"
                     raise ModelOnexError(
                         msg,
-                        error_code=ModelCoreErrorCode.CONFIGURATION_ERROR,
+                        error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                         component="secret_config",
                         operation="detect_environment_config",
                     )

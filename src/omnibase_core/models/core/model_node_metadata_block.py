@@ -19,7 +19,7 @@ from typing import (
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import EnumLifecycle, EnumMetaType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
@@ -284,7 +284,7 @@ class ModelNodeMetadataBlock(BaseModel):
             return EntrypointBlock.from_uri(value)
         msg = "entrypoint must be an EntrypointBlock instance or URI string"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 

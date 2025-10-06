@@ -15,14 +15,15 @@ repetitive patterns while maintaining type safety.
 
 from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableABC
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -174,7 +175,7 @@ class ModelContainer(BaseModel, Generic[T]):
             )
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -214,7 +215,7 @@ class ModelContainer(BaseModel, Generic[T]):
             self.is_validated = False
             self.validation_notes = error_message
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=error_message,
                 details=ModelErrorContext.with_context(
                     {
@@ -229,7 +230,7 @@ class ModelContainer(BaseModel, Generic[T]):
             if isinstance(e, ModelOnexError):
                 raise
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation error: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -310,7 +311,7 @@ class ModelContainer(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -326,7 +327,7 @@ class ModelContainer(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

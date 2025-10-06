@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 YAML-serializable data structures model with discriminated union.
@@ -15,7 +15,8 @@ from typing import Any, Dict
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -84,7 +85,7 @@ class ModelYamlValue(BaseModel):
         if self.value_type == EnumYamlValueType.LIST:
             return [v.to_serializable() for v in (self.list_value or [])]
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid value_type: {self.value_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -123,7 +124,7 @@ class ModelYamlValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

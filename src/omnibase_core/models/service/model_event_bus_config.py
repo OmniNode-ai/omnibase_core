@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -45,7 +45,7 @@ class ModelEventBusConfig(BaseModel):
             if not parsed.scheme or not parsed.netloc:
                 msg = "Invalid event bus URL format - missing scheme or netloc"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
             return v
@@ -54,6 +54,6 @@ class ModelEventBusConfig(BaseModel):
                 raise
             msg = "Invalid event bus URL"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )

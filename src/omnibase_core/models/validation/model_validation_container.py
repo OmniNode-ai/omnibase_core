@@ -4,7 +4,7 @@ from typing import Generic
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Generic validation error aggregator to standardize validation across all domains.
@@ -19,7 +19,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
@@ -226,7 +227,7 @@ class ModelValidationContainer(BaseModel):
             return not self.has_errors()
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

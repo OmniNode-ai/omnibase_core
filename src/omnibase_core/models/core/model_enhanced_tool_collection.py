@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -194,7 +194,7 @@ class ModelToolCollection(BaseModel):
         if v < 1 or v > 1000:
             msg = "max_tools must be between 1 and 1000"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -321,7 +321,7 @@ class ModelToolCollection(BaseModel):
 
     def get_performance_summary(self) -> ModelPerformanceSummary:
         """Get comprehensive performance summary for all tools."""
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
 
         now = datetime.now(UTC)
         if not self.tool_metadata:
@@ -378,7 +378,7 @@ class ModelToolCollection(BaseModel):
         if tool is None:
             msg = f"Tool '{name}' not found in collection"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                 message=msg,
             )
         return tool

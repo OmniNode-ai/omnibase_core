@@ -35,10 +35,7 @@ class PydanticError:
     def from_mypy_line(cls, line: str) -> "PydanticError | None":
         """Parse a mypy error line into a PydanticError object."""
         # Pattern: file.py:123: error: Message [call-arg]
-        match = re.match(
-            r"^([^:]+):(\d+): error: (.+) \[call-arg\]$",
-            line.strip()
-        )
+        match = re.match(r"^([^:]+):(\d+): error: (.+) \[call-arg\]$", line.strip())
         if not match:
             return None
 
@@ -52,7 +49,9 @@ class PydanticError:
         if "Missing named argument" in message:
             error_type = "missing_argument"
             # Extract: Missing named argument "field_name" for "ModelName"
-            arg_match = re.search(r'Missing named argument "([^"]+)" for "([^"]+)"', message)
+            arg_match = re.search(
+                r'Missing named argument "([^"]+)" for "([^"]+)"', message
+            )
             if arg_match:
                 field_name = arg_match.group(1)
                 model_name = arg_match.group(2)
@@ -60,7 +59,9 @@ class PydanticError:
         elif "Unexpected keyword argument" in message:
             error_type = "unexpected_argument"
             # Extract: Unexpected keyword argument "arg_name" for "method_name"
-            arg_match = re.search(r'Unexpected keyword argument "([^"]+)" for "([^"]+)"', message)
+            arg_match = re.search(
+                r'Unexpected keyword argument "([^"]+)" for "([^"]+)"', message
+            )
             if arg_match:
                 field_name = arg_match.group(1)
                 model_name = arg_match.group(2)
@@ -145,21 +146,15 @@ class PydanticErrorAnalyzer:
 
         # Get top 20 for each category
         stats["top_models"] = sorted(
-            stats["by_model"].items(),
-            key=lambda x: x[1],
-            reverse=True
+            stats["by_model"].items(), key=lambda x: x[1], reverse=True
         )[:20]
 
         stats["top_fields"] = sorted(
-            stats["by_field"].items(),
-            key=lambda x: x[1],
-            reverse=True
+            stats["by_field"].items(), key=lambda x: x[1], reverse=True
         )[:20]
 
         stats["top_files"] = sorted(
-            stats["by_file"].items(),
-            key=lambda x: x[1],
-            reverse=True
+            stats["by_file"].items(), key=lambda x: x[1], reverse=True
         )[:20]
 
         # Convert defaultdicts to regular dicts for JSON serialization
@@ -184,22 +179,20 @@ class PydanticErrorAnalyzer:
 
         print("\n--- Error Types ---")
         for error_type, count in sorted(
-            stats['by_error_type'].items(),
-            key=lambda x: x[1],
-            reverse=True
+            stats["by_error_type"].items(), key=lambda x: x[1], reverse=True
         ):
             print(f"  {error_type}: {count}")
 
         print("\n--- Top 15 Models with Most Errors ---")
-        for model, count in stats['top_models'][:15]:
+        for model, count in stats["top_models"][:15]:
             print(f"  {model}: {count}")
 
         print("\n--- Top 15 Fields with Most Errors ---")
-        for field, count in stats['top_fields'][:15]:
+        for field, count in stats["top_fields"][:15]:
             print(f"  {field}: {count}")
 
         print("\n--- Top 10 Files with Most Errors ---")
-        for file_path, count in stats['top_files'][:10]:
+        for file_path, count in stats["top_files"][:10]:
             file_name = Path(file_path).name
             print(f"  {file_name}: {count}")
 
@@ -207,8 +200,8 @@ class PydanticErrorAnalyzer:
 
         # Recommendations
         print("\nRECOMMENDATIONS:")
-        missing_arg_count = stats['by_error_type'].get('missing_argument', 0)
-        unexpected_arg_count = stats['by_error_type'].get('unexpected_argument', 0)
+        missing_arg_count = stats["by_error_type"].get("missing_argument", 0)
+        unexpected_arg_count = stats["by_error_type"].get("unexpected_argument", 0)
 
         if missing_arg_count > 0:
             print(f"\n1. Fix {missing_arg_count} missing argument errors:")

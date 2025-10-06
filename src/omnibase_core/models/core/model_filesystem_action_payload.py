@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -38,7 +38,7 @@ class ModelFilesystemActionPayload(ModelActionPayloadBase):
         if v.name not in ["scan", "watch", "sync"]:
             msg = f"Invalid filesystem action: {v.name}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v

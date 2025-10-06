@@ -1,10 +1,8 @@
 import uuid
 from typing import Any, Callable, Dict
 
-from omnibase_core.errors.error_codes import ModelOnexError
-
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -45,7 +43,8 @@ from uuid import UUID
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.models.core.model_log_context import ModelLogContext
@@ -324,7 +323,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             msg = "Event bus not available for subscription"
-            raise ModelOnexError(msg, ModelCoreErrorCode.SERVICE_UNAVAILABLE)
+            raise ModelOnexError(msg, EnumCoreErrorCode.SERVICE_UNAVAILABLE)
 
         # Subscribe to tool invocation events
         event_bus.subscribe(self.handle_tool_invocation, TOOL_INVOCATION)
@@ -421,10 +420,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             if asyncio.iscoroutinefunction(run_method):
                 return await run_method(input_state)
             # Run synchronous method in executor to avoid blocking
-            return await asyncio.get_event_loop().run_in_executor(
-            )
+            return await asyncio.get_event_loop().run_in_executor()
         msg = "Node does not have a 'run' method for tool execution"
-        raise ModelOnexError(msg, ModelCoreErrorCode.METHOD_NOT_IMPLEMENTED)
+        raise ModelOnexError(msg, EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED)
 
     def _serialize_result(self, result: Any) -> dict[str, Any]:
         """Serialize the execution result to a dict[str, Any]ionary."""

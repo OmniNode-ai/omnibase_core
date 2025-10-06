@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -112,7 +112,7 @@ class ModelNodeAction(ModelActionBase):
         if not isinstance(v, ModelNodeActionType):
             msg = f"action_type must be a ModelNodeActionType, got {type(v)}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -130,7 +130,7 @@ class ModelNodeAction(ModelActionBase):
         if action_type.category != LIFECYCLE:
             msg = f"Action type {action_type.name} is not a lifecycle action"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return cls(
@@ -155,7 +155,7 @@ class ModelNodeAction(ModelActionBase):
         if action_type.category != VALIDATION:
             msg = f"Action type {action_type.name} is not a validation action"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return cls(

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_coordination_mode import EnumCoordinationMode
 from omnibase_core.enums.enum_hub_capability import EnumHubCapability
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_hub_configuration import ModelHubConfiguration
 from omnibase_core.models.core.model_hub_service_configuration import (
@@ -87,7 +87,7 @@ class ModelUnifiedHubContract(BaseModel):
             if not hub_config and not service_config:
                 msg = "Contract must have either hub_configuration or service_configuration"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -233,6 +233,6 @@ class ModelUnifiedHubContract(BaseModel):
             return load_and_validate_yaml_model(contract_path, cls)
         except Exception as e:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to load contract from {contract_path}: {e}",
             ) from e

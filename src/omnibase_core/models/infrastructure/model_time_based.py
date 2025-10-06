@@ -5,7 +5,7 @@ from typing import Generic, TypeVar
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Time-Based Model.
@@ -22,7 +22,8 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 T = TypeVar("T", int, float)
 
@@ -77,7 +78,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             if v >= main_value:
                 msg = "Warning threshold must be less than main value"
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg
+                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return v
 
@@ -87,7 +88,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
-            raise ModelOnexError(code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         return v
 
     def model_post_init(self, __context: object) -> None:
@@ -392,7 +393,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -405,7 +406,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

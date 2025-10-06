@@ -2,7 +2,7 @@ from typing import Generic, List, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -155,7 +155,7 @@ class ModelMissingTool(BaseModel):
         if not v.strip():
             msg = "Tool name cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -165,7 +165,7 @@ class ModelMissingTool(BaseModel):
             if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):
                 msg = "Tool name should be a valid identifier-like string"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -178,7 +178,7 @@ class ModelMissingTool(BaseModel):
         if not v.strip():
             msg = "Expected type cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -199,7 +199,7 @@ class ModelMissingTool(BaseModel):
         except ValueError:
             msg = "first_detected must be a valid ISO timestamp"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

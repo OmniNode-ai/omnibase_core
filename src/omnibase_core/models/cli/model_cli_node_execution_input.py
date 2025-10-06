@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Model for CLI node execution input parameters.
@@ -22,7 +22,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
 from omnibase_core.enums.enum_cli_action import EnumCliAction
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_cli_advanced_params import ModelCliAdvancedParams
 
@@ -149,7 +150,7 @@ class ModelCliNodeExecutionInput(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

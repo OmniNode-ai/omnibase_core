@@ -4,7 +4,8 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Strongly-typed event metadata structure.
@@ -21,7 +22,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 
@@ -113,7 +114,7 @@ class ModelEventMetadata(BaseModel):
                     return str(value)
         raise ModelOnexError(
             message=f"{self.__class__.__name__} must have a valid ID field (type_id, id, uuid, identifier, etc.). Cannot generate stable ID without UUID field.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(self) -> dict[str, Any]:

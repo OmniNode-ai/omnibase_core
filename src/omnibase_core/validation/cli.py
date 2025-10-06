@@ -4,7 +4,7 @@ from typing import Callable, Dict, TypedDict, Union
 
 from pydantic import model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Unified CLI interface for all omnibase_core validation tools.
@@ -26,7 +26,8 @@ from collections.abc import Callable as CallableABC
 from pathlib import Path
 from typing import Any, Callable, TypedDict
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
@@ -72,7 +73,7 @@ class ModelValidationSuite:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown validation type: {validation_type}",
             )
 

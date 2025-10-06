@@ -5,7 +5,8 @@ from uuid import UUID
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Strongly-typed computation input data model.
@@ -21,7 +22,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.operations.model_binary_computation_input import (
@@ -97,7 +98,7 @@ class ModelComputationInputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="NUMERIC computation_type requires ModelNumericComputationInput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if computation_type == EnumComputationType.TEXT and not isinstance(
             v,
@@ -105,7 +106,7 @@ class ModelComputationInputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="TEXT computation_type requires ModelTextComputationInput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if computation_type == EnumComputationType.BINARY and not isinstance(
             v,
@@ -113,7 +114,7 @@ class ModelComputationInputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="BINARY computation_type requires ModelBinaryComputationInput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if computation_type == EnumComputationType.STRUCTURED and not isinstance(
             v,
@@ -121,7 +122,7 @@ class ModelComputationInputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="STRUCTURED computation_type requires ModelStructuredComputationInput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v

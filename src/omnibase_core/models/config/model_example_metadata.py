@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Example metadata model for examples collection.
@@ -18,7 +18,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_difficulty_level import EnumDifficultyLevel
 from omnibase_core.enums.enum_example_category import EnumExampleCategory
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelExampleMetadata(BaseModel):
@@ -72,7 +73,7 @@ class ModelExampleMetadata(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -88,6 +89,6 @@ class ModelExampleMetadata(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

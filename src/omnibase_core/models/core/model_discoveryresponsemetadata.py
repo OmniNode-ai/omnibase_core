@@ -1,7 +1,8 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
-from uuid import UUID
+
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 

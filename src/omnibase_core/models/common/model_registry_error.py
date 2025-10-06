@@ -11,7 +11,8 @@ from typing import Any
 from pydantic import Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.errors.error_codes import ModelOnexError, ModelRegistryErrorCode
+from omnibase_core.errors.error_codes import EnumRegistryErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelRegistryError(ModelOnexError):
@@ -20,7 +21,7 @@ class ModelRegistryError(ModelOnexError):
     Use this for all structured registry error reporting.
     """
 
-    error_code: ModelRegistryErrorCode = Field(
+    error_code: EnumRegistryErrorCode = Field(
         default=...,
         description="Canonical registry error code.",
     )
@@ -28,7 +29,7 @@ class ModelRegistryError(ModelOnexError):
     def __init__(
         self,
         message: str,
-        error_code: ModelRegistryErrorCode,
+        error_code: EnumRegistryErrorCode,
         status: EnumOnexStatus = EnumOnexStatus.ERROR,
         **context: Any,
     ) -> None:

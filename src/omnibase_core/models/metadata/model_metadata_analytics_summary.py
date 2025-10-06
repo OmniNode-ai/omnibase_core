@@ -5,7 +5,7 @@ from typing import Dict, TypedDict
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Metadata Analytics Summary Model (Composed).
@@ -20,7 +20,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,
 )
@@ -415,7 +416,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -431,7 +432,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

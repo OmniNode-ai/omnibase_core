@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -116,13 +116,13 @@ class ModelAgentInstance(BaseModel):
         if not task_type.replace("_", "").isalnum():
             msg = "[Any]type must be alphanumeric with underscores only"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if task_type != task_type.lower():
             msg = "[Any]type must be lowercase"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

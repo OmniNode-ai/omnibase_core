@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Custom connection properties model for connection configuration.
@@ -20,7 +20,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cloud_service_properties import ModelCloudServiceProperties
@@ -554,7 +555,7 @@ class ModelCustomConnectionProperties(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -566,7 +567,7 @@ class ModelCustomConnectionProperties(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:

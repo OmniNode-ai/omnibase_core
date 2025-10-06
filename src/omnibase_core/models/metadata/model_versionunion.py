@@ -4,9 +4,9 @@ from typing import Any, Dict, TypedDict, Union
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_version_union_type import EnumVersionUnionType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
-
 from omnibase_core.models.metadata.model_versionunion import ModelTypedDictVersionDict
 
 
@@ -36,34 +36,34 @@ class ModelVersionUnion(BaseModel):
         if self.version_type == EnumVersionUnionType.SEMANTIC_VERSION:
             if self.semantic_version is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="semantic_version must be set when version_type is 'semantic_version'",
                 )
             if self.version_dict is not None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="version_dict must be None when version_type is 'semantic_version'",
                 )
         elif self.version_type == EnumVersionUnionType.VERSION_DICT:
             if self.version_dict is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="version_dict must be set when version_type is 'version_dict'",
                 )
             if self.semantic_version is not None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="semantic_version must be None when version_type is 'version_dict'",
                 )
         elif self.version_type == EnumVersionUnionType.NONE_VERSION:
             if self.semantic_version is not None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="semantic_version must be None when version_type is 'none_version'",
                 )
             if self.version_dict is not None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="version_dict must be None when version_type is 'none_version'",
                 )
 
@@ -118,21 +118,21 @@ class ModelVersionUnion(BaseModel):
         if self.version_type == EnumVersionUnionType.SEMANTIC_VERSION:
             if self.semantic_version is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: semantic_version is None but version_type is SEMANTIC_VERSION",
                 )
             return self.semantic_version
         if self.version_type == EnumVersionUnionType.VERSION_DICT:
             if self.version_dict is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: version_dict is None but version_type is VERSION_DICT",
                 )
             return self.version_dict
         if self.version_type == EnumVersionUnionType.NONE_VERSION:
             return None
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown version_type: {self.version_type}",
         )
 
@@ -153,19 +153,19 @@ class ModelVersionUnion(BaseModel):
         if self.version_type == EnumVersionUnionType.SEMANTIC_VERSION:
             if self.semantic_version is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="semantic_version is None",
                 )
             return self.semantic_version
         if self.version_type == EnumVersionUnionType.VERSION_DICT:
             if self.version_dict is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="version_dict is None",
                 )
             return ModelSemVer(**self.version_dict)
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message="Cannot convert None version to ModelSemVer",
         )
 
@@ -203,7 +203,7 @@ class ModelVersionUnion(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Setting metadata failed: {e}",
             ) from e
 
@@ -223,6 +223,6 @@ class ModelVersionUnion(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e

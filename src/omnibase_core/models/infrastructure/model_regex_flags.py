@@ -4,7 +4,7 @@ from typing import Union
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Regex Flags Model.
@@ -20,7 +20,8 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_regex_flag_type import EnumRegexFlagType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelRegexFlags(BaseModel):
@@ -53,7 +54,7 @@ class ModelRegexFlags(BaseModel):
         if self.flag_type in expected_values:
             if self.flag_value != expected_values[self.flag_type]:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Flag value {self.flag_value} doesn't match type {self.flag_type}",
                 )
         elif self.flag_type == EnumRegexFlagType.COMBINED:
@@ -61,7 +62,7 @@ class ModelRegexFlags(BaseModel):
             valid_flags = {re.DOTALL, re.IGNORECASE, re.MULTILINE}
             if not isinstance(self.flag_value, int) or self.flag_value <= 0:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid combined flag value: {self.flag_value}",
                 )
 

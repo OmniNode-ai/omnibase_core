@@ -60,8 +60,7 @@ class MixinDebugDiscoveryLogging:
 
             # Replace with debug version
             self._handle_introspection_request = (
-                lambda envelope_or_event: self._debug_handle_introspection_request(
-                )
+                lambda envelope_or_event: self._debug_handle_introspection_request()
             )
 
             emit_log_event(

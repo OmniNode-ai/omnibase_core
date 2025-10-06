@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Dynamic CLI Action Model.
@@ -19,7 +19,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -87,7 +88,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                         f"Must be one of {valid_values}"
                     )
                     raise ModelOnexError(
-                        code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=message,
                         details=ModelErrorContext.with_context(
                             {
@@ -103,7 +104,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
             # Invalid type
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Category must be None or EnumActionCategory, got {type(v)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -133,7 +134,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 "numbers, and underscores"
             )
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=message,
                 details=ModelErrorContext.with_context(
                     {
@@ -300,6 +301,6 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

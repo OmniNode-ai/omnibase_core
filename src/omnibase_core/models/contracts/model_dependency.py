@@ -2,7 +2,7 @@ from typing import Dict
 
 from pydantic import Field, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -24,7 +24,8 @@ from typing import Any, ClassVar, Dict
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -39,7 +40,9 @@ class ModelDependency(BaseModel):
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
-    name: str = Field(default=..., description="Dependency name (e.g., 'ProtocolEventBus')",
+    name: str = Field(
+        default=...,
+        description="Dependency name (e.g., 'ProtocolEventBus')",
         min_length=1,
     )
 
@@ -96,7 +99,7 @@ class ModelDependency(BaseModel):
 
             raise ModelOnexError(
                 message="Dependency name cannot be empty or whitespace-only",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "provided_value": ModelSchemaValue.from_value(str(v)),
@@ -113,7 +116,7 @@ class ModelDependency(BaseModel):
         if len(v) < min_name_length:
             raise ModelOnexError(
                 message=f"Dependency name too short: {v}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "name": ModelSchemaValue.from_value(v),
@@ -225,7 +228,7 @@ class ModelDependency(BaseModel):
         if security_violations:
             raise ModelOnexError(
                 message=f"Security violations in module path '{module_path[:50] if len(module_path) > 50 else module_path}': {', '.join(security_violations)}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "module_path": ModelSchemaValue.from_value(module_path[:100]),
@@ -253,7 +256,7 @@ class ModelDependency(BaseModel):
         if not cls._MODULE_PATTERN.match(module_path):
             raise ModelOnexError(
                 message=f"Invalid module path format: {module_path}. Must be valid Python module path.",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "module_path": ModelSchemaValue.from_value(module_path),

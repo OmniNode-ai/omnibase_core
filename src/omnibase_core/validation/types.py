@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Generic, Optional, TypeVar, Union
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Type validation tools for ONEX compliance.
@@ -21,7 +21,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_union_pattern import ModelUnionPattern
 from .union_usage_checker import UnionUsageChecker
@@ -54,7 +55,7 @@ def validate_union_usage_file(
     except Exception as e:
         # Re-raise with context for other errors
         raise ModelOnexError(
-            code=ModelCoreErrorCode.OPERATION_FAILED,
+            code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Failed to validate union usage in {file_path}: {e}",
             cause=e,
         ) from e

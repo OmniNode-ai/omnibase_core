@@ -16,7 +16,7 @@ from omnibase_core.enums.enum_onex_security import (
     EnumDataClassification,
     EnumSecurityProfile,
 )
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_audit_event import ModelOnexAuditEvent
 from omnibase_core.models.core.model_onex_security_context_config import ModelConfig
@@ -132,7 +132,7 @@ class ModelOnexSecurityContext(BaseModel):
         if v is not None and v <= datetime.utcnow():
             msg = "Token expiry must be in the future"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -144,7 +144,7 @@ class ModelOnexSecurityContext(BaseModel):
         if v is not None and v > datetime.utcnow():
             msg = "Authentication timestamp cannot be in the future"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -161,7 +161,7 @@ class ModelOnexSecurityContext(BaseModel):
             if not re.match(ip_pattern, v):
                 msg = "Invalid IP address format"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         return v

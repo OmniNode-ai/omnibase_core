@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -26,7 +26,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -182,7 +183,7 @@ class ModelFSMSubcontract(BaseModel):
                 msg = f"Initial state '{info.data['initial_state']}' not found in states list[Any]"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -209,7 +210,7 @@ class ModelFSMSubcontract(BaseModel):
                     msg = f"State '{state_name}' not found in states list[Any]"
                     raise ModelOnexError(
                         message=msg,
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -240,7 +241,7 @@ class ModelFSMSubcontract(BaseModel):
                     msg = f"Transition from_state '{transition.from_state}' not found in states list[Any]"
                     raise ModelOnexError(
                         message=msg,
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -254,7 +255,7 @@ class ModelFSMSubcontract(BaseModel):
                     msg = f"Transition to_state '{transition.to_state}' not found in states list[Any]"
                     raise ModelOnexError(
                         message=msg,
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),

@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Effect Contract Model - ONEX Standards Compliant.
@@ -31,7 +31,8 @@ StructuredDataList = list[StructuredData]
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_backup_config import ModelBackupConfig
@@ -95,7 +96,7 @@ class ModelContractEffect(ModelContractBase):
             return v
         raise ModelOnexError(
             message=f"Invalid node_type: {v}",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             details=ModelErrorContext.with_context(
                 {
                     "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -299,7 +300,7 @@ class ModelContractEffect(ModelContractBase):
             msg = "Effect node must define at least one I/O operation"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -319,7 +320,7 @@ class ModelContractEffect(ModelContractBase):
             msg = "Transaction management requires at least one atomic operation"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -339,7 +340,7 @@ class ModelContractEffect(ModelContractBase):
             msg = "Circuit breaker threshold cannot exceed max retry attempts"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -361,7 +362,7 @@ class ModelContractEffect(ModelContractBase):
                 msg = "External services with authentication must specify endpoint_url"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -382,7 +383,7 @@ class ModelContractEffect(ModelContractBase):
                     msg = f"tool_specification must include '{field}'"
                     raise ModelOnexError(
                         message=msg,
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -461,7 +462,7 @@ class ModelContractEffect(ModelContractBase):
         except ValidationError as e:
             raise ModelOnexError(
                 message=f"Contract validation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -474,7 +475,7 @@ class ModelContractEffect(ModelContractBase):
         except yaml.YAMLError as e:
             raise ModelOnexError(
                 message=f"YAML parsing error: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -487,7 +488,7 @@ class ModelContractEffect(ModelContractBase):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),

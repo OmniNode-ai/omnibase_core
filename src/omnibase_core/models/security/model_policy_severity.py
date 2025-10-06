@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -64,7 +64,7 @@ class ModelPolicySeverity(BaseModel):
         valid_levels = {"info", "warning", "error", "critical"}
         if v not in valid_levels:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid severity level: {v}. Must be one of: {valid_levels}",
             )
         return v

@@ -9,7 +9,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
@@ -94,7 +95,7 @@ class ModelComputationOutputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="NUMERIC computation_type requires ModelNumericComputationOutput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if computation_type == "text" and not isinstance(
             v,
@@ -102,7 +103,7 @@ class ModelComputationOutputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="TEXT computation_type requires ModelTextComputationOutput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if computation_type == "binary" and not isinstance(
             v,
@@ -110,7 +111,7 @@ class ModelComputationOutputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="BINARY computation_type requires ModelBinaryComputationOutput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if computation_type == "structured" and not isinstance(
             v,
@@ -118,7 +119,7 @@ class ModelComputationOutputData(BaseModel):
         ):
             raise ModelOnexError(
                 message="STRUCTURED computation_type requires ModelStructuredComputationOutput",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -161,7 +162,7 @@ class ModelComputationOutputData(BaseModel):
                     return str(value)
         raise ModelOnexError(
             message=f"{self.__class__.__name__} must have a valid ID field (type_id, id, uuid, identifier, etc.). Cannot generate stable ID without UUID field.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(self) -> dict[str, object]:

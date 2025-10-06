@@ -4,7 +4,8 @@ from typing import Generic
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Generic Custom Properties Model.
@@ -21,7 +22,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -147,7 +148,7 @@ class ModelCustomProperties(BaseModel):
         else:
             # Raise error for unsupported types
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unsupported custom value type: {type(value)}",
                 details=ModelErrorContext.with_context(
                     {

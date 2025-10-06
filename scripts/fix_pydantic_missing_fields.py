@@ -127,7 +127,8 @@ class PydanticModelAnalyzer:
         # Determine if optional (has None in union or has default)
         is_optional = (
             "None" in type_annotation
-            or "|" in type_annotation and "None" in type_annotation
+            or "|" in type_annotation
+            and "None" in type_annotation
             or "Optional" in type_annotation
         )
 
@@ -171,7 +172,7 @@ class PydanticFieldFixer:
                 return "None"
             if field_info.default_value.startswith("Field("):
                 # Extract default from Field()
-                match = re.search(r'default=([^,)]+)', field_info.default_value)
+                match = re.search(r"default=([^,)]+)", field_info.default_value)
                 if match:
                     return match.group(1)
                 return "None"  # Field() without explicit default
@@ -199,7 +200,9 @@ class PydanticFieldFixer:
         else:
             return "None"  # Conservative default
 
-    def fix_file(self, file_path: Path, errors: list[dict[str, Any]]) -> list[FixResult]:
+    def fix_file(
+        self, file_path: Path, errors: list[dict[str, Any]]
+    ) -> list[FixResult]:
         """Fix Pydantic errors in a single file."""
         results = []
 
@@ -221,7 +224,9 @@ class PydanticFieldFixer:
             # Process each line with errors
             modifications = []
             for line_num, line_errors in sorted(errors_by_line.items()):
-                result = self._fix_line(lines[line_num], line_errors, file_path, line_num + 1)
+                result = self._fix_line(
+                    lines[line_num], line_errors, file_path, line_num + 1
+                )
                 if result:
                     modifications.append((line_num, result))
                     results.append(result)
@@ -338,7 +343,9 @@ def load_error_report(report_path: Path) -> dict[str, Any]:
     return json.loads(report_path.read_text())
 
 
-def group_errors_by_file(errors: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+def group_errors_by_file(
+    errors: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
     """Group errors by file path."""
     by_file: dict[str, list[dict[str, Any]]] = {}
     for error in errors:

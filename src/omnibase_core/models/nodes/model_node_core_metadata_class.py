@@ -115,11 +115,11 @@ class ModelNodeCoreMetadata(BaseModel):
                 if value is not None:
                     return str(value)
 
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

@@ -8,17 +8,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from hashlib import md5
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-
-from typing import TYPE_CHECKING
 
 from .model_function_deprecation_info import (
     ModelDeprecationSummary,
@@ -345,7 +344,7 @@ class ModelFunctionNodeMetadata(BaseModel):
                 if value is not None:
                     return str(value)
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

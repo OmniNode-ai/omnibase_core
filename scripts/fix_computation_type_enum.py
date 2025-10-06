@@ -13,14 +13,14 @@ def fix_numeric_computation():
 
     # Replace TYPE_CHECKING import with direct import
     content = content.replace(
-        'from typing import TYPE_CHECKING, Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)\n\nif TYPE_CHECKING:\n    from omnibase_core.enums.enum_computation_type import EnumComputationType',
-        'from typing import Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.enums.enum_computation_type import EnumComputationType\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)',
+        "from typing import TYPE_CHECKING, Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)\n\nif TYPE_CHECKING:\n    from omnibase_core.enums.enum_computation_type import EnumComputationType",
+        "from typing import Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.enums.enum_computation_type import EnumComputationType\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)",
     )
 
     # Replace string default with enum
     content = content.replace(
         '    computation_type: "EnumComputationType" = Field(\n        default="numeric",',
-        '    computation_type: EnumComputationType = Field(\n        default=EnumComputationType.NUMERIC,',
+        "    computation_type: EnumComputationType = Field(\n        default=EnumComputationType.NUMERIC,",
     )
 
     file_path.write_text(content)
@@ -36,14 +36,14 @@ def fix_structured_computation():
 
     # Replace TYPE_CHECKING import with direct import
     content = content.replace(
-        'from typing import TYPE_CHECKING, Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)\n\nif TYPE_CHECKING:\n    from omnibase_core.enums.enum_computation_type import EnumComputationType',
-        'from typing import Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.enums.enum_computation_type import EnumComputationType\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)',
+        "from typing import TYPE_CHECKING, Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)\n\nif TYPE_CHECKING:\n    from omnibase_core.enums.enum_computation_type import EnumComputationType",
+        "from typing import Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.enums.enum_computation_type import EnumComputationType\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)",
     )
 
     # Replace string default with enum
     content = content.replace(
         '    computation_type: "EnumComputationType" = Field(\n        default="structured",',
-        '    computation_type: EnumComputationType = Field(\n        default=EnumComputationType.STRUCTURED,',
+        "    computation_type: EnumComputationType = Field(\n        default=EnumComputationType.STRUCTURED,",
     )
 
     file_path.write_text(content)
@@ -59,14 +59,14 @@ def fix_binary_computation():
 
     # Replace TYPE_CHECKING import with direct import
     content = content.replace(
-        'from typing import TYPE_CHECKING, Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)\n\nif TYPE_CHECKING:\n    from omnibase_core.enums.enum_computation_type import EnumComputationType',
-        'from typing import Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.enums.enum_computation_type import EnumComputationType\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)',
+        "from typing import TYPE_CHECKING, Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)\n\nif TYPE_CHECKING:\n    from omnibase_core.enums.enum_computation_type import EnumComputationType",
+        "from typing import Any\n\nfrom pydantic import Field\n\nfrom omnibase_core.enums.enum_computation_type import EnumComputationType\nfrom omnibase_core.models.operations.model_computation_output_base import (\n    ModelComputationOutputBase,\n)",
     )
 
     # Replace string default with enum
     content = content.replace(
         '    computation_type: "EnumComputationType" = Field(\n        default="binary",',
-        '    computation_type: EnumComputationType = Field(\n        default=EnumComputationType.BINARY,',
+        "    computation_type: EnumComputationType = Field(\n        default=EnumComputationType.BINARY,",
     )
 
     file_path.write_text(content)

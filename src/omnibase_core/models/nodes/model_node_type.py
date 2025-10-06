@@ -5,7 +5,7 @@ from typing import Dict, Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Node Type Model
@@ -23,7 +23,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.constraints import (
     Identifiable,
     ProtocolMetadataProvider,
@@ -535,7 +536,7 @@ class ModelNodeType(BaseModel):
         except ValueError:
             # If name is not in enum, we can't create it - this maintains type safety
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown node type: {name}. Must be one of {list[Any](EnumTypeName)}",
             )
 
@@ -698,7 +699,7 @@ class ModelNodeType(BaseModel):
                 if value is not None:
                     return str(value)
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

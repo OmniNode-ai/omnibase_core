@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any, Generic, List
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
@@ -76,7 +77,7 @@ class MixinNodeIdFromContract:
             raise ModelOnexError(
                 f"Module '{self.__class__.__module__}' not in allowed namespaces: {allowed_prefixes}. "
                 f"Set OMNIBASE_ALLOWED_NAMESPACES environment variable or override _allowed_namespaces class attribute.",
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         module = importlib.import_module(self.__class__.__module__)
@@ -93,7 +94,7 @@ class MixinNodeIdFromContract:
                 contract_path = node_dir / "contract.yaml"
         if not contract_path.exists():
             msg = f"No contract file found at {contract_path}"
-            raise ModelOnexError(msg, ModelCoreErrorCode.FILE_NOT_FOUND)
+            raise ModelOnexError(msg, EnumCoreErrorCode.FILE_NOT_FOUND)
         # Load and validate YAML using Pydantic model
         contract_model = load_and_validate_yaml_model(contract_path, ModelGenericYaml)
         contract = contract_model.model_dump()

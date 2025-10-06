@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_node_service_config import (
     ModelNodeServiceConfig,
@@ -145,7 +145,7 @@ class ModelNodeServiceConfig(BaseModel):
         if not v.replace("_", "").replace("-", "").isalnum():
             msg = "Node name must contain only alphanumeric characters, hyphens, and underscores"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -159,7 +159,7 @@ class ModelNodeServiceConfig(BaseModel):
         if network_port and metrics_port and network_port == metrics_port:
             msg = "Network port and metrics port cannot be the same"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

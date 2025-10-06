@@ -3,7 +3,7 @@ from typing import Any, Generic
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -91,7 +91,7 @@ class ModelHealthCheck(BaseModel):
             if check_type == EnumHealthCheckType.COMMAND and not v:
                 msg = "command is required when check_type is COMMAND"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         return v
@@ -109,7 +109,7 @@ class ModelHealthCheck(BaseModel):
                 if not v and not info.data.get("endpoint_path"):
                     msg = "Either full_url or endpoint_path required for HTTP checks"
                     raise ModelOnexError(
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=msg,
                     )
         return v

@@ -5,7 +5,8 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Strongly-typed operation payload structure.
@@ -22,7 +23,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.operations.model_compute_operation_data import (
@@ -117,7 +118,7 @@ class ModelOperationPayload(BaseModel):
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(self) -> dict[str, Any]:

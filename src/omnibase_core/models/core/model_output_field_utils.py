@@ -11,7 +11,7 @@ from omnibase_core.constants import (
     INTEGRATION_KEY,
     PROCESSED_KEY,
 )
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_output_field import ModelOnexField
 
@@ -44,7 +44,7 @@ def make_output_field(field_value: Any, output_field_model_cls: type[T]) -> T:
             f"Cannot convert {field_value!r} to {output_field_model_cls.__name__}: {e}"
         )
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 

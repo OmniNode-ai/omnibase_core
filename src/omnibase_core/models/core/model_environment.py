@@ -29,8 +29,10 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
 # Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_environment_properties import (
     ModelEnvironmentProperties,
 )
@@ -54,13 +56,17 @@ class ModelEnvironment(BaseModel):
     - Validatable: Comprehensive validation and verification
     """
 
-    name: str = Field(default=..., description="Environment name",
+    name: str = Field(
+        default=...,
+        description="Environment name",
         pattern="^[a-z][a-z0-9-]*$",
         min_length=1,
         max_length=50,
     )
 
-    display_name: str = Field(default=..., description="Human-readable environment name",
+    display_name: str = Field(
+        default=...,
+        description="Human-readable environment name",
         min_length=1,
         max_length=100,
     )
@@ -181,7 +187,7 @@ class ModelEnvironment(BaseModel):
         """Add an environment variable."""
         if not key or not isinstance(key, str):
             msg = "Environment variable key must be a non-empty string"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
         self.environment_variables[key] = value
 
@@ -189,7 +195,7 @@ class ModelEnvironment(BaseModel):
         """Add a custom property."""
         if not key or not isinstance(key, str):
             msg = "Custom property key must be a non-empty string"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
         # Use the type-safe method from ModelEnvironmentProperties
         if isinstance(value, str | int | bool | float | list | datetime):

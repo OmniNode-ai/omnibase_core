@@ -1,6 +1,6 @@
 from typing import Union
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -115,6 +115,6 @@ def create_specific_action_payload(
 
     msg = f"Unknown action type: {action_type.name}"
     raise ModelOnexError(
-        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         message=msg,
     )

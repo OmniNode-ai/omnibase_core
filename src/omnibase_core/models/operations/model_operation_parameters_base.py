@@ -4,7 +4,8 @@ from typing import Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Strongly-typed operation parameters model.
@@ -20,7 +21,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParameterType
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -107,12 +108,12 @@ class ModelOperationParameterValue(BaseModel):
         ):
             raise ModelOnexError(
                 message=f"Value required for parameter type {parameter_type}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if expected_field != field_name and v is not None:
             raise ModelOnexError(
                 message=f"Unexpected value in {field_name} for parameter type {parameter_type}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -207,7 +208,7 @@ class ModelOperationParameterValue(BaseModel):
         # Exhaustive case handling - this should never be reached
         raise ModelOnexError(
             message=f"Unknown parameter type: {self.parameter_type}",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
 

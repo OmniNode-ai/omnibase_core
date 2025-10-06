@@ -2,7 +2,7 @@ from typing import Any, List
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Model for multi-document generation result.

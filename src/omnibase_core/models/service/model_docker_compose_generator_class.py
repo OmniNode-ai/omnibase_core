@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     )
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Import with fallback handling
 try:

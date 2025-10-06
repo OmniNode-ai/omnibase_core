@@ -1,7 +1,7 @@
 import uuid
 from typing import Callable, Dict, Generic, List
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict
 from uuid import UUID, uuid4
 
-# Removed: EnumCoreErrorCode doesn't exist, use ModelCoreErrorCode
+# Removed: EnumCoreErrorCode doesn't exist, use EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
@@ -40,7 +40,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumWorkflowState,
 )
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.load_balancer import LoadBalancer
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -196,7 +196,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeOrchestrator: {e!s}",
                 details={
                     "contract_model_type": "ModelContractOrchestrator",
@@ -238,14 +238,14 @@ class NodeOrchestrator(NodeCoreBase):
 
             # Fallback: this shouldn't happen but provide error
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for orchestrator node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -356,7 +356,7 @@ class NodeOrchestrator(NodeCoreBase):
                     # Check for cycles
                     if dependency_graph.has_cycles():
                         raise ModelOnexError(
-                            code=ModelCoreErrorCode.VALIDATION_ERROR,
+                            code=EnumCoreErrorCode.VALIDATION_ERROR,
                             message="Workflow contains dependency cycles",
                             context={
                                 "node_id": self.node_id,
@@ -434,7 +434,7 @@ class NodeOrchestrator(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow orchestration failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -587,14 +587,14 @@ class NodeOrchestrator(NodeCoreBase):
         """
         if condition_name in self.condition_functions:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Condition function already registered: {condition_name}",
                 context={"node_id": self.node_id, "condition_name": condition_name},
             )
 
         if not callable(function):
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Condition function must be callable: {condition_name}",
                 context={"node_id": self.node_id, "condition_name": condition_name},
             )
@@ -680,7 +680,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not input_data.workflow_id:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Workflow ID cannot be empty",
                 context={
                     "node_id": self.node_id,
@@ -690,7 +690,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not input_data.steps:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Workflow must have at least one step",
                 context={
                     "node_id": self.node_id,
@@ -700,7 +700,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not isinstance(input_data.execution_mode, EnumExecutionMode):
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Execution mode must be valid EnumExecutionMode enum",
                 context={
                     "node_id": self.node_id,

@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Environment Variables Model
@@ -19,7 +19,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelEnvironmentVariables(BaseModel):
@@ -57,12 +58,12 @@ class ModelEnvironmentVariables(BaseModel):
             if not name.isidentifier() and not name.replace("_", "").isalnum():
                 msg = f"Invalid environment variable name: {name}"
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg
+                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
             if name.startswith("__"):
                 msg = f"Environment variable name cannot start with double underscore: {name}"
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg
+                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return v
 

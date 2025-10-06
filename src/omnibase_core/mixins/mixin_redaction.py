@@ -154,13 +154,11 @@ class MixinSensitiveFieldRedaction:
             if self.is_sensitive_field(field_name) or field_name in additional_fields:
                 # Only redact non-None values
                 if field_value is not None:
-                    redacted_data[field_name] = self.get_redaction_value(
-                    )
+                    redacted_data[field_name] = self.get_redaction_value()
 
             # Recursively redact nested dictionaries
             elif isinstance(field_value, dict):
-                redacted_data[field_name] = self.redact_sensitive_fields(
-                )
+                redacted_data[field_name] = self.redact_sensitive_fields()
 
             # Redact items in lists that are dictionaries
             elif isinstance(field_value, list):
@@ -168,8 +166,7 @@ class MixinSensitiveFieldRedaction:
                 for item in field_value:
                     if isinstance(item, dict):
                         redacted_list.append(
-                            self.redact_sensitive_fields(
-                            ),
+                            self.redact_sensitive_fields(),
                         )
                     else:
                         redacted_list.append(item)

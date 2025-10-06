@@ -5,7 +5,8 @@ from typing import Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Strongly-typed effect parameter value model.
@@ -22,7 +23,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_effect_parameter_type import EnumEffectParameterType
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 
@@ -97,7 +98,7 @@ class ModelEffectParameterValue(BaseModel):
         if required_field == field_name and v is None:
             raise ModelOnexError(
                 message=f"Field {field_name} is required for parameter type {parameter_type}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -123,7 +124,7 @@ class ModelEffectParameterValue(BaseModel):
         ):
             raise ModelOnexError(
                 message=f"Field {field_name} is required for parameter type {parameter_type}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v

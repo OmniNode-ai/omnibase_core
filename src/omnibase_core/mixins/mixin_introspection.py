@@ -417,7 +417,9 @@ class MixinNodeIntrospection(ABC):
                 LogLevel.INFO,
                 response.model_dump_json(indent=2),
                 {
-                    "event_type": create_event_type_from_registry("INTROSPECTION_RESPONSE"),
+                    "event_type": create_event_type_from_registry(
+                        "INTROSPECTION_RESPONSE"
+                    ),
                     "node_id": cls.get_node_name(),
                     "event_bus": event_bus,
                     "correlation_id": correlation_id,
@@ -436,7 +438,9 @@ class MixinNodeIntrospection(ABC):
                 LogLevel.ERROR,
                 json.dumps(error_response, indent=2),
                 {
-                    "event_type": create_event_type_from_registry("INTROSPECTION_RESPONSE"),
+                    "event_type": create_event_type_from_registry(
+                        "INTROSPECTION_RESPONSE"
+                    ),
                     "node_id": cls.get_node_name(),
                     "event_bus": event_bus,
                     "correlation_id": correlation_id,

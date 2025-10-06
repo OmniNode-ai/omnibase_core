@@ -84,9 +84,7 @@ def ensure_imports(lines: List[str], imports_needed: Set[str]) -> List[str]:
             for imp in needed_typing:
                 if imp not in existing_line:
                     # Add to import list
-                    existing_line = existing_line.replace(
-                        "import ", f"import {imp}, "
-                    )
+                    existing_line = existing_line.replace("import ", f"import {imp}, ")
             lines[typing_import_idx] = existing_line
         else:
             # Add new typing import
@@ -107,9 +105,7 @@ def ensure_imports(lines: List[str], imports_needed: Set[str]) -> List[str]:
 
     # Handle pydantic_core imports
     if "ValidationInfo" in imports_needed:
-        has_pydantic_core = any(
-            "from pydantic_core import" in line for line in lines
-        )
+        has_pydantic_core = any("from pydantic_core import" in line for line in lines)
         if not has_pydantic_core:
             insert_pos = (typing_import_idx + 1) if typing_import_idx else 0
             lines.insert(insert_pos, "from pydantic_core import ValidationInfo")
@@ -124,7 +120,9 @@ def get_decorator_context(lines: List[str], idx: int, lookback: int = 5) -> str:
     return context
 
 
-def fix_function_at_line(lines: List[str], lineno: int, error_msg: str) -> Tuple[List[str], Set[str]]:
+def fix_function_at_line(
+    lines: List[str], lineno: int, error_msg: str
+) -> Tuple[List[str], Set[str]]:
     """Fix function at specific line number."""
     imports_needed: Set[str] = set()
     idx = lineno - 1
@@ -141,14 +139,13 @@ def fix_function_at_line(lines: List[str], lineno: int, error_msg: str) -> Tuple
             # Field serializers typically return str | None for masked values
             if "(self, value)" in line:
                 lines[idx] = line.replace(
-                    "(self, value)",
-                    "(self, value: Any) -> str | None"
+                    "(self, value)", "(self, value: Any) -> str | None"
                 )
             elif "(self, value," in line:
                 lines[idx] = re.sub(
-                    r'\(self, value,([^)]*)\)',
-                    r'(self, value: Any, \1) -> str | None',
-                    line
+                    r"\(self, value,([^)]*)\)",
+                    r"(self, value: Any, \1) -> str | None",
+                    line,
                 )
             imports_needed.add("Any")
             return lines, imports_needed
@@ -157,8 +154,7 @@ def fix_function_at_line(lines: List[str], lineno: int, error_msg: str) -> Tuple
     if "@validator" in decorator_context and "(cls, v, values)" in line:
         if "-> " not in line:
             lines[idx] = line.replace(
-                "(cls, v, values)",
-                "(cls, v: Any, values: dict[str, Any]) -> Any"
+                "(cls, v, values)", "(cls, v: Any, values: dict[str, Any]) -> Any"
             )
             imports_needed.add("Any")
             return lines, imports_needed
@@ -174,8 +170,7 @@ def fix_function_at_line(lines: List[str], lineno: int, error_msg: str) -> Tuple
                 # Fix the signature
                 if "(cls, v, info)" in line:
                     lines[idx] = line.replace(
-                        "(cls, v, info)",
-                        f"(cls, v: Any, info: ValidationInfo) -> Any"
+                        "(cls, v, info)", f"(cls, v: Any, info: ValidationInfo) -> Any"
                     )
                 imports_needed.add("Any")
                 imports_needed.add("ValidationInfo")
@@ -191,11 +186,7 @@ def fix_function_at_line(lines: List[str], lineno: int, error_msg: str) -> Tuple
     if "@model_validator" in decorator_context:
         if "(cls," in line and "-> " not in line:
             # Model validators return Self
-            lines[idx] = re.sub(
-                r'\(cls,([^)]*)\)',
-                r'(cls, \1) -> Self',
-                line
-            )
+            lines[idx] = re.sub(r"\(cls,([^)]*)\)", r"(cls, \1) -> Self", line)
             imports_needed.add("Self")
             return lines, imports_needed
 
@@ -252,13 +243,17 @@ def fix_function_at_line(lines: List[str], lineno: int, error_msg: str) -> Tuple
             return lines, imports_needed
 
     # Pattern 11: comparison operators
-    if any(f"def {op}" in line for op in ["__eq__", "__lt__", "__le__", "__gt__", "__ge__"]):
+    if any(
+        f"def {op}" in line for op in ["__eq__", "__lt__", "__le__", "__gt__", "__ge__"]
+    ):
         if "other)" in line and "-> bool" not in line:
             lines[idx] = line.replace("other)", "other: object) -> bool")
             return lines, imports_needed
 
     # Pattern 12: arithmetic operators
-    if any(f"def {op}" in line for op in ["__add__", "__sub__", "__mul__", "__truediv__"]):
+    if any(
+        f"def {op}" in line for op in ["__add__", "__sub__", "__mul__", "__truediv__"]
+    ):
         if "other)" in line and "-> " not in line:
             # Extract class name
             class_name = None
@@ -319,12 +314,17 @@ def main():
         "--dirs",
         nargs="+",
         help="Directories to process (relative to src/omnibase_core/)",
-        default=["models/configuration", "models/contracts", "models/discovery", "models/events"]
+        default=[
+            "models/configuration",
+            "models/contracts",
+            "models/discovery",
+            "models/events",
+        ],
     )
     parser.add_argument(
         "--backup",
         action="store_true",
-        help="Create .bak backups before modifying files"
+        help="Create .bak backups before modifying files",
     )
     args = parser.parse_args()
 

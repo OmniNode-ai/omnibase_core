@@ -88,10 +88,10 @@ def replace_exception_raising(content: str, exc_type: str, error_code: str) -> s
     # raise ValueError("message")
     pattern1 = rf'raise {exc_type}\(\s*"([^"]+)"\s*\)'
     replacement1 = (
-        r'raise ModelOnexError(\n'
-        r'            error_code=' + error_code + r',\n'
+        r"raise ModelOnexError(\n"
+        r"            error_code=" + error_code + r",\n"
         r'            message="\1",\n'
-        r'        )'
+        r"        )"
     )
     content = re.sub(pattern1, replacement1, content)
 
@@ -99,32 +99,32 @@ def replace_exception_raising(content: str, exc_type: str, error_code: str) -> s
     # raise ValueError(f"message {var}")
     pattern2 = rf'raise {exc_type}\(\s*f"([^"]+)"\s*\)'
     replacement2 = (
-        r'raise ModelOnexError(\n'
-        r'            error_code=' + error_code + r',\n'
+        r"raise ModelOnexError(\n"
+        r"            error_code=" + error_code + r",\n"
         r'            message=f"\1",\n'
-        r'        )'
+        r"        )"
     )
     content = re.sub(pattern2, replacement2, content)
 
     # Pattern 3: raise with variable message
     # raise ValueError(msg)
-    pattern3 = rf'raise {exc_type}\(\s*(\w+)\s*\)'
+    pattern3 = rf"raise {exc_type}\(\s*(\w+)\s*\)"
     replacement3 = (
-        r'raise ModelOnexError(\n'
-        r'            error_code=' + error_code + r',\n'
-        r'            message=\1,\n'
-        r'        )'
+        r"raise ModelOnexError(\n"
+        r"            error_code=" + error_code + r",\n"
+        r"            message=\1,\n"
+        r"        )"
     )
     content = re.sub(pattern3, replacement3, content)
 
     # Pattern 4: raise with "from e"
     # raise ValueError(msg) from e
-    pattern4 = rf'raise {exc_type}\(\s*([^)]+)\s*\)\s+from\s+(\w+)'
+    pattern4 = rf"raise {exc_type}\(\s*([^)]+)\s*\)\s+from\s+(\w+)"
     replacement4 = (
-        r'raise ModelOnexError(\n'
-        r'            error_code=' + error_code + r',\n'
-        r'            message=\1,\n'
-        r'        ) from \2'
+        r"raise ModelOnexError(\n"
+        r"            error_code=" + error_code + r",\n"
+        r"            message=\1,\n"
+        r"        ) from \2"
     )
     content = re.sub(pattern4, replacement4, content)
 
@@ -132,12 +132,12 @@ def replace_exception_raising(content: str, exc_type: str, error_code: str) -> s
     # raise ValueError(
     #     "message"
     # )
-    pattern5 = rf'raise {exc_type}\(\s*\n\s*([^)]+)\s*\n\s*\)'
+    pattern5 = rf"raise {exc_type}\(\s*\n\s*([^)]+)\s*\n\s*\)"
     replacement5 = (
-        r'raise ModelOnexError(\n'
-        r'            error_code=' + error_code + r',\n'
-        r'            message=\1,\n'
-        r'        )'
+        r"raise ModelOnexError(\n"
+        r"            error_code=" + error_code + r",\n"
+        r"            message=\1,\n"
+        r"        )"
     )
     content = re.sub(pattern5, replacement5, content, flags=re.MULTILINE | re.DOTALL)
 

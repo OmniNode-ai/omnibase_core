@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -148,11 +148,11 @@ class MixinEventHandler:
         except Exception as e:
             # Cannot create event type - raise error instead of silently skipping
             from omnibase_core.errors import ModelOnexError
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
             raise ModelOnexError(
                 f"Failed to create introspection request event type: {e!s}",
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             ) from e
 
         # Check if we should respond to this request
@@ -180,8 +180,7 @@ class MixinEventHandler:
                 else None
             )
             if requested_types:
-                introspection_data = self._filter_introspection_data(
-                )
+                introspection_data = self._filter_introspection_data()
 
             # Emit response event (simplified - would need full implementation)
             node_id = getattr(self, "_node_id", "unknown")

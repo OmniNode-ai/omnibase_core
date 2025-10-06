@@ -85,7 +85,7 @@ def fix_dunder_method(content: str, lineno: int, method_name: str) -> str:
             lines[lineno - 1] = line.replace("other)", "other: object) -> bool")
         elif method_name in ["__add__", "__sub__", "__mul__", "__truediv__"]:
             # Arithmetic operators - return same type
-            class_match = re.search(r"class (\w+)", content[:content.find(line)])
+            class_match = re.search(r"class (\w+)", content[: content.find(line)])
             if class_match:
                 class_name = class_match.group(1)
                 lines[lineno - 1] = line.replace(
@@ -116,7 +116,7 @@ def fix_classmethod(content: str, lineno: int) -> str:
         # Pattern: def from_xxx(cls, param):
         if "def from_" in line and "-> " not in line:
             # Find class name
-            class_match = re.search(r"class (\w+)", content[:content.find(line)])
+            class_match = re.search(r"class (\w+)", content[: content.find(line)])
             if class_match:
                 class_name = class_match.group(1)
                 # Add return type hint
@@ -128,16 +128,23 @@ def fix_classmethod(content: str, lineno: int) -> str:
 
 def add_any_import(content: str) -> str:
     """Add 'from typing import Any' if not present and needed."""
-    if "from typing import" in content and "Any" not in content.split("from typing import")[1].split("\n")[0]:
+    if (
+        "from typing import" in content
+        and "Any" not in content.split("from typing import")[1].split("\n")[0]
+    ):
         # Add Any to existing typing import
         for i, line in enumerate(content.split("\n")):
             if line.startswith("from typing import"):
                 if "(" in line:
                     # Multi-line import
-                    content = content.replace(line, line.replace("import", "import Any,"))
+                    content = content.replace(
+                        line, line.replace("import", "import Any,")
+                    )
                 else:
                     # Single line import
-                    content = content.replace(line, line.replace("import", "import Any,"))
+                    content = content.replace(
+                        line, line.replace("import", "import Any,")
+                    )
                 break
     elif "from typing import" not in content:
         # Add new typing import after docstring
@@ -193,15 +200,38 @@ def fix_file(filepath: str, errors: List[Tuple[int, str]]) -> None:
         if "__init__" in line:
             content = fix_init_method(content, lineno)
             needs_any = True
-        elif any(f"def {m}" in line for m in ["__eq__", "__lt__", "__le__", "__gt__", "__ge__", "__add__", "__sub__", "__mul__", "__truediv__"]):
-            for method in ["__eq__", "__lt__", "__le__", "__gt__", "__ge__", "__add__", "__sub__", "__mul__", "__truediv__"]:
+        elif any(
+            f"def {m}" in line
+            for m in [
+                "__eq__",
+                "__lt__",
+                "__le__",
+                "__gt__",
+                "__ge__",
+                "__add__",
+                "__sub__",
+                "__mul__",
+                "__truediv__",
+            ]
+        ):
+            for method in [
+                "__eq__",
+                "__lt__",
+                "__le__",
+                "__gt__",
+                "__ge__",
+                "__add__",
+                "__sub__",
+                "__mul__",
+                "__truediv__",
+            ]:
                 if f"def {method}" in line:
                     content = fix_dunder_method(content, lineno, method)
                     break
-        elif "@field_validator" in "\n".join(lines[max(0, lineno - 3):lineno]):
+        elif "@field_validator" in "\n".join(lines[max(0, lineno - 3) : lineno]):
             content = fix_validator_method(content, lineno)
             needs_any = True
-        elif "@classmethod" in "\n".join(lines[max(0, lineno - 3):lineno]):
+        elif "@classmethod" in "\n".join(lines[max(0, lineno - 3) : lineno]):
             content = fix_classmethod(content, lineno)
         else:
             # Generic function - add -> None if no return type

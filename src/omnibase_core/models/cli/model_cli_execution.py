@@ -316,6 +316,7 @@ class ModelCliExecution(BaseModel):
         """Get execution summary."""
         # Generate a command ID from the command name (or use a real UUID if available)
         import hashlib
+
         from omnibase_core.models.cli.model_cli_execution_summary import (
             ModelCliExecutionSummary,
         )

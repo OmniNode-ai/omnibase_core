@@ -4,7 +4,7 @@ from typing import Dict, TypedDict
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Connection Security Model.
@@ -19,7 +19,8 @@ from typing import Any, Dict, TypedDict
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
 )
@@ -52,17 +53,17 @@ class ModelConnectionSecurity(BaseModel):
             if self.ssl_cert_path and not self.ssl_cert_path.exists():
                 raise ModelOnexError(
                     message=f"SSL certificate path does not exist: {self.ssl_cert_path}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             if self.ssl_key_path and not self.ssl_key_path.exists():
                 raise ModelOnexError(
                     message=f"SSL key path does not exist: {self.ssl_key_path}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             if self.ssl_ca_path and not self.ssl_ca_path.exists():
                 raise ModelOnexError(
                     message=f"SSL CA bundle path does not exist: {self.ssl_ca_path}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         return self
 
@@ -167,7 +168,7 @@ class ModelConnectionSecurity(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -179,7 +180,7 @@ class ModelConnectionSecurity(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:

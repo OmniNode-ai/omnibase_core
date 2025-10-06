@@ -1,6 +1,7 @@
 from typing import Dict, Generic, Optional
 
 from pydantic import Field
+
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """

@@ -4,7 +4,8 @@ import uuid
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -24,7 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -100,7 +101,7 @@ class ModelExecutionMetadata(BaseModel):
         if isinstance(v, EnumExecutionStatusV2):
             return v
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Status must be EnumExecutionStatusV2, got {type(v)}",
         )
 
@@ -111,7 +112,7 @@ class ModelExecutionMetadata(BaseModel):
         if isinstance(v, EnumEnvironment):
             return v
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Environment must be EnumEnvironment, got {type(v)}",
         )
 
@@ -131,7 +132,7 @@ class ModelExecutionMetadata(BaseModel):
                     self.status = status_value
                 else:
                     raise ModelOnexError(
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
                     )
             if "end_time" in kwargs:
@@ -149,7 +150,7 @@ class ModelExecutionMetadata(BaseModel):
         except Exception as e:
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
-                error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
     def serialize(self) -> dict[str, Any]:
@@ -167,33 +168,33 @@ class ModelExecutionMetadata(BaseModel):
         if not self.execution_id:
             raise ModelOnexError(
                 message="execution_id is required",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if not self.start_time:
             raise ModelOnexError(
                 message="start_time is required",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         # Validate logical consistency
         if self.end_time and self.end_time < self.start_time:
             raise ModelOnexError(
                 message="end_time cannot be before start_time",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if self.duration_ms < 0:
             raise ModelOnexError(
                 message="duration_ms cannot be negative",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if self.memory_usage_mb < 0 or self.cpu_usage_percent < 0:
             raise ModelOnexError(
                 message="Resource usage values cannot be negative",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if self.error_count < 0 or self.warning_count < 0:
             raise ModelOnexError(
                 message="Error and warning counts cannot be negative",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return True
 

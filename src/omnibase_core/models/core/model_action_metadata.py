@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -169,7 +169,7 @@ class ModelActionMetadata(BaseModel):
                 f"Use one of: {list[Any](self.performance_metrics.__fields__.keys())}"
             )
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         setattr(self.performance_metrics, name, value)

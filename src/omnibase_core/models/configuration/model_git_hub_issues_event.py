@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 ONEX-Compliant GitHub Issues Event Model
@@ -9,9 +9,11 @@ Phase 3I remediation: Eliminated factory method anti-patterns and optional retur
 """
 
 from typing import Any
+
 from pydantic import BaseModel, Field, validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_git_hub_issue import ModelGitHubIssue
 from .model_git_hub_label import ModelGitHubLabel
@@ -79,7 +81,7 @@ class ModelGitHubIssuesEvent(BaseModel):
         if action in {"labeled", "unlabeled"} and v is None:
             raise ModelOnexError(
                 f"Action '{action}' requires label data",
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if action not in {"labeled", "unlabeled"} and v is not None:
             # Note: This might be too strict - GitHub may include label in other contexts
@@ -93,7 +95,7 @@ class ModelGitHubIssuesEvent(BaseModel):
         if action in {"assigned", "unassigned"} and v is None:
             raise ModelOnexError(
                 f"Action '{action}' requires assignee data",
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if action not in {"assigned", "unassigned"} and v is not None:
             # Allow assignee in other contexts for flexibility

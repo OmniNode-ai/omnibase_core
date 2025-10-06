@@ -14,40 +14,40 @@ def add_import(file_path):
     content = path.read_text()
 
     # Check if import already exists
-    if 'from omnibase_core.errors.model_onex_error import ModelOnexError' in content:
+    if "from omnibase_core.errors.model_onex_error import ModelOnexError" in content:
         return False
 
     # Check if it's imported from a different location
-    if re.search(r'from\s+\S+\s+import\s+.*ModelOnexError', content):
+    if re.search(r"from\s+\S+\s+import\s+.*ModelOnexError", content):
         return False
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     insert_line = None
 
     # Find where to insert (after ModelCoreErrorCode import if it exists)
     for i, line in enumerate(lines):
-        if 'from omnibase_core.errors.error_codes import ModelCoreErrorCode' in line:
+        if "from omnibase_core.errors.error_codes import ModelCoreErrorCode" in line:
             insert_line = i + 1
             break
 
     # If no ModelCoreErrorCode import, insert after other omnibase_core.errors imports
     if insert_line is None:
         for i, line in enumerate(lines):
-            if line.startswith('from omnibase_core.errors'):
+            if line.startswith("from omnibase_core.errors"):
                 insert_line = i + 1
                 break
 
     # If still not found, insert after pydantic imports
     if insert_line is None:
         for i, line in enumerate(lines):
-            if line.startswith('from pydantic') or line.startswith('import pydantic'):
+            if line.startswith("from pydantic") or line.startswith("import pydantic"):
                 insert_line = i + 1
                 break
 
     # If still not found, insert after typing imports
     if insert_line is None:
         for i, line in enumerate(lines):
-            if line.startswith('from typing') or line.startswith('import typing'):
+            if line.startswith("from typing") or line.startswith("import typing"):
                 insert_line = i + 1
                 break
 
@@ -56,19 +56,21 @@ def add_import(file_path):
         return False
 
     # Insert the import
-    lines.insert(insert_line, 'from omnibase_core.errors.model_onex_error import ModelOnexError')
-    path.write_text('\n'.join(lines))
+    lines.insert(
+        insert_line, "from omnibase_core.errors.model_onex_error import ModelOnexError"
+    )
+    path.write_text("\n".join(lines))
     return True
 
 
 def main():
     """Main function."""
-    files_path = Path('/tmp/files_need_modelonexerror.txt')
+    files_path = Path("/tmp/files_need_modelonexerror.txt")
     if not files_path.exists():
         print("Files list not found!")
         return
 
-    files = files_path.read_text().strip().split('\n')
+    files = files_path.read_text().strip().split("\n")
     print(f"Adding ModelOnexError import to {len(files)} files...")
 
     fixed_count = 0
@@ -86,5 +88,5 @@ def main():
     print(f"\nFixed {fixed_count} files")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

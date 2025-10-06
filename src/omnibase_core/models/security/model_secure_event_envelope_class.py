@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Import base envelope and security models
@@ -180,13 +180,13 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         if v < 0:
             msg = "Minimum signatures cannot be negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if v > 50:
             msg = "Minimum signatures cannot exceed 50"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -248,7 +248,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         if signature.envelope_state_hash != self.content_hash:
             msg = "Signature envelope state hash mismatch"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -468,7 +468,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         if self.is_encrypted:
             msg = "Payload is already encrypted"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -486,14 +486,14 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         if not self.is_encrypted:
             msg = "Payload is not encrypted"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         if not self.encrypted_payload or not self.encryption_metadata:
             msg = "Missing encryption data"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

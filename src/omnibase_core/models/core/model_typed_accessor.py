@@ -4,7 +4,8 @@ from typing import Generic, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Typed field accessor for specific value types.
@@ -16,7 +17,7 @@ Provides type-safe field access with generic type support.
 from typing import Any, Generic, TypeVar
 
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -63,7 +64,7 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -101,7 +102,7 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
@@ -53,7 +53,7 @@ class ModelJsonData(BaseModel):
         """Ensure field count matches actual fields."""
         if len(v) != values.get("total_field_count", 0):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Field count mismatch: expected {values.get('total_field_count', 0)}, got {len(v)}",
             )
         return v
@@ -68,7 +68,7 @@ class ModelJsonData(BaseModel):
         """ONEX-compliant field value accessor."""
         if field_name not in self.fields:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                 message=f"Field '{field_name}' not found",
             )
         return self.fields[field_name].get_typed_value()
@@ -81,7 +81,7 @@ class ModelJsonData(BaseModel):
         """Get the type of a specific field."""
         if field_name not in self.fields:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                 message=f"Field '{field_name}' not found",
             )
         return self.fields[field_name].field_type

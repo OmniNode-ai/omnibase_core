@@ -19,7 +19,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 if TYPE_CHECKING:
-    from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelSchemaValue(BaseModel):
@@ -50,7 +51,9 @@ class ModelSchemaValue(BaseModel):
     )
 
     # Type indicator
-    value_type: str = Field(default=..., description="Type of the value: string, number, boolean, null, array, object",
+    value_type: str = Field(
+        default=...,
+        description="Type of the value: string, number, boolean, null, array, object",
     )
 
     model_config = ConfigDict(
@@ -301,52 +304,52 @@ class ModelSchemaValue(BaseModel):
         """Get string value, raising error if not a string."""
         if not self.is_string():
             from omnibase_core.errors.error_codes import (
-                ModelCoreErrorCode,
+                EnumCoreErrorCode,
                 ModelOnexError,
             )
 
             msg = f"Expected string value, got {self.value_type}"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
         return self.string_value or ""
 
     def get_number(self) -> ModelNumericValue:
         """Get numeric value, raising error if not a number."""
         if not self.is_number():
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
             from omnibase_core.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected numeric value, got {self.value_type}"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
         return self.number_value or ModelNumericValue.from_float(0.0)
 
     def get_boolean(self) -> bool:
         """Get boolean value, raising error if not a boolean."""
         if not self.is_boolean():
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
             from omnibase_core.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected boolean value, got {self.value_type}"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
         return self.boolean_value or False
 
     def get_array(self) -> list["ModelSchemaValue"]:
         """Get array value, raising error if not an array."""
         if not self.is_array():
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
             from omnibase_core.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected array value, got {self.value_type}"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
         return self.array_value or []
 
     def get_object(self) -> dict[str, "ModelSchemaValue"]:
         """Get object value, raising error if not an object."""
         if not self.is_object():
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
             from omnibase_core.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected object value, got {self.value_type}"
-            raise ModelOnexError(msg, error_code=ModelCoreErrorCode.TYPE_MISMATCH)
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
         return self.object_value or {}
 
 

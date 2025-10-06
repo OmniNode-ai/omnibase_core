@@ -3,7 +3,8 @@ import re
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelDatabaseConnectionConfig(BaseModel):
@@ -53,7 +54,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if not v or not v.strip():
             msg = "Database host cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -64,7 +65,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if not re.match(r"^[a-zA-Z0-9\-\.]+$", v):
             msg = f"Invalid host format: {v}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -72,14 +73,14 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if v.startswith("-") or v.endswith("-"):
             msg = f"Host cannot start or end with hyphen: {v}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         if ".." in v:
             msg = f"Host cannot contain consecutive dots: {v}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -92,7 +93,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if not v or not v.strip():
             msg = "Database name cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -115,7 +116,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
             if pattern in v_upper:
                 msg = f"Database name contains potentially dangerous pattern: {pattern}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -128,7 +129,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if not v or not v.strip():
             msg = "Database username cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -138,7 +139,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if any(pattern in v.upper() for pattern in ["--", ";", "'", '"']):
             msg = "Username contains potentially dangerous characters"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

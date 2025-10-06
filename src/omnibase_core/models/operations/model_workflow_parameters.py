@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.errors.error_codes import (
-    ModelCoreErrorCode,
+    EnumCoreErrorCode,
     ModelOnexError,
 )
 from omnibase_core.models.operations.model_base_workflow_parameter import (
@@ -73,7 +73,7 @@ class ModelWorkflowParameters(BaseModel):
             ):
                 raise ModelOnexError(
                     message=f"Invalid parameter type for {param_name}: {type(param_value)}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         return self
 
@@ -212,7 +212,7 @@ class ModelWorkflowParameters(BaseModel):
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(

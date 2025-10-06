@@ -46,9 +46,7 @@ class StringVersionFixer:
         """Convert str ID fields to UUID."""
         # Pattern: field_name_id: str = Field(...)
         # Pattern: field_name_id: str | None = Field(...)
-        id_pattern = re.compile(
-            r'^(\s+)(\w*_?id):\s+str(\s+\|?\s*None)?\s*=\s*Field\('
-        )
+        id_pattern = re.compile(r"^(\s+)(\w*_?id):\s+str(\s+\|?\s*None)?\s*=\s*Field\(")
 
         for i, line in enumerate(self.lines):
             match = id_pattern.match(line)
@@ -59,8 +57,7 @@ class StringVersionFixer:
 
                 # Replace str with UUID
                 new_line = line.replace(
-                    f": str{optional_part} =",
-                    f": UUID{optional_part} ="
+                    f": str{optional_part} =", f": UUID{optional_part} ="
                 )
                 self.lines[i] = new_line
                 self.needs_uuid_import = True
@@ -72,7 +69,7 @@ class StringVersionFixer:
         # Pattern: field_name_version: str = Field(...)
         # Pattern: version: str = Field(...)
         version_pattern = re.compile(
-            r'^(\s+)(\w*_?version):\s+str(\s+\|?\s*None)?\s*=\s*Field\('
+            r"^(\s+)(\w*_?version):\s+str(\s+\|?\s*None)?\s*=\s*Field\("
         )
 
         for i, line in enumerate(self.lines):
@@ -84,13 +81,14 @@ class StringVersionFixer:
 
                 # Replace str with ModelSemVer
                 new_line = line.replace(
-                    f": str{optional_part} =",
-                    f": ModelSemVer{optional_part} ="
+                    f": str{optional_part} =", f": ModelSemVer{optional_part} ="
                 )
                 self.lines[i] = new_line
                 self.needs_semver_import = True
                 self.changes_made = True
-                print(f"  Fixed version field: {field_name} in {self.file_path.name}:{i+1}")
+                print(
+                    f"  Fixed version field: {field_name} in {self.file_path.name}:{i+1}"
+                )
 
     def _add_imports(self):
         """Add necessary imports to the file."""
@@ -101,7 +99,9 @@ class StringVersionFixer:
             new_imports.append("from uuid import UUID\n")
 
         if self.needs_semver_import and "ModelSemVer" not in self.content:
-            new_imports.append("from omnibase_core.models.metadata.model_semver import ModelSemVer\n")
+            new_imports.append(
+                "from omnibase_core.models.metadata.model_semver import ModelSemVer\n"
+            )
 
         if new_imports:
             # Insert after existing imports

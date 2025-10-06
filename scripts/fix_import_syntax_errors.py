@@ -12,14 +12,14 @@ def find_files_with_syntax_errors():
         ["poetry", "run", "mypy", "src/omnibase_core/"],
         capture_output=True,
         text=True,
-        cwd="/Volumes/PRO-G40/Code/omnibase_core"
+        cwd="/Volumes/PRO-G40/Code/omnibase_core",
     )
     output = result.stdout + result.stderr
 
     files = []
-    for line in output.split('\n'):
-        if 'Invalid syntax' in line:
-            match = re.match(r'^(.+?):\d+:', line)
+    for line in output.split("\n"):
+        if "Invalid syntax" in line:
+            match = re.match(r"^(.+?):\d+:", line)
             if match:
                 files.append(match.group(1))
 
@@ -40,11 +40,15 @@ def fix_file(file_path):
     # from omnibase_core.errors.error_codes import ModelCoreErrorCode
     #     Y,
     # )
-    pattern = r'(from\s+\S+\s+import\s+\(\s*\n)(from omnibase_core\.errors\.error_codes import ModelCoreErrorCode\s*\n)(\s+[^)]+\))'
+    pattern = r"(from\s+\S+\s+import\s+\(\s*\n)(from omnibase_core\.errors\.error_codes import ModelCoreErrorCode\s*\n)(\s+[^)]+\))"
 
     def replacement(match):
         """Move the error_codes import after the closing paren."""
-        return match.group(1) + match.group(3) + '\nfrom omnibase_core.errors.error_codes import ModelCoreErrorCode'
+        return (
+            match.group(1)
+            + match.group(3)
+            + "\nfrom omnibase_core.errors.error_codes import ModelCoreErrorCode"
+        )
 
     content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
@@ -77,5 +81,5 @@ def main():
     print(f"\nFixed {fixed} files")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

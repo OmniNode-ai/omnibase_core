@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 """
 Mixin for models that need validation capabilities.
@@ -90,10 +90,8 @@ class ModelValidationBase(BaseModel):
                 "omnibase_core.enums.enum_core_error_code",
             )
             # Get error code strings with fallbacks
-            validation_error_code = (
-                enum_module.ModelCoreErrorCode.VALIDATION_ERROR.value
-            )
-            internal_error_code = enum_module.ModelCoreErrorCode.INTERNAL_ERROR.value
+            validation_error_code = enum_module.EnumCoreErrorCode.VALIDATION_ERROR.value
+            internal_error_code = enum_module.EnumCoreErrorCode.INTERNAL_ERROR.value
         except (ImportError, AttributeError):
             # Fallback if enum module not available or attributes missing
             validation_error_code = "validation_error"

@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Optional, TypeVar
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Model ONEX Dependency Injection Container.
@@ -31,7 +31,8 @@ from dependency_injector import containers, providers
 from omnibase_spi import ProtocolLogger
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -209,7 +210,7 @@ class ModelONEXContainer:
                 # service_resolver = get_service_resolver()
                 # service_instance = await service_resolver.resolve_service(protocol_type)
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message=f"Protocol service resolution not yet implemented: {protocol_name}",
                     protocol_type=protocol_name,
                     service_name=service_name or "",
@@ -230,14 +231,14 @@ class ModelONEXContainer:
                         service_instance = provider()
                     else:
                         raise ModelOnexError(
-                            error_code=ModelCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                             message=f"Provider not found: {provider_name}",
                             protocol_type=protocol_name,
                             correlation_id=final_correlation_id,
                         )
                 else:
                     raise ModelOnexError(
-                        error_code=ModelCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                        error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                         message=f"Unable to resolve service for protocol {protocol_name}",
                         protocol_type=protocol_name,
                         service_name=service_name or "",
@@ -275,7 +276,7 @@ class ModelONEXContainer:
                 },
             )
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                 message=f"Service resolution failed for {protocol_name}: {e!s}",
                 protocol_type=protocol_name,
                 service_name=service_name or "",

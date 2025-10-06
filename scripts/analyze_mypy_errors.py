@@ -14,7 +14,7 @@ def run_mypy():
         ["poetry", "run", "mypy", "src/omnibase_core/", "--no-error-summary"],
         capture_output=True,
         text=True,
-        cwd="/Volumes/PRO-G40/Code/omnibase_core"
+        cwd="/Volumes/PRO-G40/Code/omnibase_core",
     )
     return result.stdout + result.stderr
 
@@ -22,20 +22,22 @@ def run_mypy():
 def parse_errors(output):
     """Parse mypy output into structured error data."""
     errors = []
-    lines = output.split('\n')
+    lines = output.split("\n")
 
     for line in lines:
-        if ': error:' in line:
+        if ": error:" in line:
             # Parse: file:line: error: message  [error-code]
-            match = re.match(r'^(.+?):(\d+): error: (.+?)  \[(.+?)\]', line)
+            match = re.match(r"^(.+?):(\d+): error: (.+?)  \[(.+?)\]", line)
             if match:
                 file_path, line_num, message, error_code = match.groups()
-                errors.append({
-                    'file': file_path,
-                    'line': int(line_num),
-                    'message': message,
-                    'error_code': error_code,
-                })
+                errors.append(
+                    {
+                        "file": file_path,
+                        "line": int(line_num),
+                        "message": message,
+                        "error_code": error_code,
+                    }
+                )
 
     return errors
 
@@ -47,12 +49,12 @@ def categorize_errors(errors):
     name_defined_names = defaultdict(int)
 
     for error in errors:
-        by_code[error['error_code']].append(error)
-        by_file[error['file']].append(error)
+        by_code[error["error_code"]].append(error)
+        by_file[error["file"]].append(error)
 
         # Track undefined names
-        if error['error_code'] == 'name-defined':
-            match = re.search(r'Name "(.+?)" is not defined', error['message'])
+        if error["error_code"] == "name-defined":
+            match = re.search(r'Name "(.+?)" is not defined', error["message"])
             if match:
                 name_defined_names[match.group(1)] += 1
 
@@ -84,7 +86,9 @@ def print_analysis(by_code, by_file, name_defined_names):
     if name_defined_names:
         print("MOST COMMON UNDEFINED NAMES (name-defined errors):")
         print("-" * 80)
-        sorted_names = sorted(name_defined_names.items(), key=lambda x: x[1], reverse=True)
+        sorted_names = sorted(
+            name_defined_names.items(), key=lambda x: x[1], reverse=True
+        )
         for name, count in sorted_names[:20]:
             print(f"  {name:40s} {count:4d} occurrences")
         print()
@@ -115,5 +119,5 @@ def main():
     print_analysis(by_code, by_file, name_defined_names)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

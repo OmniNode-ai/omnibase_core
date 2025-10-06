@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Caching Subcontract Model - ONEX Standards Compliant.
@@ -22,7 +22,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -185,7 +186,7 @@ class ModelCachingSubcontract(BaseModel):
             msg = "max_memory_mb cannot exceed 16GB for safety"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -205,7 +206,7 @@ class ModelCachingSubcontract(BaseModel):
             msg = "hit_ratio_threshold should be at least 0.1 (10%)"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -227,7 +228,7 @@ class ModelCachingSubcontract(BaseModel):
                 msg = "l2_cache_size must be larger than l1_cache_size"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

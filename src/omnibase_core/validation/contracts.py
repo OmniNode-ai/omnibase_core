@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Generic
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Contract validation tools for ONEX compliance.
@@ -26,7 +26,8 @@ import yaml
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .validation_utils import ValidationResult
 
@@ -38,14 +39,13 @@ VALIDATION_TIMEOUT = 300  # 5 minutes
 def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
     raise ModelOnexError(
-        code=ModelCoreErrorCode.TIMEOUT_ERROR,
+        code=EnumCoreErrorCode.TIMEOUT_ERROR,
         message="Validation timed out",
     )
 
 
 def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
     """Load and validate YAML content with Pydantic model - recognized utility function."""
-
 
     # Parse YAML and validate with Pydantic model directly
     # Note: yaml.safe_load is required here for parsing before Pydantic validation
@@ -103,7 +103,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except Exception as e:
             # Re-raise validation errors with context
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract validation failed for {file_path}: {e}",
             ) from e
 
@@ -116,7 +116,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     except Exception as e:
         # Re-raise file reading errors with context
         raise ModelOnexError(
-            code=ModelCoreErrorCode.FILE_ACCESS_ERROR,
+            code=EnumCoreErrorCode.FILE_ACCESS_ERROR,
             message=f"Error reading file {file_path}: {e}",
         ) from e
 
@@ -269,7 +269,7 @@ def validate_contracts_cli() -> int:
         return 1
 
     except ModelOnexError as e:
-        if e.error_code == ModelCoreErrorCode.TIMEOUT_ERROR:
+        if e.error_code == EnumCoreErrorCode.TIMEOUT_ERROR:
             print(f"❌ Validation timed out after {args.timeout} seconds")
         else:
             print(f"❌ Validation error: {e.message}")

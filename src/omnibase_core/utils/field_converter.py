@@ -4,7 +4,7 @@ from typing import Callable, Generic, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 FieldConverter
@@ -28,7 +28,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Generic, TypeVar
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -70,7 +71,7 @@ class FieldConverter(Generic[T]):
             # Validate if validator provided
             if self.validator and not self.validator(result):
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Validation failed for field {self.field_name}",
                     details=ModelErrorContext.with_context(
                         {
@@ -91,7 +92,7 @@ class FieldConverter(Generic[T]):
                 return self.default_value
 
             raise ModelOnexError(
-                code=ModelCoreErrorCode.CONVERSION_ERROR,
+                code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Failed to convert field {self.field_name}: {e!s}",
                 details=ModelErrorContext.with_context(
                     {

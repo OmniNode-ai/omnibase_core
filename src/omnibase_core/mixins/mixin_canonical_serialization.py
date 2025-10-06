@@ -29,7 +29,8 @@ from omnibase_spi.protocols.core import ProtocolCanonicalSerializer
 from pydantic import Field
 
 from omnibase_core.enums import EnumNodeMetadataField
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 
 if TYPE_CHECKING:
@@ -215,8 +216,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 if isinstance(v, EntrypointBlock):
                     filtered_dict[k] = v.to_uri()
                 elif isinstance(v, dict) and "type" in v and "target" in v:
-                    filtered_dict[k] = EntrypointBlock.from_serializable_dict(
-                    ).to_uri()
+                    filtered_dict[k] = EntrypointBlock.from_serializable_dict().to_uri()
                 elif isinstance(v, str):
                     filtered_dict[k] = (
                         EntrypointBlock.from_uri(v).to_uri()
@@ -415,5 +415,5 @@ def strip_block_delimiters_and_assert(
     remaining = [line for line in cleaned if line.strip() in delimiters]
     if remaining:
         msg = f"Delimiter(s) still present after filtering in {context}: {remaining}"
-        raise ModelOnexError(msg, ModelCoreErrorCode.INTERNAL_ERROR)
+        raise ModelOnexError(msg, EnumCoreErrorCode.INTERNAL_ERROR)
     return "\n".join(cleaned).strip()

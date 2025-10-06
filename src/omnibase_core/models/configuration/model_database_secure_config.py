@@ -5,7 +5,8 @@ from urllib.parse import urlparse
 
 from pydantic import Field, SecretStr, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_connection_parse_result import (
     LatencyProfile,
     ParsedConnectionInfo,
@@ -148,7 +149,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not v or not v.strip():
             msg = "Database host cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -162,7 +163,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not re.match(r"^[a-zA-Z0-9\-\.]+$", v):
             msg = f"Invalid hostname format: {v}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -172,13 +173,13 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             if not part or len(part) > 63:
                 msg = f"Invalid hostname part: {part}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
             if part.startswith("-") or part.endswith("-"):
                 msg = f"Hostname part cannot start or end with dash: {part}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -191,14 +192,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not isinstance(v, int):
             msg = "Port must be an integer"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         if not (1 <= v <= 65535):
             msg = f"Port must be between 1 and 65535, got: {v}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -211,7 +212,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not v or not v.strip():
             msg = "Database name cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -223,7 +224,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             if pattern in v.lower():
                 msg = f"Database name contains potentially dangerous pattern: {pattern}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -261,7 +262,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if normalized not in valid_drivers:
             msg = f"Unsupported driver: {v}. Must be one of: {valid_drivers}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -289,7 +290,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             return self._get_mongodb_connection_string(password_value)
         msg = f"Connection string generation not implemented for driver: {self.driver}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -823,7 +824,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not password:
             msg = f"Database password required: {env_prefix}PASSWORD"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -882,7 +883,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         except ValueError as e:
             msg = f"Invalid integer value in environment variables: {e}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -905,7 +906,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Create PostgreSQL configuration."""
         if password is None:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Password is required for database configuration",
                 context={"host": host, "database": database, "username": username},
             )
@@ -930,7 +931,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Create MySQL configuration."""
         if password is None:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Password is required for database configuration",
                 context={"host": host, "database": database, "username": username},
             )

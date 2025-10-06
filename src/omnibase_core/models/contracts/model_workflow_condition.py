@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
@@ -22,7 +22,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 ConditionValueType = PrimitiveValueType | list[PrimitiveValueType]
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_condition_value import ModelConditionValue
 from omnibase_core.models.contracts.model_condition_value_list import (
     ModelConditionValueList,
@@ -80,7 +81,7 @@ class ModelWorkflowCondition(BaseModel):
         if not v or not v.strip():
             raise ModelOnexError(
                 message="Condition field_name cannot be empty",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         v = v.strip()
@@ -89,7 +90,7 @@ class ModelWorkflowCondition(BaseModel):
         if not all(c.isalnum() or c in "_." for c in v):
             raise ModelOnexError(
                 message=f"Invalid field_name '{v}'. Must contain only alphanumeric characters, underscores, and dots.",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -145,7 +146,7 @@ class ModelWorkflowCondition(BaseModel):
             # For other operators, missing fields are an error
             raise ModelOnexError(
                 message=f"Field '{self.field_name}' not found in context data",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def _extract_field_value(
@@ -181,7 +182,7 @@ class ModelWorkflowCondition(BaseModel):
             return cast(ConditionValueType, container.value)
         raise ModelOnexError(
             message=f"Invalid container type: {type(container).__name__}. Expected ModelConditionValue or ModelConditionValueList.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def _evaluate_operator(
@@ -231,7 +232,7 @@ class ModelWorkflowCondition(BaseModel):
             case _:
                 raise ModelOnexError(
                     message=f"Unsupported operator: {operator}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
     def _validate_comparison_types(
@@ -245,20 +246,20 @@ class ModelWorkflowCondition(BaseModel):
         if isinstance(expected_value, list):
             raise ModelOnexError(
                 message=f"Cannot use {operator.value} operator with list[Any]type - use IN/NOT_IN operators instead",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Ensure both values are primitive types using runtime validation
         if not is_primitive_value(actual_value):
             raise ModelOnexError(
                 message=f"Cannot compare non-primitive type {type(actual_value).__name__} using {operator.value} operator",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         if not is_primitive_value(expected_value):
             raise ModelOnexError(
                 message=f"Cannot compare with non-primitive type {type(expected_value).__name__} using {operator.value} operator",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Now we know both values are primitives, check type compatibility
@@ -277,7 +278,7 @@ class ModelWorkflowCondition(BaseModel):
         # Incompatible types
         raise ModelOnexError(
             message=f"Cannot compare {type(actual_value).__name__} with {type(expected_value).__name__} using {operator.value} operator",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def _validate_contains_types(
@@ -293,12 +294,12 @@ class ModelWorkflowCondition(BaseModel):
             if isinstance(expected_value, list):
                 raise ModelOnexError(
                     message=f"Cannot use {operator.value} operator with list[Any]as expected value - expected a single primitive value",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             return
         raise ModelOnexError(
             message=f"Cannot use {operator.value} operator on {type(actual_value).__name__} - must be string, list[Any], or dict[str, Any]",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def _validate_in_types(
@@ -314,12 +315,12 @@ class ModelWorkflowCondition(BaseModel):
             if not is_primitive_value(actual_value):
                 raise ModelOnexError(
                     message=f"Cannot use {operator.value} operator with non-primitive actual value {type(actual_value).__name__}",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             return
         raise ModelOnexError(
             message=f"Cannot use {operator.value} operator with {type(expected_value).__name__} - expected value must be string or list[Any]",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     model_config = ConfigDict(

@@ -3,10 +3,7 @@ from typing import Dict, Generic, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
-
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -48,7 +45,7 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelExamples
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.metadata.model_metadata_constants import (
@@ -181,7 +178,7 @@ class ModelStateContract(BaseModel):
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Contract version must follow semantic versioning (x.y.z), got: {v}",
             )
         return v
@@ -193,7 +190,7 @@ class ModelStateContract(BaseModel):
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Node version must follow semantic versioning (x.y.z), got: {v}",
             )
         return v
@@ -204,14 +201,14 @@ class ModelStateContract(BaseModel):
         """Validate that node name follows naming conventions."""
         if not v or not v.strip():
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR, "Node name cannot be empty"
+                EnumCoreErrorCode.VALIDATION_ERROR, "Node name cannot be empty"
             )
 
         # Check for valid node name pattern (lowercase, underscores)
 
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Node name must follow pattern: lowercase, underscores. Got: {v}",
             )
         return v
@@ -267,7 +264,7 @@ class ModelStateContract(BaseModel):
 
         except Exception as e:
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Failed to parse state contract: {e}",
             ) from e
 
@@ -297,6 +294,6 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
         return load_and_validate_yaml_model(path, ModelStateContract)
     except Exception as e:
         raise ModelOnexError(
-            ModelCoreErrorCode.FILE_READ_ERROR,
+            EnumCoreErrorCode.FILE_READ_ERROR,
             f"Failed to load contract from {file_path}: {e}",
         ) from e

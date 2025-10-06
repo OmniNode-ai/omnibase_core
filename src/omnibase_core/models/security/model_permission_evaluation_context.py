@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -89,7 +89,7 @@ class ModelPermissionEvaluationContext(BaseModel):
         value = self.get(key)
         if value is None:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+                error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                 message=f"Key '{key}' not found in context",
             )
         return value

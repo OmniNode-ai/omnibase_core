@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Event Type Subcontract Model - ONEX Standards Compliant.
@@ -22,7 +22,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -170,7 +171,7 @@ class ModelEventTypeSubcontract(BaseModel):
             msg = "primary_events must contain at least one event type"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -190,7 +191,7 @@ class ModelEventTypeSubcontract(BaseModel):
             msg = "event_categories must contain at least one category"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -211,7 +212,7 @@ class ModelEventTypeSubcontract(BaseModel):
                 msg = "batch_size must be positive when batch processing is enabled"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -232,7 +233,7 @@ class ModelEventTypeSubcontract(BaseModel):
                 msg = "deduplication_window_ms must be at least 1000ms when enabled"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

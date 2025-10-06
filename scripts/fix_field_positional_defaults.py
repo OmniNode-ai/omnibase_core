@@ -45,7 +45,7 @@ def fix_field_positional_defaults(content: str) -> tuple[str, int]:
     # - Lambda functions
     # - factory functions
 
-    pattern = r'Field\(\s*([^,\s=][^,=]*?)\s*,\s+([a-z_]+\s*=)'
+    pattern = r"Field\(\s*([^,\s=][^,=]*?)\s*,\s+([a-z_]+\s*=)"
 
     def replace_func(match):
         nonlocal fixes
@@ -53,15 +53,15 @@ def fix_field_positional_defaults(content: str) -> tuple[str, int]:
         first_kwarg = match.group(2)
 
         # Don't replace if value already looks like a keyword argument
-        if '=' in value:
+        if "=" in value:
             return match.group(0)
 
         # Don't replace if value is 'default='
-        if value == 'default':
+        if value == "default":
             return match.group(0)
 
         fixes += 1
-        return f'Field(default={value}, {first_kwarg}'
+        return f"Field(default={value}, {first_kwarg}"
 
     fixed_content = re.sub(pattern, replace_func, content)
 
@@ -71,11 +71,11 @@ def fix_field_positional_defaults(content: str) -> tuple[str, int]:
 def process_file(file_path: Path) -> bool:
     """Process a single Python file."""
     try:
-        content = file_path.read_text(encoding='utf-8')
+        content = file_path.read_text(encoding="utf-8")
         fixed_content, fixes = fix_field_positional_defaults(content)
 
         if fixes > 0:
-            file_path.write_text(fixed_content, encoding='utf-8')
+            file_path.write_text(fixed_content, encoding="utf-8")
             print(f"✓ {file_path}: {fixes} fixes")
             return True
 

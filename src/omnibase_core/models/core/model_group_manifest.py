@@ -16,7 +16,7 @@ from omnibase_core.enums.enum_group_manifest import (
     EnumGroupStatus,
     EnumSecurityProfile,
 )
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_group_dependency import ModelGroupDependency
 from omnibase_core.models.core.model_group_manifest_config import ModelConfig
@@ -127,7 +127,7 @@ class ModelGroupManifest(BaseModel):
         if v < 0:
             msg = "Tool counts must be non-negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -146,7 +146,7 @@ class ModelGroupManifest(BaseModel):
         if v > total:
             msg = "active_tools cannot exceed total_tools"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -158,7 +158,7 @@ class ModelGroupManifest(BaseModel):
         if not v:
             msg = "tools list[Any]cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -167,7 +167,7 @@ class ModelGroupManifest(BaseModel):
         if len(tool_names) != len(set(tool_names)):
             msg = "Duplicate tool names found in tools list[Any]"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

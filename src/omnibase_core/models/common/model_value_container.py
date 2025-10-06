@@ -4,7 +4,7 @@ from typing import Dict, Generic, List, Optional, Union
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -30,6 +30,8 @@ from typing import Any, ClassVar
 # Import protocols from omnibase_spi
 from omnibase_spi.protocols.types import (
     ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
+)
+from omnibase_spi.protocols.types import (
     ProtocolModelValidatable as ModelProtocolValidatable,
 )
 from pydantic import BaseModel, Field, field_validator
@@ -84,7 +86,7 @@ class ModelValueContainer(BaseModel):
             return v
         except (TypeError, ValueError) as e:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value is not JSON serializable: {e}",
             )
 

@@ -64,11 +64,11 @@ class ModelOnexInputState(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
 
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message="version must be a string, dict[str, Any], or ModelSemVer",
         )
 
@@ -86,7 +86,7 @@ class ModelOnexInputState(BaseModel):
             return ModelSemVer(**v)
 
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             message="node_version must be a string, dict[str, Any], or ModelSemVer",
         )
 

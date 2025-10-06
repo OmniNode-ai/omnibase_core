@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Routing Subcontract Model - ONEX Microservices ModelArchitecture Compliant.
@@ -28,7 +28,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_load_balancing import ModelLoadBalancing
@@ -242,7 +243,7 @@ class ModelRoutingSubcontract(BaseModel):
                     msg = f"Duplicate priority {route.priority} found in pattern '{pattern}' (route: {route.route_name})"
                     raise ModelOnexError(
                         message=msg,
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         pattern=pattern,
                         priority=route.priority,
                         route_name=route.route_name,
@@ -260,7 +261,7 @@ class ModelRoutingSubcontract(BaseModel):
             msg = "Trace sampling rate above 50% may impact performance"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 sampling_rate=v,
                 max_recommended=0.5,
                 validation_type="sampling_rate_threshold",

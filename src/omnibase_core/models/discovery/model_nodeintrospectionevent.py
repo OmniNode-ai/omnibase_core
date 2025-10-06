@@ -5,7 +5,6 @@ from pydantic import Field
 from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_semver import ModelSemVer
-
 from omnibase_core.models.nodes.model_node_capability import ModelNodeCapabilities
 
 

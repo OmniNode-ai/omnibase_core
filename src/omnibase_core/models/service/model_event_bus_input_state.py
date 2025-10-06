@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.core.model_semver import (
@@ -96,7 +96,7 @@ class ModelEventBusInputState(BaseModel):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -107,7 +107,7 @@ class ModelEventBusInputState(BaseModel):
         if not v or not v.strip():
             msg = "input_field cannot be empty or whitespace"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -124,7 +124,7 @@ class ModelEventBusInputState(BaseModel):
             if pattern in v_lower:
                 msg = f"input_field contains potentially dangerous pattern: {pattern}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -147,7 +147,7 @@ class ModelEventBusInputState(BaseModel):
         if not re.match(r"^[a-zA-Z0-9\-_]+$", v):
             msg = "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -323,7 +323,7 @@ class ModelEventBusInputState(BaseModel):
         if not input_field:
             msg = f"Environment variable {env_prefix}INPUT_FIELD is required"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -370,14 +370,14 @@ class ModelEventBusInputState(BaseModel):
         version = config_data["version"]
         if not isinstance(version, ModelSemVer):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="version must be ModelSemVer",
             )
 
         input_field = config_data["input_field"]
         if not isinstance(input_field, str):
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="input_field must be str",
             )
 

@@ -5,7 +5,7 @@ from typing import Generic
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 CLI debug information model.
@@ -21,7 +21,8 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
@@ -103,7 +104,7 @@ class ModelCliDebugInfo(BaseModel):
         """Convert raw values to ModelCliValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="custom_debug_fields must be a dict[str, Any]ionary",
                 details=ModelErrorContext.with_context(
                     {
@@ -210,7 +211,7 @@ class ModelCliDebugInfo(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

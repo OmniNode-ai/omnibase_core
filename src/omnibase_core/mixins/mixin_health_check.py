@@ -33,7 +33,8 @@ from typing import Any, Callable, Union
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_health_status import ModelHealthStatus
 
@@ -74,10 +75,11 @@ class MixinHealthCheck:
             {"mixin_class": self.__class__.__name__},
         )
 
-    def get_health_checks(
-    ) -> list[
-        Callable[[], Union[ModelHealthStatus, "asyncio.Future[ModelHealthStatus]"]]
-    ]:
+    def get_health_checks() -> (
+        list[
+            Callable[[], Union[ModelHealthStatus, "asyncio.Future[ModelHealthStatus]"]]
+        ]
+    ):
         """
         Get list[Any]of health check functions.
 

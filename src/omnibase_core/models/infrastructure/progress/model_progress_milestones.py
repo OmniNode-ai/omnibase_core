@@ -4,7 +4,7 @@ from typing import List
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Progress Milestones Model.
@@ -19,7 +19,8 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelProgressMilestones(BaseModel):
@@ -51,7 +52,7 @@ class ModelProgressMilestones(BaseModel):
             if not 0.0 <= percentage <= 100.0:
                 msg = f"Milestone '{name}' percentage must be between 0.0 and 100.0"
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg
+                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return v
 
@@ -71,7 +72,7 @@ class ModelProgressMilestones(BaseModel):
         """Add a progress milestone."""
         if not 0.0 <= percentage <= 100.0:
             msg = "Milestone percentage must be between 0.0 and 100.0"
-            raise ModelOnexError(code=ModelCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
         self.milestones[name] = percentage
 
     def remove_milestone(self, name: str) -> bool:
@@ -203,7 +204,7 @@ class ModelProgressMilestones(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -216,7 +217,7 @@ class ModelProgressMilestones(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

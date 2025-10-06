@@ -5,7 +5,6 @@ from typing import Any
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
 from omnibase_core.enums.enum_status_migration import EnumStatusMigrator
 
-
 """
 Status Enum Migration Utilities.
 
@@ -22,7 +21,7 @@ Usage:
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
 from omnibase_core.enums.enum_function_lifecycle_status import (
@@ -30,6 +29,7 @@ from omnibase_core.enums.enum_function_lifecycle_status import (
 )
 from omnibase_core.enums.enum_general_status import EnumGeneralStatus
 from omnibase_core.enums.enum_scenario_status_v2 import EnumScenarioStatusV2
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Legacy enum value mappings for migration
 LEGACY_ENUM_STATUS_VALUES = {
@@ -99,16 +99,16 @@ LEGACY_METADATA_NODE_STATUS_VALUES = {
 }
 
 
-def _get_core_error_code() -> type["ModelCoreErrorCode"]:
-    """Get ModelCoreErrorCode class at runtime to avoid circular import."""
-    from omnibase_core.errors.error_codes import ModelCoreErrorCode
+def _get_core_error_code() -> type["EnumCoreErrorCode"]:
+    """Get EnumCoreErrorCode class at runtime to avoid circular import."""
+    from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
-    return ModelCoreErrorCode
+    return EnumCoreErrorCode
 
 
 def _get_onex_error() -> type["ModelOnexError"]:
     """Get ModelOnexError class at runtime to avoid circular import."""
-    from omnibase_core.errors.error_codes import ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
     return ModelOnexError
 

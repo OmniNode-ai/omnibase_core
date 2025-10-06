@@ -12,12 +12,12 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_onex_reply import EnumOnexReplyStatus
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_error_details import ModelOnexErrorDetails
 from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,
 )
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_reply_config import ModelConfig
 from omnibase_core.models.core.model_semver import ModelSemVer
 
@@ -146,7 +146,7 @@ class ModelOnexReply(BaseModel):
         if data is not None and (v is None or not v.strip()):
             msg = "data_type must be specified when data is present"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -169,7 +169,7 @@ class ModelOnexReply(BaseModel):
         ):
             msg = "Error details must be provided for error/failure status"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

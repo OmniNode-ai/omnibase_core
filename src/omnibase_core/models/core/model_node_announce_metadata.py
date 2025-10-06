@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from pydantic import Field
+
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """Node announce metadata model for ONEX event-driven architecture."""
@@ -36,7 +37,9 @@ class ModelNodeAnnounceMetadata(BaseModel):
     node_version: str | None = Field(default=None, description="Version of the node")
 
     # Node metadata and configuration
-    metadata_block: "ModelNodeMetadataBlock" = Field(default=..., description="Complete node metadata block from node.onex.yaml",
+    metadata_block: "ModelNodeMetadataBlock" = Field(
+        default=...,
+        description="Complete node metadata block from node.onex.yaml",
     )
 
     # Node status and operational state
@@ -74,7 +77,9 @@ class ModelNodeAnnounceMetadata(BaseModel):
     )
 
     # Schema and signature
-    schema_version: ModelSemVer | None = Field(default=None, description="Schema version")
+    schema_version: ModelSemVer | None = Field(
+        default=None, description="Schema version"
+    )
     signature_block: Optional["ModelSignatureBlock"] = Field(
         default=None,
         description="Signature block for verification",

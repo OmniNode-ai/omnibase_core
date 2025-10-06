@@ -18,11 +18,11 @@ if TYPE_CHECKING:
         EnumRuntimeLanguage,
     )
     from omnibase_core.enums.enum_lifecycle import EnumLifecycle
-    from omnibase_core.enums.enum_metadata import EnumLifecycle
     from omnibase_core.enums.enum_meta_type import EnumMetaType
+    from omnibase_core.enums.enum_metadata import EnumLifecycle
     from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
     from omnibase_core.errors import ModelOnexError
-    from omnibase_core.errors.error_codes import ModelCoreErrorCode
+    from omnibase_core.errors.error_codes import EnumCoreErrorCode
     from omnibase_core.models.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )
@@ -97,7 +97,7 @@ class ModelOnexMetadata(BaseModel):
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = "metadata_version must be a semver string, e.g., '0.1.0'"
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 msg,
             )
         return v
@@ -108,7 +108,7 @@ class ModelOnexMetadata(BaseModel):
 
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v):
             msg = f"Invalid name: {v}"
-            raise ModelOnexError(ModelCoreErrorCode.VALIDATION_ERROR, msg)
+            raise ModelOnexError(EnumCoreErrorCode.VALIDATION_ERROR, msg)
         return v
 
     @field_validator("namespace", mode="before")
@@ -123,7 +123,7 @@ class ModelOnexMetadata(BaseModel):
             return Namespace(**v)
         msg = "Namespace must be a Namespace, str, or dict[str, Any]with 'value'"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -133,7 +133,7 @@ class ModelOnexMetadata(BaseModel):
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = f"Invalid version: {v}"
-            raise ModelOnexError(ModelCoreErrorCode.VALIDATION_ERROR, msg)
+            raise ModelOnexError(EnumCoreErrorCode.VALIDATION_ERROR, msg)
         return v
 
     @field_validator("protocols_supported", mode="before")
@@ -149,13 +149,13 @@ class ModelOnexMetadata(BaseModel):
             except Exception:
                 msg = f"protocols_supported must be a list[Any], got: {v}"
                 raise ModelOnexError(
-                    ModelCoreErrorCode.VALIDATION_ERROR,
+                    EnumCoreErrorCode.VALIDATION_ERROR,
                     msg,
                 )
         if not isinstance(v, list):
             msg = f"protocols_supported must be a list[Any], got: {v}"
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 msg,
             )
         return v
@@ -169,6 +169,6 @@ class ModelOnexMetadata(BaseModel):
             return v
         msg = f"Entrypoint must be a URI string (e.g., python://file.py), got: {v}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )

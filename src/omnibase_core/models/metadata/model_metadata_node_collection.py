@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Metadata Node Collection Model.
@@ -13,7 +13,8 @@ from typing import Any
 
 from pydantic import Field, RootModel
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer
@@ -57,7 +58,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             validated_root = root
         else:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"root must be dict[str, Any]or None, got {type(root).__name__}",
                 details={
                     "received_type": type(root).__name__,

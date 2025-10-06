@@ -3,7 +3,7 @@ from typing import List, Literal
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -23,7 +23,8 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelCompensationPlan(BaseModel):
@@ -37,10 +38,14 @@ class ModelCompensationPlan(BaseModel):
     """
 
     # Plan identification
-    plan_id: UUID = Field(default=..., description="Unique identifier for this compensation plan",
+    plan_id: UUID = Field(
+        default=...,
+        description="Unique identifier for this compensation plan",
     )
 
-    plan_name: str = Field(default=..., description="Human-readable name for this compensation plan",
+    plan_name: str = Field(
+        default=...,
+        description="Human-readable name for this compensation plan",
         min_length=1,
         max_length=200,
     )
@@ -182,7 +187,7 @@ class ModelCompensationPlan(BaseModel):
 
                 raise ModelOnexError(
                     message="Plan ID cannot be empty",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "onex_principle": ModelSchemaValue.from_value(
@@ -198,7 +203,7 @@ class ModelCompensationPlan(BaseModel):
             except ValueError:
                 raise ModelOnexError(
                     message=f"Invalid plan_id '{v_str}'. Must be a valid UUID.",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "plan_id": ModelSchemaValue.from_value(v_str),
@@ -227,7 +232,7 @@ class ModelCompensationPlan(BaseModel):
             if not action_id.replace("_", "").replace("-", "").isalnum():
                 raise ModelOnexError(
                     message=f"Invalid action_id '{action_id}'. Must contain only alphanumeric characters, hyphens, and underscores.",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "action_id": ModelSchemaValue.from_value(action_id),
@@ -261,7 +266,7 @@ class ModelCompensationPlan(BaseModel):
                 except ValueError:
                     raise ModelOnexError(
                         message=f"Invalid dependency plan_id '{plan_id_str}'. Must be a valid UUID.",
-                        error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         details=ModelErrorContext.with_context(
                             {
                                 "dependency_plan_id": ModelSchemaValue.from_value(

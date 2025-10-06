@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
@@ -24,7 +24,8 @@ from uuid import UUID, uuid4
 from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_branching_config import ModelBranchingConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_event_coordination_config import (
@@ -141,7 +142,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Batch emission strategy requires positive batch_size"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate workflow coordination
@@ -152,7 +153,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Parallel execution requires positive max_parallel_branches"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate checkpoint configuration
@@ -163,7 +164,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Checkpoint interval must be at least 100ms"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate branching configuration
@@ -171,7 +172,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Max branch depth must be at least 1"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate event registry configuration
@@ -188,7 +189,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Published events must have unique names"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate event subscriptions reference valid handlers
@@ -197,7 +198,7 @@ class ModelContractOrchestrator(ModelContractBase):
                 msg = "Event subscriptions must specify handler_function"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         # Validate performance requirements for orchestrator nodes
@@ -205,7 +206,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Orchestrator nodes must specify single_operation_max_ms performance requirement"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
     @field_validator("published_events")
@@ -221,7 +222,7 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Published events must have unique event names"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -239,7 +240,7 @@ class ModelContractOrchestrator(ModelContractBase):
                 msg = "Batch processing requires positive batch_size"
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -255,14 +256,14 @@ class ModelContractOrchestrator(ModelContractBase):
             msg = "Buffered coordination requires positive buffer_size"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         if v.correlation_enabled and v.correlation_timeout_ms < 1000:
             msg = "Event correlation requires timeout of at least 1000ms"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v

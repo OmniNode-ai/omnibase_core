@@ -6,7 +6,7 @@ from pydantic import Field
 from omnibase_core.enums.enum_chain_validation_status import EnumChainValidationStatus
 from omnibase_core.enums.enum_compliance_framework import EnumComplianceFramework
 from omnibase_core.enums.enum_trust_level import EnumTrustLevel
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 ModelSignatureChain: Tamper-evident signature chain for secure envelopes
@@ -24,7 +24,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, validator
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.security.model_chain_metrics import ModelChainMetrics
 from omnibase_core.models.security.model_node_signature import (
     ModelNodeOperationEnum,
@@ -120,7 +120,7 @@ class ModelSignatureChain(BaseModel):
             if signature.hop_index != i:
                 msg = f"Signature at position {i} has hop_index {signature.hop_index}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -183,7 +183,7 @@ class ModelSignatureChain(BaseModel):
             msg = f"Failed to add signature to chain: {e!s}"
             raise ModelOnexError(
                 msg,
-                error_code=ModelCoreErrorCode.SECURITY_VIOLATION,
+                error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
                 component="signature_chain",
                 operation="add_signature",
             )
@@ -298,7 +298,7 @@ class ModelSignatureChain(BaseModel):
             msg = f"Chain integrity validation failed: {e!s}"
             raise ModelOnexError(
                 msg,
-                error_code=ModelCoreErrorCode.SECURITY_VIOLATION,
+                error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
                 component="signature_chain",
                 operation="validate_chain_integrity",
             )

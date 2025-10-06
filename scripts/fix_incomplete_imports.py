@@ -15,9 +15,9 @@ def find_incomplete_imports():
     )
 
     errors = []
-    for line in result.stderr.split('\n'):
-        if 'error:' in line and 'syntax' in line:
-            match = re.match(r'^([^:]+):(\d+):', line)
+    for line in result.stderr.split("\n"):
+        if "error:" in line and "syntax" in line:
+            match = re.match(r"^([^:]+):(\d+):", line)
             if match:
                 errors.append((match.group(1), int(match.group(2))))
 
@@ -37,13 +37,13 @@ def fix_incomplete_import(file_path, line_num):
     line = lines[line_idx]
 
     # Check if it's a closing paren with nothing before it
-    if line.strip() == ')':
+    if line.strip() == ")":
         # Look backwards to find the from ... import ( statement
         for i in range(line_idx - 1, max(0, line_idx - 10), -1):
-            if 'from ' in lines[i] and 'import (' in lines[i]:
+            if "from " in lines[i] and "import (" in lines[i]:
                 # Remove the incomplete import block
-                del lines[i:line_idx+1]
-                with open(file_path, 'w') as f:
+                del lines[i : line_idx + 1]
+                with open(file_path, "w") as f:
                     f.writelines(lines)
                 return True
 

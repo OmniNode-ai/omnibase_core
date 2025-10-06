@@ -2,7 +2,7 @@ import json
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 ModelOutputConfig
@@ -18,9 +18,11 @@ Safe Runtime Imports (OK to import at module level):
 """
 
 from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelOutputConfig(BaseModel):
@@ -37,7 +39,7 @@ class ModelOutputConfig(BaseModel):
         allowed = {"json", "yaml", "text"}
         if v not in allowed:
             raise ModelOnexError(
-                f"format must be one of {allowed}", ModelCoreErrorCode.VALIDATION_ERROR
+                f"format must be one of {allowed}", EnumCoreErrorCode.VALIDATION_ERROR
             )
         return v
 
@@ -48,6 +50,6 @@ class ModelOutputConfig(BaseModel):
         if v not in allowed:
             raise ModelOnexError(
                 f"log_level must be one of {allowed}",
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v

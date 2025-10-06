@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
 from omnibase_core.enums.enum_metadata import EnumLifecycle
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
 from omnibase_core.models.core.model_tool_collection import ToolCollection
 
@@ -92,7 +92,7 @@ class ModelMetadataBlock(BaseModel):
             msg = "metadata_version must be a semver string, e.g., '0.1.0'"
             raise ModelOnexError(
                 msg,
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -101,7 +101,7 @@ class ModelMetadataBlock(BaseModel):
     def check_name(cls, v: str) -> str:
         if not re.match("^[a-zA-Z_][a-zA-Z0-9_]*$", v):
             msg = f"Invalid name: {v}"
-            raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
         return v
 
     @field_validator("namespace", mode="before")
@@ -115,14 +115,14 @@ class ModelMetadataBlock(BaseModel):
         if isinstance(v, dict) and "value" in v:
             return Namespace(**v)
         msg = "Namespace must be a Namespace, str, or dict[str, Any]with 'value'"
-        raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+        raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
 
     @field_validator("version")
     @classmethod
     def check_version(cls, v: str) -> str:
         if not re.match("^\\d+\\.\\d+\\.\\d+$", v):
             msg = f"Invalid version: {v}"
-            raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
         return v
 
     @field_validator("protocols_supported", mode="before")
@@ -137,13 +137,13 @@ class ModelMetadataBlock(BaseModel):
                 msg = f"protocols_supported must be a list[Any], got: {v}"
                 raise ModelOnexError(
                     msg,
-                    ModelCoreErrorCode.VALIDATION_ERROR,
+                    EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         if not isinstance(v, list):
             msg = f"protocols_supported must be a list[Any], got: {v}"
             raise ModelOnexError(
                 msg,
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -155,4 +155,4 @@ class ModelMetadataBlock(BaseModel):
         if isinstance(v, str) and "://" in v:
             return v
         msg = f"Entrypoint must be a URI string (e.g., python://file.py), got: {v}"
-        raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+        raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)

@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -29,7 +29,8 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Import individual configuration model components
@@ -222,7 +223,7 @@ class ModelConfigurationSubcontract(BaseModel):
             ]
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -242,7 +243,7 @@ class ModelConfigurationSubcontract(BaseModel):
             msg = f"Keys cannot be both required and optional: {overlapping}"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -344,7 +345,7 @@ class ModelConfigurationSubcontract(BaseModel):
             msg = "Runtime configuration updates are not allowed for this subcontract"
             raise ModelOnexError(
                 message=msg,
-                error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
             )
 
     def create_configuration_source(
@@ -399,7 +400,7 @@ class ModelConfigurationSubcontract(BaseModel):
                 )
                 raise ModelOnexError(
                     message=msg,
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         self.configuration_sources.append(source)

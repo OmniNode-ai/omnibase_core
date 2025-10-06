@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 ModelEncryptionAlgorithm: Encryption algorithm configuration.
@@ -89,12 +89,12 @@ class ModelEncryptionAlgorithm(BaseModel):
         }
         if v not in known_algorithms:
             from omnibase_core.errors import ModelOnexError
-            from omnibase_core.errors.error_codes import ModelCoreErrorCode
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
             msg = f"Unsupported encryption algorithm: {v}"
             raise ModelOnexError(
                 msg,
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 component="encryption_algorithm",
                 operation="validate_algorithm_name",
             )

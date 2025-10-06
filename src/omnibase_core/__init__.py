@@ -1,4 +1,4 @@
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -35,7 +35,7 @@ Validation Tools:
 """
 
 # Import already done at top of file
-# from omnibase_core.errors import ModelCoreErrorCode, ModelOnexError
+# from omnibase_core.errors import EnumCoreErrorCode, ModelOnexError
 
 # No typing imports needed for lazy loading
 
@@ -66,7 +66,7 @@ def __getattr__(name: str) -> object:
         return locals()[name]
     msg = f"module '{__name__}' has no attribute '{name}'"
     raise ModelOnexError(
-        code=ModelCoreErrorCode.IMPORT_ERROR,
+        code=EnumCoreErrorCode.IMPORT_ERROR,
         message=msg,
         details={"module": __name__, "attribute": name},
     )

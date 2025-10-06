@@ -3,7 +3,7 @@ from typing import Callable, Dict, Generic, List, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 NodeReducer - Data Aggregation Node for 4-Node ModelArchitecture.
@@ -38,7 +38,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_reduction_type import EnumReductionType
 from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -159,14 +159,14 @@ class NodeReducer(NodeCoreBase):
 
             # Fallback: this shouldn't happen but provide error
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for reducer node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -458,7 +458,7 @@ class NodeReducer(NodeCoreBase):
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeReducer: {e!s}",
                 details={
                     "contract_model_type": "ModelContractReducer",
@@ -577,7 +577,7 @@ class NodeReducer(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Reduction failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -712,7 +712,7 @@ class NodeReducer(NodeCoreBase):
         """
         if reduction_type in self.reduction_functions:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Reduction type already registered: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -722,7 +722,7 @@ class NodeReducer(NodeCoreBase):
 
         if not callable(function):
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Reduction function must be callable: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -794,7 +794,7 @@ class NodeReducer(NodeCoreBase):
 
         if not isinstance(input_data.reduction_type, EnumReductionType):
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Reduction type must be valid EnumReductionType enum",
                 context={
                     "node_id": self.node_id,
@@ -804,7 +804,7 @@ class NodeReducer(NodeCoreBase):
 
         if input_data.data is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Data cannot be None for reduction",
                 context={
                     "node_id": self.node_id,
@@ -822,7 +822,7 @@ class NodeReducer(NodeCoreBase):
 
         if reduction_type not in self.reduction_functions:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"No reduction function for type: {reduction_type.value}",
                 context={
                     "node_id": self.node_id,
@@ -1067,7 +1067,7 @@ class NodeReducer(NodeCoreBase):
             reducer_func = self._get_reducer_function(reducer_func_name)
             if not reducer_func:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Unknown reducer function: {reducer_func_name}",
                     context={"node_id": self.node_id},
                 )

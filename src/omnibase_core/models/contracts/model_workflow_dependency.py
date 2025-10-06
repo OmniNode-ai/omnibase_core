@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
@@ -23,7 +23,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_workflow_condition import (
     ModelWorkflowCondition,
 )
@@ -96,7 +97,7 @@ class ModelWorkflowDependency(BaseModel):
         # ZERO TOLERANCE: Reject all non-UUID types including strings
         raise ModelOnexError(
             message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     @field_validator("condition", mode="before")
@@ -122,7 +123,7 @@ class ModelWorkflowDependency(BaseModel):
         # STRONG TYPES ONLY: Reject all other types (dict[str, Any]s, strings, Any, etc.)
         raise ModelOnexError(
             message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     @model_validator(mode="after")
@@ -136,7 +137,7 @@ class ModelWorkflowDependency(BaseModel):
         if self.workflow_id == self.dependent_workflow_id:
             raise ModelOnexError(
                 message=f"CIRCULAR DEPENDENCY DETECTED: Workflow {self.workflow_id} cannot depend on itself.",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return self
 

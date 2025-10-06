@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 CLI Configuration models for ONEX production deployment.
@@ -13,7 +13,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_api_config import ModelAPIConfig
 from .model_database_config import ModelDatabaseConfig
@@ -70,7 +71,7 @@ class ModelCLIConfig(BaseModel):
         if not config_path.exists():
             raise ModelOnexError(
                 f"Configuration file not found: {config_path}",
-                ModelCoreErrorCode.FILE_NOT_FOUND,
+                EnumCoreErrorCode.FILE_NOT_FOUND,
             )
 
         # In a real implementation, you would load from YAML/JSON here

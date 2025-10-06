@@ -1,6 +1,6 @@
 from typing import Any, Callable, Generic, List, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Event Listener Mixin for ONEX Tool Nodes.
@@ -24,7 +24,8 @@ from omnibase_spi.protocols.event_bus import ProtocolEventBus
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
@@ -116,7 +117,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def process(self, input_state: InputStateT) -> OutputStateT:
         """Process method that should be implemented by the tool."""
         msg = "Tool must implement process method"
-        raise ModelOnexError(msg, ModelCoreErrorCode.METHOD_NOT_IMPLEMENTED)
+        raise ModelOnexError(msg, EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED)
 
     def get_event_patterns(self) -> list[str]:
         """
@@ -136,8 +137,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     with open(contract_path) as f:
                         # Load and validate YAML using Pydantic model
 
-                        yaml_model = load_and_validate_yaml_model(
-                        )
+                        yaml_model = load_and_validate_yaml_model()
 
                         contract = yaml_model.model_dump()
 
@@ -742,7 +742,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     },
                 )
                 msg = f"Failed to convert event data to input state: {e}"
-                raise ModelOnexError(msg, ModelCoreErrorCode.VALIDATION_ERROR)
+                raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
         else:
             # No input state class found - this is a critical error
             emit_log_event(
@@ -755,7 +755,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 f"Event listener requires proper type conversion."
             )
             raise ModelOnexError(
-                ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             )
 
     def _get_input_state_class(self) -> type | None:

@@ -11,7 +11,8 @@ from omnibase_core.enums.enum_scalability_level import EnumScalabilityLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.enums.enum_throughput_level import EnumThroughputLevel
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_backend_capabilities import ModelBackendCapabilities
 from .model_backend_config import ModelBackendConfig
@@ -51,7 +52,7 @@ class ModelSecretBackend(BaseModel):
 
         msg = f"Invalid backend type: {v}"
         raise ModelOnexError(
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
 
@@ -443,7 +444,7 @@ class ModelSecretBackend(BaseModel):
             msg = f"No backends recommended for environment type: {environment_type}"
             raise ModelOnexError(
                 msg,
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         backend_type = recommended[0]

@@ -3,7 +3,6 @@ from datetime import datetime
 from pydantic import Field
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-
 from omnibase_core.models.discovery.model_custommetrics import ModelCustomMetrics
 from omnibase_core.models.health.model_health_check import ModelHealthMetrics
 

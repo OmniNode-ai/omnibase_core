@@ -4,7 +4,7 @@ from typing import List, Literal
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Filter Conditions Model - ONEX Standards Compliant.
@@ -21,7 +21,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelFilterConditions(BaseModel):
@@ -226,7 +227,7 @@ class ModelFilterConditions(BaseModel):
             if len(item) > 200:
                 raise ModelOnexError(
                     message=f"Source/type filter '{item}' too long. Maximum 200 characters.",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated.append(item)

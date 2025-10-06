@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # === OmniNode:Metadata ===
 # metadata_version: 0.1.0
@@ -63,7 +63,7 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 # Note: EnumOnexErrorCode is defined in this file and in error_codes.py
 # This file appears to be a legacy/duplicate file that's not imported anywhere
 # TODO: Consider removing this file entirely in favor of error_codes.py
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class EnumCLIExitCode(int, Enum):
@@ -151,7 +151,7 @@ class EnumOnexErrorCode(str, Enum):
         return EnumCLIExitCode.ERROR.value
 
 
-class ModelCoreErrorCode(EnumOnexErrorCode):
+class EnumCoreErrorCode(EnumOnexErrorCode):
     """
     Core error codes that can be reused across all ONEX components.
 
@@ -260,60 +260,60 @@ class ModelCoreErrorCode(EnumOnexErrorCode):
 
 
 # Mapping from core error codes to exit codes
-CORE_ERROR_CODE_TO_EXIT_CODE: dict[ModelCoreErrorCode, EnumCLIExitCode] = {
+CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     # Validation errors -> ERROR
-    ModelCoreErrorCode.INVALID_PARAMETER: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.MISSING_REQUIRED_PARAMETER: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.PARAMETER_OUT_OF_RANGE: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.VALIDATION_FAILED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.VALIDATION_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.INVALID_INPUT: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.INVALID_OPERATION: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_PARAMETER: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.VALIDATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.VALIDATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_INPUT: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_OPERATION: EnumCLIExitCode.ERROR,
     # File system errors -> ERROR
-    ModelCoreErrorCode.FILE_NOT_FOUND: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.FILE_READ_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.FILE_WRITE_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.DIRECTORY_NOT_FOUND: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.PERMISSION_DENIED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.FILE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_READ_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_WRITE_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DIRECTORY_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PERMISSION_DENIED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
     # Configuration errors -> ERROR
-    ModelCoreErrorCode.INVALID_CONFIGURATION: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.CONFIGURATION_NOT_FOUND: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.CONFIGURATION_PARSE_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_CONFIGURATION: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONFIGURATION_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR: EnumCLIExitCode.ERROR,
     # Registry errors -> ERROR
-    ModelCoreErrorCode.REGISTRY_NOT_FOUND: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.ITEM_NOT_REGISTERED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.DUPLICATE_REGISTRATION: EnumCLIExitCode.WARNING,
+    EnumCoreErrorCode.REGISTRY_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ITEM_NOT_REGISTERED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DUPLICATE_REGISTRATION: EnumCLIExitCode.WARNING,
     # Runtime errors -> ERROR
-    ModelCoreErrorCode.OPERATION_FAILED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.TIMEOUT_EXCEEDED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.RESOURCE_UNAVAILABLE: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.UNSUPPORTED_OPERATION: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.RESOURCE_NOT_FOUND: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.INVALID_STATE: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.TIMEOUT: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.OPERATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TIMEOUT_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RESOURCE_UNAVAILABLE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.UNSUPPORTED_OPERATION: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RESOURCE_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_STATE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TIMEOUT: EnumCLIExitCode.ERROR,
     # Database errors -> ERROR
-    ModelCoreErrorCode.DATABASE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.DATABASE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.DATABASE_QUERY_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DATABASE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DATABASE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DATABASE_QUERY_ERROR: EnumCLIExitCode.ERROR,
     # LLM provider errors -> ERROR
-    ModelCoreErrorCode.NO_SUITABLE_PROVIDER: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.RATE_LIMIT_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.AUTHENTICATION_ERROR: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.QUOTA_EXCEEDED: EnumCLIExitCode.ERROR,
-    ModelCoreErrorCode.PROCESSING_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.NO_SUITABLE_PROVIDER: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RATE_LIMIT_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.AUTHENTICATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.QUOTA_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PROCESSING_ERROR: EnumCLIExitCode.ERROR,
 }
 
 
-def get_exit_code_for_core_error(error_code: ModelCoreErrorCode) -> int:
+def get_exit_code_for_core_error(error_code: EnumCoreErrorCode) -> int:
     """
     Get the appropriate CLI exit code for a core error code.
 
     Args:
-        error_code: The ModelCoreErrorCode to map
+        error_code: The EnumCoreErrorCode to map
 
     Returns:
         The corresponding CLI exit code (integer)
@@ -321,65 +321,65 @@ def get_exit_code_for_core_error(error_code: ModelCoreErrorCode) -> int:
     return CORE_ERROR_CODE_TO_EXIT_CODE.get(error_code, EnumCLIExitCode.ERROR).value
 
 
-def get_core_error_description(error_code: ModelCoreErrorCode) -> str:
+def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
     """
     Get a human-readable description for a core error code.
 
     Args:
-        error_code: The ModelCoreErrorCode to describe
+        error_code: The EnumCoreErrorCode to describe
 
     Returns:
         A human-readable description of the error
     """
     descriptions = {
-        ModelCoreErrorCode.INVALID_PARAMETER: "Invalid parameter value",
-        ModelCoreErrorCode.MISSING_REQUIRED_PARAMETER: "Required parameter missing",
-        ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH: "Parameter type mismatch",
-        ModelCoreErrorCode.PARAMETER_OUT_OF_RANGE: "Parameter value out of range",
-        ModelCoreErrorCode.VALIDATION_FAILED: "Validation failed",
-        ModelCoreErrorCode.VALIDATION_ERROR: "Validation error occurred",
-        ModelCoreErrorCode.INVALID_INPUT: "Invalid input provided",
-        ModelCoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
-        ModelCoreErrorCode.FILE_NOT_FOUND: "File not found",
-        ModelCoreErrorCode.FILE_READ_ERROR: "Cannot read file",
-        ModelCoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",
-        ModelCoreErrorCode.DIRECTORY_NOT_FOUND: "Directory not found",
-        ModelCoreErrorCode.PERMISSION_DENIED: "Permission denied",
-        ModelCoreErrorCode.FILE_OPERATION_ERROR: "File operation failed",
-        ModelCoreErrorCode.INVALID_CONFIGURATION: "Invalid configuration",
-        ModelCoreErrorCode.CONFIGURATION_NOT_FOUND: "Configuration not found",
-        ModelCoreErrorCode.CONFIGURATION_PARSE_ERROR: "Configuration parse error",
-        ModelCoreErrorCode.REGISTRY_NOT_FOUND: "Registry not found",
-        ModelCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: "Registry initialization failed",
-        ModelCoreErrorCode.ITEM_NOT_REGISTERED: "Item not registered",
-        ModelCoreErrorCode.DUPLICATE_REGISTRATION: "Duplicate registration",
-        ModelCoreErrorCode.OPERATION_FAILED: "Operation failed",
-        ModelCoreErrorCode.TIMEOUT_EXCEEDED: "Timeout exceeded",
-        ModelCoreErrorCode.RESOURCE_UNAVAILABLE: "Resource unavailable",
-        ModelCoreErrorCode.UNSUPPORTED_OPERATION: "Unsupported operation",
-        ModelCoreErrorCode.RESOURCE_NOT_FOUND: "Resource not found",
-        ModelCoreErrorCode.INVALID_STATE: "Invalid state",
-        ModelCoreErrorCode.INITIALIZATION_FAILED: "Initialization failed",
-        ModelCoreErrorCode.TIMEOUT: "Operation timed out",
-        ModelCoreErrorCode.DATABASE_CONNECTION_ERROR: "Database connection failed",
-        ModelCoreErrorCode.DATABASE_OPERATION_ERROR: "Database operation failed",
-        ModelCoreErrorCode.DATABASE_QUERY_ERROR: "Database query failed",
-        ModelCoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
-        ModelCoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
-        ModelCoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",
-        ModelCoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
-        ModelCoreErrorCode.PROCESSING_ERROR: "Processing error",
-        ModelCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: "Intelligence processing failed",
-        ModelCoreErrorCode.PATTERN_RECOGNITION_FAILED: "Pattern recognition failed",
-        ModelCoreErrorCode.CONTEXT_ANALYSIS_FAILED: "Context analysis failed",
-        ModelCoreErrorCode.LEARNING_ENGINE_FAILED: "Learning engine failed",
-        ModelCoreErrorCode.INTELLIGENCE_COORDINATION_FAILED: "Intelligence coordination failed",
-        ModelCoreErrorCode.SYSTEM_HEALTH_DEGRADED: "System health degraded",
-        ModelCoreErrorCode.SERVICE_START_FAILED: "Service start failed",
-        ModelCoreErrorCode.SERVICE_STOP_FAILED: "Service stop failed",
-        ModelCoreErrorCode.SECURITY_REPORT_FAILED: "Security report failed",
-        ModelCoreErrorCode.SECURITY_VIOLATION: "Security violation",
-        ModelCoreErrorCode.EVENT_PROCESSING_FAILED: "Event processing failed",
+        EnumCoreErrorCode.INVALID_PARAMETER: "Invalid parameter value",
+        EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER: "Required parameter missing",
+        EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH: "Parameter type mismatch",
+        EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE: "Parameter value out of range",
+        EnumCoreErrorCode.VALIDATION_FAILED: "Validation failed",
+        EnumCoreErrorCode.VALIDATION_ERROR: "Validation error occurred",
+        EnumCoreErrorCode.INVALID_INPUT: "Invalid input provided",
+        EnumCoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
+        EnumCoreErrorCode.FILE_NOT_FOUND: "File not found",
+        EnumCoreErrorCode.FILE_READ_ERROR: "Cannot read file",
+        EnumCoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",
+        EnumCoreErrorCode.DIRECTORY_NOT_FOUND: "Directory not found",
+        EnumCoreErrorCode.PERMISSION_DENIED: "Permission denied",
+        EnumCoreErrorCode.FILE_OPERATION_ERROR: "File operation failed",
+        EnumCoreErrorCode.INVALID_CONFIGURATION: "Invalid configuration",
+        EnumCoreErrorCode.CONFIGURATION_NOT_FOUND: "Configuration not found",
+        EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR: "Configuration parse error",
+        EnumCoreErrorCode.REGISTRY_NOT_FOUND: "Registry not found",
+        EnumCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: "Registry initialization failed",
+        EnumCoreErrorCode.ITEM_NOT_REGISTERED: "Item not registered",
+        EnumCoreErrorCode.DUPLICATE_REGISTRATION: "Duplicate registration",
+        EnumCoreErrorCode.OPERATION_FAILED: "Operation failed",
+        EnumCoreErrorCode.TIMEOUT_EXCEEDED: "Timeout exceeded",
+        EnumCoreErrorCode.RESOURCE_UNAVAILABLE: "Resource unavailable",
+        EnumCoreErrorCode.UNSUPPORTED_OPERATION: "Unsupported operation",
+        EnumCoreErrorCode.RESOURCE_NOT_FOUND: "Resource not found",
+        EnumCoreErrorCode.INVALID_STATE: "Invalid state",
+        EnumCoreErrorCode.INITIALIZATION_FAILED: "Initialization failed",
+        EnumCoreErrorCode.TIMEOUT: "Operation timed out",
+        EnumCoreErrorCode.DATABASE_CONNECTION_ERROR: "Database connection failed",
+        EnumCoreErrorCode.DATABASE_OPERATION_ERROR: "Database operation failed",
+        EnumCoreErrorCode.DATABASE_QUERY_ERROR: "Database query failed",
+        EnumCoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
+        EnumCoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
+        EnumCoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",
+        EnumCoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
+        EnumCoreErrorCode.PROCESSING_ERROR: "Processing error",
+        EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: "Intelligence processing failed",
+        EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: "Pattern recognition failed",
+        EnumCoreErrorCode.CONTEXT_ANALYSIS_FAILED: "Context analysis failed",
+        EnumCoreErrorCode.LEARNING_ENGINE_FAILED: "Learning engine failed",
+        EnumCoreErrorCode.INTELLIGENCE_COORDINATION_FAILED: "Intelligence coordination failed",
+        EnumCoreErrorCode.SYSTEM_HEALTH_DEGRADED: "System health degraded",
+        EnumCoreErrorCode.SERVICE_START_FAILED: "Service start failed",
+        EnumCoreErrorCode.SERVICE_STOP_FAILED: "Service stop failed",
+        EnumCoreErrorCode.SECURITY_REPORT_FAILED: "Security report failed",
+        EnumCoreErrorCode.SECURITY_VIOLATION: "Security violation",
+        EnumCoreErrorCode.EVENT_PROCESSING_FAILED: "Event processing failed",
     }
     return descriptions.get(error_code, "Unknown error")
 
@@ -426,7 +426,7 @@ def get_error_codes_for_component(component: str) -> type[EnumOnexErrorCode]:
         msg = f"No error codes registered for component: {component}"
         raise ModelOnexError(
             message=msg,
-            error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,
+            error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
         )
     return _ERROR_CODE_REGISTRIES[component]
 
@@ -441,7 +441,7 @@ def list_registered_components() -> list[str]:
     return list(_ERROR_CODE_REGISTRIES.keys())
 
 
-class ModelRegistryErrorCode(EnumOnexErrorCode):
+class EnumRegistryErrorCode(EnumOnexErrorCode):
     """
     Canonical error codes for ONEX tool/handler registries.
     Use these for all registry-driven error handling (tool not found, duplicate, etc.).

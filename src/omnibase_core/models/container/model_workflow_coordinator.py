@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
@@ -76,7 +77,7 @@ class ModelWorkflowCoordinator:
         except Exception as e:
             # Log workflow failure
             from omnibase_core.errors.error_codes import (
-                ModelCoreErrorCode,
+                EnumCoreErrorCode,
                 ModelOnexError,
             )
             from omnibase_core.logging.structured import (
@@ -93,7 +94,7 @@ class ModelWorkflowCoordinator:
                 },
             )
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow execution failed: {e!s}",
                 workflow_id=str(workflow_id),
                 workflow_type=workflow_type,

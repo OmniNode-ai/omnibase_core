@@ -2,7 +2,7 @@ from typing import List, Literal
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 FSM Transition Action Model - ONEX Standards Compliant.
@@ -17,7 +17,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_fsmtransitionaction import ModelFSMTransitionAction
 
@@ -58,25 +59,25 @@ class ModelActionConfigValue(BaseModel):
             if v is None:
                 raise ModelOnexError(
                     message="scalar_value must be provided when value_type='scalar'",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         elif value_type == "scalar" and field_name == "list_value":
             if v is not None:
                 raise ModelOnexError(
                     message="list_value must be None when value_type='scalar'",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         elif value_type == "list[Any]" and field_name == "list_value":
             if v is None:
                 raise ModelOnexError(
                     message="list_value must be provided when value_type='list[Any]'",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         elif value_type == "list[Any]" and field_name == "scalar_value":
             if v is not None:
                 raise ModelOnexError(
                     message="scalar_value must be None when value_type='list[Any]'",
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -89,5 +90,5 @@ class ModelActionConfigValue(BaseModel):
             return self.list_value or []
         raise ModelOnexError(
             message=f"Invalid value_type: {self.value_type}",
-            error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )

@@ -1,9 +1,9 @@
 from typing import Any
-from typing_extensions import Self
 
 from pydantic import Field, model_validator
+from typing_extensions import Self
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -60,13 +60,13 @@ class ModelNodeWeights(BaseModel):
             if weight < self.min_weight:
                 msg = f"Weight for {node_id} ({weight}) is below minimum ({self.min_weight})"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
             if weight > self.max_weight:
                 msg = f"Weight for {node_id} ({weight}) exceeds maximum ({self.max_weight})"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         return self
@@ -80,13 +80,13 @@ class ModelNodeWeights(BaseModel):
         if weight < self.min_weight:
             msg = f"Weight ({weight}) is below minimum ({self.min_weight})"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if weight > self.max_weight:
             msg = f"Weight ({weight}) exceeds maximum ({self.max_weight})"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Generic
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
@@ -22,7 +22,8 @@ import yaml
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_contract_cache import ModelContractCache
 from omnibase_core.models.core.model_contract_content import ModelContractContent
@@ -80,7 +81,7 @@ class ProtocolContractLoader:
 
             if not contract_path.exists():
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Contract file not found: {contract_path}",
                     context={"contract_path": str(contract_path)},
                 )
@@ -114,7 +115,7 @@ class ProtocolContractLoader:
             raise
         except Exception as e:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to load contract: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
@@ -175,13 +176,13 @@ class ProtocolContractLoader:
 
         except yaml.YAMLError as e:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid YAML in contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
         except Exception as e:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to read contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
@@ -312,7 +313,7 @@ class ProtocolContractLoader:
 
         except Exception as e:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to parse contract content: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
@@ -351,14 +352,14 @@ class ProtocolContractLoader:
         """
         if not contract.node_name:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Contract missing required node_name field",
                 context={"contract_path": str(contract_path)},
             )
 
         if not contract.tool_specification.main_tool_class:
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Contract missing required tool_specification.main_tool_class field",
                 context={"contract_path": str(contract_path)},
             )
@@ -434,7 +435,7 @@ class ProtocolContractLoader:
             msg = f"YAML file too large ({len(content)} bytes, max {max_size}): {file_path}"
             raise ModelOnexError(
                 msg,
-                ModelCoreErrorCode.VALIDATION_FAILED,
+                EnumCoreErrorCode.VALIDATION_FAILED,
             )
 
         # Check for suspicious YAML constructs
@@ -475,7 +476,7 @@ class ProtocolContractLoader:
                     )
                     raise ModelOnexError(
                         msg,
-                        ModelCoreErrorCode.VALIDATION_FAILED,
+                        EnumCoreErrorCode.VALIDATION_FAILED,
                     )
             elif char in ["}", "]"]:
                 nesting_depth = max(0, nesting_depth - 1)

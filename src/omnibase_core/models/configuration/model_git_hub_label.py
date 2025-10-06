@@ -1,7 +1,7 @@
 from typing import Dict
+from uuid import UUID
 
 from pydantic import Field
-from uuid import UUID
 
 """
 GitHub Label Model

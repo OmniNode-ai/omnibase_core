@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from typing import Any, Dict, Generic
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,7 +14,6 @@ from omnibase_core.models.core.model_orchestrator_info import ModelOrchestratorI
 from .model_onex_message import ModelOnexMessage
 from .model_unified_summary import ModelUnifiedSummary
 from .model_unified_version import ModelUnifiedVersion
-from uuid import UUID
 
 
 class ModelOnexResult(BaseModel):

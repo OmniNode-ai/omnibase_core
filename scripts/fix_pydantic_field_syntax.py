@@ -60,7 +60,9 @@ class PydanticFieldSyntaxFixer:
             content = file_path.read_text()
 
             # First, fix multi-line Field() patterns
-            fixed_content, multiline_results = self._fix_multiline_fields(content, str(file_path))
+            fixed_content, multiline_results = self._fix_multiline_fields(
+                content, str(file_path)
+            )
 
             # Then fix single-line patterns
             lines = fixed_content.split("\n")
@@ -86,13 +88,15 @@ class PydanticFieldSyntaxFixer:
             print(f"Error processing {file_path}: {e}")
             return []
 
-    def _fix_multiline_fields(self, content: str, file_path: str) -> tuple[str, list[FieldFixResult]]:
+    def _fix_multiline_fields(
+        self, content: str, file_path: str
+    ) -> tuple[str, list[FieldFixResult]]:
         """Fix multi-line Field() definitions."""
         results = []
 
         # Pattern: Field(\n        None,\n        description=...)
         # Match Field with None as first positional arg (potentially multi-line)
-        pattern = r'(\w+:\s*[^=]+\s*=\s*Field\s*\(\s*)None(\s*,)'
+        pattern = r"(\w+:\s*[^=]+\s*=\s*Field\s*\(\s*)None(\s*,)"
 
         def replacer(match):
             # Extract field name from the line before Field
@@ -100,7 +104,7 @@ class PydanticFieldSyntaxFixer:
             field_name = self._extract_field_name(full_match)
 
             # Count line number
-            line_num = content[:match.start()].count('\n') + 1
+            line_num = content[: match.start()].count("\n") + 1
 
             result = FieldFixResult(
                 file_path=file_path,
@@ -116,7 +120,9 @@ class PydanticFieldSyntaxFixer:
 
             return match.group(1) + "default=None" + match.group(2)
 
-        fixed_content = re.sub(pattern, replacer, content, flags=re.MULTILINE | re.DOTALL)
+        fixed_content = re.sub(
+            pattern, replacer, content, flags=re.MULTILINE | re.DOTALL
+        )
         return fixed_content, results
 
     def _fix_line(

@@ -2,7 +2,7 @@ from typing import Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 ModelValidationRulesConverter - Shared Validation Rules Conversion Utility.
@@ -20,7 +20,8 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from omnibase_core.enums.enum_validation_rules_input_type import (
     EnumValidationRulesInputType,
 )
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
@@ -66,7 +67,7 @@ class ModelValidationRulesInputValue(BaseModel):
         required_field = required_fields.get(input_type)
         if required_field == field_name and v is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Field {field_name} is required for input type {input_type}",
             )
 
@@ -115,7 +116,7 @@ class ModelValidationRulesInputValue(BaseModel):
 
         # This should never be reached given the type annotations
         raise ModelOnexError(
-            code=ModelCoreErrorCode.VALIDATION_ERROR,
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported data type: {type(data)}",
         )
 

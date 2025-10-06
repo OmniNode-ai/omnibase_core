@@ -12,7 +12,6 @@ from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
 )
-from omnibase_core.models.security.model_security_rule import ModelRuleConditionValue
 from omnibase_core.models.security.model_encryption_requirement import (
     ModelEncryptionRequirement,
 )
@@ -22,6 +21,7 @@ from omnibase_core.models.security.model_policy_validation_result import (
     ModelPolicyValidationResult,
 )
 from omnibase_core.models.security.model_rule_condition import ModelRuleCondition
+from omnibase_core.models.security.model_security_rule import ModelRuleConditionValue
 from omnibase_core.models.security.model_signature_requirements import (
     ModelSignatureRequirements,
 )

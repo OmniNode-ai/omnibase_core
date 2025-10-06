@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_secret_config import ModelSecretConfig
 from omnibase_core.models.security.model_secret_manager import ModelSecretManager
@@ -114,7 +114,7 @@ class ModelSecretManager(BaseModel):
             if not validation["is_valid"]:
                 msg = f"Invalid database configuration: {validation['issues']}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_performance_metrics_config import ModelConfig
 
@@ -44,7 +44,7 @@ class ModelOnexPerformanceMetrics(BaseModel):
         if v < 0:
             msg = "Processing time cannot be negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -56,7 +56,7 @@ class ModelOnexPerformanceMetrics(BaseModel):
         if v is not None and v < 0:
             msg = "Queue time cannot be negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -68,7 +68,7 @@ class ModelOnexPerformanceMetrics(BaseModel):
         if v is not None and v < 0:
             msg = "Network time cannot be negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -80,7 +80,7 @@ class ModelOnexPerformanceMetrics(BaseModel):
         if v is not None and v < 0:
             msg = "Memory usage cannot be negative"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v
@@ -92,7 +92,7 @@ class ModelOnexPerformanceMetrics(BaseModel):
         if v is not None and (v < 0 or v > 100):
             msg = "CPU usage must be between 0 and 100"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         return v

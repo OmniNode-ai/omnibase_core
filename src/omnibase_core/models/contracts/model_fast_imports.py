@@ -1,9 +1,6 @@
-from typing import Any, Dict, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, TypeVar
 
-from omnibase_core.errors.error_codes import ModelOnexError
-
-from typing import TYPE_CHECKING
-
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Fast Import Module - Aggressive Performance Optimization
@@ -63,7 +60,8 @@ class ModelFastContractFactory:
     ) -> type["ModelContractBase"]:
         """Import a contract class on-demand with caching."""
         # Function-level imports to maintain zero-import-time loading
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -77,7 +75,7 @@ class ModelFastContractFactory:
         if not module_path:
             raise ModelOnexError(
                 message=f"Unknown contract type: {contract_type}",
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),

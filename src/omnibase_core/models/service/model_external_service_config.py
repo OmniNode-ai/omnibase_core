@@ -2,7 +2,7 @@ from typing import Any, Generic
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
 )
@@ -102,19 +102,19 @@ class ModelExternalServiceConfig(BaseModel):
                         )
                     except (ValueError, ValidationError) as e:
                         from omnibase_core.errors import ModelOnexError
-                        from omnibase_core.errors.error_codes import ModelCoreErrorCode
+                        from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
                         msg = f"Invalid database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
-                            error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
 
                         msg = f"Failed to create database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
-                            error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                            error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         ) from e
                 elif service_type in ["rest_api", "api", "http", "https"]:
                     try:
@@ -126,14 +126,14 @@ class ModelExternalServiceConfig(BaseModel):
                         msg = f"Invalid REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
-                            error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
 
                         msg = f"Failed to create REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
-                            error_code=ModelCoreErrorCode.OPERATION_FAILED,
+                            error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         ) from e
 
         return values

@@ -4,7 +4,7 @@ from typing import Callable, Generic, TypeVar
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Result Model.
@@ -19,7 +19,8 @@ from typing import Any, Callable, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Type variables for Result pattern
 T = TypeVar("T")  # Success type
@@ -90,22 +91,22 @@ class ModelResult(
         # Validate that exactly one of value or error is set
         if success and value is None:
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 "Success result must have a value",
             )
         if not success and error is None:
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 "Error result must have an error",
             )
         if success and error is not None:
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 "Success result cannot have an error",
             )
         if not success and value is not None:
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 "Error result cannot have a value",
             )
 
@@ -136,12 +137,12 @@ class ModelResult(
         """
         if not self.success:
             raise ModelOnexError(
-                ModelCoreErrorCode.OPERATION_FAILED,
+                EnumCoreErrorCode.OPERATION_FAILED,
                 f"Called unwrap() on error result: {self.error}",
             )
         if self.value is None:
             raise ModelOnexError(
-                ModelCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 "Success result has None value",
             )
         return cast(T, self.value)
@@ -151,7 +152,7 @@ class ModelResult(
         if self.success:
             if self.value is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return cast(T, self.value)
@@ -162,13 +163,13 @@ class ModelResult(
         if self.success:
             if self.value is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return cast(T, self.value)
         if self.error is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         return f(self.error)
@@ -185,12 +186,12 @@ class ModelResult(
         """
         if not self.success:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"{msg}: {self.error}",
             )
         if self.value is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Success result has None value",
             )
         return cast(T, self.value)
@@ -206,7 +207,7 @@ class ModelResult(
             try:
                 if self.value is None:
                     raise ModelOnexError(
-                        code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Success result has None value",
                     )
                 new_value = f(self.value)
@@ -216,7 +217,7 @@ class ModelResult(
                 return ModelResult.err(e)
         if self.error is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         # Return the original error without unsafe cast
@@ -232,14 +233,14 @@ class ModelResult(
         if self.success:
             if self.value is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return ModelResult.ok(self.value)
         try:
             if self.error is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
             new_error = f(self.error)
@@ -259,7 +260,7 @@ class ModelResult(
             try:
                 if self.value is None:
                     raise ModelOnexError(
-                        code=ModelCoreErrorCode.VALIDATION_ERROR,
+                        code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Success result has None value",
                     )
                 result = f(self.value)
@@ -270,7 +271,7 @@ class ModelResult(
                 return ModelResult.err(e)
         if self.error is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         # Return the original error without unsafe cast
@@ -286,14 +287,14 @@ class ModelResult(
         if self.success:
             if self.value is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
             return ModelResult.ok(self.value)
         try:
             if self.error is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
             result = f(self.error)
@@ -331,7 +332,7 @@ class ModelResult(
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -344,7 +345,7 @@ class ModelResult(
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -401,7 +402,7 @@ def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], li
         else:
             if result.error is None:
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
             errors.append(result.error)

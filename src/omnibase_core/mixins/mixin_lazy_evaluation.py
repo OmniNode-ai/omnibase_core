@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Lazy Evaluation Mixin for Performance Optimization
@@ -19,7 +19,8 @@ from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, cast
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.types.model_onex_common_types import JsonSerializable
 
 # Define PropertyValue locally to avoid dependency issues
@@ -80,7 +81,7 @@ class MixinLazyEvaluation:
                 return self.model_dump(exclude=exclude, by_alias=by_alias)
             raise ModelOnexError(
                 "lazy_model_dump requires BaseModel instance",
-                ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             )
 
         cache_key = f"model_dump_{hash((tuple(exclude or set()), by_alias))}"

@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import for event type validation
 from omnibase_core.constants.event_types import normalize_legacy_event_type
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_event_type import ModelEventType
@@ -120,7 +120,7 @@ class ModelOnexEvent(BaseModel):
         except ValueError as e:
             msg = f"Invalid event type: {e}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 

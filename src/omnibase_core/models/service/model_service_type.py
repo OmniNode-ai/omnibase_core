@@ -3,7 +3,7 @@ from typing import Any, Generic, List
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_service_type_category import EnumServiceTypeCategory
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -81,7 +81,7 @@ class ModelServiceType(BaseModel):
             if type_category == EnumServiceTypeCategory.CUSTOM and not v:
                 msg = "custom_type_name is required when type_category is CUSTOM"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
         return v

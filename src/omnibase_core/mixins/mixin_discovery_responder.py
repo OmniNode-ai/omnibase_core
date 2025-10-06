@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Any, List, Optional
 from omnibase_spi import ProtocolLogger
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
     ModelDiscoveryResponseModelMetadata,
@@ -102,7 +103,7 @@ class MixinDiscoveryResponder:
                 )
             msg = f"Failed to start discovery responder: {e!s}"
             raise ModelOnexError(
-                ModelCoreErrorCode.DISCOVERY_SETUP_FAILED,
+                EnumCoreErrorCode.DISCOVERY_SETUP_FAILED,
             )
 
     def stop_discovery_responder(self, logger: ProtocolLogger | None = None) -> None:

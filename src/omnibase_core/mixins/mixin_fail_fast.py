@@ -14,7 +14,7 @@ from typing import Any, Callable, TypeVar
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_error import ModelOnexError
 
@@ -113,7 +113,7 @@ class MixinFailFast:
         if value is None:
             msg = f"Required field '{field_name}' is missing"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
@@ -137,7 +137,7 @@ class MixinFailFast:
         if not value:
             msg = f"Field '{field_name}' cannot be empty"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
@@ -185,30 +185,30 @@ class MixinFailFast:
                 ):  # More than 50% missing
                     msg = f"Field '{field_name}' must be compatible with type {expected_type.__name__}, got {actual_type.__name__}"
                     raise ModelOnexError(
-                        error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                        error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                     )
             # For basic types, check essential characteristics
             elif expected_type == str and not hasattr(value, "split"):
                 msg = f"Field '{field_name}' must be string-like, got {actual_type.__name__}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == int and not hasattr(value, "__add__"):
                 msg = (
                     f"Field '{field_name}' must be numeric, got {actual_type.__name__}"
                 )
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == list[Any] and not hasattr(value, "append"):
                 msg = f"Field '{field_name}' must be list[Any]-like, got {actual_type.__name__}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == dict[str, Any] and not hasattr(value, "keys"):
                 msg = f"Field '{field_name}' must be dict[str, Any]-like, got {actual_type.__name__}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
 
         return value
@@ -233,7 +233,7 @@ class MixinFailFast:
         if value not in allowed_values:
             msg = f"Field '{field_name}' must be one of {allowed_values}, got '{value}'"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
@@ -255,12 +255,12 @@ class MixinFailFast:
             if not check_func():
                 msg = f"Required dependency '{dependency_name}' is not available"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.DEPENDENCY_FAILED,
+                    error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
                 )
         except Exception as e:
             msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.DEPENDENCY_FAILED,
+                error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
             )
 
     def enforce_contract(
@@ -281,7 +281,7 @@ class MixinFailFast:
         """
         if not condition:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.CONTRACT_VIOLATION,
+                code=EnumCoreErrorCode.CONTRACT_VIOLATION,
                 message=message,
             )
 

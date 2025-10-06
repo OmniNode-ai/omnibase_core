@@ -1,7 +1,7 @@
 import uuid
 from typing import Dict
 
-from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 NodeCoreBase - Foundation for 4-Node ModelArchitecture.
@@ -30,7 +30,7 @@ from uuid import UUID, uuid4
 # Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -69,7 +69,7 @@ class NodeCoreBase(ABC):
         """
         if container is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Container cannot be None for NodeCoreBase initialization",
                 context={"node_type": self.__class__.__name__},
             )
@@ -140,7 +140,7 @@ class NodeCoreBase(ABC):
             # Validate container
             if not hasattr(self.container, "get_service"):
                 raise ModelOnexError(
-                    code=ModelCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                    code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message="Container does not implement get_service method",
                     context={
                         "node_id": self.node_id,
@@ -188,7 +188,7 @@ class NodeCoreBase(ABC):
             self.metrics["error_count"] += 1
 
             raise ModelOnexError(
-                code=ModelCoreErrorCode.OPERATION_FAILED,
+                code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Node initialization failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -497,7 +497,7 @@ class NodeCoreBase(ABC):
         """
         if input_data is None:
             raise ModelOnexError(
-                code=ModelCoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Input data cannot be None",
                 context={"node_id": self.node_id, "node_type": self.__class__.__name__},
             )

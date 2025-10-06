@@ -7,7 +7,7 @@ Update for a single state field.
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_state_update_operation import EnumStateUpdateOperation
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_schema_value import ModelSchemaValue
 
@@ -38,7 +38,7 @@ class ModelStateFieldUpdate(BaseModel):
         if self.operation == EnumStateUpdateOperation.DELETE and self.value is not None:
             msg = "DELETE operation should not have a value"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
@@ -55,7 +55,7 @@ class ModelStateFieldUpdate(BaseModel):
             if not isinstance(actual_value, int | float):
                 msg = f"{self.operation} operation requires numeric value or None"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 

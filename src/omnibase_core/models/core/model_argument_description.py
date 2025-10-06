@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import ModelCoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -95,7 +95,7 @@ class ModelArgumentDescription(BaseModel):
             if self.choices and value not in self.choices:
                 msg = f"Value '{value}' not in valid choices: {self.choices}"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
             return value
@@ -106,7 +106,7 @@ class ModelArgumentDescription(BaseModel):
             except ValueError:
                 msg = f"Invalid integer value: '{value}'"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -116,7 +116,7 @@ class ModelArgumentDescription(BaseModel):
             except ValueError:
                 msg = f"Invalid float value: '{value}'"
                 raise ModelOnexError(
-                    error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
 
@@ -127,7 +127,7 @@ class ModelArgumentDescription(BaseModel):
                 return False
             msg = f"Invalid boolean value: '{value}'"
             raise ModelOnexError(
-                error_code=ModelCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
