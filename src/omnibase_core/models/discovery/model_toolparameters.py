@@ -27,22 +27,19 @@ class ModelToolParameters(BaseModel):
         """Create from dict[str, Any]ionary with type inference."""
         parameters = []
         for name, value in param_dict.items():
-            if isinstance(value, str):
+            # Check bool before int since bool is a subclass of int in Python
+            if isinstance(value, bool):
+                param_type = "boolean"
+            elif isinstance(value, str):
                 param_type = "string"
             elif isinstance(value, int):
                 param_type = "integer"
             elif isinstance(value, float):
                 param_type = "float"
-            elif isinstance(value, bool):
-                param_type = "boolean"
             elif isinstance(value, list):
                 param_type = "list[Any]"
             elif isinstance(value, dict):
                 param_type = "dict[str, Any]"
-            else:
-                # Fallback to string representation
-                param_type = "string"
-                value = str(value)
 
             parameters.append(
                 ModelToolParameter(name=name, value=value, parameter_type=param_type),

@@ -32,18 +32,15 @@ class ModelOutputMetadata(BaseModel):
         """Create from dict[str, Any]ionary with type inference."""
         items = []
         for key, value in metadata_dict.items():
-            if isinstance(value, str):
+            # Check bool before int since bool is a subclass of int in Python
+            if isinstance(value, bool):
+                value_type = "boolean"
+            elif isinstance(value, str):
                 value_type = "string"
             elif isinstance(value, int):
                 value_type = "integer"
             elif isinstance(value, float):
                 value_type = "float"
-            elif isinstance(value, bool):
-                value_type = "boolean"
-            else:
-                # Fallback to string representation
-                value_type = "string"
-                value = str(value)
 
             items.append(
                 ModelOutputMetadataItem(key=key, value=value, value_type=value_type),

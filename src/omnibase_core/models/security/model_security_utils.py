@@ -79,7 +79,7 @@ class ModelSecurityUtils:
     @staticmethod
     def mask_dict_credentials(
         data: dict[str, ModelMaskedDataValue],
-        sensitive_patterns: set | None = None,
+        sensitive_patterns: set[str] | None = None,
         recursive: bool = True,
     ) -> dict[str, ModelMaskedDataValue]:
         """
@@ -122,7 +122,7 @@ class ModelSecurityUtils:
     @staticmethod
     def _mask_list_credentials(
         data: list[ModelMaskedDataValue],
-        sensitive_patterns: set,
+        sensitive_patterns: set[str],
     ) -> list[ModelMaskedDataValue]:
         """Mask credentials in a list[Any](may contain dict[str, Any]s)."""
         masked_list: list[ModelMaskedDataValue] = []
@@ -145,7 +145,7 @@ class ModelSecurityUtils:
         return masked_list
 
     @staticmethod
-    def _is_sensitive_field(field_name: str, sensitive_patterns: set) -> bool:
+    def _is_sensitive_field(field_name: str, sensitive_patterns: set[str]) -> bool:
         """Check if a field name matches sensitive patterns."""
         field_lower = field_name.lower()
         return any(pattern in field_lower for pattern in sensitive_patterns)
@@ -281,7 +281,7 @@ class ModelSecurityUtils:
     def create_secure_mask_config(
         mask_char: str = "*",
         visible_chars: int = 2,
-        additional_patterns: set | None = None,
+        additional_patterns: set[str] | None = None,
     ) -> ModelSecureMaskConfig:
         """
         Create a secure masking configuration.

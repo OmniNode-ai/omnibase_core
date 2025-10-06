@@ -62,7 +62,7 @@ class ModelContextMetadata(BaseModel):
         default_factory=dict,
         description="OpenTelemetry baggage",
     )
-    parent_span_id: str | None = Field(
+    parent_span_id: UUID | None = Field(
         default=None,
         description="Parent span ID for tracing",
     )

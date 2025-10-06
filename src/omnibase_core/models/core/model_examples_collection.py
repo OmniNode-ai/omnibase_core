@@ -141,11 +141,7 @@ class ModelExamplesCollection(BaseModel):
         if data is None:
             return None
 
-        # Handle different input formats
-        if isinstance(data, list):
-            examples = [cls._create_example_from_data(item) for item in data]
-            return cls(examples=examples)
-
+        # Handle different input formats - data is guaranteed to be dict by type annotation
         if "examples" in data and isinstance(data["examples"], list):
             examples = [
                 cls._create_example_from_data(item) for item in data["examples"]

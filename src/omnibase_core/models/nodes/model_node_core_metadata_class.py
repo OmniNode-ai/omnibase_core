@@ -85,8 +85,11 @@ class ModelNodeCoreMetadata(BaseModel):
         node_type: "EnumMetadataNodeType" = "function",
     ) -> "ModelNodeCoreMetadata":
         """Create simple core metadata with deterministic UUID."""
+        from uuid import uuid5, NAMESPACE_DNS
+        # Generate deterministic UUID from node name
+        node_id = uuid5(NAMESPACE_DNS, node_name)
         return cls(
-            node_id=node_name,  # Simplified for extraction
+            node_id=node_id,
             node_display_name=node_name,
             node_type=node_type,
         )

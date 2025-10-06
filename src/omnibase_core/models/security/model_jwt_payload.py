@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 
@@ -19,7 +20,7 @@ class ModelJWTPayload(BaseModel):
     roles: list[str] = Field(default_factory=list, description="User roles")
     permissions: list[str] = Field(default_factory=list, description="User permissions")
     groups: list[str] = Field(default_factory=list, description="User groups")
-    session_id: str | None = Field(default=None, description="Session ID")
+    session_id: UUID | None = Field(default=None, description="Session ID")
     iat: int | None = Field(default=None, description="Issued at timestamp")
     exp: int | None = Field(default=None, description="Expiration timestamp")
     iss: str | None = Field(default=None, description="Issuer")

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelHealthIssue - Individual health issue tracking model
 
@@ -8,6 +6,7 @@ category, occurrence patterns, and recovery recommendations.
 """
 
 from datetime import datetime
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +19,7 @@ class ModelHealthIssue(BaseModel):
     categorization, occurrence patterns, and recovery recommendations.
     """
 
-    issue_id: str = Field(default=..., description="Unique issue identifier")
+    issue_id: UUID = Field(default=..., description="Unique issue identifier")
 
     severity: str = Field(
         default=...,
@@ -78,7 +77,7 @@ class ModelHealthIssue(BaseModel):
     ) -> "ModelHealthIssue":
         """Create a performance-related health issue"""
         return cls(
-            issue_id=f"perf_{int(datetime.utcnow().timestamp())}",
+            issue_id=uuid4(),
             severity=severity,
             category="performance",
             message=message,
@@ -94,7 +93,7 @@ class ModelHealthIssue(BaseModel):
     ) -> "ModelHealthIssue":
         """Create a connectivity-related health issue"""
         return cls(
-            issue_id=f"conn_{int(datetime.utcnow().timestamp())}",
+            issue_id=uuid4(),
             severity=severity,
             category="connectivity",
             message=message,
@@ -110,7 +109,7 @@ class ModelHealthIssue(BaseModel):
     ) -> "ModelHealthIssue":
         """Create a resource-related health issue"""
         return cls(
-            issue_id=f"resource_{int(datetime.utcnow().timestamp())}",
+            issue_id=uuid4(),
             severity=severity,
             category="resource",
             message=message,

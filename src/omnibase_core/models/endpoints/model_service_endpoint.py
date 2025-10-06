@@ -34,7 +34,7 @@ class ModelServiceEndpoint(BaseModel):
 
     @field_validator("port", mode="before")
     @classmethod
-    def extract_port_from_url(cls, v, values):
+    def extract_port_from_url(cls, v: Any, values: dict[str, Any]) -> Any:
         """Extract port from URL if not explicitly provided."""
         if v is None and "url" in values:
             url = values["url"]
@@ -43,7 +43,7 @@ class ModelServiceEndpoint(BaseModel):
 
     @field_validator("protocol", mode="before")
     @classmethod
-    def extract_protocol_from_url(cls, v, values):
+    def extract_protocol_from_url(cls, v: Any, values: dict[str, Any]) -> Any:
         """Extract protocol from URL if not explicitly provided."""
         if v is None and "url" in values:
             url = values["url"]

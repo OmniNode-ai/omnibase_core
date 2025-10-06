@@ -21,7 +21,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.core.model_examples import ModelExamples
+from omnibase_core.models.core.model_examples import ModelExample
 
 from .model_typedproperties import ModelTypedProperties
 
@@ -152,7 +152,7 @@ class ModelSchema(BaseModel):
     )
 
     # Documentation and examples
-    examples: list[ModelExamples] | None = Field(
+    examples: list[ModelExample] | None = Field(
         default=None,
         description="Example valid instances",
     )
@@ -450,30 +450,30 @@ class ModelSchema(BaseModel):
             except (IndexError, AttributeError):
                 schema_version = "draft-07"
 
-        # FIXED: Handle examples that can be strings or ModelExamples objects
+        # FIXED: Handle examples that can be strings or ModelExample objects
         examples = None
         if "examples" in data:
             examples_data = data["examples"]
             if isinstance(examples_data, list):
-                # Convert string examples to ModelExamples objects
+                # Convert string examples to ModelExample objects
                 examples = []
                 for example in examples_data:
                     if isinstance(example, str):
-                        # Simple string example - convert to ModelExamples
+                        # Simple string example - convert to ModelExample
                         examples.append(
-                            ModelExamples(
+                            ModelExample(
                                 value=example,
                                 description=f"Example: {example}",
                             ),
                         )
                     elif isinstance(example, dict):
-                        # Already a ModelExamples object or dict
-                        examples.append(ModelExamples.model_validate(example))
+                        # Already a ModelExample object or dict
+                        examples.append(ModelExample.model_validate(example))
                     # Skip invalid examples
             elif isinstance(examples_data, str | int | float | bool):
                 # Single example value
                 examples = [
-                    ModelExamples(
+                    ModelExample(
                         value=examples_data,
                         description=f"Example: {examples_data}",
                     ),

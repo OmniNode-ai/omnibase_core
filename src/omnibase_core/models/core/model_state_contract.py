@@ -45,7 +45,7 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.core.model_examples import ModelExamples
+from omnibase_core.models.core.model_examples import ModelExample
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.metadata.model_metadata_constants import (
     CONTRACT_SCHEMA_VERSION_KEY,
@@ -135,7 +135,7 @@ class ModelStateContract(BaseModel):
     )
 
     # Examples and metadata
-    examples: ModelExamples | None = Field(
+    examples: ModelExample | None = Field(
         default=None,
         description="Optional examples of valid input/output",
         json_schema_extra={

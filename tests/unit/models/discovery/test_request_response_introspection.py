@@ -43,13 +43,15 @@ class TestRequestIntrospectionEvent:
 
     def test_basic_request_creation(self):
         """Test creating a basic introspection request."""
+        node_id = uuid4()
+        requester_id = uuid4()
         request = ModelRequestIntrospectionEvent(
-            node_id="test_requester",
-            requester_id="test_service",
+            node_id=node_id,
+            requester_id=requester_id,
         )
 
-        assert request.node_id == "test_requester"
-        assert request.requester_id == "test_service"
+        assert request.node_id == node_id
+        assert request.requester_id == requester_id
         assert request.timeout_ms == 5000  # Default
         assert request.filters is None
         assert isinstance(request.correlation_id, UUID)
@@ -60,21 +62,22 @@ class TestRequestIntrospectionEvent:
         """Test factory methods for creating requests."""
 
         # Test discovery request
+        requester_id = uuid4()
         discovery_req = ModelRequestIntrospectionEvent.create_discovery_request(
-            requester_id="discovery_client",
+            requester_id=requester_id,
             timeout_ms=3000,
             include_resource_usage=True,
         )
 
-        assert discovery_req.requester_id == "discovery_client"
+        assert discovery_req.requester_id == requester_id
         assert discovery_req.timeout_ms == 3000
         assert discovery_req.include_resource_usage
-        assert discovery_req.node_id == "discovery_client"
+        assert isinstance(discovery_req.node_id, UUID)
 
         # Test MCP discovery request
         mcp_req = ModelRequestIntrospectionEvent.create_mcp_discovery_request()
 
-        assert mcp_req.requester_id == "mcp_server"
+        assert isinstance(mcp_req.requester_id, UUID)
         assert mcp_req.filters.protocols == ["mcp"]
         assert mcp_req.filters.status == ["ready", "busy"]
         assert mcp_req.include_resource_usage
@@ -83,7 +86,7 @@ class TestRequestIntrospectionEvent:
         # Test health check request
         health_req = ModelRequestIntrospectionEvent.create_health_check_request()
 
-        assert health_req.requester_id == "health_monitor"
+        assert isinstance(health_req.requester_id, UUID)
         assert health_req.include_resource_usage
         assert health_req.include_performance_metrics
         assert health_req.timeout_ms == 2000
@@ -99,9 +102,11 @@ class TestRequestIntrospectionEvent:
             node_names=["node_generator"],
         )
 
+        node_id = uuid4()
+        requester_id = uuid4()
         request = ModelRequestIntrospectionEvent(
-            node_id="test_requester",
-            requester_id="test_service",
+            node_id=node_id,
+            requester_id=requester_id,
             filters=filters,
         )
 
@@ -125,9 +130,10 @@ class TestIntrospectionResponseEvent:
             metadata={"author": "test"},
         )
 
+        node_id = uuid4()
         response = ModelIntrospectionResponseEvent(
             correlation_id=correlation_id,
-            node_id="test_node",
+            node_id=node_id,
             node_name="test_node",
             version=ModelSemVer.parse("1.0.0"),
             current_status=NodeCurrentStatusEnum.READY,
@@ -136,7 +142,7 @@ class TestIntrospectionResponseEvent:
         )
 
         assert response.correlation_id == correlation_id
-        assert response.node_id == "test_node"
+        assert response.node_id == node_id
         assert response.node_name == "test_node"
         assert response.version.major == 1
         assert response.current_status == NodeCurrentStatusEnum.READY
@@ -153,9 +159,10 @@ class TestIntrospectionResponseEvent:
         )
 
         # Test basic response creation
+        node_id = uuid4()
         response = ModelIntrospectionResponseEvent.create_response(
             correlation_id=correlation_id,
-            node_id="test_node",
+            node_id=node_id,
             node_name="test_node",
             version=ModelSemVer.parse("1.0.0"),
             current_status=NodeCurrentStatusEnum.READY,
@@ -170,7 +177,7 @@ class TestIntrospectionResponseEvent:
         # Test ready response creation
         ready_response = ModelIntrospectionResponseEvent.create_ready_response(
             correlation_id=correlation_id,
-            node_id="test_node",
+            node_id=node_id,
             node_name="test_node",
             version=ModelSemVer.parse("1.0.0"),
             capabilities=capabilities,
@@ -183,7 +190,7 @@ class TestIntrospectionResponseEvent:
         # Test error response creation
         error_response = ModelIntrospectionResponseEvent.create_error_response(
             correlation_id=correlation_id,
-            node_id="test_node",
+            node_id=node_id,
             node_name="test_node",
             version=ModelSemVer.parse("1.0.0"),
             error_message="Test error",
@@ -246,7 +253,7 @@ class TestMixinRequestResponseIntrospection:
 
         class TestNode(MixinRequestResponseIntrospection):
             def __init__(self):
-                self.node_id = "test_node"
+                self.node_id = uuid4()
                 self.node_name = "test_node"
                 self.version = ModelSemVer.parse("1.0.0")
                 self.tags = ["test", "mcp"]
@@ -328,9 +335,11 @@ class TestMixinRequestResponseIntrospection:
 
         # Create test request
         correlation_id = uuid4()
+        node_id = uuid4()
+        requester_id = uuid4()
         request = ModelRequestIntrospectionEvent(
-            node_id="requester",
-            requester_id="test_service",
+            node_id=node_id,
+            requester_id=requester_id,
             correlation_id=correlation_id,
             include_resource_usage=False,
             include_performance_metrics=False,
@@ -345,7 +354,7 @@ class TestMixinRequestResponseIntrospection:
 
         assert isinstance(published_event, ModelIntrospectionResponseEvent)
         assert published_event.correlation_id == correlation_id
-        assert published_event.node_id == "test_node"
+        assert isinstance(published_event.node_id, UUID)
         assert published_event.current_status == NodeCurrentStatusEnum.READY
         assert published_event.capabilities.actions == ["health_check"]
         assert published_event.response_time_ms > 0
@@ -356,12 +365,14 @@ class TestMixinRequestResponseIntrospection:
 
         # Create request with non-matching filters
         correlation_id = uuid4()
+        node_id = uuid4()
+        requester_id = uuid4()
         filters = ModelIntrospectionFilters(
             node_names=["other_node"],  # Won't match our test_node
         )
         request = ModelRequestIntrospectionEvent(
-            node_id="requester",
-            requester_id="test_service",
+            node_id=node_id,
+            requester_id=requester_id,
             correlation_id=correlation_id,
             filters=filters,
         )
@@ -380,9 +391,11 @@ class TestMixinRequestResponseIntrospection:
         node._get_current_capabilities = Mock(side_effect=Exception("Test error"))
 
         correlation_id = uuid4()
+        node_id = uuid4()
+        requester_id = uuid4()
         request = ModelRequestIntrospectionEvent(
-            node_id="requester",
-            requester_id="test_service",
+            node_id=node_id,
+            requester_id=requester_id,
             correlation_id=correlation_id,
         )
 

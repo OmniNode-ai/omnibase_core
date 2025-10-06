@@ -27,7 +27,7 @@ import hashlib
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums import EnumNodeMetadataField
-from omnibase_core.mixins.mixin_canonical_serialization import CanonicalYAMLSerializer
+from omnibase_core.mixins.mixin_canonical_serialization import MixinCanonicalYAMLSerializer
 
 
 class MixinHashComputation:
@@ -48,7 +48,7 @@ class MixinHashComputation:
         placeholder: str = "<PLACEHOLDER>",
         comment_prefix: str = "",
     ) -> str:
-        canonical = CanonicalYAMLSerializer().canonicalize_for_hash(
+        canonical = MixinCanonicalYAMLSerializer().canonicalize_for_hash(
             self,  # type: ignore[arg-type]
             volatile_fields=volatile_fields,
             placeholder=placeholder,

@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 """
-Comprehensive fix for MyPy name-defined errors in omnibase_core.
+Fix MyPy name-defined and attr-defined errors systematically.
 
-This script fixes:
-1. Missing 'self' parameters in instance methods
-2. Missing standard library imports (hashlib, math, fnmatch, etc.)
-3. Missing model imports from other modules
-4. Missing typing imports (cast, UUID, etc.)
+This script applies targeted fixes based on the error analysis.
 """
 
 import re
@@ -38,6 +34,10 @@ IMPORT_MAP = {
     # Common models that need to be discovered dynamically
     "ModelOnexError": "from omnibase_core.errors.model_onex_error import ModelOnexError",
     "EnumCoreErrorCode": "from omnibase_core.errors.error_codes import EnumCoreErrorCode",
+    "ModelErrorContext": "from omnibase_core.models.common.model_error_context import ModelErrorContext",
+    "ModelSchemaValue": "from omnibase_core.models.common.model_schema_value import ModelSchemaValue",
+    "EnumAuditAction": "from omnibase_core.enums.enum_audit_action import EnumAuditAction",
+    "EnumSecurityLevel": "from omnibase_core.enums.enum_security_level import EnumSecurityLevel",
 }
 
 
@@ -280,6 +280,116 @@ def fix_missing_imports(name: str, import_statement: str) -> int:
     return fixed_count
 
 
+def fix_onex_base_state_imports() -> int:
+    """Special fix for model_onex_base_state.py - move imports from validators to top."""
+    file_path = SRC_DIR / "models" / "core" / "model_onex_base_state.py"
+
+    if not file_path.exists():
+        return 0
+
+    content = file_path.read_text()
+    lines = content.split("\n")
+
+    # Check if imports are inside validators (indented)
+    has_nested_imports = False
+    for line in lines:
+        if "from omnibase_core.errors" in line and (line.startswith("        ") or line.startswith("\t")):
+            has_nested_imports = True
+            break
+
+    if not has_nested_imports:
+        return 0
+
+    print("\n  Fixing model_onex_base_state.py nested imports...")
+
+    # Ensure imports are at the top
+    required_imports = [
+        "from omnibase_core.errors.error_codes import EnumCoreErrorCode",
+        "from omnibase_core.errors.model_onex_error import ModelOnexError",
+    ]
+
+    # Add top-level imports if missing
+    for imp in required_imports:
+        if imp not in content:
+            # Find insertion point (after existing imports)
+            insert_idx = 0
+            for i, line in enumerate(lines):
+                if line.strip().startswith("from ") or line.strip().startswith("import "):
+                    insert_idx = i + 1
+
+            lines.insert(insert_idx, imp)
+            print(f"    Added: {imp}")
+
+    # Remove nested imports from validators
+    new_lines = []
+    for line in lines:
+        # Skip indented imports
+        if "from omnibase_core.errors" in line and (line.startswith("        ") or line.startswith("\t")):
+            continue
+        new_lines.append(line)
+
+    file_path.write_text("\n".join(new_lines))
+    print(f"    ✓ Fixed nested imports in model_onex_base_state.py")
+
+    return 1
+
+
+def fix_wrong_attribute_names() -> int:
+    """Fix wrong attribute names in imports based on MyPy suggestions."""
+    # Mapping of wrong names to correct names
+    attr_fixes = {
+        "ModelTypedDictGenericMetadataDict": "TypedDictMetadataDict",
+        "ModelEnumTransitionType": "EnumTransitionType",
+        "ModelExamples": "ModelExample",
+        "ModelNodeOperationEnum": "EnumNodeOperation",
+        "ModelToolCapabilityLevel": "EnumToolCapabilityLevel",
+        "ModelToolCategory": "EnumToolCategory",
+        "ModelToolCompatibilityMode": "EnumToolCompatibilityMode",
+        "ModelToolRegistrationStatus": "EnumToolRegistrationStatus",
+        "ModelMetadataToolComplexity": "EnumMetadataToolComplexity",
+        "ModelMetadataToolStatus": "EnumMetadataToolStatus",
+        "ModelMetadataToolType": "EnumMetadataToolType",
+        "ModelRuleConditionValue": "RuleConditionValue",
+        "ValidationInfo": "ValidationInfo",  # pydantic_core
+    }
+
+    print("\n  Fixing wrong attribute names in imports...")
+    total_fixed = 0
+
+    for wrong_name, correct_name in attr_fixes.items():
+        # Find files using the wrong name
+        output = run_mypy()
+        pattern = rf'Module.*has no attribute "{re.escape(wrong_name)}"'
+        files_to_fix = set()
+
+        for line in output.split("\n"):
+            if re.search(pattern, line):
+                match = re.match(r"^(.+?):\d+:", line)
+                if match:
+                    files_to_fix.add(match.group(1))
+
+        if not files_to_fix:
+            continue
+
+        print(f"    Fixing: {wrong_name} → {correct_name} in {len(files_to_fix)} files")
+
+        for file_path in files_to_fix:
+            path = Path(file_path)
+            if not path.exists():
+                continue
+
+            content = path.read_text()
+            if wrong_name in content:
+                # Replace in import statements
+                new_content = content.replace(wrong_name, correct_name)
+                if new_content != content:
+                    path.write_text(new_content)
+                    print(f"      ✓ {path.name}")
+                    total_fixed += 1
+
+    return total_fixed
+
+
 def discover_model_imports() -> Dict[str, str]:
     """Discover model imports by analyzing the codebase structure."""
     additional_imports = {}
@@ -368,15 +478,25 @@ def main():
     else:
         print("  No missing 'self' errors found")
 
-    # Step 2: Fix missing standard library and typing imports
-    print("\n[2/3] Fixing missing standard library and typing imports...")
+    # Step 2: Fix special case - model_onex_base_state.py
+    print("\n[2/5] Fixing special cases...")
+    fixed = fix_onex_base_state_imports()
+    total_fixed += fixed
+
+    # Step 3: Fix missing standard library and typing imports
+    print("\n[3/5] Fixing missing standard library and typing imports...")
 
     for name, import_stmt in sorted(IMPORT_MAP.items()):
         fixed = fix_missing_imports(name, import_stmt)
         total_fixed += fixed
 
-    # Step 3: Fix missing model imports
-    print("\n[3/3] Fixing missing model imports...")
+    # Step 4: Fix wrong attribute names
+    print("\n[4/5] Fixing wrong attribute names...")
+    fixed = fix_wrong_attribute_names()
+    total_fixed += fixed
+
+    # Step 5: Fix missing model imports
+    print("\n[5/5] Fixing missing model imports...")
 
     model_imports = discover_model_imports()
     for name, import_stmt in sorted(model_imports.items()):

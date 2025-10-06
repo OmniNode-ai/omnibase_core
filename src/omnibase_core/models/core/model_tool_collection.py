@@ -10,23 +10,26 @@ All functionality is preserved through re-exports with massive enterprise enhanc
 
 # Re-export enhanced models for current standards
 from omnibase_core.models.core.model_enhanced_tool_collection import (
-    ModelToolCapabilityLevel,
-    ModelToolCategory,
+    EnumToolCapabilityLevel,
+    EnumToolCategory,
     ModelToolCollection,
-    ModelToolCompatibilityMode,
-    ModelToolRegistrationStatus,
+    EnumToolCompatibilityMode,
+    EnumToolRegistrationStatus,
     ToolMetadata,
     ToolPerformanceMetrics,
     ToolValidationResult,
 )
 from omnibase_core.models.core.model_metadata_tool_collection import (
+    EnumMetadataToolComplexity,
+    EnumMetadataToolStatus,
+    EnumMetadataToolType,
     MetadataToolAnalytics,
     MetadataToolInfo,
     MetadataToolUsageMetrics,
     ModelMetadataToolCollection,
-    ModelMetadataToolComplexity,
-    ModelMetadataToolStatus,
-    ModelMetadataToolType,
+    EnumMetadataToolComplexity,
+    EnumMetadataToolStatus,
+    EnumMetadataToolType,
 )
 
 # Ensure all original functionality is available

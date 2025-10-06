@@ -6,7 +6,7 @@ from pydantic import Field
 from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_semver import ModelSemVer
-from omnibase_core.models.nodes.model_node_capability import ModelNodeCapabilities
+from omnibase_core.models.nodes.model_node_capability import ModelNodeCapability
 
 
 class ModelNodeIntrospectionEvent(ModelOnexEvent):
@@ -30,7 +30,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
     version: ModelSemVer = Field(default=..., description="Version of the node")
 
     # Node capabilities
-    capabilities: ModelNodeCapabilities = Field(
+    capabilities: ModelNodeCapability = Field(
         default=...,
         description="Node capabilities including actions, protocols, and metadata",
     )
@@ -83,7 +83,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         Returns:
             ModelNodeIntrospectionEvent instance
         """
-        capabilities = ModelNodeCapabilities(
+        capabilities = ModelNodeCapability(
             actions=actions,
             protocols=protocols or ["event_bus"],
             metadata=metadata or {},

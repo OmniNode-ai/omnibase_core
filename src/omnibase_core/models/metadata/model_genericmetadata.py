@@ -10,7 +10,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_typed_dict_metadata_dict import (
-    ModelTypedDictGenericMetadataDict,
+    TypedDictMetadataDict,
 )
 from omnibase_core.types.typed_dict_generic_value import BasicValueType
 from omnibase_core.utils.util_semver import parse_semver_from_string
@@ -201,9 +201,9 @@ class ModelGenericMetadata(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> ModelTypedDictGenericMetadataDict:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
-        metadata: ModelTypedDictGenericMetadataDict = ModelTypedDictGenericMetadataDict(
+        metadata: TypedDictMetadataDict = TypedDictMetadataDict(
             metadata_id=self.metadata_id,
             metadata_display_name=self.metadata_display_name,
             description=self.description,
@@ -221,7 +221,7 @@ class ModelGenericMetadata(BaseModel):
 
         return metadata
 
-    def set_metadata(self, metadata: ModelTypedDictGenericMetadataDict) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             if "metadata_display_name" in metadata:

@@ -14,7 +14,7 @@ from .model_example import ModelExample
 
 # Import separated models
 from .model_example_metadata import ModelExampleMetadata
-from .model_examples_collection import ModelExamples
+from .model_examples_collection import ModelExample
 from .model_node_information import ModelNodeInformation
 
 # Compatibility aliases
@@ -27,6 +27,6 @@ __all__ = [
     "ModelCustomSettings",
     "ModelExample",
     "ModelExampleMetadata",
-    "ModelExamples",
+    "ModelExample",
     "ModelNodeInformation",
 ]

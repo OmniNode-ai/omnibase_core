@@ -1,6 +1,6 @@
 from typing import Any, Generic
 
-from omnibase_core.enums.enum_transition_type import ModelEnumTransitionType
+from omnibase_core.enums.enum_transition_type import EnumTransitionType
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -222,11 +222,11 @@ class MixinContractStateReducer:
         tool_name = getattr(self, "node_name", "unknown_tool")
 
         try:
-            if transition.transition_type == ModelEnumTransitionType.SIMPLE:
+            if transition.transition_type == EnumTransitionType.SIMPLE:
                 self._apply_simple_transition(transition, input_state)
-            elif transition.transition_type == ModelEnumTransitionType.TOOL_BASED:
+            elif transition.transition_type == EnumTransitionType.TOOL_BASED:
                 self._apply_tool_based_transition(transition, input_state)
-            elif transition.transition_type == ModelEnumTransitionType.CONDITIONAL:
+            elif transition.transition_type == EnumTransitionType.CONDITIONAL:
                 self._apply_conditional_transition(transition, input_state)
             else:
                 emit_log_event(

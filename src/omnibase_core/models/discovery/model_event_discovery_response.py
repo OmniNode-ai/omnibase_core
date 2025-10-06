@@ -1,13 +1,11 @@
-from typing import Any, Dict
-
-from pydantic import Field
-
 """Event Discovery Response model for ONEX Discovery & Integration Event Registry.
 
 This module defines the response model for event discovery queries.
 """
 
 from datetime import datetime
+from typing import Any, Dict
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,7 +15,7 @@ from omnibase_core.models.discovery.model_event_descriptor import ModelEventDesc
 class ModelEventDiscoveryResponse(BaseModel):
     """Response model for event discovery queries."""
 
-    query_id: str = Field(default=..., description="Original query identifier")
+    query_id: UUID = Field(default=..., description="Original query identifier")
     correlation_id: str = Field(default=..., description="Correlation ID from request")
 
     # Results

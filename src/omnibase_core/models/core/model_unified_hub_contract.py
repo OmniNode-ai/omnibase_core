@@ -30,7 +30,7 @@ class ModelUnifiedHubContract(BaseModel):
     Unified hub contract model that can parse both AI and Generation hub formats.
 
     This model provides a standardized interface while supporting both:
-    - Generation hub format: hub_configuration.domain + orchestration_workflows
+    - Generation hub format: hub_configuration.domain_id + orchestration_workflows
     - AI hub format: service_configuration.default_port + tool_specification
     """
 
@@ -158,7 +158,7 @@ class ModelUnifiedHubContract(BaseModel):
     def get_domain(self) -> str:
         """Get hub domain from either format."""
         config = self.get_unified_config()
-        return config.domain
+        return config.domain_id
 
     def get_service_port(self) -> int:
         """Get service port from either format."""
@@ -168,7 +168,7 @@ class ModelUnifiedHubContract(BaseModel):
     def get_managed_tools(self) -> list[str]:
         """Get managed tools from either format."""
         config = self.get_unified_config()
-        return config.managed_tools or []
+        return config.managed_tool_ids or []
 
     def get_capabilities(self) -> list[EnumHubCapability]:
         """Get hub capabilities from either format."""

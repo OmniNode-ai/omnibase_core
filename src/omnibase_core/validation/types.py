@@ -31,7 +31,7 @@ from .validation_utils import ValidationResult
 
 def validate_union_usage_file(
     file_path: Path,
-) -> tuple[int, list[str], list[ModelUnionPattern]]:
+) -> tuple[int, list[str], list[ModelUnionPattern[str]]]:
     """Validate Union usage in a Python file.
 
     Raises:

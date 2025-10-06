@@ -110,7 +110,6 @@ class ModelExtensionData(BaseModel):
             return "list[Any]"
         elif isinstance(self.value, dict):
             return "object"
-        return "unknown"
 
     @field_validator("value")
     @classmethod

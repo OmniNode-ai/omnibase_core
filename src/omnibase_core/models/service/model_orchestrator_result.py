@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import Field
 
 """
@@ -15,7 +17,7 @@ class ModelOrchestratorResult(BaseModel):
     """Orchestrator result model."""
 
     # Result identification
-    result_id: str = Field(default=..., description="Result identifier")
+    result_id: UUID = Field(default=..., description="Result identifier")
     status: str = Field(default=..., description="Orchestration status")
 
     # Execution details

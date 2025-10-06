@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from omnibase_core.models.core.model_base_result import ModelBaseResult
+
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 

@@ -12,7 +12,7 @@ for comprehensive audit trails and compliance tracking.
 """
 
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +23,7 @@ from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 class ModelSecurityEvent(BaseModel):
     """Security event for audit trail."""
 
-    event_id: str = Field(default=..., description="Unique event identifier")
+    event_id: UUID = Field(default=..., description="Unique event identifier")
     event_type: EnumSecurityEventType = Field(
         default=..., description="Type of security event"
     )

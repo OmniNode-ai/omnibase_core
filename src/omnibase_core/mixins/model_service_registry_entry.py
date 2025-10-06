@@ -1,5 +1,6 @@
 import time
 from typing import Any
+from uuid import UUID
 
 
 class MixinServiceRegistryEntry:
@@ -7,7 +8,7 @@ class MixinServiceRegistryEntry:
 
     def __init__(
         self,
-        node_id: str,
+        node_id: UUID,
         service_name: str,
         metadata: dict[str, Any] | None = None,
     ) -> None:

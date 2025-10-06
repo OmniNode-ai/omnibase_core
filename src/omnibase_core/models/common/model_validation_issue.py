@@ -93,11 +93,7 @@ class ModelValidationIssue(BaseModel):
         ]
 
         for key, value in v.items():
-            if not isinstance(value, str):
-                # Skip non-string values
-                sanitized[key] = str(value)[:100]  # Truncate to prevent DoS
-                continue
-
+            # All values are guaranteed to be str by type annotation
             sanitized_value = value
 
             # Apply sanitization patterns

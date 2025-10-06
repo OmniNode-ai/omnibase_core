@@ -1,7 +1,7 @@
 from typing import Any
 
 from omnibase_core.models.configuration.model_secret_config import ModelSecretConfig
-from omnibase_core.models.security.model_secret_manager import ModelSecretManager
+
 
 
 class ModelSecretManagerCompat:

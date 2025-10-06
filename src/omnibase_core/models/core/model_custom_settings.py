@@ -11,7 +11,7 @@ Custom settings model.
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ModelCustomSettings(BaseModel):
@@ -37,7 +37,18 @@ class ModelCustomSettings(BaseModel):
     )
 
     # Metadata
-    version: ModelSemVer = Field(default="1.0", description="Settings version")
+    version: ModelSemVer = Field(default=None, description="Settings version")
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def parse_version(cls, v: object) -> object:
+        """Convert string versions to ModelSemVer."""
+        if v is None:
+            return ModelSemVer(major=1, minor=0, patch=0)
+        if isinstance(v, str):
+            from omnibase_core.utils.util_semver import parse_semver_from_string
+            return parse_semver_from_string(v)
+        return v
     last_modified: datetime | None = Field(
         default=None,
         description="Last modification time",

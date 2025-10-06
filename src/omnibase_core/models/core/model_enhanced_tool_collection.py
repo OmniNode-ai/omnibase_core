@@ -17,17 +17,17 @@ from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, computed_field, field_validator
-from pydantic_core import ValidationInfo
+from pydantic import ValidationInfo
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 from .model_tool_metadata import (
-    ModelToolCapabilityLevel,
-    ModelToolCategory,
-    ModelToolCompatibilityMode,
+    EnumToolCapabilityLevel,
+    EnumToolCategory,
+    EnumToolCompatibilityMode,
     ModelToolMetadata,
-    ModelToolRegistrationStatus,
+    EnumToolRegistrationStatus,
 )
 
 # Import separated models
@@ -174,9 +174,9 @@ class ModelToolCollection(BaseModel):
                 tool_score += 10.0
 
             # Status score (20%)
-            if metadata.status == ModelToolRegistrationStatus.REGISTERED:
+            if metadata.status == EnumToolRegistrationStatus.REGISTERED:
                 tool_score += 20.0
-            elif metadata.status == ModelToolRegistrationStatus.DEPRECATED:
+            elif metadata.status == EnumToolRegistrationStatus.DEPRECATED:
                 tool_score += 10.0
 
             # Dependencies score (10%)
@@ -225,7 +225,7 @@ class ModelToolCollection(BaseModel):
             )
 
             # Auto-detect category from class or module name
-            if metadata.category == ModelToolCategory.CUSTOM:
+            if metadata.category == EnumToolCategory.CUSTOM:
                 metadata.category = self._detect_tool_category(tool_class)
 
             self.tool_metadata[name] = metadata
@@ -236,7 +236,7 @@ class ModelToolCollection(BaseModel):
                 [
                     m
                     for m in self.tool_metadata.values()
-                    if m.status == ModelToolRegistrationStatus.REGISTERED
+                    if m.status == EnumToolRegistrationStatus.REGISTERED
                 ],
             )
             self.last_modified = datetime.now()
@@ -295,25 +295,25 @@ class ModelToolCollection(BaseModel):
 
         return result
 
-    def _detect_tool_category(self, tool_class: Any) -> ModelToolCategory:
+    def _detect_tool_category(self, tool_class: Any) -> EnumToolCategory:
         """Auto-detect tool category from class or module name."""
         class_name = tool_class.__name__.lower()
         module_name = tool_class.__module__.lower()
 
         # Category detection based on naming patterns
         if "registry" in class_name or "registry" in module_name:
-            return ModelToolCategory.REGISTRY
+            return EnumToolCategory.REGISTRY
         if "validate" in class_name or "validator" in class_name:
-            return ModelToolCategory.VALIDATION
+            return EnumToolCategory.VALIDATION
         if "transform" in class_name or "convert" in class_name:
-            return ModelToolCategory.TRANSFORMATION
+            return EnumToolCategory.TRANSFORMATION
         if "output" in class_name or "format" in class_name:
-            return ModelToolCategory.OUTPUT
+            return EnumToolCategory.OUTPUT
         if "core" in module_name or "essential" in class_name:
-            return ModelToolCategory.CORE
+            return EnumToolCategory.CORE
         if "util" in class_name or "helper" in class_name:
-            return ModelToolCategory.UTILITY
-        return ModelToolCategory.CUSTOM
+            return EnumToolCategory.UTILITY
+        return EnumToolCategory.CUSTOM
 
     def get_tool(self, name: str) -> Any | None:
         """Get a tool implementation by name."""

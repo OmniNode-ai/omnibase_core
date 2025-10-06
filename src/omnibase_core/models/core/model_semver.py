@@ -69,8 +69,6 @@ class ModelSemVer(BaseModel):
 
     def __lt__(self, other: "ModelSemVer") -> bool:
         """Check if this version is less than another."""
-        if not isinstance(other, ModelSemVer):
-            return NotImplemented
         return (self.major, self.minor, self.patch) < (
             other.major,
             other.minor,
@@ -83,8 +81,6 @@ class ModelSemVer(BaseModel):
 
     def __gt__(self, other: "ModelSemVer") -> bool:
         """Check if this version is greater than another."""
-        if not isinstance(other, ModelSemVer):
-            return NotImplemented
         return (self.major, self.minor, self.patch) > (
             other.major,
             other.minor,

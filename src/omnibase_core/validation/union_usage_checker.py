@@ -25,13 +25,13 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.union_count = 0
         self.issues: list[str] = []
         self.file_path = file_path
-        self.union_patterns: list[ModelUnionPattern] = []
+        self.union_patterns: list[ModelUnionPattern[str]] = []
         self._in_union_binop = False  # Track if we're inside a union BinOp chain
 
         # Track problematic patterns
-        self.complex_unions: list[ModelUnionPattern] = []
-        self.primitive_heavy_unions: list[ModelUnionPattern] = []
-        self.generic_unions: list[ModelUnionPattern] = []
+        self.complex_unions: list[ModelUnionPattern[str]] = []
+        self.primitive_heavy_unions: list[ModelUnionPattern[str]] = []
+        self.generic_unions: list[ModelUnionPattern[str]] = []
 
         # Common problematic type combinations
         self.problematic_combinations = {

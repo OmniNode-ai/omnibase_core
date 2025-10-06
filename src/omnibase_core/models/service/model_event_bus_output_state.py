@@ -307,8 +307,8 @@ class ModelEventBusOutputState(BaseModel):
                 "retryable": str(self.is_retryable()),
                 "next_retry_at": self.next_retry_at or "",
             },
-            error_id=self.correlation_id or "unknown",
-            correlation_id=self.correlation_id,
+            error_id=UUID(self.correlation_id) if self.correlation_id else None,
+            correlation_id=UUID(self.correlation_id) if self.correlation_id else None,
             has_been_reported=False,
         )
 

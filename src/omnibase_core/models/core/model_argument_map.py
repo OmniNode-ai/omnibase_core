@@ -67,9 +67,9 @@ class ModelArgumentMap(BaseModel):
                 if expected_type == str:
                     return str(value)  # type: ignore[return-value]
                 if expected_type == int:
-                    return int(value)  # type: ignore[return-value]
+                    return int(value)  # type: ignore[return-value,arg-type]
                 if expected_type == float:
-                    return float(value)  # type: ignore[return-value]
+                    return float(value)  # type: ignore[return-value,arg-type]
                 if expected_type == bool:
                     if isinstance(value, str):
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
@@ -135,9 +135,9 @@ class ModelArgumentMap(BaseModel):
                 if expected_type == str:
                     return str(value)  # type: ignore[return-value]
                 if expected_type == int:
-                    return int(value)  # type: ignore[return-value]
+                    return int(value)  # type: ignore[return-value,arg-type]
                 if expected_type == float:
-                    return float(value)  # type: ignore[return-value]
+                    return float(value)  # type: ignore[return-value,arg-type]
                 if expected_type == bool:
                     if isinstance(value, str):
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]

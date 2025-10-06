@@ -25,6 +25,7 @@ from .model_metadata_tool_info import ModelMetadataToolInfo
 
 # Import separated models
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
+from omnibase_core.enums.enum_audit_action import EnumAuditAction
 
 
 class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
@@ -244,6 +245,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 self.root["_tool_info"][name] = tool_info.model_dump()
             elif name not in self.root.get("_tool_info", {}):
                 # Create default tool info
+                from omnibase_core.models.core.model_semver import parse_semver_from_string
                 default_info = ModelMetadataToolInfo(
                     name=name,
                     tool_type=EnumMetadataToolType.FUNCTION,
@@ -252,7 +254,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                     description="",
                     documentation="",
                     author="Unknown",
-                    version="1.0.0",
+                    version=parse_semver_from_string("1.0.0"),
                     security_level="standard",
                     replaces=None,
                 )
@@ -414,15 +416,20 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         if not tool_info:
             return False
 
+        from uuid import uuid5, NAMESPACE_DNS
         tool_info.status = EnumMetadataToolStatus.DEPRECATED
+        # Generate deterministic UUID for audit entry
+        audit_id = uuid5(NAMESPACE_DNS, f"deprecate_{name}_{datetime.now().isoformat()}")
+        # Generate target_id properly - tools don't have UUIDs, so use None or empty string
+        target_id = UUID(int=0) if not name else None  # Use null UUID or None
         tool_info.audit_trail.append(
             ModelAuditEntry(
-                audit_id=f"deprecate_{name}_{datetime.now().isoformat()}",
+                audit_id=audit_id,
                 timestamp=datetime.now(),
                 action=EnumAuditAction.UPDATE,
                 action_detail=f"Deprecated tool: {reason}",
                 target_type="tool",
-                target_id=UUID(name) if name and isinstance(name, str) else name,
+                target_id=target_id,
                 success=True,
                 additional_context={
                     "reason": reason,
@@ -607,6 +614,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         collection = cls(tools_dict)
 
         # Add basic tool info for each tool
+        from omnibase_core.models.core.model_semver import parse_semver_from_string
         for name, tool in tools_dict.items():
             if hasattr(tool, "name") and hasattr(tool, "description"):
                 tool_info = ModelMetadataToolInfo(
@@ -617,7 +625,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                     complexity=EnumMetadataToolComplexity.SIMPLE,
                     documentation="",
                     author="Unknown",
-                    version="1.0.0",
+                    version=parse_semver_from_string("1.0.0"),
                     security_level="standard",
                     replaces=None,
                 )

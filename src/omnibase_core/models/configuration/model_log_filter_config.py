@@ -69,7 +69,7 @@ class ModelLogFilterConfig(BaseModel):
         le=1.0,
     )
 
-    def compile_regex(self, pattern: str) -> re.Pattern:
+    def compile_regex(self, pattern: str) -> re.Pattern[str]:
         """Compile regex pattern with configuration options."""
         flags = 0
         if not self.case_sensitive:

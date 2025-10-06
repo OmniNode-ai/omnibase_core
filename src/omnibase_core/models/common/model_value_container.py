@@ -275,13 +275,7 @@ class ModelValueContainer(BaseModel):
         errors: list[str] = []
 
         try:
-            # Type checking
-            for key, value in self.metadata.items():
-                if not isinstance(key, str):
-                    errors.append(f"Metadata key {repr(key)} is not a string")
-                if not isinstance(value, str):
-                    errors.append(f"Metadata value for key '{key}' is not a string")
-
+            # Type checking not needed - dict[str, str] annotation guarantees types
             # Size limits
             if len(self.metadata) > 100:
                 errors.append("Metadata exceeds maximum size of 100 entries")

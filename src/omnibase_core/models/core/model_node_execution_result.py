@@ -15,7 +15,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_base_result import ModelBaseResult
+
 from omnibase_core.models.core.model_execution_data import ModelExecutionData
 
 

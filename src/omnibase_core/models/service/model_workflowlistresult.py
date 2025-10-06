@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_base_result import ModelBaseResult
+
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 

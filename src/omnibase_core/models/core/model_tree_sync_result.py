@@ -45,11 +45,11 @@ class ModelTreeSyncResult(BaseModel):
     Result model for validating .tree and filesystem sync.
     """
 
-    extra_files_on_disk: set[Path] = Field(
+    extra_files_on_disk: set[str][Path] = Field(
         default_factory=set,
         description="Files present on disk but not in .tree",
     )
-    missing_files_in_tree: set[Path] = Field(
+    missing_files_in_tree: set[str][Path] = Field(
         default_factory=set,
         description="Files list[Any]ed in .tree but missing on disk",
     )

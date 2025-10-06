@@ -96,10 +96,6 @@ class ModelStateUpdate(BaseModel):
         if isinstance(operation, str):
             operation = EnumStateUpdateOperation(operation)
 
-        # Convert raw value to ModelSchemaValue if needed
-        if value is not None and not isinstance(value, ModelSchemaValue):
-            value = ModelSchemaValue.from_value(value)
-
         update = ModelStateFieldUpdate(
             field_path=field_path,
             operation=operation,

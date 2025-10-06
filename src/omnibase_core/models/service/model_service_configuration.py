@@ -13,7 +13,7 @@ Author: OmniNode Team
 # Import it directly from omnibase_core.models.registry.model_registry_config instead
 from omnibase_core.models.core.model_fallback_strategy import (
     ModelFallbackStrategy,
-    ModelFallbackStrategyType,
+    EnumFallbackStrategyType,
 )
 from omnibase_core.models.service.model_service_configuration_single import (
     ModelServiceConfiguration,
@@ -24,7 +24,7 @@ from omnibase_core.models.service.model_service_registry_config import (
 
 # Re-export (excluding ModelRegistryConfig due to circular import)
 __all__ = [
-    "ModelFallbackStrategyType",
+    "EnumFallbackStrategyType",
     "ModelFallbackStrategy",
     "ModelServiceConfiguration",
     "ModelServiceRegistryConfig",

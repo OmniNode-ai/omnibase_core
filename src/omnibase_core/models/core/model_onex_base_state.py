@@ -6,6 +6,8 @@ from pydantic import field_validator
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 from .model_onex_output_state import ModelOnexOutputState
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 OnexOutputState = ModelOnexOutputState
 
@@ -64,8 +66,6 @@ class ModelOnexInputState(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
 
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,

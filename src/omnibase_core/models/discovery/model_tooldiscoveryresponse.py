@@ -1,8 +1,9 @@
-import uuid
 from typing import Any, List
+from uuid import UUID
 
 from pydantic import Field
 
+from omnibase_core.constants.event_types import TOOL_DISCOVERY_RESPONSE
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
@@ -24,7 +25,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     )
 
     # Response identification
-    request_correlation_id: str | None = Field(
+    request_correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID from the original request",
     )
@@ -73,7 +74,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         tools: list[ModelDiscoveredTool],
         request_correlation_id: str | None = None,
         response_time_ms: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolDiscoveryResponse":
         """
         Factory method to create a successful discovery response.
@@ -91,14 +92,15 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         """
         # Convert string correlation_id to UUID if provided
         correlation_uuid = None
+        request_corr_uuid = None
         if request_correlation_id:
             try:
-                from uuid import UUID
-
                 correlation_uuid = UUID(request_correlation_id)
+                request_corr_uuid = correlation_uuid
             except ValueError:
                 # If it's not a valid UUID string, leave correlation_id as None
                 correlation_uuid = None
+                request_corr_uuid = None
 
         return cls(
             node_id=node_id,
@@ -106,7 +108,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
             tools=tools,
             total_count=len(tools),
             filtered_count=len(tools),
-            request_correlation_id=request_correlation_id,
+            request_correlation_id=request_corr_uuid,
             response_time_ms=response_time_ms,
             correlation_id=correlation_uuid,
             **kwargs,
@@ -120,7 +122,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         partial_tools: list[ModelDiscoveredTool] | None = None,
         request_correlation_id: str | None = None,
         timeout_ms: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolDiscoveryResponse":
         """
         Factory method to create a timeout response.
@@ -140,13 +142,16 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
 
         # Convert string correlation_id to UUID if provided
         correlation_uuid = None
+        request_corr_uuid = None
         if request_correlation_id:
             try:
 
                 correlation_uuid = UUID(request_correlation_id)
+                request_corr_uuid = correlation_uuid
             except ValueError:
                 # If it's not a valid UUID string, leave correlation_id as None
                 correlation_uuid = None
+                request_corr_uuid = None
 
         return cls(
             node_id=node_id,
@@ -154,7 +159,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
             tools=tools,
             total_count=len(tools),
             filtered_count=len(tools),
-            request_correlation_id=request_correlation_id,
+            request_correlation_id=request_corr_uuid,
             correlation_id=correlation_uuid,
             partial_response=True,
             timeout_occurred=True,

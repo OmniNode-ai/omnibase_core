@@ -276,7 +276,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, value):
+    def validate_entrypoint(cls, value: Any) -> Any:
         if isinstance(value, EntrypointBlock):
             return value
         if isinstance(value, str):
@@ -290,9 +290,9 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def validate_namespace_field(cls, value: object):
+    def validate_namespace_field(cls, value: object) -> Any:
         # Recursively flatten any dict[str, Any]or Namespace to a plain string
-        def flatten_namespace(val: object):
+        def flatten_namespace(val: object) -> str:
             if isinstance(val, Namespace):  # type: ignore[misc]
                 return val.value
             if isinstance(val, str):
@@ -310,7 +310,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("x_extensions", mode="before")
     @classmethod
-    def coerce_x_extensions(cls, v: object):
+    def coerce_x_extensions(cls, v: object) -> Any:
         if not isinstance(v, dict):
             return v
         out = {}
@@ -323,7 +323,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ExtensionValueModel(value=val)
         return out
 
-    def model_dump(self, *args, **kwargs) -> dict[str, Any]:
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d

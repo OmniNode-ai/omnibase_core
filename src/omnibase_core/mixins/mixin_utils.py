@@ -29,7 +29,7 @@ from pydantic import Field
 
 from omnibase_core.enums import EnumNodeMetadataField
 
-from .mixin_canonical_serialization import CanonicalYAMLSerializer
+from .mixin_canonical_serialization import MixinCanonicalYAMLSerializer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
@@ -51,7 +51,7 @@ def canonicalize_metadata_block(
     **kwargs: Any,
 ) -> str:
     """
-    Utility function to canonicalize a metadata block using CanonicalYAMLSerializer.
+    Utility function to canonicalize a metadata block using MixinCanonicalYAMLSerializer.
     Args:
         block: A dict[str, Any]or model instance (must implement model_dump(mode="json")).
         volatile_fields: Fields to replace with protocol placeholder values.
@@ -62,12 +62,12 @@ def canonicalize_metadata_block(
         default_flow_style: Use block style YAML.
         allow_unicode: Allow unicode in YAML output.
         comment_prefix: Prefix to add to each line (for comment blocks).
-        **kwargs: Additional keyword arguments for CanonicalYAMLSerializer.canonicalize_metadata_block.
+        **kwargs: Additional keyword arguments for MixinCanonicalYAMLSerializer.canonicalize_metadata_block.
     Returns:
         Canonical YAML string for the metadata block.
     """
     return str(
-        CanonicalYAMLSerializer().canonicalize_metadata_block(
+        MixinCanonicalYAMLSerializer().canonicalize_metadata_block(
             volatile_fields=volatile_fields,
             placeholder=placeholder,
             sort_keys=sort_keys,

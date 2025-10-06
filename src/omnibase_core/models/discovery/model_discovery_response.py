@@ -1,8 +1,3 @@
-import json
-from typing import Any, List
-
-from pydantic import Field
-
 """
 Discovery Response Model
 
@@ -10,7 +5,10 @@ Model for discovery client responses with proper typing and validation
 following ONEX canonical patterns.
 """
 
+import json
 from datetime import datetime
+from typing import Any, List
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -91,7 +89,7 @@ class ModelDiscoveryResponse(BaseModel):
     )
 
     # Client information
-    client_id: str | None = Field(default=None, description="Client identifier")
+    client_id: UUID | None = Field(default=None, description="Client identifier")
 
     client_stats: dict[str, str | int | float | bool] = Field(
         default_factory=dict,
@@ -116,7 +114,7 @@ class ModelDiscoveryResponse(BaseModel):
         operation: str,
         tools: list[ModelDiscoveredTool],
         response_time_ms: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for successful discovery responses.
@@ -147,7 +145,7 @@ class ModelDiscoveryResponse(BaseModel):
         operation: str,
         message: str,
         errors: list[str] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for error discovery responses.
@@ -176,7 +174,7 @@ class ModelDiscoveryResponse(BaseModel):
         operation: str,
         timeout_seconds: float,
         partial_tools: list[ModelDiscoveredTool] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for timeout discovery responses.
@@ -211,24 +209,32 @@ class ModelDiscoveryResponse(BaseModel):
         cls,
         client_id: str,
         client_stats: dict[str, str | int | float | bool],
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for client status responses.
 
         Args:
-            client_id: Client identifier
+            client_id: Client identifier (string representation of UUID)
             client_stats: Client statistics
             **kwargs: Additional fields
 
         Returns:
             ModelDiscoveryResponse for status
         """
+        # Convert string client_id to UUID
+        client_uuid = None
+        try:
+            client_uuid = UUID(client_id)
+        except ValueError:
+            # If conversion fails, leave as None
+            client_uuid = None
+
         return cls(
             operation="get_client_status",
             status="success",
             message=f"Client {client_id} status",
-            client_id=client_id,
+            client_id=client_uuid,
             client_stats=client_stats,
             completed_at=datetime.now(),
             **kwargs,

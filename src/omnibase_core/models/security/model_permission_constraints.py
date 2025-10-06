@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -29,10 +30,9 @@ class ModelPermissionConstraints(BaseModel):
     including usage limits, approval workflows, delegation rules, and audit requirements.
     """
 
-    constraints_id: str = Field(
+    constraints_id: UUID = Field(
         default=...,
         description="Unique constraints identifier",
-        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     usage_limits_enabled: bool = Field(
@@ -433,7 +433,7 @@ class ModelPermissionConstraints(BaseModel):
         requires_approval = risk_level in ["high", "critical"]
 
         return cls(
-            constraints_id=f"standard_{risk_level}",
+            constraints_id=uuid4(),
             risk_level=risk_level,
             audit_logging_enabled=True,
             audit_detail_level=audit_detail,
@@ -460,7 +460,7 @@ class ModelPermissionConstraints(BaseModel):
     def create_high_security_constraints(cls) -> "ModelPermissionConstraints":
         """Create high security permission constraints"""
         return cls(
-            constraints_id="high_security",
+            constraints_id=uuid4(),
             usage_limits_enabled=True,
             max_uses_total=None,
             max_uses_per_day=10,
@@ -493,7 +493,7 @@ class ModelPermissionConstraints(BaseModel):
     def create_emergency_constraints(cls) -> "ModelPermissionConstraints":
         """Create emergency access permission constraints"""
         return cls(
-            constraints_id="emergency_access",
+            constraints_id=uuid4(),
             usage_limits_enabled=True,
             max_uses_total=1,
             max_uses_per_day=None,

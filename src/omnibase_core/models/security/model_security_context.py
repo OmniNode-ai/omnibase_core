@@ -1,13 +1,10 @@
-from typing import Dict, Optional
-
-from pydantic import Field
-
 """
 Security context model for security-related operations.
 """
 
 from datetime import datetime
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -19,7 +16,7 @@ class ModelSecurityContext(BaseModel):
     """
 
     # User/Principal information
-    user_id: str | None = Field(default=None, description="User identifier")
+    user_id: UUID | None = Field(default=None, description="User identifier")
     username: str | None = Field(default=None, description="Username")
     service_account: str | None = Field(default=None, description="Service account")
 

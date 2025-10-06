@@ -13,7 +13,7 @@ from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 from .model_example_metadata import ModelExampleMetadata
 from .model_example_metadata_summary import ModelExampleMetadataSummary
 from .model_example_summary import ModelExampleSummary
-from .model_examples_collection import ModelExamples as ModelExamplesCollection
+from .model_examples_collection import ModelExample as ModelExamplesCollection
 from .model_examples_collection_summary import ModelExamplesCollectionSummary
 from .model_fallback_metadata import ModelFallbackMetadata
 from .model_fallback_strategy import ModelFallbackStrategy

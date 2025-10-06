@@ -7,7 +7,7 @@ Event sent to request real-time introspection from all connected nodes.
 Enables on-demand discovery of currently available nodes with their current status.
 """
 
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -52,7 +52,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     )
 
     # Request metadata
-    requester_id: str = Field(
+    requester_id: UUID = Field(
         default=...,
         description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
     )
@@ -76,19 +76,19 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     @classmethod
     def create_discovery_request(
         cls,
-        requester_id: str,
-        node_id: UUID = "discovery_client",
+        requester_id: UUID,
+        node_id: UUID | None = None,
         filters: ModelIntrospectionFilters | None = None,
         timeout_ms: int = 5000,
         include_resource_usage: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRequestIntrospectionEvent":
         """
         Factory method for creating discovery requests.
 
         Args:
             requester_id: Identifier of the requesting service
-            node_id: Node ID of the requester
+            node_id: Node ID of the requester (defaults to new UUID)
             filters: Optional filters for targeting specific nodes
             timeout_ms: Request timeout in milliseconds
             include_resource_usage: Whether to include resource usage
@@ -97,6 +97,9 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         Returns:
             ModelRequestIntrospectionEvent instance
         """
+        if node_id is None:
+            node_id = uuid4()
+
         return cls(
             node_id=node_id,
             requester_id=requester_id,
@@ -109,16 +112,18 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     @classmethod
     def create_mcp_discovery_request(
         cls,
-        node_id: UUID = "mcp_server",
+        node_id: UUID | None = None,
+        requester_id: UUID | None = None,
         protocols: list[str] | None = None,
         timeout_ms: int = 3000,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRequestIntrospectionEvent":
         """
         Factory method for MCP server discovery requests.
 
         Args:
-            node_id: MCP server node ID
+            node_id: MCP server node ID (defaults to new UUID)
+            requester_id: Requester identifier (defaults to new UUID)
             protocols: Required protocols (defaults to ['mcp'])
             timeout_ms: Request timeout
             **kwargs: Additional fields
@@ -126,6 +131,11 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         Returns:
             ModelRequestIntrospectionEvent for MCP discovery
         """
+        if node_id is None:
+            node_id = uuid4()
+        if requester_id is None:
+            requester_id = uuid4()
+
         filters = ModelIntrospectionFilters(
             protocols=protocols or ["mcp"],
             status=["ready", "busy"],  # Only active nodes
@@ -133,7 +143,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
 
         return cls(
             node_id=node_id,
-            requester_id="mcp_server",
+            requester_id=requester_id,
             filters=filters,
             timeout_ms=timeout_ms,
             include_resource_usage=True,
@@ -143,23 +153,28 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     @classmethod
     def create_health_check_request(
         cls,
-        requester_id: str = "health_monitor",
-        node_id: UUID = "health_monitor",
+        requester_id: UUID | None = None,
+        node_id: UUID | None = None,
         timeout_ms: int = 2000,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRequestIntrospectionEvent":
         """
         Factory method for health monitoring requests.
 
         Args:
-            requester_id: Health monitor identifier
-            node_id: Health monitor node ID
+            requester_id: Health monitor identifier (defaults to new UUID)
+            node_id: Health monitor node ID (defaults to new UUID)
             timeout_ms: Request timeout
             **kwargs: Additional fields
 
         Returns:
             ModelRequestIntrospectionEvent for health checking
         """
+        if requester_id is None:
+            requester_id = uuid4()
+        if node_id is None:
+            node_id = uuid4()
+
         return cls(
             node_id=node_id,
             requester_id=requester_id,

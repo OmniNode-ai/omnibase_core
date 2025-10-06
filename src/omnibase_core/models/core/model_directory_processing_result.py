@@ -56,15 +56,15 @@ class ModelDirectoryProcessingResult(BaseModel):
     skipped_count: int = Field(default=0, description="Number of files skipped")
 
     # File sets
-    processed_files: set[Path] = Field(
+    processed_files: set[str][Path] = Field(
         default_factory=set,
         description="Set of processed files",
     )
-    failed_files: set[Path] = Field(
+    failed_files: set[str][Path] = Field(
         default_factory=set,
         description="Set of files that failed processing",
     )
-    skipped_files: set[Path] = Field(
+    skipped_files: set[str][Path] = Field(
         default_factory=set,
         description="Set of files skipped",
     )
