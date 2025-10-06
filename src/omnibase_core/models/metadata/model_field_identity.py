@@ -31,7 +31,7 @@ class ModelFieldIdentity(BaseModel):
 
     # Core identifiers (UUID pattern)
     identity_id: UUID = Field(
-        ...,
+        default=...,
         description="UUID for field identity identifier",
     )
     identity_display_name: str | None = Field(
@@ -41,7 +41,7 @@ class ModelFieldIdentity(BaseModel):
     )
 
     field_id: UUID = Field(
-        ...,
+        default=...,
         description="UUID for actual field name",
     )
     field_display_name: str | None = Field(

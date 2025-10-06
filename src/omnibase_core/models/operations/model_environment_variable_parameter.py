@@ -15,8 +15,8 @@ class ModelEnvironmentVariableParameter(ModelBaseWorkflowParameter):
         default=EnumWorkflowParameterType.ENVIRONMENT_VARIABLE,
         description="Environment variable parameter type",
     )
-    variable_name: str = Field(..., description="Environment variable name")
-    variable_value: str = Field(..., description="Environment variable value")
+    variable_name: str = Field(default=..., description="Environment variable name")
+    variable_value: str = Field(default=..., description="Environment variable value")
     sensitive: bool = Field(default=False, description="Whether variable is sensitive")
     inherit_from_parent: bool = Field(
         default=True,

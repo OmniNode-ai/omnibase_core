@@ -21,7 +21,6 @@ from omnibase_core.errors.error_codes import ModelCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
 from omnibase_core.models.core.model_state_transition import (
-    ModelEnumTransitionType,
     ModelStateTransition,
 )
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
@@ -91,8 +90,6 @@ class MixinContractStateReducer:
 
             # Load and validate contract using safe YAML loader
             contract = load_and_validate_yaml_model(
-                transitions_path,
-                ModelGenericContract,
             )
 
             # Extract state_transitions section
@@ -210,7 +207,6 @@ class MixinContractStateReducer:
             )
             msg = f"Contract state processing error: {e!s}"
             raise ModelOnexError(
-                msg,
                 ModelCoreErrorCode.OPERATION_FAILED,
             )
 
@@ -254,7 +250,6 @@ class MixinContractStateReducer:
             )
 
     def _apply_simple_transition(
-        self,
         transition: ModelStateTransition,
         input_state: Any,
     ) -> None:
@@ -274,7 +269,6 @@ class MixinContractStateReducer:
         )
 
     def _apply_tool_based_transition(
-        self,
         transition: ModelStateTransition,
         input_state: Any,
     ) -> None:
@@ -298,7 +292,6 @@ class MixinContractStateReducer:
         )
 
     def _apply_conditional_transition(
-        self,
         transition: ModelStateTransition,
         input_state: Any,
     ) -> None:

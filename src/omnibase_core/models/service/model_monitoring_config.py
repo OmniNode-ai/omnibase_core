@@ -12,7 +12,7 @@ class ModelMonitoringConfig(BaseModel):
 
     metrics_enabled: bool = Field(default=True, description="Enable metrics collection")
     metrics_port: int = Field(
-        9090,
+        default=9090,
         description="Metrics endpoint port",
         ge=1024,
         le=65535,
@@ -22,6 +22,6 @@ class ModelMonitoringConfig(BaseModel):
     )
     log_structured: bool = Field(default=True, description="Use structured logging")
     log_correlation_enabled: bool = Field(
-        True,
+        default=True,
         description="Enable log correlation IDs",
     )

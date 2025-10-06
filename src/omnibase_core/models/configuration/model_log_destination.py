@@ -9,11 +9,13 @@ class ModelLogDestination(BaseModel):
     """Log output destination configuration."""
 
     destination_type: str = Field(
-        ...,
+        default=...,
         description="Destination type",
         pattern="^(console|file|syslog|network|database|custom)$",
     )
-    destination_name: str = Field(..., description="Unique destination identifier")
+    destination_name: str = Field(
+        default=..., description="Unique destination identifier"
+    )
     enabled: bool = Field(
         default=True,
         description="Whether this destination is enabled",

@@ -32,7 +32,7 @@ class ModelWorkflowNode(BaseModel):
         description="Unique identifier for the node",
     )
 
-    node_type: EnumNodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(default=..., description="Type of the node")
 
     node_requirements: StructuredData = Field(
         default_factory=dict,

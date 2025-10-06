@@ -26,17 +26,17 @@ class ModelFSMStateTransition(BaseModel):
     """
 
     transition_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the transition",
         min_length=1,
     )
 
-    from_state: str = Field(..., description="Source state name", min_length=1)
+    from_state: str = Field(default=..., description="Source state name", min_length=1)
 
-    to_state: str = Field(..., description="Target state name", min_length=1)
+    to_state: str = Field(default=..., description="Target state name", min_length=1)
 
     trigger: str = Field(
-        ...,
+        default=...,
         description="Event or condition that triggers transition",
         min_length=1,
     )

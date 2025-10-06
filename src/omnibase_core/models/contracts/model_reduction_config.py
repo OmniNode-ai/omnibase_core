@@ -22,13 +22,13 @@ class ModelReductionConfig(BaseModel):
     """
 
     operation_type: str = Field(
-        ...,
+        default=...,
         description="Type of reduction operation (fold, accumulate, merge, aggregate, etc.)",
         min_length=1,
     )
 
     reduction_function: str = Field(
-        ...,
+        default=...,
         description="Reduction function identifier",
         min_length=1,
     )

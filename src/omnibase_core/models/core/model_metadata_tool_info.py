@@ -6,6 +6,9 @@ from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolCo
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
 
+from omnibase_core.utils.util_semver import parse_semver_from_string
+
+
 """
 Metadata tool info model.
 """
@@ -22,24 +25,24 @@ from .model_semver import ModelSemVer
 class ModelMetadataToolInfo(BaseModel):
     """Enhanced information about a metadata tool."""
 
-    name: str = Field(..., description="Tool name")
+    name: str = Field(default=..., description="Tool name")
     tool_type: EnumMetadataToolType = Field(
-        EnumMetadataToolType.FUNCTION,
+        default=EnumMetadataToolType.FUNCTION,
         description="Type of tool",
     )
     status: EnumMetadataToolStatus = Field(
-        EnumMetadataToolStatus.ACTIVE,
+        default=EnumMetadataToolStatus.ACTIVE,
         description="Tool status",
     )
     complexity: EnumMetadataToolComplexity = Field(
-        EnumMetadataToolComplexity.SIMPLE,
+        default=EnumMetadataToolComplexity.SIMPLE,
         description="Tool complexity",
     )
 
     # Documentation and metadata
     description: str = Field(default="", description="Tool description")
     documentation: str = Field(default="", description="Detailed documentation")
-    author: str = Field("Unknown", description="Tool author")
+    author: str = Field(default="Unknown", description="Tool author")
     version: ModelSemVer = Field(
         default_factory=lambda: parse_semver_from_string("1.0.0"),
         description="Tool version",
@@ -67,7 +70,9 @@ class ModelMetadataToolInfo(BaseModel):
     )
 
     # Security and compliance
-    security_level: str = Field("standard", description="Security level required")
+    security_level: str = Field(
+        default="standard", description="Security level required"
+    )
     compliance_notes: list[str] = Field(
         default_factory=list,
         description="Compliance notes",

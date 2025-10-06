@@ -23,19 +23,19 @@ class ModelFSMOperation(BaseModel):
     """
 
     operation_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the operation",
         min_length=1,
     )
 
     operation_type: str = Field(
-        ...,
+        default=...,
         description="Type of operation (create, update, delete, transition, snapshot, restore)",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable operation description",
         min_length=1,
     )

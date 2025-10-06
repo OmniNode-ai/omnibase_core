@@ -15,8 +15,8 @@ class ModelOrchestratorResult(BaseModel):
     """Orchestrator result model."""
 
     # Result identification
-    result_id: str = Field(..., description="Result identifier")
-    status: str = Field(..., description="Orchestration status")
+    result_id: str = Field(default=..., description="Result identifier")
+    status: str = Field(default=..., description="Orchestration status")
 
     # Execution details
     graph: ModelOrchestratorGraph | None = Field(default=None, description="Graph used")

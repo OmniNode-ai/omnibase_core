@@ -43,24 +43,24 @@ class ModelMetadataToolAnalytics(BaseModel):
         default=0, description="Total invocations across all tools"
     )
     overall_success_rate: float = Field(
-        100.0,
+        default=100.0,
         description="Overall success rate percentage",
     )
     avg_collection_performance: float = Field(
-        0.0,
+        default=0.0,
         description="Average performance across all tools",
     )
 
     # Health and quality metrics
     health_score: float = Field(
-        100.0,
+        default=100.0,
         description="Overall collection health score (0-100)",
     )
     documentation_coverage: float = Field(
-        0.0,
+        default=0.0,
         description="Documentation coverage percentage",
     )
     validation_compliance: float = Field(
-        100.0,
+        default=100.0,
         description="Validation compliance percentage",
     )

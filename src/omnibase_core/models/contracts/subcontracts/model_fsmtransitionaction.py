@@ -10,13 +10,13 @@ class ModelFSMTransitionAction(BaseModel):
     """
 
     action_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the action",
         min_length=1,
     )
 
     action_type: str = Field(
-        ...,
+        default=...,
         description="Type of action (log, validate, modify, event, cleanup)",
         min_length=1,
     )

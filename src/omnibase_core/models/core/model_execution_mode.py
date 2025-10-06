@@ -22,52 +22,54 @@ class ModelExecutionMode(BaseModel):
 
     # Core fields (required)
     name: str = Field(
-        ...,
+        default=...,
         description="Execution mode identifier (DIRECT, INMEMORY, EVENT_BUS)",
         pattern="^[A-Z]+$",
     )
 
     value: str = Field(
-        ...,
+        default=...,
         description="Lowercase value for current standards (direct, inmemory, event_bus)",
     )
 
     # Properties as fields (replacing methods)
     is_synchronous: bool = Field(
-        ...,
+        default=...,
         description="Whether this execution mode is synchronous",
     )
 
     is_asynchronous: bool = Field(
-        ...,
+        default=...,
         description="Whether this execution mode is asynchronous",
     )
 
     is_distributed: bool = Field(
-        ...,
+        default=...,
         description="Whether this execution mode is distributed",
     )
 
-    is_local: bool = Field(..., description="Whether this execution mode is local")
+    is_local: bool = Field(
+        default=..., description="Whether this execution mode is local"
+    )
 
     requires_event_bus: bool = Field(
-        ...,
+        default=...,
         description="Whether this mode requires an event bus",
     )
 
     supports_scaling: bool = Field(
-        ...,
+        default=...,
         description="Whether this mode supports horizontal scaling",
     )
 
     typical_latency_ms: int = Field(
-        ...,
+        default=...,
         description="Typical latency for this execution mode in milliseconds",
         gt=0,
     )
 
     reliability_level: str = Field(
-        ...,
+        default=...,
         description="Reliability level (low, medium, high)",
         pattern="^(low|medium|high)$",
     )

@@ -46,7 +46,7 @@ class ModelOnexWarning(BaseModel):
     )
 
     message: str = Field(
-        ...,
+        default=...,
         description="Human-readable warning message",
         json_schema_extra={
             "example": "File already exists and will be overwritten: config.yaml",

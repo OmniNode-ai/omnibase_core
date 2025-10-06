@@ -104,14 +104,18 @@ class ModelConnectionProperties(BaseModel):
         default_factory=list,
         description="List of masked field names",
     )
-    masking_algorithm: str = Field("sha256", description="Masking algorithm used")
+    masking_algorithm: str = Field(
+        default="sha256", description="Masking algorithm used"
+    )
     """
     Performance summary with typed fields.
     Replaces Dict[str, Any] for get_performance_summary() returns.
     """
 
     # Timing metrics
-    total_execution_time_ms: float = Field(..., description="Total execution time")
+    total_execution_time_ms: float = Field(
+        default=..., description="Total execution time"
+    )
     average_response_time_ms: float | None = Field(
         default=None,
         description="Average response time",
@@ -172,9 +176,13 @@ class ModelConnectionProperties(BaseModel):
     timeout_count: int | None = Field(default=None, description="Number of timeouts")
 
     # Time window
-    measurement_start: datetime = Field(..., description="Measurement start time")
-    measurement_end: datetime = Field(..., description="Measurement end time")
-    measurement_duration_seconds: float = Field(..., description="Measurement duration")
+    measurement_start: datetime = Field(
+        default=..., description="Measurement start time"
+    )
+    measurement_end: datetime = Field(default=..., description="Measurement end time")
+    measurement_duration_seconds: float = Field(
+        default=..., description="Measurement duration"
+    )
 
     def calculate_success_rate(self) -> float:
         """Calculate success rate percentage."""

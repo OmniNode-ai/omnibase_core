@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
+from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
+
 
 class ModelFunctionDeprecationInfo(BaseModel):
     """

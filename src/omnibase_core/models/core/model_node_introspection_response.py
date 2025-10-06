@@ -29,23 +29,23 @@ class ModelNodeIntrospectionResponse(BaseModel):
     """
 
     node_metadata: ModelNodeMetadataInfo = Field(
-        ...,
+        default=...,
         description="Node metadata and identification",
     )
     contract: ModelContract = Field(
-        ...,
+        default=...,
         description="Node contract and interface specification",
     )
     state_models: ModelStates = Field(
-        ...,
+        default=...,
         description="Input and output state model specifications",
     )
     error_codes: ModelErrorCodes = Field(
-        ...,
+        default=...,
         description="Error codes and exit code mapping",
     )
     dependencies: ModelDependencies = Field(
-        ...,
+        default=...,
         description="Runtime and optional dependencies",
     )
     capabilities: list[EnumNodeCapability] = Field(
@@ -57,6 +57,6 @@ class ModelNodeIntrospectionResponse(BaseModel):
         description="Event channels this node subscribes to and publishes to",
     )
     introspection_version: str = Field(
-        "1.0.0",
+        default="1.0.0",
         description="Introspection format version",
     )

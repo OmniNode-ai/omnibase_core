@@ -10,8 +10,8 @@ from .model_workflow_parameters import ModelWorkflowParameters
 
 
 class ModelWorkflowExecutionResult(ModelBaseResult):
-    workflow_id: UUID = Field(..., description="ID of the executed workflow")
-    status: str = Field(..., description="Execution status")
+    workflow_id: UUID = Field(default=..., description="ID of the executed workflow")
+    status: str = Field(default=..., description="Execution status")
     outputs: ModelWorkflowOutputs | None = Field(
         default=None,
         description="Workflow execution outputs",

@@ -22,7 +22,6 @@ from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
 from omnibase_core.models.core.model_contract_dependency import ModelContractDependency
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_subcontract_reference import (
     ModelSubcontractReference,
 )
@@ -36,23 +35,25 @@ class ModelContractContent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # === REQUIRED FIELDS ===
-    contract_version: ModelSemVer = Field(..., description="Contract version")
-    node_name: str = Field(..., description="Node name")
-    node_type: EnumNodeType = Field(..., description="ONEX node type classification")
+    contract_version: ModelSemVer = Field(default=..., description="Contract version")
+    node_name: str = Field(default=..., description="Node name")
+    node_type: EnumNodeType = Field(
+        default=..., description="ONEX node type classification"
+    )
     tool_specification: ModelToolSpecification = Field(
-        ...,
+        default=...,
         description="Tool specification for NodeBase",
     )
     input_state: ModelYamlSchemaObject = Field(
-        ...,
+        default=...,
         description="Input state schema definition",
     )
     output_state: ModelYamlSchemaObject = Field(
-        ...,
+        default=...,
         description="Output state schema definition",
     )
     definitions: ModelContractDefinitions = Field(
-        ...,
+        default=...,
         description="Contract definitions section",
     )
 

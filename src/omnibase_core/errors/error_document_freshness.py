@@ -233,7 +233,6 @@ class DocumentFreshnessError(ModelOnexError):
         """
         # LAZY IMPORT: Only load ModelSchemaValue when this method is called
         # This prevents circular dependency at module import time
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         # Custom error serialization with correlation and file path
         core_code = self.model.error_code

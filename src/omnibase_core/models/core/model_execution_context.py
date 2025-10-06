@@ -6,6 +6,7 @@ from omnibase_core.models.core.model_context_metadata import ModelContextMetadat
 from omnibase_core.models.core.model_duration import ModelDuration
 from omnibase_core.models.core.model_environment import ModelEnvironment
 from omnibase_core.models.core.model_execution_mode import ModelExecutionMode
+from uuid import UUID
 
 
 class ModelExecutionContext(BaseModel):
@@ -21,7 +22,9 @@ class ModelExecutionContext(BaseModel):
         description="Execution mode (direct, inmemory, event_bus)",
     )
 
-    environment: ModelEnvironment = Field(..., description="Environment configuration")
+    environment: ModelEnvironment = Field(
+        default=..., description="Environment configuration"
+    )
 
     timeout: ModelDuration = Field(
         default_factory=lambda: ModelDuration(milliseconds=30000),
@@ -75,12 +78,12 @@ class ModelExecutionContext(BaseModel):
         description="User ID for audit and permissions",
     )
 
-    session_id: str | None = Field(
+    session_id: UUID | None = Field(
         default=None,
         description="Session ID for tracking related commands",
     )
 
-    correlation_id: str | None = Field(
+    correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for distributed tracing",
     )

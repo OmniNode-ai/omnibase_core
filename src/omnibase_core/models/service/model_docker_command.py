@@ -23,6 +23,5 @@ class ModelDockerCommand(BaseModel):
 
     def to_string(self) -> str:
         """Convert to shell command string."""
-        import shlex
 
         return " ".join(shlex.quote(arg) for arg in self.command)

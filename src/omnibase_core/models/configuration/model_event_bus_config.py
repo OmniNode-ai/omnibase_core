@@ -12,11 +12,11 @@ class ModelEventBusConfig(BaseModel):
     """
 
     bootstrap_servers: list[str] = Field(
-        ...,
+        default=...,
         description="List of event bus bootstrap servers (host:port)",
     )
     topics: list[str] = Field(
-        ...,
+        default=...,
         description="List of topics to use for event bus communication",
     )
     security_protocol: str | None = Field(

@@ -21,7 +21,7 @@ class ModelOperationDataBase(BaseModel):
     """Base operation data with discriminator."""
 
     operation_type: EnumNodeType = Field(
-        ...,
+        default=...,
         description="Operation type discriminator",
     )
     input_data: dict[str, ModelSchemaValue] = Field(

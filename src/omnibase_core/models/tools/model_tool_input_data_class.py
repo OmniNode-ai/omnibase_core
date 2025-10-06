@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class ModelToolInputData(BaseModel):
     """Input data for tool execution."""
 
-    operation: str = Field(..., description="Operation to perform")
+    operation: str = Field(default=..., description="Operation to perform")
     source_path: str | None = Field(
         default=None,
         description="Source file or directory path",

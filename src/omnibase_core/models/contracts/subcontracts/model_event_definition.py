@@ -24,19 +24,19 @@ class ModelEventDefinition(BaseModel):
     """
 
     event_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the event type",
         min_length=1,
     )
 
     event_category: str = Field(
-        ...,
+        default=...,
         description="Category classification for event routing",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable event description",
         min_length=1,
     )

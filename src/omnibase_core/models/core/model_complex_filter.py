@@ -30,6 +30,6 @@ class ModelComplexFilter(ModelCustomFilterBase):
         | ModelListFilter
         | ModelMetadataFilter
         | ModelStatusFilter
-    ] = Field(..., description="List of sub-filters to apply")
-    logic: str = Field("AND", description="Logical operator (AND/OR)")
+    ] = Field(default=..., description="List of sub-filters to apply")
+    logic: str = Field(default="AND", description="Logical operator (AND/OR)")
     negate: bool = Field(default=False, description="Negate the entire filter result")

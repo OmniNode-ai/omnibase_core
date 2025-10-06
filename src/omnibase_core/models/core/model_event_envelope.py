@@ -46,7 +46,7 @@ class ModelEventEnvelope(BaseModel):
 
     # Routing information
     route_spec: ModelRouteSpec = Field(
-        ...,
+        default=...,
         description="Routing specification and strategy",
     )
     trace: list[ModelRouteHop] = Field(
@@ -55,13 +55,15 @@ class ModelEventEnvelope(BaseModel):
     )
 
     # Event payload (unchanged by routers)
-    payload: ModelOnexEvent = Field(..., description="The actual event being routed")
+    payload: ModelOnexEvent = Field(
+        default=..., description="The actual event being routed"
+    )
 
     # Envelope metadata
-    source_node_id: str = Field(..., description="Original source node ID")
+    source_node_id: str = Field(default=..., description="Original source node ID")
     envelope_version: str = Field(default="1.0", description="Envelope format version")
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Correlation ID for request/response tracking",
     )
 
@@ -173,7 +175,9 @@ class ModelEventEnvelope(BaseModel):
 
     def add_source_hop(self, node_id: str, service_name: str | None = None) -> None:
         """Add source hop to the trace."""
-        hop = ModelRouteHop.create_source_hop(node_id, service_name)
+        hop = ModelRouteHop.create_source_hop(
+            UUID(node_id) if isinstance(node_id, str) else node_id, service_name
+        )
         self.trace.append(hop)
 
     def add_router_hop(
@@ -185,7 +189,7 @@ class ModelEventEnvelope(BaseModel):
     ) -> None:
         """Add a router hop to the trace."""
         hop = ModelRouteHop.create_router_hop(
-            node_id,
+            UUID(node_id) if isinstance(node_id, str) else node_id,
             routing_decision,
             next_hop,
             **kwargs,
@@ -199,7 +203,9 @@ class ModelEventEnvelope(BaseModel):
         service_name: str | None = None,
     ) -> None:
         """Add destination hop and mark as delivered."""
-        hop = ModelRouteHop.create_destination_hop(node_id, service_name)
+        hop = ModelRouteHop.create_destination_hop(
+            UUID(node_id) if isinstance(node_id, str) else node_id, service_name
+        )
         self.trace.append(hop)
         self.is_delivered = True
 

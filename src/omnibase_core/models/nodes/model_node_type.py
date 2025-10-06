@@ -51,14 +51,16 @@ class ModelNodeType(BaseModel):
         description="Unique identifier for the node type entity",
     )
     type_name: EnumTypeName = Field(
-        ...,
+        default=...,
         description="Node type identifier (e.g., CONTRACT_TO_MODEL)",
     )
 
-    description: str = Field(..., description="Human-readable description of the node")
+    description: str = Field(
+        default=..., description="Human-readable description of the node"
+    )
 
     category: EnumConfigCategory = Field(
-        ...,
+        default=...,
         description="Node category for organization",
     )
 

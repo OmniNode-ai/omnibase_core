@@ -51,7 +51,7 @@ class _ModelOnexErrorData(BaseModel):
     )
 
     message: str = Field(
-        ...,
+        default=...,
         description="Human-readable error message",
         json_schema_extra={"example": "File not found: config.yaml"},
     )

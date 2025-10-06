@@ -20,13 +20,13 @@ class ModelEventTransformation(BaseModel):
     """
 
     transformation_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the transformation",
         min_length=1,
     )
 
     transformation_type: str = Field(
-        ...,
+        default=...,
         description="Type of transformation (filter, map, enrich, validate)",
         min_length=1,
     )

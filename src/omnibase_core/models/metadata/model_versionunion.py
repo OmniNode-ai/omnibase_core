@@ -7,6 +7,8 @@ from omnibase_core.enums.enum_version_union_type import EnumVersionUnionType
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
+from omnibase_core.models.metadata.model_versionunion import ModelTypedDictVersionDict
+
 
 class ModelVersionUnion(BaseModel):
     """

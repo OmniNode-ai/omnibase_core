@@ -22,18 +22,18 @@ class ModelNodeCapability(BaseModel):
 
     # Core fields (required)
     name: str = Field(
-        ...,
+        default=...,
         description="Capability identifier (e.g., SUPPORTS_DRY_RUN)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
 
     value: str = Field(
-        ...,
+        default=...,
         description="Lowercase value for current standards (e.g., supports_dry_run)",
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable description of the capability",
     )
 

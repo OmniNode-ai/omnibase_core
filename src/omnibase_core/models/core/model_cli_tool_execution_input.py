@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
 from omnibase_core.models.core.model_cli_tool_execution_config import ModelConfig
+from uuid import UUID
 
 """
 Model for CLI tool execution input parameters.
@@ -22,7 +23,7 @@ class ModelCliToolExecutionInput(BaseModel):
     """
 
     # Core execution parameters
-    action: str = Field(..., description="Action to perform with the tool")
+    action: str = Field(default=..., description="Action to perform with the tool")
     tool_name: str | None = Field(
         default=None,
         description="Specific tool name for targeted operations",
@@ -36,17 +37,17 @@ class ModelCliToolExecutionInput(BaseModel):
 
     # Input/output configuration
     include_metadata: bool = Field(
-        True,
+        default=True,
         description="Whether to include detailed metadata in results",
     )
     include_health_info: bool = Field(
-        True,
+        default=True,
         description="Whether to include health information",
     )
 
     # Filtering and selection
     health_filter: bool = Field(
-        True,
+        default=True,
         description="Only include healthy tools in results",
     )
     category_filter: str | None = Field(
@@ -61,7 +62,7 @@ class ModelCliToolExecutionInput(BaseModel):
 
     # Output formatting
     output_format: str = Field(
-        "default",
+        default="default",
         description="Output format preference (default, json, table)",
     )
     verbose: bool = Field(default=False, description="Enable verbose output")
@@ -77,7 +78,7 @@ class ModelCliToolExecutionInput(BaseModel):
         default=None,
         description="Execution context identifier",
     )
-    request_id: str | None = Field(
+    request_id: UUID | None = Field(
         default=None,
         description="Request identifier for tracking",
     )

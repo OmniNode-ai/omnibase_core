@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelOnexError
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 MetadataBlock model.
@@ -33,22 +34,24 @@ class ModelMetadataBlock(BaseModel):
     """
 
     metadata_version: str = Field(
-        ...,
+        default=...,
         description="Must be a semver string, e.g., '0.1.0'",
     )
-    name: str = Field(..., description="Validator/tool name")
+    name: str = Field(default=..., description="Validator/tool name")
     namespace: "Namespace"
-    version: str = Field(..., description="Semantic version, e.g., 0.1.0")
+    version: ModelSemVer = Field(
+        default=..., description="Semantic version, e.g., 0.1.0"
+    )
     entrypoint: str | None = Field(
         default=None,
         description="Entrypoint URI string (e.g., python://file.py)",
     )
     protocols_supported: list[str] = Field(
-        ...,
+        default=...,
         description="List of supported protocols",
     )
     protocol_version: EnumProtocolVersion = Field(
-        ...,
+        default=...,
         description="Protocol version, e.g., 0.1.0",
     )
     author: str = Field(...)
@@ -76,7 +79,7 @@ class ModelMetadataBlock(BaseModel):
         description="Meta type of the node/tool",
     )
     runtime_language_hint: EnumRuntimeLanguage = Field(
-        EnumRuntimeLanguage.UNKNOWN,
+        default=EnumRuntimeLanguage.UNKNOWN,
         description="Runtime language hint",
     )
     tools: ToolCollection | None = None
@@ -103,8 +106,7 @@ class ModelMetadataBlock(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def check_namespace(cls, v):
-        from omnibase_core.models.core.model_node_metadata import Namespace
+    def check_namespace(cls, v: Any) -> Any:
 
         if isinstance(v, Namespace):
             return v
@@ -147,7 +149,7 @@ class ModelMetadataBlock(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, v):
+    def validate_entrypoint(cls, v: Any) -> Any:
         if v is None or v == "":
             return None
         if isinstance(v, str) and "://" in v:

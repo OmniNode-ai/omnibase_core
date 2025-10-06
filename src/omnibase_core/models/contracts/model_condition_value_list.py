@@ -20,7 +20,7 @@ class ModelConditionValueList(BaseModel):
     """Container for list[Any]of strongly-typed condition values."""
 
     values: list[PrimitiveValueType] = Field(
-        ...,
+        default=...,
         description="List of condition values",
     )
 

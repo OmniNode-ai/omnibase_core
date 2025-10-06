@@ -60,7 +60,7 @@ class ModelMessagePayload(BaseModel):
         description="Unique message identifier (UUID format)",
     )
     message_type: EnumMessageType = Field(
-        ...,
+        default=...,
         description="Discriminated message type",
     )
     message_content: Annotated[
@@ -69,7 +69,9 @@ class ModelMessagePayload(BaseModel):
         | ModelNotificationMessageContent
         | ModelQueryMessageContent,
         Field(discriminator="message_type"),
-    ] = Field(..., description="Message-specific content with discriminated union")
+    ] = Field(
+        default=..., description="Message-specific content with discriminated union"
+    )
     headers: ModelMessageHeaders = Field(
         default_factory=ModelMessageHeaders,
         description="Structured message headers",

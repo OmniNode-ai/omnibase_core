@@ -24,7 +24,7 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
 
     # Request identification
     requester_id: UUID = Field(
-        ...,
+        default=...,
         description="ID of the service requesting discovery (e.g. 'mcp_server')",
     )
 
@@ -40,11 +40,11 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         description="Maximum number of results to return",
     )
     timeout_ms: int | None = Field(
-        5000,
+        default=5000,
         description="Timeout in milliseconds for the request",
     )
     include_metadata: bool = Field(
-        True,
+        default=True,
         description="Whether to include full metadata in response",
     )
 
@@ -87,8 +87,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
     @classmethod
     def create_mcp_request(
         cls,
-        requester_id: UUID = "mcp_server",
-        node_id: UUID = "mcp_server",
+        requester_id: str | UUID = "mcp_server",
+        node_id: str | UUID = "mcp_server",
         correlation_id=None,
         **kwargs,
     ) -> "ModelToolDiscoveryRequest":

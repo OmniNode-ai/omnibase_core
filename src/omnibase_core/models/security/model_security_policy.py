@@ -26,9 +26,9 @@ class ModelSecurityPolicy(BaseModel):
     """
 
     # Policy identification
-    policy_id: str = Field(..., description="Unique policy identifier")
-    policy_name: str = Field(..., description="Human-readable policy name")
-    policy_version: str = Field("1.0.0", description="Policy version")
+    policy_id: str = Field(default=..., description="Unique policy identifier")
+    policy_name: str = Field(default=..., description="Human-readable policy name")
+    policy_version: str = Field(default="1.0.0", description="Policy version")
 
     # Policy metadata
     created_at: datetime = Field(
@@ -44,10 +44,12 @@ class ModelSecurityPolicy(BaseModel):
 
     # Access control
     access_control_model: str = Field(
-        "RBAC",
+        default="RBAC",
         description="Access control model (RBAC/ABAC/etc)",
     )
-    default_action: str = Field("deny", description="Default action (allow/deny)")
+    default_action: str = Field(
+        default="deny", description="Default action (allow/deny)"
+    )
 
     # Security rules
     rules: list[ModelSecurityRule] = Field(
@@ -68,9 +70,11 @@ class ModelSecurityPolicy(BaseModel):
     )
 
     # Session management
-    session_timeout_minutes: int | None = Field(30, description="Session timeout")
+    session_timeout_minutes: int | None = Field(
+        default=30, description="Session timeout"
+    )
     max_sessions_per_user: int | None = Field(
-        5,
+        default=5,
         description="Max concurrent sessions",
     )
 

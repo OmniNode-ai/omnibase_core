@@ -39,9 +39,7 @@ class ModelDependency(BaseModel):
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
-    name: str = Field(
-        ...,
-        description="Dependency name (e.g., 'ProtocolEventBus')",
+    name: str = Field(default=..., description="Dependency name (e.g., 'ProtocolEventBus')",
         min_length=1,
     )
 
@@ -113,11 +111,6 @@ class ModelDependency(BaseModel):
         # Basic validation - allow protocols, services, modules
         min_name_length = 2
         if len(v) < min_name_length:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
             raise ModelOnexError(
                 message=f"Dependency name too short: {v}",
                 error_code=ModelCoreErrorCode.VALIDATION_ERROR,
@@ -230,11 +223,6 @@ class ModelDependency(BaseModel):
                 break  # Only report first violation to avoid spam
 
         if security_violations:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
             raise ModelOnexError(
                 message=f"Security violations in module path '{module_path[:50] if len(module_path) > 50 else module_path}': {', '.join(security_violations)}",
                 error_code=ModelCoreErrorCode.VALIDATION_ERROR,
@@ -261,7 +249,6 @@ class ModelDependency(BaseModel):
     def _validate_module_format(cls, module_path: str) -> None:
         """Validate module path format using pre-compiled pattern with caching for performance."""
         from omnibase_core.models.common.model_error_context import ModelErrorContext
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         if not cls._MODULE_PATTERN.match(module_path):
             raise ModelOnexError(

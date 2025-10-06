@@ -30,9 +30,11 @@ class ModelTestResult(BaseModel):
     """
 
     # Entity reference with UUID
-    test_id: UUID = Field(..., description="Unique identifier of the test")
-    test_display_name: str = Field(..., description="Human-readable name of the test")
-    passed: bool = Field(..., description="Whether the test passed")
+    test_id: UUID = Field(default=..., description="Unique identifier of the test")
+    test_display_name: str = Field(
+        default=..., description="Human-readable name of the test"
+    )
+    passed: bool = Field(default=..., description="Whether the test passed")
     duration_ms: int = Field(
         default=0,
         description="Test execution duration in milliseconds",

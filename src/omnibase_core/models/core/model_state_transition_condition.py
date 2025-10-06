@@ -13,7 +13,7 @@ class ModelStateTransitionCondition(BaseModel):
     """Condition that must be met for a transition to apply."""
 
     expression: str = Field(
-        ...,
+        default=...,
         description="Expression to evaluate (e.g., 'state.count > 10')",
     )
 

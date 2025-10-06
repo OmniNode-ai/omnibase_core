@@ -32,7 +32,7 @@ class ModelRestApiConnectionConfig(BaseModel):
     """
 
     base_url: str = Field(
-        ...,
+        default=...,
         description="Base URL for the REST API",
         pattern=r"^https?://[a-zA-Z0-9\-\.:]+(/.*)?$",
         max_length=500,
@@ -46,12 +46,14 @@ class ModelRestApiConnectionConfig(BaseModel):
         description="Bearer token for authentication (secured)",
     )
     timeout_seconds: int = Field(
-        30,
+        default=30,
         description="Request timeout in seconds",
         ge=1,
         le=300,
     )
-    max_retries: int = Field(3, description="Maximum number of retries", ge=0, le=10)
+    max_retries: int = Field(
+        default=3, description="Maximum number of retries", ge=0, le=10
+    )
     headers: dict[str, str] | None = Field(
         default=None,
         description="Additional HTTP headers",

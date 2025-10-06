@@ -23,10 +23,12 @@ from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 class ModelSecurityEvent(BaseModel):
     """Security event for audit trail."""
 
-    event_id: str = Field(..., description="Unique event identifier")
-    event_type: EnumSecurityEventType = Field(..., description="Type of security event")
-    timestamp: datetime = Field(..., description="When the event occurred")
-    envelope_id: str = Field(..., description="Associated envelope ID")
+    event_id: str = Field(default=..., description="Unique event identifier")
+    event_type: EnumSecurityEventType = Field(
+        default=..., description="Type of security event"
+    )
+    timestamp: datetime = Field(default=..., description="When the event occurred")
+    envelope_id: str = Field(default=..., description="Associated envelope ID")
 
     # Event-specific details
     node_id: str | None = Field(
@@ -43,7 +45,7 @@ class ModelSecurityEvent(BaseModel):
     reason: str | None = Field(default=None, description="Reason for event")
 
     # Status and results
-    status: EnumSecurityEventStatus = Field(..., description="Event status")
+    status: EnumSecurityEventStatus = Field(default=..., description="Event status")
     verified: bool | None = Field(default=None, description="Verification result")
     signature_count: int | None = Field(
         default=None, description="Number of signatures"

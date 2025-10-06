@@ -21,9 +21,9 @@ class ModelRegistryReference(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    node_id: UUID = Field(..., description="Node identifier for this registry")
-    registry_class_name: str = Field(..., description="Registry class name")
-    registry_type: str = Field(..., description="Registry type classification")
+    node_id: UUID = Field(default=..., description="Node identifier for this registry")
+    registry_class_name: str = Field(default=..., description="Registry class name")
+    registry_type: str = Field(default=..., description="Registry type classification")
     is_initialized: bool = Field(
         default=True,
         description="Whether registry is initialized",

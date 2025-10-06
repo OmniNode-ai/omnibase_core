@@ -70,7 +70,6 @@ class ModelSecurityPolicyData(BaseModel):
         Returns:
             The policy value or default
         """
-        from typing import Dict, cast
 
         return cast(
             str | int | float | bool | list[Any] | dict[str, Any] | None,

@@ -11,7 +11,7 @@ class ModelMessageContentBase(BaseModel):
     """Base message content with discriminator."""
 
     message_type: EnumMessageType = Field(
-        ...,
+        default=...,
         description="Message type discriminator",
     )
     content: dict[str, ModelSchemaValue] = Field(

@@ -189,7 +189,7 @@ class ModelContractEffect(ModelContractBase):
 
     # Side-effect configuration
     io_operations: list[ModelIOOperationConfig] = Field(
-        ...,
+        default=...,
         description="I/O operation specifications",
         min_length=1,
     )

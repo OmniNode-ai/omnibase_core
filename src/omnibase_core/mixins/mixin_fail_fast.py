@@ -113,13 +113,11 @@ class MixinFailFast:
         if value is None:
             msg = f"Required field '{field_name}' is missing"
             raise ModelOnexError(
-                msg,
                 error_code=ModelCoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
     def validate_not_empty(
-        self,
         value: Any,
         field_name: str,
     ) -> Any:
@@ -139,13 +137,11 @@ class MixinFailFast:
         if not value:
             msg = f"Field '{field_name}' cannot be empty"
             raise ModelOnexError(
-                msg,
                 error_code=ModelCoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
     def validate_type(
-        self,
         value: object,
         expected_type: type,
         field_name: str,
@@ -189,14 +185,12 @@ class MixinFailFast:
                 ):  # More than 50% missing
                     msg = f"Field '{field_name}' must be compatible with type {expected_type.__name__}, got {actual_type.__name__}"
                     raise ModelOnexError(
-                        msg,
                         error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                     )
             # For basic types, check essential characteristics
             elif expected_type == str and not hasattr(value, "split"):
                 msg = f"Field '{field_name}' must be string-like, got {actual_type.__name__}"
                 raise ModelOnexError(
-                    msg,
                     error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == int and not hasattr(value, "__add__"):
@@ -204,19 +198,16 @@ class MixinFailFast:
                     f"Field '{field_name}' must be numeric, got {actual_type.__name__}"
                 )
                 raise ModelOnexError(
-                    msg,
                     error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == list[Any] and not hasattr(value, "append"):
                 msg = f"Field '{field_name}' must be list[Any]-like, got {actual_type.__name__}"
                 raise ModelOnexError(
-                    msg,
                     error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == dict[str, Any] and not hasattr(value, "keys"):
                 msg = f"Field '{field_name}' must be dict[str, Any]-like, got {actual_type.__name__}"
                 raise ModelOnexError(
-                    msg,
                     error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                 )
 
@@ -242,13 +233,11 @@ class MixinFailFast:
         if value not in allowed_values:
             msg = f"Field '{field_name}' must be one of {allowed_values}, got '{value}'"
             raise ModelOnexError(
-                msg,
                 error_code=ModelCoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
     def require_dependency(
-        self,
         dependency_name: str,
         check_func: Callable[[], bool],
     ) -> None:
@@ -266,18 +255,15 @@ class MixinFailFast:
             if not check_func():
                 msg = f"Required dependency '{dependency_name}' is not available"
                 raise ModelOnexError(
-                    msg,
                     error_code=ModelCoreErrorCode.DEPENDENCY_FAILED,
                 )
         except Exception as e:
             msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise ModelOnexError(
-                msg,
                 error_code=ModelCoreErrorCode.DEPENDENCY_FAILED,
             )
 
     def enforce_contract(
-        self,
         condition: bool,
         message: str,
         contract_field: str,

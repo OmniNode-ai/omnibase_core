@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, field_serializer
 class ModelMetricValue(BaseModel):
     """Individual metric value with metadata."""
 
-    value: int | float | str | bool = Field(..., description="Metric value")
+    value: int | float | str | bool = Field(default=..., description="Metric value")
     unit: str | None = Field(default=None, description="Unit of measurement")
     timestamp: datetime | None = Field(
         default=None,

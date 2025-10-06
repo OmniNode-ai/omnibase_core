@@ -34,7 +34,9 @@ class ModelLogDestinationConfig(BaseModel):
         description="Connection timeout in milliseconds",
         ge=100,
     )
-    retry_attempts: int = Field(3, description="Number of retry attempts", ge=0, le=10)
+    retry_attempts: int = Field(
+        default=3, description="Number of retry attempts", ge=0, le=10
+    )
     use_tls: bool = Field(default=False, description="Use TLS for network connections")
     verify_certificate: bool = Field(
         default=True, description="Verify TLS certificates"
@@ -45,11 +47,11 @@ class ModelLogDestinationConfig(BaseModel):
         default=None, description="Database table name for logs"
     )
     batch_insert: bool = Field(
-        True,
+        default=True,
         description="Use batch inserts for better performance",
     )
     create_table_if_missing: bool = Field(
-        False,
+        default=False,
         description="Create log table if it doesn't exist",
     )
 
@@ -58,7 +60,7 @@ class ModelLogDestinationConfig(BaseModel):
         default=True, description="Include timestamp in output"
     )
     timestamp_format: str = Field(
-        "%Y-%m-%d %H:%M:%S.%f",
+        default="%Y-%m-%d %H:%M:%S.%f",
         description="Timestamp format string",
     )
     include_hostname: bool = Field(

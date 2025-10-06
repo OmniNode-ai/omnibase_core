@@ -37,9 +37,11 @@ class ModelToolExecutionResult(BaseModel):
         description="Unique execution identifier",
     )
 
-    tool_name: str = Field(..., description="Name of the executed tool")
+    tool_name: str = Field(default=..., description="Name of the executed tool")
 
-    success: bool = Field(..., description="Whether the tool execution succeeded")
+    success: bool = Field(
+        default=..., description="Whether the tool execution succeeded"
+    )
 
     output: StructuredData = Field(
         default_factory=dict,

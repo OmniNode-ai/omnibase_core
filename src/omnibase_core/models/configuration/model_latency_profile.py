@@ -19,11 +19,13 @@ class ModelLatencyProfile(BaseModel):
 
     # Latency assessments
     connection_latency: str = Field(
-        ...,
+        default=...,
         description="Connection latency level (low/medium/high)",
     )
-    query_latency: str = Field(..., description="Query latency level (low/medium/high)")
-    overall_latency: str = Field(..., description="Overall latency assessment")
+    query_latency: str = Field(
+        default=..., description="Query latency level (low/medium/high)"
+    )
+    overall_latency: str = Field(default=..., description="Overall latency assessment")
 
     # Latency factors
     factors: list[str] = Field(

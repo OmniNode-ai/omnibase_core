@@ -15,7 +15,9 @@ class ModelNotificationMessageContent(ModelMessageContentBase):
         default=EnumMessageType.NOTIFICATION,
         description="Notification message type",
     )
-    notification_category: str = Field(..., description="Category of the notification")
+    notification_category: str = Field(
+        default=..., description="Category of the notification"
+    )
     severity_level: str = Field(
         default="info",
         description="Notification severity level",

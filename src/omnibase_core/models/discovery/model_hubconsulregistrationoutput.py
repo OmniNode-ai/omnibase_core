@@ -3,11 +3,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from pydantic import ConfigDict
+
 
 class ModelHubConsulRegistrationOutput(BaseModel):
     """Output model for Hub Consul Registration tool operations."""
 
-    action_result: str = Field(..., description="Result of the requested action")
+    action_result: str = Field(
+        default=..., description="Result of the requested action"
+    )
 
     # Optional outputs based on action
     registration_event: ModelHubRegistrationEvent | None = Field(
@@ -37,11 +41,11 @@ class ModelHubConsulRegistrationOutput(BaseModel):
 
     # Always present metadata
     registration_tool_id: UUID = Field(
-        ...,
+        default=...,
         description="Hub registration tool instance ID",
     )
 
-    operation_timestamp: str = Field(..., description="Operation timestamp")
+    operation_timestamp: str = Field(default=..., description="Operation timestamp")
 
     # Error handling
     error_details: str | None = Field(
@@ -50,7 +54,7 @@ class ModelHubConsulRegistrationOutput(BaseModel):
     )
 
     operation_successful: bool = Field(
-        True,
+        default=True,
         description="Whether operation was successful",
     )
 

@@ -44,9 +44,9 @@ class ModelSystemMetadata(BaseModel):
         default_factory=uuid4,
         description="System identifier (UUID format)",
     )
-    system_name: str = Field(..., description="System name")
+    system_name: str = Field(default=..., description="System name")
     version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="System version in semantic version format",
     )
     deployment_id: UUID | None = Field(

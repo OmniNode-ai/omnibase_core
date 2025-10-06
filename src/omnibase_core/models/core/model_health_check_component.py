@@ -12,9 +12,9 @@ from pydantic import BaseModel, Field, field_serializer
 class ModelHealthCheckComponent(BaseModel):
     """Individual component health status."""
 
-    name: str = Field(..., description="Component name")
+    name: str = Field(default=..., description="Component name")
     status: str = Field(
-        ...,
+        default=...,
         description="Component status (healthy/unhealthy/degraded)",
     )
     message: str | None = Field(default=None, description="Status message")

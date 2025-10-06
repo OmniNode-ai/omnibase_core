@@ -17,8 +17,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 
 class ModelEventInputState(BaseModel):
     """

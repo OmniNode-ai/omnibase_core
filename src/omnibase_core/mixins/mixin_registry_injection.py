@@ -120,7 +120,6 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 },
             )
             raise ModelOnexError(
-                error_msg,
                 ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
                 missing_methods=missing_methods,
             )

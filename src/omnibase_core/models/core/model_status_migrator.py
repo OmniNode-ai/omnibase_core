@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from omnibase_core.enums.enum_base_status import EnumBaseStatus
+from omnibase_core.enums.enum_status_migration import EnumStatusMigrator
+
+
 """
 Status Enum Migration Utilities.
 

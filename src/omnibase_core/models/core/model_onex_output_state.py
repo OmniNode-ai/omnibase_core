@@ -22,7 +22,6 @@ from pydantic import BaseModel, field_validator
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_output_field import ModelOnexField
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_internal_output_state import (

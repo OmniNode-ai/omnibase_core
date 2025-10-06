@@ -25,11 +25,13 @@ class ModelTrustState(BaseModel):
     """
 
     trust_level: str = Field(
-        ...,
+        default=...,
         description="Trust level identifier",
         pattern="^[a-z][a-z0-9_]*$",
     )
-    trust_score: float = Field(..., description="Numeric trust score", ge=0.0, le=1.0)
+    trust_score: float = Field(
+        default=..., description="Numeric trust score", ge=0.0, le=1.0
+    )
     verification_methods: list[ModelVerificationMethod] = Field(
         default_factory=list,
         description="Methods used to verify trust",

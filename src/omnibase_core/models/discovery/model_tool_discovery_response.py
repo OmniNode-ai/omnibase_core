@@ -19,7 +19,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.constants.event_types import TOOL_DISCOVERY_RESPONSE
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 from .model_tooldiscoveryresponse import ModelToolDiscoveryResponse
 
@@ -28,9 +27,11 @@ class ModelDiscoveredTool(BaseModel):
     """Information about a discovered tool"""
 
     # Node identification
-    node_id: UUID = Field(..., description="Unique identifier for the node")
-    node_name: str = Field(..., description="Name of the node (e.g. 'node_generator')")
-    version: ModelSemVer = Field(..., description="Version of the node")
+    node_id: UUID = Field(default=..., description="Unique identifier for the node")
+    node_name: str = Field(
+        default=..., description="Name of the node (e.g. 'node_generator')"
+    )
+    version: ModelSemVer = Field(default=..., description="Version of the node")
 
     # Tool capabilities
     actions: list[str] = Field(

@@ -27,21 +27,23 @@ class ModelEventDescriptor(BaseModel):
     """
 
     event_name: str = Field(
-        ...,
+        default=...,
         description="Unique event name identifier",
         min_length=1,
     )
 
-    event_type: str = Field(..., description="Event type classification", min_length=1)
+    event_type: str = Field(
+        default=..., description="Event type classification", min_length=1
+    )
 
     schema_reference: str = Field(
-        ...,
+        default=...,
         description="Reference to event schema definition",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable event description",
         min_length=1,
     )

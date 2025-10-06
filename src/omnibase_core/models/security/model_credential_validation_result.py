@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 class ModelCredentialValidationResult(BaseModel):
     """Credential validation results."""
 
-    is_valid: bool = Field(..., description="Overall validation status")
+    is_valid: bool = Field(default=..., description="Overall validation status")
     errors: list[str] = Field(
         default_factory=list,
         description="Validation error messages",
@@ -23,8 +23,12 @@ class ModelCredentialValidationResult(BaseModel):
         default_factory=list,
         description="Validation warning messages",
     )
-    strength_score: int = Field(..., description="Credential strength score (0-100)")
-    compliance_status: str = Field(..., description="Compliance validation status")
+    strength_score: int = Field(
+        default=..., description="Credential strength score (0-100)"
+    )
+    compliance_status: str = Field(
+        default=..., description="Compliance validation status"
+    )
     recommendations: list[str] = Field(
         default_factory=list,
         description="Improvement recommendations",

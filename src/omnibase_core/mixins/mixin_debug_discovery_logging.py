@@ -25,7 +25,6 @@ class MixinDebugDiscoveryLogging:
     """
 
     def setup_discovery_debug_logging(
-        self,
         node_name: str,
         additional_context: dict[str, Any] | None = None,
     ):
@@ -50,7 +49,6 @@ class MixinDebugDiscoveryLogging:
         emit_log_event(
             LogLevel.DEBUG,
             f"🔍 {node_name.upper()} DEBUG: Setting up discovery event monitoring",
-            context,
         )
 
         # Override the introspection handler to add debug logging
@@ -63,8 +61,6 @@ class MixinDebugDiscoveryLogging:
             # Replace with debug version
             self._handle_introspection_request = (
                 lambda envelope_or_event: self._debug_handle_introspection_request(
-                    envelope_or_event,
-                    node_name,
                 )
             )
 

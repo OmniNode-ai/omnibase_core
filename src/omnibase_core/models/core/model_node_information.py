@@ -22,10 +22,10 @@ class ModelNodeInformation(BaseModel):
     """
 
     # Node identification
-    node_id: UUID = Field(..., description="Node identifier")
-    node_name: str = Field(..., description="Node name")
-    node_type: str = Field(..., description="Node type")
-    node_version: ModelSemVer = Field(..., description="Node version")
+    node_id: UUID = Field(default=..., description="Node identifier")
+    node_name: str = Field(default=..., description="Node name")
+    node_type: str = Field(default=..., description="Node type")
+    node_version: ModelSemVer = Field(default=..., description="Node version")
 
     # Node metadata
     description: str | None = Field(default=None, description="Node description")
@@ -52,8 +52,8 @@ class ModelNodeInformation(BaseModel):
     )
 
     # Node status
-    status: str = Field("active", description="Node status")
-    health: str = Field("healthy", description="Node health")
+    status: str = Field(default="active", description="Node status")
+    health: str = Field(default="healthy", description="Node health")
 
     # Performance metrics
     performance_metrics: dict[str, float] | None = Field(

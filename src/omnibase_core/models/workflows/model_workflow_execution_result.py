@@ -40,10 +40,12 @@ class ModelWorkflowExecutionResult(BaseModel):
 
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
-    status: EnumWorkflowStatus = Field(..., description="Final status of the workflow")
+    status: EnumWorkflowStatus = Field(
+        default=..., description="Final status of the workflow"
+    )
 
     execution_time_ms: int = Field(
-        ...,
+        default=...,
         description="Total execution time in milliseconds",
         ge=0,
     )
@@ -59,7 +61,7 @@ class ModelWorkflowExecutionResult(BaseModel):
     )
 
     coordination_metrics: ModelWorkflowMetrics = Field(
-        ...,
+        default=...,
         description="Performance metrics for the execution",
     )
 

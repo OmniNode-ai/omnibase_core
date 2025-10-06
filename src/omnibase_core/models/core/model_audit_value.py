@@ -23,8 +23,8 @@ class ModelAuditValue(BaseModel):
     """
 
     # Object identification
-    object_type: str = Field(..., description="Type of audited object")
-    object_id: str = Field(..., description="ID of audited object")
+    object_type: str = Field(default=..., description="Type of audited object")
+    object_id: str = Field(default=..., description="ID of audited object")
     object_name: str | None = Field(default=None, description="Name of audited object")
 
     # Change details

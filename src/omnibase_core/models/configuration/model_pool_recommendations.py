@@ -18,14 +18,16 @@ class ModelPoolRecommendations(BaseModel):
     """
 
     # Recommended settings
-    recommended_pool_size: int = Field(..., description="Recommended pool size")
-    recommended_max_overflow: int = Field(..., description="Recommended max overflow")
+    recommended_pool_size: int = Field(default=..., description="Recommended pool size")
+    recommended_max_overflow: int = Field(
+        default=..., description="Recommended max overflow"
+    )
     recommended_pool_timeout: int = Field(
-        ...,
+        default=...,
         description="Recommended pool timeout (seconds)",
     )
     recommended_pool_recycle: int = Field(
-        ...,
+        default=...,
         description="Recommended pool recycle time (seconds)",
     )
 

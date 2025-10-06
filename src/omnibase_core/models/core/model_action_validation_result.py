@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 class ModelActionValidationResult(BaseModel):
     """Result of action validation with detailed information."""
 
-    is_valid: bool = Field(..., description="Whether the action is valid")
+    is_valid: bool = Field(default=..., description="Whether the action is valid")
     validation_errors: list[str] = Field(
         default_factory=list,
         description="List of validation errors",

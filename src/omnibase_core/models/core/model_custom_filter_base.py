@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 class ModelCustomFilterBase(BaseModel, ABC):
     """Base class for all custom filters."""
 
-    filter_type: str = Field(..., description="Type of custom filter")
+    filter_type: str = Field(default=..., description="Type of custom filter")
     enabled: bool = Field(default=True, description="Whether filter is active")
     priority: int = Field(
         default=0, description="Filter priority (higher = applied first)"

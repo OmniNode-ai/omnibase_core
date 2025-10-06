@@ -21,8 +21,10 @@ class ModelEffectOperationData(ModelOperationDataBase):
         default=EnumNodeType.EFFECT,
         description="Effect operation type",
     )
-    target_system: str = Field(..., description="Target external system")
-    interaction_type: str = Field(..., description="Type of external interaction")
+    target_system: str = Field(default=..., description="Target external system")
+    interaction_type: str = Field(
+        default=..., description="Type of external interaction"
+    )
     retry_policy: dict[str, int] = Field(
         default_factory=dict,
         description="Retry policy configuration",

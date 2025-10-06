@@ -23,6 +23,7 @@
 
 
 from pydantic import BaseModel
+from uuid import UUID
 
 
 class ModelLogContext(BaseModel):
@@ -34,5 +35,5 @@ class ModelLogContext(BaseModel):
     calling_function: str
     calling_line: int
     timestamp: str
-    node_id: str | None = None
-    correlation_id: str | None = None
+    node_id: UUID | None = None
+    correlation_id: UUID | None = None

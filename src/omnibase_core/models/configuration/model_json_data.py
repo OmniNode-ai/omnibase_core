@@ -4,6 +4,7 @@ from pydantic import Field
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 ONEX-Compliant JSON Data Model for Configuration System
@@ -34,7 +35,7 @@ class ModelJsonData(BaseModel):
     )
 
     # Optional metadata for validation and context
-    schema_version: str = Field(
+    schema_version: ModelSemVer = Field(
         default="1.0",
         description="JSON data schema version",
         pattern="^\\d+\\.\\d+$",
@@ -48,7 +49,7 @@ class ModelJsonData(BaseModel):
 
     # ONEX validation constraints
     @validator("fields")
-    def validate_field_consistency(cls, v, values):
+    def validate_field_consistency(cls, v: Any, values: dict[str, Any]) -> Any:
         """Ensure field count matches actual fields."""
         if len(v) != values.get("total_field_count", 0):
             raise ModelOnexError(
@@ -58,7 +59,7 @@ class ModelJsonData(BaseModel):
         return v
 
     @validator("total_field_count", pre=True, always=True)
-    def calculate_field_count(cls, v, values):
+    def calculate_field_count(cls, v: Any, values: dict[str, Any]) -> Any:
         """Auto-calculate field count for validation."""
         fields = values.get("fields", {})
         return len(fields) if isinstance(fields, dict) else v

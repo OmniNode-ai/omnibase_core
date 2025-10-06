@@ -31,12 +31,12 @@ class ModelEventBusInputState(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Schema version for input state (semantic version)",
     )
 
     input_field: str = Field(
-        ...,
+        default=...,
         description="Required input field for event bus processing",
         min_length=1,
         max_length=1000,

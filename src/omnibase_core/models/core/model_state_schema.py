@@ -21,7 +21,7 @@ class ModelStateSchema(BaseModel):
     """
 
     type: str = Field(
-        ...,
+        default=...,
         description="Type name of the state model (e.g., 'CLIInputState')",
         json_schema_extra={"example": "CLIInputState"},
     )

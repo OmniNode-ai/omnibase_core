@@ -42,17 +42,17 @@ class ModelWorkflowDependency(BaseModel):
     """
 
     workflow_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique identifier of the workflow this dependency references",
     )
 
     dependent_workflow_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique identifier of the workflow that depends on the referenced workflow",
     )
 
     dependency_type: EnumWorkflowDependencyType = Field(
-        ...,
+        default=...,
         description="Type of dependency relationship between workflows",
     )
 

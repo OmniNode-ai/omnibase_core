@@ -15,9 +15,9 @@ class ModelResourceLimitParameter(ModelBaseWorkflowParameter):
         default=EnumWorkflowParameterType.RESOURCE_LIMIT,
         description="Resource limit parameter type",
     )
-    resource_type: str = Field(..., description="Resource type")
-    limit_value: float = Field(..., description="Limit value", ge=0.0)
-    unit: str = Field(..., description="Unit for limit value")
+    resource_type: str = Field(default=..., description="Resource type")
+    limit_value: float = Field(default=..., description="Limit value", ge=0.0)
+    unit: str = Field(default=..., description="Unit for limit value")
     enforce_hard_limit: bool = Field(
         default=True,
         description="Whether to enforce hard limit",

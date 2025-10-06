@@ -20,10 +20,10 @@ from pydantic import BaseModel, Field
 class ModelOutputMetadataItem(BaseModel):
     """Single output metadata item with strong typing."""
 
-    key: str = Field(..., description="Metadata key")
-    value: str | int | float | bool = Field(..., description="Metadata value")
+    key: str = Field(default=..., description="Metadata key")
+    value: str | int | float | bool = Field(default=..., description="Metadata value")
     value_type: str = Field(
-        ...,
+        default=...,
         description="Value type",
         json_schema_extra={
             "enum": [

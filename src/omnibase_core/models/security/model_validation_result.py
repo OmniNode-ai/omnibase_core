@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 class ModelValidationResult(BaseModel):
     """Result of a validation operation."""
 
-    is_valid: bool = Field(..., description="Whether the validation passed")
+    is_valid: bool = Field(default=..., description="Whether the validation passed")
 
     validated_value: str | None = Field(
         default=None,

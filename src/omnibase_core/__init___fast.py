@@ -100,7 +100,7 @@ def get_all_validation() -> dict[str, object]:
     Returns:
         All validation tools
     """
-    from .validation import (
+    from omnibase_core.validation import (
         ModelValidationSuite,
         ValidationResult,
         validate_all,

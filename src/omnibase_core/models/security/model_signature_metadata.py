@@ -2,6 +2,9 @@ from typing import Any
 
 from pydantic import Field
 
+from omnibase_core.models.core.model_semver import ModelSemVer
+
+
 """
 ModelSignatureMetadata: Metadata for cryptographic signatures.
 

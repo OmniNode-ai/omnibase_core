@@ -23,19 +23,19 @@ class ModelRetryConfig(BaseModel):
     """
 
     max_attempts: int = Field(
-        3,
+        default=3,
         description="Maximum number of retry attempts",
         ge=1,
         le=10,
     )
     backoff_seconds: float = Field(
-        1.0,
+        default=1.0,
         description="Base backoff time between retries",
         ge=0.1,
         le=60.0,
     )
     exponential_backoff: bool = Field(
-        True,
+        default=True,
         description="Whether to use exponential backoff",
     )
 

@@ -25,9 +25,9 @@ class ModelGraphEdge(BaseModel):
     """
 
     # Edge identification
-    edge_id: str = Field(..., description="Unique edge identifier")
-    source_node_id: str = Field(..., description="Source node ID")
-    target_node_id: str = Field(..., description="Target node ID")
+    edge_id: str = Field(default=..., description="Unique edge identifier")
+    source_node_id: str = Field(default=..., description="Source node ID")
+    target_node_id: str = Field(default=..., description="Target node ID")
 
     # Edge properties
     label: str | None = Field(default=None, description="Edge label")

@@ -9,8 +9,7 @@ different data types in a type-safe manner for validation and testing.
 import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pydantic_core import ValidationInfo
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_value_type import EnumValueType
 from omnibase_core.errors.error_codes import ModelCoreErrorCode

@@ -16,29 +16,29 @@ class ModelTrustLevel(BaseModel):
     """Trust level configuration for signature chains."""
 
     level: str = Field(
-        "standard",
+        default="standard",
         description="Trust level: high_trust, trusted, standard, partial_trust, untrusted, compromised",
         pattern=r"^(high_trust|trusted|standard|partial_trust|untrusted|compromised)$",
     )
 
     minimum_trusted_signatures: int = Field(
-        0,
+        default=0,
         description="Minimum number of signatures from trusted nodes required",
         ge=0,
     )
 
     require_all_trusted: bool = Field(
-        False,
+        default=False,
         description="Whether all signatures must be from trusted nodes",
     )
 
     allow_untrusted_with_majority: bool = Field(
-        True,
+        default=True,
         description="Allow untrusted signatures if majority are trusted",
     )
 
     trusted_percentage_threshold: float = Field(
-        0.5,
+        default=0.5,
         description="Minimum percentage of signatures that must be trusted",
         ge=0.0,
         le=1.0,

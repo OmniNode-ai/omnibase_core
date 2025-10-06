@@ -33,7 +33,7 @@ class ModelFilterCriteria(BaseModel):
     )
 
     # Logical operators
-    logic: str = Field("AND", description="Logical operator (AND/OR)")
+    logic: str = Field(default="AND", description="Logical operator (AND/OR)")
 
     # Time-based filters
     time_range: dict[str, datetime] | None = Field(
@@ -53,7 +53,7 @@ class ModelFilterCriteria(BaseModel):
 
     # Sorting
     sort_by: str | None = Field(default=None, description="Field to sort by")
-    sort_order: str = Field("asc", description="Sort order (asc/desc)")
+    sort_order: str = Field(default="asc", description="Sort order (asc/desc)")
 
     # Pagination
     limit: int | None = Field(default=None, description="Maximum results to return")

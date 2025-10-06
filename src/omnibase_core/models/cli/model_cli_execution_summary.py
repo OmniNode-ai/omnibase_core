@@ -40,8 +40,10 @@ class ModelCliExecutionSummary(BaseModel):
     """
 
     # Core execution information - UUID-based entity references
-    execution_id: UUID = Field(..., description="Unique execution identifier")
-    command_id: UUID = Field(..., description="UUID identifier for the CLI command")
+    execution_id: UUID = Field(default=..., description="Unique execution identifier")
+    command_id: UUID = Field(
+        default=..., description="UUID identifier for the CLI command"
+    )
     command_display_name: str | None = Field(
         default=None,
         description="Human-readable command name",
@@ -56,27 +58,31 @@ class ModelCliExecutionSummary(BaseModel):
     )
 
     # Execution state
-    status: EnumExecutionStatus = Field(..., description="Execution status")
+    status: EnumExecutionStatus = Field(default=..., description="Execution status")
     current_phase: EnumExecutionPhase | None = Field(
         default=None,
         description="Current execution phase",
     )
     progress_percentage: float = Field(
-        ...,
+        default=...,
         description="Progress percentage",
         ge=0.0,
         le=100.0,
     )
 
     # Timing information
-    start_time: datetime = Field(..., description="Execution start time")
+    start_time: datetime = Field(default=..., description="Execution start time")
     end_time: datetime | None = Field(default=None, description="Execution end time")
-    elapsed_ms: int = Field(..., description="Elapsed time in milliseconds", ge=0)
+    elapsed_ms: int = Field(
+        default=..., description="Elapsed time in milliseconds", ge=0
+    )
 
     # Execution metadata
-    retry_count: int = Field(..., description="Current retry count", ge=0)
-    is_dry_run: bool = Field(..., description="Whether this is a dry run")
-    is_test_execution: bool = Field(..., description="Whether this is a test execution")
+    retry_count: int = Field(default=..., description="Current retry count", ge=0)
+    is_dry_run: bool = Field(default=..., description="Whether this is a dry run")
+    is_test_execution: bool = Field(
+        default=..., description="Whether this is a test execution"
+    )
 
     def is_completed(self) -> bool:
         """Check if execution is completed."""

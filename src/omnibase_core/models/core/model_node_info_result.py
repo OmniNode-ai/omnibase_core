@@ -23,7 +23,7 @@ class ModelNodeInfoResult(ModelBaseResult):
     about specific ONEX nodes.
     """
 
-    node_name: str = Field(..., description="Name of the node")
+    node_name: str = Field(default=..., description="Name of the node")
     node_version: ModelSemVer | None = Field(
         default=None, description="Version of the node"
     )

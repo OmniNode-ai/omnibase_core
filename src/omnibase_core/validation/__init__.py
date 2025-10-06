@@ -67,14 +67,12 @@ def validate_union_usage(
     strict: bool = False,
 ) -> ValidationResult:
     """Validate Union type usage patterns."""
-    from pathlib import Path
 
     return validate_union_usage_directory(Path(directory_path), max_unions, strict)
 
 
 def validate_contracts(directory_path: str = ".") -> ValidationResult:
     """Validate YAML contract files."""
-    from pathlib import Path
 
     return validate_contracts_directory(Path(directory_path))
 
@@ -84,7 +82,6 @@ def validate_patterns(
     strict: bool = False,
 ) -> ValidationResult:
     """Validate code patterns and conventions."""
-    from pathlib import Path
 
     return validate_patterns_directory(Path(directory_path), strict)
 
@@ -94,7 +91,6 @@ def validate_all(
     **kwargs: object,
 ) -> dict[str, ValidationResult]:
     """Run all validations and return results."""
-    from pathlib import Path
 
     suite = ModelValidationSuite()
     return suite.run_all_validations(Path(directory_path), **kwargs)

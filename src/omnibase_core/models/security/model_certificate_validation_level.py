@@ -15,18 +15,18 @@ class ModelCertificateValidationLevel(BaseModel):
     """Certificate validation configuration and requirements."""
 
     level: str = Field(
-        "standard",
+        default="standard",
         description="Validation level: none, basic, standard, strict, paranoid",
         pattern=r"^(none|basic|standard|strict|paranoid)$",
     )
 
     check_expiration: bool = Field(
-        True,
+        default=True,
         description="Check certificate expiration dates",
     )
 
     check_revocation: bool = Field(
-        True,
+        default=True,
         description="Check certificate revocation status via CRL/OCSP",
     )
 
@@ -35,12 +35,12 @@ class ModelCertificateValidationLevel(BaseModel):
     )
 
     check_hostname: bool = Field(
-        True,
+        default=True,
         description="Verify certificate hostname matches",
     )
 
     require_ct_logs: bool = Field(
-        False,
+        default=False,
         description="Require Certificate Transparency logs",
     )
 
@@ -50,7 +50,7 @@ class ModelCertificateValidationLevel(BaseModel):
     )
 
     max_chain_depth: int = Field(
-        10,
+        default=10,
         description="Maximum certificate chain depth",
         ge=1,
         le=20,
@@ -61,7 +61,7 @@ class ModelCertificateValidationLevel(BaseModel):
     )
 
     minimum_key_size: int = Field(
-        2048,
+        default=2048,
         description="Minimum RSA key size in bits",
         ge=1024,
     )

@@ -206,7 +206,6 @@ class NodeCompute(NodeCoreBase):
             ModelOnexError: If contract file cannot be found
         """
         import inspect
-        from pathlib import Path
 
         from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 

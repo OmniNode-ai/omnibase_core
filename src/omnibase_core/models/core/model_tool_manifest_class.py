@@ -112,7 +112,7 @@ class ModelToolManifest(BaseModel):
     )
 
     # === METADATA VALIDATION ===
-    schema_version: str = Field(
+    schema_version: ModelSemVer = Field(
         default="1.0.0",
         description="Tool manifest schema version",
     )

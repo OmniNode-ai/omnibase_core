@@ -19,7 +19,7 @@ class ModelIOOperationConfig(BaseModel):
     """
 
     operation_type: str = Field(
-        ...,
+        default=...,
         description="Type of I/O operation (file_read, file_write, db_query, api_call, etc.)",
         min_length=1,
     )

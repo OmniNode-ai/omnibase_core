@@ -421,7 +421,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 action=EnumAuditAction.UPDATE,
                 action_detail=f"Deprecated tool: {reason}",
                 target_type="tool",
-                target_id=name,
+                target_id=UUID(name) if name and isinstance(name, str) else name,
                 success=True,
                 additional_context={
                     "reason": reason,

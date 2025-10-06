@@ -63,6 +63,9 @@ class EnumToolType(str, Enum):
     LOGGING_UTILS = "LOGGING_UTILS"
     SCENARIO_RUNNER = "scenario_runner"  # Keep original name for current standards
 
+    # Function tools
+    FUNCTION = "FUNCTION"  # Language-agnostic function tool type
+
     @property
     def description(self) -> str:
         """Get a human-readable description of the tool type."""
@@ -97,5 +100,6 @@ class EnumToolType(str, Enum):
             self.LOGGER_EMIT_LOG_EVENT: "Emits structured log events",
             self.LOGGING_UTILS: "Logging utility functions",
             self.SCENARIO_RUNNER: "Runs test scenarios",
+            self.FUNCTION: "Language-agnostic function tool",
         }
         return descriptions.get(self, f"Tool: {self.value}")

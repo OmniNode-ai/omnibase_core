@@ -35,7 +35,7 @@ class ModelResultDict(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    success: bool = Field(..., description="Whether the operation succeeded")
+    success: bool = Field(default=..., description="Whether the operation succeeded")
     value: ModelCliValue | None = Field(
         default=None,
         description="Success value (if success=True)",

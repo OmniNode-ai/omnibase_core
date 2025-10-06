@@ -7,6 +7,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_node_service_config import (
     ModelNodeServiceConfig,
 )
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 ONEX Node Service Configuration Model.
@@ -46,10 +47,14 @@ class ModelNodeServiceConfig(BaseModel):
     """
 
     # Core service identification
-    node_name: str = Field(..., description="Name of the ONEX node", min_length=1)
-    node_version: ModelSemVer = Field("1.0.0", description="Version of the node")
+    node_name: str = Field(
+        default=..., description="Name of the ONEX node", min_length=1
+    )
+    node_version: ModelSemVer = Field(
+        default="1.0.0", description="Version of the node"
+    )
     service_mode: EnumServiceMode = Field(
-        EnumServiceMode.STANDALONE,
+        default=EnumServiceMode.STANDALONE,
         description="Service deployment mode",
     )
 
@@ -59,7 +64,7 @@ class ModelNodeServiceConfig(BaseModel):
         description="Override node ID for service instance",
     )
     log_level: LogLevel = Field(
-        LogLevel.INFO,
+        default=LogLevel.INFO,
         description="Logging level",
     )
     debug_mode: bool = Field(default=False, description="Enable debug mode")
@@ -111,11 +116,13 @@ class ModelNodeServiceConfig(BaseModel):
         default=None,
         description="Docker image name for containerized deployment",
     )
-    docker_tag: str | None = Field("latest", description="Docker image tag")
+    docker_tag: str | None = Field(default="latest", description="Docker image tag")
     docker_registry: str | None = Field(default=None, description="Docker registry URL")
 
     # Kubernetes-specific configuration
-    kubernetes_namespace: str = Field("default", description="Kubernetes namespace")
+    kubernetes_namespace: str = Field(
+        default="default", description="Kubernetes namespace"
+    )
     kubernetes_service_account: str | None = Field(
         default=None,
         description="Kubernetes service account",

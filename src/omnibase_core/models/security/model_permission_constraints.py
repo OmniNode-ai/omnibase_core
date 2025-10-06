@@ -30,7 +30,7 @@ class ModelPermissionConstraints(BaseModel):
     """
 
     constraints_id: str = Field(
-        ...,
+        default=...,
         description="Unique constraints identifier",
         pattern="^[a-z][a-z0-9_-]*$",
     )

@@ -18,7 +18,9 @@ class ModelPerformanceSummary(BaseModel):
     Replaces Dict[str, Any] for get_performance_summary() returns.
     """
 
-    total_execution_time_ms: float = Field(..., description="Total execution time")
+    total_execution_time_ms: float = Field(
+        default=..., description="Total execution time"
+    )
     average_response_time_ms: float | None = Field(
         default=None,
         description="Average response time",
@@ -67,9 +69,13 @@ class ModelPerformanceSummary(BaseModel):
     )
     error_rate: float | None = Field(default=None, description="Error rate percentage")
     timeout_count: int | None = Field(default=None, description="Number of timeouts")
-    measurement_start: datetime = Field(..., description="Measurement start time")
-    measurement_end: datetime = Field(..., description="Measurement end time")
-    measurement_duration_seconds: float = Field(..., description="Measurement duration")
+    measurement_start: datetime = Field(
+        default=..., description="Measurement start time"
+    )
+    measurement_end: datetime = Field(default=..., description="Measurement end time")
+    measurement_duration_seconds: float = Field(
+        default=..., description="Measurement duration"
+    )
     model_config = ConfigDict()
 
     def calculate_success_rate(self) -> float:

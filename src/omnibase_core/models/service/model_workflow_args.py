@@ -22,7 +22,9 @@ class ModelWorkflowExecutionArgs(BaseModel):
     Contains the parameters needed to execute a workflow.
     """
 
-    workflow_name: str = Field(..., description="Name of the workflow to execute")
+    workflow_name: str = Field(
+        default=..., description="Name of the workflow to execute"
+    )
     parameters: ModelWorkflowParameters | None = Field(
         default=None,
         description="Workflow execution parameters",

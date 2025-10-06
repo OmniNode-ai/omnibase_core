@@ -34,15 +34,15 @@ class ModelOnexUri(BaseModel):
     """
 
     type: EnumUriType = Field(
-        ...,
+        default=...,
         description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
     )
-    namespace: str = Field(..., description="Namespace component of the URI")
+    namespace: str = Field(default=..., description="Namespace component of the URI")
     version_spec: str = Field(
-        ...,
+        default=...,
         description="Version specifier (semver or constraint)",
     )
-    original: str = Field(..., description="Original URI string as provided")
+    original: str = Field(default=..., description="Original URI string as provided")
 
 
 # Compatibility alias

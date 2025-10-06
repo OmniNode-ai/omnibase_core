@@ -18,21 +18,21 @@ class ModelBackendPerformanceProfile(BaseModel):
     """Performance characteristics of a secret backend."""
 
     latency: EnumLatencyLevel = Field(
-        EnumLatencyLevel.MINIMAL,
+        default=EnumLatencyLevel.MINIMAL,
         description="Latency level",
     )
 
     throughput: EnumThroughputLevel = Field(
-        EnumThroughputLevel.HIGH,
+        default=EnumThroughputLevel.HIGH,
         description="Throughput level",
     )
 
     scalability: EnumScalabilityLevel = Field(
-        EnumScalabilityLevel.GOOD,
+        default=EnumScalabilityLevel.GOOD,
         description="Scalability level",
     )
 
     overhead: EnumOverheadType = Field(
-        EnumOverheadType.NONE,
+        default=EnumOverheadType.NONE,
         description="Overhead type",
     )

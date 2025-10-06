@@ -17,8 +17,14 @@ class MixinNodeIntrospectionData(BaseModel):
     ModelNodeCapabilities structure for capabilities data.
     """
 
-    node_name: str = Field(..., description="Node name identifier")
-    version: ModelSemVer = Field(..., description="Semantic version of the node")
-    capabilities: ModelNodeCapabilities = Field(..., description="Node capabilities")
+    node_name: str = Field(default=..., description="Node name identifier")
+    version: ModelSemVer = Field(
+        default=..., description="Semantic version of the node"
+    )
+    capabilities: ModelNodeCapabilities = Field(
+        default=..., description="Node capabilities"
+    )
     tags: list[str] = Field(default_factory=list, description="Discovery tags")
-    health_endpoint: str | None = Field(None, description="Health check endpoint")
+    health_endpoint: str | None = Field(
+        default=None, description="Health check endpoint"
+    )

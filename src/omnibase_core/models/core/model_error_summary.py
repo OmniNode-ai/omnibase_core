@@ -20,9 +20,9 @@ class ModelErrorSummary(BaseModel):
     """
 
     # Error identification
-    error_code: str = Field(..., description="Error code")
-    error_type: str = Field(..., description="Error type/category")
-    error_message: str = Field(..., description="Human-readable error message")
+    error_code: str = Field(default=..., description="Error code")
+    error_type: str = Field(default=..., description="Error type/category")
+    error_message: str = Field(default=..., description="Human-readable error message")
 
     # Error context
     occurred_at: datetime = Field(

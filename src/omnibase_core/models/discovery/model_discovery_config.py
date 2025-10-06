@@ -1,5 +1,6 @@
 """Tool discovery configuration model with caching, depth control, and filtering options."""
 
+from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode
@@ -110,7 +111,7 @@ class ModelDiscoveryConfig(BaseModel):
 
     @field_validator("discovery_mode")
     @classmethod
-    def validate_discovery_mode(cls, v):
+    def validate_discovery_mode(cls, v: Any) -> Any:
         """Validate discovery mode."""
         valid_modes = {"standard", "recursive", "shallow", "deep", "cached", "fast"}
         if v not in valid_modes:
@@ -123,7 +124,7 @@ class ModelDiscoveryConfig(BaseModel):
 
     @field_validator("include_patterns")
     @classmethod
-    def validate_include_patterns_not_empty(cls, v):
+    def validate_include_patterns_not_empty(cls, v: Any) -> Any:
         """Ensure include patterns is not empty."""
         if not v:
             msg = "include_patterns cannot be empty"
@@ -135,7 +136,7 @@ class ModelDiscoveryConfig(BaseModel):
 
     @field_validator("max_depth")
     @classmethod
-    def validate_max_depth_reasonable(cls, v):
+    def validate_max_depth_reasonable(cls, v: Any) -> Any:
         """Ensure max_depth is reasonable for performance."""
         if v is not None and v > 15:
             import warnings

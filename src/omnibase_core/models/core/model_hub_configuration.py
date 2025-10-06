@@ -23,7 +23,7 @@ class ModelHubConfiguration(BaseModel):
 
     # Core hub identity
     domain_id: UUID = Field(
-        ...,
+        default=...,
         description="UUID of the hub domain",
     )
 
@@ -42,7 +42,7 @@ class ModelHubConfiguration(BaseModel):
 
     # Hub capabilities and behavior
     coordination_mode: EnumCoordinationMode | None = Field(
-        EnumCoordinationMode.EVENT_ROUTER,
+        default=EnumCoordinationMode.EVENT_ROUTER,
         description="Hub coordination strategy",
     )
 
@@ -85,10 +85,10 @@ class ModelHubConfiguration(BaseModel):
         description="Hub capabilities",
     )
 
-    priority: str | None = Field("normal", description="Hub execution priority")
+    priority: str | None = Field(default="normal", description="Hub execution priority")
 
     docker_enabled: bool | None = Field(
-        False,
+        default=False,
         description="Enable Docker container isolation",
     )
 
@@ -105,13 +105,13 @@ class ModelHubConfiguration(BaseModel):
 
     # Service registry configuration
     introspection_timeout: int | None = Field(
-        30,
+        default=30,
         description="Introspection timeout in seconds",
     )
 
-    service_ttl: int | None = Field(300, description="Service TTL in seconds")
+    service_ttl: int | None = Field(default=300, description="Service TTL in seconds")
 
     auto_cleanup_interval: int | None = Field(
-        60,
+        default=60,
         description="Auto cleanup interval in seconds",
     )

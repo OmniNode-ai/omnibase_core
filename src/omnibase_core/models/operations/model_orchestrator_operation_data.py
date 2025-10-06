@@ -21,8 +21,10 @@ class ModelOrchestratorOperationData(ModelOperationDataBase):
         default=EnumNodeType.ORCHESTRATOR,
         description="Orchestrator operation type",
     )
-    workflow_definition: str = Field(..., description="Workflow definition identifier")
-    coordination_strategy: str = Field(..., description="Coordination strategy")
+    workflow_definition: str = Field(
+        default=..., description="Workflow definition identifier"
+    )
+    coordination_strategy: str = Field(default=..., description="Coordination strategy")
     dependency_resolution: dict[str, list[str]] = Field(
         default_factory=dict,
         description="Dependency resolution configuration",

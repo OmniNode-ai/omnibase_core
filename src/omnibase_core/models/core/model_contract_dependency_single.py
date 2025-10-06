@@ -9,8 +9,10 @@ class ModelContractDependency(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    name: str = Field(..., description="Dependency service name")
-    type: str = Field(..., description="Dependency type (utility, protocol, service)")
+    name: str = Field(default=..., description="Dependency service name")
+    type: str = Field(
+        default=..., description="Dependency type (utility, protocol, service)"
+    )
     class_name: str | None = Field(
         default=None,
         alias="class",

@@ -25,9 +25,13 @@ class ModelArgumentValue(BaseModel):
     Any usage with type-safe value containers.
     """
 
-    value: ArgumentValueType = Field(..., description="The actual argument value")
-    original_string: str = Field(..., description="Original string representation")
-    type_name: str = Field(..., description="Type name for validation")
+    value: ArgumentValueType = Field(
+        default=..., description="The actual argument value"
+    )
+    original_string: str = Field(
+        default=..., description="Original string representation"
+    )
+    type_name: str = Field(default=..., description="Type name for validation")
     validated: bool = Field(
         default=False,
         description="Whether value has been validated",

@@ -28,7 +28,7 @@ class ModelSecurityAssessment(BaseModel):
 
     # Overall assessment
     overall_risk_level: SecurityRiskLevel = Field(
-        ...,
+        default=...,
         description="Overall security risk level",
     )
     security_score: float | None = Field(

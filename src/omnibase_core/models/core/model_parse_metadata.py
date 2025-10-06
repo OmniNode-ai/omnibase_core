@@ -41,10 +41,12 @@ class ModelParseMetadata(BaseModel):
         ge=0,
     )
 
-    source_command: str = Field(..., description="Original command that was parsed")
+    source_command: str = Field(
+        default=..., description="Original command that was parsed"
+    )
 
     parser_version: ModelSemVer = Field(
-        default="1.0.0",
+        default_factory=lambda: ModelSemVer.parse("1.0.0"),
         description="Version of the parser used",
     )
 

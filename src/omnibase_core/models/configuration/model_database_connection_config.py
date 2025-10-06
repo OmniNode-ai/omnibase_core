@@ -22,25 +22,25 @@ class ModelDatabaseConnectionConfig(BaseModel):
     """
 
     host: str = Field(
-        ...,
+        default=...,
         description="Database host",
         pattern=r"^[a-zA-Z0-9\-\.]+$",
         max_length=255,
     )
-    port: int = Field(..., description="Database port", ge=1, le=65535)
+    port: int = Field(default=..., description="Database port", ge=1, le=65535)
     database: str = Field(
-        ...,
+        default=...,
         description="Database name",
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=100,
     )
-    username: str = Field(..., description="Database username", max_length=100)
-    password: SecretStr = Field(..., description="Database password (secured)")
+    username: str = Field(default=..., description="Database username", max_length=100)
+    password: SecretStr = Field(default=..., description="Database password (secured)")
     ssl_enabled: bool = Field(
         default=False, description="Whether to use SSL connection"
     )
     connection_timeout: int = Field(
-        30,
+        default=30,
         description="Connection timeout in seconds",
         ge=1,
         le=300,

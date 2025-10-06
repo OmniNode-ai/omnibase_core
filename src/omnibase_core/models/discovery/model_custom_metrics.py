@@ -18,10 +18,10 @@ from pydantic import BaseModel, Field
 class ModelMetricValue(BaseModel):
     """Single metric value with strong typing."""
 
-    name: str = Field(..., description="Metric name")
-    value: str | int | float | bool = Field(..., description="Metric value")
+    name: str = Field(default=..., description="Metric name")
+    value: str | int | float | bool = Field(default=..., description="Metric value")
     metric_type: str = Field(
-        ...,
+        default=...,
         description="Metric value type",
         json_schema_extra={
             "enum": [

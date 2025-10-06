@@ -17,9 +17,11 @@ class ModelConditionalWorkflowData(ModelWorkflowDataBase):
         default=EnumWorkflowType.CONDITIONAL,
         description="Conditional workflow type",
     )
-    condition_expression: str = Field(..., description="Boolean condition expression")
+    condition_expression: str = Field(
+        default=..., description="Boolean condition expression"
+    )
     true_branch: list[str] = Field(
-        ...,
+        default=...,
         description="Steps to execute when condition is true",
     )
     false_branch: list[str] = Field(

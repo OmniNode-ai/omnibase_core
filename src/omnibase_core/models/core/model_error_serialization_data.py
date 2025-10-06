@@ -1,6 +1,7 @@
 from typing import Any
 
 from pydantic import Field
+from uuid import UUID
 
 #!/usr/bin/env python3
 """
@@ -20,7 +21,7 @@ class ModelErrorSerializationData(BaseModel):
     message: str = Field(description="Error message")
     error_code: str | None = Field(default=None, description="Error code")
     status: EnumOnexStatus = Field(description="Error status")
-    correlation_id: str | None = Field(default=None, description="Correlation ID")
+    correlation_id: UUID | None = Field(default=None, description="Correlation ID")
     timestamp: datetime | None = Field(default=None, description="Error timestamp")
     context_strings: dict[str, str] = Field(
         default_factory=dict,

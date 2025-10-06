@@ -21,10 +21,10 @@ class ModelAuditData(BaseModel):
         description="Audit timestamp",
     )
     user_id: str | None = Field(default=None, description="User identifier")
-    action: str = Field(..., description="Action performed")
-    resource: str = Field(..., description="Resource accessed")
-    result: str = Field(..., description="Action result")
-    security_level: str = Field(..., description="Security classification")
+    action: str = Field(default=..., description="Action performed")
+    resource: str = Field(default=..., description="Resource accessed")
+    result: str = Field(default=..., description="Action result")
+    security_level: str = Field(default=..., description="Security classification")
     compliance_tags: list[str] = Field(
         default_factory=list,
         description="Compliance tags",

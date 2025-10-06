@@ -57,9 +57,7 @@ from omnibase_spi.protocols.types import (
 )
 from omnibase_spi.protocols.types import ProtocolNameable as Nameable
 from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
-from omnibase_spi.protocols.types import (
-    ProtocolValidatable,
-)
+from omnibase_spi.protocols.types import ProtocolValidatable
 
 # Bounded type variables with proper constraints
 
@@ -157,7 +155,6 @@ else:
             "BaseCollection",
             "BaseFactory",
         ):
-            from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
             globals()["ModelBaseCollection"] = ModelBaseCollection
             globals()["ModelBaseFactory"] = ModelBaseFactory
@@ -254,7 +251,6 @@ def validate_primitive_value(obj: object) -> bool:
         # LAZY IMPORT: Only load error_codes when validation fails
         # This prevents circular dependency at module import time
         # Import chain: errors.error_codes → types.core_types (no models/constraints)
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
@@ -279,7 +275,6 @@ def validate_context_value(obj: object) -> bool:
         # LAZY IMPORT: Only load error_codes when validation fails
         # This prevents circular dependency at module import time
         # Import chain: errors.error_codes → types.core_types (no models/constraints)
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 
         obj_type = type(obj).__name__
         msg = f"Expected context value (primitive, list[Any], or dict[str, Any]), got {obj_type}"

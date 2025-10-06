@@ -13,19 +13,21 @@ from pydantic import BaseModel, Field
 class ModelSignatureChainSummary(BaseModel):
     """Signature chain summary."""
 
-    chain_id: UUID = Field(..., description="Chain identifier")
-    envelope_id: UUID = Field(..., description="Envelope identifier")
-    signature_count: int = Field(..., description="Total signatures")
-    unique_signers: int = Field(..., description="Unique signers")
-    operations: list[str] = Field(..., description="Operations performed")
-    algorithms: list[str] = Field(..., description="Algorithms used")
-    has_complete_route: bool = Field(..., description="Route completeness")
-    validation_status: str = Field(..., description="Validation status")
-    trust_level: str = Field(..., description="Trust level")
-    created_at: str = Field(..., description="Creation timestamp")
-    last_modified: str = Field(..., description="Last modification")
-    chain_hash: str = Field(..., description="Chain hash (truncated)")
-    compliance_frameworks: list[str] = Field(..., description="Compliance frameworks")
+    chain_id: UUID = Field(default=..., description="Chain identifier")
+    envelope_id: UUID = Field(default=..., description="Envelope identifier")
+    signature_count: int = Field(default=..., description="Total signatures")
+    unique_signers: int = Field(default=..., description="Unique signers")
+    operations: list[str] = Field(default=..., description="Operations performed")
+    algorithms: list[str] = Field(default=..., description="Algorithms used")
+    has_complete_route: bool = Field(default=..., description="Route completeness")
+    validation_status: str = Field(default=..., description="Validation status")
+    trust_level: str = Field(default=..., description="Trust level")
+    created_at: str = Field(default=..., description="Creation timestamp")
+    last_modified: str = Field(default=..., description="Last modification")
+    chain_hash: str = Field(default=..., description="Chain hash (truncated)")
+    compliance_frameworks: list[str] = Field(
+        default=..., description="Compliance frameworks"
+    )
 
     def get_operation_count(self) -> int:
         """Get number of operations."""

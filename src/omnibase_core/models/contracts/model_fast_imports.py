@@ -2,6 +2,9 @@ from typing import Any, Dict, TypeVar
 
 from omnibase_core.errors.error_codes import ModelOnexError
 
+from typing import TYPE_CHECKING
+
+
 """
 Fast Import Module - Aggressive Performance Optimization
 

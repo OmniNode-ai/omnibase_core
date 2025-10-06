@@ -17,8 +17,8 @@ class ModelRequestParameter(BaseModel):
     with proper type safety.
     """
 
-    name: str = Field(..., description="Parameter name")
-    value: str = Field(..., description="Parameter value")
+    name: str = Field(default=..., description="Parameter name")
+    value: str = Field(default=..., description="Parameter value")
 
     # For multiple values with same name
     multiple_values: list[str] | None = Field(

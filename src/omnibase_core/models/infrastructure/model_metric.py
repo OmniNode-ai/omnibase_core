@@ -38,8 +38,10 @@ class ModelMetric(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    key: str = Field(..., description="Metric key")
-    value: ModelMetadataValue = Field(..., description="Strongly-typed metric value")
+    key: str = Field(default=..., description="Metric key")
+    value: ModelMetadataValue = Field(
+        default=..., description="Strongly-typed metric value"
+    )
     unit: ModelSchemaValue = Field(
         default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Unit of measurement (for numeric metrics)",

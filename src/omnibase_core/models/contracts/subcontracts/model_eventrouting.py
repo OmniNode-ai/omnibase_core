@@ -10,7 +10,7 @@ class ModelEventRouting(BaseModel):
     """
 
     routing_strategy: str = Field(
-        ...,
+        default=...,
         description="Routing strategy (broadcast, unicast, multicast, topic)",
         min_length=1,
     )

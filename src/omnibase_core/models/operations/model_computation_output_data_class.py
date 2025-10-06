@@ -49,11 +49,11 @@ class ModelComputationOutputData(BaseModel):
     """
 
     computation_type: "EnumComputationType" = Field(
-        ...,
+        default=...,
         description="Type of computation that was performed",
     )
     output_data: ModelComputationOutputUnion = Field(
-        ...,
+        default=...,
         description="Computation-specific output data with discriminated union",
     )
     processing_info: dict[str, str] = Field(

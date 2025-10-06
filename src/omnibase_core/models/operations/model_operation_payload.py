@@ -60,7 +60,7 @@ class ModelOperationPayload(BaseModel):
         description="Unique operation identifier (UUID format)",
     )
     operation_type: EnumNodeType = Field(
-        ...,
+        default=...,
         description="Discriminated operation type (ONEX node type)",
     )
     operation_data: Annotated[
@@ -69,7 +69,9 @@ class ModelOperationPayload(BaseModel):
         | ModelReducerOperationData
         | ModelOrchestratorOperationData,
         Field(discriminator="operation_type"),
-    ] = Field(..., description="Operation-specific data with discriminated union")
+    ] = Field(
+        default=..., description="Operation-specific data with discriminated union"
+    )
     execution_metadata: ModelExecutionMetadata | None = Field(
         default=None,
         description="Execution metadata for the operation",

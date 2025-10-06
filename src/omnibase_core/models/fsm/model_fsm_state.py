@@ -24,7 +24,7 @@ class ModelFsmState(BaseModel):
     - Validatable: Validation and verification
     """
 
-    name: str = Field(..., description="State name")
+    name: str = Field(default=..., description="State name")
     description: str = Field(default="", description="State description")
     is_initial: bool = Field(
         default=False, description="Whether this is the initial state"

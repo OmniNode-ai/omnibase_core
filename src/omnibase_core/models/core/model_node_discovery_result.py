@@ -28,7 +28,7 @@ class ModelNodeDiscoveryResult(ModelBaseResult):
         description="List of discovered nodes",
     )
     source: str = Field(
-        ...,
+        default=...,
         description="Discovery source (registry, filesystem, etc.)",
     )
     total_available: int | None = Field(

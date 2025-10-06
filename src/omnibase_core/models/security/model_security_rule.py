@@ -14,9 +14,9 @@ from pydantic import BaseModel, Field
 class ModelSecurityRule(BaseModel):
     """Individual security rule."""
 
-    rule_id: UUID = Field(..., description="Unique rule identifier")
-    rule_type: str = Field(..., description="Rule type (allow/deny/audit)")
-    resource_pattern: str = Field(..., description="Resource pattern to match")
+    rule_id: UUID = Field(default=..., description="Unique rule identifier")
+    rule_type: str = Field(default=..., description="Rule type (allow/deny/audit)")
+    resource_pattern: str = Field(default=..., description="Resource pattern to match")
     actions: list[str] = Field(
         default_factory=list,
         description="Actions covered by rule",

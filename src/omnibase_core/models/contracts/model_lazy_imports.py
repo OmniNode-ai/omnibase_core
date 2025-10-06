@@ -52,7 +52,6 @@ class ModelLazyContractLoader:
             ModelContractBase class (cached after first load)
         """
         if "ModelContractBase" not in self._cache:
-            from .model_contract_base import ModelContractBase
 
             self._cache["ModelContractBase"] = ModelContractBase
         return cast(type["ModelContractBase"], self._cache["ModelContractBase"])
@@ -66,7 +65,6 @@ class ModelLazyContractLoader:
             ModelContractCompute class (cached after first load)
         """
         if "ModelContractCompute" not in self._cache:
-            from .model_contract_compute import ModelContractCompute
 
             self._cache["ModelContractCompute"] = ModelContractCompute
         return cast(type["ModelContractCompute"], self._cache["ModelContractCompute"])
@@ -80,7 +78,6 @@ class ModelLazyContractLoader:
             ModelContractEffect class (cached after first load)
         """
         if "ModelContractEffect" not in self._cache:
-            from .model_contract_effect import ModelContractEffect
 
             self._cache["ModelContractEffect"] = ModelContractEffect
         return cast(type["ModelContractEffect"], self._cache["ModelContractEffect"])
@@ -94,7 +91,6 @@ class ModelLazyContractLoader:
             ModelContractReducer class (cached after first load)
         """
         if "ModelContractReducer" not in self._cache:
-            from .model_contract_reducer import ModelContractReducer
 
             self._cache["ModelContractReducer"] = ModelContractReducer
         return cast(type["ModelContractReducer"], self._cache["ModelContractReducer"])
@@ -108,7 +104,6 @@ class ModelLazyContractLoader:
             ModelContractOrchestrator class (cached after first load)
         """
         if "ModelContractOrchestrator" not in self._cache:
-            from .model_contract_orchestrator import ModelContractOrchestrator
 
             self._cache["ModelContractOrchestrator"] = ModelContractOrchestrator
         return cast(

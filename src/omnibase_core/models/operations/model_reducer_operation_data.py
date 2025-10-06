@@ -21,8 +21,8 @@ class ModelReducerOperationData(ModelOperationDataBase):
         default=EnumNodeType.REDUCER,
         description="Reducer operation type",
     )
-    aggregation_type: str = Field(..., description="Type of data aggregation")
-    state_key: str = Field(..., description="State key for aggregation")
+    aggregation_type: str = Field(default=..., description="Type of data aggregation")
+    state_key: str = Field(default=..., description="State key for aggregation")
     persistence_config: dict[str, str] = Field(
         default_factory=dict,
         description="Data persistence configuration",

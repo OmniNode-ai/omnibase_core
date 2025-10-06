@@ -6,6 +6,7 @@ from omnibase_core.enums.enum_tool_capability_level import EnumToolCapabilityLev
 from omnibase_core.enums.enum_tool_category import EnumToolCategory
 from omnibase_core.enums.enum_tool_compatibility_mode import EnumToolCompatibilityMode
 from omnibase_core.enums.enum_tool_registration_status import EnumToolRegistrationStatus
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Tool metadata model.
@@ -26,26 +27,26 @@ from .model_tool_validation_result import ModelToolValidationResult
 class ModelToolMetadata(BaseModel):
     """Comprehensive metadata for a registered tool."""
 
-    name: str = Field(..., description="Tool name")
-    tool_class: str = Field(..., description="Tool class name")
-    module_path: str = Field(..., description="Tool module path")
+    name: str = Field(default=..., description="Tool name")
+    tool_class: str = Field(default=..., description="Tool class name")
+    module_path: str = Field(default=..., description="Tool module path")
     registration_time: datetime = Field(
         default_factory=datetime.now,
         description="When tool was registered",
     )
     status: EnumToolRegistrationStatus = Field(
-        EnumToolRegistrationStatus.REGISTERED,
+        default=EnumToolRegistrationStatus.REGISTERED,
         description="Registration status",
     )
     category: EnumToolCategory = Field(
-        EnumToolCategory.CUSTOM, description="Tool category"
+        default=EnumToolCategory.CUSTOM, description="Tool category"
     )
     capability_level: EnumToolCapabilityLevel = Field(
-        EnumToolCapabilityLevel.BASIC,
+        default=EnumToolCapabilityLevel.BASIC,
         description="Capability level",
     )
     compatibility_mode: EnumToolCompatibilityMode = Field(
-        EnumToolCompatibilityMode.COMPATIBLE,
+        default=EnumToolCompatibilityMode.COMPATIBLE,
         description="Compatibility mode",
     )
 
@@ -61,8 +62,8 @@ class ModelToolMetadata(BaseModel):
 
     # Documentation and configuration
     description: str = Field(default="", description="Tool description")
-    version: str = Field("1.0.0", description="Tool version")
-    author: str = Field("Unknown", description="Tool author")
+    version: ModelSemVer = Field(default="1.0.0", description="Tool version")
+    author: str = Field(default="Unknown", description="Tool author")
     documentation_url: str | None = Field(default=None, description="Documentation URL")
     configuration_schema: ModelSchema = Field(
         default_factory=dict,
@@ -84,7 +85,9 @@ class ModelToolMetadata(BaseModel):
     )
 
     # Security and compliance
-    security_level: str = Field("standard", description="Security clearance level")
+    security_level: str = Field(
+        default="standard", description="Security clearance level"
+    )
     compliance_tags: list[str] = Field(
         default_factory=list,
         description="Compliance tags",

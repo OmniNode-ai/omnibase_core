@@ -21,7 +21,7 @@ class ModelLogNodeIdentifierUUID(BaseModel):
     """Log node identifier using UUID."""
 
     type: Literal["uuid"] = "uuid"
-    value: UUID = Field(..., description="UUID node identifier")
+    value: UUID = Field(default=..., description="UUID node identifier")
 
 
 # Discriminated union type

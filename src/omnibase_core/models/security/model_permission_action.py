@@ -18,15 +18,15 @@ class ModelPermissionAction(BaseModel):
     """
 
     action_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique action identifier",
         pattern="^[a-z][a-z0-9_-]*$",
     )
 
-    action_name: str = Field(..., description="Human-readable action name")
+    action_name: str = Field(default=..., description="Human-readable action name")
 
     action_type: str = Field(
-        ...,
+        default=...,
         description="Type of action (read, write, delete, execute, admin)",
         pattern="^(read|write|delete|execute|admin|custom)$",
     )

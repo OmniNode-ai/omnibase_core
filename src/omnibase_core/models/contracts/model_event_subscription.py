@@ -25,7 +25,7 @@ class ModelEventSubscription(BaseModel):
     """
 
     event_pattern: str = Field(
-        ...,
+        default=...,
         description="Event name pattern or specific event name",
         min_length=1,
     )
@@ -36,7 +36,7 @@ class ModelEventSubscription(BaseModel):
     )
 
     handler_function: str = Field(
-        ...,
+        default=...,
         description="Event handler function identifier",
         min_length=1,
     )

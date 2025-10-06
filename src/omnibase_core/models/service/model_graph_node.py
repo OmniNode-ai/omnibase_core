@@ -25,10 +25,10 @@ class ModelGraphNode(BaseModel):
     """
 
     # Node identification
-    node_id: str = Field(..., description="Unique node identifier")
-    label: str = Field(..., description="Node display label")
+    node_id: str = Field(default=..., description="Unique node identifier")
+    label: str = Field(default=..., description="Node display label")
     node_type: str = Field(
-        ...,
+        default=...,
         description="Type of node (e.g., 'start', 'end', 'process', 'decision')",
     )
 

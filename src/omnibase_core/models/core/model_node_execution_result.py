@@ -27,7 +27,7 @@ class ModelNodeExecutionResult(ModelBaseResult):
     or other execution mechanisms.
     """
 
-    node_name: str = Field(..., description="Name of the executed node")
+    node_name: str = Field(default=..., description="Name of the executed node")
     node_version: ModelSemVer | None = Field(
         default=None,
         description="Version of the executed node",

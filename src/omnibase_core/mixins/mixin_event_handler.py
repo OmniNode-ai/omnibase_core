@@ -138,10 +138,6 @@ class MixinEventHandler:
 
         # Check if this event is an introspection request
         try:
-            from omnibase_core.models.core.model_event_type import (
-                create_event_type_from_registry,
-            )
-
             introspection_request_type = create_event_type_from_registry(
                 "NODE_INTROSPECTION_REQUEST",
             )
@@ -185,8 +181,6 @@ class MixinEventHandler:
             )
             if requested_types:
                 introspection_data = self._filter_introspection_data(
-                    introspection_data,
-                    requested_types,
                 )
 
             # Emit response event (simplified - would need full implementation)
@@ -235,10 +229,6 @@ class MixinEventHandler:
 
         # Check if this event is a discovery request
         try:
-            from omnibase_core.models.core.model_event_type import (
-                create_event_type_from_registry,
-            )
-
             discovery_request_type = create_event_type_from_registry(
                 "NODE_DISCOVERY_REQUEST",
             )
@@ -324,7 +314,6 @@ class MixinEventHandler:
             return True
 
     def _filter_introspection_data(
-        self,
         introspection_data: dict[str, Any],
         requested_types: list[str],
     ) -> dict[str, Any]:

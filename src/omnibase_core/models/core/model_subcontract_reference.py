@@ -15,8 +15,10 @@ from pydantic import BaseModel, Field
 class ModelSubcontractReference(BaseModel):
     """Model representing a subcontract reference in main contracts."""
 
-    path: str = Field(..., description="Relative path to the subcontract YAML file")
+    path: str = Field(
+        default=..., description="Relative path to the subcontract YAML file"
+    )
     integration_field: str = Field(
-        ...,
+        default=...,
         description="Field name for integrating subcontract configuration",
     )

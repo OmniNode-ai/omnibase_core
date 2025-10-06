@@ -19,17 +19,19 @@ class ModelHealthCheckConfig(BaseModel):
     """
 
     # Endpoint configuration
-    endpoint: str = Field(..., description="Health check endpoint")
-    method: str = Field("GET", description="HTTP method for health check")
+    endpoint: str = Field(default=..., description="Health check endpoint")
+    method: str = Field(default="GET", description="HTTP method for health check")
 
     # Timing
-    interval_seconds: int = Field(30, description="Health check interval")
-    timeout_seconds: int = Field(10, description="Health check timeout")
+    interval_seconds: int = Field(default=30, description="Health check interval")
+    timeout_seconds: int = Field(default=10, description="Health check timeout")
 
     # Thresholds
-    healthy_threshold: int = Field(2, description="Consecutive successes for healthy")
+    healthy_threshold: int = Field(
+        default=2, description="Consecutive successes for healthy"
+    )
     unhealthy_threshold: int = Field(
-        3,
+        default=3,
         description="Consecutive failures for unhealthy",
     )
 
@@ -45,7 +47,7 @@ class ModelHealthCheckConfig(BaseModel):
 
     # Response validation
     check_response_body: bool = Field(
-        False,
+        default=False,
         description="Whether to check response body",
     )
     expected_response_contains: str | None = Field(
@@ -69,4 +71,4 @@ class ModelHealthCheckConfig(BaseModel):
 
     # Retry behavior
     retry_on_failure: bool = Field(default=True, description="Retry on failure")
-    max_retries: int = Field(2, description="Maximum retry attempts")
+    max_retries: int = Field(default=2, description="Maximum retry attempts")

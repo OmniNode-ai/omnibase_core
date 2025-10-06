@@ -27,7 +27,7 @@ class ModelActionPayload(ModelOnexInputState):
     (correlation_id, event_id, timestamp, etc.) for execution tracking.
     """
 
-    action: ModelNodeAction = Field(..., description="The action to execute")
+    action: ModelNodeAction = Field(default=..., description="The action to execute")
     parameters: dict[str, str | int | float | bool | list[str] | dict[str, str]] = (
         Field(
             default_factory=dict,

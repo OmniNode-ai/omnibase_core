@@ -15,38 +15,38 @@ class ModelWorkflowMetrics(BaseModel):
     """Performance metrics for workflow execution."""
 
     total_execution_time_ms: int = Field(
-        ...,
+        default=...,
         description="Total workflow execution time in milliseconds",
         ge=0,
     )
 
     coordination_overhead_ms: int = Field(
-        ...,
+        default=...,
         description="Time spent on coordination overhead in milliseconds",
         ge=0,
     )
 
     node_utilization_percent: float = Field(
-        ...,
+        default=...,
         description="Node utilization percentage",
         ge=0.0,
         le=100.0,
     )
 
     parallelism_achieved: float = Field(
-        ...,
+        default=...,
         description="Achieved parallelism factor",
         ge=0.0,
     )
 
     synchronization_delays_ms: int = Field(
-        ...,
+        default=...,
         description="Total time spent on synchronization delays",
         ge=0,
     )
 
     resource_efficiency_score: float = Field(
-        ...,
+        default=...,
         description="Resource efficiency score",
         ge=0.0,
         le=1.0,

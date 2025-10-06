@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 from .model_nodeintrospectionevent import ModelNodeIntrospectionEvent
 

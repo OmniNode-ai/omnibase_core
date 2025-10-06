@@ -20,15 +20,18 @@ class ModelFallbackStrategy(BaseModel):
     """Scalable fallback strategy configuration model."""
 
     strategy_type: EnumFallbackStrategyType = Field(
-        ..., description="The type of fallback strategy to use"
+        default=..., description="The type of fallback strategy to use"
     )
 
     timeout_seconds: int | None = Field(
-        30, description="Timeout for fallback operations in seconds", ge=1, le=300
+        default=30,
+        description="Timeout for fallback operations in seconds",
+        ge=1,
+        le=300,
     )
 
     retry_attempts: int | None = Field(
-        3, description="Number of retry attempts before giving up", ge=0, le=10
+        default=3, description="Number of retry attempts before giving up", ge=0, le=10
     )
 
     fallback_endpoint: str | None = Field(

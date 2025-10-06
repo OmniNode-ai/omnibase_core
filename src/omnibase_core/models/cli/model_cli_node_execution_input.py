@@ -40,7 +40,9 @@ class ModelCliNodeExecutionInput(BaseModel):
     """
 
     # Core execution parameters
-    action: EnumCliAction = Field(..., description="Action to perform with the node")
+    action: EnumCliAction = Field(
+        default=..., description="Action to perform with the node"
+    )
     node_id: UUID | None = Field(
         default=None,
         description="Node UUID for precise identification",
@@ -88,7 +90,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Output formatting
     output_format: EnumOutputFormat = Field(
-        EnumOutputFormat.TEXT,
+        default=EnumOutputFormat.TEXT,
         description="Output format preference for results display",
     )
     verbose: bool = Field(default=False, description="Enable verbose output")

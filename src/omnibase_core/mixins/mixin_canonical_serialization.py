@@ -76,7 +76,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
     """
 
     def canonicalize_metadata_block(
-        self,
         block: Union[dict[str, object], "NodeMetadataBlock"],
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
@@ -108,8 +107,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             Canonical YAML string (UTF-8, normalized line endings), with optional comment prefix.
         """
         import pydantic
-
-        from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
         if isinstance(block, dict):
             # Convert dict[str, Any]to NodeMetadataBlock, handling type conversions
@@ -214,13 +211,11 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             # PATCH: Flatten entrypoint to URI string
             if k == "entrypoint":
-                from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 
                 if isinstance(v, EntrypointBlock):
                     filtered_dict[k] = v.to_uri()
                 elif isinstance(v, dict) and "type" in v and "target" in v:
                     filtered_dict[k] = EntrypointBlock.from_serializable_dict(
-                        v,
                     ).to_uri()
                 elif isinstance(v, str):
                     filtered_dict[k] = (
@@ -255,7 +250,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         from omnibase_core.utils.safe_yaml_loader import _dump_yaml_content
 
         yaml_str = _dump_yaml_content(
-            filtered_dict,
             sort_keys=sort_keys,
             default_flow_style=default_flow_style,
             allow_unicode=allow_unicode,
@@ -286,7 +280,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         return norm
 
     def canonicalize_for_hash(
-        self,
         block: Union[dict[str, object], "NodeMetadataBlock"],
         body: str,
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
@@ -310,7 +303,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             Canonical string for hash computation.
         """
         meta_yaml = self.canonicalize_metadata_block(
-            block,
             volatile_fields=volatile_fields,
             placeholder=placeholder,
             explicit_start=False,

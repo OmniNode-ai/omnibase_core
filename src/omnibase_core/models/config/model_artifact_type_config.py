@@ -27,7 +27,7 @@ class ModelArtifactTypeConfig(BaseModel):
     """
 
     name: EnumArtifactType = Field(
-        ...,
+        default=...,
         description="Strongly typed artifact type",
     )
 

@@ -39,7 +39,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
     - Serializable: Data serialization/deserialization
     """
 
-    value: T = Field(..., description="The time-based value")
+    value: T = Field(default=..., description="The time-based value")
     unit: EnumTimeUnit = Field(default=EnumTimeUnit.SECONDS, description="Time unit")
     metadata: dict[str, str] = Field(
         default_factory=dict,

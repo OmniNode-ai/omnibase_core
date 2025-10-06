@@ -17,10 +17,10 @@ if TYPE_CHECKING:
 class ModelSecurityEventSummary(BaseModel):
     """Security event summary."""
 
-    event_id: str = Field(..., description="Event identifier")
-    event_type: str = Field(..., description="Event type")
-    timestamp: str = Field(..., description="Event timestamp")
-    envelope_id: str = Field(..., description="Envelope ID")
+    event_id: str = Field(default=..., description="Event identifier")
+    event_type: str = Field(default=..., description="Event type")
+    timestamp: str = Field(default=..., description="Event timestamp")
+    envelope_id: str = Field(default=..., description="Envelope ID")
     # Additional fields from the actual event can be included as needed
 
     def is_recent(self, minutes_threshold: int = 60) -> bool:

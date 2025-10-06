@@ -22,21 +22,21 @@ class ModelCliDiscoveryStats(BaseModel):
 
     # Tool counts
     total_tools_discovered: int = Field(
-        0,
+        default=0,
         description="Total number of tools discovered by the system",
     )
     healthy_tools_count: int = Field(
-        0,
+        default=0,
         description="Number of healthy tools currently available",
     )
     unhealthy_tools_count: int = Field(
-        0,
+        default=0,
         description="Number of tools with health issues",
     )
 
     # Registry and cache metrics
     discovery_cache_size: int = Field(
-        0,
+        default=0,
         description="Number of tools currently cached in discovery registry",
     )
     cache_hit_rate: float | None = Field(
@@ -66,7 +66,7 @@ class ModelCliDiscoveryStats(BaseModel):
 
     # Error tracking
     discovery_errors_count: int = Field(
-        0,
+        default=0,
         description="Number of discovery errors since last reset",
     )
     last_error_message: str | None = Field(
@@ -76,11 +76,11 @@ class ModelCliDiscoveryStats(BaseModel):
 
     # Registry health
     registries_online: int = Field(
-        0,
+        default=0,
         description="Number of tool registries currently online",
     )
     registries_total: int = Field(
-        0,
+        default=0,
         description="Total number of tool registries configured",
     )
 

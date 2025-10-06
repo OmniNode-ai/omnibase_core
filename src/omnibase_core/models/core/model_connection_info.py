@@ -28,9 +28,9 @@ class ModelConnectionInfo(BaseModel):
     """
 
     # Connection identification
-    connection_id: UUID = Field(..., description="Unique connection identifier")
+    connection_id: UUID = Field(default=..., description="Unique connection identifier")
     connection_type: str = Field(
-        ...,
+        default=...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
     protocol_version: ModelSemVer | None = Field(
@@ -38,8 +38,8 @@ class ModelConnectionInfo(BaseModel):
     )
 
     # Endpoint information
-    host: str = Field(..., description="Host address")
-    port: int = Field(..., description="Port number")
+    host: str = Field(default=..., description="Host address")
+    port: int = Field(default=..., description="Port number")
     path: str | None = Field(default=None, description="Connection path/endpoint")
 
     # Authentication
@@ -59,9 +59,9 @@ class ModelConnectionInfo(BaseModel):
     ssl_ca_path: str | None = Field(default=None, description="SSL CA bundle path")
 
     # Connection parameters
-    timeout_seconds: int = Field(30, description="Connection timeout")
-    retry_count: int = Field(3, description="Number of retry attempts")
-    retry_delay_seconds: int = Field(1, description="Delay between retries")
+    timeout_seconds: int = Field(default=30, description="Connection timeout")
+    retry_count: int = Field(default=3, description="Number of retry attempts")
+    retry_delay_seconds: int = Field(default=1, description="Delay between retries")
     keepalive_interval: int | None = Field(
         default=None,
         description="Keepalive interval in seconds",
@@ -91,7 +91,7 @@ class ModelConnectionInfo(BaseModel):
     )
     last_used_at: datetime | None = Field(default=None, description="Last usage time")
     connection_state: str = Field(
-        "disconnected",
+        default="disconnected",
         description="Current connection state",
     )
 

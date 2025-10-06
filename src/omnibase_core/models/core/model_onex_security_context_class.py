@@ -35,7 +35,7 @@ class ModelOnexSecurityContext(BaseModel):
 
     # === AUTHENTICATION ===
     user_id: str | None = Field(default=None, description="User identifier")
-    session_id: str | None = Field(default=None, description="Session identifier")
+    session_id: UUID | None = Field(default=None, description="Session identifier")
     authentication_token: str | None = Field(
         default=None,
         description="Authentication token",

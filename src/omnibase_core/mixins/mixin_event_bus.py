@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Generic, List, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, TypeVar
 
 from pydantic import Field
 
@@ -20,14 +20,6 @@ This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 import inspect
 import threading
 from collections.abc import Callable as CallableABC
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    TypeVar,
-)
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
 
@@ -45,10 +37,6 @@ from .protocol_log_emitter import LogEmitter
 from .protocol_registry_with_bus import RegistryWithBus
 
 if TYPE_CHECKING:
-    from omnibase_spi.protocols.event_bus.protocol_event_bus_mixin import (
-        ProtocolAsyncEventBus,
-    )
-
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Generic type variables for input and output states
@@ -130,7 +118,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     # --- Event Bus Access (Protocol-based) ----------------------------------
 
     def _get_event_bus(
-        self,
     ) -> "ProtocolAsyncEventBus | None":
         """Resolve event bus using protocol-based polymorphism."""
         # Try registry first
@@ -146,7 +133,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     # --- Event Completion Publishing ----------------------------------------
 
     def publish_completion_event(
-        self,
         event_type: str,
         data: MixinCompletionData,
     ) -> None:
@@ -161,7 +147,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if bus is None:
             self._log_warn(
                 "No event bus available in registry for completion event",
-                event_type,
             )
             return
 
@@ -172,14 +157,12 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if has_async and not has_sync:
             self._log_error(
                 "registry.event_bus is async-only; call 'await apublish_completion_event(...)' instead",
-                event_type,
             )
             return
 
         if not isinstance(bus, ProtocolEventBus):
             self._log_error(
                 f"registry.event_bus does not satisfy ProtocolEventBus (got {type(bus).__name__})",
-                event_type,
             )
             return
 
@@ -200,12 +183,10 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
-                event_type,
                 error=e,
             )
 
     async def apublish_completion_event(
-        self,
         event_type: str,
         data: MixinCompletionData,
     ) -> None:
@@ -222,15 +203,11 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if bus is None:
             self._log_warn(
                 "No event bus available in registry for completion event",
-                event_type,
             )
             return
 
         try:
             event = self._build_event(event_type, data)
-            from omnibase_core.models.events.model_event_envelope import (
-                ModelEventEnvelope,
-            )
 
             # Wrap event in envelope before publishing
             envelope = ModelEventEnvelope(payload=event)
@@ -249,14 +226,11 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             else:
                 # Fallback for poorly-typed buses using duck typing
                 publish = getattr(bus, "publish_async", None) or getattr(
-                    bus,
                     "publish",
-                    None,
                 )
                 if publish is None:
                     self._log_error(
                         f"registry.event_bus has no 'publish' or 'publish_async' method (got {type(bus).__name__})",
-                        event_type,
                     )
                     return
                 if inspect.iscoroutinefunction(publish):
@@ -269,7 +243,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
-                event_type,
                 error=e,
             )
 
@@ -462,7 +435,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 except Exception as e:
                     self._log_error(
                         f"Failed to subscribe to {pattern}: {e!r}",
-                        pattern,
                         error=e,
                     )
 
@@ -528,7 +500,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 except Exception as publish_error:
                     self._log_error(
                         f"Failed to publish error event: {publish_error!r}",
-                        pattern,
                         error=publish_error,
                     )
 
@@ -541,7 +512,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             if not input_state_class:
                 msg = "Cannot determine input state class for event conversion"
                 raise ModelOnexError(
-                    msg,
                     error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                 )
 
@@ -582,7 +552,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         """Log info message with pattern."""
         emit_log_event(
             LogLevel.INFO,
-            msg,
             MixinLogData(pattern=pattern, node_name=self.get_node_name()),
         )
 
@@ -590,12 +559,10 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         """Log warning message with pattern."""
         emit_log_event(
             LogLevel.WARNING,
-            msg,
             MixinLogData(pattern=pattern, node_name=self.get_node_name()),
         )
 
     def _log_error(
-        self,
         msg: str,
         pattern: str,
         error: BaseException | None = None,
@@ -603,7 +570,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         """Log error message with pattern and optional error details."""
         emit_log_event(
             LogLevel.ERROR,
-            msg,
             MixinLogData(
                 pattern=pattern,
                 node_name=self.get_node_name(),

@@ -10,7 +10,7 @@ class MixinServiceRegistryEntry:
         node_id: str,
         service_name: str,
         metadata: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.node_id = node_id
         self.service_name = service_name
         self.metadata = metadata or {}

@@ -139,7 +139,6 @@ class NodeReducer(NodeCoreBase):
             ModelOnexError: If contract file cannot be found
         """
         import inspect
-        from pathlib import Path
 
         from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 
@@ -345,7 +344,6 @@ class NodeReducer(NodeCoreBase):
         try:
             # Import FSM models dynamically to avoid circular imports
             import sys
-            from pathlib import Path
 
             # Get the tool directory to import FSM models
             tool_dir = (

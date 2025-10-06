@@ -23,7 +23,6 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 # Import for boundary state conversion
 from omnibase_core.models.core.model_onex_output_state import ModelOnexOutputState
 from omnibase_core.models.core.model_output_field import ModelOnexField
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelOnexInternalOutputState(BaseModel):
@@ -41,23 +40,25 @@ class ModelOnexInternalOutputState(BaseModel):
     version: ModelSemVer
 
     # Required traceability fields (no Optional)
-    event_id: UUID = Field(..., description="Required event ID for tracking")
+    event_id: UUID = Field(default=..., description="Required event ID for tracking")
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Required correlation ID for tracking",
     )
-    timestamp: datetime = Field(..., description="Required timestamp for tracking")
+    timestamp: datetime = Field(
+        default=..., description="Required timestamp for tracking"
+    )
 
     # Node identification (required for internal processing)
-    node_name: str = Field(..., description="Required node name for processing")
+    node_name: str = Field(default=..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Required node version for processing",
     )
 
     # Processing results
-    status: EnumOnexStatus = Field(..., description="Processing status")
-    message: str = Field(..., description="Processing message")
+    status: EnumOnexStatus = Field(default=..., description="Processing status")
+    message: str = Field(default=..., description="Processing message")
     output_field: ModelOnexField | None = Field(
         default=None,
         description="Output field with processing results",

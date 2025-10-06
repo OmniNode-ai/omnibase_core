@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 class ModelGitHubUser(BaseModel):
     """GitHub user information."""
 
-    login: str = Field(..., description="Username")
-    id: int = Field(..., description="User ID")
+    login: str = Field(default=..., description="Username")
+    id: int = Field(default=..., description="User ID")
     avatar_url: str | None = Field(default=None, description="Avatar URL")
     url: str | None = Field(default=None, description="User API URL")
-    type: str = Field("User", description="User type")
+    type: str = Field(default="User", description="User type")

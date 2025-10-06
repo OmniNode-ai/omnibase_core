@@ -68,11 +68,11 @@ class ModelOnexEvent(BaseModel):
     )
 
     event_type: str | ModelEventType = Field(
-        ...,
+        default=...,
         description="Event type - can be string or ModelEventType object",
     )
-    node_id: str = Field(
-        ...,
+    node_id: UUID = Field(
+        default=...,
         description="Unique identifier of the node that generated this event",
     )
     metadata: ModelOnexEventMetadata | None = Field(

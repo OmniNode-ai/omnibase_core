@@ -49,11 +49,13 @@ class ModelRegistryHealthReport(BaseModel):
     )
 
     status: EnumRegistryHealthStatus = Field(
-        ...,
+        default=...,
         description="Overall health status of the registry",
     )
 
-    tools_count: int = Field(..., description="Total number of registered tools", ge=0)
+    tools_count: int = Field(
+        default=..., description="Total number of registered tools", ge=0
+    )
 
     tools_health: list[ModelToolHealth] = Field(
         default_factory=list,

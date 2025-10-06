@@ -158,7 +158,6 @@ class ModelFunctionNodeCore(BaseModel):
         description: str = "",
     ) -> ModelFunctionNodeCore:
         """Create function core from signature information."""
-        import hashlib
 
         # Generate UUID from function name
         function_hash = hashlib.sha256(name.encode()).hexdigest()

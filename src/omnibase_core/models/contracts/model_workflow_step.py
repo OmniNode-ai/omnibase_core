@@ -42,7 +42,7 @@ class ModelWorkflowStep(BaseModel):
     )
 
     step_name: str = Field(
-        ...,
+        default=...,
         description="Human-readable name for this step",
         min_length=1,
         max_length=200,
@@ -57,7 +57,7 @@ class ModelWorkflowStep(BaseModel):
         "parallel",
         "custom",
     ] = Field(
-        ...,
+        default=...,
         description="Type of workflow step execution",
     )
 

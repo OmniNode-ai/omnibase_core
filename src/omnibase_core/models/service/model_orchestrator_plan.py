@@ -17,8 +17,8 @@ class ModelOrchestratorPlan(BaseModel):
     """ONEX plan model for orchestrator."""
 
     # Plan identification
-    plan_id: str = Field(..., description="Plan identifier")
-    plan_name: str = Field(..., description="Plan name")
+    plan_id: str = Field(default=..., description="Plan identifier")
+    plan_name: str = Field(default=..., description="Plan name")
 
     # Plan structure
     steps: list[ModelOrchestratorStep] = Field(

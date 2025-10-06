@@ -13,7 +13,7 @@ class ModelConditionalTransition(BaseModel):
     """Transition that applies different updates based on conditions."""
 
     branches: list[dict[str, Any]] = Field(
-        ...,
+        default=...,
         description="List of condition/transition pairs",
     )
 

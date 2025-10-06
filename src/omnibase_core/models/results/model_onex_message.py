@@ -41,13 +41,13 @@ class ModelOnexMessage(BaseModel):
     Supports linking to files, lines, context, and rich rendering.
     """
 
-    summary: str = Field(..., description="Short summary of the message.")
+    summary: str = Field(default=..., description="Short summary of the message.")
     suggestions: list[str] | None = None
     remediation: str | None = None
     rendered_markdown: str | None = None
     doc_link: str | None = None
     level: EnumLogLevel = Field(
-        EnumLogLevel.INFO,
+        default=EnumLogLevel.INFO,
         description="Message level: info, warning, error, etc.",
     )
     file: str | None = Field(

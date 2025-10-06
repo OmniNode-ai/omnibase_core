@@ -17,6 +17,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
@@ -32,7 +33,7 @@ class ModelOutputConfig(BaseModel):
 
     @field_validator("format")
     @classmethod
-    def validate_format(cls, v):
+    def validate_format(cls, v: Any) -> Any:
         allowed = {"json", "yaml", "text"}
         if v not in allowed:
             raise ModelOnexError(
@@ -42,7 +43,7 @@ class ModelOutputConfig(BaseModel):
 
     @field_validator("log_level")
     @classmethod
-    def validate_log_level(cls, v):
+    def validate_log_level(cls, v: Any) -> Any:
         allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         if v not in allowed:
             raise ModelOnexError(

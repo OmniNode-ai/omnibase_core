@@ -22,13 +22,13 @@ class ModelToolValidationResult(BaseModel):
         description="Validation warnings",
     )
     interface_compliance: bool = Field(
-        True,
+        default=True,
         description="Whether tool complies with ProtocolTool interface",
     )
     signature_valid: bool = Field(
         default=True, description="Whether tool signature is valid"
     )
     dependencies_satisfied: bool = Field(
-        True,
+        default=True,
         description="Whether tool dependencies are satisfied",
     )

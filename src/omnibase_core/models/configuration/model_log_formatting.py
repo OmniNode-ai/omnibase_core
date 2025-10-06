@@ -121,7 +121,6 @@ class ModelLogFormatting(BaseModel):
         self, level: str, logger_name: str, message: str, **kwargs
     ) -> str:
         """Create JSON format output."""
-        import datetime
         import json
 
         base_data = {"message": message}
@@ -144,7 +143,6 @@ class ModelLogFormatting(BaseModel):
         self, level: str, logger_name: str, message: str, **kwargs
     ) -> str:
         """Create structured key-value format output."""
-        import datetime
 
         base_parts = []
         if self.include_timestamp:

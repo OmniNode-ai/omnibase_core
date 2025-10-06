@@ -26,7 +26,7 @@ class ModelServiceType(BaseModel):
     """Scalable service type configuration model."""
 
     type_category: EnumServiceTypeCategory = Field(
-        ...,
+        default=...,
         description="The category of service type",
     )
 
@@ -48,17 +48,17 @@ class ModelServiceType(BaseModel):
     )
 
     supports_health_checks: bool = Field(
-        True,
+        default=True,
         description="Whether this service type supports health checking",
     )
 
     supports_load_balancing: bool = Field(
-        True,
+        default=True,
         description="Whether this service type supports load balancing",
     )
 
     connection_pooling: bool = Field(
-        False,
+        default=False,
         description="Whether this service type benefits from connection pooling",
     )
 

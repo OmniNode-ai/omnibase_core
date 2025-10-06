@@ -44,21 +44,21 @@ class ModelMissingTool(BaseModel):
     """
 
     tool_name: str = Field(
-        ...,
+        default=...,
         description="Name of the missing tool",
         min_length=1,
         max_length=200,
     )
 
     reason: str = Field(
-        ...,
+        default=...,
         description="Detailed reason why the tool is missing or invalid",
         min_length=1,
         max_length=1000,
     )
 
     expected_type: str = Field(
-        ...,
+        default=...,
         description="Expected type annotation for the tool",
         min_length=1,
         max_length=500,

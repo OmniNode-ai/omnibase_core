@@ -14,8 +14,10 @@ from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
 class ModelCurrentToolAvailability(BaseModel):
     """Current availability status of tools within the node"""
 
-    tool_name: str = Field(..., description="Name of the tool")
-    status: EnumNodeCurrentStatus = Field(..., description="Current tool status")
+    tool_name: str = Field(default=..., description="Name of the tool")
+    status: EnumNodeCurrentStatus = Field(
+        default=..., description="Current tool status"
+    )
     last_execution: str | None = Field(
         default=None,
         description="ISO timestamp of last execution",

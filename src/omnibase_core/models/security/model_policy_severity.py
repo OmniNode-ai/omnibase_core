@@ -16,33 +16,33 @@ class ModelPolicySeverity(BaseModel):
     """Policy violation severity configuration."""
 
     level: str = Field(
-        "error",
+        default="error",
         description="Severity level: info, warning, error, critical",
         pattern=r"^(info|warning|error|critical)$",
     )
 
     auto_remediate: bool = Field(
-        False,
+        default=False,
         description="Whether to attempt automatic remediation",
     )
 
     block_operation: bool = Field(
-        True,
+        default=True,
         description="Whether to block the operation on violation",
     )
 
     notify_administrators: bool = Field(
-        False,
+        default=False,
         description="Whether to notify administrators on violation",
     )
 
     log_to_audit: bool = Field(
-        True,
+        default=True,
         description="Whether to log violations to audit trail",
     )
 
     escalation_threshold: int = Field(
-        3,
+        default=3,
         description="Number of violations before escalation",
         ge=1,
     )

@@ -11,9 +11,9 @@ from omnibase_core.models.configuration.model_log_filter_config import (
 class ModelLogFilter(BaseModel):
     """Log message filtering configuration."""
 
-    filter_name: str = Field(..., description="Unique filter identifier")
+    filter_name: str = Field(default=..., description="Unique filter identifier")
     filter_type: str = Field(
-        ...,
+        default=...,
         description="Filter type",
         pattern="^(regex|field_match|level_range|keyword|custom)$",
     )

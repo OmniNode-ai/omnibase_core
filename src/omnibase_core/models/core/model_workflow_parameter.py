@@ -28,8 +28,8 @@ class ModelWorkflowParameter(BaseModel, Generic[T]):
     and eliminates the need for string-based type indicators.
     """
 
-    name: str = Field(..., description="Parameter name")
-    value: T = Field(..., description="Type-safe parameter value")
+    name: str = Field(default=..., description="Parameter name")
+    value: T = Field(default=..., description="Type-safe parameter value")
     is_required: bool = Field(
         default=False,
         description="Whether parameter is required",

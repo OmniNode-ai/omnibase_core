@@ -47,7 +47,7 @@ class ModelNodeInformation(BaseModel):
 
     # Composed sub-models (3 primary components)
     core_info: ModelNodeCoreInfo = Field(
-        ...,
+        default=...,
         description="Core node information",
     )
     capabilities: ModelNodeCapabilitiesInfo = Field(

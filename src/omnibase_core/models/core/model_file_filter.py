@@ -46,7 +46,7 @@ class ModelFileFilter(BaseModel):
         description="Sources to look for ignore patterns",
     )
     max_file_size: int = Field(
-        5 * 1024 * 1024,
+        default=5 * 1024 * 1024,
         description="Maximum file size in bytes to process",
     )
     max_files: int | None = Field(
@@ -57,7 +57,7 @@ class ModelFileFilter(BaseModel):
         default=False, description="Whether to follow symbolic links"
     )
     case_sensitive: bool = Field(
-        True,
+        default=True,
         description="Whether pattern matching is case sensitive",
     )
     model_config = ConfigDict(arbitrary_types_allowed=True)

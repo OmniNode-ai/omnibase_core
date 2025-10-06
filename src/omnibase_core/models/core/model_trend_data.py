@@ -26,10 +26,12 @@ class ModelTrendData(BaseModel):
     """
 
     # Trend identification
-    trend_name: str = Field(..., description="Trend identifier")
-    trend_type: str = Field(..., description="Type of trend (metric/usage/performance)")
+    trend_name: str = Field(default=..., description="Trend identifier")
+    trend_type: str = Field(
+        default=..., description="Type of trend (metric/usage/performance)"
+    )
     time_period: str = Field(
-        ...,
+        default=...,
         description="Time period (hourly/daily/weekly/monthly)",
     )
 

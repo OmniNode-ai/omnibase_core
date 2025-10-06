@@ -13,8 +13,8 @@ class ModelErrorEventData(ModelEventDataBase):
         default=EnumEventType.ERROR,
         description="Error event type",
     )
-    error_type: str = Field(..., description="Type of error")
-    error_message: str = Field(..., description="Error message")
+    error_type: str = Field(default=..., description="Type of error")
+    error_message: str = Field(default=..., description="Error message")
     stack_trace: str = Field(default="", description="Error stack trace")
     recovery_actions: list[str] = Field(
         default_factory=list,

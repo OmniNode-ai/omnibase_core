@@ -71,7 +71,7 @@ class ModelDirectoryProcessingResult(BaseModel):
 
     # Processing metadata
     total_size_bytes: int = Field(
-        0,
+        default=0,
         description="Total size of processed files in bytes",
     )
     directory: Path | None = Field(

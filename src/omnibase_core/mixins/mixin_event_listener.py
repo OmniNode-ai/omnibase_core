@@ -133,19 +133,10 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             try:
                 contract_path = Path(self.contract_path)
                 if contract_path.exists():
-                    from omnibase_core.models.core.model_generic_yaml import (
-                        ModelGenericYaml,
-                    )
-                    from omnibase_core.utils.safe_yaml_loader import (
-                        load_and_validate_yaml_model,
-                    )
-
                     with open(contract_path) as f:
                         # Load and validate YAML using Pydantic model
 
                         yaml_model = load_and_validate_yaml_model(
-                            file_path,
-                            ModelGenericYaml,
                         )
 
                         contract = yaml_model.model_dump()
@@ -764,7 +755,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 f"Event listener requires proper type conversion."
             )
             raise ModelOnexError(
-                msg,
                 ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             )
 
@@ -833,7 +823,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         return None
 
     def _publish_completion_event(
-        self,
         input_event: ModelOnexEvent,
         output_state: OutputStateT,
     ):
@@ -1005,7 +994,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         # Wrap in envelope and publish
         envelope = ModelEventEnvelope.create_broadcast(

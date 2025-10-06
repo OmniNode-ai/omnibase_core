@@ -22,16 +22,18 @@ class ModelFSMStateDefinition(BaseModel):
     and validation rules for FSM state handling.
     """
 
-    state_name: str = Field(..., description="Unique name for the state", min_length=1)
+    state_name: str = Field(
+        default=..., description="Unique name for the state", min_length=1
+    )
 
     state_type: str = Field(
-        ...,
+        default=...,
         description="Type classification (operational, snapshot, error, terminal)",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable state description",
         min_length=1,
     )

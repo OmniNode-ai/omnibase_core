@@ -30,7 +30,7 @@ class ModelValidationError(BaseModel):
     """
 
     message: str = Field(
-        ...,
+        default=...,
         description="Error message",
         min_length=1,
         max_length=1000,
@@ -131,7 +131,6 @@ class ModelValidationError(BaseModel):
         """Create a critical error."""
         field_id = None
         if field_name:
-            import hashlib
 
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
@@ -156,7 +155,6 @@ class ModelValidationError(BaseModel):
         """Create a warning."""
         field_id = None
         if field_name:
-            import hashlib
 
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(

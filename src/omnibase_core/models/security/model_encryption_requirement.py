@@ -20,13 +20,13 @@ class ModelEncryptionRequirement(BaseModel):
     """Encryption requirement configuration for payloads."""
 
     level: str = Field(
-        "optional",
+        default="optional",
         description="Requirement level: none, optional, required, always",
         pattern=r"^(none|optional|required|always)$",
     )
 
     minimum_key_size: int = Field(
-        256,
+        default=256,
         description="Minimum encryption key size in bits",
         ge=128,
     )
@@ -46,23 +46,23 @@ class ModelEncryptionRequirement(BaseModel):
     )
 
     require_authenticated_encryption: bool = Field(
-        True,
+        default=True,
         description="Require authenticated encryption modes (AEAD)",
     )
 
     key_rotation_days: int = Field(
-        90,
+        default=90,
         description="Maximum key age before rotation required",
         ge=1,
     )
 
     encrypt_metadata: bool = Field(
-        False,
+        default=False,
         description="Whether to also encrypt envelope metadata",
     )
 
     compression_before_encryption: bool = Field(
-        True,
+        default=True,
         description="Whether to compress data before encryption",
     )
 

@@ -66,11 +66,11 @@ class ModelComputationInputData(BaseModel):
     """
 
     computation_type: EnumComputationType = Field(
-        ...,
+        default=...,
         description="Type of computation being performed",
     )
     input_data: ModelComputationInputUnion = Field(
-        ...,
+        default=...,
         description="Computation-specific input data with discriminated union",
     )
     metadata_context: ModelComputationMetadataContext = Field(

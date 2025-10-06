@@ -46,13 +46,13 @@ class ModelEventTypeSubcontract(BaseModel):
 
     # Primary event configuration
     primary_events: list[str] = Field(
-        ...,
+        default=...,
         description="Primary events that this node produces/handles",
         min_length=1,
     )
 
     event_categories: list[str] = Field(
-        ...,
+        default=...,
         description="Event categories for classification and routing",
         min_length=1,
     )
@@ -69,7 +69,7 @@ class ModelEventTypeSubcontract(BaseModel):
     )
 
     event_routing: str = Field(
-        ...,
+        default=...,
         description="Event routing strategy or target routing group",
     )
 

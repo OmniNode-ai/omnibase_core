@@ -27,7 +27,7 @@ class ModelRateLimitPolicy(BaseModel):
     """
 
     policy_name: str = Field(
-        ...,
+        default=...,
         description="Policy identifier",
         pattern="^[a-z][a-z0-9_-]*$",
     )

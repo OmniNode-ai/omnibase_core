@@ -9,7 +9,6 @@ and Workflow context detection for tools participating in workflows.
 
 import os
 import uuid
-from typing import Any, Optional
 from uuid import UUID
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
@@ -67,11 +66,10 @@ class MixinDagSupport:
             correlation_id: workflow correlation ID
             node_id: This tool's node ID within the Workflow
         """
-        self._dag_correlation_id = correlation_id
-        self._workflow_node_id = node_id
+        self._dag_correlation_id = str(correlation_id)
+        self._workflow_node_id = str(node_id)
 
     def emit_dag_completion_event(
-        self,
         result: Any,
         status: str,
         error_message: str | None = None,

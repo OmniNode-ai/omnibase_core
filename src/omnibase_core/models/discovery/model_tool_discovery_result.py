@@ -35,6 +35,6 @@ class ModelToolDiscoveryResult(BaseModel):
         ge=0,
     )
     discovery_config: ModelDiscoveryConfig = Field(
-        ...,
+        default=...,
         description="Discovery configuration used",
     )

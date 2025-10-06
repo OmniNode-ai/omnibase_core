@@ -29,7 +29,7 @@ class ModelConfigurationSource(BaseModel):
     )
 
     source_type: str = Field(
-        ...,
+        default=...,
         description="Type of configuration source (file, environment, database, etc.)",
         pattern=r"^[a-z_]+$",
     )

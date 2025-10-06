@@ -27,12 +27,16 @@ class ModelOrchestratorInfo(BaseModel):
     """
 
     # Orchestrator identification
-    orchestrator_id: UUID = Field(..., description="Unique orchestrator identifier")
+    orchestrator_id: UUID = Field(
+        default=..., description="Unique orchestrator identifier"
+    )
     orchestrator_type: str = Field(
-        ...,
+        default=...,
         description="Orchestrator type (kubernetes/swarm/nomad/custom)",
     )
-    orchestrator_version: ModelSemVer = Field(..., description="Orchestrator version")
+    orchestrator_version: ModelSemVer = Field(
+        default=..., description="Orchestrator version"
+    )
 
     # Cluster information
     cluster_name: str | None = Field(default=None, description="Cluster name")

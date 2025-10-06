@@ -20,9 +20,11 @@ class ModelErrorDetails(BaseModel):
     """
 
     # Error identification
-    error_code: str = Field(..., description="Error code")
-    error_type: str = Field(..., description="Error type (validation/runtime/system)")
-    error_message: str = Field(..., description="Error message")
+    error_code: str = Field(default=..., description="Error code")
+    error_type: str = Field(
+        default=..., description="Error type (validation/runtime/system)"
+    )
+    error_message: str = Field(default=..., description="Error message")
 
     # Error context
     component: str | None = Field(
@@ -88,7 +90,7 @@ class ModelErrorDetails(BaseModel):
         ]
 
     @field_serializer("timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

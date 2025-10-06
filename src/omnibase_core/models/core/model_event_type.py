@@ -13,8 +13,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 
 class ModelEventType(BaseModel):
     """
@@ -25,7 +23,7 @@ class ModelEventType(BaseModel):
     """
 
     event_name: str = Field(
-        ...,
+        default=...,
         description="Event type identifier",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
@@ -33,7 +31,7 @@ class ModelEventType(BaseModel):
         default="onex",
         description="Event namespace to avoid conflicts",
     )
-    description: str = Field(..., description="Human-readable description")
+    description: str = Field(default=..., description="Human-readable description")
     schema_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Event schema version",

@@ -1,4 +1,5 @@
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 System Data Model.
@@ -14,7 +15,7 @@ class ModelSystemData(BaseModel):
 
     # System identifiers
     system_id: str | None = Field(default=None, description="System identifier")
-    version: str | None = Field(default=None, description="System version")
+    version: ModelSemVer | None = Field(default=None, description="System version")
     environment: str | None = Field(default=None, description="Environment name")
 
     # System metrics

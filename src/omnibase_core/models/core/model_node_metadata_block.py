@@ -121,7 +121,7 @@ class ModelNodeMetadataBlock(BaseModel):
     entrypoint: EntrypointBlock
     runtime_language_hint: str | None = None
     namespace: Namespace = Field(
-        ...,
+        default=...,
         description="Namespace, e.g., <prefix>.tools.<name>",
     )
     meta_type: EnumMetaType = Field(default=EnumMetaType.TOOL)

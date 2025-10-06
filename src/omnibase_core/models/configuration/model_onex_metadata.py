@@ -1,11 +1,3 @@
-import uuid
-from typing import Any, List, Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.error_codes import ModelOnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
-
 """
 Pydantic models and validators for OmniNode metadata block schema and validation.
 """
@@ -15,14 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-if TYPE_CHECKING:
-    from omnibase_core.enums.enum_lifecycle import EnumLifecycle
-    from omnibase_core.enums.enum_meta_type import EnumMetaType
-    from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
-else:
-    from omnibase_core.enums.enum_lifecycle import EnumLifecycle
-    from omnibase_core.enums.enum_meta_type import EnumMetaType
-    from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     import re
@@ -32,7 +17,10 @@ if TYPE_CHECKING:
         EnumProtocolVersion,
         EnumRuntimeLanguage,
     )
+    from omnibase_core.enums.enum_lifecycle import EnumLifecycle
     from omnibase_core.enums.enum_metadata import EnumLifecycle
+    from omnibase_core.enums.enum_meta_type import EnumMetaType
+    from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
     from omnibase_core.errors import ModelOnexError
     from omnibase_core.errors.error_codes import ModelCoreErrorCode
     from omnibase_core.models.configuration.model_metadata_config import (
@@ -51,22 +39,24 @@ class ModelOnexMetadata(BaseModel):
     """
 
     metadata_version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Must be a semver string, e.g., '0.1.0'",
     )
-    name: str = Field(..., description="Validator/tool name")
+    name: str = Field(default=..., description="Validator/tool name")
     namespace: "Namespace"
-    version: ModelSemVer = Field(..., description="Semantic version, e.g., 0.1.0")
+    version: ModelSemVer = Field(
+        default=..., description="Semantic version, e.g., 0.1.0"
+    )
     entrypoint: str | None = Field(
         default=None,
         description="Entrypoint URI string (e.g., python://file.py)",
     )
     protocols_supported: list[str] = Field(
-        ...,
+        default=...,
         description="List of supported protocols",
     )
     protocol_version: "EnumProtocolVersion" = Field(
-        ...,
+        default=...,
         description="Protocol version, e.g., 0.1.0",
     )
     author: str = Field(...)
@@ -103,10 +93,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("metadata_version")
     @classmethod
     def check_metadata_version(cls, v: str) -> str:
-        import re
-
-        from omnibase_core.errors import ModelOnexError
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = "metadata_version must be a semver string, e.g., '0.1.0'"
@@ -119,10 +105,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("name")
     @classmethod
     def check_name(cls, v: str) -> str:
-        import re
-
-        from omnibase_core.errors import ModelOnexError
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v):
             msg = f"Invalid name: {v}"
@@ -131,8 +113,7 @@ class ModelOnexMetadata(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def check_namespace(cls, v):
-        from omnibase_core.models.core.model_node_metadata import Namespace
+    def check_namespace(cls, v: Any) -> Any:
 
         if isinstance(v, Namespace):
             return v
@@ -149,10 +130,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("version")
     @classmethod
     def check_version(cls, v: str) -> str:
-        import re
-
-        from omnibase_core.errors import ModelOnexError
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = f"Invalid version: {v}"
@@ -162,8 +139,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("protocols_supported", mode="before")
     @classmethod
     def check_protocols_supported(cls, v: list[str] | str) -> list[str]:
-        from omnibase_core.errors import ModelOnexError
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
         if isinstance(v, str):
             # Try to parse as list[Any]from string
@@ -187,7 +162,7 @@ class ModelOnexMetadata(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, v):
+    def validate_entrypoint(cls, v: Any) -> Any:
         if v is None or v == "":
             return None
         if isinstance(v, str) and "://" in v:

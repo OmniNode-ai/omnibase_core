@@ -21,7 +21,7 @@ class ModelYamlSchemaProperty(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     property_type: str = Field(
-        ...,
+        default=...,
         description="Property type (string, integer, object, array, etc.)",
     )
     description: str = Field(default="", description="Property description")

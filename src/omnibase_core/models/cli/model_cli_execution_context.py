@@ -41,14 +41,16 @@ class ModelCliExecutionContext(BaseModel):
     """
 
     # Context identification
-    key: str = Field(..., description="Context key identifier")
+    key: str = Field(default=..., description="Context key identifier")
     value: object = Field(
-        ...,
+        default=...,
         description="Context value - validated against context_type discriminator",
     )
 
     # Context metadata
-    context_type: EnumContextType = Field(..., description="Type of context data")
+    context_type: EnumContextType = Field(
+        default=..., description="Type of context data"
+    )
     is_persistent: bool = Field(default=False, description="Whether context persists")
     priority: int = Field(default=0, description="Context priority", ge=0, le=10)
 

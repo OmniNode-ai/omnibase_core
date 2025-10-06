@@ -26,24 +26,28 @@ if TYPE_CHECKING:
 class ModelSecuritySummary(BaseModel):
     """Comprehensive security summary for reporting."""
 
-    envelope_id: str = Field(..., description="Envelope identifier")
-    security_level: str = Field(..., description="Required security level")
-    is_encrypted: bool = Field(..., description="Whether payload is encrypted")
-    signature_required: bool = Field(..., description="Whether signatures are required")
-    content_hash: str = Field(..., description="Content hash for integrity")
+    envelope_id: str = Field(default=..., description="Envelope identifier")
+    security_level: str = Field(default=..., description="Required security level")
+    is_encrypted: bool = Field(default=..., description="Whether payload is encrypted")
+    signature_required: bool = Field(
+        default=..., description="Whether signatures are required"
+    )
+    content_hash: str = Field(default=..., description="Content hash for integrity")
     signature_chain: "ModelSignatureChainSummary" = Field(
-        ...,
+        default=...,
         description="Signature chain summary",
     )
     compliance: "ModelComplianceSummary" = Field(
-        ...,
+        default=...,
         description="Compliance information",
     )
     authorization: "ModelAuthorizationSummary" = Field(
-        ...,
+        default=...,
         description="Authorization requirements",
     )
-    security_events_count: int = Field(..., description="Number of security events")
+    security_events_count: int = Field(
+        default=..., description="Number of security events"
+    )
     last_security_event: "ModelSecurityEventSummary" | None = Field(
         default=None,
         description="Most recent security event",

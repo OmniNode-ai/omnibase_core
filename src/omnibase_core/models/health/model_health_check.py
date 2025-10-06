@@ -26,7 +26,7 @@ class ModelHealthCheck(BaseModel):
     """Strongly typed health check configuration."""
 
     check_type: EnumHealthCheckType = Field(
-        ...,
+        default=...,
         description="Type of health check to perform",
     )
 
@@ -46,7 +46,7 @@ class ModelHealthCheck(BaseModel):
     )
 
     expected_status_code: int | None = Field(
-        200,
+        default=200,
         description="Expected HTTP status code for success",
         ge=100,
         le=599,
@@ -58,7 +58,7 @@ class ModelHealthCheck(BaseModel):
     )
 
     timeout_seconds: int = Field(
-        5,
+        default=5,
         description="Health check timeout in seconds",
         ge=1,
         le=300,

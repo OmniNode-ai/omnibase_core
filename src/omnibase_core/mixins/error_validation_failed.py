@@ -11,7 +11,7 @@ class ValidationFailedError(FailFastError):
         message: str,
         field: str | None = None,
         value: Any = None,
-    ):
+    ) -> None:
         details = {}
         if field:
             details["field"] = field

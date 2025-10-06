@@ -23,7 +23,7 @@ class ModelHubConsulRegistrationInput(BaseModel):
     """Input model for Hub Consul Registration tool operations."""
 
     action: str = Field(
-        ...,
+        default=...,
         description="Action to perform (auto_register, register_hub, deregister_hub, etc.)",
     )
 

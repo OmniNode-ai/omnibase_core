@@ -16,8 +16,10 @@ class ModelDataMessageContent(ModelMessageContentBase):
         default=EnumMessageType.DATA,
         description="Data message type",
     )
-    data_type: str = Field(..., description="Type of data being transferred")
-    data_schema: str = Field(..., description="Schema identifier for data validation")
+    data_type: str = Field(default=..., description="Type of data being transferred")
+    data_schema: str = Field(
+        default=..., description="Schema identifier for data validation"
+    )
     compression_used: bool = Field(
         default=False,
         description="Whether data is compressed",

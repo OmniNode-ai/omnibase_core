@@ -25,7 +25,9 @@ from omnibase_core.models.discovery.model_event_discovery_response import (
 class ModelContainerAdapterOutput(BaseModel):
     """Output model for Container Adapter tool operations."""
 
-    action_result: str = Field(..., description="Result of the requested action")
+    action_result: str = Field(
+        default=..., description="Result of the requested action"
+    )
 
     # Optional outputs based on action
     discovery_response: ModelEventDiscoveryResponse | None = Field(
@@ -60,13 +62,15 @@ class ModelContainerAdapterOutput(BaseModel):
 
     # Always present metadata
     discovery_phase: EnumDiscoveryPhase = Field(
-        ...,
+        default=...,
         description="Current discovery implementation phase",
     )
 
-    container_adapter_id: UUID = Field(..., description="Container Adapter instance ID")
+    container_adapter_id: UUID = Field(
+        default=..., description="Container Adapter instance ID"
+    )
 
-    operation_timestamp: str = Field(..., description="Operation timestamp")
+    operation_timestamp: str = Field(default=..., description="Operation timestamp")
 
     # Error handling
     error_details: str | None = Field(
@@ -75,7 +79,7 @@ class ModelContainerAdapterOutput(BaseModel):
     )
 
     operation_successful: bool = Field(
-        True,
+        default=True,
         description="Whether operation was successful",
     )
 

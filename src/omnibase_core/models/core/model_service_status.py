@@ -1,4 +1,5 @@
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Service Status Model.
@@ -12,16 +13,18 @@ from pydantic import BaseModel, Field
 class ModelServiceStatus(BaseModel):
     """Status of a system service."""
 
-    service_name: str = Field(..., description="Name of the service")
+    service_name: str = Field(default=..., description="Name of the service")
     service_type: str | None = Field(default=None, description="Type of service")
-    status: str = Field(..., description="Service status (running, stopped, error)")
+    status: str = Field(
+        default=..., description="Service status (running, stopped, error)"
+    )
     health: str | None = Field(
         default=None,
         description="Service health (healthy, degraded, unhealthy)",
     )
 
     # Service details
-    version: str | None = Field(default=None, description="Service version")
+    version: ModelSemVer | None = Field(default=None, description="Service version")
     uptime_seconds: int | None = Field(default=None, description="Service uptime")
     last_check: str | None = Field(
         default=None, description="Last health check timestamp"

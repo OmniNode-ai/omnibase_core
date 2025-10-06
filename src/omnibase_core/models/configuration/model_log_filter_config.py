@@ -63,7 +63,7 @@ class ModelLogFilterConfig(BaseModel):
 
     # Sampling
     sample_rate: float = Field(
-        1.0,
+        default=1.0,
         description="Sample rate (0.0-1.0) for probabilistic filtering",
         ge=0.0,
         le=1.0,

@@ -24,8 +24,8 @@ class ModelRequestConfig(BaseModel):
     """
 
     # HTTP method and URL
-    method: str = Field("GET", description="HTTP method")
-    url: str = Field(..., description="Request URL")
+    method: str = Field(default="GET", description="HTTP method")
+    url: str = Field(default=..., description="Request URL")
 
     # Headers and parameters
     headers: dict[str, str] = Field(default_factory=dict, description="Request headers")
@@ -50,8 +50,10 @@ class ModelRequestConfig(BaseModel):
     )
 
     # Timeouts
-    connect_timeout: float = Field(10.0, description="Connection timeout in seconds")
-    read_timeout: float = Field(30.0, description="Read timeout in seconds")
+    connect_timeout: float = Field(
+        default=10.0, description="Connection timeout in seconds"
+    )
+    read_timeout: float = Field(default=30.0, description="Read timeout in seconds")
 
     # SSL/TLS - Explicit type handling
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
@@ -71,7 +73,7 @@ class ModelRequestConfig(BaseModel):
 
     # Advanced options
     follow_redirects: bool = Field(default=True, description="Follow HTTP redirects")
-    max_redirects: int = Field(10, description="Maximum number of redirects")
+    max_redirects: int = Field(default=10, description="Maximum number of redirects")
     stream: bool = Field(default=False, description="Stream response content")
 
     model_config = ConfigDict()

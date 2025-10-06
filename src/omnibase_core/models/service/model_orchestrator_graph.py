@@ -16,8 +16,8 @@ class ModelOrchestratorGraph(BaseModel):
     """ONEX graph model for orchestrator."""
 
     # Graph identification
-    graph_id: str = Field(..., description="Graph identifier")
-    graph_name: str = Field(..., description="Graph name")
+    graph_id: str = Field(default=..., description="Graph identifier")
+    graph_name: str = Field(default=..., description="Graph name")
 
     # Graph structure
     nodes: list[ModelGraphNode] = Field(default_factory=list, description="Graph nodes")

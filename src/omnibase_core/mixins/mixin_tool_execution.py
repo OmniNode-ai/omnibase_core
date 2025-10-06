@@ -154,7 +154,6 @@ class MixinToolExecution:
         return {"result": str(output_state)}
 
     def _publish_execution_response(
-        self,
         correlation_id: str,
         success: bool,
         result: dict[str, Any] | None,

@@ -30,15 +30,17 @@ class ModelOnexInternalProcessingContext(BaseModel):
 
     # Required traceability fields
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Required correlation ID for tracking",
     )
-    event_id: UUID = Field(..., description="Required event ID for tracking")
-    session_id: UUID = Field(..., description="Required session ID for tracking")
+    event_id: UUID = Field(default=..., description="Required event ID for tracking")
+    session_id: UUID = Field(
+        default=..., description="Required session ID for tracking"
+    )
 
     # Processing metadata
-    node_name: str = Field(..., description="Node performing the processing")
-    operation: str = Field(..., description="Operation being performed")
+    node_name: str = Field(default=..., description="Node performing the processing")
+    operation: str = Field(default=..., description="Operation being performed")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Processing timestamp",

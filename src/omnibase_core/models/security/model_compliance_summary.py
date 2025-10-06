@@ -12,14 +12,18 @@ from pydantic import BaseModel, Field
 class ModelComplianceSummary(BaseModel):
     """Compliance information summary."""
 
-    frameworks: list[str] = Field(..., description="Applicable compliance frameworks")
-    classification: str = Field(..., description="Data classification level")
+    frameworks: list[str] = Field(
+        default=..., description="Applicable compliance frameworks"
+    )
+    classification: str = Field(default=..., description="Data classification level")
     contains_pii: bool = Field(
-        ...,
+        default=...,
         description="Contains personally identifiable information",
     )
-    contains_phi: bool = Field(..., description="Contains protected health information")
-    contains_financial: bool = Field(..., description="Contains financial data")
+    contains_phi: bool = Field(
+        default=..., description="Contains protected health information"
+    )
+    contains_financial: bool = Field(default=..., description="Contains financial data")
 
     def get_framework_count(self) -> int:
         """Get number of compliance frameworks."""

@@ -28,10 +28,12 @@ class ModelDiscoveryResponse(BaseModel):
     """
 
     # Operation result
-    operation: str = Field(..., description="Discovery operation that was performed")
+    operation: str = Field(
+        default=..., description="Discovery operation that was performed"
+    )
 
     status: str = Field(
-        ...,
+        default=...,
         description="Operation status",
         json_schema_extra={"enum": ["success", "error", "timeout", "partial"]},
     )
@@ -49,7 +51,7 @@ class ModelDiscoveryResponse(BaseModel):
 
     # Result metadata
     total_count: int = Field(
-        0,
+        default=0,
         description="Total number of tools found before filtering",
     )
 
@@ -79,7 +81,7 @@ class ModelDiscoveryResponse(BaseModel):
     )
 
     partial_response: bool = Field(
-        False,
+        default=False,
         description="Whether this is a partial response",
     )
 

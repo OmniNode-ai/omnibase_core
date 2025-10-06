@@ -17,7 +17,7 @@ class ModelParallelWorkflowData(ModelWorkflowDataBase):
         description="Parallel workflow type",
     )
     parallel_branches: list[list[str]] = Field(
-        ...,
+        default=...,
         description="Parallel execution branches",
     )
     synchronization_points: list[str] = Field(

@@ -25,14 +25,16 @@ class ModelLoadBalancingAlgorithm(BaseModel):
     """
 
     algorithm_name: str = Field(
-        ...,
+        default=...,
         description="Load balancing algorithm name",
         pattern="^(round_robin|least_connections|weighted_round_robin|ip_hash|least_response_time|resource_based|custom)$",
     )
 
-    display_name: str = Field(..., description="Human-readable algorithm name")
+    display_name: str = Field(default=..., description="Human-readable algorithm name")
 
-    description: str = Field(..., description="Algorithm description and behavior")
+    description: str = Field(
+        default=..., description="Algorithm description and behavior"
+    )
 
     parameters: ModelLoadBalancingParameters = Field(
         default_factory=lambda: ModelLoadBalancingParameters(),

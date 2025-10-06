@@ -15,9 +15,9 @@ from pydantic import BaseModel, Field
 class ModelGeneratedFile(BaseModel):
     """Represents a generated file."""
 
-    path: Path = Field(..., description="Path where the file will be written")
-    content: str = Field(..., description="Content of the file")
+    path: Path = Field(default=..., description="Path where the file will be written")
+    content: str = Field(default=..., description="Content of the file")
     file_type: str = Field(
-        ...,
+        default=...,
         description="Type of file (models, config, error_codes, etc.)",
     )

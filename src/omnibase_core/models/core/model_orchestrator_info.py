@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 from pydantic import Field
+from uuid import UUID
 
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.
@@ -23,12 +24,14 @@ class ModelOrchestratorInfo(BaseModel):
     """
 
     # Orchestrator identification
-    orchestrator_id: str = Field(..., description="Unique orchestrator identifier")
+    orchestrator_id: str = Field(
+        default=..., description="Unique orchestrator identifier"
+    )
     orchestrator_type: str = Field(
-        ...,
+        default=...,
         description="Orchestrator type (kubernetes/swarm/nomad/custom)",
     )
-    orchestrator_version: str = Field(..., description="Orchestrator version")
+    orchestrator_version: str = Field(default=..., description="Orchestrator version")
 
     # Cluster information
     cluster_name: str | None = Field(default=None, description="Cluster name")
@@ -38,20 +41,20 @@ class ModelOrchestratorInfo(BaseModel):
     )
 
     # Node information
-    node_id: str | None = Field(default=None, description="Node identifier")
+    node_id: UUID | None = Field(default=None, description="Node identifier")
     node_name: str | None = Field(default=None, description="Node name")
     node_role: str | None = Field(
         default=None, description="Node role (master/worker/edge)"
     )
 
     # Workflow information
-    workflow_id: str | None = Field(default=None, description="Current workflow ID")
+    workflow_id: UUID | None = Field(default=None, description="Current workflow ID")
     workflow_name: str | None = Field(default=None, description="Workflow name")
     workflow_step: str | None = Field(default=None, description="Current workflow step")
     workflow_status: str | None = Field(default=None, description="Workflow status")
 
     # Execution context
-    execution_id: str | None = Field(default=None, description="Execution identifier")
+    execution_id: UUID | None = Field(default=None, description="Execution identifier")
     parent_execution_id: str | None = Field(
         default=None, description="Parent execution ID"
     )

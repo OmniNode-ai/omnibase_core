@@ -19,9 +19,13 @@ class ModelGenericContract(BaseModel):
     """
 
     # Core contract fields
-    contract_version: ModelSemVer = Field(..., description="Contract schema version")
-    node_name: str = Field(..., description="Name of the node/tool")
-    node_version: ModelSemVer = Field(..., description="Version of the node/tool")
+    contract_version: ModelSemVer = Field(
+        default=..., description="Contract schema version"
+    )
+    node_name: str = Field(default=..., description="Name of the node/tool")
+    node_version: ModelSemVer = Field(
+        default=..., description="Version of the node/tool"
+    )
     description: str | None = Field(
         default=None,
         description="Description of what this tool does",
@@ -50,8 +54,8 @@ class ModelGenericContract(BaseModel):
     )
 
     # Schema definitions
-    input_state: dict[str, Any] = Field(..., description="Input state schema")
-    output_state: dict[str, Any] = Field(..., description="Output state schema")
+    input_state: dict[str, Any] = Field(default=..., description="Input state schema")
+    output_state: dict[str, Any] = Field(default=..., description="Output state schema")
     definitions: dict[str, Any] | None = Field(
         default=None,
         description="Shared schema definitions",

@@ -25,10 +25,10 @@ class ModelOrchestratorStep(BaseModel):
     """
 
     # Step identification
-    step_id: str = Field(..., description="Unique step identifier")
-    name: str = Field(..., description="Step name")
+    step_id: str = Field(default=..., description="Unique step identifier")
+    name: str = Field(default=..., description="Step name")
     step_type: str = Field(
-        ...,
+        default=...,
         description="Type of step (e.g., 'node', 'condition', 'parallel')",
     )
 
@@ -70,7 +70,7 @@ class ModelOrchestratorStep(BaseModel):
         description="Map step outputs to plan variables",
     )
     continue_on_error: bool = Field(
-        False,
+        default=False,
         description="Whether to continue if step fails",
     )
 

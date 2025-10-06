@@ -29,19 +29,19 @@ class ModelExecutionPriority(BaseModel):
     """
 
     priority_value: int = Field(
-        ...,
+        default=...,
         description="Priority value (higher = more important)",
         ge=0,
         le=100,
     )
 
     priority_class: str = Field(
-        ...,
+        default=...,
         description="Priority class name",
         pattern="^[a-z][a-z0-9_-]*$",
     )
 
-    display_name: str = Field(..., description="Human-readable priority name")
+    display_name: str = Field(default=..., description="Human-readable priority name")
 
     preemptible: bool = Field(
         default=True,
@@ -49,7 +49,7 @@ class ModelExecutionPriority(BaseModel):
     )
 
     resource_allocation: ModelResourceAllocation = Field(
-        ...,
+        default=...,
         description="Resource allocation for this priority",
     )
 

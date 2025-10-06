@@ -49,14 +49,14 @@ class ModelWorkflowStepExecution(BaseModel):
     )
 
     step_name: str = Field(
-        ...,
+        default=...,
         description="Human-readable name for this step",
         min_length=1,
         max_length=200,
     )
 
     execution_mode: EnumExecutionMode = Field(
-        ...,
+        default=...,
         description="Execution mode for this step",
     )
 

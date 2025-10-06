@@ -26,7 +26,7 @@ class ModelDataHandlingDeclaration(BaseModel):
     """
 
     processes_sensitive_data: bool = Field(
-        ...,
+        default=...,
         description="Whether this component processes sensitive data requiring special handling",
     )
     data_residency_required: str | None = Field(

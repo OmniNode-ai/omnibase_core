@@ -30,7 +30,7 @@ class ModelStructuredComputationInput(ModelComputationInputBase):
         description="Structured computation type discriminator",
     )
     schema_definition: str = Field(
-        ...,
+        default=...,
         description="Schema definition for structured data",
     )
     validation_level: str = Field(default="strict", description="Data validation level")

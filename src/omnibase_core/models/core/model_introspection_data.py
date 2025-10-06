@@ -21,9 +21,9 @@ class ModelIntrospectionData(BaseModel):
     """
 
     # Core introspection fields
-    node_name: str = Field(..., description="Node name")
-    node_version: ModelSemVer = Field(..., description="Node version")
-    node_type: str = Field(..., description="Node type/category")
+    node_name: str = Field(default=..., description="Node name")
+    node_version: ModelSemVer = Field(default=..., description="Node version")
+    node_type: str = Field(default=..., description="Node type/category")
     description: str | None = Field(default=None, description="Node description")
 
     # Capabilities
@@ -81,7 +81,7 @@ class ModelIntrospectionData(BaseModel):
     documentation_url: str | None = Field(default=None, description="Documentation URL")
 
     # Status and health
-    status: str = Field("active", description="Node status")
+    status: str = Field(default="active", description="Node status")
     last_updated: datetime | None = Field(
         default=None, description="Last update timestamp"
     )

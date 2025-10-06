@@ -26,19 +26,25 @@ class ModelContractCache(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # === CACHE IDENTIFICATION ===
-    cache_key: str = Field(..., description="Unique cache key for the contract")
-    file_path: Path = Field(..., description="Path to the original contract file")
+    cache_key: str = Field(default=..., description="Unique cache key for the contract")
+    file_path: Path = Field(
+        default=..., description="Path to the original contract file"
+    )
 
     # === CACHED CONTENT ===
-    content: ModelContractContent = Field(..., description="Cached contract content")
+    content: ModelContractContent = Field(
+        default=..., description="Cached contract content"
+    )
 
     # === CACHE METADATA ===
-    cached_at: datetime = Field(..., description="Timestamp when cache was created")
-    file_modified_at: datetime = Field(
-        ..., description="Last modification time of source file"
+    cached_at: datetime = Field(
+        default=..., description="Timestamp when cache was created"
     )
-    file_size: int = Field(..., description="Size of source file in bytes")
-    content_hash: str = Field(..., description="Hash of the cached content")
+    file_modified_at: datetime = Field(
+        default=..., description="Last modification time of source file"
+    )
+    file_size: int = Field(default=..., description="Size of source file in bytes")
+    content_hash: str = Field(default=..., description="Hash of the cached content")
 
     # === CACHE VALIDITY ===
     is_valid: bool = Field(

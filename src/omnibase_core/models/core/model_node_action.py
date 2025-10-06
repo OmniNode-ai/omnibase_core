@@ -32,17 +32,17 @@ class ModelNodeAction(ModelActionBase):
     """
 
     action_name: str = Field(
-        ...,
+        default=...,
         description="Unique action identifier (human-readable name)",
     )
     action_type: ModelNodeActionType = Field(
-        ...,
+        default=...,
         description="Rich action type with embedded metadata",
     )
-    category: ModelActionCategory = Field(..., description="Action category")
-    display_name: str = Field(..., description="Human-readable action name")
+    category: ModelActionCategory = Field(default=..., description="Action category")
+    display_name: str = Field(default=..., description="Human-readable action name")
     description: str = Field(
-        ...,
+        default=...,
         description="Detailed description of what this action does",
     )
 

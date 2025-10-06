@@ -26,14 +26,16 @@ class ModelArgumentDescription(BaseModel):
     """
 
     name: str = Field(
-        ...,
+        default=...,
         description="Argument name (without -- prefix)",
         pattern=r"^[a-z][a-z0-9_-]*$",
     )
 
-    type: EnumArgumentType = Field(..., description="Argument data type")
+    type: EnumArgumentType = Field(default=..., description="Argument data type")
 
-    description: str = Field(..., description="Human-readable argument description")
+    description: str = Field(
+        default=..., description="Human-readable argument description"
+    )
 
     required: bool = Field(default=False, description="Whether argument is required")
 

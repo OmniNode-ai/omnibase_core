@@ -35,13 +35,13 @@ class ModelExternalServiceConfig(BaseModel):
     """
 
     service_name: str = Field(
-        ...,
+        default=...,
         description="Name of the external service (e.g., 'database', 'api', 'cache')",
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=100,
     )
     service_type: str = Field(
-        ...,
+        default=...,
         description="Type of service (e.g., 'event_bus', 'database', 'rest_api')",
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=50,
@@ -55,17 +55,17 @@ class ModelExternalServiceConfig(BaseModel):
         description="Service-specific connection configuration with validation",
     )
     health_check_enabled: bool = Field(
-        True,
+        default=True,
         description="Whether to perform health checks before using this service",
     )
     health_check_timeout: int = Field(
-        5,
+        default=5,
         description="Timeout in seconds for health check operations",
         ge=1,
         le=300,
     )
     required: bool = Field(
-        True,
+        default=True,
         description="Whether this service is required for the scenario. If False, gracefully degrade if unavailable.",
     )
     retry_config: ModelRetryConfig | None = Field(
@@ -110,8 +110,6 @@ class ModelExternalServiceConfig(BaseModel):
                             error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.errors import ModelOnexError
-                        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
                         msg = f"Failed to create database connection config: {e!s}"
                         raise ModelOnexError(
@@ -124,8 +122,6 @@ class ModelExternalServiceConfig(BaseModel):
                             **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-                        from omnibase_core.errors import ModelOnexError
-                        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
                         msg = f"Invalid REST API connection config: {e!s}"
                         raise ModelOnexError(
@@ -133,8 +129,6 @@ class ModelExternalServiceConfig(BaseModel):
                             error_code=ModelCoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.errors import ModelOnexError
-                        from omnibase_core.errors.error_codes import ModelCoreErrorCode
 
                         msg = f"Failed to create REST API connection config: {e!s}"
                         raise ModelOnexError(

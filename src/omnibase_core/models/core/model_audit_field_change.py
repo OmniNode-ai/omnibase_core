@@ -14,10 +14,12 @@ from omnibase_core.models.core.model_schema_value import ModelSchemaValue
 class ModelAuditFieldChange(BaseModel):
     """Individual field change in an audit entry."""
 
-    field_path: str = Field(..., description="Dot-separated path to changed field")
-    old_value: ModelSchemaValue = Field(..., description="Previous value")
-    new_value: ModelSchemaValue = Field(..., description="New value")
-    value_type: str = Field(..., description="Type of the value")
+    field_path: str = Field(
+        default=..., description="Dot-separated path to changed field"
+    )
+    old_value: ModelSchemaValue = Field(default=..., description="Previous value")
+    new_value: ModelSchemaValue = Field(default=..., description="New value")
+    value_type: str = Field(default=..., description="Type of the value")
 
     def is_sensitive(self) -> bool:
         """Check if this field contains sensitive data."""

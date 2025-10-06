@@ -38,7 +38,6 @@ class ModelOnexBatchResult(BaseModel):
         emit_log_event_sync(
             LogLevel.DEBUG,
             "export_schema called",
-            node_id="model_onex_batch_result",
-            event_bus=None,  # Will be injected properly
+            {"node_id": "model_onex_batch_result", "event_bus": None},
         )
         return json.dumps(cls.model_json_schema(), indent=2)

@@ -25,34 +25,36 @@ class ModelToolImplementation(BaseModel):
     """
 
     # Implementation identification
-    tool_name: str = Field(..., description="Name of the resolved tool")
+    tool_name: str = Field(default=..., description="Name of the resolved tool")
     implementation_class: str = Field(
-        ...,
+        default=...,
         description="Class name of the tool implementation",
     )
     module_path: str = Field(
-        ...,
+        default=...,
         description="Python module path to the implementation",
     )
 
     # Implementation metadata
-    version: ModelSemVer = Field(..., description="Version of the tool implementation")
+    version: ModelSemVer = Field(
+        default=..., description="Version of the tool implementation"
+    )
     registry_source: str = Field(
-        ...,
+        default=...,
         description="Registry that provided this implementation",
     )
 
     # Duck typing support
     has_process_method: bool = Field(
-        True,
+        default=True,
         description="Whether the implementation has a process() method",
     )
     accepts_input_state: bool = Field(
-        True,
+        default=True,
         description="Whether the implementation accepts input state models",
     )
     returns_output_state: bool = Field(
-        True,
+        default=True,
         description="Whether the implementation returns output state models",
     )
 
@@ -67,6 +69,6 @@ class ModelToolImplementation(BaseModel):
 
     # Instance reference (opaque for serialization safety)
     instance_available: bool = Field(
-        False,
+        default=False,
         description="Whether a live instance is available",
     )

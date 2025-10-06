@@ -38,7 +38,7 @@ class ModelConditionValue(BaseModel):
         description="List of integers for comparison",
     )
 
-    def get_value(self):
+    def get_value(self) -> str | int | float | bool | list[str] | list[int] | None:
         """Get the actual value that is set."""
         if self.string_value is not None:
             return self.string_value

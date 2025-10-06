@@ -19,12 +19,12 @@ class ModelCliAction(BaseModel):
     """
 
     action_name: str = Field(
-        ...,
+        default=...,
         description="Action identifier",
         pattern="^[a-z][a-z0-9_]*$",
     )
-    node_name: str = Field(..., description="Node that provides this action")
-    description: str = Field(..., description="Human-readable description")
+    node_name: str = Field(default=..., description="Node that provides this action")
+    description: str = Field(default=..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
     category: str | None = Field(
         default=None, description="Action category for grouping"

@@ -30,9 +30,11 @@ class ModelTimeRestrictions(BaseModel):
         pattern=r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)(,(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun))*$",
     )
 
-    timezone: str | None = Field("UTC", description="Timezone for time restrictions")
+    timezone: str | None = Field(
+        default="UTC", description="Timezone for time restrictions"
+    )
 
     enforce_business_hours_only: bool = Field(
-        False,
+        default=False,
         description="Whether to enforce business hours only",
     )

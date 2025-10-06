@@ -35,7 +35,9 @@ class ModelContractLoader(BaseModel):
         default_factory=list,
         description="Current resolution stack for circular reference detection",
     )
-    base_path: Path = Field(..., description="Base path for contract resolution")
+    base_path: Path = Field(
+        default=..., description="Base path for contract resolution"
+    )
     loaded_contracts: dict[str, ModelContractContent] = Field(
         default_factory=dict,
         description="Successfully loaded contracts",

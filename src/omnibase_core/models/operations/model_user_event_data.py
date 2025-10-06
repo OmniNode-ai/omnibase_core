@@ -13,7 +13,9 @@ class ModelUserEventData(ModelEventDataBase):
         default=EnumEventType.USER,
         description="User event type",
     )
-    user_action: str = Field(..., description="User action that triggered the event")
+    user_action: str = Field(
+        default=..., description="User action that triggered the event"
+    )
     session_context: dict[str, str] = Field(
         default_factory=dict,
         description="User session context",

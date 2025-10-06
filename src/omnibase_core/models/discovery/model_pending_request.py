@@ -18,7 +18,7 @@ class ModelPendingRequest(BaseModel):
     """Tracks pending introspection requests for correlation."""
 
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique correlation ID for request-response matching",
     )
     timestamp: datetime = Field(

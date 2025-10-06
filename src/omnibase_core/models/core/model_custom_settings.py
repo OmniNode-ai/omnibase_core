@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Custom settings model.
@@ -35,7 +36,7 @@ class ModelCustomSettings(BaseModel):
     )
 
     # Metadata
-    version: str = Field("1.0", description="Settings version")
+    version: ModelSemVer = Field(default="1.0", description="Settings version")
     last_modified: datetime | None = Field(
         default=None,
         description="Last modification time",
@@ -43,7 +44,7 @@ class ModelCustomSettings(BaseModel):
 
     # Validation
     validate_on_set: bool = Field(
-        False,
+        default=False,
         description="Validate settings on modification",
     )
     allow_unknown: bool = Field(default=True, description="Allow unknown settings")

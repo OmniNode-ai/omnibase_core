@@ -25,7 +25,9 @@ class ModelNodeReference(BaseModel):
     with namespaces for isolation and extensibility.
     """
 
-    node_name: str = Field(..., description="Node name", pattern="^[a-z][a-z0-9_]*$")
+    node_name: str = Field(
+        default=..., description="Node name", pattern="^[a-z][a-z0-9_]*$"
+    )
 
     namespace: str | None = Field(
         default=None,

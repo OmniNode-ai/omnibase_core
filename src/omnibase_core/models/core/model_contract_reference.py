@@ -20,10 +20,10 @@ class ModelContractReference(BaseModel):
     """Model representing a contract reference ($ref)."""
 
     ref_path: str = Field(
-        ...,
+        default=...,
         description="The reference path (e.g., 'contracts/models.yaml#/InputState')",
     )
-    file_path: Path = Field(..., description="Resolved file path")
+    file_path: Path = Field(default=..., description="Resolved file path")
     json_path: str = Field(
         default="",
         description="JSON path within the file (empty string if none)",

@@ -15,11 +15,11 @@ from pydantic import BaseModel, Field
 class ModelEnforcementAction(BaseModel):
     """Enforcement action taken by policy engine."""
 
-    timestamp: datetime = Field(..., description="When action was taken")
-    envelope_id: str = Field(..., description="Envelope ID")
-    policy_id: str = Field(..., description="Policy that triggered action")
-    decision: str = Field(..., description="Decision made (allow, deny, etc)")
-    confidence: float = Field(..., description="Confidence in decision")
-    reasons: list[str] = Field(..., description="Reasons for decision")
-    enforcement_actions: list[str] = Field(..., description="Actions taken")
-    evaluation_time_ms: float = Field(..., description="Time to evaluate")
+    timestamp: datetime = Field(default=..., description="When action was taken")
+    envelope_id: str = Field(default=..., description="Envelope ID")
+    policy_id: str = Field(default=..., description="Policy that triggered action")
+    decision: str = Field(default=..., description="Decision made (allow, deny, etc)")
+    confidence: float = Field(default=..., description="Confidence in decision")
+    reasons: list[str] = Field(default=..., description="Reasons for decision")
+    enforcement_actions: list[str] = Field(default=..., description="Actions taken")
+    evaluation_time_ms: float = Field(default=..., description="Time to evaluate")

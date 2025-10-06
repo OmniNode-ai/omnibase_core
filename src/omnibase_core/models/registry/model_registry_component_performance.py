@@ -16,19 +16,23 @@ class ModelRegistryComponentPerformance(BaseModel):
     Tracks performance metrics for tools and services.
     """
 
-    name: str = Field(..., description="Name of the component (tool or service)")
+    name: str = Field(
+        default=..., description="Name of the component (tool or service)"
+    )
 
-    type: str = Field(..., description="Component type", pattern="^(tool|service)$")
+    type: str = Field(
+        default=..., description="Component type", pattern="^(tool|service)$"
+    )
 
     category: str = Field(
-        ...,
+        default=...,
         description="Component category (tool type or service type)",
     )
 
     response_time_ms: float = Field(
-        ...,
+        default=...,
         description="Response time in milliseconds",
         ge=0,
     )
 
-    status: str = Field(..., description="Current health status of component")
+    status: str = Field(default=..., description="Current health status of component")

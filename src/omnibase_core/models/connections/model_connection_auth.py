@@ -141,7 +141,6 @@ class ModelConnectionAuth(BaseModel):
         password: str,
     ) -> ModelConnectionAuth:
         """Create password-based authentication."""
-        import hashlib
 
         # Generate UUID from username
         user_hash = hashlib.sha256(username.encode()).hexdigest()

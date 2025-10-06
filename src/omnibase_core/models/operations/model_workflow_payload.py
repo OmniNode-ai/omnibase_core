@@ -35,7 +35,7 @@ class ModelWorkflowPayload(BaseModel):
     """
 
     workflow_type: EnumWorkflowType = Field(
-        ...,
+        default=...,
         description="Discriminated workflow type",
     )
     workflow_data: (
@@ -44,7 +44,7 @@ class ModelWorkflowPayload(BaseModel):
         | ModelConditionalWorkflowData
         | ModelLoopWorkflowData
     ) = Field(
-        ...,
+        default=...,
         description="Workflow-specific data with discriminated union",
         discriminator="workflow_type",
     )

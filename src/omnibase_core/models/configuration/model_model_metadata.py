@@ -2,25 +2,32 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelMetadata(BaseModel):
     """Basic metadata model for file information."""
 
-    meta_type: str = Field(..., description="Type of metadata block")
-    metadata_version: str = Field(..., description="Version of the metadata schema")
-    schema_version: str = Field(..., description="Version of the content schema")
-    uuid: str = Field(..., description="Unique identifier for this file")
-    name: str = Field(..., description="File name")
-    version: str = Field(..., description="File version")
-    author: str = Field(..., description="Author of the file")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    last_modified_at: datetime = Field(..., description="Last modification timestamp")
+    meta_type: str = Field(default=..., description="Type of metadata block")
+    metadata_version: str = Field(
+        default=..., description="Version of the metadata schema"
+    )
+    schema_version: ModelSemVer = Field(
+        default=..., description="Version of the content schema"
+    )
+    uuid: str = Field(default=..., description="Unique identifier for this file")
+    name: str = Field(default=..., description="File name")
+    version: ModelSemVer = Field(default=..., description="File version")
+    author: str = Field(default=..., description="Author of the file")
+    created_at: datetime = Field(default=..., description="Creation timestamp")
+    last_modified_at: datetime = Field(
+        default=..., description="Last modification timestamp"
+    )
     description: str | None = Field(default=None, description="Description of the file")
     state_contract: str | None = Field(
         default=None, description="State contract reference"
     )
     lifecycle: str | None = Field(default=None, description="EnumLifecycle state")
-    hash: str = Field(..., description="Canonical content hash")
+    hash: str = Field(default=..., description="Canonical content hash")
     entrypoint: str | None = Field(default=None, description="Entrypoint information")
     namespace: str | None = Field(default=None, description="Namespace for the file")

@@ -31,12 +31,12 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
     - Validatable: Validation and verification
     """
 
-    metric_id: UUID = Field(..., description="UUID for metric identifier")
+    metric_id: UUID = Field(default=..., description="UUID for metric identifier")
     metric_display_name: str = Field(
         default="",
         description="Human-readable metric name",
     )
-    value: SimpleValueType = Field(..., description="Typed metric value")
+    value: SimpleValueType = Field(default=..., description="Typed metric value")
     unit: str = Field(default="", description="Unit of measurement")
     description: str = Field(default="", description="Metric description")
 
@@ -73,7 +73,6 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         description: str = "",
     ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
-        import hashlib
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
@@ -97,7 +96,6 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         description: str = "",
     ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
-        import hashlib
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
@@ -121,7 +119,6 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         description: str = "",
     ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""
-        import hashlib
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(

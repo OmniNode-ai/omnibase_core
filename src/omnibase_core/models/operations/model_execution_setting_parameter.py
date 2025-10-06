@@ -15,7 +15,7 @@ class ModelExecutionSettingParameter(ModelBaseWorkflowParameter):
         default=EnumWorkflowParameterType.EXECUTION_SETTING,
         description="Execution setting parameter type",
     )
-    setting_name: str = Field(..., description="Setting name")
+    setting_name: str = Field(default=..., description="Setting name")
     enabled: bool = Field(default=True, description="Whether setting is enabled")
     conditional: bool = Field(
         default=False,

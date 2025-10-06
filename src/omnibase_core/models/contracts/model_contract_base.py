@@ -47,36 +47,36 @@ class ModelContractBase(BaseModel, ABC):
 
     # Core contract identification
     name: str = Field(
-        ...,
+        default=...,
         description="Unique contract name for identification",
         min_length=1,
     )
 
     version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Semantic version following SemVer specification",
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable contract description",
         min_length=1,
     )
 
     node_type: EnumNodeType = Field(
-        ...,
+        default=...,
         description="Node type classification for 4-node architecture",
     )
 
     # Model specifications with strong typing
     input_model: str = Field(
-        ...,
+        default=...,
         description="Fully qualified input model class name",
         min_length=1,
     )
 
     output_model: str = Field(
-        ...,
+        default=...,
         description="Fully qualified output model class name",
         min_length=1,
     )

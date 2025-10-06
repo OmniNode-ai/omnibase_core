@@ -21,10 +21,10 @@ class ModelActionCategory(BaseModel):
     Replaces simple string enum with structured category definitions.
     """
 
-    name: str = Field(..., description="Category name identifier")
-    display_name: str = Field(..., description="Human-readable category name")
+    name: str = Field(default=..., description="Category name identifier")
+    display_name: str = Field(default=..., description="Human-readable category name")
     description: str = Field(
-        ...,
+        default=...,
         description="Description of what this category represents",
     )
 

@@ -1,3 +1,5 @@
+from omnibase_core.models.core.model_semver import ModelSemVer
+
 """
 Tool Version Model.
 
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
 class ModelToolVersion(BaseModel):
     """Version information for a tool."""
 
-    version: str = Field(description="Semantic version identifier")
+    version: ModelSemVer = Field(description="Semantic version identifier")
     status: "EnumVersionStatus" = Field(description="Version lifecycle status")
     release_date: str = Field(description="Version release date")
     breaking_changes: bool = Field(

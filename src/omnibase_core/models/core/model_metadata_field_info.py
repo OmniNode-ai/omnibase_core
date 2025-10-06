@@ -25,35 +25,35 @@ class ModelMetadataFieldInfo(BaseModel):
 
     # Core fields (required)
     name: str = Field(
-        ...,
+        default=...,
         description="Field name identifier (e.g., METADATA_VERSION)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
 
     field_name: str = Field(
-        ...,
+        default=...,
         description="Actual field name in models (e.g., metadata_version)",
     )
 
     # Properties
     is_required: bool = Field(
-        ...,
+        default=...,
         description="Whether this field is required in metadata",
     )
 
     is_optional: bool = Field(
-        ...,
+        default=...,
         description="Whether this field is optional with defaults",
     )
 
     is_volatile: bool = Field(
-        ...,
+        default=...,
         description="Whether this field may change on stamping",
     )
 
     # Field metadata
     field_type: str = Field(
-        ...,
+        default=...,
         description="Python type of the field (str, int, datetime, etc.)",
     )
 

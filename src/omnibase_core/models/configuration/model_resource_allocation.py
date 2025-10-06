@@ -22,7 +22,7 @@ class ModelResourceAllocation(BaseModel):
     """
 
     cpu_shares: int = Field(
-        ...,
+        default=...,
         description="CPU shares allocated (relative weight)",
         ge=1,
         le=1000,

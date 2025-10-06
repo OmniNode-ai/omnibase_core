@@ -36,8 +36,10 @@ class ModelActionMetadata(BaseModel):
         default_factory=uuid4,
         description="Unique identifier for this action instance",
     )
-    action_type: ModelNodeActionType = Field(..., description="Rich action type model")
-    action_name: str = Field(..., description="Human-readable action name")
+    action_type: ModelNodeActionType = Field(
+        default=..., description="Rich action type model"
+    )
+    action_name: str = Field(default=..., description="Human-readable action name")
 
     # Correlation tracking
     correlation_id: UUID = Field(

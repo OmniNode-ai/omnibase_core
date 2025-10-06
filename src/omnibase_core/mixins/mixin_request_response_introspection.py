@@ -18,7 +18,6 @@ from omnibase_core.enums.enum_node_current_status import (
     EnumNodeCurrentStatus,
 )
 from omnibase_core.logging.structured import emit_log_event_sync
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
@@ -82,7 +81,6 @@ class MixinRequestResponseIntrospection:
             # Note: CLI sends "core.discovery.realtime_request"
             self._event_bus.subscribe(
                 self._handle_introspection_request,
-                REQUEST_REAL_TIME_INTROSPECTION,
             )
 
             emit_log_event_sync(
@@ -133,8 +131,6 @@ class MixinRequestResponseIntrospection:
         Args:
             envelope_or_event: The envelope or event to handle
         """
-        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-        from omnibase_core.logging.structured import emit_log_event_sync
 
         # Extract event from envelope if needed
         if hasattr(envelope_or_event, "payload"):
@@ -323,7 +319,7 @@ class MixinRequestResponseIntrospection:
                 )
 
                 # Create envelope for the response
-                from omnibase_core.models.core.model_event_envelope import (
+                from omnibase_core.models.events.model_event_envelope import (
                     ModelEventEnvelope,
                 )
 
@@ -419,7 +415,7 @@ class MixinRequestResponseIntrospection:
 
                 if hasattr(self, "_event_bus") and self._event_bus:
                     # Create envelope for the error response
-                    from omnibase_core.models.core.model_event_envelope import (
+                    from omnibase_core.models.events.model_event_envelope import (
                         ModelEventEnvelope,
                     )
 
@@ -466,7 +462,6 @@ class MixinRequestResponseIntrospection:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
 
     def _matches_introspection_filters(
-        self,
         filters: ModelIntrospectionFilters | None,
     ) -> bool:
         """
@@ -668,7 +663,6 @@ class MixinRequestResponseIntrospection:
             return None
 
     def _get_additional_introspection_info(
-        self,
     ) -> ModelIntrospectionAdditionalInfo | None:
         """
         Get additional node-specific introspection information.

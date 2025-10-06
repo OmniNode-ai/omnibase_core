@@ -57,7 +57,7 @@ class ModelAggregationSubcontract(BaseModel):
 
     # Aggregation functions
     aggregation_functions: list[str] = Field(
-        ...,
+        default=...,
         description="List of aggregation functions to apply",
         min_length=1,
     )

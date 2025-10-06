@@ -41,7 +41,7 @@ class ModelExample(BaseModel):
     )
 
     name: str = Field(
-        ...,
+        default=...,
         description="Name/title of the example",
         min_length=1,
     )

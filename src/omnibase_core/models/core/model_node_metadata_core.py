@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Core model for node metadata information.
@@ -28,7 +29,7 @@ class ModelNodeMetadata(BaseModel):
     repository: str | None = Field(default=None, description="Source repository")
     documentation_url: str | None = Field(default=None, description="Documentation URL")
     tags: list[str] = Field(default_factory=list, description="Node tags")
-    version: str | None = Field(default=None, description="Node version")
+    version: ModelSemVer | None = Field(default=None, description="Node version")
     description: str | None = Field(default=None, description="Node description")
     category: str | None = Field(default=None, description="Node category")
     dependencies: list[str] = Field(

@@ -31,7 +31,7 @@ class ModelPermissionScope(BaseModel):
     """
 
     scope_id: str = Field(
-        ...,
+        default=...,
         description="Unique scope identifier",
         pattern="^[a-z][a-z0-9_-]*$",
     )
@@ -255,7 +255,6 @@ class ModelPermissionScope(BaseModel):
 
     def _matches_pattern(self, value: str, pattern: str) -> bool:
         """Check if value matches pattern (supports wildcards)"""
-        import fnmatch
 
         return fnmatch.fnmatch(value, pattern)
 

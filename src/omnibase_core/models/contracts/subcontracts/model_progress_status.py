@@ -26,15 +26,20 @@ class ModelProgressStatus(BaseModel):
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
     overall_progress_percent: float = Field(
-        ..., description="Overall workflow progress percentage", ge=0.0, le=100.0
+        default=...,
+        description="Overall workflow progress percentage",
+        ge=0.0,
+        le=100.0,
     )
 
-    current_stage: str = Field(..., description="Current stage of the workflow")
+    current_stage: str = Field(default=..., description="Current stage of the workflow")
 
-    stages_completed: int = Field(..., description="Number of stages completed", ge=0)
+    stages_completed: int = Field(
+        default=..., description="Number of stages completed", ge=0
+    )
 
     stages_total: int = Field(
-        ..., description="Total number of stages in the workflow", ge=1
+        default=..., description="Total number of stages in the workflow", ge=1
     )
 
     estimated_completion: datetime | None = Field(

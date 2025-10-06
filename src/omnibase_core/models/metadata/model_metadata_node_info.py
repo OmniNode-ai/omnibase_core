@@ -58,7 +58,7 @@ class ModelMetadataNodeInfo(BaseModel):
     """
 
     # Core identification
-    node_id: UUID = Field(..., description="UUID for node identifier")
+    node_id: UUID = Field(default=..., description="UUID for node identifier")
 
     # Structured naming and description (reduces string fields)
     display_name: ModelStructuredDisplayName = Field(
@@ -391,7 +391,6 @@ class ModelMetadataNodeInfo(BaseModel):
         complexity: EnumConceptualComplexity = EnumConceptualComplexity.BASIC,
     ) -> ModelMetadataNodeInfo:
         """Create function node info."""
-        import hashlib
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
@@ -444,7 +443,6 @@ class ModelMetadataNodeInfo(BaseModel):
         description: str = "",
     ) -> ModelMetadataNodeInfo:
         """Create documentation node info."""
-        import hashlib
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()

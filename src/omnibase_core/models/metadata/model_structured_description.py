@@ -43,7 +43,7 @@ class ModelStructuredDescription(BaseModel):
 
     # Core description components
     purpose: str = Field(
-        ...,
+        default=...,
         description="Primary purpose or function of the entity",
         max_length=200,
     )

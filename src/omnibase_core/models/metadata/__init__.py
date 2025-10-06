@@ -25,7 +25,6 @@ if TYPE_CHECKING:
         ProtocolSupportedMetadataType = BasicValueType
 else:
     # Runtime fallback using structured type constraints
-    from omnibase_core.types.constraints import BasicValueType
 
     ProtocolSupportedMetadataType = BasicValueType
 

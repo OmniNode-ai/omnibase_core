@@ -42,12 +42,12 @@ class ModelEventMetadata(BaseModel):
         default_factory=uuid4,
         description="Unique event identifier (UUID format)",
     )
-    event_type: str = Field(..., description="Type of event")
+    event_type: str = Field(default=..., description="Type of event")
     timestamp: datetime = Field(
         default_factory=datetime.now,
         description="Event timestamp",
     )
-    source: str = Field(..., description="Event source identifier")
+    source: str = Field(default=..., description="Event source identifier")
 
     # Event processing
     processed: bool = Field(default=False, description="Whether event was processed")

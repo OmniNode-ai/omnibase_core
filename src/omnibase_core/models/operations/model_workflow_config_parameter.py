@@ -15,8 +15,8 @@ class ModelWorkflowConfigParameter(ModelBaseWorkflowParameter):
         default=EnumWorkflowParameterType.WORKFLOW_CONFIG,
         description="Workflow config parameter type",
     )
-    config_key: str = Field(..., description="Configuration key")
-    config_value: str = Field(..., description="Configuration value")
+    config_key: str = Field(default=..., description="Configuration key")
+    config_value: str = Field(default=..., description="Configuration value")
     config_scope: str = Field(default="workflow", description="Configuration scope")
     overridable: bool = Field(
         default=True,

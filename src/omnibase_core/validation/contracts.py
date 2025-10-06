@@ -46,7 +46,6 @@ def timeout_handler(signum: int, frame: object) -> None:
 def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
     """Load and validate YAML content with Pydantic model - recognized utility function."""
 
-    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
     # Parse YAML and validate with Pydantic model directly
     # Note: yaml.safe_load is required here for parsing before Pydantic validation

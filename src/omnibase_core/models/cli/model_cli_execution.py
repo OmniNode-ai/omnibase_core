@@ -56,7 +56,7 @@ class ModelCliExecution(BaseModel):
         default_factory=uuid4,
         description="Unique execution identifier",
     )
-    command_name: str = Field(..., description="Command name")
+    command_name: str = Field(default=..., description="Command name")
     command_args: list[str] = Field(
         default_factory=list,
         description="Command arguments",
@@ -316,7 +316,6 @@ class ModelCliExecution(BaseModel):
         """Get execution summary."""
         # Generate a command ID from the command name (or use a real UUID if available)
         import hashlib
-
         from omnibase_core.models.cli.model_cli_execution_summary import (
             ModelCliExecutionSummary,
         )

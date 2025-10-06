@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 class ModelEvaluationContext(BaseModel):
     """Context information for policy evaluation."""
 
-    envelope_id: str = Field(..., description="Envelope identifier")
-    source_node_id: str = Field(..., description="Source node identifier")
+    envelope_id: str = Field(default=..., description="Envelope identifier")
+    source_node_id: str = Field(default=..., description="Source node identifier")
     destination: str | None = Field(default=None, description="Final destination")
     hop_count: int = Field(default=0, description="Current hop count", ge=0)
     is_encrypted: bool = Field(
@@ -33,5 +33,5 @@ class ModelEvaluationContext(BaseModel):
     groups: list[str] = Field(default_factory=list, description="User groups")
     mfa_verified: bool = Field(default=False, description="MFA verification status")
     trust_level_user: str | None = Field(default=None, description="User trust level")
-    timestamp: str = Field(..., description="Evaluation timestamp")
+    timestamp: str = Field(default=..., description="Evaluation timestamp")
     policy_id: str | None = Field(default=None, description="Specific policy ID to use")

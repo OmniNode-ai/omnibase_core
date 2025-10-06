@@ -40,17 +40,17 @@ class ModelEventBusOutputState(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Schema version for output state (matches input)",
     )
 
     status: EnumOnexStatus = Field(
-        ...,
+        default=...,
         description="Execution status with business context",
     )
 
     message: str = Field(
-        ...,
+        default=...,
         description="Human-readable result message with details",
         min_length=1,
         max_length=2000,
@@ -293,8 +293,6 @@ class ModelEventBusOutputState(BaseModel):
         """Get comprehensive error summary."""
         if not self.is_failed():
             return None
-
-        from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 
         return ModelErrorSummary(
             error_code=self.error_code or "UNKNOWN",

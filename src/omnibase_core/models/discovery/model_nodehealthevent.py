@@ -4,6 +4,9 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
+from omnibase_core.models.discovery.model_custommetrics import ModelCustomMetrics
+from omnibase_core.models.health.model_health_check import ModelHealthMetrics
+
 
 class ModelNodeHealthEvent(ModelOnexEvent):
     """
@@ -21,11 +24,11 @@ class ModelNodeHealthEvent(ModelOnexEvent):
     )
 
     # Node identification
-    node_name: str = Field(..., description="Name of the node reporting health")
+    node_name: str = Field(default=..., description="Name of the node reporting health")
 
     # Health information
     health_metrics: ModelHealthMetrics = Field(
-        ...,
+        default=...,
         description="Current health metrics for the node",
     )
 

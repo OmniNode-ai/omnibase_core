@@ -25,7 +25,7 @@ class ModelCliExecutionResult(BaseModel):
     """
 
     # Core result information
-    success: bool = Field(..., description="Whether the operation succeeded")
+    success: bool = Field(default=..., description="Whether the operation succeeded")
     error_message: str | None = Field(
         default=None,
         description="Error message if operation failed",

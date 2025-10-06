@@ -40,7 +40,7 @@ class ModelSchema(BaseModel):
 
     # Core schema identification
     schema_type: str = Field(
-        "object",
+        default="object",
         alias="type",
         description="JSON Schema type (string, object, array, etc.)",
     )
@@ -54,7 +54,9 @@ class ModelSchema(BaseModel):
     )
 
     # Document-level metadata (used when this represents a full document)
-    schema_version: str = Field("draft-07", description="JSON Schema version")
+    schema_version: ModelSemVer = Field(
+        default="draft-07", description="JSON Schema version"
+    )
     title: str | None = Field(default=None, description="Schema title")
 
     # String validation constraints
@@ -114,7 +116,7 @@ class ModelSchema(BaseModel):
         description="Required properties for objects",
     )
     additional_properties: bool | None = Field(
-        True,
+        default=True,
         description="Allow additional properties",
     )
     min_properties: int | None = Field(
@@ -250,9 +252,9 @@ class ModelSchema(BaseModel):
             ):
                 # These are handled by the type mapper - return a basic schema
                 if "semver_model" in self.ref:
-                    return ModelSchema(schema_type="object", title="ModelSemVer")
+                    return ModelSchema(type="object", title="ModelSemVer")
                 if "onex_field_model" in self.ref:
-                    return ModelSchema(schema_type="object", title="ModelOnexField")
+                    return ModelSchema(type="object", title="ModelOnexField")
 
             # FAIL FAST: If we can't resolve the reference, throw an error instead of returning placeholder
             msg = f"FAIL_FAST: Unresolved schema reference: {self.ref}. Available definitions: {list[Any](definitions.keys())}"
@@ -497,16 +499,16 @@ class ModelSchema(BaseModel):
 
         # Create the unified schema
         return cls(
-            schema_type=data.get("type", "object"),
+            type=data.get("type", "object"),
             schema_version=schema_version,
             title=data.get("title"),
             description=data.get("description"),
-            ref=data.get("$ref"),
-            enum_values=data.get("enum"),
+            **{"$ref": data.get("$ref")} if data.get("$ref") else {},
+            enum=data.get("enum"),
             pattern=data.get("pattern"),
             format=data.get("format"),
-            min_length=data.get("minLength"),
-            max_length=data.get("maxLength"),
+            minLength=data.get("minLength"),
+            maxLength=data.get("maxLength"),
             minimum=data.get("minimum"),
             maximum=data.get("maximum"),
             multiple_of=data.get("multipleOf"),

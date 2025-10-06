@@ -5,6 +5,9 @@ from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import ModelOnexError
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -63,7 +66,7 @@ StateSchemaModel = ModelStateSchema
 ErrorModelState = ModelErrorState
 
 # Current schema version for state contracts
-STATE_CONTRACT_SCHEMA_VERSION = "1.0.0"
+STATE_CONTRACT_SCHEMA_VERSION = ModelSemVer.parse("1.0.0")
 
 
 class ModelStateContract(BaseModel):
@@ -96,13 +99,13 @@ class ModelStateContract(BaseModel):
     )
 
     node_name: str = Field(
-        ...,
+        default=...,
         description="Name of the node this contract belongs to",
         json_schema_extra={"example": "cli_node"},
     )
 
     node_version: ModelSemVer = Field(
-        default="1.0.0",
+        default_factory=lambda: ModelSemVer.parse("1.0.0"),
         description="Version of the node",
         json_schema_extra={"example": "1.0.0"},
     )
@@ -114,19 +117,19 @@ class ModelStateContract(BaseModel):
     )
 
     contract_description: str = Field(
-        ...,
+        default=...,
         description="Human-readable description of the contract",
         json_schema_extra={"example": "State contract for CLI node command routing"},
     )
 
     # State definitions
     input_state: ModelStateSchema = Field(
-        ...,
+        default=...,
         description="Definition of the input state structure",
     )
 
     output_state: ModelStateSchema = Field(
-        ...,
+        default=...,
         description="Definition of the output state structure",
     )
 
@@ -177,7 +180,7 @@ class ModelStateContract(BaseModel):
         import re
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
-            raise OnexError(
+            raise ModelOnexError(
                 ModelCoreErrorCode.VALIDATION_ERROR,
                 f"Contract version must follow semantic versioning (x.y.z), got: {v}",
             )
@@ -187,10 +190,9 @@ class ModelStateContract(BaseModel):
     @classmethod
     def validate_node_version(cls, v: str) -> str:
         """Validate that node version follows semantic versioning."""
-        import re
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
-            raise OnexError(
+            raise ModelOnexError(
                 ModelCoreErrorCode.VALIDATION_ERROR,
                 f"Node version must follow semantic versioning (x.y.z), got: {v}",
             )
@@ -201,15 +203,14 @@ class ModelStateContract(BaseModel):
     def validate_node_name(cls, v: str) -> str:
         """Validate that node name follows naming conventions."""
         if not v or not v.strip():
-            raise OnexError(
+            raise ModelOnexError(
                 ModelCoreErrorCode.VALIDATION_ERROR, "Node name cannot be empty"
             )
 
         # Check for valid node name pattern (lowercase, underscores)
-        import re
 
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
-            raise OnexError(
+            raise ModelOnexError(
                 ModelCoreErrorCode.VALIDATION_ERROR,
                 f"Node name must follow pattern: lowercase, underscores. Got: {v}",
             )
@@ -248,7 +249,7 @@ class ModelStateContract(BaseModel):
             ModelStateContract instance
 
         Raises:
-            OnexError: If the data cannot be parsed or validated
+            ModelOnexError: If the data cannot be parsed or validated
         """
         try:
             # Handle legacy field names
@@ -265,7 +266,7 @@ class ModelStateContract(BaseModel):
             return cls(**data)
 
         except Exception as e:
-            raise OnexError(
+            raise ModelOnexError(
                 ModelCoreErrorCode.VALIDATION_ERROR,
                 f"Failed to parse state contract: {e}",
             ) from e
@@ -283,7 +284,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
         ModelStateContract instance
 
     Raises:
-        OnexError: If the file cannot be loaded or validated
+        ModelOnexError: If the file cannot be loaded or validated
     """
     from pathlib import Path
 
@@ -295,7 +296,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
         # Use centralized YAML loading with full Pydantic validation
         return load_and_validate_yaml_model(path, ModelStateContract)
     except Exception as e:
-        raise OnexError(
+        raise ModelOnexError(
             ModelCoreErrorCode.FILE_READ_ERROR,
             f"Failed to load contract from {file_path}: {e}",
         ) from e

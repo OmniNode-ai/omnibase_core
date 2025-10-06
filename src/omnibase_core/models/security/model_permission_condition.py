@@ -21,26 +21,26 @@ class ModelPermissionCondition(BaseModel):
     """
 
     condition_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique condition identifier",
     )
 
     condition_type: str = Field(
-        ...,
+        default=...,
         description="Type of condition",
         pattern="^(time|location|attribute|resource|user|custom)$",
     )
 
     operator: str = Field(
-        ...,
+        default=...,
         description="Comparison operator",
         pattern="^(eq|neq|gt|gte|lt|lte|in|not_in|contains|matches)$",
     )
 
-    field_name: str = Field(..., description="Field to evaluate")
+    field_name: str = Field(default=..., description="Field to evaluate")
 
     expected_value: ModelConditionValue = Field(
-        ...,
+        default=...,
         description="Expected value for comparison",
     )
 

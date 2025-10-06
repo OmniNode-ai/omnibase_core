@@ -24,12 +24,12 @@ class ModelAuditEntry(BaseModel):
     """
 
     # Core audit fields
-    audit_id: UUID = Field(..., description="Unique audit entry ID")
+    audit_id: UUID = Field(default=..., description="Unique audit entry ID")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="When the action occurred",
     )
-    action: EnumAuditAction = Field(..., description="Action performed")
+    action: EnumAuditAction = Field(default=..., description="Action performed")
     action_detail: str | None = Field(
         default=None,
         description="Detailed action description",

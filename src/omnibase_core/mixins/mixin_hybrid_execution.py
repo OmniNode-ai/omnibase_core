@@ -11,7 +11,6 @@ Supports LlamaIndex workflow orchestration for complex operations.
 """
 
 import json
-from typing import Any, Generic, TypeVar
 
 from omnibase_core.constants import constants_contract_fields as cf
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -105,7 +104,6 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         return ExecutionMode.DIRECT
 
     def execute(
-        self,
         input_state: InputStateT,
         mode: str | None = None,
     ) -> OutputStateT:
@@ -190,14 +188,9 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
                 )
                 return self._execute_direct(input_state)
 
-            # Import LlamaIndex workflow components
+            # Check if LlamaIndex is available
             try:
-                from llama_index.core.workflow import (
-                    Event,
-                    StartEvent,
-                    StopEvent,
-                    Workflow,
-                )
+                import llama_index.core.workflow  # noqa: F401
             except ImportError as e:
                 emit_log_event(
                     LogLevel.ERROR,
@@ -224,12 +217,18 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
                 loop.close()
 
             # Record metrics
+            from uuid import uuid4
+
+            from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
+
             end_time = time.time()
             self._workflow_metrics = ModelWorkflowMetrics(
-                workflow_name=workflow.__class__.__name__,
-                execution_time=end_time - start_time,
-                steps_executed=getattr(workflow, "_steps_executed", 0),
-                status=EnumOnexStatus.HEALTHY,
+                workflow_id=uuid4(),
+                status=EnumWorkflowStatus.COMPLETED,
+                start_time=str(start_time),
+                end_time=str(end_time),
+                duration_seconds=end_time - start_time,
+                steps_completed=getattr(workflow, "_steps_executed", 0),
             )
 
             emit_log_event(

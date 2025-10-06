@@ -30,7 +30,7 @@ class ModelDiscoveryRequest(BaseModel):
 
     # Operation identification
     operation: str = Field(
-        ...,
+        default=...,
         description="Discovery operation type",
         json_schema_extra={
             "enum": ["discover_tools", "get_client_status", "close_client"],
@@ -45,7 +45,7 @@ class ModelDiscoveryRequest(BaseModel):
 
     # Request control
     timeout_seconds: float | None = Field(
-        5.0,
+        default=5.0,
         description="Request timeout in seconds",
         ge=0.1,
         le=300.0,
@@ -59,7 +59,7 @@ class ModelDiscoveryRequest(BaseModel):
     )
 
     include_metadata: bool = Field(
-        True,
+        default=True,
         description="Whether to include full metadata in response",
     )
 
@@ -69,7 +69,7 @@ class ModelDiscoveryRequest(BaseModel):
     )
 
     retry_delay: float = Field(
-        1.0,
+        default=1.0,
         description="Initial delay between retries in seconds",
         ge=0.1,
         le=60.0,

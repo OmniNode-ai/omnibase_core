@@ -35,7 +35,7 @@ class ModelWorkflowInstance(BaseModel):
         description="Unique identifier for the workflow instance",
     )
 
-    workflow_name: str = Field(..., description="Name of the workflow")
+    workflow_name: str = Field(default=..., description="Name of the workflow")
 
     workflow_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
@@ -43,12 +43,12 @@ class ModelWorkflowInstance(BaseModel):
     )
 
     created_timestamp: datetime = Field(
-        ...,
+        default=...,
         description="When the workflow instance was created",
     )
 
     status: EnumWorkflowStatus = Field(
-        ...,
+        default=...,
         description="Current status of the workflow",
     )
 

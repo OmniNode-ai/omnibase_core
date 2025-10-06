@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Dict
 
+from omnibase_core.enums.enum_status_migration import EnumStatusMigrator
+
+
 """
 Status Migration Validation Utilities.
 

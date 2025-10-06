@@ -14,7 +14,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_node_announce_metadata import (

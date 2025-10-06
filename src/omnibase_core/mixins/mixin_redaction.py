@@ -133,7 +133,6 @@ class MixinSensitiveFieldRedaction:
         return redaction_values.get("string", redaction_values["default"])
 
     def redact_sensitive_fields(
-        self,
         data: dict[str, Any],
         additional_sensitive_fields: set[str] | None = None,
     ) -> dict[str, Any]:
@@ -156,15 +155,11 @@ class MixinSensitiveFieldRedaction:
                 # Only redact non-None values
                 if field_value is not None:
                     redacted_data[field_name] = self.get_redaction_value(
-                        field_name,
-                        field_value,
                     )
 
             # Recursively redact nested dictionaries
             elif isinstance(field_value, dict):
                 redacted_data[field_name] = self.redact_sensitive_fields(
-                    field_value,
-                    additional_sensitive_fields,
                 )
 
             # Redact items in lists that are dictionaries
@@ -174,8 +169,6 @@ class MixinSensitiveFieldRedaction:
                     if isinstance(item, dict):
                         redacted_list.append(
                             self.redact_sensitive_fields(
-                                item,
-                                additional_sensitive_fields,
                             ),
                         )
                     else:
@@ -185,7 +178,6 @@ class MixinSensitiveFieldRedaction:
         return redacted_data
 
     def redact(
-        self,
         additional_sensitive_fields: set[str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
@@ -211,7 +203,6 @@ class MixinSensitiveFieldRedaction:
         return self.redact_sensitive_fields(data, additional_sensitive_fields)
 
     def model_dump_redacted(
-        self,
         additional_sensitive_fields: set[str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:

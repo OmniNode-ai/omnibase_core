@@ -41,17 +41,19 @@ class ModelOnexInternalInputState(BaseModel):
     version: ModelSemVer
 
     # Required traceability fields (no Optional)
-    event_id: UUID = Field(..., description="Required event ID for tracking")
+    event_id: UUID = Field(default=..., description="Required event ID for tracking")
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Required correlation ID for tracking",
     )
-    timestamp: datetime = Field(..., description="Required timestamp for tracking")
+    timestamp: datetime = Field(
+        default=..., description="Required timestamp for tracking"
+    )
 
     # Node identification (required for internal processing)
-    node_name: str = Field(..., description="Required node name for processing")
+    node_name: str = Field(default=..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Required node version for processing",
     )
 

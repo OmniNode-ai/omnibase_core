@@ -40,24 +40,24 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     """
 
     host: str = Field(
-        ...,
+        default=...,
         description="Database host",
         pattern=r"^[a-zA-Z0-9\-\.]+$",
         max_length=255,
     )
 
-    port: int = Field(..., description="Database port", ge=1, le=65535)
+    port: int = Field(default=..., description="Database port", ge=1, le=65535)
 
     database: str = Field(
-        ...,
+        default=...,
         description="Database name",
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=100,
     )
 
-    username: str = Field(..., description="Database username", max_length=100)
+    username: str = Field(default=..., description="Database username", max_length=100)
 
-    password: SecretStr = Field(..., description="Database password (secured)")
+    password: SecretStr = Field(default=..., description="Database password (secured)")
 
     driver: str = Field(
         default="postgresql",
@@ -431,7 +431,6 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     def get_security_assessment(self) -> "ModelSecurityAssessment":
         """Comprehensive security assessment of database configuration."""
-        from typing import Any
 
         assessment: dict[str, Any] = {
             "security_level": "basic",
@@ -827,8 +826,6 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 error_code=ModelCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
-
-        from typing import Any
 
         config_data: dict[str, Any] = {
             "host": os.getenv(f"{env_prefix}HOST", "localhost"),

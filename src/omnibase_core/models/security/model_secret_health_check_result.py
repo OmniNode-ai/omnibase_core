@@ -17,7 +17,7 @@ class ModelSecretHealthCheckResult(BaseModel):
     healthy: bool = Field(default=True, description="Overall health status")
 
     backend_available: bool = Field(
-        False,
+        default=False,
         description="Whether the backend is available and accessible",
     )
 
@@ -31,7 +31,7 @@ class ModelSecretHealthCheckResult(BaseModel):
     )
 
     response_time_ms: int = Field(
-        0,
+        default=0,
         description="Health check response time in milliseconds",
         ge=0,
     )

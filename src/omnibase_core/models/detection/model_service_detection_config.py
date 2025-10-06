@@ -21,14 +21,16 @@ class ModelServiceDetectionConfig(BaseModel):
     """Configuration for service detection and health checking."""
 
     endpoints: list[ModelServiceEndpoint] = Field(
-        ...,
+        default=...,
         description="List of service endpoints for detection",
     )
     health_check: ModelHealthCheck | None = Field(
         default=None,
         description="Strongly typed health check configuration",
     )
-    timeout: int = Field(5, description="Connection timeout in seconds", ge=1, le=300)
+    timeout: int = Field(
+        default=5, description="Connection timeout in seconds", ge=1, le=300
+    )
     admin_timeout: int | None = Field(
         default=None,
         description="Admin operation timeout in seconds",

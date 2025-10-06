@@ -51,7 +51,7 @@ class ModelFunctionNode(BaseModel):
 
     # Composed sub-models for focused concerns
     core: ModelFunctionNodeCore = Field(
-        ...,
+        default=...,
         description="Core function information",
     )
     metadata: ModelFunctionNodeMetadata = Field(

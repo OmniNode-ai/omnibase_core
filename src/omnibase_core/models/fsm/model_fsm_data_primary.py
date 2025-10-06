@@ -33,12 +33,14 @@ class ModelFsmData(BaseModel):
     - Validatable: Validation and verification
     """
 
-    state_machine_name: str = Field(..., description="Name of the state machine")
+    state_machine_name: str = Field(
+        default=..., description="Name of the state machine"
+    )
     description: str = Field(default="", description="State machine description")
-    initial_state: str = Field(..., description="Initial state name")
-    states: list[ModelFsmState] = Field(..., description="List of states")
+    initial_state: str = Field(default=..., description="Initial state name")
+    states: list[ModelFsmState] = Field(default=..., description="List of states")
     transitions: list[ModelFsmTransition] = Field(
-        ..., description="List of transitions"
+        default=..., description="List of transitions"
     )
     variables: dict[str, str] = Field(
         default_factory=dict, description="State machine variables"

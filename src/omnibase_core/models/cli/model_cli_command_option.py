@@ -39,17 +39,17 @@ class ModelCliCommandOption(BaseModel):
     """
 
     # Option identification - UUID-based entity references
-    option_id: UUID = Field(..., description="Unique identifier for the option")
+    option_id: UUID = Field(default=..., description="Unique identifier for the option")
     option_display_name: str | None = Field(
         default=None,
         description="Human-readable option name (e.g., '--verbose', '-v')",
     )
     value: object = Field(
-        ...,
+        default=...,
         description="Option value - validated against value_type discriminator",
     )
     value_type: EnumCliOptionValueType = Field(
-        ...,
+        default=...,
         description="Type discriminator for the option value",
     )
 

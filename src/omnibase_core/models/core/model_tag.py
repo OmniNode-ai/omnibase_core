@@ -25,11 +25,11 @@ class ModelTag(BaseModel):
 
     tag_id: UUID = Field(default_factory=uuid4, description="Unique tag identifier")
 
-    name: str = Field(..., description="Tag name", pattern="^[a-z][a-z0-9-]*$")
+    name: str = Field(default=..., description="Tag name", pattern="^[a-z][a-z0-9-]*$")
 
     namespace: str = Field(default="user", description="Tag namespace")
 
-    display_name: str = Field(..., description="Display name")
+    display_name: str = Field(default=..., description="Display name")
 
     description: str | None = Field(default=None, description="Tag description")
 
@@ -41,7 +41,7 @@ class ModelTag(BaseModel):
 
     icon: str | None = Field(default=None, description="Icon identifier")
 
-    created_by: str = Field(..., description="Creator identifier")
+    created_by: str = Field(default=..., description="Creator identifier")
 
     created_at: datetime = Field(
         default_factory=datetime.utcnow,

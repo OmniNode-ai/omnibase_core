@@ -19,12 +19,12 @@ class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
 
     workflow_metadata: ModelWorkflowDefinitionMetadata = Field(
-        ...,
+        default=...,
         description="Workflow metadata",
     )
 
     execution_graph: ModelExecutionGraph = Field(
-        ...,
+        default=...,
         description="Execution graph for the workflow",
     )
 

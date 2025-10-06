@@ -32,7 +32,6 @@ from pydantic import BaseModel, field_validator
 from omnibase_core.models.core.model_onex_internal_input_state import (
     ModelOnexInternalInputState,
 )
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelOnexInputState(BaseModel):
@@ -85,9 +84,6 @@ class ModelOnexInputState(BaseModel):
             return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-
-        from omnibase_core.errors.error_codes import ModelCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         raise ModelOnexError(
             error_code=ModelCoreErrorCode.PARAMETER_TYPE_MISMATCH,

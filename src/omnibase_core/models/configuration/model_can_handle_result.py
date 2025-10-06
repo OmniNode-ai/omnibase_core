@@ -13,9 +13,9 @@ class ModelCanHandleResult(BaseModel):
     """
 
     can_handle: bool = Field(
-        ...,
+        default=...,
         description="Whether the handler can process the file/content.",
     )
 
-    def __bool__(self):
+    def __bool__(self) -> None:
         return self.can_handle

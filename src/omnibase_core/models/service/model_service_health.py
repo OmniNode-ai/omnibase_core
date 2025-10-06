@@ -50,21 +50,23 @@ class ModelServiceHealth(BaseModel):
     """
 
     service_name: str = Field(
-        ...,
+        default=...,
         description="Name of the external service",
         min_length=1,
         max_length=100,
     )
 
-    service_type: EnumServiceType = Field(..., description="Type of the service")
+    service_type: EnumServiceType = Field(
+        default=..., description="Type of the service"
+    )
 
     status: EnumServiceHealthStatus = Field(
-        ...,
+        default=...,
         description="Current health status of the service",
     )
 
     connection_string: str = Field(
-        ...,
+        default=...,
         description="Safe connection string (credentials masked)",
         min_length=1,
         max_length=500,

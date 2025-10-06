@@ -40,21 +40,6 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
-from omnibase_core.models.core.model_node_introspection import (
-    CLIArgumentModel,
-    CLIInterfaceModel,
-    ContractModel,
-    DependenciesModel,
-    ErrorCodeModel,
-    ErrorCodesModel,
-    EventChannelsModel,
-    ModelStateModel,
-    ModelStatesModel,
-    NodeCapabilityEnum,
-    NodeModelMetadata,
-    StateFieldModel,
-    create_node_introspection_response,
-)
 from omnibase_core.models.core.model_node_introspection_response import (
     ModelNodeIntrospectionResponse,
 )
@@ -188,7 +173,6 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def _extract_state_model_fields(
-        cls,
         model_class: type[BaseModel],
     ) -> list[StateFieldModel]:
         """Extract field information from a Pydantic model."""
@@ -287,10 +271,6 @@ class MixinNodeIntrospection(ABC):
         Returns:
             ModelNodeIntrospectionResponse with all node metadata and capabilities
         """
-        from omnibase_core.cli_tools.onex.v1_0_0.cli_version_resolver import (
-            global_resolver,
-        )
-
         node_name = cls.get_node_name()
 
         # Get version information from resolver
@@ -418,10 +398,6 @@ class MixinNodeIntrospection(ABC):
         """
         import os
 
-        from omnibase_core.models.core.model_event_type import (
-            create_event_type_from_registry,
-        )
-
         # 1. Try to extract correlation_id from event_bus (if it has one)
         correlation_id = None
         if hasattr(event_bus, "correlation_id"):
@@ -440,10 +416,12 @@ class MixinNodeIntrospection(ABC):
             emit_log_event_sync(
                 LogLevel.INFO,
                 response.model_dump_json(indent=2),
-                event_type=create_event_type_from_registry("INTROSPECTION_RESPONSE"),
-                node_id=cls.get_node_name(),
-                event_bus=event_bus,
-                correlation_id=correlation_id,
+                {
+                    "event_type": create_event_type_from_registry("INTROSPECTION_RESPONSE"),
+                    "node_id": cls.get_node_name(),
+                    "event_bus": event_bus,
+                    "correlation_id": correlation_id,
+                },
             )
             sys.exit(0)
         except Exception as e:
@@ -457,9 +435,11 @@ class MixinNodeIntrospection(ABC):
             emit_log_event_sync(
                 LogLevel.ERROR,
                 json.dumps(error_response, indent=2),
-                event_type=create_event_type_from_registry("INTROSPECTION_RESPONSE"),
-                node_id=cls.get_node_name(),
-                event_bus=event_bus,
-                correlation_id=correlation_id,
+                {
+                    "event_type": create_event_type_from_registry("INTROSPECTION_RESPONSE"),
+                    "node_id": cls.get_node_name(),
+                    "event_bus": event_bus,
+                    "correlation_id": correlation_id,
+                },
             )
             sys.exit(1)

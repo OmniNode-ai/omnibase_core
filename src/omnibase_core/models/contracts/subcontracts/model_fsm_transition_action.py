@@ -30,7 +30,7 @@ class ModelActionConfigValue(BaseModel):
     """
 
     value_type: Literal["scalar", "list[Any]"] = Field(
-        ...,
+        default=...,
         description="Type of configuration value",
     )
 

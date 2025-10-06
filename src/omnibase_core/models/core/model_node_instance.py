@@ -1,6 +1,7 @@
 from typing import Any
 
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Node Instance Model
@@ -30,11 +31,13 @@ class ModelNodeInstance(BaseModel):
     health, load, and capability information for advanced management.
     """
 
-    reference: ModelNodeReference = Field(..., description="Node reference")
+    reference: ModelNodeReference = Field(default=..., description="Node reference")
 
-    status: EnumNodeStatus = Field(..., description="Current node status")
+    status: EnumNodeStatus = Field(default=..., description="Current node status")
 
-    node_type: ModelNodeType = Field(..., description="Type of this node instance")
+    node_type: ModelNodeType = Field(
+        default=..., description="Type of this node instance"
+    )
 
     health_metrics: ModelHealthMetrics = Field(
         default_factory=lambda: ModelHealthMetrics(),
@@ -71,7 +74,7 @@ class ModelNodeInstance(BaseModel):
         description="Connection URL for remote instances",
     )
 
-    protocol_version: str = Field(
+    protocol_version: ModelSemVer = Field(
         default="1.0.0",
         description="Protocol version supported",
     )

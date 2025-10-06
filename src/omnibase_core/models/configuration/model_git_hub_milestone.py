@@ -1,6 +1,7 @@
 from typing import Dict
 
 from pydantic import Field
+from uuid import UUID
 
 """
 GitHub Milestone Model
@@ -23,16 +24,16 @@ class ModelGitHubMilestone(BaseModel):
     Represents a GitHub milestone with structured fields.
     """
 
-    id: int = Field(..., description="Milestone ID")
-    node_id: str = Field(..., description="Milestone node ID")
-    number: int = Field(..., description="Milestone number")
-    title: str = Field(..., description="Milestone title")
+    id: int = Field(default=..., description="Milestone ID")
+    node_id: UUID = Field(default=..., description="Milestone node ID")
+    number: int = Field(default=..., description="Milestone number")
+    title: str = Field(default=..., description="Milestone title")
     description: str | None = Field(default=None, description="Milestone description")
-    creator: ModelGitHubUser = Field(..., description="Milestone creator")
+    creator: ModelGitHubUser = Field(default=..., description="Milestone creator")
     open_issues: int = Field(default=0, description="Number of open issues")
     closed_issues: int = Field(default=0, description="Number of closed issues")
-    state: str = Field("open", description="Milestone state (open/closed)")
-    created_at: datetime = Field(..., description="Creation timestamp")
+    state: str = Field(default="open", description="Milestone state (open/closed)")
+    created_at: datetime = Field(default=..., description="Creation timestamp")
     updated_at: datetime | None = Field(
         default=None, description="Last update timestamp"
     )

@@ -27,7 +27,7 @@ class ModelHealthCheckResult(BaseModel):
 
     # Overall status
     status: str = Field(
-        ...,
+        default=...,
         description="Overall health status (healthy/unhealthy/degraded)",
     )
     timestamp: datetime = Field(
@@ -42,7 +42,7 @@ class ModelHealthCheckResult(BaseModel):
     )
 
     # Service information
-    service_name: str = Field(..., description="Service name")
+    service_name: str = Field(default=..., description="Service name")
     service_version: str | None = Field(default=None, description="Service version")
     uptime_seconds: int | None = Field(
         default=None, description="Service uptime in seconds"

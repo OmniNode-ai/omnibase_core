@@ -17,7 +17,7 @@ class ModelCredentialStrengthAssessment(BaseModel):
     """Result of credential strength assessment."""
 
     strength: EnumCredentialStrength = Field(
-        EnumCredentialStrength.VERY_WEAK,
+        default=EnumCredentialStrength.VERY_WEAK,
         description="Overall strength level",
     )
 
@@ -26,7 +26,7 @@ class ModelCredentialStrengthAssessment(BaseModel):
     length: int = Field(default=0, description="Character length of credential", ge=0)
 
     character_variety: int = Field(
-        0,
+        default=0,
         description="Number of different character types",
         ge=0,
         le=4,

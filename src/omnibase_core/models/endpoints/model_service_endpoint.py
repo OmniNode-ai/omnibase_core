@@ -16,7 +16,7 @@ class ModelServiceEndpoint(BaseModel):
     """Strongly typed service endpoint configuration."""
 
     url: HttpUrl = Field(
-        ...,
+        default=...,
         description="Service endpoint URL (http/https/redis/postgresql/etc.)",
     )
     port: int | None = Field(

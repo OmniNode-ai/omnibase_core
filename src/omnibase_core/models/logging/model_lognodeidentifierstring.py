@@ -7,4 +7,6 @@ class ModelLogNodeIdentifierString(BaseModel):
     """Log node identifier using string fallback."""
 
     type: Literal["string"] = "string"
-    value: str = Field(..., description="String node identifier (class/module name)")
+    value: str = Field(
+        default=..., description="String node identifier (class/module name)"
+    )

@@ -37,15 +37,15 @@ class ModelNodeCoreMetadata(BaseModel):
         description="Unique identifier for the node entity",
     )
     node_display_name: str = Field(default="", description="Human-readable node name")
-    node_type: "EnumMetadataNodeType" = Field(..., description="Node type")
+    node_type: "EnumMetadataNodeType" = Field(default=..., description="Node type")
 
     # Status information (2 fields)
     status: "EnumMetadataNodeStatus" = Field(
-        default="ACTIVE",
+        default="active",
         description="Node status",
     )
     health: "EnumNodeHealthStatus" = Field(
-        default="HEALTHY",
+        default="healthy",
         description="Node health",
     )
 
@@ -82,7 +82,7 @@ class ModelNodeCoreMetadata(BaseModel):
     def create_simple(
         cls,
         node_name: str,
-        node_type: "EnumMetadataNodeType" = "FUNCTION",
+        node_type: "EnumMetadataNodeType" = "function",
     ) -> "ModelNodeCoreMetadata":
         """Create simple core metadata with deterministic UUID."""
         return cls(

@@ -26,7 +26,7 @@ class ModelApprovalRequirements(BaseModel):
     )
 
     min_approvals: int = Field(
-        1,
+        default=1,
         description="Minimum number of approvals required",
         ge=0,
         le=10,
@@ -45,7 +45,7 @@ class ModelApprovalRequirements(BaseModel):
     )
 
     escalation_enabled: bool = Field(
-        False,
+        default=False,
         description="Whether escalation is enabled after timeout",
     )
 

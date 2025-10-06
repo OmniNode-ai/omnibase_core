@@ -24,10 +24,12 @@ class ModelMultiDocGenerationResult(BaseModel):
     """Result of multi-document model generation."""
 
     contract_path: Path = Field(
-        ...,
+        default=...,
         description="Path to the source contract.yaml file",
     )
-    output_dir: Path = Field(..., description="Directory where files were generated")
+    output_dir: Path = Field(
+        default=..., description="Directory where files were generated"
+    )
     generated_files: list[ModelGeneratedFile] = Field(
         default_factory=list,
         description="List of generated files",

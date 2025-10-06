@@ -5,6 +5,10 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
+from omnibase_core.models.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
+
 
 class ModelToolDiscoveryResponse(ModelOnexEvent):
     """
@@ -26,7 +30,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         description="Correlation ID from the original request",
     )
     requester_id: str = Field(
-        ...,
+        default=...,
         description="ID of the service that made the request",
     )
 
@@ -38,7 +42,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
 
     # Response metadata
     total_count: int = Field(
-        0,
+        default=0,
         description="Total number of tools found (may be > len(tools) if limited)",
     )
     filtered_count: int = Field(
@@ -51,7 +55,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
 
     # Status flags
     partial_response: bool = Field(
-        False,
+        default=False,
         description="True if some registries didn't respond in time",
     )
     timeout_occurred: bool = Field(
@@ -139,7 +143,6 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         correlation_uuid = None
         if request_correlation_id:
             try:
-                from uuid import UUID
 
                 correlation_uuid = UUID(request_correlation_id)
             except ValueError:

@@ -27,7 +27,7 @@ class ModelMaskedConnectionProperties(BaseModel):
     port: int | None = Field(default=None, description="Server port")
     database: str | None = Field(default=None, description="Database name")
     username: str | None = Field(default=None, description="Username (may be masked)")
-    password: str = Field("***MASKED***", description="Always masked")
+    password: str = Field(default="***MASKED***", description="Always masked")
     auth_mechanism: str | None = Field(
         default=None, description="Authentication mechanism"
     )
@@ -37,4 +37,6 @@ class ModelMaskedConnectionProperties(BaseModel):
         default_factory=list,
         description="List of masked field names",
     )
-    masking_algorithm: str = Field("sha256", description="Masking algorithm used")
+    masking_algorithm: str = Field(
+        default="sha256", description="Masking algorithm used"
+    )

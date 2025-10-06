@@ -22,7 +22,7 @@ class ModelUsageExample(GenericModel, Generic[InputT, OutputT]):
     """Model representing a usage example for introspection with typed input/output."""
 
     description: str = Field(
-        ...,
+        default=...,
         description="Description of what this example demonstrates",
     )
     command: str | None = Field(

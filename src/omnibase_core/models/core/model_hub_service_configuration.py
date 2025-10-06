@@ -22,7 +22,7 @@ class ModelHubServiceConfiguration(BaseModel):
     """Service configuration section from contracts."""
 
     is_persistent_service: bool | None = Field(
-        True,
+        default=True,
         description="Whether hub runs as persistent service",
     )
     http_endpoints: list[ModelHubHttpEndpoint] | None = Field(

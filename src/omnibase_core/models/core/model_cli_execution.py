@@ -43,22 +43,22 @@ class ModelCliExecution(BaseModel):
     )
 
     command_definition: ModelCliCommandDefinition = Field(
-        ...,
+        default=...,
         description="Command being executed",
     )
 
     parsed_arguments: ModelParsedArguments = Field(
-        ...,
+        default=...,
         description="Parsed and validated arguments",
     )
 
     execution_context: ModelExecutionContext = Field(
-        ...,
+        default=...,
         description="Execution environment and settings",
     )
 
     target_node: ModelNodeReference = Field(
-        ...,
+        default=...,
         description="Node that will execute the command",
     )
 
@@ -86,7 +86,7 @@ class ModelCliExecution(BaseModel):
         description="User ID for audit and permissions",
     )
 
-    session_id: str | None = Field(
+    session_id: UUID | None = Field(
         default=None,
         description="Session ID for tracking related commands",
     )
@@ -277,7 +277,7 @@ class ModelCliExecution(BaseModel):
         execution_context: ModelExecutionContext,
         target_node: ModelNodeReference,
         user_id: str | None = None,
-        session_id: str | None = None,
+        session_id: UUID | None = None,
         parent_execution_id: UUID | None = None,
         **kwargs,
     ) -> "ModelCliExecution":

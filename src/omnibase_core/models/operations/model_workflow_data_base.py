@@ -12,7 +12,7 @@ class ModelWorkflowDataBase(BaseModel):
     """Base workflow data with discriminator."""
 
     workflow_type: EnumWorkflowType = Field(
-        ...,
+        default=...,
         description="Workflow type discriminator",
     )
     input_parameters: ModelWorkflowInputParameters = Field(

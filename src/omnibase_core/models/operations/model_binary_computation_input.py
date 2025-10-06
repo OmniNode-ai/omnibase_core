@@ -29,7 +29,7 @@ class ModelBinaryComputationInput(ModelComputationInputBase):
         default=EnumComputationType.BINARY,
         description="Binary computation type discriminator",
     )
-    binary_format: str = Field(..., description="Binary data format")
+    binary_format: str = Field(default=..., description="Binary data format")
     compression_algorithm: str = Field(
         default="none",
         description="Compression algorithm used",

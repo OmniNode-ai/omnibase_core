@@ -70,7 +70,7 @@ class ModelConfigurationSubcontract(BaseModel):
 
     # Configuration identification
     config_name: str = Field(
-        ...,
+        default=...,
         description="Unique identifier for this configuration set",
         pattern=r"^[a-zA-Z][a-zA-Z0-9_-]*$",
         min_length=1,

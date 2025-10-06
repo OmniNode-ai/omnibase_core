@@ -39,7 +39,7 @@ class ModelStateTransition(BaseModel):
     """
 
     # Transition identification
-    name: str = Field(..., description="Unique name for this transition")
+    name: str = Field(default=..., description="Unique name for this transition")
 
     description: str | None = Field(
         default=None,
@@ -48,7 +48,7 @@ class ModelStateTransition(BaseModel):
 
     # Trigger configuration
     triggers: list[str] = Field(
-        ...,
+        default=...,
         description="Action types or events that trigger this transition",
     )
 
@@ -58,7 +58,9 @@ class ModelStateTransition(BaseModel):
     )
 
     # Transition type and configuration
-    transition_type: EnumTransitionType = Field(..., description="Type of transition")
+    transition_type: EnumTransitionType = Field(
+        default=..., description="Type of transition"
+    )
 
     # Type-specific configuration (only one should be set)
     simple_config: ModelSimpleTransition | None = Field(
@@ -110,12 +112,12 @@ class ModelStateTransition(BaseModel):
 
     # Error handling
     on_error: str | None = Field(
-        "fail",
+        default="fail",
         description="Error handling strategy: 'fail', 'skip', 'rollback', 'retry'",
     )
 
     max_retries: int | None = Field(
-        0,
+        default=0,
         description="Maximum retry attempts for failed transitions",
     )
 

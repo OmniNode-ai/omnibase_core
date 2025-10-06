@@ -32,12 +32,12 @@ class ModelOrchestratorInput(BaseModel):
     """
 
     workflow_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique identifier for this workflow",
     )
 
     steps: list[ModelWorkflowStepExecution] = Field(
-        ...,
+        default=...,
         description="Workflow steps with execution metadata and state tracking",
     )
 

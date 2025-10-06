@@ -392,7 +392,6 @@ class ModelONEXContainer:
         Returns:
             NodeBase: Configured node instance
         """
-        from omnibase_core.infrastructure.node_base import NodeBase
 
         return NodeBase(
             contract_path=contract_path,

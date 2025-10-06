@@ -30,8 +30,6 @@ from typing import Any, ClassVar
 # Import protocols from omnibase_spi
 from omnibase_spi.protocols.types import (
     ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
-)
-from omnibase_spi.protocols.types import (
     ProtocolModelValidatable as ModelProtocolValidatable,
 )
 from pydantic import BaseModel, Field, field_validator
@@ -50,7 +48,7 @@ class ModelValueContainer(BaseModel):
     No wrapper classes needed - uses Python's native types directly.
     """
 
-    value: JsonSerializable = Field(..., description="The contained value")
+    value: JsonSerializable = Field(default=..., description="The contained value")
     metadata: dict[str, str] = Field(
         default_factory=dict, description="Optional string metadata"
     )
@@ -240,7 +238,6 @@ class ModelValueContainer(BaseModel):
         # Numeric validation errors
         elif isinstance(self.value, (int, float)):
             if isinstance(self.value, float):
-                import math
 
                 if math.isnan(self.value):
                     errors.append("Float value cannot be NaN")

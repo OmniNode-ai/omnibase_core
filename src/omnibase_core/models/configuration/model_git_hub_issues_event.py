@@ -8,6 +8,7 @@ ONEX-Compliant GitHub Issues Event Model
 Phase 3I remediation: Eliminated factory method anti-patterns and optional return types.
 """
 
+from typing import Any
 from pydantic import BaseModel, Field, validator
 
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
@@ -27,7 +28,7 @@ class ModelGitHubIssuesEvent(BaseModel):
     """
 
     action: str = Field(
-        ...,
+        default=...,
         description="GitHub event action type",
         pattern="^(opened|edited|deleted|transferred|pinned|unpinned|closed|reopened|assigned|unassigned|labeled|unlabeled|locked|unlocked|milestoned|demilestoned)$",
         min_length=4,
@@ -35,17 +36,17 @@ class ModelGitHubIssuesEvent(BaseModel):
     )
 
     issue: ModelGitHubIssue = Field(
-        ...,
+        default=...,
         description="Associated issue data",
     )
 
     repository: ModelGitHubRepository = Field(
-        ...,
+        default=...,
         description="Repository where event occurred",
     )
 
     sender: ModelGitHubUser = Field(
-        ...,
+        default=...,
         description="User who triggered the event",
     )
 
@@ -61,7 +62,7 @@ class ModelGitHubIssuesEvent(BaseModel):
 
     # ONEX validation constraints
     @validator("action")
-    def validate_action_context(cls, v, values):
+    def validate_action_context(cls, v: Any, values: dict[str, Any]) -> Any:
         """Validate action corresponds to appropriate context data."""
         label_actions = {"labeled", "unlabeled"}
         assignee_actions = {"assigned", "unassigned"}
@@ -72,7 +73,7 @@ class ModelGitHubIssuesEvent(BaseModel):
         return v
 
     @validator("label")
-    def validate_label_context(cls, v, values):
+    def validate_label_context(cls, v: Any, values: dict[str, Any]) -> Any:
         """Ensure label is provided when action requires it."""
         action = values.get("action", "")
         if action in {"labeled", "unlabeled"} and v is None:
@@ -86,7 +87,7 @@ class ModelGitHubIssuesEvent(BaseModel):
         return v
 
     @validator("assignee")
-    def validate_assignee_context(cls, v, values):
+    def validate_assignee_context(cls, v: Any, values: dict[str, Any]) -> Any:
         """Ensure assignee is provided when action requires it."""
         action = values.get("action", "")
         if action in {"assigned", "unassigned"} and v is None:

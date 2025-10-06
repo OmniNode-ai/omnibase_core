@@ -17,7 +17,6 @@ from pydantic import Field
 from omnibase_core.constants.event_types import REAL_TIME_INTROSPECTION_RESPONSE
 from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
@@ -44,23 +43,25 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Response correlation
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Correlation ID matching the original request",
     )
 
     # Node identification
-    node_name: str = Field(..., description="Name of the responding node")
-    version: ModelSemVer = Field(..., description="Version of the responding node")
+    node_name: str = Field(default=..., description="Name of the responding node")
+    version: ModelSemVer = Field(
+        default=..., description="Version of the responding node"
+    )
 
     # Current status
     current_status: EnumNodeCurrentStatus = Field(
-        ...,
+        default=...,
         description="Current operational status of the node",
     )
 
     # Node capabilities (from introspection)
     capabilities: ModelNodeCapabilities = Field(
-        ...,
+        default=...,
         description="Node capabilities including actions, protocols, and metadata",
     )
 
@@ -82,7 +83,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Response metadata
     response_time_ms: float = Field(
-        ...,
+        default=...,
         description="Time taken to process the introspection request in milliseconds",
         ge=0.0,
     )

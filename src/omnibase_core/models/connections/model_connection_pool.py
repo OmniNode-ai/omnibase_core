@@ -33,14 +33,16 @@ class ModelConnectionPool(BaseModel):
 
     # Connection parameters
     timeout_seconds: int = Field(
-        30,
+        default=30,
         description="Connection timeout in seconds",
         ge=1,
         le=3600,
     )
-    retry_count: int = Field(3, description="Number of retry attempts", ge=0, le=10)
+    retry_count: int = Field(
+        default=3, description="Number of retry attempts", ge=0, le=10
+    )
     retry_delay_seconds: int = Field(
-        1,
+        default=1,
         description="Delay between retries in seconds",
         ge=0,
         le=60,

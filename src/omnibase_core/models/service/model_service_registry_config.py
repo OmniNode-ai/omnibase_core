@@ -42,11 +42,11 @@ class ModelServiceRegistryConfig(BaseModel):
         description="Registry mode configurations",
     )
     default_mode: str = Field(
-        "development",
+        default="development",
         description="Default registry mode if not specified",
     )
     configuration_version: str = Field(
-        "1.0",
+        default="1.0",
         description="Configuration schema version",
     )
 

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 class ModelConfigurationSummary(BaseModel):
     """Configuration summary model."""
 
-    backend_type: str = Field(..., description="Backend type identifier")
+    backend_type: str = Field(default=..., description="Backend type identifier")
     backend_capabilities: dict[str, bool] = Field(
         default_factory=dict,
         description="Backend capabilities",
@@ -27,14 +27,18 @@ class ModelConfigurationSummary(BaseModel):
         default_factory=dict,
         description="Performance profile settings",
     )
-    audit_enabled: bool = Field(..., description="Audit logging enabled status")
-    fallback_enabled: bool = Field(..., description="Fallback mechanism enabled status")
+    audit_enabled: bool = Field(default=..., description="Audit logging enabled status")
+    fallback_enabled: bool = Field(
+        default=..., description="Fallback mechanism enabled status"
+    )
     fallback_backends: list[str] = Field(
         default_factory=list,
         description="Available fallback backends",
     )
-    environment_type: str = Field(..., description="Detected environment type")
-    production_ready: bool = Field(..., description="Production readiness status")
+    environment_type: str = Field(default=..., description="Detected environment type")
+    production_ready: bool = Field(
+        default=..., description="Production readiness status"
+    )
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dict[str, Any]ionary for current standards."""

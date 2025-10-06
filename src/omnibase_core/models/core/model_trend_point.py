@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field, field_serializer
 class ModelTrendPoint(BaseModel):
     """Individual trend data point."""
 
-    timestamp: datetime = Field(..., description="Data point timestamp")
-    value: float | int = Field(..., description="Data point value")
+    timestamp: datetime = Field(default=..., description="Data point timestamp")
+    value: float | int = Field(default=..., description="Data point value")
     label: str | None = Field(default=None, description="Optional label")
 
     @field_serializer("timestamp")

@@ -21,7 +21,7 @@ class ModelCanonicalizationPolicy(BaseModel):
     """
 
     canonicalize_body: Callable[..., Any] = Field(
-        ...,
+        default=...,
         description="Function to canonicalize body content",
     )
 

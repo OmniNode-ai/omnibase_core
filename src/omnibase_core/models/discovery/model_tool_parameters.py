@@ -18,13 +18,13 @@ from pydantic import BaseModel, Field
 class ModelToolParameter(BaseModel):
     """Single tool parameter with strong typing."""
 
-    name: str = Field(..., description="Parameter name")
+    name: str = Field(default=..., description="Parameter name")
     value: str | int | float | bool | list[str] | dict[str, str] = Field(
-        ...,
+        default=...,
         description="Parameter value with specific allowed types",
     )
     parameter_type: str = Field(
-        ...,
+        default=...,
         description="Parameter type",
         json_schema_extra={
             "enum": [

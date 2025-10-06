@@ -53,7 +53,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
 
     # Request metadata
     requester_id: str = Field(
-        ...,
+        default=...,
         description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
     )
 

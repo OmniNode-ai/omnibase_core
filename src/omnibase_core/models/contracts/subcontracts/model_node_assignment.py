@@ -25,10 +25,10 @@ class ModelNodeAssignment(BaseModel):
         description="Unique identifier for the node",
     )
 
-    node_type: EnumNodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(default=..., description="Type of the node")
 
     assignment_status: EnumAssignmentStatus = Field(
-        ...,
+        default=...,
         description="Current status of the assignment",
     )
 

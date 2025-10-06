@@ -44,18 +44,18 @@ class ModelCliExecutionInputData(BaseModel):
     """
 
     # Data identification
-    key: str = Field(..., description="Input data key identifier")
+    key: str = Field(default=..., description="Input data key identifier")
     value_type: EnumCliInputValueType = Field(
-        ...,
+        default=...,
         description="Type discriminator for the input value",
     )
     value: object = Field(
-        ...,
+        default=...,
         description="Input data value - validated against value_type discriminator",
     )
 
     # Data metadata
-    data_type: EnumDataType = Field(..., description="Type of input data")
+    data_type: EnumDataType = Field(default=..., description="Type of input data")
     is_sensitive: bool = Field(default=False, description="Whether data is sensitive")
     is_required: bool = Field(default=False, description="Whether data is required")
 

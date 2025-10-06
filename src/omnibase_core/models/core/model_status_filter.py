@@ -11,12 +11,14 @@ class ModelStatusFilter(ModelCustomFilterBase):
     """Status-based custom filter."""
 
     filter_type: str = Field(default="status", description="Filter type identifier")
-    allowed_statuses: list[str] = Field(..., description="Allowed status values")
+    allowed_statuses: list[str] = Field(
+        default=..., description="Allowed status values"
+    )
     blocked_statuses: list[str] = Field(
         default_factory=list,
         description="Blocked status values",
     )
     include_unknown: bool = Field(
-        False,
+        default=False,
         description="Include items with unknown status",
     )

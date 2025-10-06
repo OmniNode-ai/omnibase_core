@@ -21,14 +21,16 @@ class ModelEventBusConfig(BaseModel):
         description="Event bus service URL",
     )
     timeout_ms: int = Field(
-        30000,
+        default=30000,
         description="Event bus timeout in milliseconds",
         ge=1000,
         le=300000,
     )
-    retry_attempts: int = Field(3, description="Number of retry attempts", ge=1, le=10)
+    retry_attempts: int = Field(
+        default=3, description="Number of retry attempts", ge=1, le=10
+    )
     connection_pool_size: int = Field(
-        10,
+        default=10,
         description="Connection pool size",
         ge=1,
         le=100,

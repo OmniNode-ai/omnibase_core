@@ -22,7 +22,7 @@ ConditionValue = TypeVar("ConditionValue", str, int, float, bool)
 class ModelConditionValue(BaseModel, Generic[ConditionValue]):
     """Generic container for strongly-typed condition values."""
 
-    value: ConditionValue = Field(..., description="Typed condition value")
+    value: ConditionValue = Field(default=..., description="Typed condition value")
 
     @property
     def python_type(self) -> type:

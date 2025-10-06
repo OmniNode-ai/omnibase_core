@@ -16,7 +16,7 @@ class ModelQueryMessageContent(ModelMessageContentBase):
         default=EnumMessageType.QUERY,
         description="Query message type",
     )
-    query_type: str = Field(..., description="Type of query being performed")
+    query_type: str = Field(default=..., description="Type of query being performed")
     query_parameters: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Query parameters",

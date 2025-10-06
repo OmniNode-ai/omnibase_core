@@ -28,7 +28,7 @@ class ModelSeverity(BaseModel):
 
     # Core required fields with strong typing
     name: str = Field(
-        ...,
+        default=...,
         description="Severity identifier (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL)",
         pattern="^[A-Z][A-Z_]*$",
         min_length=3,
@@ -36,7 +36,7 @@ class ModelSeverity(BaseModel):
     )
 
     value: str = Field(
-        ...,
+        default=...,
         description="Lowercase canonical value",
         pattern="^[a-z][a-z_]*$",
         min_length=3,
@@ -44,7 +44,7 @@ class ModelSeverity(BaseModel):
     )
 
     numeric_value: int = Field(
-        ...,
+        default=...,
         description="Numeric severity level for comparison (higher = more severe)",
         ge=0,
         le=100,
@@ -52,12 +52,12 @@ class ModelSeverity(BaseModel):
 
     # Behavioral properties
     is_blocking: bool = Field(
-        ...,
+        default=...,
         description="Whether this severity blocks execution flow",
     )
 
     is_critical: bool = Field(
-        ...,
+        default=...,
         description="Whether this represents critical or fatal severity",
     )
 

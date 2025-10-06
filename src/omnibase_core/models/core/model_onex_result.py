@@ -13,6 +13,7 @@ from omnibase_core.models.core.model_orchestrator_info import ModelOrchestratorI
 from .model_onex_message import ModelOnexMessage
 from .model_unified_summary import ModelUnifiedSummary
 from .model_unified_version import ModelUnifiedVersion
+from uuid import UUID
 
 
 class ModelOnexResult(BaseModel):
@@ -37,7 +38,7 @@ class ModelOnexResult(BaseModel):
     version: ModelUnifiedVersion | None = None
     duration: float | None = None
     exit_code: int | None = None
-    run_id: str | None = None
+    run_id: UUID | None = None
     child_results: list[ModelOnexResult] | None = None
     output_format: str | None = None
     cli_args: list[str] | None = None
@@ -46,8 +47,8 @@ class ModelOnexResult(BaseModel):
     skipped_reason: str | None = None
     coverage: float | None = None
     test_type: str | None = None
-    batch_id: str | None = None
-    parent_id: str | None = None
+    batch_id: UUID | None = None
+    parent_id: UUID | None = None
     timestamp: datetime | None = None
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

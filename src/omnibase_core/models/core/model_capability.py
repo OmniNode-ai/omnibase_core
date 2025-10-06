@@ -17,8 +17,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 
 class ModelCapability(BaseModel):
     """
@@ -33,7 +31,9 @@ class ModelCapability(BaseModel):
         description="Unique capability identifier",
     )
 
-    name: str = Field(..., description="Capability name", pattern="^[a-z][a-z0-9_]*$")
+    name: str = Field(
+        default=..., description="Capability name", pattern="^[a-z][a-z0-9_]*$"
+    )
 
     namespace: str = Field(
         default="onex",
@@ -46,9 +46,9 @@ class ModelCapability(BaseModel):
         description="Capability version",
     )
 
-    display_name: str = Field(..., description="Human-readable capability name")
+    display_name: str = Field(default=..., description="Human-readable capability name")
 
-    description: str = Field(..., description="What this capability provides")
+    description: str = Field(default=..., description="What this capability provides")
 
     category: str = Field(
         default="general",

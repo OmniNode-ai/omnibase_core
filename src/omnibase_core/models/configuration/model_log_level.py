@@ -11,17 +11,17 @@ class ModelLogLevel(BaseModel):
     """Extensible log level configuration enabling custom logging levels."""
 
     level_name: str = Field(
-        ...,
+        default=...,
         description="Log level name (e.g., DEBUG, INFO, CUSTOM_TRACE)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
     numeric_value: int = Field(
-        ...,
+        default=...,
         description="Numeric value for comparison and ordering",
         ge=0,
         le=100,
     )
-    display_name: str = Field(..., description="Human-readable display name")
+    display_name: str = Field(default=..., description="Human-readable display name")
     color_code: str | None = Field(
         default=None,
         description="Terminal color code for console output",

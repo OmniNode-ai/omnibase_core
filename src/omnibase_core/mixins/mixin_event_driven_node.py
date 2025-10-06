@@ -54,9 +54,9 @@ from omnibase_core.mixins.mixin_request_response_introspection import (
 
 
 class MixinEventDrivenNode(
-    MixinIntrospectionPublisher,
     MixinEventHandler,
     MixinNodeLifecycle,
+    MixinIntrospectionPublisher,
     MixinRequestResponseIntrospection,
 ):
     """
@@ -71,7 +71,6 @@ class MixinEventDrivenNode(
     """
 
     def __init__(
-        self,
         node_id: str,
         event_bus: ProtocolEventBus,
         metadata_loader: ProtocolSchemaLoader | None = None,
@@ -140,7 +139,6 @@ class MixinEventDrivenNode(
         except Exception as e:
             msg = f"Failed to load node version from metadata: {e}"
             raise ModelOnexError(
-                msg,
                 ModelCoreErrorCode.METADATA_LOAD_FAILED,
             )
 

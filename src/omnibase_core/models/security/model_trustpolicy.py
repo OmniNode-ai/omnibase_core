@@ -12,6 +12,7 @@ from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
 )
+from omnibase_core.models.security.model_security_rule import ModelRuleConditionValue
 from omnibase_core.models.security.model_encryption_requirement import (
     ModelEncryptionRequirement,
 )
@@ -51,12 +52,14 @@ class ModelTrustPolicy(BaseModel):
 
     # Policy identification
     policy_id: UUID = Field(
-        default_factory=lambda: str(uuid.uuid4()),
+        default_factory=uuid.uuid4,
         description="Unique policy identifier",
     )
-    name: str = Field(..., description="Policy name", min_length=1)
+    name: str = Field(default=..., description="Policy name", min_length=1)
     version: ModelSemVer = Field(
-        default="1.0", description="Policy version", pattern=r"^\d+\.\d+$"
+        default_factory=lambda: ModelSemVer.parse("1.0"),
+        description="Policy version",
+        pattern=r"^\d+\.\d+$",
     )
     description: str | None = Field(default=None, description="Policy description")
 
@@ -65,7 +68,7 @@ class ModelTrustPolicy(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When policy was created",
     )
-    created_by: str = Field(..., description="Policy creator", min_length=1)
+    created_by: str = Field(default=..., description="Policy creator", min_length=1)
     organization: str | None = Field(default=None, description="Organization name")
 
     # Global policy settings

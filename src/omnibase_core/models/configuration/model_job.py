@@ -19,7 +19,7 @@ from .model_step import ModelStep
 class ModelJob(BaseModel):
     """GitHub Actions workflow job."""
 
-    runs_on: str | list[str] = Field(..., alias="runs-on")
+    runs_on: str | list[str] = Field(default=..., alias="runs-on")
     steps: list[ModelStep]
     name: str | None = None
     needs: Any = None

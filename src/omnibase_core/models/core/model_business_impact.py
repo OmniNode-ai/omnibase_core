@@ -21,7 +21,9 @@ class ModelBusinessImpact(BaseModel):
     """
 
     # Impact assessment
-    severity: EnumImpactSeverity = Field(..., description="Overall impact severity")
+    severity: EnumImpactSeverity = Field(
+        default=..., description="Overall impact severity"
+    )
     affected_users: int | None = Field(
         default=None, description="Number of affected users"
     )

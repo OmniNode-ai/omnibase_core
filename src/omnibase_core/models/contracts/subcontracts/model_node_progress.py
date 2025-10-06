@@ -23,16 +23,16 @@ class ModelNodeProgress(BaseModel):
         description="Unique identifier for the node",
     )
 
-    node_type: EnumNodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(default=..., description="Type of the node")
 
     progress_percent: float = Field(
-        ...,
+        default=...,
         description="Progress percentage for this node",
         ge=0.0,
         le=100.0,
     )
 
-    status: str = Field(..., description="Current status of the node")
+    status: str = Field(default=..., description="Current status of the node")
 
     model_config = {
         "extra": "ignore",

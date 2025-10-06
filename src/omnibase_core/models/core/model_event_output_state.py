@@ -23,7 +23,7 @@ class ModelEventOutputState(BaseModel):
     """
 
     status: str = Field(
-        ...,
+        default=...,
         description="Execution status",
         pattern="^(success|failure|timeout|cancelled|pending)$",
     )

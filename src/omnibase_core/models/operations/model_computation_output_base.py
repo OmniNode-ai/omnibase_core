@@ -18,7 +18,7 @@ class ModelComputationOutputBase(BaseModel):
     """Base computation output with discriminator."""
 
     computation_type: "EnumComputationType" = Field(
-        ...,
+        default=...,
         description="Computation type discriminator",
     )
     computed_values: dict[str, ModelSchemaValue] = Field(

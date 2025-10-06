@@ -46,12 +46,12 @@ class ModelSignatureChain(BaseModel):
 
     # Chain identification
     chain_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique identifier for this signature chain",
         min_length=1,
     )
     envelope_id: UUID = Field(
-        ...,
+        default=...,
         description="ID of the envelope this chain belongs to",
         min_length=1,
     )
@@ -79,7 +79,7 @@ class ModelSignatureChain(BaseModel):
         min_length=0,
     )
     content_hash: str = Field(
-        ...,
+        default=...,
         description="SHA-256 hash of the original envelope content",
         min_length=1,
     )
@@ -461,7 +461,7 @@ class ModelSignatureChain(BaseModel):
     @classmethod
     def create_new_chain(
         cls,
-        envelope_id: str,
+        envelope_id: str | UUID,
         content_hash: str,
         signing_policy: ModelSigningPolicy | None = None,
         compliance_frameworks: list[EnumComplianceFramework] | None = None,
@@ -470,8 +470,10 @@ class ModelSignatureChain(BaseModel):
         import uuid
 
         return cls(
-            chain_id=str(uuid.uuid4()),
-            envelope_id=envelope_id,
+            chain_id=uuid.uuid4(),  # UUID object, not string
+            envelope_id=(
+                UUID(envelope_id) if isinstance(envelope_id, str) else envelope_id
+            ),
             content_hash=content_hash,
             signing_policy=signing_policy,
             compliance_frameworks=compliance_frameworks or [],

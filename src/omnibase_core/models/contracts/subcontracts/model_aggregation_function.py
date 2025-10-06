@@ -25,31 +25,31 @@ class ModelAggregationFunction(BaseModel):
     """
 
     function_name: str = Field(
-        ...,
+        default=...,
         description="Name of the aggregation function",
         min_length=1,
     )
 
     function_type: str = Field(
-        ...,
+        default=...,
         description="Type of function (statistical, mathematical, custom)",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable function description",
         min_length=1,
     )
 
     input_fields: list[str] = Field(
-        ...,
+        default=...,
         description="Required input fields for function",
         min_length=1,
     )
 
     output_field: str = Field(
-        ...,
+        default=...,
         description="Output field name for result",
         min_length=1,
     )

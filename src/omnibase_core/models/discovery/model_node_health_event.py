@@ -23,7 +23,7 @@ class ModelHealthMetrics(BaseModel):
 
     # Basic health status
     status: str = Field(
-        ...,
+        default=...,
         description="Health status (healthy, warning, critical, unknown)",
     )
 

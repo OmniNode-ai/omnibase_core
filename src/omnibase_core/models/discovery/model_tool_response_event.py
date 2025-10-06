@@ -59,23 +59,29 @@ class ModelToolResponseEvent(ModelOnexEvent):
 
     # Response correlation
     correlation_id: UUID = Field(
-        ...,
+        default=...,
         description="Correlation ID matching the original TOOL_INVOCATION request",
     )
 
     # Source node identification
-    source_node_id: str = Field(..., description="Node ID that executed the tool")
+    source_node_id: str = Field(
+        default=..., description="Node ID that executed the tool"
+    )
     source_node_name: str = Field(
-        ...,
+        default=...,
         description="Name of the node that executed the tool",
     )
 
     # Tool execution details
-    tool_name: str = Field(..., description="Name of the tool that was executed")
-    action: str = Field(..., description="Action that was performed")
+    tool_name: str = Field(
+        default=..., description="Name of the tool that was executed"
+    )
+    action: str = Field(default=..., description="Action that was performed")
 
     # Execution result
-    success: bool = Field(..., description="Whether the tool execution was successful")
+    success: bool = Field(
+        default=..., description="Whether the tool execution was successful"
+    )
     result: dict[str, str | int | float | bool | list[Any]] | None = Field(
         default=None,
         description="Tool execution result data (if successful)",
@@ -91,7 +97,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
 
     # Performance metrics
     execution_time_ms: int = Field(
-        ...,
+        default=...,
         description="Total execution time in milliseconds",
         ge=0,
     )
@@ -113,11 +119,11 @@ class ModelToolResponseEvent(ModelOnexEvent):
 
     # Response routing
     target_node_id: str = Field(
-        ...,
+        default=...,
         description="Node ID where response should be delivered",
     )
     requester_id: str = Field(
-        ...,
+        default=...,
         description="Original requester identifier for response handling",
     )
 

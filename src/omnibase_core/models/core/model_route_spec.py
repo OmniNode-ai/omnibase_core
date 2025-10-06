@@ -30,7 +30,7 @@ class ModelRouteSpec(BaseModel):
 
     # Core routing information
     final_destination: str = Field(
-        ...,
+        default=...,
         description="Ultimate destination address (node://, service://, etc.)",
     )
     remaining_hops: list[str] = Field(

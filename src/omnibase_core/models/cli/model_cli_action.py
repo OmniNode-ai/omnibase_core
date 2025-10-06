@@ -46,13 +46,15 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         exclude=True,
     )
     action_display_name: str = Field(
-        ...,
+        default=...,
         description="Action name",
         alias="action_name",
     )
-    node_id: UUID = Field(..., description="UUID-based node reference")
-    node_display_name: str = Field(..., description="Node name", alias="node_name")
-    description: str = Field(..., description="Human-readable description")
+    node_id: UUID = Field(default=..., description="UUID-based node reference")
+    node_display_name: str = Field(
+        default=..., description="Node name", alias="node_name"
+    )
+    description: str = Field(default=..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
     category: object = Field(
         default=None,

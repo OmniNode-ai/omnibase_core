@@ -141,7 +141,6 @@ class ModelTypedMapping(BaseModel):
 
     def get_int(self, key: str, default: int | None = None) -> int | None:
         """Get an integer value with type safety."""
-        from typing import Dict, Optional, cast
 
         container = self.data.get(key)
         if container is None:
@@ -155,7 +154,6 @@ class ModelTypedMapping(BaseModel):
 
     def get_bool(self, key: str, default: bool | None = None) -> bool | None:
         """Get a boolean value with type safety."""
-        from typing import Dict, Optional, cast
 
         container = self.data.get(key)
         if container is None:

@@ -14,6 +14,7 @@ from omnibase_core.enums.enum_version_manifest import (
     EnumContractCompliance,
     EnumVersionStatus,
 )
+from omnibase_core.models.service.model_node_service_config import ModelVersionFile
 from omnibase_core.errors.error_codes import ModelCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer, SemVerField
@@ -201,7 +202,6 @@ class ModelVersionManifest(BaseModel):
 
     def get_required_files(self) -> list[ModelVersionFile]:
         """Get all required files."""
-        from omnibase_core.models.core.model_version_file import ModelVersionFile
 
         all_files = (
             self.implementation.model_files

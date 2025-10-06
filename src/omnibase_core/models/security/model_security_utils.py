@@ -330,7 +330,7 @@ class ModelSecurityUtils:
 
         audit_report = ModelCredentialAuditReport()
 
-        def _audit_recursive(obj, path=""):
+        def _audit_recursive(obj: Any, path: str = "") -> None:
             if isinstance(obj, dict):
                 for key, value in obj.items():
                     current_path = f"{path}.{key}" if path else key

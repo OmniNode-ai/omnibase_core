@@ -32,12 +32,12 @@ class ModelEventBusInputOutputState(BaseModel):
     """
 
     input_state: ModelEventBusInputState = Field(
-        ...,
+        default=...,
         description="Input state for the event bus operation",
     )
 
     output_state: ModelEventBusOutputState = Field(
-        ...,
+        default=...,
         description="Output state for the event bus operation",
     )
 

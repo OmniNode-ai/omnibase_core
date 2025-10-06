@@ -9,6 +9,10 @@ from pydantic import BaseModel, Field
 from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
+
 
 class ModelNodeCoreInfo(BaseModel):
     """
@@ -29,8 +33,8 @@ class ModelNodeCoreInfo(BaseModel):
     node_display_name: str | None = Field(
         default=None, description="Human-readable node name"
     )
-    node_type: EnumMetadataNodeType = Field(..., description="Node type")
-    node_version: ModelSemVer = Field(..., description="Node version")
+    node_type: EnumMetadataNodeType = Field(default=..., description="Node type")
+    node_version: ModelSemVer = Field(default=..., description="Node version")
 
     # Basic metadata (3 fields)
     description: str | None = Field(default=None, description="Node description")

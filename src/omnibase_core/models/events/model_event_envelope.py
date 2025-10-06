@@ -24,7 +24,6 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 T = TypeVar("T")  # For the wrapped event payload
 
@@ -74,7 +73,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     # CORE ENVELOPE FIELDS
     # ============================================================================
 
-    payload: T = Field(..., description="The wrapped event payload")
+    payload: T = Field(default=..., description="The wrapped event payload")
     envelope_id: UUID = Field(
         default_factory=uuid4, description="Unique envelope identifier"
     )

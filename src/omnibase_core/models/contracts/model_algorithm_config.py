@@ -31,13 +31,13 @@ class ModelAlgorithmConfig(BaseModel):
     """
 
     algorithm_type: str = Field(
-        ...,
+        default=...,
         description="Algorithm type identifier",
         min_length=1,
     )
 
     factors: dict[str, ModelAlgorithmFactorConfig] = Field(
-        ...,
+        default=...,
         description="Algorithm factors with configuration",
     )
 

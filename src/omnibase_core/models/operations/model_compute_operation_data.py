@@ -21,7 +21,9 @@ class ModelComputeOperationData(ModelOperationDataBase):
         default=EnumNodeType.COMPUTE,
         description="Compute operation type",
     )
-    algorithm_type: str = Field(..., description="Type of algorithm or computation")
+    algorithm_type: str = Field(
+        default=..., description="Type of algorithm or computation"
+    )
     computation_resources: dict[str, float] = Field(
         default_factory=dict,
         description="Required computation resources",

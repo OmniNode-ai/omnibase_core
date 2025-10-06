@@ -32,17 +32,17 @@ class ModelParsedArguments(BaseModel):
     """
 
     arguments: ModelArgumentMap = Field(
-        ...,
+        default=...,
         description="Parsed argument values in type-safe container",
     )
 
     command_definition: ModelCliCommandDefinition = Field(
-        ...,
+        default=...,
         description="Command definition used for parsing",
     )
 
     target_node: ModelNodeReference = Field(
-        ...,
+        default=...,
         description="Target node reference for execution",
     )
 

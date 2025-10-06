@@ -24,7 +24,7 @@ class ModelNotificationSettings(BaseModel):
         default=True, description="Send email on execution failure"
     )
     email_on_completion: bool = Field(
-        False,
+        default=False,
         description="Send email on execution completion",
     )
 
@@ -41,7 +41,7 @@ class ModelNotificationSettings(BaseModel):
         description="Custom headers for webhook",
     )
     webhook_retry_count: int = Field(
-        3,
+        default=3,
         description="Number of webhook retry attempts",
         ge=0,
         le=5,
@@ -57,7 +57,7 @@ class ModelNotificationSettings(BaseModel):
 
     # Notification rules
     min_severity: str = Field(
-        "error",
+        default="error",
         description="Minimum severity to trigger notifications",
         pattern="^(debug|info|warning|error|critical)$",
     )
@@ -67,11 +67,11 @@ class ModelNotificationSettings(BaseModel):
         ge=1,
     )
     aggregate_notifications: bool = Field(
-        True,
+        default=True,
         description="Aggregate multiple notifications",
     )
     aggregation_window_minutes: int = Field(
-        5,
+        default=5,
         description="Window for notification aggregation",
         ge=1,
         le=60,

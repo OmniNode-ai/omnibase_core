@@ -285,9 +285,7 @@ class ModelContractCompute(ModelContractBase):
     # These fields define the core computation behavior
 
     # Computation configuration
-    algorithm: ModelAlgorithmConfig = Field(
-        ...,
-        description="Algorithm configuration and parameters",
+    algorithm: ModelAlgorithmConfig = Field(default=..., description="Algorithm configuration and parameters",
     )
 
     parallel_processing: ModelParallelConfig = Field(

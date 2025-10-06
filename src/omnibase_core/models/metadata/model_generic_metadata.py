@@ -8,6 +8,9 @@ from pydantic import Field, field_validator
 from omnibase_core.errors.error_codes import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
+from typing import TYPE_CHECKING
+
+
 """
 Generic metadata model for flexible data storage.
 """
@@ -26,7 +29,7 @@ if TYPE_CHECKING:
     from . import ProtocolSupportedMetadataType
 else:
     # Runtime fallback - will be dict[str, object] from __init__.py
-    from . import ProtocolSupportedMetadataType
+    ProtocolSupportedMetadataType = dict[str, object]  # type: ignore[misc]
 
 from pydantic import BaseModel, Field, field_validator
 

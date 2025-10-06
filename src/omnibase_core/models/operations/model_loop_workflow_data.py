@@ -18,10 +18,10 @@ class ModelLoopWorkflowData(ModelWorkflowDataBase):
         description="Loop workflow type",
     )
     loop_body: list[str] = Field(
-        ...,
+        default=...,
         description="Steps to execute in each loop iteration",
     )
-    loop_condition: str = Field(..., description="Loop continuation condition")
+    loop_condition: str = Field(default=..., description="Loop continuation condition")
     max_iterations: int = Field(
         default=100,
         description="Maximum number of loop iterations",

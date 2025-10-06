@@ -18,7 +18,7 @@ class ModelCacheKeyStrategy(BaseModel):
     """
 
     key_generation_method: str = Field(
-        ...,
+        default=...,
         description="Method for generating cache keys",
         min_length=1,
     )

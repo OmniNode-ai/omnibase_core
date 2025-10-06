@@ -17,33 +17,33 @@ class ModelRetryStrategy(BaseModel):
     """
 
     max_retries: int = Field(
-        3,
+        default=3,
         description="Maximum number of retry attempts",
         ge=0,
         le=10,
     )
 
     backoff_multiplier: float = Field(
-        1.5,
+        default=1.5,
         description="Backoff multiplier for exponential backoff",
         gt=1.0,
         le=5.0,
     )
 
     max_backoff: int = Field(
-        30,
+        default=30,
         description="Maximum backoff time in seconds",
         ge=1,
         le=300,
     )
 
     retry_on_timeout: bool = Field(
-        True,
+        default=True,
         description="Whether to retry on timeout errors",
     )
 
     initial_backoff: float = Field(
-        1.0,
+        default=1.0,
         description="Initial backoff time in seconds",
         gt=0,
         le=60,

@@ -15,7 +15,7 @@ class ModelSystemEventData(ModelEventDataBase):
         description="System event type",
     )
     system_component: str = Field(
-        ...,
+        default=...,
         description="System component that generated the event",
     )
     severity_level: str = Field(default="info", description="Event severity level")

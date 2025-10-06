@@ -47,7 +47,7 @@ class ModelExecutionMetadata(BaseModel):
         default_factory=uuid4,
         description="Unique execution identifier (UUID format)",
     )
-    start_time: datetime = Field(..., description="Execution start timestamp")
+    start_time: datetime = Field(default=..., description="Execution start timestamp")
     end_time: datetime | None = Field(
         default=None, description="Execution end timestamp"
     )

@@ -54,7 +54,7 @@ class ModelTreeSyncResult(BaseModel):
         description="Files list[Any]ed in .tree but missing on disk",
     )
     status: EnumTreeSyncStatus = Field(
-        ...,
+        default=...,
         description="Sync status: ok, drift, or error",
     )
     messages: list[ModelOnexMessage] = Field(

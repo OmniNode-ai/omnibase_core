@@ -19,7 +19,7 @@ class ModelCredentialAuditReport(BaseModel):
     )
 
     sensitive_fields: int = Field(
-        0,
+        default=0,
         description="Number of sensitive fields found",
         ge=0,
     )

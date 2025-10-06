@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class ModelMatrixStrategy(BaseModel):
     """Matrix strategy configuration."""
 
-    matrix: dict[str, list[Any]] = Field(..., description="Matrix dimensions")
+    matrix: dict[str, list[Any]] = Field(default=..., description="Matrix dimensions")
     include: list[dict[str, Any]] | None = Field(
         default=None,
         description="Matrix inclusions",

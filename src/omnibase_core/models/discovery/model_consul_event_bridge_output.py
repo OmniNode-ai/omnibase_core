@@ -15,7 +15,7 @@ from omnibase_core.models.discovery.model_event_descriptor import ModelEventDesc
 class ModelConsulEventBridgeOutput(BaseModel):
     """Output model for Consul Event Bridge operations."""
 
-    bridge_result: str = Field(..., description="Bridge operation result")
+    bridge_result: str = Field(default=..., description="Bridge operation result")
 
     bridging_success: bool | None = Field(
         default=None, description="Event bridging success"
@@ -36,7 +36,7 @@ class ModelConsulEventBridgeOutput(BaseModel):
         description="Event monitoring started successfully",
     )
 
-    operation_timestamp: str = Field(..., description="Operation timestamp")
+    operation_timestamp: str = Field(default=..., description="Operation timestamp")
 
     error_details: str | None = Field(
         default=None,
@@ -44,7 +44,7 @@ class ModelConsulEventBridgeOutput(BaseModel):
     )
 
     operation_successful: bool = Field(
-        True,
+        default=True,
         description="Whether operation was successful",
     )
 

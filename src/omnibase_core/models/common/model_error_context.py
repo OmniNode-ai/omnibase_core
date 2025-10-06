@@ -106,7 +106,6 @@ class ModelErrorContext(BaseModel):
 
     def to_simple_context(self) -> "BasicErrorContext":
         """Convert to BasicErrorContext (no circular dependencies)."""
-        from omnibase_core.types.core_types import BasicErrorContext
 
         return BasicErrorContext(
             file_path=self.file_path,

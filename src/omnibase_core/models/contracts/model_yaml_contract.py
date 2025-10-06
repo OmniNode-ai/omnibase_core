@@ -44,12 +44,12 @@ class ModelYamlContract(BaseModel):
 
     # Required fields for contract validation
     contract_version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Contract semantic version specification",
     )
 
     node_type: EnumNodeType = Field(
-        ...,
+        default=...,
         description="Node type classification for 4-node architecture",
     )
 

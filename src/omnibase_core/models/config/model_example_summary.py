@@ -39,7 +39,7 @@ class ModelExampleSummary(BaseModel):
         default_factory=uuid4,
         description="Unique identifier for the example entity",
     )
-    display_name: str = Field(..., description="Example display name")
+    display_name: str = Field(default=..., description="Example display name")
 
     description: str | None = Field(default=None, description="Example description")
     is_valid: bool = Field(default=True, description="Whether example is valid")

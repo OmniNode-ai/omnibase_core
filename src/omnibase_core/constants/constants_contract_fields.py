@@ -64,3 +64,10 @@ HASH = "hash"
 ENTRYPOINT = "entrypoint"
 RUNTIME_LANGUAGE_HINT = "runtime_language_hint"
 META_TYPE = "meta_type"
+
+# Output field processing keys
+BACKEND_KEY = "backend"
+CUSTOM_KEY = "custom"
+DEFAULT_PROCESSED_VALUE = "default_processed"
+INTEGRATION_KEY = "integration"
+PROCESSED_KEY = "processed"

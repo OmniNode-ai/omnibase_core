@@ -22,7 +22,7 @@ class ModelYamlSchemaObject(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     object_type: str = Field(
-        ...,
+        default=...,
         description="Object type (always 'object' for schema objects)",
     )
     properties: dict[str, ModelYamlSchemaProperty] = Field(

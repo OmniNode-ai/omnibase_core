@@ -46,10 +46,8 @@ from omnibase_core.mixins.mixin_node_introspection_data import (
     MixinNodeIntrospectionData,
 )
 from omnibase_core.models.core.model_log_context import ModelLogContext
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
-    ModelNodeIntrospectionEvent,
 )
 
 # Component identifier for logging
@@ -281,23 +279,17 @@ class MixinIntrospectionPublisher:
                 loader_metadata = getattr(metadata_loader, "metadata", None)
                 if loader_metadata:
                     if hasattr(loader_metadata, "description") and getattr(
-                        loader_metadata,
                         "description",
-                        None,
                     ):
                         capabilities.metadata["description"] = str(
                             loader_metadata.description,
                         )
                     if hasattr(loader_metadata, "author") and getattr(
-                        loader_metadata,
                         "author",
-                        None,
                     ):
                         capabilities.metadata["author"] = str(loader_metadata.author)
                     if hasattr(loader_metadata, "copyright") and getattr(
-                        loader_metadata,
                         "copyright",
-                        None,
                     ):
                         capabilities.metadata["copyright"] = str(
                             loader_metadata.copyright,
@@ -401,9 +393,7 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "supports_mcp") and getattr(self, "supports_mcp", False):
                 tags.append("mcp")
             if hasattr(self, "supports_graphql") and getattr(
-                self,
                 "supports_graphql",
-                False,
             ):
                 tags.append("graphql")
         except Exception:

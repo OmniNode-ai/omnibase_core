@@ -21,13 +21,15 @@ class ModelHealthMetric(BaseModel):
     """
 
     metric_name: str = Field(
-        ...,
+        default=...,
         description="Metric name (e.g., 'cpu_usage', 'memory_usage', 'response_time')",
     )
 
-    current_value: float = Field(..., description="Current metric value")
+    current_value: float = Field(default=..., description="Current metric value")
 
-    unit: str = Field(..., description="Metric unit (e.g., '%', 'ms', 'MB', 'req/s')")
+    unit: str = Field(
+        default=..., description="Metric unit (e.g., '%', 'ms', 'MB', 'req/s')"
+    )
 
     threshold_warning: float | None = Field(
         default=None,

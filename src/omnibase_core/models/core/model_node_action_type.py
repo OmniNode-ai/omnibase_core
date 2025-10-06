@@ -27,10 +27,10 @@ class ModelNodeActionType(BaseModel):
     that include all necessary metadata for validation and execution.
     """
 
-    name: str = Field(..., description="Unique action type name")
-    category: ModelActionCategory = Field(..., description="Action category")
-    display_name: str = Field(..., description="Human-readable display name")
-    description: str = Field(..., description="Detailed action description")
+    name: str = Field(default=..., description="Unique action type name")
+    category: ModelActionCategory = Field(default=..., description="Action category")
+    display_name: str = Field(default=..., description="Human-readable display name")
+    description: str = Field(default=..., description="Detailed action description")
 
     # Behavioral metadata
     is_destructive: bool = Field(

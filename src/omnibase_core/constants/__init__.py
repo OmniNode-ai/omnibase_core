@@ -1,6 +1,13 @@
 """Constants module for omnibase_core."""
 
 from omnibase_core.constants import constants_contract_fields
+from omnibase_core.constants.constants_contract_fields import (
+    BACKEND_KEY,
+    CUSTOM_KEY,
+    DEFAULT_PROCESSED_VALUE,
+    INTEGRATION_KEY,
+    PROCESSED_KEY,
+)
 from omnibase_core.constants.event_types import (
     NODE_FAILURE,
     NODE_HEALTH_CHECK,
@@ -37,4 +44,10 @@ __all__ = [
     "TOOL_DISCOVERY_RESPONSE",
     "TOOL_INVOCATION",
     "TOOL_RESPONSE",
+    # Output field processing keys
+    "BACKEND_KEY",
+    "CUSTOM_KEY",
+    "DEFAULT_PROCESSED_VALUE",
+    "INTEGRATION_KEY",
+    "PROCESSED_KEY",
 ]

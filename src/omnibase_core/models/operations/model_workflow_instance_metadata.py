@@ -43,7 +43,7 @@ class ModelWorkflowInstanceMetadata(BaseModel):
         default_factory=uuid4,
         description="Unique workflow identifier (UUID format)",
     )
-    workflow_type: str = Field(..., description="Type of workflow")
+    workflow_type: str = Field(default=..., description="Type of workflow")
     instance_id: UUID = Field(
         default_factory=uuid4,
         description="Workflow instance identifier (UUID format)",

@@ -1,4 +1,5 @@
 from typing import Any
+from typing_extensions import Self
 
 from pydantic import Field, model_validator
 
@@ -53,7 +54,7 @@ class ModelNodeWeights(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_weights(self):
+    def validate_weights(self) -> Self:
         """Ensure all weights are within valid range"""
         for node_id, weight in self.weights.items():
             if weight < self.min_weight:

@@ -21,24 +21,24 @@ class ModelServiceConfiguration(BaseModel):
     """Configuration for a single service."""
 
     type: ModelServiceType = Field(
-        ...,
+        default=...,
         description="Strongly typed service configuration",
     )
     detection: ModelServiceDetectionConfig = Field(
-        ...,
+        default=...,
         description="Service detection and health check configuration",
     )
     priority: int = Field(
-        1,
+        default=1,
         description="Service priority (1=highest, higher numbers=lower priority)",
         ge=1,
     )
     required: bool = Field(
-        True,
+        default=True,
         description="Whether this service is required for the registry mode",
     )
     fallback_enabled: bool = Field(
-        True,
+        default=True,
         description="Whether to enable fallback if this service is unavailable",
     )
 

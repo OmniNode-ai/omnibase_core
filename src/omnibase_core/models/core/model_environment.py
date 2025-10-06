@@ -54,17 +54,13 @@ class ModelEnvironment(BaseModel):
     - Validatable: Comprehensive validation and verification
     """
 
-    name: str = Field(
-        ...,
-        description="Environment name",
+    name: str = Field(default=..., description="Environment name",
         pattern="^[a-z][a-z0-9-]*$",
         min_length=1,
         max_length=50,
     )
 
-    display_name: str = Field(
-        ...,
-        description="Human-readable environment name",
+    display_name: str = Field(default=..., description="Human-readable environment name",
         min_length=1,
         max_length=100,
     )
@@ -278,7 +274,7 @@ class ModelEnvironment(BaseModel):
         is_production = name in ["production", "prod"]
 
         # Set appropriate resource limits based on environment
-        from omnibase_core.models.configuration.model_resource_limits import (
+        from omnibase_core.models.common.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -346,7 +342,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_development(cls) -> "ModelEnvironment":
         """Create a development environment."""
-        from omnibase_core.models.configuration.model_resource_limits import (
+        from omnibase_core.models.common.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -373,7 +369,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_staging(cls) -> "ModelEnvironment":
         """Create a staging environment."""
-        from omnibase_core.models.configuration.model_resource_limits import (
+        from omnibase_core.models.common.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -399,7 +395,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_production(cls) -> "ModelEnvironment":
         """Create a production environment."""
-        from omnibase_core.models.configuration.model_resource_limits import (
+        from omnibase_core.models.common.model_resource_limits import (
             ModelResourceLimits,
         )
         from omnibase_core.models.security.model_security_level import (

@@ -25,7 +25,7 @@ class ModelContainerAdapterInput(BaseModel):
     """Input model for Container Adapter tool operations."""
 
     action: str = Field(
-        ...,
+        default=...,
         description="Action to perform (discover_services, register_service, etc.)",
     )
 

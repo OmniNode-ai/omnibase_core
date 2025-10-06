@@ -32,13 +32,13 @@ class ModelHealthStatus(BaseModel):
     """
 
     status: str = Field(
-        ...,
+        default=...,
         description="Primary health status",
         pattern="^(healthy|degraded|unhealthy|unknown|custom)$",
     )
 
     health_score: float = Field(
-        ...,
+        default=...,
         description="Overall health score (0.0-1.0)",
         ge=0.0,
         le=1.0,

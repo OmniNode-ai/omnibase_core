@@ -50,10 +50,6 @@ class MixinYAMLSerialization:
         Returns:
             YAML string with each line prefixed by comment_prefix.
         """
-        from omnibase_core.utils.safe_yaml_loader import (
-            serialize_pydantic_model_to_yaml,
-        )
-
         # Delegate to centralized serialization function
         return serialize_pydantic_model_to_yaml(
             self,  # type: ignore[arg-type] # Protocol matches Pydantic BaseModel

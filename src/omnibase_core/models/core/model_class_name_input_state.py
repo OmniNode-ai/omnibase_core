@@ -10,7 +10,9 @@ from omnibase_core.models.core.model_onex_base_state import ModelOnexInputState
 class ModelClassNameInputState(ModelOnexInputState):
     """Input state for class name generation operations."""
 
-    base_name: str = Field(..., description="Base name to convert to class name")
+    base_name: str = Field(
+        default=..., description="Base name to convert to class name"
+    )
     add_model_prefix: bool = Field(
         default=False, description="Whether to add 'Model' prefix"
     )

@@ -14,7 +14,7 @@ class ModelOrchestratorMetrics(BaseModel):
         default=0, ge=0, description="Number of active workflows"
     )
     completed_workflows: int = Field(
-        0,
+        default=0,
         ge=0,
         description="Number of completed workflows",
     )

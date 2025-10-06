@@ -24,16 +24,22 @@ from omnibase_core.models.core.model_status_migrator import (
     LEGACY_FUNCTION_STATUS_VALUES,
     LEGACY_METADATA_NODE_STATUS_VALUES,
     LEGACY_SCENARIO_STATUS_VALUES,
-    EnumStatusMigrator,
+    ModelEnumStatusMigrator,
 )
+
+# Alias for backward compatibility
+EnumStatusMigrator = ModelEnumStatusMigrator
 from omnibase_core.models.core.model_status_protocol import (
     EnumStatusProtocol,
     StatusEnumType,
 )
 from omnibase_core.models.core.model_validation_result_status import ValidationResult
 from omnibase_core.models.validation.model_status_migration_validator import (
-    EnumStatusMigrationValidator,
+    ModelEnumStatusMigrationValidator,
 )
+
+# Alias for backward compatibility
+EnumStatusMigrationValidator = ModelEnumStatusMigrationValidator
 
 # Public API exports
 __all__ = [

@@ -36,7 +36,7 @@ class ModelCoordinationResult(BaseModel):
     )
 
     coordination_overhead_ms: int = Field(
-        ...,
+        default=...,
         description="Time spent on coordination overhead in milliseconds",
         ge=0,
     )

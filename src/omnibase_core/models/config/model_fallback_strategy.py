@@ -34,7 +34,7 @@ class ModelFallbackStrategy(BaseModel):
     """
 
     strategy_type: EnumFallbackStrategyType = Field(
-        ...,
+        default=...,
         description="The type of fallback strategy to use",
     )
 

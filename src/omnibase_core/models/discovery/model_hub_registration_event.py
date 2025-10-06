@@ -19,16 +19,20 @@ class ModelHubRegistrationEvent(BaseModel):
     """Hub self-registration event for Consul service registry."""
 
     # Hub Identity
-    hub_id: UUID = Field(..., description="Unique hub identifier")
-    hub_name: str = Field(..., description="Hub name")
-    hub_domain: str = Field(..., description="Hub domain")
-    hub_version: ModelSemVer = Field(..., description="Hub version")
+    hub_id: UUID = Field(default=..., description="Unique hub identifier")
+    hub_name: str = Field(default=..., description="Hub name")
+    hub_domain: str = Field(default=..., description="Hub domain")
+    hub_version: ModelSemVer = Field(default=..., description="Hub version")
 
     # Consul Registration
-    consul_service_name: str = Field(..., description="Consul service name for hub")
-    consul_service_id: UUID = Field(..., description="Consul service ID")
-    consul_port: int = Field(..., description="Hub service port")
-    consul_health_endpoint: str = Field("/health", description="Health check endpoint")
+    consul_service_name: str = Field(
+        default=..., description="Consul service name for hub"
+    )
+    consul_service_id: UUID = Field(default=..., description="Consul service ID")
+    consul_port: int = Field(default=..., description="Hub service port")
+    consul_health_endpoint: str = Field(
+        default="/health", description="Health check endpoint"
+    )
     consul_tags: list[str] = Field(
         default_factory=list,
         description="Consul service tags",
@@ -44,21 +48,21 @@ class ModelHubRegistrationEvent(BaseModel):
         description="Registration timestamp",
     )
     registration_required: bool = Field(
-        True,
+        default=True,
         description="Whether registration is required",
     )
     auto_deregister_on_shutdown: bool = Field(
-        True,
+        default=True,
         description="Auto-deregister on shutdown",
     )
 
     # Event Registry Integration
     event_registry_enabled: bool = Field(
-        True,
+        default=True,
         description="Whether Event Registry is enabled",
     )
     container_adapter_coordination: bool = Field(
-        True,
+        default=True,
         description="Container Adapter coordination enabled",
     )
 

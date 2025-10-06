@@ -32,7 +32,7 @@ class ModelPolicyRule(BaseModel):
         default_factory=lambda: str(uuid4()),
         description="Unique rule identifier",
     )
-    name: str = Field(..., description="Human-readable rule name")
+    name: str = Field(default=..., description="Human-readable rule name")
     description: str | None = Field(default=None, description="Rule description")
 
     # Rule conditions

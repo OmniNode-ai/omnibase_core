@@ -20,7 +20,7 @@ class ModelDependencies(BaseModel):
         default_factory=list,
         description="Optional dependencies",
     )
-    python_version: str = Field(..., description="Required Python version")
+    python_version: str = Field(default=..., description="Required Python version")
     external_tools: list[str] = Field(
         default_factory=list,
         description="Required external tools",

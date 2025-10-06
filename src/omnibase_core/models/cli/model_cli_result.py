@@ -49,14 +49,14 @@ class ModelCliResult(BaseModel):
     """
 
     execution: ModelCliExecution = Field(
-        ...,
+        default=...,
         description="Execution details and context",
     )
 
-    success: bool = Field(..., description="Whether execution was successful")
+    success: bool = Field(default=..., description="Whether execution was successful")
 
     exit_code: int = Field(
-        ...,
+        default=...,
         description="Process exit code (0 = success, >0 = error)",
         ge=0,
         le=255,
@@ -88,7 +88,9 @@ class ModelCliResult(BaseModel):
 
     warnings: list[str] = Field(default_factory=list, description="Warning messages")
 
-    execution_time: ModelDuration = Field(..., description="Total execution time")
+    execution_time: ModelDuration = Field(
+        default=..., description="Total execution time"
+    )
 
     end_time: datetime = Field(
         default_factory=lambda: datetime.now(UTC),

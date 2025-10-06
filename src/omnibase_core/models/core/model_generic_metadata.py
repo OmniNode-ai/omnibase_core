@@ -1,6 +1,7 @@
 from typing import Dict, Generic, Optional
 
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
@@ -25,7 +26,7 @@ class ModelGenericMetadata(BaseModel):
     )
     created_by: str | None = Field(default=None, description="Creator identifier")
     updated_by: str | None = Field(default=None, description="Last updater identifier")
-    version: str | None = Field(default=None, description="Version information")
+    version: ModelSemVer | None = Field(default=None, description="Version information")
 
     # Flexible fields for various use cases
     tags: list[str] | None = Field(

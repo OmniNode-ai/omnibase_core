@@ -31,7 +31,7 @@ class ModelNodeConfigurationStringValue(BaseModel):
         default="string",
         description="Type discriminator for string values",
     )
-    value: str = Field(..., description="String configuration value")
+    value: str = Field(default=..., description="String configuration value")
 
     def to_python_value(self) -> str:
         """Get the underlying Python value."""

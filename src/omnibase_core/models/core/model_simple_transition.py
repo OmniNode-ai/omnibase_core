@@ -13,11 +13,11 @@ class ModelSimpleTransition(BaseModel):
     """Simple direct state field updates."""
 
     updates: dict[str, Any] = Field(
-        ...,
+        default=...,
         description="Field path to value mappings (e.g., {'user.name': 'John'})",
     )
 
     merge_strategy: str | None = Field(
-        "replace",
+        default="replace",
         description="How to handle existing values: 'replace', 'merge', 'append'",
     )

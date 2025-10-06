@@ -85,11 +85,11 @@ class ModelMonitoringThresholds(BaseModel):
         default=True, description="Alert on execution timeout"
     )
     alert_on_degraded_performance: bool = Field(
-        True,
+        default=True,
         description="Alert on performance degradation",
     )
     performance_baseline_factor: float = Field(
-        2.0,
+        default=2.0,
         description="Factor for performance degradation detection",
         ge=1.0,
     )

@@ -39,23 +39,23 @@ class ModelMetadataFieldInfo(BaseModel):
 
     # Grouped properties by concern
     identity: ModelFieldIdentity = Field(
-        ...,
+        default=...,
         description="Field identity and naming information",
     )
 
     # Field properties (non-string)
     is_required: bool = Field(
-        ...,
+        default=...,
         description="Whether this field is required in metadata",
     )
 
     is_optional: bool = Field(
-        ...,
+        default=...,
         description="Whether this field is optional with defaults",
     )
 
     is_volatile: bool = Field(
-        ...,
+        default=...,
         description="Whether this field may change on stamping",
     )
 

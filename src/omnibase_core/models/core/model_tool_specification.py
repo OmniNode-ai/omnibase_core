@@ -20,7 +20,7 @@ class ModelToolSpecification(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     main_tool_class: str = Field(
-        ...,
+        default=...,
         description="Main tool class name for instantiation",
     )
     # TODO: Re-enable when enum is available

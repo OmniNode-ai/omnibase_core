@@ -25,7 +25,7 @@ class ModelActionPayloadBase(BaseModel):
     """
 
     action_type: ModelNodeActionType = Field(
-        ...,
+        default=...,
         description="The rich action type being performed",
     )
     correlation_id: UUID | None = Field(

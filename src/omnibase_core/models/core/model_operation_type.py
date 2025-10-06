@@ -21,16 +21,18 @@ class ModelOperationType(BaseModel):
     """
 
     operation_name: str = Field(
-        ...,
+        default=...,
         description="Operation identifier",
         pattern="^[a-z][a-z0-9_]*$",
     )
     category: str = Field(
-        ...,
+        default=...,
         description="Operation category",
         pattern="^[a-z][a-z0-9_]*$",
     )
-    description: str = Field(..., description="Human-readable operation description")
+    description: str = Field(
+        default=..., description="Human-readable operation description"
+    )
     is_read_only: bool = Field(
         default=True,
         description="Whether operation modifies state",

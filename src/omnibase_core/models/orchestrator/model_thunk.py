@@ -41,12 +41,12 @@ class ModelThunk(BaseModel):
     )
 
     thunk_type: EnumThunkType = Field(
-        ...,
+        default=...,
         description="Type of thunk for execution routing",
     )
 
     target_node_type: str = Field(
-        ...,
+        default=...,
         description="Target node type for thunk execution",
         min_length=1,
         max_length=100,

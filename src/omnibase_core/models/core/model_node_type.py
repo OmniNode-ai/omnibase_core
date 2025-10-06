@@ -26,17 +26,19 @@ class ModelNodeType(BaseModel):
     """
 
     type_name: str = Field(
-        ...,
+        default=...,
         description="Node type identifier",
         pattern="^[a-z][a-z0-9_]*$",
     )
     category: str = Field(
-        ...,
+        default=...,
         description="Node category",
         pattern="^(core|extension|plugin|custom)$",
     )
-    display_name: str = Field(..., description="Human-readable type name")
-    description: str = Field(..., description="Description of what this node type does")
+    display_name: str = Field(default=..., description="Human-readable type name")
+    description: str = Field(
+        default=..., description="Description of what this node type does"
+    )
     capabilities_provided: list[ModelCapability] = Field(
         default_factory=list,
         description="Capabilities this type provides",

@@ -19,12 +19,12 @@ class ModelRiskAssessment(BaseModel):
     """
 
     level: str = Field(
-        "medium",
+        default="medium",
         description="Risk level",
         pattern="^(low|medium|high|critical)$",
     )
 
-    score: int = Field(2, description="Numeric risk score", ge=1, le=5)
+    score: int = Field(default=2, description="Numeric risk score", ge=1, le=5)
 
     compliance_tags: list[str] = Field(
         default_factory=list,
@@ -38,7 +38,7 @@ class ModelRiskAssessment(BaseModel):
     )
 
     emergency_override_allowed: bool = Field(
-        False,
+        default=False,
         description="Whether emergency override is allowed",
     )
 
@@ -53,7 +53,7 @@ class ModelRiskAssessment(BaseModel):
     )
 
     residual_risk_acceptable: bool = Field(
-        True,
+        default=True,
         description="Whether residual risk after controls is acceptable",
     )
 
@@ -63,7 +63,7 @@ class ModelRiskAssessment(BaseModel):
     )
 
     review_frequency_days: int = Field(
-        90,
+        default=90,
         description="How often risk assessment should be reviewed",
         ge=1,
         le=365,

@@ -21,7 +21,7 @@ class ModelRegistryError(ModelOnexError):
     """
 
     error_code: ModelRegistryErrorCode = Field(
-        ...,
+        default=...,
         description="Canonical registry error code.",
     )
 

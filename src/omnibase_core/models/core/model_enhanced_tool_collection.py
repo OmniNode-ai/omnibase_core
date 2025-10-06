@@ -58,9 +58,9 @@ class ModelToolCollection(BaseModel):
     )
 
     # Collection management
-    collection_id: UUID = Field(..., description="Unique collection identifier")
+    collection_id: UUID = Field(default=..., description="Unique collection identifier")
     collection_name: str = Field(
-        "default",
+        default="default",
         description="Human-readable collection name",
     )
     collection_version: ModelSemVer = Field(
@@ -77,13 +77,13 @@ class ModelToolCollection(BaseModel):
     )
 
     # Operational configuration
-    max_tools: int = Field(100, description="Maximum number of tools allowed")
+    max_tools: int = Field(default=100, description="Maximum number of tools allowed")
     auto_validation: bool = Field(
-        True,
+        default=True,
         description="Whether to automatically validate tools",
     )
     performance_monitoring: bool = Field(
-        True,
+        default=True,
         description="Whether to track performance metrics",
     )
     strict_mode: bool = Field(
@@ -92,7 +92,7 @@ class ModelToolCollection(BaseModel):
 
     # Analytics and insights
     total_registrations: int = Field(
-        0,
+        default=0,
         description="Total number of tool registrations",
     )
     active_tool_count: int = Field(default=0, description="Number of active tools")
@@ -100,7 +100,7 @@ class ModelToolCollection(BaseModel):
         default=0, description="Number of deprecated tools"
     )
     failed_registration_count: int = Field(
-        0,
+        default=0,
         description="Number of failed registrations",
     )
 
@@ -321,8 +321,19 @@ class ModelToolCollection(BaseModel):
 
     def get_performance_summary(self) -> ModelPerformanceSummary:
         """Get comprehensive performance summary for all tools."""
+        from datetime import datetime, UTC
+
+        now = datetime.now(UTC)
         if not self.tool_metadata:
-            return ModelPerformanceSummary(total_tools=0, summary="No tools registered")
+            return ModelPerformanceSummary(
+                total_execution_time_ms=0.0,
+                measurement_start=now,
+                measurement_end=now,
+                measurement_duration_seconds=0.0,
+                total_requests=0,
+                successful_requests=0,
+                failed_requests=0,
+            )
 
         total_executions = sum(
             m.performance_metrics.total_executions for m in self.tool_metadata.values()
@@ -335,17 +346,22 @@ class ModelToolCollection(BaseModel):
             m.performance_metrics.avg_execution_time_ms
             for m in self.tool_metadata.values()
         ) / len(self.tool_metadata)
+        total_exec_time = sum(
+            m.performance_metrics.total_execution_time_ms
+            for m in self.tool_metadata.values()
+        )
+
+        successful = int(total_executions * avg_success_rate / 100)
 
         return ModelPerformanceSummary(
-            total_tools=len(self.tools),
-            active_tools=self.active_tool_count,
-            deprecated_tools=self.deprecated_tool_count,
-            total_executions=total_executions,
-            avg_success_rate_percent=avg_success_rate,
-            avg_execution_time_ms=avg_execution_time,
-            collection_health_score=self.collection_health_score,
-            tools_by_category=self.tool_count_by_category,
-            tools_by_status=self.tool_count_by_status,
+            total_execution_time_ms=total_exec_time,
+            average_response_time_ms=avg_execution_time,
+            measurement_start=now,
+            measurement_end=now,
+            measurement_duration_seconds=0.0,
+            total_requests=int(total_executions),
+            successful_requests=successful,
+            failed_requests=int(total_executions) - successful,
         )
 
     def has_tool(self, name: str) -> bool:

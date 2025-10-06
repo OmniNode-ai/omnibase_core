@@ -6,6 +6,8 @@ from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_semver import ModelSemVer
 
+from omnibase_core.models.nodes.model_node_capability import ModelNodeCapabilities
+
 
 class ModelNodeIntrospectionEvent(ModelOnexEvent):
     """
@@ -22,12 +24,14 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
     )
 
     # Node identification
-    node_name: str = Field(..., description="Name of the node (e.g. 'node_generator')")
-    version: ModelSemVer = Field(..., description="Version of the node")
+    node_name: str = Field(
+        default=..., description="Name of the node (e.g. 'node_generator')"
+    )
+    version: ModelSemVer = Field(default=..., description="Version of the node")
 
     # Node capabilities
     capabilities: ModelNodeCapabilities = Field(
-        ...,
+        default=...,
         description="Node capabilities including actions, protocols, and metadata",
     )
 

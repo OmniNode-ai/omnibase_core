@@ -34,7 +34,7 @@ class ModelTimeoutData(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    timeout_seconds: int = Field(..., description="Timeout duration in seconds")
+    timeout_seconds: int = Field(default=..., description="Timeout duration in seconds")
     warning_threshold_seconds: int = Field(
         default=0,
         description="Warning threshold in seconds",

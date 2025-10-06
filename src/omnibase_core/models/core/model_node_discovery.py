@@ -13,7 +13,7 @@ class ModelNodeDiscovery(BaseModel):
     """Node discovery results from dynamic registry queries."""
 
     discovered_nodes: list[ModelNodeReference] = Field(
-        ...,
+        default=...,
         description="List of discovered nodes",
     )
     discovery_timestamp: datetime = Field(
@@ -21,11 +21,11 @@ class ModelNodeDiscovery(BaseModel):
         description="When discovery occurred",
     )
     discovery_source: EnumDiscoverySource = Field(
-        ...,
+        default=...,
         description="Source of discovery",
     )
-    total_nodes: int = Field(..., description="Total nodes discovered", ge=0)
-    active_nodes: int = Field(..., description="Number of active nodes", ge=0)
+    total_nodes: int = Field(default=..., description="Total nodes discovered", ge=0)
+    active_nodes: int = Field(default=..., description="Number of active nodes", ge=0)
     discovery_metadata: ModelDiscoveryMetadata | None = Field(
         default=None,
         description="Additional discovery metadata",

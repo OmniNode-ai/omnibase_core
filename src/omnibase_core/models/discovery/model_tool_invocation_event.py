@@ -57,21 +57,21 @@ class ModelToolInvocationEvent(ModelOnexEvent):
 
     # Target node identification
     target_node_id: str = Field(
-        ...,
+        default=...,
         description="Unique identifier of the target node that should execute the tool",
     )
     target_node_name: str = Field(
-        ...,
+        default=...,
         description="Name of the target node (e.g., 'node_generator')",
     )
 
     # Tool execution details
     tool_name: str = Field(
-        ...,
+        default=...,
         description="Name of the tool to invoke (e.g., 'generate_node')",
     )
     action: str = Field(
-        ...,
+        default=...,
         description="Action to perform with the tool (e.g., 'health_check')",
     )
     parameters: ModelToolParameters = Field(
@@ -103,11 +103,11 @@ class ModelToolInvocationEvent(ModelOnexEvent):
 
     # Request metadata
     requester_id: str = Field(
-        ...,
+        default=...,
         description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
     )
     requester_node_id: str = Field(
-        ...,
+        default=...,
         description="Node ID of the requester for response routing",
     )
 

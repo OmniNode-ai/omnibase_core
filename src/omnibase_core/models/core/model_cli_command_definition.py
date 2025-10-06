@@ -28,19 +28,21 @@ class ModelCliCommandDefinition(BaseModel):
     """
 
     command_name: str = Field(
-        ...,
+        default=...,
         description="CLI command name (e.g., 'generate', 'validate')",
         pattern=r"^[a-z][a-z0-9_-]*$",
     )
 
     target_node: ModelNodeReference = Field(
-        ...,
+        default=...,
         description="Target node for execution",
     )
 
-    action: str = Field(..., description="Action to execute on the target node")
+    action: str = Field(default=..., description="Action to execute on the target node")
 
-    description: str = Field(..., description="Human-readable command description")
+    description: str = Field(
+        default=..., description="Human-readable command description"
+    )
 
     required_args: list[ModelArgumentDescription] = Field(
         default_factory=list,
@@ -52,7 +54,9 @@ class ModelCliCommandDefinition(BaseModel):
         description="Optional command arguments",
     )
 
-    event_type: ModelEventType = Field(..., description="Event type for execution")
+    event_type: ModelEventType = Field(
+        default=..., description="Event type for execution"
+    )
 
     examples: list[str] = Field(
         default_factory=list,

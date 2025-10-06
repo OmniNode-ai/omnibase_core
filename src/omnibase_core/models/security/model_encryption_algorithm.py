@@ -15,15 +15,17 @@ class ModelEncryptionAlgorithm(BaseModel):
     """Encryption algorithm configuration and parameters."""
 
     name: str = Field(
-        ...,
+        default=...,
         description="Algorithm name: AES-256-GCM, AES-256-CBC, ChaCha20-Poly1305, etc.",
         pattern=r"^[A-Z0-9-]+$",
     )
 
-    key_size_bits: int = Field(256, description="Key size in bits", ge=128, le=512)
+    key_size_bits: int = Field(
+        default=256, description="Key size in bits", ge=128, le=512
+    )
 
     block_size_bits: int | None = Field(
-        128,
+        default=128,
         description="Block size in bits for block ciphers",
         ge=64,
         le=256,
@@ -36,19 +38,19 @@ class ModelEncryptionAlgorithm(BaseModel):
     )
 
     is_authenticated: bool = Field(
-        True,
+        default=True,
         description="Whether this is an authenticated encryption algorithm (AEAD)",
     )
 
     tag_size_bits: int | None = Field(
-        128,
+        default=128,
         description="Authentication tag size in bits for AEAD algorithms",
         ge=64,
         le=256,
     )
 
     iv_size_bits: int = Field(
-        96,
+        default=96,
         description="Initialization vector size in bits",
         ge=64,
         le=256,
@@ -59,13 +61,13 @@ class ModelEncryptionAlgorithm(BaseModel):
     )
 
     security_level: str = Field(
-        "high",
+        default="high",
         description="Security level: low, medium, high, military",
         pattern=r"^(low|medium|high|military)$",
     )
 
     performance_rating: str = Field(
-        "medium",
+        default="medium",
         description="Performance rating: slow, medium, fast",
         pattern=r"^(slow|medium|fast)$",
     )

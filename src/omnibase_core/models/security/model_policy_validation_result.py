@@ -19,14 +19,18 @@ from .model_signature_requirements import ModelSignatureRequirements
 class ModelPolicyValidationResult(BaseModel):
     """Result of policy validation against a signature chain."""
 
-    policy_id: str = Field(..., description="ID of the policy that was evaluated")
-    policy_version: ModelSemVer = Field(..., description="Version of the policy")
+    policy_id: str = Field(
+        default=..., description="ID of the policy that was evaluated"
+    )
+    policy_version: ModelSemVer = Field(
+        default=..., description="Version of the policy"
+    )
     status: str = Field(
-        ...,
+        default=...,
         description="Validation status: compliant, warning, violated",
     )
     severity: ModelPolicySeverity = Field(
-        ...,
+        default=...,
         description="Severity level of any violations",
     )
     violations: list[str] = Field(
@@ -38,8 +42,8 @@ class ModelPolicyValidationResult(BaseModel):
         description="List of policy warnings",
     )
     requirements: ModelSignatureRequirements = Field(
-        ...,
+        default=...,
         description="Evaluated signature requirements",
     )
-    enforcement_mode: str = Field(..., description="Policy enforcement mode")
-    validated_at: str = Field(..., description="Timestamp of validation")
+    enforcement_mode: str = Field(default=..., description="Policy enforcement mode")
+    validated_at: str = Field(default=..., description="Timestamp of validation")

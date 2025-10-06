@@ -7,6 +7,9 @@ from omnibase_core.enums.enum_discovery_phase import EnumDiscoveryPhase
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.enums.enum_service_status import EnumServiceStatus
 
+from omnibase_core.models.core.model_semver import ModelSemVer
+
+
 """Event Descriptor model for ONEX Discovery & Integration Event Registry.
 
 This module defines the core EventDescriptor structure used for event-driven service
@@ -92,28 +95,34 @@ class ModelEventDescriptor(BaseModel):
     """
 
     # Core Event Identity
-    event_id: UUID = Field(..., description="Unique identifier for this event")
-    event_type: EnumEventType = Field(..., description="Type of event being described")
-    event_name: str = Field(..., description="Human-readable event name")
+    event_id: UUID = Field(default=..., description="Unique identifier for this event")
+    event_type: EnumEventType = Field(
+        default=..., description="Type of event being described"
+    )
+    event_name: str = Field(default=..., description="Human-readable event name")
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for request/response matching",
     )
 
     # Service Identity
-    service_id: UUID = Field(..., description="Unique service identifier")
-    service_name: str = Field(..., description="Service name for Consul registration")
-    service_version: ModelSemVer = Field(..., description="Service version")
+    service_id: UUID = Field(default=..., description="Unique service identifier")
+    service_name: str = Field(
+        default=..., description="Service name for Consul registration"
+    )
+    service_version: ModelSemVer = Field(default=..., description="Service version")
     node_id: UUID | None = Field(
         default=None, description="Node ID hosting the service"
     )
 
     # Discovery & Registry Information
     discovery_phase: EnumDiscoveryPhase = Field(
-        ...,
+        default=...,
         description="Current discovery implementation phase",
     )
-    consul_service_name: str = Field(..., description="Consul service registry name")
+    consul_service_name: str = Field(
+        default=..., description="Consul service registry name"
+    )
     consul_tags: list[str] = Field(
         default_factory=list,
         description="Consul service tags",
@@ -125,11 +134,11 @@ class ModelEventDescriptor(BaseModel):
 
     # Container Adapter Coordination
     container_adapter_enabled: bool = Field(
-        True,
+        default=True,
         description="Whether Container Adapter pattern is active",
     )
     container_status: EnumServiceStatus = Field(
-        ...,
+        default=...,
         description="Current container/service status",
     )
     health_check_endpoint: str | None = Field(
@@ -156,7 +165,7 @@ class ModelEventDescriptor(BaseModel):
         default=None, description="Hub domain for integration"
     )
     hub_registration_required: bool = Field(
-        True,
+        default=True,
         description="Whether hub should register in Consul",
     )
 
@@ -176,15 +185,15 @@ class ModelEventDescriptor(BaseModel):
 
     # Quality & Validation
     trust_level: str = Field(
-        "medium",
+        default="medium",
         description="Trust level for service (high/medium/low)",
     )
     validation_required: bool = Field(
-        True,
+        default=True,
         description="Whether event requires validation",
     )
     event_schema_version: ModelSemVer = Field(
-        "1.0.0",
+        default="1.0.0",
         description="EventDescriptor schema version",
     )
 

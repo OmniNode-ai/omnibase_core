@@ -11,7 +11,9 @@ class ModelMetadata(BaseModel):
     Reuse this model for all metadata fields across the codebase.
     """
 
-    name: str = Field(..., description="Canonical name of the node or artifact.")
+    name: str = Field(
+        default=..., description="Canonical name of the node or artifact."
+    )
     description: str | None = Field(
         default=None,
         description="Description of the entity.",

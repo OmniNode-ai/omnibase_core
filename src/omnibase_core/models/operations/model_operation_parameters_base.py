@@ -40,7 +40,7 @@ class ModelOperationParameterValue(BaseModel):
     parameter_type: EnumOperationParameterType = Field(
         description="Parameter type discriminator",
     )
-    name: str = Field(..., description="Parameter name")
+    name: str = Field(default=..., description="Parameter name")
     description: str = Field(default="", description="Parameter description")
     required: bool = Field(default=False, description="Whether parameter is required")
 

@@ -35,12 +35,12 @@ class ModelLoadBalancingPolicy(BaseModel):
     """
 
     policy_name: str = Field(
-        ...,
+        default=...,
         description="Load balancing policy identifier",
         pattern="^[a-z][a-z0-9_-]*$",
     )
 
-    display_name: str = Field(..., description="Human-readable policy name")
+    display_name: str = Field(default=..., description="Human-readable policy name")
 
     description: str | None = Field(
         default=None,
@@ -50,7 +50,7 @@ class ModelLoadBalancingPolicy(BaseModel):
     enabled: bool = Field(default=True, description="Whether this policy is enabled")
 
     algorithm: ModelLoadBalancingAlgorithm = Field(
-        ...,
+        default=...,
         description="Load balancing algorithm configuration",
     )
 
@@ -60,7 +60,7 @@ class ModelLoadBalancingPolicy(BaseModel):
     )
 
     health_check: ModelHealthCheckConfig = Field(
-        ...,
+        default=...,
         description="Health check configuration",
     )
 
@@ -118,13 +118,15 @@ class ModelLoadBalancingPolicy(BaseModel):
         le=100,
     )
 
-    def is_node_excluded(self, node_id: UUID) -> bool:
+    def is_node_excluded(self, node_id: UUID | str) -> bool:
         """Check if a node is excluded from load balancing"""
-        return node_id in self.excluded_nodes
+        node_uuid = UUID(node_id) if isinstance(node_id, str) else node_id
+        return node_uuid in self.excluded_nodes
 
-    def is_node_preferred(self, node_id: UUID) -> bool:
-        """Check if a node is in the preferred list[Any]"""
-        return node_id in self.preferred_nodes
+    def is_node_preferred(self, node_id: UUID | str) -> bool:
+        """Check if a node is in the preferred list"""
+        node_uuid = UUID(node_id) if isinstance(node_id, str) else node_id
+        return node_uuid in self.preferred_nodes
 
     def get_effective_nodes(self, available_nodes: list[str]) -> list[str]:
         """Get effective nodes after applying exclusions and preferences"""

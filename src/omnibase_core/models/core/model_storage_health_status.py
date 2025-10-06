@@ -1,3 +1,5 @@
+from uuid import UUID
+
 """
 Storage Health Status Model - ONEX Standards Compliant.
 
@@ -20,7 +22,7 @@ class ModelStorageHealthStatus(BaseModel):
     status, capacity, and performance metrics.
     """
 
-    backend_id: str = Field(description="Unique backend identifier")
+    backend_id: UUID = Field(description="Unique backend identifier")
 
     backend_type: str = Field(description="Storage backend type")
 

@@ -1,6 +1,7 @@
 from typing import Any
 
 from pydantic import Field
+from uuid import UUID
 
 """
 Node Data Model.
@@ -15,7 +16,7 @@ class ModelNodeData(BaseModel):
     """Detailed node information data."""
 
     # Basic info
-    node_id: str | None = Field(default=None, description="Node identifier")
+    node_id: UUID | None = Field(default=None, description="Node identifier")
     display_name: str | None = Field(default=None, description="Display name")
     description: str | None = Field(default=None, description="Node description")
     author: str | None = Field(default=None, description="Node author")

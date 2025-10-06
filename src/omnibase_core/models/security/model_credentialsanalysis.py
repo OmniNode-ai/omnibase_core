@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 class ModelCredentialsAnalysis(BaseModel):
     """Credentials strength analysis results."""
 
-    strength_score: int = Field(..., description="Overall strength score (0-100)")
+    strength_score: int = Field(
+        default=..., description="Overall strength score (0-100)"
+    )
     password_entropy: float | None = Field(
         default=None,
         description="Password entropy score",
@@ -21,10 +23,10 @@ class ModelCredentialsAnalysis(BaseModel):
         default_factory=list,
         description="Improvement recommendations",
     )
-    compliance_status: str = Field(..., description="Compliance status")
-    risk_level: str = Field(..., description="Risk assessment level")
+    compliance_status: str = Field(default=..., description="Compliance status")
+    risk_level: str = Field(default=..., description="Risk assessment level")
     manager_assessment: ModelManagerAssessment = Field(
-        ...,
+        default=...,
         description="Manager-specific assessment",
     )
 

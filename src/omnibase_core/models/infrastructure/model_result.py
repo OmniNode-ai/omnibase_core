@@ -73,7 +73,7 @@ class ModelResult(
             return str(v)
         return v
 
-    success: bool = Field(..., description="Whether the operation succeeded")
+    success: bool = Field(default=..., description="Whether the operation succeeded")
     value: Any = Field(default=None, description="Success value (if success=True)")
     error: Any = Field(default=None, description="Error value (if success=False)")
 

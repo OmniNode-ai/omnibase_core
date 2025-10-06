@@ -258,6 +258,38 @@ class ModelCoreErrorCode(EnumOnexErrorCode):
     QUOTA_EXCEEDED = "ONEX_CORE_164_QUOTA_EXCEEDED"
     PROCESSING_ERROR = "ONEX_CORE_165_PROCESSING_ERROR"
 
+    # Type validation errors (181-190)
+    TYPE_MISMATCH = "ONEX_CORE_181_TYPE_MISMATCH"
+
+    # Intelligence and pattern recognition errors (191-200)
+    INTELLIGENCE_PROCESSING_FAILED = "ONEX_CORE_191_INTELLIGENCE_PROCESSING_FAILED"
+    PATTERN_RECOGNITION_FAILED = "ONEX_CORE_192_PATTERN_RECOGNITION_FAILED"
+    CONTEXT_ANALYSIS_FAILED = "ONEX_CORE_193_CONTEXT_ANALYSIS_FAILED"
+    LEARNING_ENGINE_FAILED = "ONEX_CORE_194_LEARNING_ENGINE_FAILED"
+    INTELLIGENCE_COORDINATION_FAILED = "ONEX_CORE_195_INTELLIGENCE_COORDINATION_FAILED"
+
+    # Service and system health errors (201-220)
+    SYSTEM_HEALTH_DEGRADED = "ONEX_CORE_201_SYSTEM_HEALTH_DEGRADED"
+    SERVICE_START_FAILED = "ONEX_CORE_202_SERVICE_START_FAILED"
+    SERVICE_STOP_FAILED = "ONEX_CORE_203_SERVICE_STOP_FAILED"
+    SERVICE_UNHEALTHY = "ONEX_CORE_204_SERVICE_UNHEALTHY"
+    SERVICE_UNAVAILABLE = "ONEX_CORE_205_SERVICE_UNAVAILABLE"
+
+    # Security errors (221-230)
+    SECURITY_REPORT_FAILED = "ONEX_CORE_221_SECURITY_REPORT_FAILED"
+    SECURITY_VIOLATION = "ONEX_CORE_222_SECURITY_VIOLATION"
+
+    # Event and processing errors (231-240)
+    EVENT_PROCESSING_FAILED = "ONEX_CORE_231_EVENT_PROCESSING_FAILED"
+
+    # Contract and compliance errors (241-250)
+    DEPENDENCY_FAILED = "ONEX_CORE_241_DEPENDENCY_FAILED"
+    CONTRACT_VIOLATION = "ONEX_CORE_242_CONTRACT_VIOLATION"
+
+    # Discovery and metadata errors (251-260)
+    DISCOVERY_SETUP_FAILED = "ONEX_CORE_251_DISCOVERY_SETUP_FAILED"
+    METADATA_LOAD_FAILED = "ONEX_CORE_252_METADATA_LOAD_FAILED"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -333,6 +365,31 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[ModelCoreErrorCode, EnumCLIExitCode] = {
     ModelCoreErrorCode.AUTHENTICATION_ERROR: EnumCLIExitCode.ERROR,
     ModelCoreErrorCode.QUOTA_EXCEEDED: EnumCLIExitCode.ERROR,
     ModelCoreErrorCode.PROCESSING_ERROR: EnumCLIExitCode.ERROR,
+    # Type validation errors -> ERROR
+    ModelCoreErrorCode.TYPE_MISMATCH: EnumCLIExitCode.ERROR,
+    # Intelligence errors -> ERROR
+    ModelCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.CONTEXT_ANALYSIS_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.LEARNING_ENGINE_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.INTELLIGENCE_COORDINATION_FAILED: EnumCLIExitCode.ERROR,
+    # Service/system health errors -> ERROR
+    ModelCoreErrorCode.SYSTEM_HEALTH_DEGRADED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.SERVICE_START_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.SERVICE_STOP_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.SERVICE_UNHEALTHY: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.SERVICE_UNAVAILABLE: EnumCLIExitCode.ERROR,
+    # Security errors -> ERROR
+    ModelCoreErrorCode.SECURITY_REPORT_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.SECURITY_VIOLATION: EnumCLIExitCode.ERROR,
+    # Event processing errors -> ERROR
+    ModelCoreErrorCode.EVENT_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
+    # Contract/compliance errors -> ERROR
+    ModelCoreErrorCode.DEPENDENCY_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.CONTRACT_VIOLATION: EnumCLIExitCode.ERROR,
+    # Discovery/metadata errors -> ERROR
+    ModelCoreErrorCode.DISCOVERY_SETUP_FAILED: EnumCLIExitCode.ERROR,
+    ModelCoreErrorCode.METADATA_LOAD_FAILED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -412,6 +469,24 @@ def get_core_error_description(error_code: ModelCoreErrorCode) -> str:
         ModelCoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",
         ModelCoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
         ModelCoreErrorCode.PROCESSING_ERROR: "Processing error",
+        ModelCoreErrorCode.TYPE_MISMATCH: "Type mismatch in value conversion",
+        ModelCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: "Intelligence processing failed",
+        ModelCoreErrorCode.PATTERN_RECOGNITION_FAILED: "Pattern recognition failed",
+        ModelCoreErrorCode.CONTEXT_ANALYSIS_FAILED: "Context analysis failed",
+        ModelCoreErrorCode.LEARNING_ENGINE_FAILED: "Learning engine operation failed",
+        ModelCoreErrorCode.INTELLIGENCE_COORDINATION_FAILED: "Intelligence coordination failed",
+        ModelCoreErrorCode.SYSTEM_HEALTH_DEGRADED: "System health has degraded",
+        ModelCoreErrorCode.SERVICE_START_FAILED: "Service failed to start",
+        ModelCoreErrorCode.SERVICE_STOP_FAILED: "Service failed to stop",
+        ModelCoreErrorCode.SERVICE_UNHEALTHY: "Service is unhealthy",
+        ModelCoreErrorCode.SERVICE_UNAVAILABLE: "Service is unavailable",
+        ModelCoreErrorCode.SECURITY_REPORT_FAILED: "Security report generation failed",
+        ModelCoreErrorCode.SECURITY_VIOLATION: "Security violation detected",
+        ModelCoreErrorCode.EVENT_PROCESSING_FAILED: "Event processing failed",
+        ModelCoreErrorCode.DEPENDENCY_FAILED: "Dependency check or operation failed",
+        ModelCoreErrorCode.CONTRACT_VIOLATION: "Contract violation detected",
+        ModelCoreErrorCode.DISCOVERY_SETUP_FAILED: "Discovery setup failed",
+        ModelCoreErrorCode.METADATA_LOAD_FAILED: "Metadata loading failed",
     }
     return descriptions.get(error_code, "Unknown error")
 
@@ -505,11 +580,9 @@ def __getattr__(name: str) -> Any:
     Provides ModelOnexError via lazy import to avoid circular dependencies.
     """
     if name == "ModelOnexError":
-        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         return ModelOnexError
 
-    from omnibase_core.errors.model_onex_error import ModelOnexError
 
     raise ModelOnexError(
         error_code=ModelCoreErrorCode.ITEM_NOT_REGISTERED,

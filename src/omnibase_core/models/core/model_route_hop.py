@@ -21,8 +21,10 @@ class ModelRouteHop(BaseModel):
     """
 
     # Hop identification
-    hop_id: UUID = Field(..., description="Unique identifier for this hop")
-    node_id: UUID = Field(..., description="ID of the node that processed this hop")
+    hop_id: UUID = Field(default=..., description="Unique identifier for this hop")
+    node_id: UUID = Field(
+        default=..., description="ID of the node that processed this hop"
+    )
     service_name: str | None = Field(
         default=None, description="Service name if applicable"
     )
@@ -39,7 +41,7 @@ class ModelRouteHop(BaseModel):
 
     # Routing information
     hop_type: str = Field(
-        ...,
+        default=...,
         description="Type of hop: 'source', 'router', 'destination'",
     )
     routing_decision: str | None = Field(

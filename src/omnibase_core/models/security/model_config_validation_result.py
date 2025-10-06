@@ -19,7 +19,7 @@ class ModelConfigValidationResult(BaseModel):
     )
 
     backend_valid: bool = Field(
-        True,
+        default=True,
         description="Whether the backend configuration is valid",
     )
 

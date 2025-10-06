@@ -24,11 +24,11 @@ class ModelFunctionTool(BaseModel):
         description="Tool type (always 'function')",
     )
     language: EnumFunctionLanguage = Field(
-        ...,
+        default=...,
         description="Programming language (python, javascript, typescript, bash, yaml, etc.)",
     )
-    line: int = Field(..., description="Line number where function is defined")
-    description: str = Field(..., description="Function description")
+    line: int = Field(default=..., description="Line number where function is defined")
+    description: str = Field(default=..., description="Function description")
     inputs: list[str] = Field(
         default_factory=list,
         description="Function input parameters with types",

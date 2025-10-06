@@ -14,7 +14,7 @@ class ModelToolBasedTransition(BaseModel):
     """Transition that delegates to a tool for state computation."""
 
     tool_id: UUID = Field(
-        ...,
+        default=...,
         description="UUID of the tool to invoke",
     )
 
@@ -34,6 +34,6 @@ class ModelToolBasedTransition(BaseModel):
     )
 
     timeout_ms: int | None = Field(
-        5000,
+        default=5000,
         description="Tool invocation timeout in milliseconds",
     )

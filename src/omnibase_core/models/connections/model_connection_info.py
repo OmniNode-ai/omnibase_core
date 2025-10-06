@@ -59,7 +59,7 @@ class ModelConnectionInfo(BaseModel):
 
     # Composed sub-models for focused concerns
     endpoint: ModelConnectionEndpoint = Field(
-        ...,
+        default=...,
         description="Connection endpoint configuration",
     )
     auth: ModelConnectionAuth = Field(

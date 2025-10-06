@@ -88,11 +88,11 @@ class MixinNodeLifecycle:
                 metadata_block = metadata_loader.metadata
             else:
                 # Create minimal metadata block
-                from omnibase_core.models.core.model_node_metadata import (
-                    NodeMetadataBlock,
+                from omnibase_core.models.core.model_node_metadata_block import (
+                    ModelNodeMetadataBlock,
                 )
 
-                metadata_block = NodeMetadataBlock(
+                metadata_block = ModelNodeMetadataBlock(
                     name=self.__class__.__name__.lower(),
                     version="1.0.0",
                     description="Event-driven ONEX node",
@@ -122,13 +122,11 @@ class MixinNodeLifecycle:
                 metadata_block=metadata_block,
                 status=getattr(self, "status", EnumNodeStatus.ACTIVE),
                 execution_mode=getattr(
-                    self,
                     "execution_mode",
                     EnumRegistryExecutionMode.MEMORY,
                 ),
                 inputs=getattr(self, "inputs", getattr(metadata_block, "inputs", None)),
                 outputs=getattr(
-                    self,
                     "outputs",
                     getattr(metadata_block, "outputs", None),
                 ),
@@ -139,7 +137,6 @@ class MixinNodeLifecycle:
                 timestamp=datetime.now(),
                 signature_block=getattr(self, "signature_block", None),
                 node_version=getattr(
-                    self,
                     "node_version",
                     getattr(metadata_block, "version", "1.0.0"),
                 ),
@@ -248,7 +245,6 @@ class MixinNodeLifecycle:
             )
 
     def emit_node_start(
-        self,
         metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
@@ -297,15 +293,17 @@ class MixinNodeLifecycle:
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_START event: {e}",
-                final_correlation_id,
-                event_type="lifecycle_error",
-                data={"node_id": node_id, "event_type": "NODE_START", "error": str(e)},
+                {
+                    "event_type": "lifecycle_error",
+                    "node_id": node_id,
+                    "event_type_label": "NODE_START",
+                    "error": str(e),
+                },
             )
 
         return final_correlation_id
 
     def emit_node_success(
-        self,
         metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
@@ -354,11 +352,10 @@ class MixinNodeLifecycle:
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_SUCCESS event: {e}",
-                final_correlation_id,
-                event_type="lifecycle_error",
-                data={
+                {
+                    "event_type": "lifecycle_error",
                     "node_id": node_id,
-                    "event_type": "NODE_SUCCESS",
+                    "event_type_label": "NODE_SUCCESS",
                     "error": str(e),
                 },
             )
@@ -366,7 +363,6 @@ class MixinNodeLifecycle:
         return final_correlation_id
 
     def emit_node_failure(
-        self,
         metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
@@ -415,11 +411,10 @@ class MixinNodeLifecycle:
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_FAILURE event: {e}",
-                final_correlation_id,
-                event_type="lifecycle_error",
-                data={
+                {
+                    "event_type": "lifecycle_error",
                     "node_id": node_id,
-                    "event_type": "NODE_FAILURE",
+                    "event_type_label": "NODE_FAILURE",
                     "error": str(e),
                 },
             )

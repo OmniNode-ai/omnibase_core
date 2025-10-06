@@ -18,7 +18,7 @@ class ModelSignatureRequirements(BaseModel):
     """Signature requirements evaluated from policy rules."""
 
     minimum_signatures: int = Field(
-        1,
+        default=1,
         description="Minimum number of signatures required",
     )
     required_algorithms: list[str] = Field(
@@ -38,7 +38,7 @@ class ModelSignatureRequirements(BaseModel):
         description="Required trust level",
     )
     encryption_required: bool = Field(
-        False,
+        default=False,
         description="Whether encryption is required",
     )
     certificate_validation: ModelCertificateValidationLevel = Field(

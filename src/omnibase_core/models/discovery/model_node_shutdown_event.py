@@ -31,11 +31,11 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     )
 
     # Node identification
-    node_name: str = Field(..., description="Name of the node shutting down")
+    node_name: str = Field(default=..., description="Name of the node shutting down")
 
     # Shutdown information
     shutdown_reason: str = Field(
-        ...,
+        default=...,
         description="Reason for shutdown (graceful, error, forced, maintenance)",
     )
     shutdown_initiated_at: datetime = Field(
@@ -69,7 +69,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
 
     # Restart information
     restart_expected: bool = Field(
-        False,
+        default=False,
         description="Whether the node is expected to restart",
     )
     restart_delay_seconds: int | None = Field(

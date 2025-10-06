@@ -15,7 +15,7 @@ from omnibase_core.models.core.model_cli_command import ModelCLICommand
 class ModelCLIInterface(BaseModel):
     """Model for CLI interface specification."""
 
-    entrypoint: str = Field(..., description="CLI entrypoint command")
+    entrypoint: str = Field(default=..., description="CLI entrypoint command")
     commands: list[ModelCLICommand] = Field(
         default_factory=list,
         description="CLI commands this node provides",
@@ -29,8 +29,8 @@ class ModelCLIInterface(BaseModel):
         default_factory=list,
         description="Optional CLI arguments (legacy)",
     )
-    exit_codes: list[int] = Field(..., description="Possible exit codes")
+    exit_codes: list[int] = Field(default=..., description="Possible exit codes")
     supports_introspect: bool = Field(
-        True,
+        default=True,
         description="Whether node supports --introspect",
     )

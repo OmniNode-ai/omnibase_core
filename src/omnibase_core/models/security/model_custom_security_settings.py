@@ -31,7 +31,7 @@ class ModelCustomSecuritySettings(BaseModel):
         description="List security settings",
     )
 
-    def add_setting(self, key: str, value) -> None:
+    def add_setting(self, key: str, value: Any) -> None:
         """Add a custom security setting with automatic type detection."""
         if isinstance(value, str):
             self.string_settings[key] = value
@@ -45,7 +45,9 @@ class ModelCustomSecuritySettings(BaseModel):
             # Default to string representation for unknown types
             self.string_settings[key] = str(value)
 
-    def get_setting(self, key: str, default=None):
+    def get_setting(
+        self, key: str, default: Any = None
+    ) -> str | int | bool | list[str] | Any:
         """Get a custom security setting."""
         if key in self.string_settings:
             return self.string_settings[key]

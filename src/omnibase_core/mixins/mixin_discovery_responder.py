@@ -59,7 +59,6 @@ class MixinDiscoveryResponder:
         }
 
     def start_discovery_responder(
-        self,
         event_bus: ProtocolEventBus,
         logger: ProtocolLogger | None = None,
         response_throttle: float = 1.0,
@@ -103,7 +102,6 @@ class MixinDiscoveryResponder:
                 )
             msg = f"Failed to start discovery responder: {e!s}"
             raise ModelOnexError(
-                msg,
                 ModelCoreErrorCode.DISCOVERY_SETUP_FAILED,
             )
 
@@ -166,7 +164,6 @@ class MixinDiscoveryResponder:
             pass
 
     def _matches_discovery_criteria(
-        self,
         request: ModelDiscoveryRequestModelMetadata,
     ) -> bool:
         """
@@ -217,7 +214,6 @@ class MixinDiscoveryResponder:
         return True
 
     def _send_discovery_response(
-        self,
         original_event: OnexEvent,
         request: ModelDiscoveryRequestModelMetadata,
     ):

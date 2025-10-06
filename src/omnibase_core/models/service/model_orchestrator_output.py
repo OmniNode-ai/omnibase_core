@@ -25,13 +25,15 @@ class ModelOrchestratorOutput(BaseModel):
     """
 
     # Execution summary
-    execution_status: str = Field(..., description="Overall execution status")
+    execution_status: str = Field(default=..., description="Overall execution status")
     execution_time_ms: int = Field(
-        ...,
+        default=...,
         description="Total execution time in milliseconds",
     )
-    start_time: str = Field(..., description="Execution start time (ISO format)")
-    end_time: str = Field(..., description="Execution end time (ISO format)")
+    start_time: str = Field(
+        default=..., description="Execution start time (ISO format)"
+    )
+    end_time: str = Field(default=..., description="Execution end time (ISO format)")
 
     # Step results
     completed_steps: list[str] = Field(

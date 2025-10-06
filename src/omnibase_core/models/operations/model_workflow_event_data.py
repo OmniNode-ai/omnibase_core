@@ -14,8 +14,8 @@ class ModelWorkflowEventData(ModelEventDataBase):
         default=EnumEventType.WORKFLOW,
         description="Workflow event type",
     )
-    workflow_stage: str = Field(..., description="Current workflow stage")
-    workflow_step: str = Field(..., description="Current workflow step")
+    workflow_stage: str = Field(default=..., description="Current workflow stage")
+    workflow_step: str = Field(default=..., description="Current workflow step")
     execution_metrics: dict[str, float] = Field(
         default_factory=dict,
         description="Workflow execution metrics",

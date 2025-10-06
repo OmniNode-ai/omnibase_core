@@ -20,25 +20,27 @@ class ModelHealthIssue(BaseModel):
     categorization, occurrence patterns, and recovery recommendations.
     """
 
-    issue_id: str = Field(..., description="Unique issue identifier")
+    issue_id: str = Field(default=..., description="Unique issue identifier")
 
     severity: str = Field(
-        ...,
+        default=...,
         description="Issue severity level",
         pattern="^(low|medium|high|critical)$",
     )
 
     category: str = Field(
-        ...,
+        default=...,
         description="Issue category",
         pattern="^(performance|connectivity|resource|configuration|security|other)$",
     )
 
-    message: str = Field(..., description="Human-readable issue description")
+    message: str = Field(default=..., description="Human-readable issue description")
 
-    first_detected: datetime = Field(..., description="When issue was first detected")
+    first_detected: datetime = Field(
+        default=..., description="When issue was first detected"
+    )
 
-    last_seen: datetime = Field(..., description="When issue was last observed")
+    last_seen: datetime = Field(default=..., description="When issue was last observed")
 
     count: int = Field(
         default=1,

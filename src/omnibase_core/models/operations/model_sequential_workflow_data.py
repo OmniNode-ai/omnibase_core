@@ -17,7 +17,7 @@ class ModelSequentialWorkflowData(ModelWorkflowDataBase):
         description="Sequential workflow type",
     )
     step_sequence: list[str] = Field(
-        ...,
+        default=...,
         description="Ordered sequence of workflow steps",
     )
     continue_on_error: bool = Field(

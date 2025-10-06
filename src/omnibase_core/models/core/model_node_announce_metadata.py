@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """Node announce metadata model for ONEX event-driven architecture."""
 
@@ -31,13 +32,11 @@ class ModelNodeAnnounceMetadata(BaseModel):
     """
 
     # Core identification
-    node_id: str = Field(..., description="Unique identifier for the node")
+    node_id: UUID = Field(default=..., description="Unique identifier for the node")
     node_version: str | None = Field(default=None, description="Version of the node")
 
     # Node metadata and configuration
-    metadata_block: "ModelNodeMetadataBlock" = Field(
-        ...,
-        description="Complete node metadata block from node.onex.yaml",
+    metadata_block: "ModelNodeMetadataBlock" = Field(default=..., description="Complete node metadata block from node.onex.yaml",
     )
 
     # Node status and operational state
@@ -75,7 +74,7 @@ class ModelNodeAnnounceMetadata(BaseModel):
     )
 
     # Schema and signature
-    schema_version: str | None = Field(default=None, description="Schema version")
+    schema_version: ModelSemVer | None = Field(default=None, description="Schema version")
     signature_block: Optional["ModelSignatureBlock"] = Field(
         default=None,
         description="Signature block for verification",
@@ -91,11 +90,9 @@ class ModelNodeAnnounceMetadata(BaseModel):
 # Resolve forward references after all models are defined
 try:
     # Import the models needed for forward references
-    from omnibase_core.models.core.model_io_block import ModelIOBlock
     from omnibase_core.models.core.model_node_metadata_block import (
         ModelNodeMetadataBlock,
     )
-    from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 
     # Rebuild the model to resolve forward references
     ModelNodeAnnounceMetadata.model_rebuild()

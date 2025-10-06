@@ -22,12 +22,16 @@ class ModelGitHubReleaseEvent(BaseModel):
     """
 
     action: str = Field(
-        ...,
+        default=...,
         description="Event action (published/created/edited/deleted/prereleased/released)",
     )
-    release: ModelGitHubRelease = Field(..., description="Release data")
-    repository: ModelGitHubRepository = Field(..., description="Repository data")
-    sender: ModelGitHubUser = Field(..., description="User who triggered the event")
+    release: ModelGitHubRelease = Field(default=..., description="Release data")
+    repository: ModelGitHubRepository = Field(
+        default=..., description="Repository data"
+    )
+    sender: ModelGitHubUser = Field(
+        default=..., description="User who triggered the event"
+    )
 
     @classmethod
     def from_dict(

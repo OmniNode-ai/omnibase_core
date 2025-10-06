@@ -25,15 +25,17 @@ class ModelTrustLevel(BaseModel):
     simple enum values, supporting verification methods and expiration.
     """
 
-    trust_score: float = Field(..., description="Trust score", ge=0.0, le=1.0)
+    trust_score: float = Field(default=..., description="Trust score", ge=0.0, le=1.0)
 
     trust_category: str = Field(
-        ...,
+        default=...,
         description="Trust category",
         pattern="^(untrusted|low|medium|high|verified|certified|custom)$",
     )
 
-    display_name: str = Field(..., description="Human-readable trust level name")
+    display_name: str = Field(
+        default=..., description="Human-readable trust level name"
+    )
 
     verification_methods: list[ModelVerificationMethod] = Field(
         default_factory=list,

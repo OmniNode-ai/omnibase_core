@@ -47,7 +47,7 @@ class ModelStructuredDisplayName(BaseModel):
 
     # Base name components
     base_name: str = Field(
-        ...,
+        default=...,
         description="Base name without prefixes or suffixes",
         pattern=r"^[a-z][a-z0-9_]*$",
     )

@@ -39,7 +39,7 @@ class ModelValidationResult(BaseModel, Generic[T]):
     """
 
     # Core validation result
-    is_valid: bool = Field(..., description="Overall validation result")
+    is_valid: bool = Field(default=..., description="Overall validation result")
 
     # Optional validated value with generic typing
     validated_value: T | None = Field(

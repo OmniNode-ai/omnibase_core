@@ -19,8 +19,10 @@ from omnibase_core.models.discovery.model_event_descriptor import (
 class ModelEventDiscoveryRequest(BaseModel):
     """Request model for event discovery queries."""
 
-    query_id: str = Field(..., description="Unique query identifier")
-    correlation_id: str = Field(..., description="Correlation ID for response matching")
+    query_id: str = Field(default=..., description="Unique query identifier")
+    correlation_id: str = Field(
+        default=..., description="Correlation ID for response matching"
+    )
 
     # Discovery Filters
     service_name_pattern: str | None = Field(
@@ -52,11 +54,13 @@ class ModelEventDiscoveryRequest(BaseModel):
     )
 
     # Query Configuration
-    max_results: int = Field(100, description="Maximum number of results to return")
+    max_results: int = Field(
+        default=100, description="Maximum number of results to return"
+    )
     include_inactive: bool = Field(
-        False,
+        default=False,
         description="Whether to include inactive services",
     )
-    timeout_seconds: int = Field(30, description="Query timeout in seconds")
+    timeout_seconds: int = Field(default=30, description="Query timeout in seconds")
 
     model_config = ConfigDict(use_enum_values=True, extra="forbid")

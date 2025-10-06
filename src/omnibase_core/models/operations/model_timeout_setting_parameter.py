@@ -15,8 +15,8 @@ class ModelTimeoutSettingParameter(ModelBaseWorkflowParameter):
         default=EnumWorkflowParameterType.TIMEOUT_SETTING,
         description="Timeout setting parameter type",
     )
-    timeout_name: str = Field(..., description="Timeout name")
-    timeout_ms: int = Field(..., description="Timeout in milliseconds", gt=0)
+    timeout_name: str = Field(default=..., description="Timeout name")
+    timeout_ms: int = Field(default=..., description="Timeout in milliseconds", gt=0)
     retry_on_timeout: bool = Field(
         default=True,
         description="Whether to retry on timeout",

@@ -1,6 +1,7 @@
 from typing import Dict
 
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Model for node contract data validation.
@@ -22,7 +23,9 @@ class ModelNodeContractData(BaseModel):
     for node initialization instead of manual dict[str, Any]ionary access.
     """
 
-    version: str = Field(..., description="Required version field for node contract")
+    version: ModelSemVer = Field(
+        default=..., description="Required version field for node contract"
+    )
 
     # Allow additional fields since contract data can be flexible
     model_config = {"extra": "allow"}

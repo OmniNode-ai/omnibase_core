@@ -184,11 +184,13 @@ class ModelSecurityLevel(BaseModel):
         """Add a security header."""
         self.security_headers[header] = value
 
-    def add_custom_setting(self, key: str, value) -> None:
+    def add_custom_setting(self, key: str, value: Any) -> None:
         """Add a custom security setting."""
         self.custom_security_settings.add_setting(key, value)
 
-    def get_custom_setting(self, key: str, default=None):
+    def get_custom_setting(
+        self, key: str, default: Any = None
+    ) -> str | int | bool | list[str] | Any:
         """Get a custom security setting."""
         return self.custom_security_settings.get_setting(key, default)
 

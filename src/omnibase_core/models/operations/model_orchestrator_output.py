@@ -30,39 +30,39 @@ class ModelOrchestratorOutput(BaseModel):
     """
 
     workflow_id: UUID = Field(
-        ...,
+        default=...,
         description="Workflow identifier",
     )
 
     operation_id: UUID = Field(
-        ...,
+        default=...,
         description="Operation identifier",
     )
 
     workflow_state: EnumWorkflowState = Field(
-        ...,
+        default=...,
         description="Final workflow execution state",
     )
 
     steps_completed: int = Field(
-        ...,
+        default=...,
         description="Number of steps successfully completed",
         ge=0,
     )
 
     steps_failed: int = Field(
-        ...,
+        default=...,
         description="Number of steps that failed",
         ge=0,
     )
 
     thunks_emitted: list[ModelThunk] = Field(
-        ...,
+        default=...,
         description="List of thunks emitted during workflow execution",
     )
 
     processing_time_ms: float = Field(
-        ...,
+        default=...,
         description="Total processing time in milliseconds",
         ge=0,
     )

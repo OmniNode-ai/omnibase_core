@@ -20,7 +20,7 @@ class ModelMetadataToolUsageMetrics(BaseModel):
     )
     failure_count: int = Field(default=0, description="Number of failed invocations")
     avg_processing_time_ms: float = Field(
-        0.0,
+        default=0.0,
         description="Average processing time in milliseconds",
     )
     last_used: datetime | None = Field(default=None, description="Last usage timestamp")
@@ -29,6 +29,6 @@ class ModelMetadataToolUsageMetrics(BaseModel):
         description="Most recent error message",
     )
     popularity_score: float = Field(
-        0.0,
+        default=0.0,
         description="Popularity score based on usage (0-100)",
     )

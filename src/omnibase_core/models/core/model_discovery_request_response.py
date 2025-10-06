@@ -1,4 +1,5 @@
 from pydantic import Field
+from uuid import UUID
 
 """
 Discovery Request and Response Metadata Models
@@ -16,7 +17,7 @@ from .model_discoveryresponsemetadata import ModelDiscoveryResponseModelMetadata
 class ModelDiscoveryRequestModelMetadata(BaseModel):
     """Metadata for discovery request messages."""
 
-    request_id: str = Field(..., description="Unique request identifier")
+    request_id: UUID = Field(default=..., description="Unique request identifier")
     node_types: list[str] | None = Field(
         default=None, description="Filter by node types (COMPUTE, EFFECT, etc.)"
     )

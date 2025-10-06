@@ -1,13 +1,14 @@
 from typing import Any
 
 from pydantic import BaseModel, Field
+from uuid import UUID
 
 
 class ModelContextMetadata(BaseModel):
     """Metadata for execution context."""
 
     # Request tracking
-    request_id: str | None = Field(
+    request_id: UUID | None = Field(
         default=None, description="Unique request identifier"
     )
     request_source: str | None = Field(

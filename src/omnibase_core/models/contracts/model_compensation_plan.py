@@ -37,14 +37,10 @@ class ModelCompensationPlan(BaseModel):
     """
 
     # Plan identification
-    plan_id: UUID = Field(
-        ...,
-        description="Unique identifier for this compensation plan",
+    plan_id: UUID = Field(default=..., description="Unique identifier for this compensation plan",
     )
 
-    plan_name: str = Field(
-        ...,
-        description="Human-readable name for this compensation plan",
+    plan_name: str = Field(default=..., description="Human-readable name for this compensation plan",
         min_length=1,
         max_length=200,
     )
@@ -200,13 +196,6 @@ class ModelCompensationPlan(BaseModel):
             try:
                 return UUID(v_str)
             except ValueError:
-                from omnibase_core.models.common.model_error_context import (
-                    ModelErrorContext,
-                )
-                from omnibase_core.models.common.model_schema_value import (
-                    ModelSchemaValue,
-                )
-
                 raise ModelOnexError(
                     message=f"Invalid plan_id '{v_str}'. Must be a valid UUID.",
                     error_code=ModelCoreErrorCode.VALIDATION_ERROR,
@@ -236,13 +225,6 @@ class ModelCompensationPlan(BaseModel):
                 continue  # Skip empty entries
 
             if not action_id.replace("_", "").replace("-", "").isalnum():
-                from omnibase_core.models.common.model_error_context import (
-                    ModelErrorContext,
-                )
-                from omnibase_core.models.common.model_schema_value import (
-                    ModelSchemaValue,
-                )
-
                 raise ModelOnexError(
                     message=f"Invalid action_id '{action_id}'. Must contain only alphanumeric characters, hyphens, and underscores.",
                     error_code=ModelCoreErrorCode.VALIDATION_ERROR,
@@ -277,13 +259,6 @@ class ModelCompensationPlan(BaseModel):
                 try:
                     validated.append(UUID(plan_id_str))
                 except ValueError:
-                    from omnibase_core.models.common.model_error_context import (
-                        ModelErrorContext,
-                    )
-                    from omnibase_core.models.common.model_schema_value import (
-                        ModelSchemaValue,
-                    )
-
                     raise ModelOnexError(
                         message=f"Invalid dependency plan_id '{plan_id_str}'. Must be a valid UUID.",
                         error_code=ModelCoreErrorCode.VALIDATION_ERROR,

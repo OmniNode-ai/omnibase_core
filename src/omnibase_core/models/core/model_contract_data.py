@@ -1,4 +1,5 @@
 from pydantic import Field
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Contract Data Model.
@@ -14,7 +15,9 @@ from pydantic import BaseModel, Field
 class ModelContractData(BaseModel):
     """Node contract information."""
 
-    contract_version: str | None = Field(default=None, description="Contract version")
+    contract_version: ModelSemVer | None = Field(
+        default=None, description="Contract version"
+    )
     contract_name: str | None = Field(default=None, description="Contract name")
     contract_description: str | None = Field(
         default=None,

@@ -20,26 +20,26 @@ class ModelPermissionSessionInfo(BaseModel):
     Provides structured session data for constraint validation.
     """
 
-    session_id: str = Field(..., description="Unique session identifier")
+    session_id: str = Field(default=..., description="Unique session identifier")
 
-    user_id: str = Field(..., description="User identifier for the session")
+    user_id: str = Field(default=..., description="User identifier for the session")
 
-    start_time: datetime = Field(..., description="Session start time")
+    start_time: datetime = Field(default=..., description="Session start time")
 
-    last_activity: datetime = Field(..., description="Last activity timestamp")
+    last_activity: datetime = Field(default=..., description="Last activity timestamp")
 
-    ip_address: str = Field(..., description="Client IP address")
+    ip_address: str = Field(default=..., description="Client IP address")
 
     user_agent: str | None = Field(default=None, description="Client user agent string")
 
     authentication_method: str = Field(
-        "password",
+        default="password",
         description="How user authenticated",
         pattern="^(password|sso|certificate|api_key|oauth|mfa)$",
     )
 
     mfa_verified: bool = Field(
-        False,
+        default=False,
         description="Whether MFA was verified in this session",
     )
 
@@ -55,7 +55,7 @@ class ModelPermissionSessionInfo(BaseModel):
     device_id: str | None = Field(default=None, description="Device identifier")
 
     device_trust_level: str = Field(
-        "unknown",
+        default="unknown",
         description="Device trust level",
         pattern="^(trusted|known|unknown|suspicious)$",
     )

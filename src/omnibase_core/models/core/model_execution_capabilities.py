@@ -31,19 +31,19 @@ class ModelExecutionCapabilities(BaseModel):
     """
 
     supported_node_types: list[ModelNodeType] = Field(
-        ...,
+        default=...,
         description="Supported node types",
     )
     supported_delivery_modes: list[EnumDeliveryMode] = Field(
-        ...,
+        default=...,
         description="Supported delivery modes",
     )
     max_concurrent_executions: int = Field(
-        ...,
+        default=...,
         description="Maximum concurrent executions",
         ge=1,
     )
-    timeout: ModelDuration = Field(..., description="Default execution timeout")
+    timeout: ModelDuration = Field(default=..., description="Default execution timeout")
     performance_constraints: ModelPerformanceConstraints | None = Field(
         default=None,
         description="Performance constraints",

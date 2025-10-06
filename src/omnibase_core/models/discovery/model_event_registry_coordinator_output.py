@@ -17,7 +17,9 @@ from omnibase_core.enums.enum_service_status import EnumServiceStatus
 class ModelEventRegistryCoordinatorOutput(BaseModel):
     """Output model for Event Registry Coordinator operations."""
 
-    coordinator_result: str = Field(..., description="Coordinator operation result")
+    coordinator_result: str = Field(
+        default=..., description="Coordinator operation result"
+    )
 
     phase_initialization_success: bool | None = Field(
         default=None,
@@ -43,7 +45,7 @@ class ModelEventRegistryCoordinatorOutput(BaseModel):
         description="Health status of Container Adapters",
     )
 
-    operation_timestamp: str = Field(..., description="Operation timestamp")
+    operation_timestamp: str = Field(default=..., description="Operation timestamp")
 
     error_details: str | None = Field(
         default=None,
@@ -51,7 +53,7 @@ class ModelEventRegistryCoordinatorOutput(BaseModel):
     )
 
     operation_successful: bool = Field(
-        True,
+        default=True,
         description="Whether operation was successful",
     )
 

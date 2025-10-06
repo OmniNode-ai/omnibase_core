@@ -23,14 +23,14 @@ class ModelAlgorithmFactorConfig(BaseModel):
     """
 
     weight: float = Field(
-        ...,
+        default=...,
         description="Factor weight in algorithm (0.0-1.0)",
         ge=0.0,
         le=1.0,
     )
 
     calculation_method: str = Field(
-        ...,
+        default=...,
         description="Calculation method identifier",
         min_length=1,
     )

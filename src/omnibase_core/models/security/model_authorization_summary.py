@@ -12,8 +12,12 @@ from pydantic import BaseModel, Field
 class ModelAuthorizationSummary(BaseModel):
     """Authorization requirements summary."""
 
-    authorized_roles: list[str] = Field(..., description="Roles authorized to process")
-    authorized_nodes: list[str] = Field(..., description="Nodes authorized to process")
+    authorized_roles: list[str] = Field(
+        default=..., description="Roles authorized to process"
+    )
+    authorized_nodes: list[str] = Field(
+        default=..., description="Nodes authorized to process"
+    )
     security_clearance_required: str | None = Field(
         default=None,
         description="Required security clearance",

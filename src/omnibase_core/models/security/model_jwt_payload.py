@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 class ModelJWTPayload(BaseModel):
     """Model for JWT token payload."""
 
-    sub: str = Field(..., description="Subject (user ID)")
+    sub: str = Field(default=..., description="Subject (user ID)")
     username: str | None = Field(default=None, description="Username")
     roles: list[str] = Field(default_factory=list, description="User roles")
     permissions: list[str] = Field(default_factory=list, description="User permissions")

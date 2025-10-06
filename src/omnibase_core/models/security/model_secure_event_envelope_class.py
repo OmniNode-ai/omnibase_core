@@ -60,8 +60,12 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     # Cryptographic signature chain
     signature_chain: ModelSignatureChain = Field(
         default_factory=lambda: ModelSignatureChain(
-            chain_id="temp-chain",  # Will be updated after envelope creation
-            envelope_id="temp",  # Will be updated after envelope creation
+            chain_id=UUID(
+                "00000000-0000-0000-0000-000000000000"
+            ),  # Temp UUID, will be updated after envelope creation
+            envelope_id=UUID(
+                "00000000-0000-0000-0000-000000000000"
+            ),  # Temp UUID, will be updated after envelope creation
             content_hash="initial",  # Will be calculated from envelope content
             signing_policy=None,
             chain_metrics=ModelChainMetrics(
@@ -127,7 +131,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
 
     # Tamper detection
     content_hash: str = Field(
-        ...,
+        default=...,
         description="Hash of envelope content for tamper detection",
     )
     signature_required: bool = Field(
@@ -162,7 +166,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         super().__init__(**data)
 
         # Update signature chain with actual envelope ID
-        if self.signature_chain.envelope_id == "temp":
+        if str(self.signature_chain.envelope_id) == "temp":
             self.signature_chain.envelope_id = self.envelope_id
 
         # Initialize content hash
@@ -264,9 +268,13 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         trusted_nodes: set[str] | None = None,
     ) -> "ModelSignatureVerificationResult":
         """Verify all signatures in the chain."""
-        from omnibase_core.models.security.model_signature_verification_result import (
+        from omnibase_core.models.security.model_chain_validation import (
             ModelChainValidation,
+        )
+        from omnibase_core.models.security.model_policy_validation import (
             ModelPolicyValidation,
+        )
+        from omnibase_core.models.security.model_signature_verification_result import (
             ModelSignatureVerificationResult,
         )
 
@@ -279,8 +287,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
                 signature_count=0,
                 verified_signatures=0,
                 chain_validation=ModelChainValidation(
-                    chain_id=str(chain_summary["chain_id"]),
-                    envelope_id=str(chain_summary["envelope_id"]),
+                    chain_id=UUID(str(chain_summary["chain_id"])),
+                    envelope_id=UUID(str(chain_summary["envelope_id"])),
                     signature_count=0,
                     unique_signers=0,
                     operations=[],
@@ -306,8 +314,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
                 signature_count=len(self.signature_chain.signatures),
                 verified_signatures=0,
                 chain_validation=ModelChainValidation(
-                    chain_id=str(chain_summary["chain_id"]),
-                    envelope_id=str(chain_summary["envelope_id"]),
+                    chain_id=UUID(str(chain_summary["chain_id"])),
+                    envelope_id=UUID(str(chain_summary["envelope_id"])),
                     signature_count=(
                         int(chain_summary["signature_count"])
                         if isinstance(chain_summary["signature_count"], int)
@@ -371,8 +379,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             signature_count=len(self.signature_chain.signatures),
             verified_signatures=verified_signatures,
             chain_validation=ModelChainValidation(
-                chain_id=str(chain_summary["chain_id"]),
-                envelope_id=str(chain_summary["envelope_id"]),
+                chain_id=UUID(str(chain_summary["chain_id"])),
+                envelope_id=UUID(str(chain_summary["envelope_id"])),
                 signature_count=(
                     int(chain_summary["signature_count"])
                     if isinstance(chain_summary["signature_count"], int)
@@ -586,8 +594,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             signature_required=self.signature_required,
             content_hash=self.content_hash,
             signature_chain=ModelSignatureChainSummary(
-                chain_id=str(chain_summary["chain_id"]),
-                envelope_id=str(chain_summary["envelope_id"]),
+                chain_id=UUID(str(chain_summary["chain_id"])),
+                envelope_id=UUID(str(chain_summary["envelope_id"])),
                 signature_count=(
                     int(chain_summary["signature_count"])
                     if isinstance(chain_summary["signature_count"], int)

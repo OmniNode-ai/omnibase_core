@@ -14,13 +14,15 @@ class ModelWorkflowInputState(BaseModel):
     """Input state for workflow orchestrator."""
 
     action: str = Field(
-        ...,
+        default=...,
         description="Action to perform (process, orchestrate, execute)",
     )
-    scenario_id: UUID = Field(..., description="ID of the scenario to orchestrate")
-    correlation_id: UUID = Field(..., description="Correlation ID for tracking")
+    scenario_id: UUID = Field(
+        default=..., description="ID of the scenario to orchestrate"
+    )
+    correlation_id: UUID = Field(default=..., description="Correlation ID for tracking")
     operation_type: str = Field(
-        ...,
+        default=...,
         description="Type of operation (model_generation, bootstrap_validation, extraction, generic)",
     )
     parameters: ModelWorkflowParameters = Field(

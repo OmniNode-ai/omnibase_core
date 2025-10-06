@@ -17,8 +17,8 @@ from omnibase_core.models.discovery.model_event_descriptor import ModelEventDesc
 class ModelEventDiscoveryResponse(BaseModel):
     """Response model for event discovery queries."""
 
-    query_id: str = Field(..., description="Original query identifier")
-    correlation_id: str = Field(..., description="Correlation ID from request")
+    query_id: str = Field(default=..., description="Original query identifier")
+    correlation_id: str = Field(default=..., description="Correlation ID from request")
 
     # Results
     discovered_events: list[ModelEventDescriptor] = Field(
@@ -38,7 +38,7 @@ class ModelEventDiscoveryResponse(BaseModel):
         description="Consul query time in milliseconds",
     )
     container_adapter_active: bool = Field(
-        True,
+        default=True,
         description="Whether Container Adapter is active",
     )
 
@@ -51,7 +51,7 @@ class ModelEventDiscoveryResponse(BaseModel):
         description="Error message if query failed",
     )
     partial_results: bool = Field(
-        False,
+        default=False,
         description="Whether results are partial due to timeout",
     )
 

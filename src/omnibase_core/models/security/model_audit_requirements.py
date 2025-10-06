@@ -22,20 +22,20 @@ class ModelAuditRequirements(BaseModel):
     enabled: bool = Field(default=True, description="Whether audit logging is enabled")
 
     detail_level: str = Field(
-        "standard",
+        default="standard",
         description="Level of audit detail required",
         pattern="^(minimal|standard|detailed|comprehensive)$",
     )
 
     retention_days: int = Field(
-        365,
+        default=365,
         description="Days to retain audit logs",
         ge=1,
         le=7300,  # Max 20 years
     )
 
     export_required: bool = Field(
-        False,
+        default=False,
         description="Whether audit logs must be exported to external system",
     )
 
@@ -50,7 +50,7 @@ class ModelAuditRequirements(BaseModel):
     )
 
     export_format: str = Field(
-        "json",
+        default="json",
         description="Format for exported audit logs",
         pattern="^(json|csv|syslog|cef)$",
     )
@@ -61,14 +61,14 @@ class ModelAuditRequirements(BaseModel):
     )
 
     sampling_rate: float = Field(
-        1.0,
+        default=1.0,
         description="Sampling rate for audit logs (1.0 = 100%)",
         ge=0.0,
         le=1.0,
     )
 
     alert_on_anomaly: bool = Field(
-        False,
+        default=False,
         description="Whether to alert on anomalous audit patterns",
     )
 

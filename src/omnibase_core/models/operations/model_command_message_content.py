@@ -17,7 +17,7 @@ class ModelCommandMessageContent(ModelMessageContentBase):
         default=EnumMessageType.COMMAND,
         description="Command message type",
     )
-    command_name: str = Field(..., description="Name of the command to execute")
+    command_name: str = Field(default=..., description="Name of the command to execute")
     command_parameters: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Command parameters",

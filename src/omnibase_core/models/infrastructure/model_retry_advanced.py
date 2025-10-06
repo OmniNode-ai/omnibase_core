@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
@@ -78,7 +77,6 @@ class ModelRetryAdvanced(BaseModel):
 
     def add_metadata(self, key: str, value: object) -> None:
         """Add custom metadata with bounded type values."""
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
         schema_value = ModelSchemaValue.from_value(value)
         # Convert ModelSchemaValue back to primitive and ensure it's a valid PrimitiveValueType

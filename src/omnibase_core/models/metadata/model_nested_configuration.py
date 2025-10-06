@@ -30,13 +30,15 @@ class ModelNestedConfiguration(BaseModel):
     """
 
     # UUID-based entity references
-    config_id: UUID = Field(..., description="Unique identifier for the configuration")
+    config_id: UUID = Field(
+        default=..., description="Unique identifier for the configuration"
+    )
     config_display_name: str | None = Field(
         default=None,
         description="Human-readable configuration name",
     )
     config_type: EnumConfigType = Field(
-        ...,
+        default=...,
         description="Configuration type",
     )
     settings: dict[str, ModelCliValue] = Field(

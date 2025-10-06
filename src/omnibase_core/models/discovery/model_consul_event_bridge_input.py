@@ -15,7 +15,7 @@ from omnibase_core.models.discovery.model_event_descriptor import ModelEventDesc
 class ModelConsulEventBridgeInput(BaseModel):
     """Input model for Consul Event Bridge operations."""
 
-    bridge_action: str = Field(..., description="Bridge action to perform")
+    bridge_action: str = Field(default=..., description="Bridge action to perform")
 
     event_descriptor: ModelEventDescriptor | None = Field(
         default=None,
@@ -28,7 +28,7 @@ class ModelConsulEventBridgeInput(BaseModel):
     )
 
     sync_required: bool = Field(
-        False,
+        default=False,
         description="Whether to perform state synchronization",
     )
 

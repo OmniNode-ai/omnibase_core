@@ -22,15 +22,17 @@ class ModelToolType(BaseModel):
 
     # Core fields (required)
     name: str = Field(
-        ...,
+        default=...,
         description="Tool type identifier (e.g., CONTRACT_TO_MODEL)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
 
-    description: str = Field(..., description="Human-readable description of the tool")
+    description: str = Field(
+        default=..., description="Human-readable description of the tool"
+    )
 
     category: str = Field(
-        ...,
+        default=...,
         description="Tool category for organization",
         pattern="^[a-z][a-z0-9_]*$",
     )

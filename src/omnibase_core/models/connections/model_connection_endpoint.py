@@ -36,7 +36,7 @@ class ModelConnectionEndpoint(BaseModel):
 
     # Connection type and protocol
     connection_type: EnumConnectionType = Field(
-        ...,
+        default=...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
     protocol_version: ModelSemVer | None = Field(
@@ -45,13 +45,13 @@ class ModelConnectionEndpoint(BaseModel):
 
     # Endpoint information
     host: str = Field(
-        ...,
+        default=...,
         description="Host address (IP or hostname)",
         min_length=1,
         max_length=255,
         pattern=r"^[a-zA-Z0-9.-]+$",
     )
-    port: int = Field(..., description="Port number", ge=1, le=65535)
+    port: int = Field(default=..., description="Port number", ge=1, le=65535)
     path: str | None = Field(
         default=None,
         description="Connection path/endpoint",

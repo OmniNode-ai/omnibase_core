@@ -19,32 +19,32 @@ class ModelSessionAffinityMetadata(BaseModel):
 
     # Session tracking
     session_id_format: str = Field(
-        "uuid",
+        default="uuid",
         description="Format for session IDs",
         pattern="^(uuid|ulid|nanoid|custom)$",
     )
     include_timestamp: bool = Field(
-        True,
+        default=True,
         description="Include timestamp in session metadata",
     )
 
     # Client identification
     include_user_agent: bool = Field(
-        True,
+        default=True,
         description="Include user agent in affinity calculation",
     )
     include_accept_language: bool = Field(
-        False,
+        default=False,
         description="Include accept-language header in affinity",
     )
     include_geo_location: bool = Field(
-        False,
+        default=False,
         description="Include geo-location in affinity calculation",
     )
 
     # Session persistence
     persist_across_restarts: bool = Field(
-        False,
+        default=False,
         description="Persist affinity data across server restarts",
     )
     storage_backend: str | None = Field(
@@ -69,7 +69,7 @@ class ModelSessionAffinityMetadata(BaseModel):
         description="Failover node priority order",
     )
     preserve_session_data: bool = Field(
-        True,
+        default=True,
         description="Preserve session data during failover",
     )
 
@@ -78,7 +78,7 @@ class ModelSessionAffinityMetadata(BaseModel):
         default=True, description="Track session-level metrics"
     )
     metrics_sampling_rate: float = Field(
-        1.0,
+        default=1.0,
         description="Sampling rate for session metrics",
         ge=0.0,
         le=1.0,

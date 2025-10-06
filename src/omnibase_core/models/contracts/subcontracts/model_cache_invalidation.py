@@ -20,7 +20,7 @@ class ModelCacheInvalidation(BaseModel):
     """
 
     invalidation_strategy: str = Field(
-        ...,
+        default=...,
         description="Strategy for cache invalidation",
         min_length=1,
     )

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 class ModelServiceContainer(BaseModel):
     """Service container configuration."""
 
-    image: str = Field(..., description="Container image")
+    image: str = Field(default=..., description="Container image")
     env: dict[str, str] | None = Field(
         default=None, description="Environment variables"
     )

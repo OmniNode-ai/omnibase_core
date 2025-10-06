@@ -35,7 +35,7 @@ class ModelNodeSignature(BaseModel):
 
     # Node identification
     node_id: str = Field(
-        ...,
+        default=...,
         description="Unique identifier of the signing node",
         min_length=1,
     )
@@ -50,7 +50,7 @@ class ModelNodeSignature(BaseModel):
         description="When the signature was created (UTC)",
     )
     signature: str = Field(
-        ...,
+        default=...,
         description="Base64-encoded digital signature",
         min_length=1,
     )
@@ -61,7 +61,7 @@ class ModelNodeSignature(BaseModel):
         description="Cryptographic algorithm used for signing",
     )
     key_id: str = Field(
-        ...,
+        default=...,
         description="Certificate fingerprint or key identifier",
         min_length=1,
     )
@@ -72,7 +72,7 @@ class ModelNodeSignature(BaseModel):
 
     # Operation context
     operation: EnumNodeOperation = Field(
-        ...,
+        default=...,
         description="Type of operation performed by this node",
     )
     operation_details: ModelOperationDetails | None = Field(
@@ -82,7 +82,7 @@ class ModelNodeSignature(BaseModel):
 
     # Audit and compliance
     hop_index: int = Field(
-        ...,
+        default=...,
         description="Position in the routing chain (0-based)",
         ge=0,
         le=MAX_HOP_INDEX,
@@ -92,7 +92,7 @@ class ModelNodeSignature(BaseModel):
         description="Hash of the previous signature in the chain",
     )
     envelope_state_hash: str = Field(
-        ...,
+        default=...,
         description="Hash of envelope state when signature was created",
         min_length=1,
     )

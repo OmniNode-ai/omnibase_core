@@ -35,7 +35,7 @@ class ModelSecretBackend(BaseModel):
     """
 
     backend_type: EnumBackendType = Field(
-        EnumBackendType.ENVIRONMENT,
+        default=EnumBackendType.ENVIRONMENT,
         description="Secret backend type",
     )
 

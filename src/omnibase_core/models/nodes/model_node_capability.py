@@ -54,12 +54,12 @@ class ModelNodeCapability(BaseModel):
     )
 
     value: str = Field(
-        ...,
+        default=...,
         description="Lowercase value for current standards (e.g., supports_dry_run)",
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable description of the capability",
     )
 

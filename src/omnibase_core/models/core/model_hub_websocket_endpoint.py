@@ -11,5 +11,5 @@ from pydantic import BaseModel, Field
 class ModelHubWebSocketEndpoint(BaseModel):
     """WebSocket endpoint configuration for hubs."""
 
-    path: str = Field(..., description="WebSocket path")
+    path: str = Field(default=..., description="WebSocket path")
     description: str | None = Field(default=None, description="WebSocket description")

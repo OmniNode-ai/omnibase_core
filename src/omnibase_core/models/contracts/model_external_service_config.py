@@ -21,7 +21,7 @@ class ModelExternalServiceConfig(BaseModel):
     """
 
     service_type: str = Field(
-        ...,
+        default=...,
         description="External service type (rest_api, graphql, grpc, message_queue, etc.)",
         min_length=1,
     )

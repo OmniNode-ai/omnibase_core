@@ -17,10 +17,10 @@ class ModelHandlerMetadata(BaseModel):
     Canonical metadata for a file type handler.
     """
 
-    handler_name: str = Field(..., description="Handler name.")
-    handler_version: ModelSemVer = Field(..., description="Handler version.")
-    handler_author: str = Field(..., description="Handler author.")
-    handler_description: str = Field(..., description="Handler description.")
+    handler_name: str = Field(default=..., description="Handler name.")
+    handler_version: ModelSemVer = Field(default=..., description="Handler version.")
+    handler_author: str = Field(default=..., description="Handler author.")
+    handler_description: str = Field(default=..., description="Handler description.")
     supported_extensions: list[str] = Field(
         default_factory=list,
         description="Supported file extensions.",
@@ -30,15 +30,15 @@ class ModelHandlerMetadata(BaseModel):
         description="Supported special filenames.",
     )
     handler_priority: int = Field(
-        ...,
+        default=...,
         description="Handler priority (higher = preferred).",
     )
     requires_content_analysis: bool = Field(
-        ...,
+        default=...,
         description="Whether handler requires content analysis.",
     )
     source: EnumHandlerSource = Field(
-        ...,
+        default=...,
         description="Handler source (core, plugin, runtime, etc.)",
     )
 

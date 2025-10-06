@@ -25,10 +25,10 @@ class ModelValidationIssue(BaseModel):
     """
 
     severity: EnumValidationSeverity = Field(
-        ...,
+        default=...,
         description="Severity level of the issue",
     )
-    message: str = Field(..., description="Human-readable issue description")
+    message: str = Field(default=..., description="Human-readable issue description")
     code: str | None = Field(
         default=None,
         description="Machine-readable error code for programmatic handling",

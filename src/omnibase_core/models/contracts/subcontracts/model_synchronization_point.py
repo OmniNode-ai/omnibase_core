@@ -14,12 +14,16 @@ from pydantic import BaseModel, Field
 class ModelSynchronizationPoint(BaseModel):
     """A synchronization point in workflow execution."""
 
-    point_name: str = Field(..., description="Name of the synchronization point")
+    point_name: str = Field(
+        default=..., description="Name of the synchronization point"
+    )
 
-    timestamp: datetime = Field(..., description="When the synchronization occurred")
+    timestamp: datetime = Field(
+        default=..., description="When the synchronization occurred"
+    )
 
     nodes_synchronized: int = Field(
-        ...,
+        default=...,
         description="Number of nodes synchronized at this point",
         ge=0,
     )

@@ -3,6 +3,9 @@ from typing import Any, Callable, Dict
 
 from omnibase_core.errors.error_codes import ModelOnexError
 
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -59,7 +62,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
 # Moved to TYPE_CHECKING block
 
 if TYPE_CHECKING:
-    from uuid import UUID
+    pass
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -371,7 +374,6 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         )
 
     async def _convert_event_to_input_state(
-        self,
         event: ModelToolInvocationEvent,
     ) -> Any:
         """
@@ -409,7 +411,6 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         return None
 
     async def _execute_tool(
-        self,
         input_state: Any,
         event: ModelToolInvocationEvent,
     ) -> Any:
@@ -421,9 +422,6 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 return await run_method(input_state)
             # Run synchronous method in executor to avoid blocking
             return await asyncio.get_event_loop().run_in_executor(
-                None,
-                run_method,
-                input_state,
             )
         msg = "Node does not have a 'run' method for tool execution"
         raise ModelOnexError(msg, ModelCoreErrorCode.METHOD_NOT_IMPLEMENTED)

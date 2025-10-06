@@ -18,6 +18,8 @@ from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
+from typing import TYPE_CHECKING
+
 from .model_function_deprecation_info import (
     ModelDeprecationSummary,
     ModelFunctionDeprecationInfo,
@@ -311,7 +313,6 @@ class ModelFunctionNodeMetadata(BaseModel):
         replacement: str | None = None,
     ) -> ModelFunctionNodeMetadata:
         """Create metadata for function with deprecation info."""
-        from omnibase_core.models.metadata.model_semver import ModelSemVer
 
         # Parse version string
         try:

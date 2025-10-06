@@ -18,7 +18,9 @@ from omnibase_core.models.discovery.model_event_descriptor import (
 class ModelEventRegistryCoordinatorInput(BaseModel):
     """Input model for Event Registry Coordinator operations."""
 
-    coordinator_action: str = Field(..., description="Coordinator action to perform")
+    coordinator_action: str = Field(
+        default=..., description="Coordinator action to perform"
+    )
 
     discovery_phase: EnumDiscoveryPhase | None = Field(
         default=None,
@@ -35,7 +37,7 @@ class ModelEventRegistryCoordinatorInput(BaseModel):
     )
 
     cross_adapter_coordination: bool = Field(
-        False,
+        default=False,
         description="Whether to coordinate across multiple adapters",
     )
 

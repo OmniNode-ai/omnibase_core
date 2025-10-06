@@ -51,7 +51,9 @@ class ModelCustomFields(BaseModel):
     )
 
     # Metadata
-    schema_version: ModelSemVer = Field("1.0", description="Schema version")
+    schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer.parse("1.0"), description="Schema version"
+    )
     last_modified: datetime = Field(
         default_factory=datetime.utcnow,
         description="Last modification time",
@@ -63,7 +65,7 @@ class ModelCustomFields(BaseModel):
         default=False, description="Enforce strict validation"
     )
     allow_undefined_fields: bool = Field(
-        True,
+        default=True,
         description="Allow fields not in definitions",
     )
 

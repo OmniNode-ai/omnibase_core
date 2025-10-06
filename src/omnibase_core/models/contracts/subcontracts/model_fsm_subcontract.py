@@ -49,7 +49,7 @@ class ModelFSMSubcontract(BaseModel):
 
     # Core FSM identification
     state_machine_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the state machine",
         min_length=1,
     )
@@ -60,7 +60,7 @@ class ModelFSMSubcontract(BaseModel):
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable state machine description",
         min_length=1,
     )
@@ -73,13 +73,13 @@ class ModelFSMSubcontract(BaseModel):
 
     # State definitions
     states: list[ModelFSMStateDefinition] = Field(
-        ...,
+        default=...,
         description="All available states in the system",
         min_length=1,
     )
 
     initial_state: str = Field(
-        ...,
+        default=...,
         description="Name of the initial state",
         min_length=1,
     )
@@ -96,7 +96,7 @@ class ModelFSMSubcontract(BaseModel):
 
     # Transition specifications
     transitions: list[ModelFSMStateTransition] = Field(
-        ...,
+        default=...,
         description="All valid state transitions",
         min_length=1,
     )

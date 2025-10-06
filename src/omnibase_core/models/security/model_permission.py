@@ -44,7 +44,7 @@ class ModelPermission(BaseModel):
     )
 
     name: str = Field(
-        ...,
+        default=...,
         description="Human-readable permission name",
         min_length=1,
         max_length=100,
@@ -52,7 +52,7 @@ class ModelPermission(BaseModel):
     )
 
     resource: str = Field(
-        ...,
+        default=...,
         description="Resource identifier or pattern",
         min_length=1,
         max_length=500,
@@ -60,7 +60,7 @@ class ModelPermission(BaseModel):
     )
 
     action: str = Field(
-        ...,
+        default=...,
         description="Action on resource",
         min_length=1,
         max_length=50,
@@ -120,7 +120,7 @@ class ModelPermission(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default="1.0.0",
+        default_factory=lambda: ModelSemVer.parse("1.0.0"),
         description="Permission definition version",
         pattern="^\\d+\\.\\d+\\.\\d+$",
     )
@@ -644,7 +644,6 @@ class ModelPermission(BaseModel):
 
     def _matches_pattern(self, value: str, pattern: str) -> bool:
         """Check if value matches pattern."""
-        import fnmatch
 
         return fnmatch.fnmatch(value, pattern)
 

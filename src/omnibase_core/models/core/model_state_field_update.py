@@ -16,11 +16,11 @@ class ModelStateFieldUpdate(BaseModel):
     """Update for a single state field."""
 
     field_path: str = Field(
-        ...,
+        default=...,
         description="Dot-separated path to the field (e.g., 'user.profile.name')",
     )
     operation: EnumStateUpdateOperation = Field(
-        ...,
+        default=...,
         description="Operation to perform on the field",
     )
     value: ModelSchemaValue | None = Field(

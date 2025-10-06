@@ -3,8 +3,10 @@
 Type-safe input state source structure.
 """
 
+from typing import TypedDict
 
-class ModelInputStateSourceType(dict, total=False):
+
+class ModelInputStateSourceType(TypedDict, total=False):
     """Type-safe input state source structure."""
 
     version: object | None  # Use object with runtime type checking instead of Any

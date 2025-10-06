@@ -162,9 +162,6 @@ class MixinServiceRegistry:
 
         try:
             # Import the required models
-            from omnibase_core.models.core.model_event_envelope import (
-                ModelEventEnvelope,
-            )
             from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
             # Create the discovery event
@@ -202,7 +199,6 @@ class MixinServiceRegistry:
 
         except Exception as e:
             logger.exception(f"❌ Failed to send discovery request: {e}")
-            import traceback
 
             traceback.print_exc()
 
@@ -313,12 +309,6 @@ class MixinServiceRegistry:
         correlation_id = str(uuid4())
 
         try:
-            # Import the required models
-            from omnibase_core.models.core.model_event_envelope import (
-                ModelEventEnvelope,
-            )
-            from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-
             # Create the introspection event
             introspection_event = ModelOnexEvent(
                 event_type="core.discovery.node_introspection",
@@ -458,7 +448,6 @@ class MixinServiceRegistry:
             logger.exception(f"❌ Error handling discovery request: {e}")
 
     def get_registered_tools(
-        self,
         status_filter: str | None = None,
     ) -> list[MixinServiceRegistryEntry]:
         """

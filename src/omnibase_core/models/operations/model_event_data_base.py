@@ -5,11 +5,17 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
+from omnibase_core.models.core.model_event_type import ModelEventAttributeInfo
+from omnibase_core.models.core.model_event_type import ModelEventContextInfo
+from omnibase_core.models.core.model_event_type import ModelEventSourceInfo
+
 
 class ModelEventDataBase(BaseModel):
     """Base event data with discriminator."""
 
-    event_type: EnumEventType = Field(..., description="Event type discriminator")
+    event_type: EnumEventType = Field(
+        default=..., description="Event type discriminator"
+    )
     context: ModelEventContextInfo = Field(
         default_factory=lambda: ModelEventContextInfo(),
         description="Structured event context information",

@@ -15,26 +15,26 @@ class ModelPerformanceOptimizationConfig(BaseModel):
     cache_enabled: bool = Field(default=True, description="Whether caching is enabled")
 
     cache_ttl_seconds: int = Field(
-        300,
+        default=300,
         description="Cache time-to-live in seconds",
         ge=0,
         le=3600,
     )
 
     connection_pooling: bool = Field(
-        False,
+        default=False,
         description="Whether connection pooling is enabled",
     )
 
     max_connections: int = Field(
-        10,
+        default=10,
         description="Maximum number of connections in pool",
         ge=1,
         le=100,
     )
 
     connection_timeout: int = Field(
-        5,
+        default=5,
         description="Connection timeout in seconds",
         ge=1,
         le=30,

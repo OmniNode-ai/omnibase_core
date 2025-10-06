@@ -46,24 +46,24 @@ class ModelWorkflowCondition(BaseModel):
     """
 
     condition_type: EnumConditionType = Field(
-        ...,
+        default=...,
         description="Type of condition to evaluate",
     )
 
     field_name: str = Field(
-        ...,
+        default=...,
         description="Name of the field or property to evaluate",
         min_length=1,
         max_length=100,
     )
 
     operator: EnumConditionOperator = Field(
-        ...,
+        default=...,
         description="Operator to use for condition evaluation",
     )
 
     expected_value: ModelConditionValue[Any] | ModelConditionValueList = Field(
-        ...,
+        default=...,
         description="Expected value for comparison (strongly typed container)",
     )
 

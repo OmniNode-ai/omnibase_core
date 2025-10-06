@@ -1,6 +1,7 @@
 from typing import Dict
 
 from pydantic import Field
+from uuid import UUID
 
 """
 GitHub Label Model
@@ -20,10 +21,10 @@ class ModelGitHubLabel(BaseModel):
     Represents a GitHub issue/PR label with structured fields.
     """
 
-    id: int = Field(..., description="Label ID")
-    node_id: str = Field(..., description="Label node ID")
-    url: str = Field(..., description="Label API URL")
-    name: str = Field(..., description="Label name")
-    color: str = Field(..., description="Label color (hex without #)")
+    id: int = Field(default=..., description="Label ID")
+    node_id: UUID = Field(default=..., description="Label node ID")
+    url: str = Field(default=..., description="Label API URL")
+    name: str = Field(default=..., description="Label name")
+    color: str = Field(default=..., description="Label color (hex without #)")
     default: bool = Field(default=False, description="Whether this is a default label")
     description: str | None = Field(default=None, description="Label description")

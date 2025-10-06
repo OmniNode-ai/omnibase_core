@@ -48,21 +48,23 @@ class ModelToolHealth(BaseModel):
     """
 
     tool_name: str = Field(
-        ...,
+        default=...,
         description="Name of the tool",
         min_length=1,
         max_length=100,
     )
 
     status: EnumToolHealthStatus = Field(
-        ...,
+        default=...,
         description="Current health status of the tool",
     )
 
-    tool_type: EnumToolType = Field(..., description="Type/category of the tool")
+    tool_type: EnumToolType = Field(
+        default=..., description="Type/category of the tool"
+    )
 
     is_callable: bool = Field(
-        ...,
+        default=...,
         description="Whether the tool can be invoked successfully",
     )
 
@@ -376,8 +378,6 @@ class ModelToolHealth(BaseModel):
         if not self.is_unhealthy() and not self.error_message:
             return None
 
-        from omnibase_core.models.core.model_error_summary import ModelErrorSummary
-
         return ModelErrorSummary(
             error_code=self.error_code or "TOOL_ERROR",
             error_type=self.status.value,
@@ -430,11 +430,6 @@ class ModelToolHealth(BaseModel):
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get metrics suitable for monitoring systems."""
-        from omnibase_core.models.core.model_monitoring_metrics import (
-            MetricValue,
-            ModelMonitoringMetrics,
-        )
-
         health_score = (
             100.0 if self.is_healthy() else 50.0 if self.is_degraded() else 0.0
         )

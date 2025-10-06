@@ -16,11 +16,11 @@ from omnibase_core.models.core.model_version_status import ModelVersionStatus
 class ModelNodeMetadataInfo(BaseModel):
     """Model for node metadata."""
 
-    name: str = Field(..., description="Node name")
-    version: ModelSemVer = Field(..., description="Node version")
-    description: str = Field(..., description="Node description")
-    author: str = Field(..., description="Node author")
-    schema_version: ModelSemVer = Field(..., description="Node schema version")
+    name: str = Field(default=..., description="Node name")
+    version: ModelSemVer = Field(default=..., description="Node version")
+    description: str = Field(default=..., description="Node description")
+    author: str = Field(default=..., description="Node author")
+    schema_version: ModelSemVer = Field(default=..., description="Node schema version")
     created_at: str | None = Field(default=None, description="Node creation timestamp")
     last_modified_at: str | None = Field(
         default=None,

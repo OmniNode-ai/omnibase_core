@@ -24,9 +24,9 @@ class ModelFsmTransition(BaseModel):
     - Validatable: Validation and verification
     """
 
-    from_state: str = Field(..., description="Source state of transition")
-    to_state: str = Field(..., description="Target state of transition")
-    trigger: str = Field(..., description="Event that triggers the transition")
+    from_state: str = Field(default=..., description="Source state of transition")
+    to_state: str = Field(default=..., description="Target state of transition")
+    trigger: str = Field(default=..., description="Event that triggers the transition")
     conditions: list[str] = Field(
         default_factory=list, description="Conditions for transition"
     )

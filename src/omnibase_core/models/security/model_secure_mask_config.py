@@ -13,14 +13,14 @@ class ModelSecureMaskConfig(BaseModel):
     """Configuration for secure credential masking."""
 
     mask_char: str = Field(
-        "*",
+        default="*",
         description="Character to use for masking",
         min_length=1,
         max_length=1,
     )
 
     visible_chars: int = Field(
-        2,
+        default=2,
         description="Number of visible characters at start/end",
         ge=0,
         le=10,
@@ -32,13 +32,13 @@ class ModelSecureMaskConfig(BaseModel):
     )
 
     min_mask_length: int = Field(
-        8,
+        default=8,
         description="Minimum length of masked section",
         ge=1,
         le=20,
     )
 
     recursive: bool = Field(
-        True,
+        default=True,
         description="Whether to recursively mask nested structures",
     )

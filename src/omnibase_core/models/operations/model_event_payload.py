@@ -28,9 +28,11 @@ class ModelEventPayload(BaseModel):
     - Validatable: Validation and verification
     """
 
-    event_type: EnumEventType = Field(..., description="Discriminated event type")
+    event_type: EnumEventType = Field(
+        default=..., description="Discriminated event type"
+    )
     event_data: EventDataUnion = Field(
-        ...,
+        default=...,
         description="Event-specific data with discriminated union",
     )
     routing_info: ModelEventRoutingInfo = Field(

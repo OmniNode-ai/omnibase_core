@@ -54,7 +54,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             return ModelMaskData.from_dict(masked_data)
         return ModelMaskData()
 
-    def _mask_secrets_recursive(self, data, mask_level: str = "standard"):
+    def _mask_secrets_recursive(self, data: Any, mask_level: str = "standard") -> Any:
         """Recursively mask SecretStr fields and sensitive patterns in data structure."""
         if isinstance(data, dict):
             return {

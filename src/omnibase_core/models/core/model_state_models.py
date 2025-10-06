@@ -12,5 +12,9 @@ from omnibase_core.models.core.model_state import ModelState
 class ModelStates(BaseModel):
     """Model for input/output state models."""
 
-    input: ModelState = Field(..., description="Input state model specification")
-    output: ModelState = Field(..., description="Output state model specification")
+    input: ModelState = Field(
+        default=..., description="Input state model specification"
+    )
+    output: ModelState = Field(
+        default=..., description="Output state model specification"
+    )
