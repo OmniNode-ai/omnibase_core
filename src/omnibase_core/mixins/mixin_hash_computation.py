@@ -27,7 +27,9 @@ import hashlib
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums import EnumNodeMetadataField
-from omnibase_core.mixins.mixin_canonical_serialization import MixinCanonicalYAMLSerializer
+from omnibase_core.mixins.mixin_canonical_serialization import (
+    MixinCanonicalYAMLSerializer,
+)
 
 
 class MixinHashComputation:

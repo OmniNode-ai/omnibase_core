@@ -32,9 +32,9 @@ class ModelMetadataBlock(BaseModel):
     - lifecycle: EnumLifecycle (not str)
     """
 
-    metadata_version: str = Field(
+    metadata_version: ModelSemVer = Field(
         default=...,
-        description="Must be a semver string, e.g., '0.1.0'",
+        description="Semantic version, e.g., 0.1.0",
     )
     name: str = Field(default=..., description="Validator/tool name")
     namespace: "Namespace"
@@ -84,16 +84,18 @@ class ModelMetadataBlock(BaseModel):
     tools: ToolCollection | None = None
     lifecycle: EnumLifecycle = Field(default=EnumLifecycle.ACTIVE)
 
-    @field_validator("metadata_version")
+    @field_validator("metadata_version", mode="before")
     @classmethod
-    def check_metadata_version(cls, v: str) -> str:
-        if not re.match("^\\d+\\.\\d+\\.\\d+$", v):
-            msg = "metadata_version must be a semver string, e.g., '0.1.0'"
-            raise ModelOnexError(
-                msg,
-                EnumCoreErrorCode.VALIDATION_ERROR,
-            )
-        return v
+    def check_metadata_version(cls, v: Any) -> ModelSemVer:
+        """Validate and convert metadata_version to ModelSemVer."""
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        # v must be str since union type is exhaustive
+        from omnibase_core.models.metadata.model_semver import parse_semver_from_string
+
+        return parse_semver_from_string(v)
 
     @field_validator("name")
     @classmethod
@@ -116,13 +118,18 @@ class ModelMetadataBlock(BaseModel):
         msg = "Namespace must be a Namespace, str, or dict[str, Any]with 'value'"
         raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
 
-    @field_validator("version")
+    @field_validator("version", mode="before")
     @classmethod
-    def check_version(cls, v: str) -> str:
-        if not re.match("^\\d+\\.\\d+\\.\\d+$", v):
-            msg = f"Invalid version: {v}"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
-        return v
+    def check_version(cls, v: Any) -> ModelSemVer:
+        """Validate and convert version to ModelSemVer."""
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        # v must be str since union type is exhaustive
+        from omnibase_core.models.metadata.model_semver import parse_semver_from_string
+
+        return parse_semver_from_string(v)
 
     @field_validator("protocols_supported", mode="before")
     @classmethod

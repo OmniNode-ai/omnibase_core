@@ -47,7 +47,7 @@ class MixinDiscoveryResponder:
     - Response time metrics
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._discovery_active = False
         self._last_response_time = 0

@@ -27,7 +27,7 @@ class ServiceMinimalLogging:
         level: LogLevel,
         event_type: str,
         message: str,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """Minimal log event implementation."""
         pass
@@ -37,7 +37,7 @@ class ServiceMinimalLogging:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """Minimal synchronous log event implementation."""
         pass
@@ -47,7 +47,7 @@ class ServiceMinimalLogging:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """Minimal asynchronous log event implementation."""
         pass

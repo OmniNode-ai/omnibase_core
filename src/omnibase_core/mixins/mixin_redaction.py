@@ -178,7 +178,7 @@ class MixinSensitiveFieldRedaction:
     def redact(
         self,
         additional_sensitive_fields: set[str] | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Get a redacted version of the model data.
@@ -204,7 +204,7 @@ class MixinSensitiveFieldRedaction:
     def model_dump_redacted(
         self,
         additional_sensitive_fields: set[str] | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Convenience method that combines model_dump with redaction.

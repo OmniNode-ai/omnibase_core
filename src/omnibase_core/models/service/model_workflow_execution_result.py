@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-
+from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 from .model_workflow_outputs import ModelWorkflowOutputs

@@ -121,7 +121,7 @@ class ModelExecutionMetadata(BaseModel):
         """Get execution identifier (Identifiable protocol)."""
         return str(self.execution_id)
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update execution status and metadata

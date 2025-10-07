@@ -93,7 +93,7 @@ class ModelPerformanceSummary(BaseModel):
         return None
 
     @field_serializer("measurement_start", "measurement_end")
-    def serialize_datetime(self, value) -> None:
+    def serialize_datetime(self, value: Any) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

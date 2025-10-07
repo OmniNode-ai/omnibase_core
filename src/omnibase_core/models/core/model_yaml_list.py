@@ -11,7 +11,7 @@ class ModelYamlList(BaseModel):
     # For files that are root-level arrays
     root_list: list[Any] = Field(default_factory=list, description="Root level list")
 
-    def __init__(self, data: list[Any] | None = None, **kwargs: Any) -> None:
+    def __init__(self, data: list[Any] | None = None, **kwargs) -> None:
         """Handle case where YAML root is a list."""
         if data is not None and isinstance(data, list):
             super().__init__(root_list=data, **kwargs)

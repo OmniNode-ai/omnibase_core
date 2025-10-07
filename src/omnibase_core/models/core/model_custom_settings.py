@@ -47,8 +47,10 @@ class ModelCustomSettings(BaseModel):
             return ModelSemVer(major=1, minor=0, patch=0)
         if isinstance(v, str):
             from omnibase_core.utils.util_semver import parse_semver_from_string
+
             return parse_semver_from_string(v)
         return v
+
     last_modified: datetime | None = Field(
         default=None,
         description="Last modification time",

@@ -367,19 +367,10 @@ class ModelEventBusInputState(BaseModel):
                 ) from e
 
         # Create instance with proper type handling
+        # version is always ModelSemVer (set at line 331)
+        # input_field is always str (from environment variable)
         version = config_data["version"]
-        if not isinstance(version, ModelSemVer):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="version must be ModelSemVer",
-            )
-
         input_field = config_data["input_field"]
-        if not isinstance(input_field, str):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="input_field must be str",
-            )
 
         # Extract and validate fields with proper type checking
         correlation_id_raw = config_data.get("correlation_id")

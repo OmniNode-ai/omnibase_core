@@ -92,7 +92,7 @@ class NodeBase(
         container: ModelONEXContainer | None = None,
         workflow_id: UUID | None = None,
         session_id: UUID | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """
         Initialize NodeBase with monadic patterns and workflow support.

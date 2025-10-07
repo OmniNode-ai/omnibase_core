@@ -26,6 +26,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -92,11 +94,6 @@ class ModelDependency(BaseModel):
     def validate_name(cls, v: str) -> str:
         """Validate dependency name follows ONEX conventions."""
         if not v or not v.strip():
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
             raise ModelOnexError(
                 message="Dependency name cannot be empty or whitespace-only",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -251,8 +248,6 @@ class ModelDependency(BaseModel):
     @classmethod
     def _validate_module_format(cls, module_path: str) -> None:
         """Validate module path format using pre-compiled pattern with caching for performance."""
-        from omnibase_core.models.common.model_error_context import ModelErrorContext
-
         if not cls._MODULE_PATTERN.match(module_path):
             raise ModelOnexError(
                 message=f"Invalid module path format: {module_path}. Must be valid Python module path.",

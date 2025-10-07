@@ -200,7 +200,7 @@ def _dump_yaml_content(
     explicit_end: bool = False,
     indent: int = 2,
     width: int = 120,
-    **kwargs: Any,
+    **kwargs,
 ) -> str:
     """
     Internal function to dump data to YAML format with security restrictions.

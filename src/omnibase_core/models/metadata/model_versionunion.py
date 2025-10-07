@@ -9,6 +9,13 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 
+class ModelTypedDictVersionDict(TypedDict):
+    """Version dictionary structure."""
+
+    major: int
+    minor: int
+    patch: int
+
 
 class ModelVersionUnion(BaseModel):
     """

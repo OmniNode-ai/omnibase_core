@@ -16,8 +16,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, computed_field, field_validator
-from pydantic import ValidationInfo
+from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
@@ -26,8 +25,8 @@ from .model_tool_metadata import (
     EnumToolCapabilityLevel,
     EnumToolCategory,
     EnumToolCompatibilityMode,
-    ModelToolMetadata,
     EnumToolRegistrationStatus,
+    ModelToolMetadata,
 )
 
 # Import separated models

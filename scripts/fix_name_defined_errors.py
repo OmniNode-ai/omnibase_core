@@ -293,7 +293,9 @@ def fix_onex_base_state_imports() -> int:
     # Check if imports are inside validators (indented)
     has_nested_imports = False
     for line in lines:
-        if "from omnibase_core.errors" in line and (line.startswith("        ") or line.startswith("\t")):
+        if "from omnibase_core.errors" in line and (
+            line.startswith("        ") or line.startswith("\t")
+        ):
             has_nested_imports = True
             break
 
@@ -314,7 +316,9 @@ def fix_onex_base_state_imports() -> int:
             # Find insertion point (after existing imports)
             insert_idx = 0
             for i, line in enumerate(lines):
-                if line.strip().startswith("from ") or line.strip().startswith("import "):
+                if line.strip().startswith("from ") or line.strip().startswith(
+                    "import "
+                ):
                     insert_idx = i + 1
 
             lines.insert(insert_idx, imp)
@@ -324,7 +328,9 @@ def fix_onex_base_state_imports() -> int:
     new_lines = []
     for line in lines:
         # Skip indented imports
-        if "from omnibase_core.errors" in line and (line.startswith("        ") or line.startswith("\t")):
+        if "from omnibase_core.errors" in line and (
+            line.startswith("        ") or line.startswith("\t")
+        ):
             continue
         new_lines.append(line)
 

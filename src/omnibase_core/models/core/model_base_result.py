@@ -26,8 +26,6 @@ from typing import Any, Generic
 
 from pydantic import BaseModel, Field
 
-
-
 from .model_base_error import ModelBaseError
 from .model_generic_metadata import ModelGenericMetadata
 

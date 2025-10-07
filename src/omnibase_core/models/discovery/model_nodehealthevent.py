@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 
+from omnibase_core.constants.event_types import NODE_HEALTH_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.discovery.model_custommetrics import ModelCustomMetrics
-from omnibase_core.models.health.model_health_check import ModelHealthMetrics
+from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
 
 
 class ModelNodeHealthEvent(ModelOnexEvent):
@@ -51,11 +53,11 @@ class ModelNodeHealthEvent(ModelOnexEvent):
     @classmethod
     def create_healthy_report(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         uptime_seconds: int | None = None,
         response_time_ms: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeHealthEvent":
         """
         Factory method to create a healthy status report.
@@ -71,10 +73,14 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             ModelNodeHealthEvent for healthy status
         """
         health_metrics = ModelHealthMetrics(
-            status="healthy",
-            uptime_seconds=uptime_seconds,
-            response_time_ms=response_time_ms,
-            last_health_check=datetime.now(),
+            cpu_usage_percent=10.0,  # Low CPU usage
+            memory_usage_percent=20.0,  # Low memory usage
+            response_time_ms=response_time_ms or 50.0,
+            error_rate=0.0,  # No errors
+            success_rate=100.0,  # Perfect success rate
+            uptime_seconds=uptime_seconds or 0,
+            consecutive_errors=0,
+            custom_metrics={"status": 1.0},  # 1.0 = healthy
         )
 
         return cls(
@@ -87,13 +93,13 @@ class ModelNodeHealthEvent(ModelOnexEvent):
     @classmethod
     def create_warning_report(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         warning_reason: str,
         cpu_usage: float | None = None,
         memory_usage: float | None = None,
         error_rate: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeHealthEvent":
         """
         Factory method to create a warning status report.
@@ -111,14 +117,16 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             ModelNodeHealthEvent for warning status
         """
         health_metrics = ModelHealthMetrics(
-            status="warning",
-            cpu_usage_percent=cpu_usage,
-            memory_usage_percent=memory_usage,
-            error_rate=error_rate,
-            last_health_check=datetime.now(),
-            custom_metrics=ModelCustomMetrics.from_dict(
-                {"warning_reason": warning_reason},
-            ),
+            cpu_usage_percent=cpu_usage or 85.0,  # High CPU usage
+            memory_usage_percent=memory_usage or 85.0,  # High memory usage
+            error_rate=error_rate or 5.0,  # Elevated error rate
+            success_rate=95.0,  # Reduced success rate
+            response_time_ms=500.0,  # Slower response
+            consecutive_errors=2,  # Some consecutive errors
+            custom_metrics={
+                "status": 0.5,  # 0.5 = warning
+                "warning_code": hash(warning_reason) % 1000 / 1000.0,
+            },
         )
 
         return cls(
@@ -131,10 +139,10 @@ class ModelNodeHealthEvent(ModelOnexEvent):
     @classmethod
     def create_critical_report(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         error_message: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeHealthEvent":
         """
         Factory method to create a critical status report.
@@ -149,11 +157,17 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             ModelNodeHealthEvent for critical status
         """
         health_metrics = ModelHealthMetrics(
-            status="critical",
-            last_health_check=datetime.now(),
-            custom_metrics=ModelCustomMetrics.from_dict(
-                {"error_message": error_message},
-            ),
+            cpu_usage_percent=95.0,  # Critical CPU usage
+            memory_usage_percent=95.0,  # Critical memory usage
+            error_rate=50.0,  # High error rate
+            success_rate=50.0,  # Low success rate
+            response_time_ms=2000.0,  # Very slow response
+            consecutive_errors=10,  # Many consecutive errors
+            last_error_timestamp=datetime.now(),
+            custom_metrics={
+                "status": 0.0,  # 0.0 = critical
+                "error_code": hash(error_message) % 1000 / 1000.0,
+            },
         )
 
         return cls(
@@ -165,8 +179,10 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     def is_healthy(self) -> bool:
         """Check if the node is healthy"""
-        return self.health_metrics.status == "healthy"
+        # Use ModelHealthMetrics.is_healthy() method
+        return self.health_metrics.is_healthy()
 
     def needs_attention(self) -> bool:
         """Check if the node needs attention (warning or critical)"""
-        return self.health_metrics.status in ["warning", "critical"]
+        # Node needs attention if it's not healthy
+        return not self.health_metrics.is_healthy()

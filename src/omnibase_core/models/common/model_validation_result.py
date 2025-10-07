@@ -126,7 +126,8 @@ class ModelValidationResult(BaseModel, Generic[T]):
         summary: str | None = None,
     ) -> "ModelValidationResult[T]":
         """Create a failed validation result."""
-        # Handle both legacy errors list[Any]and new issues list[Any]final_issues = issues or []
+        # Handle both legacy errors list and new issues list
+        final_issues: list[ModelValidationIssue] = issues or []
 
         if errors:
             # Convert legacy errors to issues

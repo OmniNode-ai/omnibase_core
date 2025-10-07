@@ -203,7 +203,7 @@ def trace_function_lifecycle(func: F) -> F:
             return result
     """
 
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: Any, **kwargs) -> Any:
         function_name = func.__name__
         module_name = func.__module__
         correlation_id = uuid4()
@@ -362,7 +362,7 @@ def log_performance_metrics(threshold_ms: int = 1000) -> Callable[[F], F]:
     """
 
     def decorator(func: F) -> F:
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs) -> Any:
             function_name = func.__name__
             correlation_id = uuid4()
 

@@ -3,6 +3,9 @@ from typing import Any, Generic
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
+from omnibase_core.enums.enum_health_check_type import (
+    EnumHealthCheckType as HealthCheckType,
+)
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 

@@ -3,6 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 
 class ModelDiscoveryMetadata(BaseModel):
     """Additional metadata for node discovery operations."""
@@ -36,7 +38,7 @@ class ModelDiscoveryMetadata(BaseModel):
         default=None,
         description="When discovery data should be refreshed next",
     )
-    discovery_version: str = Field(
-        default="1.0.0",
+    discovery_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of discovery protocol used",
     )

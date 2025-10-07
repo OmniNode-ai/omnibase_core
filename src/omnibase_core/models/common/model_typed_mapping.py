@@ -257,10 +257,8 @@ class ModelTypedMapping(BaseModel):
             if len(self.data) > 10000:
                 return False
 
-            # Key validation
+            # Key validation (keys are always str from type dict[str, ModelValueContainer])
             for key in self.data.keys():
-                if not isinstance(key, str):
-                    return False
                 if len(key) == 0 or len(key) > 200:
                     return False
                 # Keys should not contain null bytes or control characters
@@ -283,11 +281,9 @@ class ModelTypedMapping(BaseModel):
             if len(self.data) > 10000:
                 errors.append("Mapping exceeds maximum size of 10000 entries")
 
-            # Key validation
+            # Key validation (keys are always str from type dict[str, ModelValueContainer])
             for key in self.data.keys():
-                if not isinstance(key, str):
-                    errors.append(f"Key {repr(key)} is not a string")
-                elif len(key) == 0:
+                if len(key) == 0:
                     errors.append("Empty key not allowed")
                 elif len(key) > 200:
                     errors.append(

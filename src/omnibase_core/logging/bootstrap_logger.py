@@ -5,6 +5,8 @@ Basic logger implementation for container initialization before
 full logging infrastructure is available.
 """
 
+from typing import Any
+
 from omnibase_spi import ProtocolLogger
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel

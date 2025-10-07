@@ -10,7 +10,7 @@ class ModelMetadata(BaseModel):
     """Basic metadata model for file information."""
 
     meta_type: str = Field(default=..., description="Type of metadata block")
-    metadata_version: str = Field(
+    metadata_version: ModelSemVer = Field(
         default=..., description="Version of the metadata schema"
     )
     schema_version: ModelSemVer = Field(

@@ -109,12 +109,7 @@ class ModelNodeAction(ModelActionBase):
     @classmethod
     def validate_action_type(cls, v: ModelNodeActionType) -> ModelNodeActionType:
         """Validate that action_type is a valid ModelNodeActionType."""
-        if not isinstance(v, ModelNodeActionType):
-            msg = f"action_type must be a ModelNodeActionType, got {type(v)}"
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
-            )
+        # Pydantic already ensures v is a ModelNodeActionType from the field type annotation
         return v
 
     @classmethod
@@ -124,7 +119,7 @@ class ModelNodeAction(ModelActionBase):
         action_name: str,
         display_name: str,
         description: str,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelNodeAction":
         """Create lifecycle actions like health_check."""
         if action_type.category != LIFECYCLE:
@@ -149,7 +144,7 @@ class ModelNodeAction(ModelActionBase):
         action_name: str,
         display_name: str,
         description: str,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelNodeAction":
         """Create validation actions."""
         if action_type.category != VALIDATION:
@@ -174,7 +169,7 @@ class ModelNodeAction(ModelActionBase):
         action_name: str,
         display_name: str,
         description: str,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelNodeAction":
         """Create actions with specific ModelNodeActionType."""
         # Action type already contains all metadata including category

@@ -24,16 +24,18 @@
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 
 class ModelOnexVersionInfo(BaseModel):
     """
     Canonical Pydantic model for ONEX version information.
     Fields:
-        metadata_version (str): The metadata schema version.
-        protocol_version (str): The protocol version.
-        schema_version (str): The schema version.
+        metadata_version (ModelSemVer): The metadata schema version.
+        protocol_version (ModelSemVer): The protocol version.
+        schema_version (ModelSemVer): The schema version.
     """
 
-    metadata_version: str
-    protocol_version: str
-    schema_version: str
+    metadata_version: ModelSemVer
+    protocol_version: ModelSemVer
+    schema_version: ModelSemVer

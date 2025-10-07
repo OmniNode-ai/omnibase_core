@@ -12,6 +12,7 @@ from uuid import UUID
 
 from pydantic import RootModel, computed_field, model_validator
 
+from omnibase_core.enums.enum_audit_action import EnumAuditAction
 from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
@@ -25,7 +26,6 @@ from .model_metadata_tool_info import ModelMetadataToolInfo
 
 # Import separated models
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
-from omnibase_core.enums.enum_audit_action import EnumAuditAction
 
 
 class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
@@ -39,7 +39,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     def __init__(
         self,
         root: Union[dict[str, Any], "ModelMetadataToolCollection", None] = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """Initialize with enhanced enterprise features."""
         if root is None:
@@ -245,7 +245,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 self.root["_tool_info"][name] = tool_info.model_dump()
             elif name not in self.root.get("_tool_info", {}):
                 # Create default tool info
-                from omnibase_core.models.core.model_semver import parse_semver_from_string
+                from omnibase_core.models.core.model_semver import (
+                    parse_semver_from_string,
+                )
+
                 default_info = ModelMetadataToolInfo(
                     name=name,
                     tool_type=EnumMetadataToolType.FUNCTION,
@@ -416,10 +419,13 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         if not tool_info:
             return False
 
-        from uuid import uuid5, NAMESPACE_DNS
+        from uuid import NAMESPACE_DNS, uuid5
+
         tool_info.status = EnumMetadataToolStatus.DEPRECATED
         # Generate deterministic UUID for audit entry
-        audit_id = uuid5(NAMESPACE_DNS, f"deprecate_{name}_{datetime.now().isoformat()}")
+        audit_id = uuid5(
+            NAMESPACE_DNS, f"deprecate_{name}_{datetime.now().isoformat()}"
+        )
         # Generate target_id properly - tools don't have UUIDs, so use None or empty string
         target_id = UUID(int=0) if not name else None  # Use null UUID or None
         tool_info.audit_trail.append(
@@ -615,6 +621,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
         # Add basic tool info for each tool
         from omnibase_core.models.core.model_semver import parse_semver_from_string
+
         for name, tool in tools_dict.items():
             if hasattr(tool, "name") and hasattr(tool, "description"):
                 tool_info = ModelMetadataToolInfo(

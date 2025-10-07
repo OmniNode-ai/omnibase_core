@@ -6,6 +6,7 @@ including authentication, permissions, environment settings, and safety paramete
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +22,7 @@ from omnibase_core.models.configuration.model_agent_safety import ModelAgentSafe
 class ModelAgentConfig(BaseModel):
     """Complete agent configuration."""
 
-    agent_id: str = Field(description="Unique identifier for the agent")
+    agent_id: UUID = Field(description="Unique identifier for the agent")
     model: str = Field(
         default="claude-3-sonnet-20240229",
         description="Claude model to use for the agent",

@@ -9,7 +9,7 @@ within the ONEX architecture.
 
 from pydantic import Field
 
-
+from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.core.model_service_status import ModelServiceStatus
 from omnibase_core.models.core.model_system_data import ModelSystemData
 

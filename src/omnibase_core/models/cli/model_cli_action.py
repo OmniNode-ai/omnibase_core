@@ -264,7 +264,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         "populate_by_name": True,  # Allow both field name and alias
     }
 
-    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+    def model_dump(self, **kwargs) -> dict[str, Any]:
         """Override model_dump to use aliases by default."""
         kwargs.setdefault("by_alias", True)
         return super().model_dump(**kwargs)

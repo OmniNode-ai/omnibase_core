@@ -31,7 +31,7 @@ class ModelNamespaceConfig(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:

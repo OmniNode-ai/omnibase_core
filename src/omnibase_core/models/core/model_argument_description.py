@@ -39,9 +39,9 @@ class ModelArgumentDescription(BaseModel):
 
     required: bool = Field(default=False, description="Whether argument is required")
 
-    default_value: str | int | bool | float | list[str] | None = Field(
+    default_value: Any = Field(
         default=None,
-        description="Default value if not provided",
+        description="Default value if not provided (any JSON-serializable primitive)",
     )
 
     choices: list[str] | None = Field(
@@ -89,7 +89,7 @@ class ModelArgumentDescription(BaseModel):
 
         return f"{flags}{type_hint}: {self.description}{required_hint}{default_hint}"
 
-    def validate_value(self, value: str) -> str | int | bool | float | list[str]:
+    def validate_value(self, value: str) -> Any:
         """Validate and convert a string value to the appropriate type."""
         if self.type == EnumArgumentType.STRING:
             if self.choices and value not in self.choices:

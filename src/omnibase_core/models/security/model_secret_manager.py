@@ -8,7 +8,6 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_secret_config import ModelSecretConfig
 
-
 from .model_configuration_summary import ModelConfigurationSummary
 from .model_credentials_analysis import ModelCredentialsAnalysis, ModelManagerAssessment
 from .model_mask_data import ModelMaskData
@@ -19,7 +18,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.configuration.model_database_secure_config import (
         ModelDatabaseSecureConfig,
     )
-    from omnibase_core.models.core import ModelHealthCheckResult
+    from omnibase_core.models.core.model_health_check_result import (
+        ModelHealthCheckResult,
+    )
 
 try:
     from dotenv import load_dotenv
@@ -111,8 +112,8 @@ class ModelSecretManager(BaseModel):
 
             # Validate configuration
             validation = config.validate_credentials()
-            if not validation["is_valid"]:
-                msg = f"Invalid database configuration: {validation['issues']}"
+            if not validation.is_valid:
+                msg = f"Invalid database configuration: {validation.errors}"
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
@@ -210,14 +211,13 @@ class ModelSecretManager(BaseModel):
                 return [mask_recursive(item) for item in obj]
             return obj
 
-        if isinstance(data, ModelMaskData):
-            masked_dict = mask_recursive(data.to_dict())
-            return (
-                ModelMaskData.from_dict(masked_dict)
-                if isinstance(masked_dict, dict)
-                else data
-            )
-        return data
+        # Parameter is typed as ModelMaskData, no need to check
+        masked_dict = mask_recursive(data.to_dict())
+        return (
+            ModelMaskData.from_dict(masked_dict)
+            if isinstance(masked_dict, dict)
+            else data
+        )
 
     def analyze_credentials_strength(
         self,
@@ -242,13 +242,13 @@ class ModelSecretManager(BaseModel):
 
         # Combine base analysis with manager assessment
         return ModelCredentialsAnalysis(
-            strength_score=base_analysis.get("strength_score", 0),
-            password_entropy=base_analysis.get("password_entropy"),
-            common_patterns=base_analysis.get("common_patterns", []),
-            security_issues=base_analysis.get("security_issues", []),
-            recommendations=base_analysis.get("recommendations", []),
-            compliance_status=base_analysis.get("compliance_status", "unknown"),
-            risk_level=base_analysis.get("risk_level", "unknown"),
+            strength_score=base_analysis.strength_score,
+            password_entropy=base_analysis.password_entropy,
+            common_patterns=base_analysis.common_patterns,
+            security_issues=base_analysis.security_issues,
+            recommendations=base_analysis.recommendations,
+            compliance_status=base_analysis.compliance_status,
+            risk_level=base_analysis.risk_level,
             manager_assessment=manager_assessment,
         )
 

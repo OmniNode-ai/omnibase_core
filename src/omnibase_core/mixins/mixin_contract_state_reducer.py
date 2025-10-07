@@ -39,7 +39,7 @@ class MixinContractStateReducer:
                 return self.process_action_with_transitions(input_state)
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs) -> None:
         """Initialize contract state reducer mixin."""
         super().__init__(*args, **kwargs)
 

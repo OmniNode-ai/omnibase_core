@@ -98,7 +98,7 @@ class ModelHealthCheckResult(BaseModel):
         return self.status.lower() == "healthy"
 
     @field_serializer("timestamp")
-    def serialize_datetime(self, value) -> None:
+    def serialize_datetime(self, value: Any) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

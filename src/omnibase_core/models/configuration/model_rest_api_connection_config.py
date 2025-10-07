@@ -112,11 +112,8 @@ class ModelRestApiConnectionConfig(BaseModel):
                 raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
 
             validated_headers = {}
+            # Field type dict[str, str] ensures keys and values are strings
             for key, value in v.items():
-                if not isinstance(key, str) or not isinstance(value, str):
-                    msg = "Header keys and values must be strings"
-                    raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
-
                 if len(key) > 100 or len(value) > 500:
                     msg = "Header key or value too long"
                     raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)

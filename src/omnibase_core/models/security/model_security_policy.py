@@ -10,6 +10,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 from .model_security_context import ModelSecurityContext
 from .model_security_policy_data import ModelSecurityPolicyData
 from .model_security_rule import ModelSecurityRule
@@ -28,7 +30,10 @@ class ModelSecurityPolicy(BaseModel):
     # Policy identification
     policy_id: str = Field(default=..., description="Unique policy identifier")
     policy_name: str = Field(default=..., description="Human-readable policy name")
-    policy_version: str = Field(default="1.0.0", description="Policy version")
+    policy_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Policy version",
+    )
 
     # Policy metadata
     created_at: datetime = Field(

@@ -301,10 +301,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         Maps input events to their corresponding completion events.
         """
         try:
-            if isinstance(input_event_type, str):
-                event_str = input_event_type
-            else:
-                event_str = str(input_event_type)
+            # input_event_type is already typed as str
+            event_str = input_event_type
 
             # Extract domain and event suffix
             parts = event_str.split(".")

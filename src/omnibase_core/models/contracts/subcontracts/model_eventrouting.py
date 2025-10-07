@@ -1,5 +1,6 @@
-from omnibase_core.models.configuration.model_retry_policy import ModelRetryPolicy
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.configuration.model_retry_policy import ModelRetryPolicy
 
 
 class ModelEventRouting(BaseModel):

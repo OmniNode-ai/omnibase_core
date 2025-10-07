@@ -57,7 +57,7 @@ class MixinRequestResponseIntrospection:
     - Request-response introspection for real-time "who's available now" discovery
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._introspection_request_subscription = None
         self._startup_time: float = time.time()

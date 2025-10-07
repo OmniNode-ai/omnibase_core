@@ -12,8 +12,8 @@ Author: OmniNode Team
 # NOTE: ModelRegistryConfig import removed to break circular dependency
 # Import it directly from omnibase_core.models.registry.model_registry_config instead
 from omnibase_core.models.core.model_fallback_strategy import (
-    ModelFallbackStrategy,
     EnumFallbackStrategyType,
+    ModelFallbackStrategy,
 )
 from omnibase_core.models.service.model_service_configuration_single import (
     ModelServiceConfiguration,

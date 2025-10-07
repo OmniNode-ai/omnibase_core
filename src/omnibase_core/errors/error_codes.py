@@ -521,10 +521,16 @@ def get_error_codes_for_component(component: str) -> type[EnumOnexErrorCode]:
         The error code enum class for the component
 
     Raises:
-        KeyError: If component is not registered
+        ModelOnexError: If component is not registered
     """
     if component not in _ERROR_CODE_REGISTRIES:
-        raise KeyError(f"No error codes registered for component: {component}")
+        # Local import to avoid circular dependency
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        raise ModelOnexError(
+            message=f"No error codes registered for component: {component}",
+            error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
+        )
     return _ERROR_CODE_REGISTRIES[component]
 
 
@@ -569,12 +575,18 @@ class EnumRegistryErrorCode(EnumOnexErrorCode):
         return EnumCLIExitCode.ERROR.value
 
 
-# Module-level attribute access - use standard Python exceptions
+# Module-level attribute access - now using ModelOnexError with local import
 def __getattr__(name: str) -> Any:
     """
     Handle module-level attribute access.
 
-    Raises standard AttributeError for missing attributes to avoid circular dependencies.
-    error_codes.py should NEVER import or raise ModelOnexError.
+    Raises ModelOnexError for missing attributes.
+    Uses local import to avoid circular dependencies.
     """
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+    # Local import to avoid circular dependency
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+
+    raise ModelOnexError(
+        message=f"module '{__name__}' has no attribute '{name}'",
+        error_code=EnumCoreErrorCode.NOT_FOUND,
+    )

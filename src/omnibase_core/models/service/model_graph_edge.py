@@ -1,4 +1,5 @@
 from typing import Dict
+from uuid import UUID
 
 from pydantic import Field
 
@@ -25,9 +26,9 @@ class ModelGraphEdge(BaseModel):
     """
 
     # Edge identification
-    edge_id: str = Field(default=..., description="Unique edge identifier")
-    source_node_id: str = Field(default=..., description="Source node ID")
-    target_node_id: str = Field(default=..., description="Target node ID")
+    edge_id: UUID = Field(default=..., description="Unique edge identifier")
+    source_node_id: UUID = Field(default=..., description="Source node ID")
+    target_node_id: UUID = Field(default=..., description="Target node ID")
 
     # Edge properties
     label: str | None = Field(default=None, description="Edge label")

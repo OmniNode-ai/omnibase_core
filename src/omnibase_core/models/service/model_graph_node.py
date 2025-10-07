@@ -1,4 +1,5 @@
 from typing import Dict
+from uuid import UUID
 
 from pydantic import Field
 
@@ -25,7 +26,7 @@ class ModelGraphNode(BaseModel):
     """
 
     # Node identification
-    node_id: str = Field(default=..., description="Unique node identifier")
+    node_id: UUID = Field(default=..., description="Unique node identifier")
     label: str = Field(default=..., description="Node display label")
     node_type: str = Field(
         default=...,

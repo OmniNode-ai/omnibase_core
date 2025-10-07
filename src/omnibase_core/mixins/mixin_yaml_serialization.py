@@ -27,6 +27,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
+from omnibase_core.utils.safe_yaml_loader import serialize_pydantic_model_to_yaml
+
 if TYPE_CHECKING:
     from .protocol_has_model_dump import HasModelDump
 

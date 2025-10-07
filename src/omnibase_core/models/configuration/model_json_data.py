@@ -36,9 +36,8 @@ class ModelJsonData(BaseModel):
 
     # Optional metadata for validation and context
     schema_version: ModelSemVer = Field(
-        default="1.0",
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="JSON data schema version",
-        pattern="^\\d+\\.\\d+$",
     )
 
     total_field_count: int = Field(

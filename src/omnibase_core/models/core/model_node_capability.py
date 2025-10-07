@@ -9,7 +9,14 @@ Replaces EnumNodeCapability with a proper model that includes metadata,
 descriptions, and dependencies for each capability.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.metadata.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 
 class ModelNodeCapability(BaseModel):
@@ -38,8 +45,8 @@ class ModelNodeCapability(BaseModel):
     )
 
     # Metadata fields
-    version_introduced: str = Field(
-        default="1.0.0",
+    version_introduced: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="ONEX version when this capability was introduced",
     )
 
@@ -75,6 +82,23 @@ class ModelNodeCapability(BaseModel):
         description="Example configuration for this capability",
     )
 
+    @field_validator("version_introduced", mode="before")
+    @classmethod
+    def validate_version_introduced(cls, v: Any) -> ModelSemVer:
+        """Validate and convert version_introduced to ModelSemVer."""
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        if isinstance(v, str):
+            from omnibase_core.models.metadata.model_semver import (
+                parse_semver_from_string,
+            )
+
+            return parse_semver_from_string(v)
+        msg = "version_introduced must be ModelSemVer, dict, or str"
+        raise ModelOnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
+
     # Factory methods for standard capabilities
     @classmethod
     def SUPPORTS_DRY_RUN(cls) -> "ModelNodeCapability":
@@ -83,7 +107,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_DRY_RUN",
             value="supports_dry_run",
             description="Node can simulate execution without side effects",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
             configuration_required=False,
             performance_impact="low",
         )
@@ -95,7 +119,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_BATCH_PROCESSING",
             value="supports_batch_processing",
             description="Node can process multiple items in a single execution",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
             configuration_required=True,
             performance_impact="medium",
             example_config={"batch_size": 100, "parallel_workers": 4},
@@ -108,7 +132,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_CUSTOM_HANDLERS",
             value="supports_custom_handlers",
             description="Node accepts custom handler implementations",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
             configuration_required=True,
             performance_impact="low",
             dependencies=["SUPPORTS_SCHEMA_VALIDATION"],
@@ -121,7 +145,7 @@ class ModelNodeCapability(BaseModel):
             name="TELEMETRY_ENABLED",
             value="telemetry_enabled",
             description="Node emits telemetry data for monitoring",
-            version_introduced="1.1.0",
+            version_introduced=parse_semver_from_string("1.1.0"),
             configuration_required=True,
             performance_impact="low",
             example_config={"telemetry_endpoint": "http://telemetry.example.com"},
@@ -134,7 +158,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_CORRELATION_ID",
             value="supports_correlation_id",
             description="Node preserves correlation IDs across executions",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
             configuration_required=False,
             performance_impact="low",
         )
@@ -146,7 +170,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_EVENT_BUS",
             value="supports_event_bus",
             description="Node can publish and consume events via event bus",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
             configuration_required=True,
             performance_impact="medium",
             dependencies=["SUPPORTS_CORRELATION_ID"],
@@ -160,7 +184,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_SCHEMA_VALIDATION",
             value="supports_schema_validation",
             description="Node validates input/output against JSON schemas",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
             configuration_required=False,
             performance_impact="low",
         )
@@ -172,7 +196,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_ERROR_RECOVERY",
             value="supports_error_recovery",
             description="Node can recover from errors with retry logic",
-            version_introduced="1.1.0",
+            version_introduced=parse_semver_from_string("1.1.0"),
             configuration_required=True,
             performance_impact="medium",
             example_config={"max_retries": 3, "backoff_strategy": "exponential"},
@@ -185,7 +209,7 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_EVENT_DISCOVERY",
             value="supports_event_discovery",
             description="Node can discover available events and their schemas",
-            version_introduced="1.2.0",
+            version_introduced=parse_semver_from_string("1.2.0"),
             configuration_required=False,
             performance_impact="low",
             dependencies=["SUPPORTS_EVENT_BUS", "SUPPORTS_SCHEMA_VALIDATION"],
@@ -215,14 +239,14 @@ class ModelNodeCapability(BaseModel):
             name=capability_upper,
             value=capability.lower(),
             description=f"Custom capability: {capability}",
-            version_introduced="1.0.0",
+            version_introduced=parse_semver_from_string("1.0.0"),
         )
 
     def __str__(self) -> str:
         """String representation for current standards."""
         return self.value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
             return self.value == other or self.name == other.upper()
@@ -232,5 +256,6 @@ class ModelNodeCapability(BaseModel):
 
     def is_compatible_with_version(self, version: str) -> bool:
         """Check if this capability is available in a given ONEX version."""
-        # Simple string comparison - could be enhanced with proper version parsing
-        return self.version_introduced <= version
+        # Parse the version string to ModelSemVer for comparison
+        target_version = parse_semver_from_string(version)
+        return self.version_introduced <= target_version

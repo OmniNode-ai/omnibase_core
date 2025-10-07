@@ -30,7 +30,7 @@ class ModelHealthCheckComponent(BaseModel):
     )
 
     @field_serializer("last_check")
-    def serialize_datetime(self, value) -> None:
+    def serialize_datetime(self, value: Any) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_tool_health_status import EnumToolHealthStatus
 from omnibase_core.enums.enum_tool_type import EnumToolType
+from omnibase_core.models.core.model_metric_value import ModelMetricValue
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_error_summary import ModelErrorSummary
@@ -460,23 +461,23 @@ class ModelToolHealth(BaseModel):
             start_time=None,
             end_time=None,
             custom_metrics={
-                "tool_name": MetricValue(
+                "tool_name": ModelMetricValue(
                     value=self.tool_name, unit="string", timestamp=datetime.now(UTC)
                 ),
-                "tool_type": MetricValue(
+                "tool_type": ModelMetricValue(
                     value=self.tool_type.value,
                     unit="string",
                     timestamp=datetime.now(UTC),
                 ),
-                "is_callable": MetricValue(
+                "is_callable": ModelMetricValue(
                     value=self.is_callable, unit="boolean", timestamp=datetime.now(UTC)
                 ),
-                "severity": MetricValue(
+                "severity": ModelMetricValue(
                     value=self.get_severity_level(),
                     unit="string",
                     timestamp=datetime.now(UTC),
                 ),
-                "consecutive_failures": MetricValue(
+                "consecutive_failures": ModelMetricValue(
                     value=self.consecutive_failures or 0,
                     unit="count",
                     timestamp=datetime.now(UTC),

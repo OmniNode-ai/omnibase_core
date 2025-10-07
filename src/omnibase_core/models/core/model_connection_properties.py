@@ -81,7 +81,7 @@ class ModelConnectionProperties(BaseModel):
         return cls(**data)
 
     @field_serializer("password")
-    def serialize_secret(self, value) -> str:
+    def serialize_secret(self, value: Any) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         return value
@@ -201,7 +201,7 @@ class ModelConnectionProperties(BaseModel):
         return None
 
     @field_serializer("measurement_start", "measurement_end")
-    def serialize_datetime(self, value) -> None:
+    def serialize_datetime(self, value: Any) -> Any:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

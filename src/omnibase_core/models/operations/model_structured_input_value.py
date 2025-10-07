@@ -15,6 +15,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelStructuredInputValue(BaseModel):
@@ -32,8 +33,8 @@ class ModelStructuredInputValue(BaseModel):
         default_factory=dict,
         description="Structured data with field definitions",
     )
-    schema_version: str = Field(
-        default="1.0",
+    schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Schema version for the structured data",
     )
     metadata: dict[str, Any] = Field(

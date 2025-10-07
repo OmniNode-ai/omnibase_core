@@ -167,10 +167,10 @@ class ModelPerformanceProfile(BaseModel):
     # New pattern: ModelPerformanceProfile(**data)
 
     @field_serializer("profile_timestamp")
-    def serialize_datetime(self, value) -> None:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None
 
 
 # Compatibility alias

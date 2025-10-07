@@ -48,7 +48,7 @@ def canonicalize_metadata_block(
     default_flow_style: bool = False,
     allow_unicode: bool = True,
     comment_prefix: str = "",
-    **kwargs: Any,
+    **kwargs,
 ) -> str:
     """
     Utility function to canonicalize a metadata block using MixinCanonicalYAMLSerializer.

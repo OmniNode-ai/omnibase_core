@@ -28,7 +28,7 @@ class MixinContractMetadata:
 
     Usage:
         class MyTool(MixinContractMetadata, ProtocolReducer):
-            def __init__(self, **kwargs: Any) -> None:
+            def __init__(self, **kwargs) -> None:
                 super().__init__(**kwargs)
                 # Access metadata via self properties
                 print(f"Tool: {self.node_name} v{self.node_version}")

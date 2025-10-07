@@ -166,8 +166,9 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         super().__init__(**data)
 
         # Update signature chain with actual envelope ID
-        if str(self.signature_chain.envelope_id) == "temp":
-            self.signature_chain.envelope_id = self.envelope_id
+        temp_uuid = UUID("00000000-0000-0000-0000-000000000000")
+        if self.signature_chain.envelope_id == temp_uuid:
+            self.signature_chain.envelope_id = UUID(self.envelope_id)
 
         # Initialize content hash
         if not hasattr(self, "content_hash") or not self.content_hash:
@@ -366,7 +367,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             )
             if policy_result:
                 policy_validation = ModelPolicyValidation(
-                    policy_id=self.trust_policy.policy_id,
+                    policy_id=str(self.trust_policy.policy_id),
                     policy_name=self.trust_policy.name,
                     is_valid=policy_result.status == "compliant",
                     violations=policy_result.violations,
@@ -452,7 +453,11 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         )
 
         if self.security_context:
-            context.user_id = self.security_context.user_id
+            context.user_id = (
+                str(self.security_context.user_id)
+                if self.security_context.user_id
+                else None
+            )
             context.roles = self.security_context.roles
             context.security_clearance = self.security_clearance_required
             context.trust_level = self.security_context.trust_level
@@ -556,7 +561,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     ) -> None:
         """Log a security event for audit trail."""
         event = ModelSecurityEvent(
-            event_id=str(uuid4()),
+            event_id=uuid4(),
             event_type=event_type,
             timestamp=datetime.utcnow(),
             envelope_id=self.envelope_id,
@@ -581,7 +586,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         if self.security_events:
             last_event = self.security_events[-1]
             last_event_summary = ModelSecurityEventSummary(
-                event_id=last_event.event_id,
+                event_id=str(last_event.event_id),
                 event_type=last_event.event_type,
                 timestamp=last_event.timestamp.isoformat(),
                 envelope_id=last_event.envelope_id,
@@ -668,7 +673,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         )
 
         # Add source hop to trace
-        envelope.add_source_hop(source_node_id)
+        envelope.add_source_hop(str(source_node_id))
 
         return envelope
 

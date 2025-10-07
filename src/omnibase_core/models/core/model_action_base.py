@@ -15,6 +15,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 
 class ModelActionBase(BaseModel):
     """
@@ -53,8 +55,8 @@ class ModelActionBase(BaseModel):
     )
 
     # MCP/GraphQL compatibility with strong typing
-    mcp_schema_version: str = Field(
-        default="1.0.0",
+    mcp_schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="MCP schema version for current standards",
     )
     graphql_compatible: bool = Field(

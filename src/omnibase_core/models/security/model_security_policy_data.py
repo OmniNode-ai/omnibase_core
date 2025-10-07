@@ -1,6 +1,6 @@
-from typing import Dict, Union
+from typing import Any, Dict, Union, cast
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 """
 ModelSecurityPolicyData: Security policy data container.
@@ -8,10 +8,6 @@ ModelSecurityPolicyData: Security policy data container.
 This model represents the serialized data structure for security policies.
 Now uses strongly-typed values instead of Union types for better type safety.
 """
-
-from typing import Any, Dict
-
-from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_typed_value import (
     ModelTypedMapping,
@@ -34,8 +30,6 @@ class ModelSecurityPolicyData(BaseModel):
         self,
     ) -> dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]:
         """Get policy data as a regular dict[str, Any]ionary for current standards."""
-        from typing import Dict, cast
-
         return cast(
             dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
             self.typed_data.to_python_dict(),

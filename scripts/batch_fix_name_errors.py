@@ -14,30 +14,30 @@ SRC_DIR = ROOT_DIR / "src" / "omnibase_core"
 
 # Standard library imports
 STDLIB_IMPORTS = {
-    'hashlib': 'import hashlib',
-    're': 'import re',
-    'Path': 'from pathlib import Path',
-    'cast': 'from typing import cast',
-    'UUID': 'from uuid import UUID',
+    "hashlib": "import hashlib",
+    "re": "import re",
+    "Path": "from pathlib import Path",
+    "cast": "from typing import cast",
+    "UUID": "from uuid import UUID",
 }
 
 # Internal model imports
 INTERNAL_IMPORTS = {
-    'ModelOnexError': 'from omnibase_core.errors.model_onex_error import ModelOnexError',
-    'EnumCoreErrorCode': 'from omnibase_core.errors.error_codes import EnumCoreErrorCode',
-    'ModelErrorContext': 'from omnibase_core.models.common.model_error_context import ModelErrorContext',
-    'ModelSchemaValue': 'from omnibase_core.models.common.model_schema_value import ModelSchemaValue',
-    'EnumAuditAction': 'from omnibase_core.enums.enum_audit_action import EnumAuditAction',
-    'EnumSecurityLevel': 'from omnibase_core.enums.enum_security_level import EnumSecurityLevel',
-    'ModelRetryPolicy': 'from omnibase_core.models.configuration.model_retry_policy import ModelRetryPolicy',
-    'ModelSemVer': 'from omnibase_core.models.metadata.model_semver import ModelSemVer',
-    'EnumStatusMigrationValidator': 'from omnibase_core.enums.enum_status_migration import EnumStatusMigrationValidator',
+    "ModelOnexError": "from omnibase_core.errors.model_onex_error import ModelOnexError",
+    "EnumCoreErrorCode": "from omnibase_core.errors.error_codes import EnumCoreErrorCode",
+    "ModelErrorContext": "from omnibase_core.models.common.model_error_context import ModelErrorContext",
+    "ModelSchemaValue": "from omnibase_core.models.common.model_schema_value import ModelSchemaValue",
+    "EnumAuditAction": "from omnibase_core.enums.enum_audit_action import EnumAuditAction",
+    "EnumSecurityLevel": "from omnibase_core.enums.enum_security_level import EnumSecurityLevel",
+    "ModelRetryPolicy": "from omnibase_core.models.configuration.model_retry_policy import ModelRetryPolicy",
+    "ModelSemVer": "from omnibase_core.models.metadata.model_semver import ModelSemVer",
+    "EnumStatusMigrationValidator": "from omnibase_core.enums.enum_status_migration import EnumStatusMigrationValidator",
 }
 
 # Wrong attribute name corrections
 ATTR_CORRECTIONS = {
-    'ModelTypedDictGenericMetadataDict': 'TypedDictMetadataDict',
-    'ModelEnumTransitionType': 'EnumTransitionType',
+    "ModelTypedDictGenericMetadataDict": "TypedDictMetadataDict",
+    "ModelEnumTransitionType": "EnumTransitionType",
 }
 
 
@@ -57,20 +57,22 @@ def parse_errors(mypy_output: str) -> Dict[str, List[Dict]]:
     """Parse MyPy output and group errors by file."""
     errors_by_file = defaultdict(list)
 
-    for line in mypy_output.split('\n'):
+    for line in mypy_output.split("\n"):
         # Parse: file.py:line: error: Message  [error-type]
-        match = re.match(r'^(.*?):(\d+): error: (.*?)\s+\[([\w-]+)\]$', line.strip())
+        match = re.match(r"^(.*?):(\d+): error: (.*?)\s+\[([\w-]+)\]$", line.strip())
         if match:
             filepath, lineno, message, error_type = match.groups()
 
-            if error_type not in ('name-defined', 'attr-defined'):
+            if error_type not in ("name-defined", "attr-defined"):
                 continue
 
-            errors_by_file[filepath].append({
-                'line': int(lineno),
-                'message': message,
-                'type': error_type,
-            })
+            errors_by_file[filepath].append(
+                {
+                    "line": int(lineno),
+                    "message": message,
+                    "type": error_type,
+                }
+            )
 
     return dict(errors_by_file)
 
@@ -79,7 +81,7 @@ def extract_missing_names(errors: List[Dict]) -> Set[str]:
     """Extract missing names from error messages."""
     names = set()
     for error in errors:
-        match = re.search(r'Name "(\w+)" is not defined', error['message'])
+        match = re.search(r'Name "(\w+)" is not defined', error["message"])
         if match:
             names.add(match.group(1))
     return names
@@ -92,12 +94,12 @@ def has_import(content: str, import_stmt: str) -> bool:
         return True
 
     # Check for the imported name
-    if ' import ' in import_stmt:
-        parts = import_stmt.split(' import ')
+    if " import " in import_stmt:
+        parts = import_stmt.split(" import ")
         if len(parts) == 2:
             name = parts[1].strip()
             # Check if name is imported from any module
-            if re.search(rf'\bimport\s+.*\b{re.escape(name)}\b', content):
+            if re.search(rf"\bimport\s+.*\b{re.escape(name)}\b", content):
                 return True
 
     return False
@@ -127,7 +129,7 @@ def find_import_insert_position(lines: List[str]) -> int:
             continue
 
         # Track imports
-        if stripped.startswith('from ') or stripped.startswith('import '):
+        if stripped.startswith("from ") or stripped.startswith("import "):
             last_import = i
 
     return last_import + 1 if last_import > 0 else 0
@@ -140,7 +142,7 @@ def fix_file(filepath: str, errors: List[Dict]) -> int:
         return 0
 
     content = path.read_text()
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Collect all needed imports
     missing_names = extract_missing_names(errors)
@@ -161,7 +163,7 @@ def fix_file(filepath: str, errors: List[Dict]) -> int:
     for old_name, new_name in ATTR_CORRECTIONS.items():
         if old_name in content:
             content = content.replace(old_name, new_name)
-            lines = content.split('\n')
+            lines = content.split("\n")
             modified = True
             print(f"    Renamed: {old_name} → {new_name}")
 
@@ -177,8 +179,10 @@ def fix_file(filepath: str, errors: List[Dict]) -> int:
             modified = True
 
     if modified:
-        path.write_text('\n'.join(lines))
-        return len(imports_to_add) + (1 if any(old_name in content for old_name in ATTR_CORRECTIONS) else 0)
+        path.write_text("\n".join(lines))
+        return len(imports_to_add) + (
+            1 if any(old_name in content for old_name in ATTR_CORRECTIONS) else 0
+        )
 
     return 0
 
@@ -196,11 +200,19 @@ def main():
     errors_by_file = parse_errors(mypy_output)
     total_errors = sum(len(errs) for errs in errors_by_file.values())
 
-    print(f"Found {total_errors} name-defined/attr-defined errors in {len(errors_by_file)} files")
+    print(
+        f"Found {total_errors} name-defined/attr-defined errors in {len(errors_by_file)} files"
+    )
     print()
 
     # Fix files in priority order
-    priority_paths = ['models/core/', 'models/common/', 'models/', 'mixins/', 'infrastructure/']
+    priority_paths = [
+        "models/core/",
+        "models/common/",
+        "models/",
+        "mixins/",
+        "infrastructure/",
+    ]
 
     total_fixes = 0
 
@@ -213,7 +225,9 @@ def main():
             total_fixes += fixes
 
     # Fix remaining files
-    all_priority_files = {fp for fp in errors_by_file.keys() if any(p in fp for p in priority_paths)}
+    all_priority_files = {
+        fp for fp in errors_by_file.keys() if any(p in fp for p in priority_paths)
+    }
     remaining = set(errors_by_file.keys()) - all_priority_files
 
     for filepath in sorted(remaining):
@@ -226,5 +240,5 @@ def main():
     print("=" * 80)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

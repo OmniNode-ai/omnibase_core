@@ -184,7 +184,7 @@ class ModelCliCommandRegistry(BaseModel):
 
     def _create_command_from_contract(
         self,
-        command_data: dict[str, Any],
+        command_data: dict[str, Any] | str,
         node_name: str,
     ) -> ModelCliCommandDefinition | None:
         """Create a command definition from contract data."""

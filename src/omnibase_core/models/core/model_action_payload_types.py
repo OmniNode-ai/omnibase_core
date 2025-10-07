@@ -59,7 +59,7 @@ SpecificActionPayload = Union[
 
 def create_specific_action_payload(
     action_type: ModelNodeActionType,
-    **kwargs: Any,
+    **kwargs,
 ) -> SpecificActionPayload:
     """
     Create the appropriate specific payload type for an action.

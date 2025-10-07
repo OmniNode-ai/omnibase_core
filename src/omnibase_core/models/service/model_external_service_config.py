@@ -203,6 +203,7 @@ class ModelExternalServiceConfig(BaseModel):
     ) -> "ModelExternalServiceConfig":
         """Create database service configuration."""
         from pydantic import SecretStr
+
         db_config = ModelDatabaseConnectionConfig(
             host=host,
             port=port,

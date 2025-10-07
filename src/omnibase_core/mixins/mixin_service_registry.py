@@ -36,7 +36,7 @@ class MixinServiceRegistry:
     registries that maintain live catalogs of available tools.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs) -> None:
         """Initialize the service registry mixin."""
         # Extract mixin-specific kwargs before passing to super()
         introspection_timeout = kwargs.pop("introspection_timeout", 30)
@@ -56,7 +56,7 @@ class MixinServiceRegistry:
 
         # State
         self.registry_started = False
-        self.cleanup_task = None
+        self.cleanup_task: Any = None  # asyncio.TimerHandle or None
         self._event_handlers_setup = False
 
         # Don't setup event handlers during init - defer until start_service_registry

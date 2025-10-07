@@ -193,7 +193,7 @@ class ModelEnumStatusMigrationValidator:
         Returns:
             Detailed report on migration status and recommendations
         """
-        conflicts = EnumStatusMigrationValidator.find_enum_conflicts()
+        conflicts = ModelEnumStatusMigrationValidator.find_enum_conflicts()
 
         return {
             "summary": {

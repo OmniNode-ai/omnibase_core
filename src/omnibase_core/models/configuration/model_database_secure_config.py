@@ -189,13 +189,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     @classmethod
     def validate_port(cls, v: int) -> int:
         """Validate database port number."""
-        if not isinstance(v, int):
-            msg = "Port must be an integer"
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
-            )
-
+        # Pydantic already ensures v is an int from the field type annotation
         if not (1 <= v <= 65535):
             msg = f"Port must be between 1 and 65535, got: {v}"
             raise ModelOnexError(

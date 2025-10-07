@@ -8,40 +8,82 @@ from typing import Dict, List, Tuple
 # Patterns to fix: (regex_pattern, replacement, description)
 FIXES: List[Tuple[str, str, str]] = [
     # Enum import fixes - remove "Model" prefix from enum names
-    (r'\bModelEnumTransitionType\b', 'EnumTransitionType', 'Fix EnumTransitionType'),
-    (r'\bModelToolCapabilityLevel\b', 'EnumToolCapabilityLevel', 'Fix EnumToolCapabilityLevel'),
-    (r'\bModelToolCategory\b', 'EnumToolCategory', 'Fix EnumToolCategory'),
-    (r'\bModelToolCompatibilityMode\b', 'EnumToolCompatibilityMode', 'Fix EnumToolCompatibilityMode'),
-    (r'\bModelToolRegistrationStatus\b', 'EnumToolRegistrationStatus', 'Fix EnumToolRegistrationStatus'),
-    (r'\bModelMetadataToolComplexity\b', 'EnumMetadataToolComplexity', 'Fix EnumMetadataToolComplexity'),
-    (r'\bModelMetadataToolStatus\b', 'EnumMetadataToolStatus', 'Fix EnumMetadataToolStatus'),
-    (r'\bModelMetadataToolType\b', 'EnumMetadataToolType', 'Fix EnumMetadataToolType'),
-    (r'\bModelFallbackStrategyType\b', 'EnumFallbackStrategyType', 'Fix EnumFallbackStrategyType'),
-
+    (r"\bModelEnumTransitionType\b", "EnumTransitionType", "Fix EnumTransitionType"),
+    (
+        r"\bModelToolCapabilityLevel\b",
+        "EnumToolCapabilityLevel",
+        "Fix EnumToolCapabilityLevel",
+    ),
+    (r"\bModelToolCategory\b", "EnumToolCategory", "Fix EnumToolCategory"),
+    (
+        r"\bModelToolCompatibilityMode\b",
+        "EnumToolCompatibilityMode",
+        "Fix EnumToolCompatibilityMode",
+    ),
+    (
+        r"\bModelToolRegistrationStatus\b",
+        "EnumToolRegistrationStatus",
+        "Fix EnumToolRegistrationStatus",
+    ),
+    (
+        r"\bModelMetadataToolComplexity\b",
+        "EnumMetadataToolComplexity",
+        "Fix EnumMetadataToolComplexity",
+    ),
+    (
+        r"\bModelMetadataToolStatus\b",
+        "EnumMetadataToolStatus",
+        "Fix EnumMetadataToolStatus",
+    ),
+    (r"\bModelMetadataToolType\b", "EnumMetadataToolType", "Fix EnumMetadataToolType"),
+    (
+        r"\bModelFallbackStrategyType\b",
+        "EnumFallbackStrategyType",
+        "Fix EnumFallbackStrategyType",
+    ),
     # Module import fixes
-    (r'from pydantic_core import ValidationInfo', 'from pydantic import ValidationInfo', 'Fix ValidationInfo import'),
-
+    (
+        r"from pydantic_core import ValidationInfo",
+        "from pydantic import ValidationInfo",
+        "Fix ValidationInfo import",
+    ),
     # Missing type parameters
-    (r':\s*set\s*([|\[])', r': set[str]\1', 'Fix set type parameter'),
-    (r'Pattern\s*([|\]])', r'Pattern[str]\1', 'Fix Pattern type parameter'),
-
+    (r":\s*set\s*([|\[])", r": set[str]\1", "Fix set type parameter"),
+    (r"Pattern\s*([|\]])", r"Pattern[str]\1", "Fix Pattern type parameter"),
     # Self-circular imports - remove
-    (r'from omnibase_core\.models\.metadata\.model_versionunion import ModelTypedDictVersionDict', '', 'Remove circular import'),
-    (r'from omnibase_core\.models\.core\.model_base_result import ModelBaseResult', '', 'Remove circular import'),
-   (r'from omnibase_core\.models\.security\.model_secret_manager import ModelSecretManager', '', 'Remove circular import'),
+    (
+        r"from omnibase_core\.models\.metadata\.model_versionunion import ModelTypedDictVersionDict",
+        "",
+        "Remove circular import",
+    ),
+    (
+        r"from omnibase_core\.models\.core\.model_base_result import ModelBaseResult",
+        "",
+        "Remove circular import",
+    ),
+    (
+        r"from omnibase_core\.models\.security\.model_secret_manager import ModelSecretManager",
+        "",
+        "Remove circular import",
+    ),
 ]
 
 # File-specific fixes that need context
 FILE_SPECIFIC_FIXES: Dict[str, List[Tuple[str, str]]] = {
     "model_enhanced_tool_collection.py": [
-        ('from omnibase_core.models.core.model_tool_metadata import (',
-         'from omnibase_core.models.core.model_tool_metadata import (\n    EnumToolCapabilityLevel,\n    EnumToolCompatibilityMode,\n    EnumToolRegistrationStatus,'),
+        (
+            "from omnibase_core.models.core.model_tool_metadata import (",
+            "from omnibase_core.models.core.model_tool_metadata import (\n    EnumToolCapabilityLevel,\n    EnumToolCompatibilityMode,\n    EnumToolRegistrationStatus,",
+        ),
     ],
     "model_tool_collection.py": [
-        ('from omnibase_core.models.core.model_metadata_tool_collection import (',
-         'from omnibase_core.models.core.model_metadata_tool_collection import (\n    EnumMetadataToolComplexity,\n    EnumMetadataToolStatus,\n    EnumMetadataToolType,'),
+        (
+            "from omnibase_core.models.core.model_metadata_tool_collection import (",
+            "from omnibase_core.models.core.model_metadata_tool_collection import (\n    EnumMetadataToolComplexity,\n    EnumMetadataToolStatus,\n    EnumMetadataToolType,",
+        ),
     ],
 }
+
 
 def fix_file(file_path: Path) -> int:
     """Fix a single file. Returns number of changes made."""
@@ -74,6 +116,7 @@ def fix_file(file_path: Path) -> int:
 
     return 0
 
+
 def main():
     """Main function to fix all files."""
     src_dir = Path("/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core")
@@ -90,6 +133,7 @@ def main():
     print(f"\n=== Summary ===")
     print(f"Files changed: {files_changed}")
     print(f"Total changes: {total_changes}")
+
 
 if __name__ == "__main__":
     main()

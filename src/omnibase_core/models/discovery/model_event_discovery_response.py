@@ -16,7 +16,7 @@ class ModelEventDiscoveryResponse(BaseModel):
     """Response model for event discovery queries."""
 
     query_id: UUID = Field(default=..., description="Original query identifier")
-    correlation_id: str = Field(default=..., description="Correlation ID from request")
+    correlation_id: UUID = Field(default=..., description="Correlation ID from request")
 
     # Results
     discovered_events: list[ModelEventDescriptor] = Field(

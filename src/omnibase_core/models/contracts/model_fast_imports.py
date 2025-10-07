@@ -191,7 +191,7 @@ def factory_stats() -> dict[str, object]:
 
 
 # Ultra-fast contract creation helpers
-def create_compute_contract(**kwargs: Any) -> "ModelContractCompute":
+def create_compute_contract(**kwargs) -> "ModelContractCompute":
     """Create ModelContractCompute instance with fast loading.
 
     Note: Any type allows arbitrary keyword arguments which are validated by Pydantic at runtime.
@@ -200,7 +200,7 @@ def create_compute_contract(**kwargs: Any) -> "ModelContractCompute":
     return ComputeContract(**kwargs)
 
 
-def create_effect_contract(**kwargs: Any) -> "ModelContractEffect":
+def create_effect_contract(**kwargs) -> "ModelContractEffect":
     """Create ModelContractEffect instance with fast loading.
 
     Note: Any type allows arbitrary keyword arguments which are validated by Pydantic at runtime.
@@ -209,7 +209,7 @@ def create_effect_contract(**kwargs: Any) -> "ModelContractEffect":
     return EffectContract(**kwargs)
 
 
-def create_base_contract(**kwargs: Any) -> "ModelContractBase":
+def create_base_contract(**kwargs) -> "ModelContractBase":
     """Create ModelContractBase instance with fast loading.
 
     Note: Any type allows arbitrary keyword arguments which are validated by Pydantic at runtime.

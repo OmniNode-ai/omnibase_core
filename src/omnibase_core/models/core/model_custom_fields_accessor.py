@@ -463,7 +463,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             # Initialize our custom_fields if other has them but we don't
             self.custom_fields = copy.deepcopy(other_custom_fields)
 
-    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> dict[str, Any]:
+    def model_dump(self, exclude_none: bool = False, **kwargs) -> dict[str, Any]:
         """Override model_dump to include all field data."""
         data = {}
 
@@ -555,7 +555,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

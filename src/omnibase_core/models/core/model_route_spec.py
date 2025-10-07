@@ -170,7 +170,7 @@ class ModelRouteSpec(BaseModel):
         return v
 
     @classmethod
-    def create_direct_route(cls, destination: str, **kwargs: Any) -> "ModelRouteSpec":
+    def create_direct_route(cls, destination: str, **kwargs) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
         return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)
 
@@ -179,7 +179,7 @@ class ModelRouteSpec(BaseModel):
         cls,
         destination: str,
         hops: list[str],
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelRouteSpec":
         """Create an explicit route through specified hops."""
         return cls(
@@ -201,7 +201,7 @@ class ModelRouteSpec(BaseModel):
         )
 
     @classmethod
-    def create_broadcast_route(cls, **kwargs: Any) -> "ModelRouteSpec":
+    def create_broadcast_route(cls, **kwargs) -> "ModelRouteSpec":
         """Create broadcast route to all nodes."""
         return cls(
             final_destination="broadcast://all",

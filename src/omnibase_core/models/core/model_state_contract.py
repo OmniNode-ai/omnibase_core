@@ -169,42 +169,48 @@ class ModelStateContract(BaseModel):
         json_schema_extra={"example": "2025-05-30T13:04:27.518784Z"},
     )
 
-    @field_validator("contract_version")
+    @field_validator("contract_version", mode="before")
     @classmethod
-    def validate_contract_version(cls, v: str) -> str:
-        """Validate that contract version follows semantic versioning."""
-        import re
+    def validate_contract_version(
+        cls, v: ModelSemVer | str | dict[str, Any]
+    ) -> ModelSemVer:
+        """Validate and convert contract version to ModelSemVer."""
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        # v must be str since union type is exhaustive
+        from omnibase_core.models.metadata.model_semver import parse_semver_from_string
 
-        if not re.match(r"^\d+\.\d+\.\d+$", v):
-            raise ModelOnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR,
-                f"Contract version must follow semantic versioning (x.y.z), got: {v}",
-            )
-        return v
+        return parse_semver_from_string(v)
 
-    @field_validator("node_version")
+    @field_validator("node_version", mode="before")
     @classmethod
-    def validate_node_version(cls, v: str) -> str:
-        """Validate that node version follows semantic versioning."""
+    def validate_node_version(
+        cls, v: ModelSemVer | str | dict[str, Any]
+    ) -> ModelSemVer:
+        """Validate and convert node version to ModelSemVer."""
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        # v must be str since union type is exhaustive
+        from omnibase_core.models.metadata.model_semver import parse_semver_from_string
 
-        if not re.match(r"^\d+\.\d+\.\d+$", v):
-            raise ModelOnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR,
-                f"Node version must follow semantic versioning (x.y.z), got: {v}",
-            )
-        return v
+        return parse_semver_from_string(v)
 
     @field_validator("node_name")
     @classmethod
     def validate_node_name(cls, v: str) -> str:
         """Validate that node name follows naming conventions."""
+        import re
+
         if not v or not v.strip():
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR, "Node name cannot be empty"
             )
 
         # Check for valid node name pattern (lowercase, underscores)
-
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,

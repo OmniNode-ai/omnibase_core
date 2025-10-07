@@ -52,7 +52,7 @@ class ModelHubConfiguration(BaseModel):
         domain_name: str,
         service_port: int | None = None,
         managed_tool_names: list[str] | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelHubConfiguration":
         """Factory method to create hub configuration with legacy domain name."""
         # Generate UUID for domain

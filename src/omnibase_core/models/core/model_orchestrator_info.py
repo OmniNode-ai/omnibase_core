@@ -10,11 +10,14 @@ Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fi
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_orchestrator_metrics import (
     ModelOrchestratorMetrics,
 )
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelOrchestratorInfo(BaseModel):
@@ -31,7 +34,9 @@ class ModelOrchestratorInfo(BaseModel):
         default=...,
         description="Orchestrator type (kubernetes/swarm/nomad/custom)",
     )
-    orchestrator_version: str = Field(default=..., description="Orchestrator version")
+    orchestrator_version: ModelSemVer = Field(
+        default=..., description="Orchestrator version"
+    )
 
     # Cluster information
     cluster_name: str | None = Field(default=None, description="Cluster name")
@@ -55,10 +60,12 @@ class ModelOrchestratorInfo(BaseModel):
 
     # Execution context
     execution_id: UUID | None = Field(default=None, description="Execution identifier")
-    parent_execution_id: str | None = Field(
+    parent_execution_id: UUID | None = Field(
         default=None, description="Parent execution ID"
     )
-    root_execution_id: str | None = Field(default=None, description="Root execution ID")
+    root_execution_id: UUID | None = Field(
+        default=None, description="Root execution ID"
+    )
 
     # Timing information
     scheduled_at: datetime | None = Field(
@@ -115,6 +122,23 @@ class ModelOrchestratorInfo(BaseModel):
 
     model_config = ConfigDict()
 
+    @field_validator("orchestrator_version", mode="before")
+    @classmethod
+    def validate_orchestrator_version(cls, v: Any) -> ModelSemVer:
+        """Validate and convert orchestrator_version to ModelSemVer."""
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        if isinstance(v, str):
+            from omnibase_core.models.metadata.model_semver import (
+                parse_semver_from_string,
+            )
+
+            return parse_semver_from_string(v)
+        msg = "orchestrator_version must be ModelSemVer, dict, or str"
+        raise ModelOnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
+
     @classmethod
     def from_dict(
         cls,
@@ -148,7 +172,7 @@ class ModelOrchestratorInfo(BaseModel):
         return self.workflow_status in ["completed", "succeeded", "failed", "cancelled"]
 
     @field_serializer("scheduled_at", "started_at", "completed_at")
-    def serialize_datetime(self, value) -> None:
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

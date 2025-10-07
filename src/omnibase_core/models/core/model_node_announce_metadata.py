@@ -34,7 +34,9 @@ class ModelNodeAnnounceMetadata(BaseModel):
 
     # Core identification
     node_id: UUID = Field(default=..., description="Unique identifier for the node")
-    node_version: str | None = Field(default=None, description="Version of the node")
+    node_version: ModelSemVer | None = Field(
+        default=None, description="Version of the node"
+    )
 
     # Node metadata and configuration
     metadata_block: "ModelNodeMetadataBlock" = Field(

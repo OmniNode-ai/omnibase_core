@@ -74,7 +74,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         tools: list[ModelDiscoveredTool],
         request_correlation_id: str | None = None,
         response_time_ms: float | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelToolDiscoveryResponse":
         """
         Factory method to create a successful discovery response.
@@ -122,7 +122,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         partial_tools: list[ModelDiscoveredTool] | None = None,
         request_correlation_id: str | None = None,
         timeout_ms: int | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelToolDiscoveryResponse":
         """
         Factory method to create a timeout response.

@@ -147,7 +147,8 @@ class ModelConnectionInfo(BaseModel):
         if "connection_type" not in data:
             data["connection_type"] = "tcp"
 
-        # Extract custom properties from flat dict[str, Any]known_fields = set(cls.model_fields.keys())
+        # Extract custom properties from flat dict
+        known_fields = set(cls.model_fields.keys())
         custom_props = {}
         custom_fields_map = ModelCustomConnectionProperties.model_fields.keys()
 
@@ -182,13 +183,13 @@ class ModelConnectionInfo(BaseModel):
         return self.use_ssl or self.auth_type in ["oauth2", "jwt", "mtls"]
 
     @field_serializer("password", "api_key", "token")
-    def serialize_secret(self, value) -> str:
+    def serialize_secret(self, value: Any) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         return value
 
     @field_serializer("established_at", "last_used_at")
-    def serialize_datetime(self, value) -> str | None:
+    def serialize_datetime(self, value: Any) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

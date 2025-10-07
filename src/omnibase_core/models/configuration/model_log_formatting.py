@@ -72,7 +72,7 @@ class ModelLogFormatting(BaseModel):
         level: str,
         logger_name: str,
         message: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Format a log message according to configuration."""
         truncated_message = self._apply_truncation(message)
@@ -94,14 +94,14 @@ class ModelLogFormatting(BaseModel):
         return message[: self.max_message_length - 3] + "..."
 
     def _create_text_output(
-        self, level: str, logger_name: str, message: str, **kwargs
+        self, level: str, logger_name: str, message: str, **kwargs: Any
     ) -> str:
         """Create text format output."""
-        import datetime
+        import datetime as dt
 
         field_map = {
             "timestamp": (
-                datetime.now().strftime(self.timestamp_format)
+                dt.datetime.now().strftime(self.timestamp_format)
                 if self.include_timestamp
                 else None
             ),
@@ -110,15 +110,15 @@ class ModelLogFormatting(BaseModel):
             "message": message,
         }
 
-        parts = [
-            field_map[field]
+        parts: list[str] = [
+            str(field_map[field])
             for field in self.field_order
             if field_map.get(field) is not None
         ]
         return self.field_separator.join(parts)
 
     def _create_json_output(
-        self, level: str, logger_name: str, message: str, **kwargs
+        self, level: str, logger_name: str, message: str, **kwargs: Any
     ) -> str:
         """Create JSON format output."""
         import json
@@ -140,7 +140,7 @@ class ModelLogFormatting(BaseModel):
         return json.dumps(final_data, indent=self.effective_json_indent)
 
     def _create_structured_output(
-        self, level: str, logger_name: str, message: str, **kwargs
+        self, level: str, logger_name: str, message: str, **kwargs: Any
     ) -> str:
         """Create structured key-value format output."""
 

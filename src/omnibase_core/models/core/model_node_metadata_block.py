@@ -205,10 +205,8 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @classmethod
     def get_canonicalizer(cls) -> object | None:
-        policy = cls.canonicalization_policy
-        if isinstance(policy, ModelCanonicalizationPolicy):
-            return policy.get_canonicalizer()
-        return None
+        # canonicalization_policy is always ModelCanonicalizationPolicy from ClassVar
+        return cls.canonicalization_policy.get_canonicalizer()
 
     def to_serializable_dict(
         self,
@@ -323,7 +321,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ExtensionValueModel(value=val)
         return out
 
-    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+    def model_dump(self, *args: Any, **kwargs) -> dict[str, Any]:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d

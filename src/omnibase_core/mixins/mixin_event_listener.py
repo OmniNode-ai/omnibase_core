@@ -56,7 +56,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def __init__(self, **kwargs) -> None:
         """Initialize the event listener mixin."""
         super().__init__(**kwargs)
-        self._event_listener_thread = None
+        self._event_listener_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._event_subscriptions: list[tuple[str, Any]] = []
 

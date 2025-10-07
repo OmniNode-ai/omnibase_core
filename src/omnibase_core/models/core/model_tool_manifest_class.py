@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_tool_manifest import (
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
         EnumToolStatus,
         EnumVersionStatus,
     )
-    from omnibase_core.models.core.model_semver import ModelSemVer
     from omnibase_core.models.core.model_tool_capability import ModelToolCapability
     from omnibase_core.models.core.model_tool_dependency import ModelToolDependency
     from omnibase_core.models.core.model_tool_integration import ModelToolIntegration
@@ -58,10 +58,10 @@ class ModelToolManifest(BaseModel):
     lifecycle: str = Field(default="active", description="Tool lifecycle state")
 
     # === VERSION CATALOG ===
-    current_stable_version: str = Field(
+    current_stable_version: ModelSemVer = Field(
         description="Current stable version identifier",
     )
-    current_development_version: str | None = Field(
+    current_development_version: ModelSemVer | None = Field(
         default=None,
         description="Current development version identifier",
     )
@@ -113,7 +113,7 @@ class ModelToolManifest(BaseModel):
 
     # === METADATA VALIDATION ===
     schema_version: ModelSemVer = Field(
-        default="1.0.0",
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Tool manifest schema version",
     )
     uuid: str | None = Field(
@@ -124,6 +124,27 @@ class ModelToolManifest(BaseModel):
         default=None,
         description="Content hash for integrity verification",
     )
+
+    @field_validator(
+        "current_stable_version", "current_development_version", mode="before"
+    )
+    @classmethod
+    def validate_version_fields(cls, v: Any) -> ModelSemVer | None:
+        """Validate and convert version fields to ModelSemVer."""
+        if v is None:
+            return None
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+        if isinstance(v, str):
+            from omnibase_core.models.metadata.model_semver import (
+                parse_semver_from_string,
+            )
+
+            return parse_semver_from_string(v)
+        msg = "Version field must be ModelSemVer, dict, or str"
+        raise ModelOnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     @field_validator("versions")
     @classmethod

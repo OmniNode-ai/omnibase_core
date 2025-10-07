@@ -173,7 +173,7 @@ class ModelErrorValue(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs) -> bool:
         """Execute or update execution status (Executable protocol).
 
         Raises:
@@ -186,7 +186,7 @@ class ModelErrorValue(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:

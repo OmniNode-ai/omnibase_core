@@ -31,7 +31,7 @@ ModelResultCLI: Canonical Pydantic model for structured CLI output/results.
 from typing import Any, Optional
 
 from omnibase_core.models.core.model_base_error import ModelBaseError
-
+from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.core.model_cli_output import ModelCLIOutput
 
 from .model_generic_metadata import ModelGenericMetadata

@@ -138,7 +138,7 @@ class ModelBusinessImpact(BaseModel):
         return cls(**data)
 
     @field_serializer("assessment_timestamp")
-    def serialize_datetime(self, value) -> None:
+    def serialize_datetime(self, value: Any) -> None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return value

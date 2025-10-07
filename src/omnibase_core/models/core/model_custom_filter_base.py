@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Base class for all custom filters.
 
@@ -20,3 +18,7 @@ class ModelCustomFilterBase(BaseModel, ABC):
     priority: int = Field(
         default=0, description="Filter priority (higher = applied first)"
     )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert filter to dictionary representation."""
+        return self.model_dump()

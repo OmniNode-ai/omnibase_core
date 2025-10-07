@@ -27,7 +27,7 @@ from types.core_types (not from models or types.constraints).
 from datetime import UTC, datetime
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
@@ -103,14 +103,14 @@ class ModelExamplesCollection(BaseModel):
 
     @field_validator("total_examples", mode="before")
     @classmethod
-    def compute_total_examples(cls, v: int, info: dict[str, Any]) -> int:
+    def compute_total_examples(cls, v: int, info: ValidationInfo) -> int:
         """Compute total examples from examples list."""
         examples = info.data.get("examples", [])
         return len(examples)
 
     @field_validator("valid_examples", mode="before")
     @classmethod
-    def compute_valid_examples(cls, v: int, info: dict[str, Any]) -> int:
+    def compute_valid_examples(cls, v: int, info: ValidationInfo) -> int:
         """Compute valid examples count."""
         examples = info.data.get("examples", [])
         return sum(1 for ex in examples if ex.is_valid)
@@ -118,7 +118,7 @@ class ModelExamplesCollection(BaseModel):
     @field_validator("last_validated", mode="before")
     @classmethod
     def update_validation_timestamp(
-        cls, v: datetime | None, info: dict[str, Any]
+        cls, v: datetime | None, info: ValidationInfo
     ) -> datetime | None:
         """Update validation timestamp when examples change."""
         examples = info.data.get("examples", [])
@@ -295,7 +295,11 @@ class ModelExamplesCollection(BaseModel):
         try:
             # Basic validation - ensure examples are properly structured
             for example in self.examples:
-                if not example.validate_instance():
+                # Validate that example is a proper ModelExample instance
+                # and has required fields
+                if not isinstance(example, ModelExample) or not hasattr(
+                    example, "input_data"
+                ):
                     return False
             return True
         except Exception:

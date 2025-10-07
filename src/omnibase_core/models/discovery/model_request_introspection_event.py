@@ -81,7 +81,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         filters: ModelIntrospectionFilters | None = None,
         timeout_ms: int = 5000,
         include_resource_usage: bool = False,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelRequestIntrospectionEvent":
         """
         Factory method for creating discovery requests.
@@ -116,7 +116,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         requester_id: UUID | None = None,
         protocols: list[str] | None = None,
         timeout_ms: int = 3000,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelRequestIntrospectionEvent":
         """
         Factory method for MCP server discovery requests.
@@ -156,7 +156,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         requester_id: UUID | None = None,
         node_id: UUID | None = None,
         timeout_ms: int = 2000,
-        **kwargs: Any,
+        **kwargs,
     ) -> "ModelRequestIntrospectionEvent":
         """
         Factory method for health monitoring requests.

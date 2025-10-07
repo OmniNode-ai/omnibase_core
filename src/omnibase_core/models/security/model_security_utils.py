@@ -1,14 +1,24 @@
+"""Enterprise-grade security utilities for credential masking and security operations."""
+
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping, Sequence, Union
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
 
 from .model_credential_audit_report import ModelCredentialAuditReport
-from .model_credential_strength_assessment import (
-    ModelCredentialStrengthAssessment,
-)
-from .model_masked_data import ModelMaskedDataValue
+from .model_credential_strength_assessment import ModelCredentialStrengthAssessment
 from .model_secure_mask_config import ModelSecureMaskConfig
+
+# Define recursive JSON value type for proper type checking
+JSONValue = Union[
+    Dict[str, "JSONValue"],
+    List["JSONValue"],
+    str,
+    int,
+    float,
+    bool,
+    None,
+]
 
 
 class ModelSecurityUtils:
@@ -18,7 +28,7 @@ class ModelSecurityUtils:
 
     Features:
     - Comprehensive credential masking strategies
-    - Recursive dict[str, Any]ionary credential masking
+    - Recursive dictionary credential masking
     - Configurable masking patterns
     - Security pattern detection
     - Credential strength assessment
@@ -78,33 +88,37 @@ class ModelSecurityUtils:
 
     @staticmethod
     def mask_dict_credentials(
-        data: dict[str, ModelMaskedDataValue],
+        data: Mapping[str, Any],
         sensitive_patterns: set[str] | None = None,
         recursive: bool = True,
-    ) -> dict[str, ModelMaskedDataValue]:
+    ) -> Dict[str, JSONValue]:
         """
-        Recursively mask credential fields in a dict[str, Any]ionary.
+        Recursively mask credential fields in a dictionary.
 
         Args:
-            data: Dictionary that may contain credentials
+            data: Dictionary that may contain credentials (read-only view)
             sensitive_patterns: Custom set of sensitive field patterns
-            recursive: Whether to recursively process nested dict[str, Any]ionaries
+            recursive: Whether to recursively process nested dictionaries
 
         Returns:
-            Dictionary with credentials masked
+            New dictionary with credentials masked
         """
         if sensitive_patterns is None:
             sensitive_patterns = ModelSecurityUtils.DEFAULT_SENSITIVE_PATTERNS
 
-        masked_data: dict[str, ModelMaskedDataValue] = {}
+        masked_data: Dict[str, JSONValue] = {}
         for key, value in data.items():
-            if isinstance(value, dict) and recursive:
+            if isinstance(value, Mapping) and recursive:
+                # Recursively mask nested dictionaries
                 masked_data[key] = ModelSecurityUtils.mask_dict_credentials(
                     value,
                     sensitive_patterns,
                     recursive,
                 )
-            elif isinstance(value, list) and recursive:
+            elif (
+                isinstance(value, Sequence) and not isinstance(value, str) and recursive
+            ):
+                # Recursively mask lists (but not strings, which are also Sequence)
                 masked_data[key] = ModelSecurityUtils._mask_list_credentials(
                     value,
                     sensitive_patterns,
@@ -113,21 +127,33 @@ class ModelSecurityUtils:
                 key,
                 sensitive_patterns,
             ):
+                # Mask sensitive string values
                 masked_data[key] = ModelSecurityUtils.mask_credential(value)
             else:
+                # Copy non-sensitive values as-is
                 masked_data[key] = value
 
         return masked_data
 
     @staticmethod
     def _mask_list_credentials(
-        data: list[ModelMaskedDataValue],
+        data: Sequence[Any],
         sensitive_patterns: set[str],
-    ) -> list[ModelMaskedDataValue]:
-        """Mask credentials in a list[Any](may contain dict[str, Any]s)."""
-        masked_list: list[ModelMaskedDataValue] = []
+    ) -> List[JSONValue]:
+        """
+        Mask credentials in a list (may contain dicts and nested lists).
+
+        Args:
+            data: List that may contain credentials (read-only view)
+            sensitive_patterns: Set of sensitive field patterns
+
+        Returns:
+            New list with credentials masked
+        """
+        masked_list: List[JSONValue] = []
         for item in data:
-            if isinstance(item, dict):
+            if isinstance(item, Mapping):
+                # Recursively mask dictionaries in the list
                 masked_list.append(
                     ModelSecurityUtils.mask_dict_credentials(
                         item,
@@ -135,11 +161,13 @@ class ModelSecurityUtils:
                         recursive=True,
                     ),
                 )
-            elif isinstance(item, list):
+            elif isinstance(item, Sequence) and not isinstance(item, str):
+                # Recursively mask nested lists (but not strings)
                 masked_list.append(
                     ModelSecurityUtils._mask_list_credentials(item, sensitive_patterns),
                 )
             else:
+                # Copy non-dictionary/list items as-is
                 masked_list.append(item)
 
         return masked_list
@@ -161,9 +189,6 @@ class ModelSecurityUtils:
         Returns:
             List of detected credential pattern types
         """
-        if not isinstance(value, str):
-            return []
-
         patterns = []
 
         # API Key patterns
@@ -211,14 +236,8 @@ class ModelSecurityUtils:
             value: Credential to assess
 
         Returns:
-            Dictionary with strength assessment
+            Strength assessment model with score and issues
         """
-        if not isinstance(value, str):
-            return ModelCredentialStrengthAssessment(
-                strength=EnumCredentialStrength.INVALID,
-                issues=["Not a string"],
-            )
-
         issues = []
         score = 0
 
@@ -292,7 +311,7 @@ class ModelSecurityUtils:
             additional_patterns: Additional sensitive field patterns
 
         Returns:
-            Masking configuration dict[str, Any]ionary
+            Masking configuration object
         """
         patterns = ModelSecurityUtils.DEFAULT_SENSITIVE_PATTERNS.copy()
         if additional_patterns:
@@ -308,18 +327,18 @@ class ModelSecurityUtils:
 
     @staticmethod
     def audit_credential_usage(
-        data: dict[str, ModelMaskedDataValue],
+        data: Mapping[str, Any],
         config: ModelSecureMaskConfig | None = None,
     ) -> ModelCredentialAuditReport:
         """
         Audit credential usage in data structure.
 
         Args:
-            data: Data structure to audit
+            data: Data structure to audit (read-only view)
             config: Masking configuration
 
         Returns:
-            Audit report
+            Audit report with security findings
         """
         if config is None:
             config = ModelSecurityUtils.create_secure_mask_config()
@@ -331,7 +350,8 @@ class ModelSecurityUtils:
         audit_report = ModelCredentialAuditReport()
 
         def _audit_recursive(obj: Any, path: str = "") -> None:
-            if isinstance(obj, dict):
+            """Recursively audit object for credentials."""
+            if isinstance(obj, Mapping):
                 for key, value in obj.items():
                     current_path = f"{path}.{key}" if path else key
                     audit_report.total_fields += 1
@@ -361,7 +381,7 @@ class ModelSecurityUtils:
                                 )
 
                     _audit_recursive(value, current_path)
-            elif isinstance(obj, list):
+            elif isinstance(obj, Sequence) and not isinstance(obj, str):
                 for i, item in enumerate(obj):
                     _audit_recursive(item, f"{path}[{i}]" if path else f"[{i}]")
 

@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 if TYPE_CHECKING:
     from omnibase_core.models.registry.model_registry_mode_config import (
         ModelRegistryModeConfig,
@@ -45,8 +47,8 @@ class ModelServiceRegistryConfig(BaseModel):
         default="development",
         description="Default registry mode if not specified",
     )
-    configuration_version: str = Field(
-        default="1.0",
+    configuration_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Configuration schema version",
     )
 

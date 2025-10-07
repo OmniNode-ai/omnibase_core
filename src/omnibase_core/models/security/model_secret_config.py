@@ -43,6 +43,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_latency_level import EnumLatencyLevel
+from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -165,9 +166,7 @@ class ModelSecretConfig(BaseModel):
     def validate_dotenv_path(cls, v: Path | None) -> Path | None:
         """Validate dotenv path exists if specified."""
         if v is not None:
-            if not isinstance(v, Path):
-                v = Path(v)
-
+            # Field type Path | None ensures v is Path when not None
             # Convert relative paths to absolute
             if not v.is_absolute():
                 v = Path.cwd() / v

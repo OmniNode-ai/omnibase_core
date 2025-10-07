@@ -20,6 +20,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.metadata.model_semver import ModelSemVer
+
 from .model_onex_event import ModelOnexEvent
 from .model_route_hop import ModelRouteHop
 from .model_route_spec import ModelRouteSpec
@@ -61,7 +63,10 @@ class ModelEventEnvelope(BaseModel):
 
     # Envelope metadata
     source_node_id: str = Field(default=..., description="Original source node ID")
-    envelope_version: str = Field(default="1.0", description="Envelope format version")
+    envelope_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Envelope format version",
+    )
     correlation_id: UUID = Field(
         default=...,
         description="Correlation ID for request/response tracking",
@@ -91,7 +96,7 @@ class ModelEventEnvelope(BaseModel):
         payload: ModelOnexEvent,
         destination: str,
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for direct routing to destination."""
         route_spec = ModelRouteSpec.create_direct_route(destination)
@@ -114,7 +119,7 @@ class ModelEventEnvelope(BaseModel):
         destination: str,
         hops: list[str],
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope with explicit routing path."""
         route_spec = ModelRouteSpec.create_explicit_route(destination, hops)
@@ -136,7 +141,7 @@ class ModelEventEnvelope(BaseModel):
         payload: ModelOnexEvent,
         service_pattern: str,
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for anycast routing to service."""
         route_spec = ModelRouteSpec.create_anycast_route(service_pattern)
@@ -157,7 +162,7 @@ class ModelEventEnvelope(BaseModel):
         cls,
         payload: ModelOnexEvent,
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for broadcast routing."""
         route_spec = ModelRouteSpec.create_broadcast_route()
@@ -185,7 +190,7 @@ class ModelEventEnvelope(BaseModel):
         node_id: str,
         routing_decision: str,
         next_hop: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Add a router hop to the trace."""
         hop = ModelRouteHop.create_router_hop(

@@ -1,7 +1,6 @@
 """Collection of custom filters model."""
 
-from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
@@ -14,6 +13,17 @@ from .model_numeric_filter import ModelNumericFilter
 from .model_status_filter import ModelStatusFilter
 from .model_string_filter import ModelStringFilter
 
+# Type alias for the filter union
+FilterType = Union[
+    ModelStringFilter,
+    ModelNumericFilter,
+    ModelDateTimeFilter,
+    ModelListFilter,
+    ModelMetadataFilter,
+    ModelStatusFilter,
+    ModelComplexFilter,
+]
+
 
 class ModelCustomFilters(BaseModel):
     """
@@ -22,16 +32,9 @@ class ModelCustomFilters(BaseModel):
     Replaces Dict[str, Any] for custom_filters fields with typed filters.
     """
 
-    filters: dict[
-        str,
-        ModelStringFilter
-        | ModelNumericFilter
-        | ModelDateTimeFilter
-        | ModelListFilter
-        | ModelMetadataFilter
-        | ModelStatusFilter
-        | ModelComplexFilter,
-    ] = Field(default_factory=dict, description="Named custom filters")
+    filters: dict[str, FilterType] = Field(
+        default_factory=dict, description="Named custom filters"
+    )
 
     def add_string_filter(self, name: str, pattern: str, **kwargs: Any) -> None:
         """Add a string filter."""
@@ -46,7 +49,7 @@ class ModelCustomFilters(BaseModel):
         self.filters[name] = ModelDateTimeFilter(**kwargs)
 
     def add_list_filter(self, name: str, values: list[Any], **kwargs: Any) -> None:
-        """Add a list[Any]filter."""
+        """Add a list filter."""
         self.filters[name] = ModelListFilter(values=values, **kwargs)
 
     def add_metadata_filter(
@@ -63,7 +66,7 @@ class ModelCustomFilters(BaseModel):
         """Add a status filter."""
         self.filters[name] = ModelStatusFilter(allowed_statuses=allowed, **kwargs)
 
-    def get_filter(self, name: str) -> ModelCustomFilterBase | None:
+    def get_filter(self, name: str) -> FilterType | None:
         """Get a filter by name."""
         return self.filters.get(name)
 
@@ -72,14 +75,14 @@ class ModelCustomFilters(BaseModel):
         self.filters.pop(name, None)
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary (for current standards)."""
-        # Custom transformation logic for filters dict[str, Any]ionary
+        """Convert to dictionary (for current standards)."""
+        # Custom transformation logic for filters dictionary
         return {name: filter_obj.to_dict() for name, filter_obj in self.filters.items()}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelCustomFilters":
-        """Create from dict[str, Any]ionary (for migration)."""
-        filters = {}
+        """Create from dictionary (for migration)."""
+        filters: dict[str, FilterType] = {}
 
         for name, filter_data in data.items():
             if isinstance(filter_data, dict) and "filter_type" in filter_data:
@@ -91,7 +94,7 @@ class ModelCustomFilters(BaseModel):
                     filters[name] = ModelNumericFilter(**filter_data)
                 elif filter_type == "datetime":
                     filters[name] = ModelDateTimeFilter(**filter_data)
-                elif filter_type == "list[Any]":
+                elif filter_type == "list" or filter_type == "list[Any]":
                     filters[name] = ModelListFilter(**filter_data)
                 elif filter_type == "metadata":
                     filters[name] = ModelMetadataFilter(**filter_data)
