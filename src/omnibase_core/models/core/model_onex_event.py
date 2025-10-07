@@ -234,28 +234,10 @@ class ModelOnexEvent(BaseModel):
 # Compatibility alias
 OnexEvent = ModelOnexEvent
 
-# Import the deprecated enum
-# This allows existing code to continue working while showing deprecation warnings
-try:
-    import warnings
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        from omnibase_core.enums.enum_events import EnumOnexEventType  # type: ignore[attr-defined]
-
-    __all__ = [
-        "ModelOnexEvent",
-        "ModelTelemetryOperationErrorMetadata",
-        "ModelTelemetryOperationStartMetadata",
-        "ModelTelemetryOperationSuccessMetadata",
-        "OnexEvent",
-        "EnumOnexEventType",
-    ]
-except ImportError:
-    __all__ = [
-        "ModelOnexEvent",
-        "ModelTelemetryOperationErrorMetadata",
-        "ModelTelemetryOperationStartMetadata",
-        "ModelTelemetryOperationSuccessMetadata",
-        "OnexEvent",
-    ]
+__all__ = [
+    "ModelOnexEvent",
+    "ModelTelemetryOperationErrorMetadata",
+    "ModelTelemetryOperationStartMetadata",
+    "ModelTelemetryOperationSuccessMetadata",
+    "OnexEvent",
+]

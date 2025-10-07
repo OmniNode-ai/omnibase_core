@@ -29,6 +29,7 @@ else:
     ProtocolSupportedMetadataType = BasicValueType
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 from .model_generic_metadata import ModelGenericMetadata
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
@@ -39,7 +40,6 @@ from .model_metadata_node_info import ModelMetadataNodeInfo, ModelMetadataNodeTy
 from .model_metadata_usage_metrics import ModelMetadataUsageMetrics
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
-from omnibase_core.models.core.model_semver import ModelSemVer
 from .model_typed_dict_analytics_summary_data import TypedDictAnalyticsSummaryData
 from .model_typed_dict_categorization_update_data import (
     TypedDictCategorizationUpdateData,

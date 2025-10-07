@@ -674,6 +674,7 @@ class MixinRequestResponseIntrospection:
         # Create the additional info model
         # Convert startup_time from float timestamp to datetime
         from datetime import datetime, timezone
+
         startup_datetime = datetime.fromtimestamp(self._startup_time, tz=timezone.utc)
         additional_info = ModelIntrospectionAdditionalInfo(
             startup_time=startup_datetime,

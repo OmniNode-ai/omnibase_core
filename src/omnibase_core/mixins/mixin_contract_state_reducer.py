@@ -89,7 +89,9 @@ class MixinContractStateReducer:
                 return []
 
             # Load and validate contract using safe YAML loader
-            contract: ModelGenericContract = load_and_validate_yaml_model(transitions_path, ModelGenericContract)
+            contract: ModelGenericContract = load_and_validate_yaml_model(
+                transitions_path, ModelGenericContract
+            )
 
             # Extract state_transitions section
             contract_dict = contract.model_dump()
@@ -114,7 +116,8 @@ class MixinContractStateReducer:
                 elif transition_type == "tool_based":
                     tool_config = transition_data.get("tool_config", {})
                     # Get tool_id from config or generate from tool_name
-                    from uuid import UUID, uuid5, NAMESPACE_DNS
+                    from uuid import NAMESPACE_DNS, UUID, uuid5
+
                     tool_id = tool_config.get("tool_id")
                     if tool_id is None and tool_config.get("tool_name"):
                         # Generate deterministic UUID from tool_name
@@ -289,7 +292,9 @@ class MixinContractStateReducer:
         if not transition.tool_config:
             return
 
-        target_tool_name = transition.tool_config.tool_display_name or str(transition.tool_config.tool_id)
+        target_tool_name = transition.tool_config.tool_display_name or str(
+            transition.tool_config.tool_id
+        )
 
         emit_log_event(
             LogLevel.DEBUG,

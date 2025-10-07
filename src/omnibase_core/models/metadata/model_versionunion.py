@@ -9,7 +9,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 
-class ModelTypedDictVersionDict(TypedDict):
+class TypedDictVersionDict(TypedDict):
     """Version dictionary structure."""
 
     major: int
@@ -21,7 +21,7 @@ class ModelVersionUnion(BaseModel):
     """
     Discriminated union for version types.
 
-    Replaces Union[ModelSemVer, ModelTypedDictVersionDict, None] patterns with structured typing.
+    Replaces Union[ModelSemVer, TypedDictVersionDict, None] patterns with structured typing.
     Implements omnibase_spi protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
@@ -35,7 +35,7 @@ class ModelVersionUnion(BaseModel):
 
     # Version storage (only one should be populated based on type)
     semantic_version: ModelSemVer | None = None
-    version_dict: ModelTypedDictVersionDict | None = None
+    version_dict: TypedDictVersionDict | None = None
 
     @model_validator(mode="after")
     def validate_single_version(self) -> ModelVersionUnion:
@@ -85,9 +85,7 @@ class ModelVersionUnion(BaseModel):
         )
 
     @classmethod
-    def from_version_dict(
-        cls, version_dict: ModelTypedDictVersionDict
-    ) -> ModelVersionUnion:
+    def from_version_dict(cls, version_dict: TypedDictVersionDict) -> ModelVersionUnion:
         """Create union from version dict[str, Any]ionary."""
         return cls(
             version_type=EnumVersionUnionType.VERSION_DICT,
@@ -99,12 +97,12 @@ class ModelVersionUnion(BaseModel):
         """Create union representing no version."""
         return cls(version_type=EnumVersionUnionType.NONE_VERSION)
 
-    def get_version(self) -> ModelSemVer | ModelTypedDictVersionDict | None:
+    def get_version(self) -> ModelSemVer | TypedDictVersionDict | None:
         """
         Get the actual version value with runtime type safety.
 
         Returns:
-            ModelSemVer | ModelTypedDictVersionDict | None: The actual version value based on
+            ModelSemVer | TypedDictVersionDict | None: The actual version value based on
                    version_type discriminator. Use isinstance() to check specific type.
 
         Raises:

@@ -112,7 +112,9 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
 
         return cls(
             node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
-            requester_id=UUID(requester_id) if isinstance(requester_id, str) else requester_id,
+            requester_id=(
+                UUID(requester_id) if isinstance(requester_id, str) else requester_id
+            ),
             filters=filters,
             correlation_id=correlation_id,
             **kwargs,

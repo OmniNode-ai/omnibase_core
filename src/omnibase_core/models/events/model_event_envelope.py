@@ -406,8 +406,11 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         # Create lazy values for expensive nested serializations
         # Cast to BaseModel since we check for model_dump attribute
         lazy_payload = self.lazy_string_conversion(
-            cast(Optional[BaseModel], self.payload if hasattr(self.payload, "model_dump") else None),
-            "payload"
+            cast(
+                Optional[BaseModel],
+                self.payload if hasattr(self.payload, "model_dump") else None,
+            ),
+            "payload",
         )
 
         # Direct field access for simple fields (more efficient than model_dump())

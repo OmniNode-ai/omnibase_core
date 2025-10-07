@@ -29,7 +29,9 @@ class MixinNodeIdFromContract:
         "omnibase.",
     ]
 
-    def __init__(self, contract_path: Path | None = None, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, contract_path: Path | None = None, *args: Any, **kwargs: Any
+    ) -> None:
         self._explicit_contract_path = contract_path
         super().__init__(*args, **kwargs)
 

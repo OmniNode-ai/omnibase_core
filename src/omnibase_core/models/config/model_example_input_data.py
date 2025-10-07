@@ -19,8 +19,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIOType
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelExampleInputData(BaseModel):

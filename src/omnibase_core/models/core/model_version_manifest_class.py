@@ -22,13 +22,13 @@ from omnibase_core.models.core.model_version_deployment import ModelVersionDeplo
 from omnibase_core.models.core.model_version_documentation import (
     ModelVersionDocumentation,
 )
+from omnibase_core.models.core.model_version_file import ModelVersionFile
 from omnibase_core.models.core.model_version_implementation import (
     ModelVersionImplementation,
 )
 from omnibase_core.models.core.model_version_manifest_class_config import ModelConfig
 from omnibase_core.models.core.model_version_security import ModelVersionSecurity
 from omnibase_core.models.core.model_version_testing import ModelVersionTesting
-from omnibase_core.models.core.model_version_file import ModelVersionFile
 
 
 class ModelVersionManifest(BaseModel):

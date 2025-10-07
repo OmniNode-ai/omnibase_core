@@ -403,6 +403,7 @@ class NodeEffect(NodeCoreBase):
                 # Ensure operation_id is not None for transaction
                 if input_data.operation_id is None:
                     from uuid import uuid4
+
                     input_data.operation_id = uuid4()
                 transaction = ModelTransaction(input_data.operation_id)
                 transaction.state = EnumTransactionState.ACTIVE
@@ -464,8 +465,12 @@ class NodeEffect(NodeCoreBase):
                 ),
                 metadata={
                     "timeout_ms": ModelSchemaValue.from_value(input_data.timeout_ms),
-                    "transaction_enabled": ModelSchemaValue.from_value(input_data.transaction_enabled),
-                    "circuit_breaker_enabled": ModelSchemaValue.from_value(input_data.circuit_breaker_enabled),
+                    "transaction_enabled": ModelSchemaValue.from_value(
+                        input_data.transaction_enabled
+                    ),
+                    "circuit_breaker_enabled": ModelSchemaValue.from_value(
+                        input_data.circuit_breaker_enabled
+                    ),
                 },
             )
 
@@ -972,7 +977,7 @@ class NodeEffect(NodeCoreBase):
             try:
                 # Get event bus from container - access via attribute instead of get_service
                 # since get_service requires a protocol type, not a string
-                event_bus: Any = getattr(self.container, 'event_bus', None)
+                event_bus: Any = getattr(self.container, "event_bus", None)
                 if not event_bus:
                     emit_log_event(
                         LogLevel.WARNING,

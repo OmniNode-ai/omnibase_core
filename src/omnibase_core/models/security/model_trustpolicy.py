@@ -292,7 +292,9 @@ class ModelTrustPolicy(BaseModel):
             compliance_tags=[],
             trust_level=ModelTrustLevel(level=self.default_trust_level),
             encryption_required=self.encryption_requirement != "none",
-            certificate_validation=ModelCertificateValidationLevel(level=self.certificate_validation),
+            certificate_validation=ModelCertificateValidationLevel(
+                level=self.certificate_validation
+            ),
             applicable_rules=[rule.rule_id for rule in applicable_rules],
         )
 

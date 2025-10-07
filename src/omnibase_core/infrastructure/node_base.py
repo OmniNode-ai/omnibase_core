@@ -38,10 +38,10 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_action import ModelAction
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
 from omnibase_core.models.infrastructure.model_state import ModelState
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -246,9 +246,7 @@ class NodeBase(
 
         # Store contract and configuration
         business_logic_pattern = getattr(
-            contract_content.tool_specification,
-            "business_logic_pattern",
-            None
+            contract_content.tool_specification, "business_logic_pattern", None
         )
         # Handle both string and enum cases
         if business_logic_pattern is not None:

@@ -28,8 +28,8 @@ from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 # Using ModelCliValue instead of primitive soup type alias for proper discriminated union typing

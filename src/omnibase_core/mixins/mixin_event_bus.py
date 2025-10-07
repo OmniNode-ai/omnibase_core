@@ -20,9 +20,9 @@ This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 import inspect
 import threading
 from collections.abc import Callable as CallableABC
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
-from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -113,6 +113,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             return self._node_id
         # Generate deterministic UUID from node name
         import hashlib
+
         namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
         return UUID(hashlib.md5(self.node_name.encode()).hexdigest())
 
@@ -179,7 +180,9 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
 
             # Wrap event in envelope before publishing
-            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(payload=event)
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
+                payload=event
+            )
             # Use publish_async for envelope publishing
             if hasattr(bus, "publish_async"):
                 bus.publish_async(envelope)
@@ -219,7 +222,9 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Wrap event in envelope before publishing
-            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(payload=event)
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
+                payload=event
+            )
 
             # Check if bus has async methods (async bus or hybrid bus)
             if hasattr(bus, "apublish") or hasattr(bus, "apublish_async"):
@@ -458,7 +463,9 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         def handler(envelope: "ModelEventEnvelope[Any]") -> None:
             """Handle incoming event envelope."""
             # Extract event from envelope
-            extracted_event = envelope.payload if hasattr(envelope, "payload") else envelope
+            extracted_event = (
+                envelope.payload if hasattr(envelope, "payload") else envelope
+            )
 
             # Validate event has required attributes
             if not hasattr(extracted_event, "event_type"):
@@ -467,6 +474,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
             # Type assertion: extracted_event should be ModelOnexEvent
             from typing import cast
+
             event = cast(ModelOnexEvent, extracted_event)
 
             try:
@@ -482,7 +490,9 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 self.process(input_state)
 
                 # Publish completion event
-                completion_event_type = self.get_completion_event_type(str(event.event_type))
+                completion_event_type = self.get_completion_event_type(
+                    str(event.event_type)
+                )
                 completion_data = MixinCompletionData(
                     message=f"Processing completed for {event.event_type}",
                     success=True,
@@ -565,11 +575,19 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
     def _log_info(self, msg: str, pattern: str) -> None:
         """Log info message with pattern."""
-        emit_log_event(LogLevel.INFO, msg, context={"pattern": pattern, "node_name": self.get_node_name()})
+        emit_log_event(
+            LogLevel.INFO,
+            msg,
+            context={"pattern": pattern, "node_name": self.get_node_name()},
+        )
 
     def _log_warn(self, msg: str, pattern: str) -> None:
         """Log warning message with pattern."""
-        emit_log_event(LogLevel.WARNING, msg, context={"pattern": pattern, "node_name": self.get_node_name()})
+        emit_log_event(
+            LogLevel.WARNING,
+            msg,
+            context={"pattern": pattern, "node_name": self.get_node_name()},
+        )
 
     def _log_error(
         self,
@@ -578,4 +596,12 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         error: BaseException | None = None,
     ) -> None:
         """Log error message with pattern and optional error details."""
-        emit_log_event(LogLevel.ERROR, msg, context={"pattern": pattern, "node_name": self.get_node_name(), "error": None if error is None else repr(error)})
+        emit_log_event(
+            LogLevel.ERROR,
+            msg,
+            context={
+                "pattern": pattern,
+                "node_name": self.get_node_name(),
+                "error": None if error is None else repr(error),
+            },
+        )

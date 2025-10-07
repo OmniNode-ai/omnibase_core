@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.metadata.model_input_state_fields_type import (
         ModelInputStateFieldsType,
     )
-    from omnibase_core.models.metadata.model_version_union import ModelVersionUnion
+    from omnibase_core.models.metadata.model_versionunion import ModelVersionUnion
 
 
 class ModelInputState(BaseModel):

@@ -53,9 +53,7 @@ class ModelSchema(BaseModel):
     )
 
     # Document-level metadata (used when this represents a full document)
-    schema_version: str = Field(
-        default="draft-07", description="JSON Schema version"
-    )
+    schema_version: str = Field(default="draft-07", description="JSON Schema version")
     title: str | None = Field(default=None, description="Schema title")
 
     # String validation constraints
@@ -498,8 +496,16 @@ class ModelSchema(BaseModel):
 
         # Create the unified schema
         # Parse semver if string, then convert back to string for schema_version field
-        parsed_version = parse_semver_from_string(schema_version) if isinstance(schema_version, str) else schema_version
-        version_str = str(parsed_version) if hasattr(parsed_version, '__str__') else schema_version
+        parsed_version = (
+            parse_semver_from_string(schema_version)
+            if isinstance(schema_version, str)
+            else schema_version
+        )
+        version_str = (
+            str(parsed_version)
+            if hasattr(parsed_version, "__str__")
+            else schema_version
+        )
 
         return cls(
             type=data.get("type", "object"),
@@ -519,7 +525,11 @@ class ModelSchema(BaseModel):
             min_items=data.get("minItems"),
             max_items=data.get("maxItems"),
             unique_items=data.get("uniqueItems"),
-            properties={k: v for k, v in properties.items() if v is not None} if properties else None,
+            properties=(
+                {k: v for k, v in properties.items() if v is not None}
+                if properties
+                else None
+            ),
             required=data.get("required"),
             additional_properties=data.get("additionalProperties", True),
             min_properties=data.get("minProperties"),
@@ -530,7 +540,11 @@ class ModelSchema(BaseModel):
                 if data.get("default") is not None
                 else None
             ),
-            definitions={k: v for k, v in definitions.items() if v is not None} if definitions else None,
+            definitions=(
+                {k: v for k, v in definitions.items() if v is not None}
+                if definitions
+                else None
+            ),
             all_of=[s for s in all_of if s is not None] if all_of else None,
             any_of=[s for s in any_of if s is not None] if any_of else None,
             one_of=[s for s in one_of if s is not None] if one_of else None,

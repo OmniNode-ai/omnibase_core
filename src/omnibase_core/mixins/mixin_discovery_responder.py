@@ -139,19 +139,25 @@ class MixinDiscoveryResponder:
             # Type cast for mypy - event is ModelOnexEvent after extraction
             onex_event = cast(OnexEvent, event)
 
-            if not hasattr(onex_event, "event_type") or not is_event_equal(onex_event.event_type, "DISCOVERY_REQUEST"):
+            if not hasattr(onex_event, "event_type") or not is_event_equal(
+                onex_event.event_type, "DISCOVERY_REQUEST"
+            ):
                 return  # Not a discovery request
 
             # Type-safe increment (get returns int|float|None, but default ensures int)
             current_requests = self._discovery_stats.get("requests_received", 0)
-            self._discovery_stats["requests_received"] = (current_requests if isinstance(current_requests, int) else 0) + 1
+            self._discovery_stats["requests_received"] = (
+                current_requests if isinstance(current_requests, int) else 0
+            ) + 1
             self._discovery_stats["last_request_time"] = time.time()
 
             # Check rate limiting
             current_time = time.time()
             if current_time - self._last_response_time < self._response_throttle:
                 current_throttled = self._discovery_stats.get("throttled_requests", 0)
-                self._discovery_stats["throttled_requests"] = (current_throttled if isinstance(current_throttled, int) else 0) + 1
+                self._discovery_stats["throttled_requests"] = (
+                    current_throttled if isinstance(current_throttled, int) else 0
+                ) + 1
                 return  # Throttled
 
             # Extract request metadata
@@ -168,7 +174,9 @@ class MixinDiscoveryResponder:
 
             self._last_response_time = current_time
             current_responses = self._discovery_stats.get("responses_sent", 0)
-            self._discovery_stats["responses_sent"] = (current_responses if isinstance(current_responses, int) else 0) + 1
+            self._discovery_stats["responses_sent"] = (
+                current_responses if isinstance(current_responses, int) else 0
+            ) + 1
 
         except Exception:
             # Silently handle errors to avoid disrupting discovery
@@ -242,6 +250,7 @@ class MixinDiscoveryResponder:
             # Create discovery response
             # Get node_id as UUID or generate a temporary one
             from uuid import UUID, uuid4
+
             node_id_value: UUID
             if hasattr(self, "node_id"):
                 node_id_attr = getattr(self, "node_id")

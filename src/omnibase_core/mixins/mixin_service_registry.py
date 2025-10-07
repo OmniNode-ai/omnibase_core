@@ -238,6 +238,7 @@ class MixinServiceRegistry:
 
             # Convert node_id to UUID if it's a string, or keep as is if already UUID
             from uuid import UUID as UUIDType
+
             if isinstance(node_id, str):
                 try:
                     node_id_uuid = UUIDType(node_id)
@@ -300,7 +301,9 @@ class MixinServiceRegistry:
             )
             if node_id:
                 # Ensure node_id is string for dict key
-                node_id_str = str(node_id) if isinstance(node_id, UUID) else str(node_id)
+                node_id_str = (
+                    str(node_id) if isinstance(node_id, UUID) else str(node_id)
+                )
 
                 if node_id_str in self.service_registry:
                     self.service_registry[node_id_str].set_offline()
@@ -374,7 +377,9 @@ class MixinServiceRegistry:
             node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
             if node_id:
                 # Ensure node_id is string for dict key
-                node_id_str = str(node_id) if isinstance(node_id, UUID) else str(node_id)
+                node_id_str = (
+                    str(node_id) if isinstance(node_id, UUID) else str(node_id)
+                )
 
                 if node_id_str in self.service_registry:
                     introspection_data = (
@@ -383,8 +388,12 @@ class MixinServiceRegistry:
                         and hasattr(envelope.payload, "data")
                         else {}
                     )
-                    introspection_data = introspection_data if introspection_data is not None else {}
-                    self.service_registry[node_id_str].update_introspection(introspection_data)
+                    introspection_data = (
+                        introspection_data if introspection_data is not None else {}
+                    )
+                    self.service_registry[node_id_str].update_introspection(
+                        introspection_data
+                    )
 
                     emit_log_event(
                         LogLevel.DEBUG,

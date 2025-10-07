@@ -626,7 +626,9 @@ class NodeReducer(NodeCoreBase):
             group_key=group_by,  # Use field name string instead of lambda
             metadata={
                 "group_by": ModelSchemaValue.from_value(group_by),
-                "aggregation_functions": ModelSchemaValue.from_value(aggregation_functions),
+                "aggregation_functions": ModelSchemaValue.from_value(
+                    aggregation_functions
+                ),
                 "rsd_operation": ModelSchemaValue.from_value("ticket_aggregation"),
             },
         )
@@ -659,7 +661,9 @@ class NodeReducer(NodeCoreBase):
             reduction_type=EnumReductionType.NORMALIZE,
             metadata={
                 "score_field": ModelSchemaValue.from_value(score_field),
-                "normalization_method": ModelSchemaValue.from_value(normalization_method),
+                "normalization_method": ModelSchemaValue.from_value(
+                    normalization_method
+                ),
                 "rsd_operation": ModelSchemaValue.from_value("priority_normalization"),
             },
         )

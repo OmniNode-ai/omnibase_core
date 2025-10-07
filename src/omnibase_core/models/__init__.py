@@ -9,6 +9,8 @@ OmniBase Core Models
 Organized by domain for better maintainability and discoverability.
 """
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 # Import all domain modules for easy access
 from . import (
     cli,
@@ -31,7 +33,6 @@ from .common import (
     ModelNumericValue,
     ModelSchemaValue,
 )
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from .infrastructure import err, ok
 from .model_yaml_dump_options import ModelYamlDumpOptions
 from .results import ModelOnexResult

@@ -19,8 +19,8 @@ import time
 import uuid
 from collections.abc import Callable as CallableABC
 from pathlib import Path
-from uuid import UUID
 from typing import Any, Callable, Generic, TypeVar
+from uuid import UUID
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 from pydantic import ValidationError
@@ -660,7 +660,12 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
-        if event_data is not None and hasattr(event_data, "payload") and event_data.payload is not None and hasattr(event_data.payload, "data"):
+        if (
+            event_data is not None
+            and hasattr(event_data, "payload")
+            and event_data.payload is not None
+            and hasattr(event_data.payload, "data")
+        ):
             data = event_data.payload.data
             emit_log_event(
                 LogLevel.DEBUG,
@@ -846,7 +851,11 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         # Convert event_type to str (handles both str and ModelEventType)
-        event_type_str = str(input_event.event_type) if not isinstance(input_event.event_type, str) else input_event.event_type
+        event_type_str = (
+            str(input_event.event_type)
+            if not isinstance(input_event.event_type, str)
+            else input_event.event_type
+        )
         completion_event_type = self.get_completion_event_type(event_type_str)
 
         emit_log_event(
@@ -990,7 +999,11 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     ) -> None:
         """Publish error completion event."""
         # Convert event_type to str (handles both str and ModelEventType)
-        event_type_str = str(input_event.event_type) if not isinstance(input_event.event_type, str) else input_event.event_type
+        event_type_str = (
+            str(input_event.event_type)
+            if not isinstance(input_event.event_type, str)
+            else input_event.event_type
+        )
         completion_event_type = self.get_completion_event_type(event_type_str)
 
         # Create error event data

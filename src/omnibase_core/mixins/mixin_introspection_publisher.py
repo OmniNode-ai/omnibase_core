@@ -87,7 +87,7 @@ class MixinIntrospectionPublisher:
             introspection_data = self._gather_introspection_data()
 
             # Generate correlation ID for introspection
-            from uuid import uuid4, UUID
+            from uuid import UUID, uuid4
 
             correlation_id = uuid4()
 

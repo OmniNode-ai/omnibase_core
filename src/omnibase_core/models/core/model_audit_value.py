@@ -98,8 +98,12 @@ class ModelAuditValue(BaseModel):
                     field_changes.append(
                         ModelAuditFieldChange(
                             field_path=key,
-                            old_value=ModelSchemaValue.from_value(None if is_new else value),
-                            new_value=ModelSchemaValue.from_value(value if is_new else None),
+                            old_value=ModelSchemaValue.from_value(
+                                None if is_new else value
+                            ),
+                            new_value=ModelSchemaValue.from_value(
+                                value if is_new else None
+                            ),
                             value_type=type(value).__name__,
                         ),
                     )

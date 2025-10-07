@@ -31,15 +31,21 @@ class MixinToolExecution:
     # Type hints for methods expected to be provided by the mixed class
     def get_node_name(self) -> str:
         """Get the node name. Must be implemented by the mixed class."""
-        raise NotImplementedError("Must be implemented by the mixed class")
+        raise NotImplementedError(
+            "Must be implemented by the mixed class"
+        )  # stub-ok: mixin interface
 
     def process(self, input_state: Any) -> Any:
         """Process the input state. Must be implemented by the mixed class."""
-        raise NotImplementedError("Must be implemented by the mixed class")
+        raise NotImplementedError(
+            "Must be implemented by the mixed class"
+        )  # stub-ok: mixin interface
 
     def _get_input_state_class(self) -> type[Any]:
         """Get the input state class. Must be implemented by the mixed class."""
-        raise NotImplementedError("Must be implemented by the mixed class")
+        raise NotImplementedError(
+            "Must be implemented by the mixed class"
+        )  # stub-ok: mixin interface
 
     def handle_tool_execution_request_event(self, envelope: ModelEventEnvelope) -> None:
         """
@@ -56,7 +62,11 @@ class MixinToolExecution:
             {
                 "tool_name": self.get_node_name(),
                 "correlation_id": event.correlation_id,
-                "requester": event.data.get("caller", "unknown") if event.data is not None else "unknown",
+                "requester": (
+                    event.data.get("caller", "unknown")
+                    if event.data is not None
+                    else "unknown"
+                ),
             },
         )
 
@@ -86,7 +96,9 @@ class MixinToolExecution:
 
             # Publish successful response
             self._publish_execution_response(
-                correlation_id=str(event.correlation_id) if event.correlation_id else "",
+                correlation_id=(
+                    str(event.correlation_id) if event.correlation_id else ""
+                ),
                 success=True,
                 result=self._output_state_to_dict(output_state),
                 execution_time=execution_time,
@@ -106,7 +118,9 @@ class MixinToolExecution:
 
             # Publish error response
             self._publish_execution_response(
-                correlation_id=str(event.correlation_id) if event.correlation_id else "",
+                correlation_id=(
+                    str(event.correlation_id) if event.correlation_id else ""
+                ),
                 success=False,
                 result=None,
                 execution_time=0,
@@ -190,7 +204,15 @@ class MixinToolExecution:
 
         # Create response event
         # Convert node_id and correlation_id to proper types
-        node_id_uuid = self.get_node_id() if hasattr(self, "get_node_id") else UUID(self.get_node_name()) if len(self.get_node_name()) == 36 else uuid4()
+        node_id_uuid = (
+            self.get_node_id()
+            if hasattr(self, "get_node_id")
+            else (
+                UUID(self.get_node_name())
+                if len(self.get_node_name()) == 36
+                else uuid4()
+            )
+        )
         corr_id_uuid = UUID(correlation_id) if correlation_id else None
 
         response_event = ModelOnexEvent(

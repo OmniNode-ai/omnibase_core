@@ -17,70 +17,64 @@ FIXES: List[Tuple[str, int, str, str, str]] = [
     (
         "mixins/mixin_workflow_support.py",
         114,
-        r'correlation_id=correlation_id,',
-        'correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,',
-        "Convert str to UUID for correlation_id"
+        r"correlation_id=correlation_id,",
+        "correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,",
+        "Convert str to UUID for correlation_id",
     ),
     (
         "mixins/mixin_workflow_support.py",
         127,
-        r'correlation_id=correlation_id,',
-        'correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,',
-        "Convert str to UUID for correlation_id in create_broadcast"
+        r"correlation_id=correlation_id,",
+        "correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,",
+        "Convert str to UUID for correlation_id in create_broadcast",
     ),
     (
         "mixins/mixin_workflow_support.py",
         156,
-        r'correlation_id=correlation_id,',
-        'correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,',
-        "Convert str to UUID for correlation_id in emit_dag_start_event"
+        r"correlation_id=correlation_id,",
+        "correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,",
+        "Convert str to UUID for correlation_id in emit_dag_start_event",
     ),
     (
         "mixins/mixin_workflow_support.py",
         169,
-        r'correlation_id=correlation_id,',
-        'correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,',
-        "Convert str to UUID for correlation_id in envelope"
+        r"correlation_id=correlation_id,",
+        "correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,",
+        "Convert str to UUID for correlation_id in envelope",
     ),
-
     # ModelSemVer conversion - model_event_bus_input_state.py
     (
         "models/service/model_event_bus_input_state.py",
         398,
-        r'version=version,',
-        'version=parse_semver_from_string(version) if isinstance(version, str) else version,',
-        "Convert str to ModelSemVer"
+        r"version=version,",
+        "version=parse_semver_from_string(version) if isinstance(version, str) else version,",
+        "Convert str to ModelSemVer",
     ),
-
     # ModelSemVer conversion - model_schema.py
     (
         "models/core/model_schema.py",
         502,
-        r'schema_version=schema_version,',
-        'schema_version=parse_semver_from_string(schema_version) if isinstance(schema_version, str) else schema_version,',
-        "Convert str to ModelSemVer for schema_version"
+        r"schema_version=schema_version,",
+        "schema_version=parse_semver_from_string(schema_version) if isinstance(schema_version, str) else schema_version,",
+        "Convert str to ModelSemVer for schema_version",
     ),
 ]
 
 
 def read_file_lines(filepath: Path) -> List[str]:
     """Read file and return lines."""
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         return f.readlines()
 
 
 def write_file_lines(filepath: Path, lines: List[str]) -> None:
     """Write lines to file."""
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.writelines(lines)
 
 
 def apply_line_fix(
-    filepath: Path,
-    line_num: int,
-    pattern: str,
-    replacement: str,
-    description: str
+    filepath: Path, line_num: int, pattern: str, replacement: str, description: str
 ) -> bool:
     """Apply a fix to a specific line in a file."""
     try:
@@ -140,11 +134,7 @@ def fix_path_none_errors():
         if "Path(" in line:
             # Replace Path(var) with Path(var) if var else Path(".")
             # This is a simple pattern - looking for Path(something)
-            new_line = re.sub(
-                r'Path\(([^)]+)\)',
-                r'Path(\1 if \1 else ".")',
-                line
-            )
+            new_line = re.sub(r"Path\(([^)]+)\)", r'Path(\1 if \1 else ".")', line)
 
             if new_line != line:
                 lines[line_idx] = new_line
@@ -158,12 +148,9 @@ def fix_uuid_node_id_errors():
     files_patterns = [
         (
             "models/discovery/model_introspection_response_event.py",
-            [(143, "node_id"), (183, "node_id"), (227, "node_id")]
+            [(143, "node_id"), (183, "node_id"), (227, "node_id")],
         ),
-        (
-            "mixins/mixin_event_listener.py",
-            [(990, "node_id")]
-        ),
+        ("mixins/mixin_event_listener.py", [(990, "node_id")]),
     ]
 
     print("\n🔧 Fixing node_id str -> UUID conversion errors...")
@@ -182,7 +169,7 @@ def fix_uuid_node_id_errors():
 
             line = lines[line_idx]
             # Look for node_id=some_var pattern
-            pattern = rf'({field_name}=)(\w+),'
+            pattern = rf"({field_name}=)(\w+),"
             match = re.search(pattern, line)
 
             if match:
@@ -190,8 +177,8 @@ def fix_uuid_node_id_errors():
                 # Add UUID conversion
                 new_line = re.sub(
                     pattern,
-                    rf'\1UUID({var_name}) if isinstance({var_name}, str) else {var_name},',
-                    line
+                    rf"\1UUID({var_name}) if isinstance({var_name}, str) else {var_name},",
+                    line,
                 )
                 lines[line_idx] = new_line
                 modified = True
@@ -214,18 +201,18 @@ def fix_correlation_id_errors():
         if not filepath.exists():
             continue
 
-        content = filepath.read_text(encoding='utf-8')
+        content = filepath.read_text(encoding="utf-8")
         original = content
 
         # Fix correlation_id=var_name, patterns
         content = re.sub(
-            r'correlation_id=(\w+),',
-            lambda m: f'correlation_id=UUID({m.group(1)}) if isinstance({m.group(1)}, str) else {m.group(1)},',
-            content
+            r"correlation_id=(\w+),",
+            lambda m: f"correlation_id=UUID({m.group(1)}) if isinstance({m.group(1)}, str) else {m.group(1)},",
+            content,
         )
 
         if content != original:
-            filepath.write_text(content, encoding='utf-8')
+            filepath.write_text(content, encoding="utf-8")
             print(f"  ✅ {file_rel} - Fixed correlation_id conversions")
 
 

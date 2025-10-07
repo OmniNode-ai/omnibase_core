@@ -104,18 +104,65 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def get_input_state_class(cls) -> type[BaseModel]:
-        """Return the input state model class."""
-        raise NotImplementedError("Subclasses must implement get_input_state_class()")
+        """
+        Return the input state model class.
+
+        By default, attempts to get from metadata loader if available.
+        Override this method to provide node-specific input state class.
+
+        Returns:
+            type[BaseModel]: Input state model class
+
+        Raises:
+            AttributeError: If metadata loader doesn't provide input_state_class
+        """
+        metadata_loader = cls.get_metadata_loader()
+        if hasattr(metadata_loader, "input_state_class"):
+            return metadata_loader.input_state_class
+        # Fallback to generic BaseModel if not provided
+        return BaseModel
 
     @classmethod
     def get_output_state_class(cls) -> type[BaseModel]:
-        """Return the output state model class."""
-        raise NotImplementedError("Subclasses must implement get_output_state_class()")
+        """
+        Return the output state model class.
+
+        By default, attempts to get from metadata loader if available.
+        Override this method to provide node-specific output state class.
+
+        Returns:
+            type[BaseModel]: Output state model class
+
+        Raises:
+            AttributeError: If metadata loader doesn't provide output_state_class
+        """
+        metadata_loader = cls.get_metadata_loader()
+        if hasattr(metadata_loader, "output_state_class"):
+            return metadata_loader.output_state_class
+        # Fallback to generic BaseModel if not provided
+        return BaseModel
 
     @classmethod
     def get_error_codes_class(cls) -> type:
-        """Return the error codes enum class."""
-        raise NotImplementedError("Subclasses must implement get_error_codes_class()")
+        """
+        Return the error codes enum class.
+
+        By default, attempts to get from metadata loader if available.
+        Override this method to provide node-specific error codes enum.
+
+        Returns:
+            type: Error codes enum class
+
+        Raises:
+            AttributeError: If metadata loader doesn't provide error_codes_class
+        """
+        metadata_loader = cls.get_metadata_loader()
+        if hasattr(metadata_loader, "error_codes_class"):
+            return metadata_loader.error_codes_class
+        # Fallback to creating a minimal error codes enum
+        from enum import Enum
+
+        return type("DefaultErrorCodes", (Enum,), {"UNKNOWN": "UNKNOWN_ERROR"})
 
     @classmethod
     def get_node_author(cls) -> str:

@@ -247,7 +247,7 @@ class ModelRestApiConnectionConfig(BaseModel):
             retry_config=ModelRequestRetryConfig(
                 max_retries=self.max_retries if self.max_retries > 0 else 0,
                 retry_delay=1.0,
-                retry_backoff=2.0
+                retry_backoff=2.0,
             ),
         )
 

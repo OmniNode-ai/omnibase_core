@@ -253,7 +253,11 @@ class ModelMissingTool(BaseModel):
     def analyze_error_category(self) -> dict[str, Any]:
         """Analyze the error category and provide insights."""
         return {
-            "category": self.reason_category.value if self.reason_category is not None else "UNKNOWN",
+            "category": (
+                self.reason_category.value
+                if self.reason_category is not None
+                else "UNKNOWN"
+            ),
             "is_recoverable": self._is_recoverable_error(),
             "requires_code_change": self._requires_code_change(),
             "requires_configuration": self._requires_configuration_change(),
@@ -498,9 +502,19 @@ class ModelMissingTool(BaseModel):
         """Get comprehensive metrics for monitoring systems."""
         return {
             "tool_name": self.tool_name,
-            "reason_category": self.reason_category.value if self.reason_category is not None else "UNKNOWN",
-            "criticality": self.criticality.value if self.criticality is not None else "UNKNOWN",
-            "tool_category": self.tool_category.value if self.tool_category is not None else "UNKNOWN",
+            "reason_category": (
+                self.reason_category.value
+                if self.reason_category is not None
+                else "UNKNOWN"
+            ),
+            "criticality": (
+                self.criticality.value if self.criticality is not None else "UNKNOWN"
+            ),
+            "tool_category": (
+                self.tool_category.value
+                if self.tool_category is not None
+                else "UNKNOWN"
+            ),
             "severity_level": self.get_severity_level(),
             "business_impact_score": self.calculate_business_impact_score(),
             "requires_immediate_attention": self.requires_immediate_attention(),
@@ -525,15 +539,27 @@ class ModelMissingTool(BaseModel):
             "tool_details": {
                 "name": self.tool_name,
                 "expected_type": self.expected_type,
-                "category": self.tool_category.value if self.tool_category is not None else "UNKNOWN",
-                "criticality": self.criticality.value if self.criticality is not None else "UNKNOWN",
+                "category": (
+                    self.tool_category.value
+                    if self.tool_category is not None
+                    else "UNKNOWN"
+                ),
+                "criticality": (
+                    self.criticality.value
+                    if self.criticality is not None
+                    else "UNKNOWN"
+                ),
             },
             "impact_assessment": self.assess_operational_impact(),
             "recovery_recommendations": self.get_recovery_recommendations()[
                 :3
             ],  # Top 3
             "metadata": {
-                "reason_category": self.reason_category.value if self.reason_category is not None else "UNKNOWN",
+                "reason_category": (
+                    self.reason_category.value
+                    if self.reason_category is not None
+                    else "UNKNOWN"
+                ),
                 "detection_count": self.detection_count,
                 "first_detected": self.first_detected,
             },

@@ -60,9 +60,12 @@ class MixinDebugDiscoveryLogging:
             )
 
             # Replace with debug version (explicit type for MyPy)
-            from typing import Callable, Any
+            from typing import Any, Callable
+
             debug_handler: Callable[[Any], None] = (
-                lambda envelope_or_event: self._debug_handle_introspection_request(envelope_or_event, node_name)
+                lambda envelope_or_event: self._debug_handle_introspection_request(
+                    envelope_or_event, node_name
+                )
             )
             self._handle_introspection_request = debug_handler  # type: ignore[assignment]  # Dynamic method replacement for debug logging
 

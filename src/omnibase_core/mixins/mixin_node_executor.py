@@ -240,13 +240,21 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_success_response(
                 correlation_id=correlation_id,
-                source_node_id=UUID(self._node_id) if isinstance(self._node_id, str) else self._node_id,
+                source_node_id=(
+                    UUID(self._node_id)
+                    if isinstance(self._node_id, str)
+                    else self._node_id
+                ),
                 source_node_name=self._extract_node_name(),
                 tool_name=event.tool_name,
                 action=event.action,
                 result=self._serialize_result(result),
                 execution_time_ms=execution_time_ms,
-                target_node_id=str(event.requester_node_id) if isinstance(event.requester_node_id, UUID) else event.requester_node_id,
+                target_node_id=(
+                    str(event.requester_node_id)
+                    if isinstance(event.requester_node_id, UUID)
+                    else event.requester_node_id
+                ),
                 requester_id=event.requester_id,
                 execution_priority=event.priority,
             )
@@ -264,14 +272,22 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
-                source_node_id=UUID(self._node_id) if isinstance(self._node_id, str) else self._node_id,
+                source_node_id=(
+                    UUID(self._node_id)
+                    if isinstance(self._node_id, str)
+                    else self._node_id
+                ),
                 source_node_name=self._extract_node_name(),
                 tool_name=event.tool_name,
                 action=event.action,
                 error=str(e),
                 error_code="TOOL_EXECUTION_ERROR",
                 execution_time_ms=execution_time_ms,
-                target_node_id=str(event.requester_node_id) if isinstance(event.requester_node_id, UUID) else event.requester_node_id,
+                target_node_id=(
+                    str(event.requester_node_id)
+                    if isinstance(event.requester_node_id, UUID)
+                    else event.requester_node_id
+                ),
                 requester_id=event.requester_id,
                 execution_priority=event.priority,
             )
@@ -404,14 +420,22 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         if input_state_class:
             # Create input state with action and parameters
             # Convert ModelToolParameters to dict
-            params_dict = event.parameters.get_parameter_dict() if hasattr(event.parameters, 'get_parameter_dict') else {}
+            params_dict = (
+                event.parameters.get_parameter_dict()
+                if hasattr(event.parameters, "get_parameter_dict")
+                else {}
+            )
             state_data = {"action": event.action, **params_dict}
             return input_state_class(**state_data)
         # Fallback to generic state object
         from types import SimpleNamespace
 
         # Convert ModelToolParameters to dict for SimpleNamespace
-        params_dict = event.parameters.get_parameter_dict() if hasattr(event.parameters, 'get_parameter_dict') else {}
+        params_dict = (
+            event.parameters.get_parameter_dict()
+            if hasattr(event.parameters, "get_parameter_dict")
+            else {}
+        )
         return SimpleNamespace(action=event.action, **params_dict)
 
     def _infer_input_state_class(self) -> type | None:
@@ -473,7 +497,11 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Emit a node shutdown event."""
         try:
             shutdown_event = ModelNodeShutdownEvent.create_graceful_shutdown(
-                node_id=UUID(self._node_id) if isinstance(self._node_id, str) else self._node_id,
+                node_id=(
+                    UUID(self._node_id)
+                    if isinstance(self._node_id, str)
+                    else self._node_id
+                ),
                 node_name=self._extract_node_name(),
             )
 
@@ -528,7 +556,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     def _log_info(self, message: str) -> None:
         """Log info message with context."""
-        node_id_raw = getattr(self, "_node_id", UUID("00000000-0000-0000-0000-000000000000"))
+        node_id_raw = getattr(
+            self, "_node_id", UUID("00000000-0000-0000-0000-000000000000")
+        )
         context = ModelLogContext(
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
@@ -540,7 +570,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     def _log_warning(self, message: str) -> None:
         """Log warning message with context."""
-        node_id_raw = getattr(self, "_node_id", UUID("00000000-0000-0000-0000-000000000000"))
+        node_id_raw = getattr(
+            self, "_node_id", UUID("00000000-0000-0000-0000-000000000000")
+        )
         context = ModelLogContext(
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
@@ -552,7 +584,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     def _log_error(self, message: str) -> None:
         """Log error message with context."""
-        node_id_raw = getattr(self, "_node_id", UUID("00000000-0000-0000-0000-000000000000"))
+        node_id_raw = getattr(
+            self, "_node_id", UUID("00000000-0000-0000-0000-000000000000")
+        )
         context = ModelLogContext(
             calling_module=_COMPONENT_NAME,
             calling_function="executor",

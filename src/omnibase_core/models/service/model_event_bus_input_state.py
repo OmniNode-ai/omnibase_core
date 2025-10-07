@@ -401,7 +401,11 @@ class ModelEventBusInputState(BaseModel):
         )
 
         return cls(
-            version=parse_semver_from_string(version) if isinstance(version, str) else version,
+            version=(
+                parse_semver_from_string(version)
+                if isinstance(version, str)
+                else version
+            ),
             input_field=input_field,
             correlation_id=correlation_id_validated,
             event_id=event_id_validated,

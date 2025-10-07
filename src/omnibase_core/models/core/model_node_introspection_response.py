@@ -19,8 +19,8 @@ from omnibase_core.models.core.model_node_introspection_response_config import (
     ModelNodeIntrospectionResponseConfig,
 )
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
-from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_state_models import ModelStates
 
 
 class ModelNodeIntrospectionResponse(BaseModel):

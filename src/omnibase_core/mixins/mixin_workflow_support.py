@@ -28,7 +28,9 @@ class MixinDagSupport:
     - Supporting both Workflow and non-Workflow execution modes
     """
 
-    def __init__(self, event_bus: ProtocolEventBus | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, event_bus: ProtocolEventBus | None = None, **kwargs: Any
+    ) -> None:
         """Initialize Workflow support mixin."""
         super().__init__(**kwargs)
         self._event_bus = event_bus
@@ -109,8 +111,14 @@ class MixinDagSupport:
             event_data["error_message"] = error_message
 
         # Convert IDs to proper types
-        correlation_uuid = UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id
-        node_uuid = UUID(node_id) if isinstance(node_id, str) else (node_id if isinstance(node_id, UUID) else UUID(str(node_id)))
+        correlation_uuid = (
+            UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id
+        )
+        node_uuid = (
+            UUID(node_id)
+            if isinstance(node_id, str)
+            else (node_id if isinstance(node_id, UUID) else UUID(str(node_id)))
+        )
 
         # Create and emit the event
         event = ModelOnexEvent(
@@ -156,8 +164,14 @@ class MixinDagSupport:
         }
 
         # Convert IDs to proper types
-        correlation_uuid = UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id
-        node_uuid = UUID(node_id) if isinstance(node_id, str) else (node_id if isinstance(node_id, UUID) else UUID(str(node_id)))
+        correlation_uuid = (
+            UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id
+        )
+        node_uuid = (
+            UUID(node_id)
+            if isinstance(node_id, str)
+            else (node_id if isinstance(node_id, UUID) else UUID(str(node_id)))
+        )
 
         event = ModelOnexEvent(
             event_type=f"workflow_node_started:{node_id}",
