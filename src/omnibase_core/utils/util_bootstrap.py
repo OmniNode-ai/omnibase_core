@@ -77,7 +77,7 @@ def emit_log_event(
     level: LogLevel,
     event_type: str,
     message: str,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Bootstrap emit_log_event function.
@@ -99,7 +99,7 @@ def emit_log_event_sync(
     level: LogLevel,
     message: str,
     event_type: str = "generic",
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Bootstrap emit_log_event_sync function.

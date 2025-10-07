@@ -39,7 +39,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     def __init__(
         self,
         root: Union[dict[str, Any], "ModelMetadataToolCollection", None] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Initialize with enhanced enterprise features."""
         if root is None:

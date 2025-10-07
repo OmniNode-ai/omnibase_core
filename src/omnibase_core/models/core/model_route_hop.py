@@ -74,7 +74,7 @@ class ModelRouteHop(BaseModel):
         cls,
         node_id: UUID,
         service_name: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRouteHop":
         """Create a source hop (where the event originated)."""
         return cls(
@@ -91,7 +91,7 @@ class ModelRouteHop(BaseModel):
         node_id: UUID,
         routing_decision: str,
         next_hop: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRouteHop":
         """Create a router hop (intermediate routing node)."""
         return cls(
@@ -108,7 +108,7 @@ class ModelRouteHop(BaseModel):
         cls,
         node_id: UUID,
         service_name: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRouteHop":
         """Create a destination hop (final recipient)."""
         return cls(

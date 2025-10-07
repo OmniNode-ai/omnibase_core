@@ -49,7 +49,7 @@
 1. **Self Parameter Issues (136 errors)**
    - `Name "self" is not defined` - decorators/validators
    - `Self argument missing for a non-static method`
-   
+
 2. **Missing Type Annotations (106 errors)**
    - Functions missing parameter type annotations
    - Violates `no-untyped-def` check

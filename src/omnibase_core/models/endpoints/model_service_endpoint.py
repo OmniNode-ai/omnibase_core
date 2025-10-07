@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field, field_validator
-
 """
 Service Endpoint Model for ONEX Configuration-Driven Registry System.
 
@@ -11,7 +7,9 @@ Extracted from model_service_configuration.py for modular architecture complianc
 Author: OmniNode Team
 """
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from typing import Any
+
+from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 
 class ModelServiceEndpoint(BaseModel):
@@ -32,20 +30,21 @@ class ModelServiceEndpoint(BaseModel):
         description="Protocol scheme (extracted from URL if not specified)",
     )
 
-    @field_validator("port", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def extract_port_from_url(cls, v: Any, values: dict[str, Any]) -> Any:
-        """Extract port from URL if not explicitly provided."""
-        if v is None and "url" in values:
-            url = values["url"]
-            return url.port
-        return v
+    def extract_from_url(cls, data: Any) -> Any:
+        """Extract port and protocol from URL if not explicitly provided."""
+        if isinstance(data, dict):
+            # Extract port from URL if not provided
+            if data.get("port") is None and "url" in data:
+                url = data["url"]
+                if hasattr(url, "port") and url.port:
+                    data["port"] = url.port
 
-    @field_validator("protocol", mode="before")
-    @classmethod
-    def extract_protocol_from_url(cls, v: Any, values: dict[str, Any]) -> Any:
-        """Extract protocol from URL if not explicitly provided."""
-        if v is None and "url" in values:
-            url = values["url"]
-            return url.scheme
-        return v
+            # Extract protocol from URL if not provided
+            if data.get("protocol") is None and "url" in data:
+                url = data["url"]
+                if hasattr(url, "scheme"):
+                    data["protocol"] = url.scheme
+
+        return data

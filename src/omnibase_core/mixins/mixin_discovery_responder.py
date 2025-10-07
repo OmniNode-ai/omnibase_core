@@ -18,7 +18,6 @@ from omnibase_core.models.core.model_discovery_request_response import (
 )
 from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
-from omnibase_core.utils.decorators import allow_dict_str_any
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -60,10 +59,11 @@ class MixinDiscoveryResponder:
         }
 
     def start_discovery_responder(
+        self,
         event_bus: ProtocolEventBus,
         logger: ProtocolLogger | None = None,
         response_throttle: float = 1.0,
-    ):
+    ) -> None:
         """
         Start responding to discovery broadcasts.
 
@@ -165,7 +165,7 @@ class MixinDiscoveryResponder:
             pass
 
     def _matches_discovery_criteria(
-        request: ModelDiscoveryRequestModelMetadata,
+        self, request: ModelDiscoveryRequestModelMetadata
     ) -> bool:
         """
         Check if this node matches the discovery criteria.
@@ -196,9 +196,6 @@ class MixinDiscoveryResponder:
 
         return True
 
-    @allow_dict_str_any(
-        "Filter criteria requires flexible dict[str, Any]ionary structure"
-    )
     def _matches_custom_criteria(self, filter_criteria: dict[str, Any]) -> bool:
         """
         Check custom filter criteria.
@@ -206,7 +203,7 @@ class MixinDiscoveryResponder:
         Override this method in subclasses for custom filtering logic.
 
         Args:
-            filter_criteria: Custom filter criteria
+            filter_criteria: Custom filter criteria (dict[str, Any] required for flexible structure)
 
         Returns:
             bool: True if node matches criteria, False otherwise
@@ -215,9 +212,10 @@ class MixinDiscoveryResponder:
         return True
 
     def _send_discovery_response(
+        self,
         original_event: OnexEvent,
         request: ModelDiscoveryRequestModelMetadata,
-    ):
+    ) -> None:
         """
         Send discovery response back to requester.
 
@@ -270,15 +268,12 @@ class MixinDiscoveryResponder:
             # Log error but don't disrupt discovery
             pass
 
-    @allow_dict_str_any(
-        "Introspection data requires flexible dict[str, Any]ionary structure"
-    )
     def _get_discovery_introspection(self) -> dict[str, Any]:
         """
         Get introspection data for discovery response.
 
         Returns:
-            dict[str, Any]: Node introspection data
+            dict[str, Any]: Node introspection data (dict[str, Any] required for flexible structure)
         """
         if hasattr(self, "get_introspection_response"):
             try:
@@ -365,15 +360,12 @@ class MixinDiscoveryResponder:
             "publishes_to": ["onex.discovery.response"],
         }
 
-    @allow_dict_str_any(
-        "Discovery stats require flexible dict[str, Any]ionary structure"
-    )
     def get_discovery_stats(self) -> dict[str, Any]:
         """
         Get discovery responder statistics.
 
         Returns:
-            dict[str, Any]: Discovery statistics
+            dict[str, Any]: Discovery statistics (dict[str, Any] required for flexible structure)
         """
         return {
             **self._discovery_stats,

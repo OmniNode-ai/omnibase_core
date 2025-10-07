@@ -60,7 +60,7 @@ class ModelCliExecutionResult(BaseModel):
         output_data: dict[str, Any] | None = None,
         tool_name: str | None = None,
         execution_time_ms: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelCliExecutionResult":
         """
         Create a successful execution result.
@@ -90,7 +90,7 @@ class ModelCliExecutionResult(BaseModel):
         tool_name: str | None = None,
         status_code: int = 1,
         output_data: dict[str, Any] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelCliExecutionResult":
         """
         Create an error execution result.

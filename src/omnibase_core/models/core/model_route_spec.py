@@ -179,7 +179,7 @@ class ModelRouteSpec(BaseModel):
         cls,
         destination: str,
         hops: list[str],
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRouteSpec":
         """Create an explicit route through specified hops."""
         return cls(

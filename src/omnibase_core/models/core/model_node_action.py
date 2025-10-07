@@ -119,7 +119,7 @@ class ModelNodeAction(ModelActionBase):
         action_name: str,
         display_name: str,
         description: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeAction":
         """Create lifecycle actions like health_check."""
         if action_type.category != LIFECYCLE:
@@ -144,7 +144,7 @@ class ModelNodeAction(ModelActionBase):
         action_name: str,
         display_name: str,
         description: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeAction":
         """Create validation actions."""
         if action_type.category != VALIDATION:
@@ -169,7 +169,7 @@ class ModelNodeAction(ModelActionBase):
         action_name: str,
         display_name: str,
         description: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeAction":
         """Create actions with specific ModelNodeActionType."""
         # Action type already contains all metadata including category

@@ -39,7 +39,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
     def __init__(
         self,
         root: dict[str, Any] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Initialize with enhanced enterprise features.

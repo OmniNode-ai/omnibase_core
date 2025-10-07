@@ -114,7 +114,7 @@ class ModelDiscoveryResponse(BaseModel):
         operation: str,
         tools: list[ModelDiscoveredTool],
         response_time_ms: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for successful discovery responses.
@@ -145,7 +145,7 @@ class ModelDiscoveryResponse(BaseModel):
         operation: str,
         message: str,
         errors: list[str] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for error discovery responses.
@@ -174,7 +174,7 @@ class ModelDiscoveryResponse(BaseModel):
         operation: str,
         timeout_seconds: float,
         partial_tools: list[ModelDiscoveredTool] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for timeout discovery responses.
@@ -209,7 +209,7 @@ class ModelDiscoveryResponse(BaseModel):
         cls,
         client_id: str,
         client_stats: dict[str, str | int | float | bool],
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for client status responses.

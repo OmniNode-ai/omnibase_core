@@ -129,7 +129,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         parameters: ModelToolParameters = None,
         timeout_ms: int = 30000,
         priority: str = "normal",
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolInvocationEvent":
         """
         Factory method for creating tool invocation events.
@@ -171,7 +171,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         action: str,
         parameters: ModelToolParameters = None,
         timeout_ms: int = 10000,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolInvocationEvent":
         """
         Factory method for MCP server tool invocations.
@@ -210,7 +210,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         action: str,
         parameters: ModelToolParameters = None,
         timeout_ms: int = 60000,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolInvocationEvent":
         """
         Factory method for CLI tool invocations.

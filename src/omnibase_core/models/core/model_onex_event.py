@@ -130,7 +130,7 @@ class ModelOnexEvent(BaseModel):
         event_type: str,
         node_id: UUID,
         correlation_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelOnexEvent":
         """
         Factory method for creating core ONEX events.
@@ -158,7 +158,7 @@ class ModelOnexEvent(BaseModel):
         action: str,
         node_id: UUID,
         correlation_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelOnexEvent":
         """
         Factory method for creating user-defined events.
@@ -188,7 +188,7 @@ class ModelOnexEvent(BaseModel):
         action: str,
         node_id: UUID,
         correlation_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelOnexEvent":
         """
         Factory method for creating plugin events.

@@ -57,7 +57,7 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         tags: list[str] | None = None,
         protocols: list[str] | None = None,
         correlation_id=None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolDiscoveryRequest":
         """
         Factory method to create a simple discovery request.
@@ -91,7 +91,7 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         requester_id: str | UUID = "mcp_server",
         node_id: str | UUID = "mcp_server",
         correlation_id=None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolDiscoveryRequest":
         """
         Factory method for MCP server discovery requests.

@@ -59,7 +59,7 @@ class ModelEventType(BaseModel):
         event_name: str,
         namespace: str = "onex",
         description: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventType":
         """
         ONEX-compliant factory method using Pydantic model_validate.

@@ -38,7 +38,7 @@ class ModelCliAction(BaseModel):
         action_name: str,
         node_name: str,
         description: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelCliAction":
         """Factory method for creating actions from contract data."""
         return cls(

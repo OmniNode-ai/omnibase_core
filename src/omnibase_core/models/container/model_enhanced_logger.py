@@ -30,7 +30,7 @@ class ModelEnhancedLogger:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Emit log event synchronously."""
         if level.value >= self.level.value:
@@ -43,7 +43,7 @@ class ModelEnhancedLogger:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Emit log event asynchronously."""
         self.emit_log_event_sync(level, message, event_type, **kwargs)
@@ -53,7 +53,7 @@ class ModelEnhancedLogger:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Emit log event (defaults to sync)."""
         self.emit_log_event_sync(level, message, event_type, **kwargs)

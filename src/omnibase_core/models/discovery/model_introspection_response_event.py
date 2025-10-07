@@ -117,7 +117,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         tools: list[ModelCurrentToolAvailability] | None = None,
         resource_usage: ModelResourceUsage | None = None,
         performance_metrics: ModelPerformanceMetrics | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelIntrospectionResponseEvent":
         """
         Factory method for creating introspection responses.
@@ -161,7 +161,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         version: ModelSemVer,
         capabilities: ModelNodeCapabilities,
         response_time_ms: float,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelIntrospectionResponseEvent":
         """
         Factory method for simple "ready" status responses.
@@ -198,7 +198,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         version: ModelSemVer,
         error_message: str,
         response_time_ms: float,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelIntrospectionResponseEvent":
         """
         Factory method for error responses.

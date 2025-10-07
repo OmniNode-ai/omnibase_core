@@ -32,7 +32,6 @@ This mixin handles:
 """
 
 import atexit
-import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID, uuid4
@@ -50,6 +49,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
+from omnibase_core.utils.parser_semver import parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -63,6 +63,20 @@ def _ensure_uuid(value: UUID | None) -> UUID:
     if value is None:
         return uuid4()
     return value
+
+
+def _get_node_id_as_uuid(obj: Any) -> UUID:
+    """Get node_id as UUID from object, converting if necessary."""
+    node_id = getattr(obj, "_node_id", None)
+    if isinstance(node_id, UUID):
+        return node_id
+    if isinstance(node_id, str):
+        try:
+            return UUID(node_id)
+        except (ValueError, AttributeError):
+            pass
+    # Fallback: generate new UUID if invalid
+    return uuid4()
 
 
 class MixinNodeLifecycle:
@@ -79,7 +93,7 @@ class MixinNodeLifecycle:
         if not event_bus:
             return
 
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id = _get_node_id_as_uuid(self)
 
         # --- Load node metadata block from node.onex.yaml ---
         try:
@@ -122,23 +136,28 @@ class MixinNodeLifecycle:
                 metadata_block=metadata_block,
                 status=getattr(self, "status", EnumNodeStatus.ACTIVE),
                 execution_mode=getattr(
+                    self,
                     "execution_mode",
                     EnumRegistryExecutionMode.MEMORY,
                 ),
                 inputs=getattr(self, "inputs", getattr(metadata_block, "inputs", None)),
                 outputs=getattr(
+                    self,
                     "outputs",
                     getattr(metadata_block, "outputs", None),
                 ),
                 graph_binding=getattr(self, "graph_binding", None),
                 trust_state=getattr(self, "trust_state", None),
                 ttl=getattr(self, "ttl", None),
-                schema_version=getattr(metadata_block, "schema_version", "1.0.0"),
+                schema_version=parse_semver_from_string(
+                    getattr(metadata_block, "schema_version", None) or "1.0.0"
+                ),
                 timestamp=datetime.now(),
                 signature_block=getattr(self, "signature_block", None),
-                node_version=getattr(
-                    "node_version",
-                    getattr(metadata_block, "version", "1.0.0"),
+                node_version=parse_semver_from_string(
+                    getattr(self, "node_version", None)
+                    or getattr(metadata_block, "version", None)
+                    or "1.0.0"
                 ),
                 correlation_id=uuid4(),
             )
@@ -200,7 +219,7 @@ class MixinNodeLifecycle:
         if not event_bus:
             return
 
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id = _get_node_id_as_uuid(self)
 
         try:
             # Create shutdown event
@@ -245,6 +264,7 @@ class MixinNodeLifecycle:
             )
 
     def emit_node_start(
+        self,
         metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
@@ -265,7 +285,7 @@ class MixinNodeLifecycle:
             # Still generate and return correlation ID even if no event bus
             return uuid4() if correlation_id is None else _ensure_uuid(correlation_id)
 
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id = _get_node_id_as_uuid(self)
 
         # Handle correlation ID using UUID architecture pattern
         if correlation_id is None:
@@ -278,7 +298,7 @@ class MixinNodeLifecycle:
                 event_type=create_event_type_from_registry("NODE_START"),
                 node_id=node_id,
                 metadata=metadata,
-                correlation_id=str(final_correlation_id),
+                correlation_id=final_correlation_id,
             )
 
             # Wrap in envelope before publishing
@@ -304,6 +324,7 @@ class MixinNodeLifecycle:
         return final_correlation_id
 
     def emit_node_success(
+        self,
         metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
@@ -324,7 +345,7 @@ class MixinNodeLifecycle:
             # Still generate and return correlation ID even if no event bus
             return uuid4() if correlation_id is None else _ensure_uuid(correlation_id)
 
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id = _get_node_id_as_uuid(self)
 
         # Handle correlation ID using UUID architecture pattern
         if correlation_id is None:
@@ -337,7 +358,7 @@ class MixinNodeLifecycle:
                 event_type=create_event_type_from_registry("NODE_SUCCESS"),
                 node_id=node_id,
                 metadata=metadata,
-                correlation_id=str(final_correlation_id),
+                correlation_id=final_correlation_id,
             )
 
             # Wrap in envelope before publishing
@@ -363,6 +384,7 @@ class MixinNodeLifecycle:
         return final_correlation_id
 
     def emit_node_failure(
+        self,
         metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
@@ -383,7 +405,7 @@ class MixinNodeLifecycle:
             # Still generate and return correlation ID even if no event bus
             return uuid4() if correlation_id is None else _ensure_uuid(correlation_id)
 
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id = _get_node_id_as_uuid(self)
 
         # Handle correlation ID using UUID architecture pattern
         if correlation_id is None:
@@ -396,7 +418,7 @@ class MixinNodeLifecycle:
                 event_type=create_event_type_from_registry("NODE_FAILURE"),
                 node_id=node_id,
                 metadata=metadata,
-                correlation_id=str(final_correlation_id),
+                correlation_id=final_correlation_id,
             )
 
             # Wrap in envelope before publishing
@@ -431,7 +453,7 @@ class MixinNodeLifecycle:
             try:
                 self.cleanup_event_handlers()  # type: ignore
             except Exception as e:
-                node_id = getattr(self, "_node_id", "unknown")
+                node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_lifecycle_resources",

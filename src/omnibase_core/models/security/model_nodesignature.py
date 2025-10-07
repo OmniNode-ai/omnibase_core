@@ -187,7 +187,7 @@ class ModelNodeSignature(BaseModel):
         key_id: str,
         envelope_state_hash: str,
         user_context: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Create a source signature for envelope origination."""
         return cls(
@@ -211,7 +211,7 @@ class ModelNodeSignature(BaseModel):
         hop_index: int,
         previous_signature_hash: str,
         routing_decision: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Create a routing signature for envelope forwarding."""
         if hop_index <= 0:
@@ -242,7 +242,7 @@ class ModelNodeSignature(BaseModel):
         hop_index: int,
         previous_signature_hash: str,
         delivery_status: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Create a destination signature for envelope delivery."""
         if hop_index <= 0:

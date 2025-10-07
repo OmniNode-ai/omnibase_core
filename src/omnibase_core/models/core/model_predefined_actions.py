@@ -24,7 +24,7 @@ def _create_and_register_action(
     category: ModelActionCategory,
     display_name: str,
     description: str,
-    **kwargs,
+    **kwargs: Any,
 ) -> ModelNodeActionType:
     """Helper to create and register action types."""
     action_type = ModelNodeActionType(

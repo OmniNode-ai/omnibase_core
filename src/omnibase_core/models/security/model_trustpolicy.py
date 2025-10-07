@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any, ClassVar, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -233,21 +233,16 @@ class ModelTrustPolicy(BaseModel):
             )
         return v
 
-    @field_validator("expires_at")
-    def validate_expiration_date(
-        self, v: datetime | None, info: dict[str, Any]
-    ) -> datetime | None:
+    @model_validator(mode="after")
+    def validate_expiration_date(self) -> Self:
         """Validate expiration date is after effective date."""
-        if v is not None and "data" in info and isinstance(info["data"], dict):
-            data = info["data"]
-            if "effective_from" in data:
-                effective_from = data["effective_from"]
-                if v <= effective_from:
-                    raise ModelOnexError(
-                        message="Expiration date must be after effective date",
-                        error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
-                    )
-        return v
+        if self.expires_at is not None:
+            if self.expires_at <= self.effective_from:
+                raise ModelOnexError(
+                    message="Expiration date must be after effective date",
+                    error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                )
+        return self
 
     def is_active(self, check_time: datetime | None = None) -> bool:
         """Check if policy is currently active."""

@@ -65,7 +65,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         protocols: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
         tags: list[str] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeIntrospectionEvent":
         """
         Factory method to create introspection event from node information.

@@ -98,7 +98,7 @@ class ModelDiscoveryRequest(BaseModel):
         filters: ModelDiscoveryFilters | None = None,
         timeout_seconds: float = 5.0,
         max_results: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryRequest":
         """
         Factory method for tool discovery requests.
@@ -124,7 +124,7 @@ class ModelDiscoveryRequest(BaseModel):
     def create_status_request(
         cls,
         client_id: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryRequest":
         """
         Factory method for client status requests.
@@ -142,7 +142,7 @@ class ModelDiscoveryRequest(BaseModel):
     def create_close_request(
         cls,
         client_id: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelDiscoveryRequest":
         """
         Factory method for client close requests.

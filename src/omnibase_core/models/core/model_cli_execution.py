@@ -278,7 +278,7 @@ class ModelCliExecution(BaseModel):
         user_id: str | None = None,
         session_id: UUID | None = None,
         parent_execution_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelCliExecution":
         """Create execution for a specific command."""
         return cls(

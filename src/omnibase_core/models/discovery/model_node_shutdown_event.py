@@ -101,7 +101,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         node_name: str,
         uptime_seconds: int | None = None,
         requests_processed: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeShutdownEvent":
         """
         Factory method to create a graceful shutdown event.
@@ -138,7 +138,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         node_name: str,
         error_message: str,
         uptime_seconds: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeShutdownEvent":
         """
         Factory method to create an error shutdown event.
@@ -172,7 +172,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         maintenance_reason: str,
         restart_delay_seconds: int | None = None,
         replacement_node_id: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeShutdownEvent":
         """
         Factory method to create a maintenance shutdown event.
@@ -207,7 +207,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         node_id: UUID,
         node_name: str,
         force_reason: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeShutdownEvent":
         """
         Factory method to create a forced shutdown event.

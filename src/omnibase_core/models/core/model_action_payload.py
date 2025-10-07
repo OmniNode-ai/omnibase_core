@@ -82,7 +82,7 @@ class ModelActionPayload(ModelOnexInputState):
     def create_child_payload(
         self,
         child_action: ModelNodeAction,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelActionPayload":
         """Create child payload for action composition."""
         return ModelActionPayload(

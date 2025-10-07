@@ -150,7 +150,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         target_node_id: str,
         requester_id: str,
         execution_priority: str = "normal",
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolResponseEvent":
         """
         Factory method for creating successful tool response events.
@@ -202,7 +202,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         target_node_id: str,
         requester_id: str,
         execution_priority: str = "normal",
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolResponseEvent":
         """
         Factory method for creating error tool response events.
@@ -253,7 +253,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         timeout_ms: int,
         target_node_id: str,
         requester_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelToolResponseEvent":
         """
         Factory method for creating timeout response events.
