@@ -1,3 +1,5 @@
+from uuid import UUID, uuid4
+
 from pydantic import Field
 
 from omnibase_core.models.core.model_semver import ModelSemVer

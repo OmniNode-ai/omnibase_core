@@ -37,8 +37,8 @@ class ModelEventEnvelope(BaseModel):
     """
 
     # Envelope identification
-    envelope_id: str = Field(
-        default_factory=lambda: str(uuid4()),
+    envelope_id: UUID = Field(
+        default_factory=uuid4,
         description="Unique envelope identifier",
     )
     created_at: datetime = Field(
@@ -62,7 +62,7 @@ class ModelEventEnvelope(BaseModel):
     )
 
     # Envelope metadata
-    source_node_id: str = Field(default=..., description="Original source node ID")
+    source_node_id: UUID = Field(default=..., description="Original source node ID")
     envelope_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Envelope format version",

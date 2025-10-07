@@ -1,6 +1,8 @@
 import fnmatch
 from typing import Any
 
+from uuid import UUID, uuid4
+
 from pydantic import Field
 
 """
@@ -31,7 +33,7 @@ class ModelPermissionScope(BaseModel):
     is valid, including resource hierarchies, time constraints, and conditions.
     """
 
-    scope_id: str = Field(
+    scope_id: UUID = Field(
         default=...,
         description="Unique scope identifier",
         pattern="^[a-z][a-z0-9_-]*$",

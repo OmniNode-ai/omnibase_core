@@ -32,7 +32,7 @@ Contains the result of the tool execution or error information if execution fail
 """
 
 from typing import Any, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -118,11 +118,11 @@ class ModelToolResponseEvent(ModelOnexEvent):
     )
 
     # Response routing
-    target_node_id: str = Field(
+    target_node_id: UUID = Field(
         default=...,
         description="Node ID where response should be delivered",
     )
-    requester_id: str = Field(
+    requester_id: UUID = Field(
         default=...,
         description="Original requester identifier for response handling",
     )

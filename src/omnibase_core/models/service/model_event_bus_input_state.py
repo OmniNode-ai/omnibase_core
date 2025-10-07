@@ -3,7 +3,11 @@ import os
 from datetime import datetime
 from typing import Any, Optional
 
+from uuid import UUID, uuid4
+
 from pydantic import BaseModel, Field, field_validator
+from omnibase_core.models.core.model_semver import ModelSemVer
+
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError

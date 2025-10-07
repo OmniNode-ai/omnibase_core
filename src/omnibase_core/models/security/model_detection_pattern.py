@@ -6,6 +6,8 @@ Configuration for a single detection pattern used in sensitive information detec
 
 from typing import Any
 
+from uuid import UUID, uuid4
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_language_code import EnumLanguageCode
@@ -21,7 +23,7 @@ class ModelDetectionPattern(BaseModel):
     Configuration for a single detection pattern.
     """
 
-    pattern_id: str = Field(description="Unique identifier for this pattern")
+    pattern_id: UUID = Field(description="Unique identifier for this pattern")
     pattern_name: str = Field(description="Human-readable name for this pattern")
     pattern_regex: str | None = Field(
         default=None,
