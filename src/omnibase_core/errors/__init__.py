@@ -15,31 +15,6 @@ from omnibase_core.errors.error_codes import (
     register_error_codes,
 )
 
-# Document freshness errors
-from omnibase_core.errors.error_document_freshness import DocumentFreshnessError
-from omnibase_core.errors.error_document_freshness_ai import DocumentFreshnessAIError
-from omnibase_core.errors.error_document_freshness_analysis import (
-    DocumentFreshnessAnalysisError,
-)
-from omnibase_core.errors.error_document_freshness_change_detection import (
-    DocumentFreshnessChangeDetectionError,
-)
-from omnibase_core.errors.error_document_freshness_database import (
-    ModelDocumentFreshnessDatabaseError,
-)
-from omnibase_core.errors.error_document_freshness_dependency import (
-    DocumentFreshnessDependencyError,
-)
-from omnibase_core.errors.error_document_freshness_path import (
-    DocumentFreshnessPathError,
-)
-from omnibase_core.errors.error_document_freshness_system import (
-    DocumentFreshnessSystemError,
-)
-from omnibase_core.errors.error_document_freshness_validation import (
-    DocumentFreshnessValidationError,
-)
-
 # ModelOnexError is imported via lazy import to avoid circular dependency
 # It's available as: from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -66,16 +41,6 @@ __all__ = [
     "list_registered_components",
     # Registry errors
     "ModelRegistryError",
-    # Document freshness errors
-    "DocumentFreshnessError",
-    "DocumentFreshnessPathError",
-    "ModelDocumentFreshnessDatabaseError",
-    "DocumentFreshnessAnalysisError",
-    "DocumentFreshnessAIError",
-    "DocumentFreshnessDependencyError",
-    "DocumentFreshnessChangeDetectionError",
-    "DocumentFreshnessValidationError",
-    "DocumentFreshnessSystemError",
 ]
 
 

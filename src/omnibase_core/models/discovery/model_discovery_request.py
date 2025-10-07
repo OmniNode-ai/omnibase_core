@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 
 from pydantic import Field
 
@@ -81,7 +82,7 @@ class ModelDiscoveryRequest(BaseModel):
     )
 
     # Request tracking
-    correlation_id: str | None = Field(
+    correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for request tracking",
     )

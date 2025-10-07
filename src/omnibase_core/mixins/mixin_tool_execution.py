@@ -31,21 +31,21 @@ class MixinToolExecution:
     # Type hints for methods expected to be provided by the mixed class
     def get_node_name(self) -> str:
         """Get the node name. Must be implemented by the mixed class."""
-        raise NotImplementedError(
+        raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
-        )  # stub-ok: mixin interface
+        )
 
     def process(self, input_state: Any) -> Any:
         """Process the input state. Must be implemented by the mixed class."""
-        raise NotImplementedError(
+        raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
-        )  # stub-ok: mixin interface
+        )
 
     def _get_input_state_class(self) -> type[Any]:
         """Get the input state class. Must be implemented by the mixed class."""
-        raise NotImplementedError(
+        raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
-        )  # stub-ok: mixin interface
+        )
 
     def handle_tool_execution_request_event(self, envelope: ModelEventEnvelope) -> None:
         """

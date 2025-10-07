@@ -97,7 +97,7 @@ class ModelDiscoveryResponse(BaseModel):
     )
 
     # Request tracking
-    correlation_id: str | None = Field(
+    correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID from the request",
     )

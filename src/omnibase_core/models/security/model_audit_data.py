@@ -1,16 +1,14 @@
+from datetime import datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 """
 ModelAuditData: Audit data representation.
 
 This model provides structured audit data without using Any types.
 """
-
-from datetime import datetime
-
-from pydantic import BaseModel, Field
 
 
 class ModelAuditData(BaseModel):
@@ -20,7 +18,7 @@ class ModelAuditData(BaseModel):
         default_factory=datetime.utcnow,
         description="Audit timestamp",
     )
-    user_id: str | None = Field(default=None, description="User identifier")
+    user_id: UUID | None = Field(default=None, description="User identifier")
     action: str = Field(default=..., description="Action performed")
     resource: str = Field(default=..., description="Resource accessed")
     result: str = Field(default=..., description="Action result")
