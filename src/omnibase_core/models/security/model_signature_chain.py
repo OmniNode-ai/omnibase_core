@@ -379,8 +379,8 @@ class ModelSignatureChain(BaseModel):
         algorithms = {sig.signature_algorithm for sig in self.signatures}
 
         return {
-            "chain_id": self.chain_id,
-            "envelope_id": self.envelope_id,
+            "chain_id": str(self.chain_id),
+            "envelope_id": str(self.envelope_id),
             "signature_count": len(self.signatures),
             "unique_signers": len(self.get_unique_signers()),
             "operations": [op.value for op in operations],
@@ -481,7 +481,7 @@ class ModelSignatureChain(BaseModel):
     def __str__(self) -> str:
         """Human-readable representation."""
         return (
-            f"SignatureChain[{self.chain_id[:8]}] "
+            f"SignatureChain[{str(self.chain_id)[:8]}] "
             f"{len(self.signatures)} signatures, "
             f"status: {self.validation_status.value}"
         )

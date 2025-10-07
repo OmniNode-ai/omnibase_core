@@ -213,39 +213,50 @@ class ModelGenericMetadata(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        # TypedDict only has: name, description, version, tags, metadata
+        # Convert types to match TypedDict expectations
         metadata: TypedDictMetadataDict = TypedDictMetadataDict(
-            metadata_id=self.metadata_id,
-            metadata_display_name=self.metadata_display_name,
-            description=self.description,
-            version=self.version,
+            name=self.metadata_display_name or "",
+            description=self.description or "",
+            version=str(self.version) if self.version else "",
             tags=self.tags,
+            metadata={},  # Will populate below
         )
 
-        # Include custom fields
+        # Include custom fields in the metadata dict
         if self.custom_fields:
             custom_fields_dict: dict[str, object] = {
                 key: cli_value.to_python_value()
                 for key, cli_value in self.custom_fields.items()
             }
-            metadata["custom_fields"] = custom_fields_dict
+            metadata["metadata"]["custom_fields"] = custom_fields_dict  # type: ignore[index]
+
+        # Add metadata_id to metadata dict if present
+        if self.metadata_id:
+            metadata["metadata"]["metadata_id"] = str(self.metadata_id)  # type: ignore[index]
 
         return metadata
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
-            if "metadata_display_name" in metadata:
-                self.metadata_display_name = metadata["metadata_display_name"]
+            # TypedDict has: name, description, version, tags, metadata
+            if "name" in metadata:
+                self.metadata_display_name = metadata["name"]
             if "description" in metadata:
                 self.description = metadata["description"]
             if "tags" in metadata and isinstance(metadata["tags"], list):
                 self.tags = metadata["tags"]
-            if "custom_fields" in metadata:
-                custom_fields = metadata["custom_fields"]
-                if isinstance(custom_fields, dict):
-                    for key, value in custom_fields.items():
-                        if isinstance(value, (str, int, bool, float)):
-                            self.set_field(key, value)
+
+            # Custom fields are in the metadata dict
+            if "metadata" in metadata:
+                meta_dict = metadata["metadata"]
+                if isinstance(meta_dict, dict) and "custom_fields" in meta_dict:
+                    custom_fields = meta_dict["custom_fields"]  # type: ignore[index]
+                    if isinstance(custom_fields, dict):
+                        for key, value in custom_fields.items():
+                            if isinstance(value, (str, int, bool, float)):
+                                self.set_field(key, value)
             return True
         except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False

@@ -78,10 +78,11 @@ class MixinEventHandler:
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    asyncio.create_task(
+                    # Create background tasks (explicitly ignore returned Task objects)
+                    _ = asyncio.create_task(
                         subscribe_async(self._handle_introspection_request),
                     )
-                    asyncio.create_task(
+                    _ = asyncio.create_task(
                         subscribe_async(self._handle_node_discovery_request),
                     )
                 else:

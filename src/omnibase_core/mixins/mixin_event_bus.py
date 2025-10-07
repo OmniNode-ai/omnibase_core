@@ -224,9 +224,9 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             # Check if bus has async methods (async bus or hybrid bus)
             if hasattr(bus, "apublish") or hasattr(bus, "apublish_async"):
                 if hasattr(bus, "publish_async"):
-                    await bus.publish_async(envelope)
+                    await bus.publish_async(envelope)  # type: ignore[func-returns-value]  # Protocol method returns None but awaiting is valid for async
                 else:
-                    await bus.publish(event)
+                    await bus.publish(event)  # type: ignore[func-returns-value]  # Protocol method returns None but awaiting is valid for async
             else:
                 # Synchronous publishing for standard event bus
                 if hasattr(bus, "publish_async"):

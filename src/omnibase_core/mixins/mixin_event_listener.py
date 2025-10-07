@@ -831,7 +831,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         self,
         input_event: ModelOnexEvent,
         output_state: OutputStateT,
-    ):
+    ) -> None:
         """Publish completion event with results."""
         emit_log_event(
             LogLevel.INFO,

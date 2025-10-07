@@ -12,7 +12,6 @@ from omnibase_core.models.core.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 from omnibase_core.models.service.model_retry_strategy import ModelRetryStrategy
 
 

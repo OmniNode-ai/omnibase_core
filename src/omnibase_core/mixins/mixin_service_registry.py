@@ -160,7 +160,7 @@ class MixinServiceRegistry:
         if not hasattr(self, "event_bus") or not self.event_bus:
             return
 
-        correlation_id = str(uuid4())
+        correlation_id = uuid4()
 
         try:
             # Import the required models
@@ -169,7 +169,7 @@ class MixinServiceRegistry:
             # Create the discovery event
             discovery_event = ModelOnexEvent(
                 event_type="core.discovery.realtime_request",
-                node_id=getattr(self, "node_id", f"registry_{uuid4().hex[:8]}"),
+                node_id=getattr(self, "node_id", uuid4()),
                 correlation_id=correlation_id,
                 data={
                     "request_type": "tool_discovery",
@@ -236,18 +236,35 @@ class MixinServiceRegistry:
             # Register or update service
             service_name = event_data.get("node_name", node_id)
 
-            if node_id not in self.service_registry:
+            # Convert node_id to UUID if it's a string, or keep as is if already UUID
+            from uuid import UUID as UUIDType
+            if isinstance(node_id, str):
+                try:
+                    node_id_uuid = UUIDType(node_id)
+                except (ValueError, AttributeError):
+                    # If not a valid UUID string, generate a new UUID
+                    node_id_uuid = uuid4()
+            elif isinstance(node_id, UUID):
+                node_id_uuid = node_id
+            else:
+                # Fallback for any other type
+                node_id_uuid = uuid4()
+
+            # Use string representation for dict key
+            node_id_str = str(node_id_uuid)
+
+            if node_id_str not in self.service_registry:
                 entry = MixinServiceRegistryEntry(
-                    node_id=node_id,
+                    node_id=node_id_uuid,
                     service_name=service_name,
                     metadata=event_data.get("metadata", {}),
                 )
-                self.service_registry[node_id] = entry
+                self.service_registry[node_id_str] = entry
 
                 emit_log_event(
                     LogLevel.INFO,
                     f"New tool discovered: {service_name}",
-                    {"node_id": node_id, "service_name": service_name},
+                    {"node_id": node_id_str, "service_name": service_name},
                 )
 
                 # Send introspection request to get tool capabilities
@@ -261,7 +278,7 @@ class MixinServiceRegistry:
                         logger.exception(f"Discovery callback error: {e}")
             else:
                 # Update existing entry
-                self.service_registry[node_id].update_last_seen()
+                self.service_registry[node_id_str].update_last_seen()
 
         except Exception as e:
             logger.exception(f"❌ Error handling node start event: {e}")
@@ -281,21 +298,25 @@ class MixinServiceRegistry:
                 if hasattr(envelope, "payload")
                 else None
             )
-            if node_id and node_id in self.service_registry:
-                self.service_registry[node_id].set_offline()
+            if node_id:
+                # Ensure node_id is string for dict key
+                node_id_str = str(node_id) if isinstance(node_id, UUID) else str(node_id)
 
-                emit_log_event(
-                    LogLevel.INFO,
-                    f"Tool went offline: {self.service_registry[node_id].service_name}",
-                    {"node_id": node_id},
-                )
+                if node_id_str in self.service_registry:
+                    self.service_registry[node_id_str].set_offline()
 
-                # Call discovery callbacks
-                for callback in self.discovery_callbacks:
-                    try:
-                        callback("tool_offline", self.service_registry[node_id])
-                    except Exception as e:
-                        logger.exception(f"Discovery callback error: {e}")
+                    emit_log_event(
+                        LogLevel.INFO,
+                        f"Tool went offline: {self.service_registry[node_id_str].service_name}",
+                        {"node_id": node_id_str},
+                    )
+
+                    # Call discovery callbacks
+                    for callback in self.discovery_callbacks:
+                        try:
+                            callback("tool_offline", self.service_registry[node_id_str])
+                        except Exception as e:
+                            logger.exception(f"Discovery callback error: {e}")
 
         except Exception as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
@@ -305,21 +326,21 @@ class MixinServiceRegistry:
         # Same logic as stop for now
         self._handle_node_stop(envelope)
 
-    def _send_introspection_request(self, node_id: UUID) -> None:
+    def _send_introspection_request(self, node_id: UUID | str) -> None:
         """Send introspection request to a specific node."""
         if not hasattr(self, "event_bus") or not self.event_bus:
             return
 
-        correlation_id = str(uuid4())
+        correlation_id = uuid4()
 
         try:
             # Create the introspection event
             introspection_event = ModelOnexEvent(
                 event_type="core.discovery.node_introspection",
-                node_id=getattr(self, "node_id", f"registry_{uuid4().hex[:8]}"),
+                node_id=getattr(self, "node_id", uuid4()),
                 correlation_id=correlation_id,
                 data={
-                    "target_node_id": node_id,
+                    "target_node_id": str(node_id),
                     "requested_info": ["capabilities", "metadata", "health_status"],
                 },
             )
@@ -351,26 +372,30 @@ class MixinServiceRegistry:
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
             node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
-            if node_id and node_id in self.service_registry:
-                introspection_data = (
-                    envelope.payload.data
-                    if hasattr(envelope, "payload")
-                    and hasattr(envelope.payload, "data")
-                    else {}
-                )
-                introspection_data = introspection_data if introspection_data is not None else {}
-                self.service_registry[node_id].update_introspection(introspection_data)
+            if node_id:
+                # Ensure node_id is string for dict key
+                node_id_str = str(node_id) if isinstance(node_id, UUID) else str(node_id)
 
-                emit_log_event(
-                    LogLevel.DEBUG,
-                    f"Updated introspection data for {node_id}",
-                    {
-                        "node_id": node_id,
-                        "capabilities_count": len(
-                            introspection_data.get("capabilities", []),
-                        ),
-                    },
-                )
+                if node_id_str in self.service_registry:
+                    introspection_data = (
+                        envelope.payload.data
+                        if hasattr(envelope, "payload")
+                        and hasattr(envelope.payload, "data")
+                        else {}
+                    )
+                    introspection_data = introspection_data if introspection_data is not None else {}
+                    self.service_registry[node_id_str].update_introspection(introspection_data)
+
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"Updated introspection data for {node_id_str}",
+                        {
+                            "node_id": node_id_str,
+                            "capabilities_count": len(
+                                introspection_data.get("capabilities", []),
+                            ),
+                        },
+                    )
 
         except Exception as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
@@ -428,7 +453,7 @@ class MixinServiceRegistry:
 
                     response_event = ModelOnexEvent(
                         event_type="core.discovery.response",
-                        node_id=getattr(self, "node_id", f"registry_{uuid4().hex[:8]}"),
+                        node_id=getattr(self, "node_id", uuid4()),
                         correlation_id=correlation_id,
                         data=response_data,
                     )

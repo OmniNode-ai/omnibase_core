@@ -96,7 +96,7 @@ class ModelNamespace(BaseModel):
     def __str__(self) -> str:
         return self.value
 
-    def model_dump(self, *args: Any, **kwargs: Any) -> str:
+    def model_dump(self, *args: Any, **kwargs: Any) -> str:  # type: ignore[override]  # Returns str instead of dict for namespace string serialization
         # Always dump as a string for YAML/JSON
         return self.value
 

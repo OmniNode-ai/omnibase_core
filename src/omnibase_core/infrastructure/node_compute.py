@@ -1014,7 +1014,7 @@ class NodeCompute(NodeCoreBase):
             "parallel_algorithm_support": True,
         }
 
-    def _get_computation_metrics_sync(self) -> dict[str, float]:
+    def _get_computation_metrics_sync(self) -> dict[str, float | dict[str, float] | str]:
         """Get computation metrics synchronously for introspection."""
         try:
             # Add cache statistics

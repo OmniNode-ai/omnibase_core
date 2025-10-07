@@ -3,9 +3,9 @@
 ONEX discriminated union types for effect result patterns.
 """
 
-from typing import Any, Union
+from typing import Annotated, Any, Union
 
-from pydantic import Annotated, Discriminator, Field
+from pydantic import Discriminator, Field
 
 from omnibase_core.models.operations.model_effect_result_bool import (
     ModelEffectResultBool,

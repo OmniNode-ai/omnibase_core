@@ -283,17 +283,23 @@ class MixinIntrospectionPublisher:
                 loader_metadata = getattr(metadata_loader, "metadata", None)
                 if loader_metadata:
                     if hasattr(loader_metadata, "description") and getattr(
+                        loader_metadata,
                         "description",
+                        None,
                     ):
                         capabilities.metadata["description"] = str(
                             loader_metadata.description,
                         )
                     if hasattr(loader_metadata, "author") and getattr(
+                        loader_metadata,
                         "author",
+                        None,
                     ):
                         capabilities.metadata["author"] = str(loader_metadata.author)
                     if hasattr(loader_metadata, "copyright") and getattr(
+                        loader_metadata,
                         "copyright",
+                        None,
                     ):
                         capabilities.metadata["copyright"] = str(
                             loader_metadata.copyright,
@@ -397,7 +403,9 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "supports_mcp") and getattr(self, "supports_mcp", False):
                 tags.append("mcp")
             if hasattr(self, "supports_graphql") and getattr(
+                self,
                 "supports_graphql",
+                False,
             ):
                 tags.append("graphql")
         except Exception:
@@ -427,9 +435,18 @@ class MixinIntrospectionPublisher:
         # Create envelope for the event
         from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 
+        # Convert node_id to string for envelope
+        source_node_id_str: str
+        if isinstance(node_id, str):
+            source_node_id_str = node_id
+        elif isinstance(node_id, UUID):
+            source_node_id_str = str(node_id)
+        else:
+            source_node_id_str = "unknown"
+
         envelope = ModelEventEnvelope.create_broadcast(
             payload=event,
-            source_node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            source_node_id=source_node_id_str,
             correlation_id=event.correlation_id,
         )
 

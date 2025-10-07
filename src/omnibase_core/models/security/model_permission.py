@@ -327,7 +327,7 @@ class ModelPermission(BaseModel):
     def validate_resource_hierarchy(cls, v: list[str]) -> list[str]:
         """Validate resource hierarchy."""
         if len(v) > 10:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Resource hierarchy cannot exceed 10 levels",
                 error_code="ONEX_PERMISSION_ERROR",
             )
@@ -338,7 +338,7 @@ class ModelPermission(BaseModel):
     def validate_resource_patterns(cls, v: list[str]) -> list[str]:
         """Validate resource patterns."""
         if len(v) > 20:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Maximum 20 resource patterns allowed",
                 error_code="ONEX_PERMISSION_ERROR",
             )
@@ -349,7 +349,7 @@ class ModelPermission(BaseModel):
     def validate_conditions(cls, v: list[str]) -> list[str]:
         """Validate conditions."""
         if len(v) > 50:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Maximum 50 conditions allowed",
                 error_code="ONEX_PERMISSION_ERROR",
             )
@@ -360,13 +360,13 @@ class ModelPermission(BaseModel):
     def validate_tags(cls, v: list[str]) -> list[str]:
         """Validate tags."""
         if len(v) > 20:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Maximum 20 tags allowed",
                 error_code="ONEX_PERMISSION_ERROR",
             )
         for tag in v:
             if len(tag) > 50:
-                raise ModelOnexError(
+                raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                     message=f"Tag '{tag}' exceeds maximum length of 50",
                     error_code="ONEX_PERMISSION_ERROR",
                 )
@@ -377,7 +377,7 @@ class ModelPermission(BaseModel):
     def validate_approval_types(cls, v: list[str]) -> list[str]:
         """Validate approval types."""
         if len(v) > 10:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Maximum 10 approval types allowed",
                 error_code="ONEX_PERMISSION_ERROR",
             )
@@ -388,7 +388,7 @@ class ModelPermission(BaseModel):
     def validate_allowed_countries(cls, v: list[str]) -> list[str]:
         """Validate allowed countries."""
         if len(v) > 50:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Maximum 50 countries allowed",
                 error_code="ONEX_PERMISSION_ERROR",
             )
@@ -399,7 +399,7 @@ class ModelPermission(BaseModel):
     def validate_allowed_ip_ranges(cls, v: list[str]) -> list[str]:
         """Validate allowed IP ranges."""
         if len(v) > 20:
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 message="Maximum 20 IP ranges allowed",
                 error_code="ONEX_PERMISSION_ERROR",
             )

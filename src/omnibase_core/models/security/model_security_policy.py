@@ -127,7 +127,9 @@ class ModelSecurityPolicy(BaseModel):
     @classmethod
     def from_dict(cls, data: ModelSecurityPolicyData) -> "ModelSecurityPolicy":
         """Create from data container for easy migration."""
-        return cls(**data.typed_data)
+        # Convert ModelTypedMapping to dict for ** unpacking
+        data_dict = data.typed_data.to_python_dict()
+        return cls(**data_dict)
 
     @field_serializer("created_at", "updated_at", "valid_from", "valid_until")
     def serialize_datetime(self, value: Any) -> Any:

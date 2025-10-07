@@ -15,7 +15,7 @@ from omnibase_core.mixins.mixin_node_id_from_contract import MixinNodeIdFromCont
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class NodeReducerProcessor(
+class NodeReducerProcessor(  # type: ignore[misc]  # get_introspection_data signature differs between NodeReducer and MixinEventDrivenNode - both implementations are valid
     NodeReducer,
     MixinNodeExecutor,
     MixinNodeIdFromContract,

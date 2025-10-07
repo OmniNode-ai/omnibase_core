@@ -298,7 +298,7 @@ class ModelOnexSecurityContext(BaseModel):
         """Create sanitized version for logging (removes sensitive data)."""
         return {
             "user_id": self.user_id or "anonymous",
-            "session_id": self.session_id[:8] + "..." if self.session_id else None,
+            "session_id": str(self.session_id)[:8] + "..." if self.session_id else None,
             "authentication_method": self.authentication_method,
             "security_profile": self.security_profile,
             "data_classification": self.data_classification,

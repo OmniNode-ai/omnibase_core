@@ -56,9 +56,14 @@ from omnibase_core.models.core.model_node_introspection_response import (
     ModelNodeIntrospectionResponse,
 )
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.core.model_performance_profile_info import (
+    ModelPerformanceProfileInfo,
+)
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.core.model_state import ModelState
 from omnibase_core.models.core.model_state_field import ModelStateField
 from omnibase_core.models.core.model_state_models import ModelStates
+from omnibase_core.models.core.model_version_status import ModelVersionStatus
 
 
 class MixinNodeIntrospection(ABC):
@@ -296,33 +301,39 @@ class MixinNodeIntrospection(ABC):
         # Get version information from resolver
         # TODO: Implement global_resolver for version information
         # version_info = global_resolver.get_version_info(node_name)
-        version_info = {
+        version_info: dict[str, Any] = {
             "available_versions": [],
             "latest_version": None,
             "total_versions": 0,
-            "version_status": {},
+            "version_status": None,
         }
 
         # Create enhanced node metadata with version information
         node_metadata = ModelNodeMetadataInfo(
             name=node_name,
-            version=cls.get_node_version(),
+            version=parse_semver_from_string(cls.get_node_version()),
             description=cls.get_node_description(),
             author=cls.get_node_author(),
-            schema_version=cls.get_schema_version(),
+            schema_version=parse_semver_from_string(cls.get_schema_version()),
             created_at=None,  # Could be extracted from metadata if available
             last_modified_at=None,  # Could be extracted from metadata if available
             # Enhanced version information
             available_versions=version_info.get("available_versions", []),
-            latest_version=version_info.get("latest_version"),
+            latest_version=(
+                parse_semver_from_string(version_info["latest_version"])
+                if version_info.get("latest_version")
+                else None
+            ),
             total_versions=version_info.get("total_versions", 0),
-            version_status=version_info.get("version_status", {}),
+            version_status=version_info.get("version_status"),
             # Ecosystem information
             category=cls._get_node_category(),
             tags=cls._get_node_tags(),
             maturity=cls._get_node_maturity(),
             use_cases=cls._get_node_use_cases(),
-            performance_profile=cls._get_performance_profile(),
+            performance_profile=ModelPerformanceProfileInfo(
+                **cls._get_performance_profile()
+            ),
         )
 
         # Create contract model
@@ -336,7 +347,7 @@ class MixinNodeIntrospection(ABC):
                 exit_codes=cls.get_cli_exit_codes(),
                 supports_introspect=True,
             ),
-            protocol_version=cls.get_protocol_version(),
+            protocol_version=parse_semver_from_string(cls.get_protocol_version()),
         )
 
         # Create state models
@@ -346,13 +357,13 @@ class MixinNodeIntrospection(ABC):
         state_models = ModelStates(
             input=ModelState(
                 class_name=input_class.__name__,
-                schema_version=cls.get_schema_version(),
+                schema_version=parse_semver_from_string(cls.get_schema_version()),
                 fields=cls._extract_state_model_fields(input_class),
                 schema_file=f"{node_name}_input.schema.json",
             ),
             output=ModelState(
                 class_name=output_class.__name__,
-                schema_version=cls.get_schema_version(),
+                schema_version=parse_semver_from_string(cls.get_schema_version()),
                 fields=cls._extract_state_model_fields(output_class),
                 schema_file=f"{node_name}_output.schema.json",
             ),

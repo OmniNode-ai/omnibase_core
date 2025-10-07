@@ -5,7 +5,7 @@
 
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from omnibase_spi import ProtocolLogger
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
@@ -21,6 +21,7 @@ from omnibase_core.models.core.model_event_type import (
     is_event_equal,
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -133,35 +134,41 @@ class MixinDiscoveryResponder:
             envelope: Event envelope containing the discovery request
         """
         try:
-            # Extract event from envelope
+            # Extract event from envelope and cast to OnexEvent for type safety
             event = envelope.payload if hasattr(envelope, "payload") else envelope
+            # Type cast for mypy - event is ModelOnexEvent after extraction
+            onex_event = cast(OnexEvent, event)
 
-            if not hasattr(event, "event_type") or not is_event_equal(event.event_type, "DISCOVERY_REQUEST"):
+            if not hasattr(onex_event, "event_type") or not is_event_equal(onex_event.event_type, "DISCOVERY_REQUEST"):
                 return  # Not a discovery request
 
-            self._discovery_stats["requests_received"] = self._discovery_stats.get("requests_received", 0) + 1
+            # Type-safe increment (get returns int|float|None, but default ensures int)
+            current_requests = self._discovery_stats.get("requests_received", 0)
+            self._discovery_stats["requests_received"] = (current_requests if isinstance(current_requests, int) else 0) + 1
             self._discovery_stats["last_request_time"] = time.time()
 
             # Check rate limiting
             current_time = time.time()
             if current_time - self._last_response_time < self._response_throttle:
-                self._discovery_stats["throttled_requests"] = self._discovery_stats.get("throttled_requests", 0) + 1
+                current_throttled = self._discovery_stats.get("throttled_requests", 0)
+                self._discovery_stats["throttled_requests"] = (current_throttled if isinstance(current_throttled, int) else 0) + 1
                 return  # Throttled
 
             # Extract request metadata
-            request_metadata = event.metadata
+            request_metadata = onex_event.metadata
             if not isinstance(request_metadata, ModelDiscoveryRequestModelMetadata):
                 return  # Invalid request format
 
             # Check if we match filter criteria
-            if not self._matches_discovery_criteria(request_metadata):
+            if not self._matches_discovery_criteria(request_metadata):  # type: ignore[unreachable]
                 return  # Doesn't match criteria
 
             # Generate discovery response
-            self._send_discovery_response(event, request_metadata)
+            self._send_discovery_response(onex_event, request_metadata)
 
             self._last_response_time = current_time
-            self._discovery_stats["responses_sent"] = self._discovery_stats.get("responses_sent", 0) + 1
+            current_responses = self._discovery_stats.get("responses_sent", 0)
+            self._discovery_stats["responses_sent"] = (current_responses if isinstance(current_responses, int) else 0) + 1
 
         except Exception:
             # Silently handle errors to avoid disrupting discovery
@@ -233,23 +240,62 @@ class MixinDiscoveryResponder:
             introspection_data = self._get_discovery_introspection()
 
             # Create discovery response
+            # Get node_id as UUID or generate a temporary one
+            from uuid import UUID, uuid4
+            node_id_value: UUID
+            if hasattr(self, "node_id"):
+                node_id_attr = getattr(self, "node_id")
+                if isinstance(node_id_attr, UUID):
+                    node_id_value = node_id_attr
+                elif isinstance(node_id_attr, str):
+                    node_id_value = UUID(node_id_attr)
+                else:
+                    node_id_value = uuid4()
+            else:
+                node_id_value = uuid4()
+
+            # Get version as ModelSemVer
+            version_value = self._get_node_version()
+            if version_value is None:
+                version_semver = ModelSemVer(major=0, minor=0, patch=0)
+            else:
+                # Parse version string like "1.2.3"
+                parts = version_value.split(".")
+                try:
+                    major = int(parts[0]) if len(parts) > 0 else 0
+                    minor = int(parts[1]) if len(parts) > 1 else 0
+                    patch = int(parts[2]) if len(parts) > 2 else 0
+                    version_semver = ModelSemVer(major=major, minor=minor, patch=patch)
+                except (ValueError, IndexError):
+                    version_semver = ModelSemVer(major=0, minor=0, patch=0)
+
+            # Get event channels as list
+            channels_dict = self._get_discovery_event_channels()
+            # Flatten the dict to a list of channel names
+            event_channels_list: list[str] = []
+            if channels_dict:
+                for key, values in channels_dict.items():
+                    if isinstance(values, list):
+                        event_channels_list.extend(values)
+
             response_metadata = ModelDiscoveryResponseModelMetadata(
                 request_id=request.request_id,
-                node_id=getattr(self, "node_id", "unknown"),
+                node_id=node_id_value,
                 introspection=introspection_data,
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
                 node_type=self.__class__.__name__,
-                version=self._get_node_version(),
-                event_channels=self._get_discovery_event_channels(),
+                version=version_semver,
+                event_channels=event_channels_list,
                 response_time_ms=(time.time() - response_start) * 1000,
             )
 
+            # Use data field for discovery metadata instead of metadata field
             response_event = OnexEvent(
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
-                node_id=getattr(self, "node_id", "unknown"),
+                node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                metadata=response_metadata,
+                data=response_metadata.model_dump(),
             )
 
             # Publish response (assuming we have access to event bus)

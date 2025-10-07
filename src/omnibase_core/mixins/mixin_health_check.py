@@ -75,7 +75,7 @@ class MixinHealthCheck:
             {"mixin_class": self.__class__.__name__},
         )
 
-    def get_health_checks() -> (
+    def get_health_checks(self) -> (
         list[
             Callable[[], Union[ModelHealthStatus, "asyncio.Future[ModelHealthStatus]"]]
         ]
@@ -358,6 +358,7 @@ class MixinHealthCheck:
         )
 
     def check_dependency_health(
+        self,
         dependency_name: str,
         check_func: Callable[[], bool],
     ) -> ModelHealthStatus:

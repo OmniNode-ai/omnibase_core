@@ -672,8 +672,11 @@ class MixinRequestResponseIntrospection:
             ModelIntrospectionAdditionalInfo with additional information
         """
         # Create the additional info model
+        # Convert startup_time from float timestamp to datetime
+        from datetime import datetime, timezone
+        startup_datetime = datetime.fromtimestamp(self._startup_time, tz=timezone.utc)
         additional_info = ModelIntrospectionAdditionalInfo(
-            startup_time=self._startup_time,
+            startup_time=startup_datetime,
         )
 
         # Add any node-specific information

@@ -92,6 +92,8 @@ class MixinFailFast:
                     function=func.__name__,
                     traceback=traceback.format_exc(),
                 )
+                # _handle_critical_error calls sys.exit(), but MyPy doesn't know that
+                raise FailFastError(f"Critical error in {func.__name__}: {e!s}") from e
 
         return wrapper
 
@@ -117,6 +119,7 @@ class MixinFailFast:
         return value
 
     def validate_not_empty(
+        self,
         value: Any,
         field_name: str,
     ) -> Any:
@@ -141,6 +144,7 @@ class MixinFailFast:
         return value
 
     def validate_type(
+        self,
         value: object,
         expected_type: type,
         field_name: str,
@@ -237,6 +241,7 @@ class MixinFailFast:
         return value
 
     def require_dependency(
+        self,
         dependency_name: str,
         check_func: Callable[[], bool],
     ) -> None:
@@ -263,6 +268,7 @@ class MixinFailFast:
             )
 
     def enforce_contract(
+        self,
         condition: bool,
         message: str,
         contract_field: str,
@@ -280,7 +286,7 @@ class MixinFailFast:
         """
         if not condition:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
                 message=message,
             )
 

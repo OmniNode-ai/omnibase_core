@@ -270,7 +270,7 @@ class NodeEffect(NodeCoreBase):
                     caller_self = frame.f_locals["self"]
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
-                        if module and hasattr(module, "__file__"):
+                        if module and hasattr(module, "__file__") and module.__file__:
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
@@ -400,6 +400,10 @@ class NodeEffect(NodeCoreBase):
 
             # Create transaction if enabled
             if input_data.transaction_enabled:
+                # Ensure operation_id is not None for transaction
+                if input_data.operation_id is None:
+                    from uuid import uuid4
+                    input_data.operation_id = uuid4()
                 transaction = ModelTransaction(input_data.operation_id)
                 transaction.state = EnumTransactionState.ACTIVE
                 self.active_transactions[str(input_data.operation_id)] = transaction
@@ -966,8 +970,9 @@ class NodeEffect(NodeCoreBase):
             correlation_id = operation_data.get("correlation_id")
 
             try:
-                # Get event bus from container
-                event_bus: Any = self.container.get_service("event_bus")
+                # Get event bus from container - access via attribute instead of get_service
+                # since get_service requires a protocol type, not a string
+                event_bus: Any = getattr(self.container, 'event_bus', None)
                 if not event_bus:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -1005,7 +1010,7 @@ class NodeEffect(NodeCoreBase):
         self.effect_handlers[EnumEffectType.FILE_OPERATION] = file_operation_handler
         self.effect_handlers[EnumEffectType.EVENT_EMISSION] = event_emission_handler
 
-    def get_introspection_data(self) -> dict[str, Any]:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get comprehensive introspection data for NodeEffect.
 

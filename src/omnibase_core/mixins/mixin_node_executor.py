@@ -403,12 +403,16 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
         if input_state_class:
             # Create input state with action and parameters
-            state_data = {"action": event.action, **event.parameters}
+            # Convert ModelToolParameters to dict
+            params_dict = event.parameters.get_parameter_dict() if hasattr(event.parameters, 'get_parameter_dict') else {}
+            state_data = {"action": event.action, **params_dict}
             return input_state_class(**state_data)
         # Fallback to generic state object
         from types import SimpleNamespace
 
-        return SimpleNamespace(action=event.action, **event.parameters)
+        # Convert ModelToolParameters to dict for SimpleNamespace
+        params_dict = event.parameters.get_parameter_dict() if hasattr(event.parameters, 'get_parameter_dict') else {}
+        return SimpleNamespace(action=event.action, **params_dict)
 
     def _infer_input_state_class(self) -> type | None:
         """Attempt to infer the input state class for this node."""

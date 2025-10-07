@@ -56,13 +56,15 @@ class MixinDebugDiscoveryLogging:
         if hasattr(self, "_handle_introspection_request"):
             # Store original handler
             self._original_handle_introspection_request = (
-                self._handle_introspection_request
+                self._handle_introspection_request  # type: ignore[has-type]  # Dynamic attribute access for debug wrapper
             )
 
-            # Replace with debug version
-            self._handle_introspection_request = (
+            # Replace with debug version (explicit type for MyPy)
+            from typing import Callable, Any
+            debug_handler: Callable[[Any], None] = (
                 lambda envelope_or_event: self._debug_handle_introspection_request(envelope_or_event, node_name)
             )
+            self._handle_introspection_request = debug_handler  # type: ignore[assignment]  # Dynamic method replacement for debug logging
 
             emit_log_event(
                 LogLevel.DEBUG,

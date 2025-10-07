@@ -290,9 +290,9 @@ class ModelTrustPolicy(BaseModel):
             required_algorithms=[],
             trusted_nodes=self.globally_trusted_nodes.copy(),
             compliance_tags=[],
-            trust_level=self.default_trust_level,
+            trust_level=ModelTrustLevel(level=self.default_trust_level),
             encryption_required=self.encryption_requirement != "none",
-            certificate_validation=self.certificate_validation,
+            certificate_validation=ModelCertificateValidationLevel(level=self.certificate_validation),
             applicable_rules=[rule.rule_id for rule in applicable_rules],
         )
 
@@ -363,7 +363,7 @@ class ModelTrustPolicy(BaseModel):
             severity = ModelPolicySeverity(level="info")
 
         return ModelPolicyValidationResult(
-            policy_id=self.policy_id,
+            policy_id=str(self.policy_id),
             policy_version=self.version,
             status=status,
             severity=severity,
@@ -384,10 +384,12 @@ class ModelTrustPolicy(BaseModel):
                 operation_type=None,
                 security_level=None,
                 environment=None,
-                operation_type_condition=ModelRuleConditionValue(
-                    **{"$in": ["high_security"]}
+                operation_type_condition=ModelRuleConditionValue.model_validate(
+                    {"$in": ["high_security"]}
                 ),
-                security_level_condition=ModelRuleConditionValue(**{"$gte": 3}),
+                security_level_condition=ModelRuleConditionValue.model_validate(
+                    {"$gte": 3}
+                ),
                 source_node_id=None,
                 destination=None,
                 hop_count=None,

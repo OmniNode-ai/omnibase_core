@@ -8,7 +8,8 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_monitoring_thresholds import (
     ModelMonitoringThresholds,
 )
@@ -146,14 +147,14 @@ class ModelPriorityMetadata(BaseModel):
         if len(v) > 20:
             raise ModelOnexError(
                 message="Maximum 20 tags allowed",
-                error_code="ONEX_PRIORITY_METADATA_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
 
         for tag in v:
             if len(tag) > 50:
                 raise ModelOnexError(
                     message=f"Tag '{tag}' exceeds maximum length of 50",
-                    error_code="ONEX_PRIORITY_METADATA_ERROR",
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
 
         return v
@@ -165,7 +166,7 @@ class ModelPriorityMetadata(BaseModel):
         if len(v) > 1000:
             raise ModelOnexError(
                 message="Maximum 1000 approved users allowed",
-                error_code="ONEX_PRIORITY_METADATA_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return v
 
@@ -176,7 +177,7 @@ class ModelPriorityMetadata(BaseModel):
         if len(v) > 100:
             raise ModelOnexError(
                 message="Maximum 100 approved groups allowed",
-                error_code="ONEX_PRIORITY_METADATA_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return v
 
@@ -226,7 +227,7 @@ class ModelPriorityMetadata(BaseModel):
             if len(self.tags) >= 20:
                 raise ModelOnexError(
                     message="Maximum 20 tags allowed",
-                    error_code="ONEX_PRIORITY_METADATA_ERROR",
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             self.tags.append(tag)
             self.update_last_modified()

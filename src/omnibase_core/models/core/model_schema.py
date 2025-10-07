@@ -497,9 +497,13 @@ class ModelSchema(BaseModel):
             )
 
         # Create the unified schema
+        # Parse semver if string, then convert back to string for schema_version field
+        parsed_version = parse_semver_from_string(schema_version) if isinstance(schema_version, str) else schema_version
+        version_str = str(parsed_version) if hasattr(parsed_version, '__str__') else schema_version
+
         return cls(
             type=data.get("type", "object"),
-            schema_version=parse_semver_from_string(schema_version) if isinstance(schema_version, str) else schema_version,
+            schema_version=version_str if isinstance(version_str, str) else "draft-07",
             title=data.get("title"),
             description=data.get("description"),
             **{"$ref": data.get("$ref")} if data.get("$ref") else {},

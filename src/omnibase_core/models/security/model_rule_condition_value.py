@@ -3,11 +3,13 @@
 Value structure for rule conditions supporting various comparison types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelRuleConditionValue(BaseModel):
     """Value structure for rule conditions supporting various comparison types."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     # Comparison operators
     in_values: list[str] | None = Field(

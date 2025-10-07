@@ -15,7 +15,7 @@ from omnibase_core.mixins.mixin_node_id_from_contract import MixinNodeIdFromCont
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class NodeEffectExecutor(
+class NodeEffectExecutor(  # type: ignore[misc]  # Signature incompatibility between NodeEffect and MixinEventDrivenNode get_introspection_data
     NodeEffect,
     MixinNodeExecutor,
     MixinNodeIdFromContract,

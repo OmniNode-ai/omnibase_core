@@ -3,7 +3,6 @@ Service domain models for ONEX.
 """
 
 from .model_custom_field_definition import *
-from .model_custom_fields import *
 from .model_error_details import *
 from .model_event_bus_bootstrap_result import *
 from .model_event_bus_config import *

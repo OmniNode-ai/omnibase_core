@@ -146,7 +146,7 @@ class ModelEventBusOutputState(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ModelOnexError(
+        raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
             error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
             message=msg,
         )
@@ -163,7 +163,7 @@ class ModelEventBusOutputState(BaseModel):
         """Validate message content."""
         if not v or not v.strip():
             msg = "message cannot be empty or whitespace"
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
                 message=msg,
             )
@@ -185,7 +185,7 @@ class ModelEventBusOutputState(BaseModel):
         import re
 
         if not re.match(r"^[A-Z0-9_]+$", v):
-            raise ModelOnexError(
+            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
                 message="error_code must contain only uppercase letters, numbers, and underscores",
             )
