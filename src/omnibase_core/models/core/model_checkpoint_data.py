@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_checkpoint_status import EnumCheckpointStatus
 from omnibase_core.enums.enum_checkpoint_type import EnumCheckpointType
 from omnibase_core.models.core.model_checkpoint_data_config import ModelConfig
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelCheckpointData(BaseModel):

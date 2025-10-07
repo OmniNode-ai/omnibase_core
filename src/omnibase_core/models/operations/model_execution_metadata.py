@@ -27,7 +27,7 @@ from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
 from omnibase_core.errors.error_codes import (
     EnumCoreErrorCode,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelExecutionMetadata(BaseModel):

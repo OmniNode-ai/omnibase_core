@@ -33,7 +33,7 @@ from omnibase_core.errors.error_codes import (
 )
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 # Type variable for configuration data - using Any to avoid Pydantic schema generation issues
 T = TypeVar("T")

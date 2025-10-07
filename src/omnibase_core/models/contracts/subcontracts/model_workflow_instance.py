@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType

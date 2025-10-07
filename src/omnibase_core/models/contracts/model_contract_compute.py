@@ -39,7 +39,7 @@ from omnibase_core.models.contracts.subcontracts.model_caching_subcontract impor
 from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
     ModelEventTypeSubcontract,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )

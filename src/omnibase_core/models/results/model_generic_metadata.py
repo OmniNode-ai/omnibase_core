@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelGenericMetadata(BaseModel):

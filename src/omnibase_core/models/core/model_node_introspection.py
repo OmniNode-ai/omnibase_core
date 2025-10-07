@@ -58,7 +58,7 @@ from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )
 from omnibase_core.models.core.model_semver import ModelSemVer
-from omnibase_core.models.metadata.model_semver import parse_semver_from_string
+from omnibase_core.models.core.model_semver import parse_semver_from_string
 from omnibase_core.models.core.model_state import ModelState
 from omnibase_core.models.core.model_state_field import ModelStateField
 from omnibase_core.models.core.model_state_models import ModelStates

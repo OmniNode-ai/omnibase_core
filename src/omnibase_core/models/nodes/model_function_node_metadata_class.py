@@ -18,7 +18,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 from .model_function_deprecation_info import (
     ModelDeprecationSummary,

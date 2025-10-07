@@ -30,7 +30,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_nested_configuration import ModelNestedConfiguration
-from .model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from .model_structured_description import ModelStructuredDescription
 from .model_structured_display_name import ModelStructuredDisplayName
 from .model_structured_tags import ModelStructuredTags

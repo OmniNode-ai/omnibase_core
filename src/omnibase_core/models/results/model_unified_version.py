@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from omnibase_core.models.core.model_semver import ModelSemVer
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelUnifiedVersion(BaseModel):

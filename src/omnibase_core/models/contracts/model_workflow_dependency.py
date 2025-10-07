@@ -28,7 +28,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_workflow_condition import (
     ModelWorkflowCondition,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelWorkflowDependency(BaseModel):

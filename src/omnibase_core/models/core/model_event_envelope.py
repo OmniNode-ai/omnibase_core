@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 from .model_onex_event import ModelOnexEvent
 from .model_route_hop import ModelRouteHop

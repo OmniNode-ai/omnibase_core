@@ -12,7 +12,7 @@ from omnibase_core.errors.error_codes import (
     ModelOnexError,
 )
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.operations.model_command_message_content import (
     ModelCommandMessageContent,
 )

@@ -35,7 +35,7 @@ from omnibase_core.models.metadata.model_metadata_usage_metrics import (
 
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
-from .model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from .model_structured_description import ModelStructuredDescription
 from .model_structured_display_name import ModelStructuredDisplayName
 from .model_structured_tags import ModelStructuredTags

@@ -36,7 +36,7 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
-from .model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 # Use simplified BasicValueType from core constraints instead of redundant TypeVar
 

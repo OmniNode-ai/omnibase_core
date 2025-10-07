@@ -14,7 +14,7 @@ from omnibase_core.models.configuration.model_raw_registry_mode import (
     ModelRawRegistryMode,
 )
 from omnibase_core.models.configuration.model_raw_service import ModelRawService
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelRawConfiguration(BaseModel):

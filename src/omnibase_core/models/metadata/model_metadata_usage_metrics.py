@@ -17,7 +17,7 @@ from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.types.constraints import BasicValueType
 
 from .model_metadatausagemetrics import ModelMetadataUsageMetrics

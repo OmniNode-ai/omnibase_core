@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 @dataclass

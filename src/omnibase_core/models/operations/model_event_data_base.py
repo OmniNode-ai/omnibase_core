@@ -8,7 +8,7 @@ from omnibase_core.models.operations.model_event_attribute_info import (
 )
 from omnibase_core.models.operations.model_event_context_info import ModelEventContextInfo
 from omnibase_core.models.operations.model_event_source_info import ModelEventSourceInfo
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelEventDataBase(BaseModel):

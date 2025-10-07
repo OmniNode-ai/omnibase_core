@@ -33,7 +33,7 @@ from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
 )
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelContractBase(BaseModel, ABC):

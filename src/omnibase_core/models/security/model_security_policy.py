@@ -10,7 +10,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 from .model_security_context import ModelSecurityContext
 from .model_security_policy_data import ModelSecurityPolicyData

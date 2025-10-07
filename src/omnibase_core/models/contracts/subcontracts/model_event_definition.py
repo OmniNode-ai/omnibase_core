@@ -12,7 +12,7 @@ Model for event definitions in the ONEX event-driven architecture system.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelEventDefinition(BaseModel):

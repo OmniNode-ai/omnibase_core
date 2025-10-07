@@ -14,7 +14,7 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 
 if TYPE_CHECKING:
-    from omnibase_core.models.metadata.model_semver import ModelSemVer
+    from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelNodeCoreMetadata(BaseModel):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 """Metadata about the validation process."""
 

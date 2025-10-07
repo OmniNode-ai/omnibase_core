@@ -41,7 +41,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.infrastructure.model_action import ModelAction
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
 from omnibase_core.models.infrastructure.model_state import ModelState
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 T = TypeVar("T")
 U = TypeVar("U")

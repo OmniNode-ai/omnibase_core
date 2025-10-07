@@ -17,7 +17,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_orchestrator_metrics import (
     ModelOrchestratorMetrics,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelOrchestratorInfo(BaseModel):
@@ -131,7 +131,7 @@ class ModelOrchestratorInfo(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         if isinstance(v, str):
-            from omnibase_core.models.metadata.model_semver import (
+            from omnibase_core.models.core.model_semver import (
                 parse_semver_from_string,
             )
 
