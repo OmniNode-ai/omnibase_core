@@ -2,28 +2,27 @@
 Pydantic models and validators for OmniNode metadata block schema and validation.
 """
 
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_lifecycle import EnumLifecycle
+from omnibase_core.enums.enum_meta_type import EnumMetaType
+from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.core.model_node_metadata import Namespace
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
-    import re
-
     from omnibase_core.enums import (
         EnumProtocolVersion,
     )
-    from omnibase_core.enums.enum_lifecycle import EnumLifecycle
-    from omnibase_core.enums.enum_meta_type import EnumMetaType
-    from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
-    from omnibase_core.errors import ModelOnexError
-    from omnibase_core.errors.error_codes import EnumCoreErrorCode
     from omnibase_core.models.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )
-    from omnibase_core.models.core.model_node_metadata import Namespace
     from omnibase_core.models.core.model_tool_collection import ToolCollection
 
 

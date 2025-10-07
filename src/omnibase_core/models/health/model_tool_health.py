@@ -1,11 +1,3 @@
-from typing import Any, Generic, List, Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 """
 Enterprise Tool Health Monitoring Model.
 
@@ -22,7 +14,10 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_tool_health_status import EnumToolHealthStatus
 from omnibase_core.enums.enum_tool_type import EnumToolType
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_metric_value import ModelMetricValue
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_error_summary import ModelErrorSummary

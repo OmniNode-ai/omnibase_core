@@ -159,15 +159,13 @@ class ModelMissingTool(BaseModel):
                 message=msg,
             )
 
-        # Check for valid Python identifier-like names
-        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v.strip()):
-            # Allow some flexibility for tool names with dots or hyphens
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):
-                msg = "Tool name should be a valid identifier-like string"
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=msg,
-                )
+        # Check for valid Python identifier-like names (allow dots and hyphens)
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):
+            msg = "Tool name should be a valid identifier-like string"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         return v.strip()
 
