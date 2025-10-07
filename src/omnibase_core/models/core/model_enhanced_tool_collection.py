@@ -346,7 +346,7 @@ class ModelToolCollection(BaseModel):
             for m in self.tool_metadata.values()
         ) / len(self.tool_metadata)
         total_exec_time = sum(
-            m.performance_metrics.total_execution_time_ms
+            m.performance_metrics.avg_execution_time_ms * m.performance_metrics.total_executions
             for m in self.tool_metadata.values()
         )
 

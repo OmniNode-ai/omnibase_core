@@ -103,7 +103,7 @@ class ModelNodeInstance(BaseModel):
             True if instance can accept new work
         """
         return (
-            self.status == EnumNodeStatus.RUNNING
+            self.status == EnumNodeStatus.ACTIVE
             and self.is_healthy()
             and self.load_metrics.can_accept_load()
         )

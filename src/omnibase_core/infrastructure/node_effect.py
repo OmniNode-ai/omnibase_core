@@ -448,7 +448,7 @@ class NodeEffect(NodeCoreBase):
             # Create output
             output = ModelEffectOutput(
                 result=wrapped_result,
-                operation_id=input_data or uuid4().operation_id,
+                operation_id=input_data.operation_id or uuid4(),
                 effect_type=input_data.effect_type,
                 transaction_state=(
                     transaction.state if transaction else EnumTransactionState.COMMITTED

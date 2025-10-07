@@ -47,6 +47,7 @@ from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
+from .model_backend_config import ModelBackendConfig
 from .model_config_validation_result import ModelConfigValidationResult
 from .model_performance_optimization_config import (
     ModelPerformanceOptimizationConfig,
@@ -227,7 +228,8 @@ class ModelSecretConfig(BaseModel):
         )
 
         # Validate primary backend configuration
-        backend_config = self.get_backend_config_dict()
+        backend_config_dict = self.get_backend_config_dict()
+        backend_config = ModelBackendConfig(**backend_config_dict)
         backend_validation = self.backend.validate_config(backend_config)
 
         if not backend_validation.is_valid:

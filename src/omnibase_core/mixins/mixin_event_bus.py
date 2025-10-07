@@ -106,6 +106,16 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         """Get the name of this node."""
         return self.node_name
 
+    def get_node_id(self) -> UUID:
+        """Get the UUID for this node (derived from node name)."""
+        # Try to get actual node_id if available, otherwise generate from name
+        if hasattr(self, "_node_id") and isinstance(self._node_id, UUID):
+            return self._node_id
+        # Generate deterministic UUID from node name
+        import hashlib
+        namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
+        return UUID(hashlib.md5(self.node_name.encode()).hexdigest())
+
     def process(self, input_state: InputStateT) -> OutputStateT:
         """
         Process input state and return output state.
@@ -159,12 +169,6 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             self._log_error(
                 "registry.event_bus is async-only; call 'await apublish_completion_event(...)' instead",
                 pattern="event_bus.async_only",
-            )
-            return
-
-        if not isinstance(bus, ProtocolEventBus):
-            self._log_error(
-                f"registry.event_bus does not satisfy ProtocolEventBus (got {type(bus).__name__})",
             )
             return
 
@@ -223,25 +227,12 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                     await bus.publish_async(envelope)
                 else:
                     await bus.publish(event)
-            elif isinstance(bus, ProtocolEventBus):
+            else:
+                # Synchronous publishing for standard event bus
                 if hasattr(bus, "publish_async"):
                     bus.publish_async(envelope)
                 else:
                     bus.publish(event)
-            else:
-                # Fallback for poorly-typed buses using duck typing
-                publish = getattr(bus, "publish_async", None) or getattr(
-                    "publish",
-                )
-                if publish is None:
-                    self._log_error(
-                        f"registry.event_bus has no 'publish' or 'publish_async' method (got {type(bus).__name__})",
-                    )
-                    return
-                if inspect.iscoroutinefunction(publish):
-                    await publish(envelope if hasattr(bus, "publish_async") else event)
-                else:
-                    publish(envelope if hasattr(bus, "publish_async") else event)
 
             self._log_info(f"Published completion event: {event_type}", event_type)
 
@@ -256,10 +247,15 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         self, event_type: str, data: MixinCompletionData
     ) -> ModelOnexEvent:
         """Build ModelOnexEvent from completion data."""
+        # Extract kwargs and handle correlation_id explicitly
+        event_kwargs = data.to_event_kwargs()
+        correlation_id = event_kwargs.pop("correlation_id", None)
+
         return ModelOnexEvent.create_core_event(
             event_type=event_type,
-            node_id=self.get_node_name(),
-            **data.to_event_kwargs(),
+            node_id=self.get_node_id(),
+            correlation_id=correlation_id if isinstance(correlation_id, UUID) else None,
+            **event_kwargs,
         )
 
     # --- Event Listening and Subscription -----------------------------------
@@ -469,7 +465,10 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 self._log_error("Event missing event_type attribute", pattern)
                 return
 
-            event = extracted_event
+            # Type assertion: extracted_event should be ModelOnexEvent
+            from typing import cast
+            event = cast(ModelOnexEvent, extracted_event)
+
             try:
                 self._log_info(
                     f"Processing event: {event.event_type}",
@@ -483,7 +482,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 self.process(input_state)
 
                 # Publish completion event
-                completion_event_type = self.get_completion_event_type(event.event_type)
+                completion_event_type = self.get_completion_event_type(str(event.event_type))
                 completion_data = MixinCompletionData(
                     message=f"Processing completed for {event.event_type}",
                     success=True,
@@ -503,7 +502,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 # Publish error completion event
                 try:
                     completion_event_type = self.get_completion_event_type(
-                        event.event_type,
+                        str(event.event_type),
                     )
                     error_data = MixinCompletionData(
                         message=f"Processing failed: {e!s}",

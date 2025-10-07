@@ -4,7 +4,6 @@ from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 """

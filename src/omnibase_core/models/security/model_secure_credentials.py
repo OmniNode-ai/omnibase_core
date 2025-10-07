@@ -16,6 +16,9 @@ from .model_mask_data import ModelMaskData
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="ModelSecureCredentials")
 
+# Exclude T from wildcard imports
+__all__ = ["ModelSecureCredentials"]
+
 
 class ModelSecureCredentials(BaseModel, ABC):
     """

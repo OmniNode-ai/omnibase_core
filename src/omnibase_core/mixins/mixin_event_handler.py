@@ -1,4 +1,5 @@
 from typing import Any, List
+from uuid import UUID
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 

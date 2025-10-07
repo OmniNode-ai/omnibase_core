@@ -19,7 +19,7 @@ class ModelRegistryErrorModel(ModelOnexWarning):
     Use this for all structured registry error reporting.
     """
 
-    error_code: EnumRegistryErrorCode = Field(
+    error_code: ModelRegistryErrorCode = Field(
         default=...,
         description="Canonical registry error code.",
     )

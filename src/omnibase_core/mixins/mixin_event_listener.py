@@ -16,8 +16,10 @@ Provides event-driven execution capabilities to tool nodes by:
 import re
 import threading
 import time
+import uuid
 from collections.abc import Callable as CallableABC
 from pathlib import Path
+from uuid import UUID
 from typing import Any, Callable, Generic, TypeVar
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
@@ -304,7 +306,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             self._stop_event.set()
 
             # Unsubscribe from all events
-            for pattern in self._event_subscriptions:
+            for pattern, handler in self._event_subscriptions:
                 try:
                     if self.event_bus is not None:
                         self.event_bus.unsubscribe(pattern)
@@ -377,7 +379,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                 if self.event_bus is not None:
                     self.event_bus.subscribe(handler, pattern)
-                self._event_subscriptions.append(pattern)
+                self._event_subscriptions.append((pattern, handler))
 
                 emit_log_event(
                     LogLevel.INFO,
@@ -658,8 +660,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
-        if hasattr(event_data, "payload") and event_data.payload is not None and hasattr(event_data.payload, "data"):
-            data = event_data.payload.data if event_data.payload is not None else None
+        if event_data is not None and hasattr(event_data, "payload") and event_data.payload is not None and hasattr(event_data.payload, "data"):
+            data = event_data.payload.data
             emit_log_event(
                 LogLevel.DEBUG,
                 "📦 EVENT_TO_INPUT_STATE: Using payload.data from event",
@@ -707,7 +709,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     )
                     return result
                 # Try to extract dict from model
-                if hasattr(data, "model_dump"):
+                if data is not None and hasattr(data, "model_dump"):
                     dict_data = data.model_dump()
                     result = input_state_class(**dict_data)
                     emit_log_event(
@@ -716,7 +718,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         {"node_name": self.get_node_name()},
                     )
                     return result
-                if hasattr(data, "dict"):
+                if data is not None and hasattr(data, "dict"):
                     dict_data = data.dict()
                     result = input_state_class(**dict_data)
                     emit_log_event(
@@ -843,7 +845,9 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
-        completion_event_type = self.get_completion_event_type(input_event.event_type)
+        # Convert event_type to str (handles both str and ModelEventType)
+        event_type_str = str(input_event.event_type) if not isinstance(input_event.event_type, str) else input_event.event_type
+        completion_event_type = self.get_completion_event_type(event_type_str)
 
         emit_log_event(
             LogLevel.DEBUG,
@@ -918,9 +922,17 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
+        # Convert node name to UUID (try parse, fallback to uuid5)
+        node_name = self.get_node_name()
+        try:
+            node_uuid = UUID(node_name)
+        except (ValueError, AttributeError):
+            # Generate deterministic UUID from node name
+            node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
+
         completion_event = ModelOnexEvent(
             event_type=completion_event_type,
-            node_id=self.get_node_name(),
+            node_id=node_uuid,
             correlation_id=input_event.correlation_id,
             data=completion_data,
         )
@@ -958,7 +970,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         # Publish envelope
-        self.event_bus.publish(envelope)
+        if self.event_bus is not None:
+            self.event_bus.publish(envelope)
 
         emit_log_event(
             LogLevel.INFO,
@@ -976,7 +989,9 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         self, input_event: ModelOnexEvent, error_message: str
     ) -> None:
         """Publish error completion event."""
-        completion_event_type = self.get_completion_event_type(input_event.event_type)
+        # Convert event_type to str (handles both str and ModelEventType)
+        event_type_str = str(input_event.event_type) if not isinstance(input_event.event_type, str) else input_event.event_type
+        completion_event_type = self.get_completion_event_type(event_type_str)
 
         # Create error event data
         error_data = {
@@ -987,10 +1002,18 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             "error": error_message,
         }
 
+        # Convert node name to UUID (try parse, fallback to uuid5)
+        node_name = self.get_node_name()
+        try:
+            node_uuid = UUID(node_name)
+        except (ValueError, AttributeError):
+            # Generate deterministic UUID from node name
+            node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
+
         # Create error event
         error_event = ModelOnexEvent(
             event_type=completion_event_type,
-            node_id=self.get_node_name(),
+            node_id=node_uuid,
             correlation_id=input_event.correlation_id,
             data=error_data,
         )

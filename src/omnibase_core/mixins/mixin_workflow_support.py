@@ -108,12 +108,16 @@ class MixinDagSupport:
         if error_message:
             event_data["error_message"] = error_message
 
+        # Convert IDs to proper types
+        correlation_uuid = UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id
+        node_uuid = UUID(node_id) if isinstance(node_id, str) else (node_id if isinstance(node_id, UUID) else UUID(str(node_id)))
+
         # Create and emit the event
         event = ModelOnexEvent(
             event_type=f"workflow_node_completed:{node_id}",
             data=event_data,
-            correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,
-            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            correlation_id=correlation_uuid,
+            node_id=node_uuid,
         )
 
         try:
@@ -125,7 +129,7 @@ class MixinDagSupport:
             envelope = ModelEventEnvelope.create_broadcast(
                 payload=event,
                 source_node_id=str(node_id),
-                correlation_id=correlation_id,
+                correlation_id=correlation_uuid,
             )
 
             self._event_bus.publish(envelope)
@@ -151,11 +155,15 @@ class MixinDagSupport:
             "timestamp": self._get_current_timestamp(),
         }
 
+        # Convert IDs to proper types
+        correlation_uuid = UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id
+        node_uuid = UUID(node_id) if isinstance(node_id, str) else (node_id if isinstance(node_id, UUID) else UUID(str(node_id)))
+
         event = ModelOnexEvent(
             event_type=f"workflow_node_started:{node_id}",
             data=event_data,
-            correlation_id=correlation_id,
-            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            correlation_id=correlation_uuid,
+            node_id=node_uuid,
         )
 
         try:
@@ -167,7 +175,7 @@ class MixinDagSupport:
             envelope = ModelEventEnvelope.create_broadcast(
                 payload=event,
                 source_node_id=str(node_id),
-                correlation_id=correlation_id,
+                correlation_id=correlation_uuid,
             )
 
             self._event_bus.publish(envelope)

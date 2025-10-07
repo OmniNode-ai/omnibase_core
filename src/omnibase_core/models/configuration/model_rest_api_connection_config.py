@@ -244,12 +244,10 @@ class ModelRestApiConnectionConfig(BaseModel):
             headers=self.get_request_headers(),
             read_timeout=float(self.timeout_seconds),
             verify_ssl=self.uses_https(),
-            retry_config=(
-                ModelRequestRetryConfig(
-                    max_retries=self.max_retries, retry_delay=1.0, retry_backoff=2.0
-                )
-                if self.max_retries > 0
-                else None
+            retry_config=ModelRequestRetryConfig(
+                max_retries=self.max_retries if self.max_retries > 0 else 0,
+                retry_delay=1.0,
+                retry_backoff=2.0
             ),
         )
 

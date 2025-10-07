@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_audit_field_change import ModelAuditFieldChange
 
 # Compatibility alias
@@ -87,8 +88,8 @@ class ModelAuditValue(BaseModel):
                     field_changes.append(
                         ModelAuditFieldChange(
                             field_path=key,
-                            old_value=value["old"],
-                            new_value=value["new"],
+                            old_value=ModelSchemaValue.from_value(value["old"]),
+                            new_value=ModelSchemaValue.from_value(value["new"]),
                             value_type=type(value["new"]).__name__,
                         ),
                     )
@@ -97,8 +98,8 @@ class ModelAuditValue(BaseModel):
                     field_changes.append(
                         ModelAuditFieldChange(
                             field_path=key,
-                            old_value=None if is_new else value,
-                            new_value=value if is_new else None,
+                            old_value=ModelSchemaValue.from_value(None if is_new else value),
+                            new_value=ModelSchemaValue.from_value(value if is_new else None),
                             value_type=type(value).__name__,
                         ),
                     )

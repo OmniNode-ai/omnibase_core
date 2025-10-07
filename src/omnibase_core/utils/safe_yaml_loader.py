@@ -2,7 +2,6 @@ import json
 from typing import Optional, TypeVar
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.util_serialization import serialize_data_to_yaml
 
 """
 Safe YAML loading utilities without direct yaml.safe_load usage.

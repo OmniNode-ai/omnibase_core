@@ -8,12 +8,15 @@ enabling tools to be executed via the event bus in the unified execution model.
 """
 
 import time
+from datetime import datetime
 from typing import Any
+from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMetadata
 
 
 class MixinToolExecution:
@@ -28,15 +31,15 @@ class MixinToolExecution:
     # Type hints for methods expected to be provided by the mixed class
     def get_node_name(self) -> str:
         """Get the node name. Must be implemented by the mixed class."""
-        ...
+        raise NotImplementedError("Must be implemented by the mixed class")
 
     def process(self, input_state: Any) -> Any:
         """Process the input state. Must be implemented by the mixed class."""
-        ...
+        raise NotImplementedError("Must be implemented by the mixed class")
 
     def _get_input_state_class(self) -> type[Any]:
         """Get the input state class. Must be implemented by the mixed class."""
-        ...
+        raise NotImplementedError("Must be implemented by the mixed class")
 
     def handle_tool_execution_request_event(self, envelope: ModelEventEnvelope) -> None:
         """
@@ -83,7 +86,7 @@ class MixinToolExecution:
 
             # Publish successful response
             self._publish_execution_response(
-                correlation_id=event.correlation_id,
+                correlation_id=str(event.correlation_id) if event.correlation_id else "",
                 success=True,
                 result=self._output_state_to_dict(output_state),
                 execution_time=execution_time,
@@ -103,7 +106,7 @@ class MixinToolExecution:
 
             # Publish error response
             self._publish_execution_response(
-                correlation_id=event.correlation_id,
+                correlation_id=str(event.correlation_id) if event.correlation_id else "",
                 success=False,
                 result=None,
                 execution_time=0,
@@ -186,21 +189,24 @@ class MixinToolExecution:
             return
 
         # Create response event
+        # Convert node_id and correlation_id to proper types
+        node_id_uuid = self.get_node_id() if hasattr(self, "get_node_id") else UUID(self.get_node_name()) if len(self.get_node_name()) == 36 else uuid4()
+        corr_id_uuid = UUID(correlation_id) if correlation_id else None
+
         response_event = ModelOnexEvent(
             event_type="tool.execution.response",
-            node_id=self.get_node_name(),
-            correlation_id=correlation_id,
-            timestamp=time.time(),
+            node_id=node_id_uuid,
+            correlation_id=corr_id_uuid,
+            timestamp=datetime.fromtimestamp(time.time()),
             data={
                 "tool_name": self.get_node_name(),
                 "success": success,
                 "result": result,
                 "execution_time": execution_time,
                 "error": error,
-            },
-            metadata={
                 "tool_version": getattr(self, "version", "1.0.0"),
             },
+            metadata=None,
         )
 
         # Wrap in envelope and publish

@@ -317,10 +317,10 @@ class ModelEventBusInputState(BaseModel):
         env_prefix: str = "ONEX_EVENT_BUS_",
     ) -> "ModelEventBusInputState":
         """Create input state from environment variables."""
-        version = os.getenv(f"{env_prefix}VERSION", "1.0.0")
-        input_field = os.getenv(f"{env_prefix}INPUT_FIELD", "")
+        version_env = os.getenv(f"{env_prefix}VERSION", "1.0.0")
+        input_field_env = os.getenv(f"{env_prefix}INPUT_FIELD", "")
 
-        if not input_field:
+        if not input_field_env:
             msg = f"Environment variable {env_prefix}INPUT_FIELD is required"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -328,8 +328,8 @@ class ModelEventBusInputState(BaseModel):
             )
 
         config_data: dict[str, str | int | ModelSemVer | None] = {
-            "version": parse_semver_from_string(version),
-            "input_field": input_field,
+            "version": parse_semver_from_string(version_env),
+            "input_field": input_field_env,
         }
 
         # Optional environment variables

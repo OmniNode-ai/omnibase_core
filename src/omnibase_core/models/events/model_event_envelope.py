@@ -1,7 +1,7 @@
 import uuid
-from typing import Dict, Generic, Optional, TypeVar
+from typing import Dict, Generic, Optional, TypeVar, cast
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -404,8 +404,10 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             Dictionary representation with lazy-evaluated nested structures
         """
         # Create lazy values for expensive nested serializations
+        # Cast to BaseModel since we check for model_dump attribute
         lazy_payload = self.lazy_string_conversion(
-            self.payload if hasattr(self.payload, "model_dump") else None, "payload"
+            cast(Optional[BaseModel], self.payload if hasattr(self.payload, "model_dump") else None),
+            "payload"
         )
 
         # Direct field access for simple fields (more efficient than model_dump())

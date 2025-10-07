@@ -7,7 +7,7 @@ from pydantic import Field
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 """
 Unified Schema Model for JSON Schema representation.

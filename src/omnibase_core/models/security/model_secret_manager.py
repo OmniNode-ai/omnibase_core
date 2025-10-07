@@ -31,6 +31,9 @@ except ImportError:
 
 T = TypeVar("T", bound=ModelSecureCredentials)
 
+# Exclude T from wildcard imports
+__all__ = ["ModelSecretManager"]
+
 
 class ModelSecretManager(BaseModel):
     """

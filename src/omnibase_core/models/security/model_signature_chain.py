@@ -198,7 +198,7 @@ class ModelSignatureChain(BaseModel):
             if not signature.is_valid_operation_sequence(last_operation):
                 return False
         # First signature must be SOURCE
-        elif signature.operation != ModelNodeOperationEnum.SOURCE:
+        elif signature.operation != EnumNodeOperation.SOURCE:
             return False
 
         # Check content hash matches
@@ -337,7 +337,7 @@ class ModelSignatureChain(BaseModel):
 
     def get_signatures_by_operation(
         self,
-        operation: ModelNodeOperationEnum,
+        operation: EnumNodeOperation,
     ) -> list[ModelNodeSignature]:
         """Get all signatures for specific operation type."""
         return [sig for sig in self.signatures if sig.operation == operation]
@@ -346,8 +346,8 @@ class ModelSignatureChain(BaseModel):
         """Check if chain has complete routing from source to destination."""
         operations = {sig.operation for sig in self.signatures}
         return (
-            ModelNodeOperationEnum.SOURCE in operations
-            and ModelNodeOperationEnum.DESTINATION in operations
+            EnumNodeOperation.SOURCE in operations
+            and EnumNodeOperation.DESTINATION in operations
         )
 
     def calculate_trust_score(self, trusted_nodes: set[str]) -> float:
@@ -369,7 +369,7 @@ class ModelSignatureChain(BaseModel):
 
         return trusted_signatures / len(self.signatures)
 
-    def get_routing_path(self) -> list[tuple[str, ModelNodeOperationEnum]]:
+    def get_routing_path(self) -> list[tuple[str, EnumNodeOperation]]:
         """Get the routing path as list[Any]of (node_id, operation) tuples."""
         return [(sig.node_id, sig.operation) for sig in self.signatures]
 
@@ -445,7 +445,7 @@ class ModelSignatureChain(BaseModel):
 
         # Check for missing required operations
         operations = {sig.operation for sig in self.signatures}
-        if ModelNodeOperationEnum.SOURCE not in operations:
+        if EnumNodeOperation.SOURCE not in operations:
             anomalies.append("Missing SOURCE operation")
 
         # Check for signature gaps

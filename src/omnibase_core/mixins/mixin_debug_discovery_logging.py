@@ -28,7 +28,7 @@ class MixinDebugDiscoveryLogging:
         self,
         node_name: str,
         additional_context: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """
         Setup comprehensive discovery event debug logging.
 

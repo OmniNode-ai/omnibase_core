@@ -46,6 +46,7 @@ from omnibase_core.models.core.model_node_announce_metadata import (
     ModelNodeAnnounceMetadata,
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMetadata
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
@@ -165,7 +166,7 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_ANNOUNCE"),
                 node_id=node_id,
-                metadata=announce,
+                metadata=ModelOnexEventMetadata.from_node_announce(announce),
             )
 
             # Wrap in envelope before publishing
@@ -297,7 +298,7 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_START"),
                 node_id=node_id,
-                metadata=metadata,
+                metadata=ModelOnexEventMetadata(**metadata) if metadata else None,
                 correlation_id=final_correlation_id,
             )
 
@@ -357,7 +358,7 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_SUCCESS"),
                 node_id=node_id,
-                metadata=metadata,
+                metadata=ModelOnexEventMetadata(**metadata) if metadata else None,
                 correlation_id=final_correlation_id,
             )
 
@@ -417,7 +418,7 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_FAILURE"),
                 node_id=node_id,
-                metadata=metadata,
+                metadata=ModelOnexEventMetadata(**metadata) if metadata else None,
                 correlation_id=final_correlation_id,
             )
 

@@ -22,7 +22,7 @@ class ModelDetectionRuleSet(BaseModel):
     ruleset_id: str = Field(description="Unique identifier for this ruleset")
     ruleset_name: str = Field(description="Human-readable name for this ruleset")
     version: ModelSemVer = Field(description="Version of this ruleset")
-    patterns: list[ModelDetectionPattern[str]] = Field(
+    patterns: list[ModelDetectionPattern] = Field(
         default_factory=list,
         description="Detection patterns in this ruleset",
     )
@@ -77,11 +77,11 @@ class ModelDetectionRuleSet(BaseModel):
 
     def get_patterns_by_type(
         self, detection_type: EnumDetectionType
-    ) -> list[ModelDetectionPattern[str]]:
+    ) -> list[ModelDetectionPattern]:
         """Get patterns for a specific detection type."""
         return [p for p in self.patterns if p.detection_type == detection_type]
 
-    def get_enabled_patterns(self) -> list[ModelDetectionPattern[str]]:
+    def get_enabled_patterns(self) -> list[ModelDetectionPattern]:
         """Get all enabled patterns."""
         return [p for p in self.patterns if p.is_enabled()]
 

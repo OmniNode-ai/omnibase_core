@@ -216,7 +216,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 if isinstance(v, EntrypointBlock):
                     filtered_dict[k] = v.to_uri()
                 elif isinstance(v, dict) and "type" in v and "target" in v:
-                    filtered_dict[k] = EntrypointBlock.from_serializable_dict().to_uri()
+                    filtered_dict[k] = EntrypointBlock(**v).to_uri()
                 elif isinstance(v, str):
                     filtered_dict[k] = (
                         EntrypointBlock.from_uri(v).to_uri()

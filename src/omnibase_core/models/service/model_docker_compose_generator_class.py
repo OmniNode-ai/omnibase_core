@@ -40,23 +40,25 @@ from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Import with fallback handling
+yaml_module: ModuleType | None
 try:
     import yaml
 
     HAS_YAML = True
-    yaml_module: ModuleType | None = yaml
+    yaml_module = yaml
 except ImportError:
     HAS_YAML = False
-    yaml_module: ModuleType | None = None
+    yaml_module = None
 
+json_module: ModuleType | None
 try:
     import json
 
     HAS_JSON = True
-    json_module: ModuleType | None = json
+    json_module = json
 except ImportError:
     HAS_JSON = False
-    json_module: ModuleType | None = None
+    json_module = None
 
 
 class ModelDockerComposeGenerator:

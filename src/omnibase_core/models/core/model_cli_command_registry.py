@@ -192,7 +192,7 @@ class ModelCliCommandRegistry(BaseModel):
             # Handle both string and object formats
             if isinstance(command_data, str):
                 # Simple string format - just the command name
-                command_name = command_data
+                command_name_str = command_data
                 action = command_data
                 description = f"Execute {command_data} on {node_name}"
                 category = "general"
@@ -207,11 +207,11 @@ class ModelCliCommandRegistry(BaseModel):
                     return None
 
                 # Type assertion: we know command_name_raw is truthy and should be str
-                command_name: str = str(command_name_raw)
-                action = command_data.get("action", command_name)
+                command_name_str = str(command_name_raw)
+                action = command_data.get("action", command_name_str)
                 description = command_data.get(
                     "description",
-                    f"Execute {command_name} on {node_name}",
+                    f"Execute {command_name_str} on {node_name}",
                 )
                 category = command_data.get("category", "general")
                 event_type_name = command_data.get("event_type", "NODE_START")
@@ -224,16 +224,22 @@ class ModelCliCommandRegistry(BaseModel):
             event_type = ModelEventType(
                 event_name=event_type_name,
                 namespace="onex",
-                description=f"Event for {command_name} command",
+                description=f"Event for {command_name_str} command",
             )
 
             # Parse arguments (simplified for now)
-            required_args: list[str] = []
-            optional_args: list[str] = []
+            # Note: Converting to empty lists of ModelArgumentDescription
+            # TODO: Extract actual argument descriptions from command metadata
+            from omnibase_core.models.core.model_argument_description import (
+                ModelArgumentDescription,
+            )
+
+            required_args: list[ModelArgumentDescription] = []
+            optional_args: list[ModelArgumentDescription] = []
 
             # Create command definition
             return ModelCliCommandDefinition(
-                command_name=command_name,
+                command_name=command_name_str,
                 target_node=node_ref,
                 action=action,
                 description=description,

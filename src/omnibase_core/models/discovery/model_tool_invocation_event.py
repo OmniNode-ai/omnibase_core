@@ -155,7 +155,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
             target_node_name=target_node_name,
             tool_name=tool_name,
             action=action,
-            requester_id=requester_id,
+            requester_id=str(requester_id),
             requester_node_id=requester_node_id,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,

@@ -176,7 +176,7 @@ class ModelLoadBalancingPolicy(BaseModel):
         """Get weight for a specific node"""
         if not self.should_use_weights() or self.node_weights is None:
             return 1.0
-        return self.node_weights.get_weight(node_id)
+        return self.node_weights.get_weight(str(node_id))
 
     def calculate_policy_score(
         self, performance_metrics: dict[str, Any] | None = None

@@ -149,10 +149,12 @@ class ModelExternalServiceConfig(BaseModel):
         masked_connection = ModelSecurityUtils.mask_dict_credentials(connection_dict)
 
         # Build masked config
+        # Type note: masked_connection contains only simple types (str, int, bool) after masking
+        # Complex types are recursively masked to simple representations
         return ModelMaskedConfig(
             service_name=self.service_name,
             service_type=self.service_type,
-            connection_config=masked_connection,
+            connection_config=masked_connection,  # type: ignore[arg-type]
             health_check_enabled=self.health_check_enabled,
             health_check_timeout=self.health_check_timeout,
             required=self.required,

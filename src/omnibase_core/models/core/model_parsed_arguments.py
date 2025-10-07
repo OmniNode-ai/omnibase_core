@@ -116,14 +116,14 @@ class ModelParsedArguments(BaseModel):
         """Get formatted error messages for display."""
         messages = []
         for error in self.validation_errors:
-            messages.append(error.get_display_message())
+            messages.append(error.message)
         return messages
 
     def get_warning_messages(self) -> list[str]:
         """Get formatted warning messages for display."""
         messages = []
         for warning in self.validation_warnings:
-            messages.append(warning.get_display_message())
+            messages.append(warning.message)
         return messages
 
     def add_validation_error(self, error: ModelValidationError) -> None:
@@ -167,7 +167,7 @@ class ModelParsedArguments(BaseModel):
 
     def get_required_arguments(self) -> list[str]:
         """Get list[Any]of required argument names from command definition."""
-        return [arg.name for arg in self.command_definition.arguments if arg.required]
+        return [arg.name for arg in self.command_definition.required_args]
 
     def validate_required_arguments(self) -> list[ModelValidationError]:
         """Validate that all required arguments are present."""
@@ -176,9 +176,10 @@ class ModelParsedArguments(BaseModel):
 
         for arg_name in required_args:
             if not self.arguments.has_argument(arg_name):
-                error = ModelValidationError.create_required_error(
+                error = ModelValidationError.create_error(
+                    message=f"Required argument '{arg_name}' missing for command {self.command_definition.command_name}",
                     field_name=arg_name,
-                    location=f"command {self.command_definition.command_name}",
+                    error_code="MISSING_REQUIRED_ARGUMENT",
                 )
                 errors.append(error)
 

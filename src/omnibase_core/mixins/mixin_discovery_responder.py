@@ -136,16 +136,16 @@ class MixinDiscoveryResponder:
             # Extract event from envelope
             event = envelope.payload if hasattr(envelope, "payload") else envelope
 
-            if not is_event_equal(event.event_type, "DISCOVERY_REQUEST"):
+            if not hasattr(event, "event_type") or not is_event_equal(event.event_type, "DISCOVERY_REQUEST"):
                 return  # Not a discovery request
 
-            self._discovery_stats["requests_received"] += 1
+            self._discovery_stats["requests_received"] = self._discovery_stats.get("requests_received", 0) + 1
             self._discovery_stats["last_request_time"] = time.time()
 
             # Check rate limiting
             current_time = time.time()
             if current_time - self._last_response_time < self._response_throttle:
-                self._discovery_stats["throttled_requests"] += 1
+                self._discovery_stats["throttled_requests"] = self._discovery_stats.get("throttled_requests", 0) + 1
                 return  # Throttled
 
             # Extract request metadata
@@ -161,7 +161,7 @@ class MixinDiscoveryResponder:
             self._send_discovery_response(event, request_metadata)
 
             self._last_response_time = current_time
-            self._discovery_stats["responses_sent"] += 1
+            self._discovery_stats["responses_sent"] = self._discovery_stats.get("responses_sent", 0) + 1
 
         except Exception:
             # Silently handle errors to avoid disrupting discovery

@@ -336,9 +336,8 @@ class MixinRequestResponseIntrospection:
                     {
                         "correlation_id": str(request_event.correlation_id),
                         "envelope_id": str(response_envelope.envelope_id),
-                        "source_node_id": response_envelope.source_node_id,
-                        "target_node_ids": response_envelope.target_node_ids,
-                        "broadcast": response_envelope.broadcast,
+                        "source_tool": response_envelope.source_tool,
+                        "target_tool": response_envelope.target_tool,
                         "event_type": response_envelope.payload.event_type,
                         "response_type": type(response).__name__,
                         "envelope_correlation_id": str(

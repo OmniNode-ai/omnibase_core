@@ -39,7 +39,8 @@ class MixinNodeSetup:
                         continue
 
                     mod = __import__(cls.__module__, fromlist=["__file__"])
-                    return Path(mod.__file__).parent
+                    if mod.__file__ is not None:
+                        return Path(mod.__file__).parent
                 except Exception:
                     continue
         # Fallback to mixin's own directory
@@ -56,7 +57,7 @@ class MixinNodeSetup:
     @property
     def contract(self) -> Any:
         if not hasattr(self, "_contract"):
-            self._contract = load_state_contract_from_file(self.contract_path)
+            self._contract = load_state_contract_from_file(str(self.contract_path))
         return self._contract
 
     @property

@@ -13,13 +13,10 @@ if TYPE_CHECKING:
     import re
 
     from omnibase_core.enums import (
-        EnumMetaType,
         EnumProtocolVersion,
-        EnumRuntimeLanguage,
     )
     from omnibase_core.enums.enum_lifecycle import EnumLifecycle
     from omnibase_core.enums.enum_meta_type import EnumMetaType
-    from omnibase_core.enums.enum_metadata import EnumLifecycle
     from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
     from omnibase_core.errors import ModelOnexError
     from omnibase_core.errors.error_codes import EnumCoreErrorCode

@@ -289,7 +289,7 @@ class MixinContractStateReducer:
         if not transition.tool_config:
             return
 
-        target_tool_name = transition.tool_config.tool_name
+        target_tool_name = transition.tool_config.tool_display_name or str(transition.tool_config.tool_id)
 
         emit_log_event(
             LogLevel.DEBUG,

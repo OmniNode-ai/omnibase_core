@@ -157,7 +157,7 @@ def io_error_handling(
                     (
                         EnumCoreErrorCode.FILE_NOT_FOUND
                         if isinstance(e, FileNotFoundError)
-                        else EnumCoreErrorCode.FILESYSTEM_ERROR
+                        else EnumCoreErrorCode.FILE_OPERATION_ERROR
                     ),
                 ) from e
             except Exception as e:

@@ -163,13 +163,13 @@ class ModelSecurityEventCollection(BaseModel):
         self,
         severity_levels: list[str],
     ) -> list[ModelSecurityEvent]:
-        """Get events with specific severity levels."""
+        """Get events with specific status levels (severity proxy)."""
         if not severity_levels:
             raise ModelOnexError(
                 message="Severity levels cannot be empty",
                 error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-        return [event for event in self.events if event.severity in severity_levels]
+        return [event for event in self.events if event.status.value in severity_levels]
 
     def get_events_by_node(self, node_id: str) -> list[ModelSecurityEvent]:
         """Get events for a specific node."""

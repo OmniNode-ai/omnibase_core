@@ -3,7 +3,6 @@ from __future__ import annotations
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
 
 """
 Semantic Version Model

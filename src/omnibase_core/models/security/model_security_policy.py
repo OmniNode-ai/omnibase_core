@@ -115,8 +115,14 @@ class ModelSecurityPolicy(BaseModel):
 
     def to_dict(self) -> ModelSecurityPolicyData:
         """Convert to data container for current standards."""
-        # Custom transformation using model_dump() in data container
-        return ModelSecurityPolicyData(typed_data=self.model_dump(exclude_none=True))
+        # Convert dict to ModelTypedMapping following ONEX pattern
+        from omnibase_core.models.common.model_typed_mapping import ModelTypedMapping
+
+        typed_mapping = ModelTypedMapping()
+        for key, value in self.model_dump(exclude_none=True).items():
+            typed_mapping.set_value(key, value)
+
+        return ModelSecurityPolicyData(typed_data=typed_mapping)
 
     @classmethod
     def from_dict(cls, data: ModelSecurityPolicyData) -> "ModelSecurityPolicy":

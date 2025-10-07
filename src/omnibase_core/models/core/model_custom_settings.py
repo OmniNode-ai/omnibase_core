@@ -85,7 +85,8 @@ class ModelCustomSettings(BaseModel):
         if "general_settings" in data:
             return cls(**data)
 
-        # Legacy format - all settings in flat dict[str, Any]return cls(general_settings=data.copy())
+        # Legacy format - all settings in flat dict
+        return cls(general_settings=data.copy())
 
     def get_setting(self, key: str, default: Any = None) -> Any:
         """Get a setting value."""

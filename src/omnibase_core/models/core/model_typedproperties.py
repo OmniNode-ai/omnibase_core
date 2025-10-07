@@ -31,6 +31,8 @@ class ModelTypedProperties(BaseModel):
         properties = {}
         for name, prop_data in data.items():
             if isinstance(prop_data, dict):
-                properties[name] = ModelSchema.from_dict(prop_data)
+                schema = ModelSchema.from_dict(prop_data)
+                if schema is not None:
+                    properties[name] = schema
 
         return cls(properties=properties)

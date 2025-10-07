@@ -286,7 +286,7 @@ class ModelCliOutputData(BaseModel):
 
         # Then check custom fields
         if self.custom_fields:
-            return self.custom_fields.get_field(field_name, default)
+            return self.custom_fields.fields.get(field_name, default)
 
         # Finally check raw data
         if self.raw_data and field_name in self.raw_data:

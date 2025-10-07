@@ -89,7 +89,7 @@ class ModelTrendData(BaseModel):
         timestamp: datetime,
         value: float | int,
         label: str | None = None,
-    ):
+    ) -> None:
         """Add a new data point to the trend."""
         self.data_points.append(
             ModelTrendPoint(timestamp=timestamp, value=value, label=label),

@@ -39,10 +39,26 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.enums.enum_node_capability import EnumNodeCapability
 from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
+from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
+from omnibase_core.models.core.model_contract import ModelContract
+from omnibase_core.models.core.model_dependencies import ModelDependencies
+from omnibase_core.models.core.model_error_code import ModelErrorCode
+from omnibase_core.models.core.model_error_codes import ModelErrorCodes
+from omnibase_core.models.core.model_event_channels import ModelEventChannels
+from omnibase_core.models.core.model_event_type import create_event_type_from_registry
+from omnibase_core.models.core.model_node_introspection import (
+    create_node_introspection_response,
+)
 from omnibase_core.models.core.model_node_introspection_response import (
     ModelNodeIntrospectionResponse,
 )
+from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.core.model_state import ModelState
+from omnibase_core.models.core.model_state_field import ModelStateField
+from omnibase_core.models.core.model_state_models import ModelStates
 
 
 class MixinNodeIntrospection(ABC):
@@ -84,14 +100,17 @@ class MixinNodeIntrospection(ABC):
     @classmethod
     def get_input_state_class(cls) -> type[BaseModel]:
         """Return the input state model class."""
+        raise NotImplementedError("Subclasses must implement get_input_state_class()")
 
     @classmethod
     def get_output_state_class(cls) -> type[BaseModel]:
         """Return the output state model class."""
+        raise NotImplementedError("Subclasses must implement get_output_state_class()")
 
     @classmethod
     def get_error_codes_class(cls) -> type:
         """Return the error codes enum class."""
+        raise NotImplementedError("Subclasses must implement get_error_codes_class()")
 
     @classmethod
     def get_node_author(cls) -> str:
@@ -129,14 +148,14 @@ class MixinNodeIntrospection(ABC):
         return []
 
     @classmethod
-    def get_node_capabilities(cls) -> list[NodeCapabilityEnum]:
+    def get_node_capabilities(cls) -> list[EnumNodeCapability]:
         """Return node capabilities. Override to specify capabilities."""
         return []
 
     @classmethod
-    def get_event_channels(cls) -> EventChannelsModel:
+    def get_event_channels(cls) -> ModelEventChannels:
         """Return event channels configuration. Override to specify channels."""
-        return EventChannelsModel(
+        return ModelEventChannels(
             subscribes_to=["onex.discovery.broadcast"],
             publishes_to=["onex.discovery.response"],
         )
@@ -148,15 +167,15 @@ class MixinNodeIntrospection(ABC):
         return f"python -m omnibase.nodes.{node_name}.v1_0_0.node"
 
     @classmethod
-    def get_cli_required_args(cls) -> list[CLIArgumentModel]:
+    def get_cli_required_args(cls) -> list[ModelCLIArgument]:
         """Return required CLI arguments. Override to specify required args."""
         return []
 
     @classmethod
-    def get_cli_optional_args(cls) -> list[CLIArgumentModel]:
+    def get_cli_optional_args(cls) -> list[ModelCLIArgument]:
         """Return optional CLI arguments. Override to specify optional args."""
         return [
-            CLIArgumentModel(
+            ModelCLIArgument(
                 name="--introspect",
                 type="bool",
                 required=False,
@@ -175,7 +194,7 @@ class MixinNodeIntrospection(ABC):
     def _extract_state_model_fields(
         cls,
         model_class: type[BaseModel],
-    ) -> list[StateFieldModel]:
+    ) -> list[ModelStateField]:
         """Extract field information from a Pydantic model."""
         fields = []
 
@@ -195,7 +214,7 @@ class MixinNodeIntrospection(ABC):
             )
 
             fields.append(
-                StateFieldModel(
+                ModelStateField(
                     name=field_name,
                     type=field_type,
                     required=is_required,
@@ -207,7 +226,7 @@ class MixinNodeIntrospection(ABC):
         return fields
 
     @classmethod
-    def _extract_error_codes(cls) -> ErrorCodesModel:
+    def _extract_error_codes(cls) -> ModelErrorCodes:
         """Extract error codes from the node's error codes class."""
         error_codes_class = cls.get_error_codes_class()
 
@@ -253,7 +272,7 @@ class MixinNodeIntrospection(ABC):
                     category = "configuration"
 
                 codes.append(
-                    ErrorCodeModel(
+                    ModelErrorCode(
                         code=code_value,
                         number=number,
                         description=description,
@@ -262,7 +281,7 @@ class MixinNodeIntrospection(ABC):
                     ),
                 )
 
-        return ErrorCodesModel(component=component, codes=codes, total_codes=len(codes))
+        return ModelErrorCodes(component=component, codes=codes, total_codes=len(codes))
 
     @classmethod
     def get_introspection_response(cls) -> ModelNodeIntrospectionResponse:
@@ -275,10 +294,17 @@ class MixinNodeIntrospection(ABC):
         node_name = cls.get_node_name()
 
         # Get version information from resolver
-        version_info = global_resolver.get_version_info(node_name)
+        # TODO: Implement global_resolver for version information
+        # version_info = global_resolver.get_version_info(node_name)
+        version_info = {
+            "available_versions": [],
+            "latest_version": None,
+            "total_versions": 0,
+            "version_status": {},
+        }
 
         # Create enhanced node metadata with version information
-        node_metadata = NodeModelMetadata(
+        node_metadata = ModelNodeMetadataInfo(
             name=node_name,
             version=cls.get_node_version(),
             description=cls.get_node_description(),
@@ -300,10 +326,10 @@ class MixinNodeIntrospection(ABC):
         )
 
         # Create contract model
-        contract = ContractModel(
+        contract = ModelContract(
             input_state_schema=f"{node_name}_input.schema.json",
             output_state_schema=f"{node_name}_output.schema.json",
-            cli_interface=CLIInterfaceModel(
+            cli_interface=ModelCLIInterface(
                 entrypoint=cls.get_cli_entrypoint(),
                 required_args=cls.get_cli_required_args(),
                 optional_args=cls.get_cli_optional_args(),
@@ -317,14 +343,14 @@ class MixinNodeIntrospection(ABC):
         input_class = cls.get_input_state_class()
         output_class = cls.get_output_state_class()
 
-        state_models = ModelStatesModel(
-            input=ModelStateModel(
+        state_models = ModelStates(
+            input=ModelState(
                 class_name=input_class.__name__,
                 schema_version=cls.get_schema_version(),
                 fields=cls._extract_state_model_fields(input_class),
                 schema_file=f"{node_name}_input.schema.json",
             ),
-            output=ModelStateModel(
+            output=ModelState(
                 class_name=output_class.__name__,
                 schema_version=cls.get_schema_version(),
                 fields=cls._extract_state_model_fields(output_class),
@@ -336,7 +362,7 @@ class MixinNodeIntrospection(ABC):
         error_codes = cls._extract_error_codes()
 
         # Create dependencies model
-        dependencies = DependenciesModel(
+        dependencies = ModelDependencies(
             runtime=cls.get_runtime_dependencies(),
             optional=cls.get_optional_dependencies(),
             python_version=cls.get_python_version_requirement(),

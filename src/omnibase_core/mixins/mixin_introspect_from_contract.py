@@ -31,6 +31,11 @@ class MixinIntrospectFromContract:
             )
 
         module = importlib.import_module(self.__class__.__module__)
+        if module.__file__ is None:
+            raise ModelOnexError(
+                f"Module '{self.__class__.__module__}' has no __file__ attribute",
+                EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         node_file = Path(module.__file__)
         return node_file.parent
 
