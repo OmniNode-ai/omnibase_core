@@ -1,6 +1,7 @@
 from typing import Any
 
 from omnibase_core.models.configuration.model_secret_config import ModelSecretConfig
+from omnibase_core.models.security.model_mask_data import ModelMaskData
 from omnibase_core.models.security.model_secret_manager import ModelSecretManager
 
 
@@ -20,6 +21,8 @@ class ModelSecretManagerCompat:
         """Get database configuration (legacy method)."""
         return self._manager.get_database_config()
 
-    def mask_sensitive_data(self, data: dict[str, Any]) -> dict[str, Any]:
+    def mask_sensitive_data(
+        self, data: ModelMaskData, mask_level: str = "standard"
+    ) -> ModelMaskData:
         """Mask sensitive data (legacy method)."""
-        return self._manager.mask_sensitive_data(data)
+        return self._manager.mask_sensitive_data(data, mask_level)

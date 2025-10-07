@@ -79,7 +79,7 @@ class ModelHealthCheck(BaseModel):
 
     @field_validator("endpoint_path")
     @classmethod
-    def validate_endpoint_path_format(cls, v, info):
+    def validate_endpoint_path_format(cls, v: Any, info: Any) -> Any:
         """Ensure endpoint path starts with /"""
         if v is not None and not v.startswith("/"):
             return f"/{v}"
@@ -87,7 +87,7 @@ class ModelHealthCheck(BaseModel):
 
     @field_validator("command", mode="before")
     @classmethod
-    def validate_command_type_consistency(cls, v, info):
+    def validate_command_type_consistency(cls, v: Any, info: Any) -> Any:
         """Ensure command is provided when check_type is COMMAND"""
         if hasattr(info, "data") and info.data:
             check_type = info.data.get("check_type")
@@ -101,7 +101,7 @@ class ModelHealthCheck(BaseModel):
 
     @field_validator("full_url", mode="before")
     @classmethod
-    def validate_url_type_consistency(cls, v, info):
+    def validate_url_type_consistency(cls, v: Any, info: Any) -> Any:
         """Ensure URL fields are consistent with check type"""
         if hasattr(info, "data") and info.data:
             check_type = info.data.get("check_type")

@@ -44,7 +44,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 service = self.registry.get_service("my_service")
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the registry injection mixin."""
         super().__init__(**kwargs)
 

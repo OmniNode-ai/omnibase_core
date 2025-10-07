@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 class ModelSignatureMetadata(BaseModel):
     """Metadata for cryptographic signatures."""
 
-    signature_version: ModelSemVer = Field(
+    signature_version: str = Field(
         default="1.0",
         description="Signature format version",
     )

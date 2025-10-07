@@ -28,7 +28,7 @@ from omnibase_core.models.core.model_version_implementation import (
 from omnibase_core.models.core.model_version_manifest_class_config import ModelConfig
 from omnibase_core.models.core.model_version_security import ModelVersionSecurity
 from omnibase_core.models.core.model_version_testing import ModelVersionTesting
-from omnibase_core.models.service.model_node_service_config import ModelVersionFile
+from omnibase_core.models.core.model_version_file import ModelVersionFile
 
 
 class ModelVersionManifest(BaseModel):

@@ -37,7 +37,7 @@ class ModelCustomSettings(BaseModel):
     )
 
     # Metadata
-    version: ModelSemVer = Field(default=None, description="Settings version")
+    version: ModelSemVer | None = Field(default=None, description="Settings version")
 
     @field_validator("version", mode="before")
     @classmethod

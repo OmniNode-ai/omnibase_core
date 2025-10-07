@@ -29,9 +29,9 @@ from . import (
 from .common import (
     ModelErrorContext,
     ModelNumericValue,
-    ModelOnexError,
     ModelSchemaValue,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from .infrastructure import err, ok
 from .model_yaml_dump_options import ModelYamlDumpOptions
 from .results import ModelOnexResult

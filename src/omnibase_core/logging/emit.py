@@ -79,7 +79,7 @@ def emit_log_event(
         level=level,
         event_type=event_type,
         message=sanitized_message,
-        node_id=node_id,
+        node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
         correlation_id=correlation_id,
         context=context,
         data=sanitized_data,
@@ -118,7 +118,7 @@ def emit_log_event_with_new_correlation(
         event_type=event_type,
         message=message,
         correlation_id=correlation_id,
-        node_id=node_id,
+        node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
         data=data,
         event_bus=event_bus,
     )
@@ -151,7 +151,7 @@ def emit_log_event_sync(
         event_type=event_type,
         message=message,
         correlation_id=correlation_id,
-        node_id=node_id,
+        node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
         data=data,
         event_bus=event_bus,
     )
@@ -187,7 +187,7 @@ async def emit_log_event_async(
         event_type=event_type,
         message=message,
         correlation_id=correlation_id,
-        node_id=node_id,
+        node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
         data=data,
         event_bus=event_bus,
     )
@@ -203,7 +203,7 @@ def trace_function_lifecycle(func: F) -> F:
             return result
     """
 
-    def wrapper(*args: Any, **kwargs) -> Any:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         function_name = func.__name__
         module_name = func.__module__
         correlation_id = uuid4()
@@ -362,7 +362,7 @@ def log_performance_metrics(threshold_ms: int = 1000) -> Callable[[F], F]:
     """
 
     def decorator(func: F) -> F:
-        def wrapper(*args: Any, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             function_name = func.__name__
             correlation_id = uuid4()
 
@@ -573,19 +573,20 @@ def _create_log_context_from_frame() -> ModelLogContext:
     # Walk up the stack to get the actual caller
     if frame and frame.f_back and frame.f_back.f_back:
         frame = frame.f_back.f_back
+        node_id_raw = _detect_node_id_from_context()
         return ModelLogContext(
             calling_function=frame.f_code.co_name,
             calling_module=frame.f_globals.get("__name__", "unknown"),
             calling_line=frame.f_lineno,
             timestamp=datetime.now(UTC).isoformat(),
-            node_id=_detect_node_id_from_context(),
+            node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
     return ModelLogContext(
         calling_function="unknown",
         calling_module="unknown",
         calling_line=0,
         timestamp=datetime.now(UTC).isoformat(),
-        node_id="unknown",
+        node_id=UUID("00000000-0000-0000-0000-000000000000"),
     )
 
 

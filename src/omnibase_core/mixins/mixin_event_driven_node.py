@@ -72,10 +72,11 @@ class MixinEventDrivenNode(
     """
 
     def __init__(
+        self,
         node_id: str,
         event_bus: ProtocolEventBus,
         metadata_loader: ProtocolSchemaLoader | None = None,
-        registry=None,
+        registry: Any = None,
         **kwargs: object,
     ) -> None:
         super().__init__(**kwargs)
@@ -137,10 +138,12 @@ class MixinEventDrivenNode(
                 metadata = metadata_loader.metadata
                 if metadata and hasattr(metadata, "version"):
                     return str(metadata.version)
+            return "0.0.0"  # Default version if metadata unavailable
         except Exception as e:
             msg = f"Failed to load node version from metadata: {e}"
             raise ModelOnexError(
                 EnumCoreErrorCode.METADATA_LOAD_FAILED,
+                msg,
             )
 
     def get_capabilities(self) -> list[str]:

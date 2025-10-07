@@ -9,10 +9,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+
 if TYPE_CHECKING:
-    from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
-    from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-    from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
     from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
@@ -37,15 +38,15 @@ class ModelNodeCoreMetadata(BaseModel):
         description="Unique identifier for the node entity",
     )
     node_display_name: str = Field(default="", description="Human-readable node name")
-    node_type: "EnumMetadataNodeType" = Field(default=..., description="Node type")
+    node_type: EnumMetadataNodeType = Field(default=..., description="Node type")
 
     # Status information (2 fields)
-    status: "EnumMetadataNodeStatus" = Field(
-        default="active",
+    status: EnumMetadataNodeStatus = Field(
+        default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    health: "EnumNodeHealthStatus" = Field(
-        default="healthy",
+    health: EnumNodeHealthStatus = Field(
+        default=EnumNodeHealthStatus.HEALTHY,
         description="Node health",
     )
 
@@ -82,7 +83,7 @@ class ModelNodeCoreMetadata(BaseModel):
     def create_simple(
         cls,
         node_name: str,
-        node_type: "EnumMetadataNodeType" = "function",
+        node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
     ) -> "ModelNodeCoreMetadata":
         """Create simple core metadata with deterministic UUID."""
         from uuid import NAMESPACE_DNS, uuid5

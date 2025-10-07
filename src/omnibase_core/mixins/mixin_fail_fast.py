@@ -56,7 +56,7 @@ class MixinFailFast:
                     pass
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the fail fast mixin."""
         super().__init__(**kwargs)
 
@@ -78,7 +78,7 @@ class MixinFailFast:
         """
 
         @wraps(func)
-        def wrapper(*args, **kwargs) -> T:
+        def wrapper(*args: Any, **kwargs: Any) -> T:
             try:
                 return func(*args, **kwargs)
             except FailFastError:
@@ -284,7 +284,7 @@ class MixinFailFast:
                 message=message,
             )
 
-    def _handle_critical_error(self, message: str, **details) -> None:
+    def _handle_critical_error(self, message: str, **details: Any) -> None:
         """
         Handle a critical error by logging and exiting.
 

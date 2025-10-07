@@ -28,6 +28,8 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.validation.contracts import load_and_validate_yaml_model
 
 # Generic type variables for input and output states
 InputStateT = TypeVar("InputStateT")
@@ -53,7 +55,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     self.start_event_listener()
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the event listener mixin."""
         super().__init__(**kwargs)
         self._event_listener_thread: threading.Thread | None = None
@@ -136,9 +138,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 if contract_path.exists():
                     with open(contract_path) as f:
                         # Load and validate YAML using Pydantic model
-
-                        yaml_model = load_and_validate_yaml_model()
-
+                        content = f.read()
+                        yaml_model = load_and_validate_yaml_model(content)
                         contract = yaml_model.model_dump()
 
                     event_subscriptions = contract.get("event_subscriptions", [])
@@ -305,7 +306,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             # Unsubscribe from all events
             for pattern in self._event_subscriptions:
                 try:
-                    self.event_bus.unsubscribe(pattern)
+                    if self.event_bus is not None:
+                        self.event_bus.unsubscribe(pattern)
                 except Exception as e:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -373,7 +375,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     },
                 )
 
-                self.event_bus.subscribe(handler, pattern)
+                if self.event_bus is not None:
+                    self.event_bus.subscribe(handler, pattern)
                 self._event_subscriptions.append(pattern)
 
                 emit_log_event(
@@ -438,7 +441,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             {"node_name": self.get_node_name(), "pattern": pattern},
         )
 
-        def handler(envelope) -> None:
+        def handler(envelope: Any) -> None:
             """Handle incoming event envelope."""
             # Handle both envelope and direct event for current standards
             if hasattr(envelope, "payload"):
@@ -655,8 +658,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             },
         )
 
-        if hasattr(event_data, "payload") and hasattr(event_data.payload, "data"):
-            data = event_data.payload.data
+        if hasattr(event_data, "payload") and event_data.payload is not None and hasattr(event_data.payload, "data"):
+            data = event_data.payload.data if event_data.payload is not None else None
             emit_log_event(
                 LogLevel.DEBUG,
                 "📦 EVENT_TO_INPUT_STATE: Using payload.data from event",
@@ -823,6 +826,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         return None
 
     def _publish_completion_event(
+        self,
         input_event: ModelOnexEvent,
         output_state: OutputStateT,
     ):
@@ -918,7 +922,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             event_type=completion_event_type,
             node_id=self.get_node_name(),
             correlation_id=input_event.correlation_id,
-            causation_id=input_event.event_id,
             data=completion_data,
         )
 
@@ -989,7 +992,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             event_type=completion_event_type,
             node_id=self.get_node_name(),
             correlation_id=input_event.correlation_id,
-            causation_id=input_event.event_id,
             data=error_data,
         )
 
@@ -1002,7 +1004,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             correlation_id=input_event.correlation_id,
         )
 
-        self.event_bus.publish(envelope)
+        if self.event_bus is not None:
+            self.event_bus.publish(envelope)
 
         emit_log_event(
             LogLevel.ERROR,

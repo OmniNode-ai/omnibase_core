@@ -55,3 +55,9 @@ class ModelLatencyProfile(BaseModel):
         default_factory=list,
         description="Latency optimization suggestions",
     )
+
+    # Driver-specific latency
+    driver_latency: str | None = Field(
+        default=None,
+        description="Driver-specific latency characteristics",
+    )

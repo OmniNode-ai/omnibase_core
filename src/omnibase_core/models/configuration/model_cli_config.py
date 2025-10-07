@@ -56,7 +56,7 @@ class ModelCLIConfig(BaseModel):
     debug: bool = Field(default=False, description="Enable debug mode")
     verbose: bool = Field(default=False, description="Enable verbose output")
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, __context: Any) -> None:
         """Initialize configuration after model creation."""
         self.ensure_directories_exist()
 

@@ -1,6 +1,6 @@
 from typing import Any
 
-from omnibase_core.constants.constants_contract_fields import (
+from omnibase_core.constants.event_types import (
     NODE_INTROSPECTION_EVENT,
     TOOL_DISCOVERY_REQUEST,
 )

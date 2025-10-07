@@ -456,7 +456,7 @@ class ModelToolType(BaseModel):
         """String representation for current standards."""
         return self.name
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
             return self.name == other

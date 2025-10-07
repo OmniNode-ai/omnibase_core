@@ -143,7 +143,7 @@ class ModelExecutionContext(BaseModel):
         # Check custom tags
         return self.execution_metadata.custom_tags.get(key, default)
 
-    def create_child_context(self, **overrides) -> "ModelExecutionContext":
+    def create_child_context(self, **overrides: Any) -> "ModelExecutionContext":
         """Create a child context with optional overrides."""
         data = self.model_dump()
         data.update(overrides)
@@ -166,9 +166,9 @@ class ModelExecutionContext(BaseModel):
         if self.user_id:
             env_dict["ONEX_USER_ID"] = self.user_id
         if self.session_id:
-            env_dict["ONEX_SESSION_ID"] = self.session_id
+            env_dict["ONEX_SESSION_ID"] = str(self.session_id)
         if self.correlation_id:
-            env_dict["ONEX_CORRELATION_ID"] = self.correlation_id
+            env_dict["ONEX_CORRELATION_ID"] = str(self.correlation_id)
         if self.working_directory:
             env_dict["ONEX_WORKING_DIRECTORY"] = self.working_directory
 

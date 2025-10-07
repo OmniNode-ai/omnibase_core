@@ -42,6 +42,7 @@ class MixinHashComputation:
     """
 
     def compute_hash(
+        self,
         body: str,
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
@@ -52,6 +53,7 @@ class MixinHashComputation:
     ) -> str:
         canonical = MixinCanonicalYAMLSerializer().canonicalize_for_hash(
             self,  # type: ignore[arg-type]
+            body,
             volatile_fields=volatile_fields,
             placeholder=placeholder,
             comment_prefix=comment_prefix,

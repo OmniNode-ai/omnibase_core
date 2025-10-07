@@ -1,6 +1,6 @@
 """Model for optional string values."""
 
-from typing import Optional
+from typing import Callable, Optional
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class ModelOptionalString(BaseModel):
         """Get value or return default if None."""
         return self.value if self.value is not None else default
 
-    def map(self, func) -> "ModelOptionalString":
+    def map(self, func: Callable[[str], str]) -> "ModelOptionalString":
         """Apply function to value if present."""
         if self.value is not None:
             return ModelOptionalString(value=func(self.value))

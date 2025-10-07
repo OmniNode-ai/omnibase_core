@@ -190,7 +190,7 @@ class ModelEventDescriptor(BaseModel):
         default=True,
         description="Whether event requires validation",
     )
-    event_schema_version: ModelSemVer = Field(
+    event_schema_version: str = Field(
         default="1.0.0",
         description="EventDescriptor schema version",
     )

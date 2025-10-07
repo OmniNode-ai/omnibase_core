@@ -53,7 +53,7 @@ class ModelSchema(BaseModel):
     )
 
     # Document-level metadata (used when this represents a full document)
-    schema_version: ModelSemVer = Field(
+    schema_version: str = Field(
         default="draft-07", description="JSON Schema version"
     )
     title: str | None = Field(default=None, description="Schema title")
@@ -462,7 +462,7 @@ class ModelSchema(BaseModel):
                         # Simple string example - convert to ModelExample
                         examples.append(
                             ModelExample(
-                                value=example,
+                                name=example,
                                 description=f"Example: {example}",
                             ),
                         )
@@ -474,7 +474,7 @@ class ModelSchema(BaseModel):
                 # Single example value
                 examples = [
                     ModelExample(
-                        value=examples_data,
+                        name=str(examples_data),
                         description=f"Example: {examples_data}",
                     ),
                 ]
@@ -499,7 +499,7 @@ class ModelSchema(BaseModel):
         # Create the unified schema
         return cls(
             type=data.get("type", "object"),
-            schema_version=schema_version,
+            schema_version=parse_semver_from_string(schema_version) if isinstance(schema_version, str) else schema_version,
             title=data.get("title"),
             description=data.get("description"),
             **{"$ref": data.get("$ref")} if data.get("$ref") else {},
@@ -515,7 +515,7 @@ class ModelSchema(BaseModel):
             min_items=data.get("minItems"),
             max_items=data.get("maxItems"),
             unique_items=data.get("uniqueItems"),
-            properties=properties,
+            properties={k: v for k, v in properties.items() if v is not None} if properties else None,
             required=data.get("required"),
             additional_properties=data.get("additionalProperties", True),
             min_properties=data.get("minProperties"),
@@ -526,10 +526,10 @@ class ModelSchema(BaseModel):
                 if data.get("default") is not None
                 else None
             ),
-            definitions=definitions,
-            all_of=all_of,
-            any_of=any_of,
-            one_of=one_of,
+            definitions={k: v for k, v in definitions.items() if v is not None} if definitions else None,
+            all_of=[s for s in all_of if s is not None] if all_of else None,
+            any_of=[s for s in any_of if s is not None] if any_of else None,
+            one_of=[s for s in one_of if s is not None] if one_of else None,
             examples=examples,
         )
 

@@ -115,7 +115,7 @@ class ModelHealthMetadata(BaseModel):
         return self.check_interval_seconds
 
     @classmethod
-    def create_production(cls, **kwargs) -> "ModelHealthMetadata":
+    def create_production(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create production health metadata configuration"""
         return cls(
             environment="production",
@@ -127,7 +127,7 @@ class ModelHealthMetadata(BaseModel):
         )
 
     @classmethod
-    def create_development(cls, **kwargs) -> "ModelHealthMetadata":
+    def create_development(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create development health metadata configuration"""
         return cls(
             environment="development",
@@ -139,7 +139,7 @@ class ModelHealthMetadata(BaseModel):
         )
 
     @classmethod
-    def create_maintenance_mode(cls, **kwargs) -> "ModelHealthMetadata":
+    def create_maintenance_mode(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create maintenance mode health metadata configuration"""
         return cls(
             maintenance_mode=True,

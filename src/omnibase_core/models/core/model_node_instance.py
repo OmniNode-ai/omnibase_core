@@ -75,7 +75,7 @@ class ModelNodeInstance(BaseModel):
         description="Connection URL for remote instances",
     )
 
-    protocol_version: ModelSemVer = Field(
+    protocol_version: str = Field(
         default="1.0.0",
         description="Protocol version supported",
     )

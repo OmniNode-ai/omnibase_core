@@ -48,7 +48,7 @@ class ModelEventPayload(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields

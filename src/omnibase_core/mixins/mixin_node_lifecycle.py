@@ -169,7 +169,7 @@ class MixinNodeLifecycle:
             )
 
             # Wrap in envelope before publishing
-            envelope: ModelEventEnvelope = ModelEventEnvelope(
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event,
                 source_tool=node_id,
                 correlation_id=announce.correlation_id,
@@ -229,7 +229,7 @@ class MixinNodeLifecycle:
             )
 
             # Wrap in envelope and publish event
-            envelope: ModelEventEnvelope = ModelEventEnvelope(
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=shutdown_event,
                 source_tool=node_id,
                 correlation_id=shutdown_event.correlation_id,
@@ -302,7 +302,7 @@ class MixinNodeLifecycle:
             )
 
             # Wrap in envelope before publishing
-            envelope: ModelEventEnvelope = ModelEventEnvelope(
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event,
                 source_tool=node_id,
                 correlation_id=final_correlation_id,
@@ -362,7 +362,7 @@ class MixinNodeLifecycle:
             )
 
             # Wrap in envelope before publishing
-            envelope: ModelEventEnvelope = ModelEventEnvelope(
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event,
                 source_tool=node_id,
                 correlation_id=final_correlation_id,
@@ -422,7 +422,7 @@ class MixinNodeLifecycle:
             )
 
             # Wrap in envelope before publishing
-            envelope: ModelEventEnvelope = ModelEventEnvelope(
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event,
                 source_tool=node_id,
                 correlation_id=final_correlation_id,

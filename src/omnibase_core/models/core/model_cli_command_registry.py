@@ -200,12 +200,14 @@ class ModelCliCommandRegistry(BaseModel):
                 examples = []
             else:
                 # Object format with detailed information
-                command_name = command_data.get("command_name") or command_data.get(
+                command_name_raw = command_data.get("command_name") or command_data.get(
                     "name",
                 )
-                if not command_name:
+                if not command_name_raw:
                     return None
 
+                # Type assertion: we know command_name_raw is truthy and should be str
+                command_name: str = str(command_name_raw)
                 action = command_data.get("action", command_name)
                 description = command_data.get(
                     "description",

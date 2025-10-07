@@ -40,6 +40,7 @@ from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Import contract model for reducer nodes
@@ -624,9 +625,9 @@ class NodeReducer(NodeCoreBase):
             reduction_type=EnumReductionType.AGGREGATE,
             group_key=group_by,  # Use field name string instead of lambda
             metadata={
-                "group_by": group_by,
-                "aggregation_functions": aggregation_functions,
-                "rsd_operation": "ticket_aggregation",
+                "group_by": ModelSchemaValue.from_value(group_by),
+                "aggregation_functions": ModelSchemaValue.from_value(aggregation_functions),
+                "rsd_operation": ModelSchemaValue.from_value("ticket_aggregation"),
             },
         )
 
@@ -657,9 +658,9 @@ class NodeReducer(NodeCoreBase):
             data=tickets_with_scores,
             reduction_type=EnumReductionType.NORMALIZE,
             metadata={
-                "score_field": score_field,
-                "normalization_method": normalization_method,
-                "rsd_operation": "priority_normalization",
+                "score_field": ModelSchemaValue.from_value(score_field),
+                "normalization_method": ModelSchemaValue.from_value(normalization_method),
+                "rsd_operation": ModelSchemaValue.from_value("priority_normalization"),
             },
         )
 
@@ -686,8 +687,8 @@ class NodeReducer(NodeCoreBase):
             data=list[Any](dependency_graph.items()),
             reduction_type=EnumReductionType.MERGE,
             metadata={
-                "graph_operation": "cycle_detection",
-                "rsd_operation": "dependency_analysis",
+                "graph_operation": ModelSchemaValue.from_value("cycle_detection"),
+                "rsd_operation": ModelSchemaValue.from_value("dependency_analysis"),
             },
         )
 
@@ -1204,7 +1205,8 @@ class NodeReducer(NodeCoreBase):
 
             # Handle dependency graph cycle detection
             metadata = input_data.metadata or {}
-            if metadata.get("graph_operation") == "cycle_detection":
+            graph_op = metadata.get("graph_operation")
+            if graph_op and graph_op.to_value() == "cycle_detection":
                 return self._detect_dependency_cycles(data)
 
             # General merge operation

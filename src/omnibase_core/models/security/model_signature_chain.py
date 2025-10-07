@@ -25,10 +25,8 @@ from pydantic import BaseModel, Field, validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.security.model_chain_metrics import ModelChainMetrics
-from omnibase_core.models.security.model_node_signature import (
-    ModelNodeOperationEnum,
-    ModelNodeSignature,
-)
+from omnibase_core.enums.enum_node_operation import EnumNodeOperation
+from omnibase_core.models.security.model_node_signature import ModelNodeSignature
 from omnibase_core.models.security.model_signing_policy import ModelSigningPolicy
 
 logger = logging.getLogger(__name__)

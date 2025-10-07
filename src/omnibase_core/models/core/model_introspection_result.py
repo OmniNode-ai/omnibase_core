@@ -21,4 +21,4 @@ class ModelIntrospectionResult(BaseModel):
 
     metadata: ModelIntrospectionMetadata = Field(description="Tool metadata")
     health: ModelToolHealthStatus = Field(description="Tool health status")
-    examples: list[ModelUsageExample] = Field(description="Usage examples")
+    examples: list["ModelUsageExample[Any, Any]"] = Field(description="Usage examples")

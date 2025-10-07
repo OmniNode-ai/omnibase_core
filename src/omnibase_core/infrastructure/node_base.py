@@ -204,17 +204,39 @@ class NodeBase(
 
                 # Process each dependency
                 for dependency in contract_content.dependencies:
-                    emit_log_event(
-                        LogLevel.DEBUG,
-                        f"Dependency registered: {dependency.name}",
-                        {
-                            "dependency_name": dependency.name,
-                            "dependency_module": dependency.module or "N/A",
-                            "dependency_type": dependency.dependency_type.value,
-                            "required": dependency.required,
-                            "node_name": contract_content.node_name,
-                        },
-                    )
+                    # Handle both string and ModelContractDependency types
+                    if isinstance(dependency, str):
+                        emit_log_event(
+                            LogLevel.DEBUG,
+                            f"Dependency registered: {dependency}",
+                            {
+                                "dependency_name": dependency,
+                                "dependency_module": "N/A",
+                                "dependency_type": "unknown",
+                                "required": True,
+                                "node_name": contract_content.node_name,
+                            },
+                        )
+                    else:
+                        # Use type instead of dependency_type for ModelContractDependency
+                        dep_type = getattr(dependency, "type", "unknown")
+                        # Handle enum or string type
+                        if hasattr(dep_type, "value"):
+                            dep_type_value = dep_type.value
+                        else:
+                            dep_type_value = str(dep_type)
+
+                        emit_log_event(
+                            LogLevel.DEBUG,
+                            f"Dependency registered: {dependency.name}",
+                            {
+                                "dependency_name": dependency.name,
+                                "dependency_module": dependency.module or "N/A",
+                                "dependency_type": dep_type_value,
+                                "required": getattr(dependency, "required", True),
+                                "node_name": contract_content.node_name,
+                            },
+                        )
 
                     # Note: Actual service registration with container will be implemented
                     # when omnibase-spi protocol service resolver is fully integrated.
@@ -223,15 +245,20 @@ class NodeBase(
         self._container = container
 
         # Store contract and configuration
-        business_logic_pattern = (
-            contract_content.tool_specification.business_logic_pattern
+        business_logic_pattern = getattr(
+            contract_content.tool_specification,
+            "business_logic_pattern",
+            None
         )
         # Handle both string and enum cases
-        pattern_value = (
-            business_logic_pattern.value
-            if hasattr(business_logic_pattern, "value")
-            else str(business_logic_pattern)
-        )
+        if business_logic_pattern is not None:
+            pattern_value = (
+                business_logic_pattern.value
+                if hasattr(business_logic_pattern, "value")
+                else str(business_logic_pattern)
+            )
+        else:
+            pattern_value = "unknown"
 
         self.state = ModelNodeState(
             contract_path=contract_path,

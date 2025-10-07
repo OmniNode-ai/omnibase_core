@@ -61,7 +61,7 @@ class MixinDebugDiscoveryLogging:
 
             # Replace with debug version
             self._handle_introspection_request = (
-                lambda envelope_or_event: self._debug_handle_introspection_request()
+                lambda envelope_or_event: self._debug_handle_introspection_request(envelope_or_event, node_name)
             )
 
             emit_log_event(
@@ -71,7 +71,7 @@ class MixinDebugDiscoveryLogging:
             )
 
     def _debug_handle_introspection_request(
-        self, envelope_or_event, node_name: str
+        self, envelope_or_event: Any, node_name: str
     ) -> None:
         """
         Debug wrapper for introspection request handling.

@@ -11,6 +11,7 @@ and their capabilities.
 
 import logging
 import time
+import traceback
 from collections.abc import Callable as CallableABC
 from typing import TYPE_CHECKING, Any, Callable, Optional
 from uuid import uuid4
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ class MixinServiceRegistry:
     registries that maintain live catalogs of available tools.
     """
 
-    def __init__(self, *args: Any, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the service registry mixin."""
         # Extract mixin-specific kwargs before passing to super()
         introspection_timeout = kwargs.pop("introspection_timeout", 30)
@@ -211,6 +213,7 @@ class MixinServiceRegistry:
                 if hasattr(envelope, "payload") and hasattr(envelope.payload, "data")
                 else {}
             )
+            event_data = event_data if event_data is not None else {}
             node_id = (
                 event_data.get("node_name") or envelope.payload.node_id
                 if hasattr(envelope, "payload")
@@ -272,6 +275,7 @@ class MixinServiceRegistry:
                 if hasattr(envelope, "payload") and hasattr(envelope.payload, "data")
                 else {}
             )
+            event_data = event_data if event_data is not None else {}
             node_id = (
                 event_data.get("node_name") or envelope.payload.node_id
                 if hasattr(envelope, "payload")
@@ -354,6 +358,7 @@ class MixinServiceRegistry:
                     and hasattr(envelope.payload, "data")
                     else {}
                 )
+                introspection_data = introspection_data if introspection_data is not None else {}
                 self.service_registry[node_id].update_introspection(introspection_data)
 
                 emit_log_event(
@@ -379,6 +384,7 @@ class MixinServiceRegistry:
                 if hasattr(envelope, "payload") and hasattr(envelope.payload, "data")
                 else {}
             )
+            event_data = event_data if event_data is not None else {}
             logger.info(f"📡 Received discovery request: {envelope}")
 
             # Extract request details
@@ -448,6 +454,7 @@ class MixinServiceRegistry:
             logger.exception(f"❌ Error handling discovery request: {e}")
 
     def get_registered_tools(
+        self,
         status_filter: str | None = None,
     ) -> list[MixinServiceRegistryEntry]:
         """

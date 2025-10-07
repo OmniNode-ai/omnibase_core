@@ -52,7 +52,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             sys.exit(tool.main())
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the CLI handler mixin."""
         super().__init__(**kwargs)
 

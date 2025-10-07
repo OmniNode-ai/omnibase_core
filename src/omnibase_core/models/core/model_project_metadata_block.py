@@ -64,7 +64,7 @@ class ModelProjectMetadataBlock(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def _parse_entrypoint(cls, value) -> str:
+    def _parse_entrypoint(cls, value: Any) -> str:
         # Accept EntrypointBlock or URI string, always return URI string
         if isinstance(value, str) and "://" in value:
             return value
@@ -91,7 +91,7 @@ class ModelProjectMetadataBlock(BaseModel):
                 )
         # Convert tools to ModelToolCollection if needed
         if TOOLS_KEY in data and isinstance(data[TOOLS_KEY], dict):
-            data[TOOLS_KEY] = ModelToolCollection(data[TOOLS_KEY])
+            data[TOOLS_KEY] = ModelToolCollection(tools=data[TOOLS_KEY])
         # Convert version fields to ModelOnexVersionInfo
         version_fields = [
             METADATA_VERSION_KEY,

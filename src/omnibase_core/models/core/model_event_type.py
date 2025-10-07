@@ -95,7 +95,7 @@ class ModelEventType(BaseModel):
         """String representation for current standards."""
         return self.event_name
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Enable comparison with strings for current standards."""
         if isinstance(other, str):
             return self.event_name == other

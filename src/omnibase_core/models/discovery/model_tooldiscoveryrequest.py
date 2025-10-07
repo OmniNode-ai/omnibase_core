@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.constants_contract_fields import TOOL_DISCOVERY_REQUEST
+from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
 from omnibase_core.models.core.model_discovery_filters import ModelDiscoveryFilters
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
@@ -56,7 +56,7 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         requester_id: UUID,
         tags: list[str] | None = None,
         protocols: list[str] | None = None,
-        correlation_id=None,
+        correlation_id: UUID | None = None,
         **kwargs: Any,
     ) -> "ModelToolDiscoveryRequest":
         """
@@ -78,8 +78,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
             filters = ModelDiscoveryFilters(tags=tags, protocols=protocols)
 
         return cls(
-            node_id=node_id,
-            requester_id=requester_id,
+            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            requester_id=UUID(requester_id) if isinstance(requester_id, str) else requester_id,
             filters=filters,
             correlation_id=correlation_id,
             **kwargs,
@@ -90,7 +90,7 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         cls,
         requester_id: str | UUID = "mcp_server",
         node_id: str | UUID = "mcp_server",
-        correlation_id=None,
+        correlation_id: UUID | None = None,
         **kwargs: Any,
     ) -> "ModelToolDiscoveryRequest":
         """
@@ -111,8 +111,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         )
 
         return cls(
-            node_id=node_id,
-            requester_id=requester_id,
+            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            requester_id=UUID(requester_id) if isinstance(requester_id, str) else requester_id,
             filters=filters,
             correlation_id=correlation_id,
             **kwargs,

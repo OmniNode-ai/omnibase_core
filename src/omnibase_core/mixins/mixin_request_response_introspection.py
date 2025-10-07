@@ -57,7 +57,7 @@ class MixinRequestResponseIntrospection:
     - Request-response introspection for real-time "who's available now" discovery
     """
 
-    def __init__(self, *args: Any, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._introspection_request_subscription = None
         self._startup_time: float = time.time()
@@ -124,7 +124,7 @@ class MixinRequestResponseIntrospection:
                     f"Failed to teardown request-response introspection: {e}",
                 )
 
-    def _handle_introspection_request(self, envelope_or_event) -> None:
+    def _handle_introspection_request(self, envelope_or_event: Any) -> None:
         """
         Handle incoming REQUEST_REAL_TIME_INTROSPECTION events.
 
@@ -462,6 +462,7 @@ class MixinRequestResponseIntrospection:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
 
     def _matches_introspection_filters(
+        self,
         filters: ModelIntrospectionFilters | None,
     ) -> bool:
         """

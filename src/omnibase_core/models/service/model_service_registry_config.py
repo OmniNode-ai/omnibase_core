@@ -54,7 +54,7 @@ class ModelServiceRegistryConfig(BaseModel):
 
     @field_validator("services")
     @classmethod
-    def validate_services_not_empty(cls, v, info):
+    def validate_services_not_empty(cls, v: Any, info: Any) -> Any:
         if not v:
             msg = "At least one service must be configured"
             raise ModelOnexError(
@@ -65,7 +65,7 @@ class ModelServiceRegistryConfig(BaseModel):
 
     @field_validator("registry_modes")
     @classmethod
-    def validate_default_mode_exists(cls, v, info):
+    def validate_default_mode_exists(cls, v: Any, info: Any) -> Any:
         if hasattr(info, "data") and info.data:
             default_mode = info.data.get("default_mode")
             if default_mode and default_mode not in v:

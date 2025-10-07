@@ -4,6 +4,7 @@ Generator for Docker Compose configurations from ONEX service schemas.
 """
 
 from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -43,17 +44,19 @@ try:
     import yaml
 
     HAS_YAML = True
+    yaml_module: ModuleType | None = yaml
 except ImportError:
     HAS_YAML = False
-    yaml = None
+    yaml_module: ModuleType | None = None
 
 try:
     import json
 
     HAS_JSON = True
+    json_module: ModuleType | None = json
 except ImportError:
     HAS_JSON = False
-    json = None
+    json_module: ModuleType | None = None
 
 
 class ModelDockerComposeGenerator:

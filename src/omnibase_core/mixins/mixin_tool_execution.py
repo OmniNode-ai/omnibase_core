@@ -25,6 +25,19 @@ class MixinToolExecution:
     or other sources.
     """
 
+    # Type hints for methods expected to be provided by the mixed class
+    def get_node_name(self) -> str:
+        """Get the node name. Must be implemented by the mixed class."""
+        ...
+
+    def process(self, input_state: Any) -> Any:
+        """Process the input state. Must be implemented by the mixed class."""
+        ...
+
+    def _get_input_state_class(self) -> type[Any]:
+        """Get the input state class. Must be implemented by the mixed class."""
+        ...
+
     def handle_tool_execution_request_event(self, envelope: ModelEventEnvelope) -> None:
         """
         Handle tool execution request events.
@@ -40,15 +53,16 @@ class MixinToolExecution:
             {
                 "tool_name": self.get_node_name(),
                 "correlation_id": event.correlation_id,
-                "requester": event.data.get("caller", "unknown"),
+                "requester": event.data.get("caller", "unknown") if event.data is not None else "unknown",
             },
         )
 
         try:
             # Extract request data
-            requested_tool = event.data.get("tool_name", "")
-            parameters = event.data.get("parameters", [])
-            event.data.get("timeout", 30)
+            event_data = event.data if event.data is not None else {}
+            requested_tool = event_data.get("tool_name", "")
+            parameters = event_data.get("parameters", [])
+            event_data.get("timeout", 30)
 
             # Check if this request is for this tool
             if requested_tool != self.get_node_name():
@@ -105,7 +119,8 @@ class MixinToolExecution:
         # Get input state class
         input_state_class = self._get_input_state_class()
 
-        # Convert parameter list[Any]to dict[str, Any]param_dict = {}
+        # Convert parameter list to dict
+        param_dict: dict[str, Any] = {}
         for param in parameters:
             if isinstance(param, dict):
                 param_dict[param.get("name", "")] = param.get("value")
@@ -154,6 +169,7 @@ class MixinToolExecution:
         return {"result": str(output_state)}
 
     def _publish_execution_response(
+        self,
         correlation_id: str,
         success: bool,
         result: dict[str, Any] | None,

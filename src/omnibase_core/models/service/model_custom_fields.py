@@ -158,7 +158,7 @@ class ModelCustomFields(BaseModel):
             del self.field_values[name]
             self.last_modified = datetime.utcnow()
 
-    def define_field(self, name: str, field_type: str, **kwargs) -> None:
+    def define_field(self, name: str, field_type: str, **kwargs: Any) -> None:
         """Define a new custom field."""
         self.field_definitions[name] = ModelCustomFieldDefinition(
             field_name=name,

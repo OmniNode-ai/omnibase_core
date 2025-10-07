@@ -40,7 +40,10 @@ from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
-from omnibase_core.models.core.model_event_type import is_event_equal
+from omnibase_core.models.core.model_event_type import (
+    create_event_type_from_registry,
+    is_event_equal,
+)
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent
 
@@ -102,7 +105,7 @@ class MixinEventHandler:
                 calling_function="_setup_event_handlers",
                 calling_line=67,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.DEBUG,
@@ -123,7 +126,7 @@ class MixinEventHandler:
             self._setup_event_handlers()
 
     def _handle_introspection_request(
-        self, envelope: "ModelEventEnvelope | OnexEvent"
+        self, envelope: "ModelEventEnvelope[Any] | OnexEvent"
     ) -> None:
         """
         Handle NODE_INTROSPECTION_REQUEST events.
@@ -180,7 +183,9 @@ class MixinEventHandler:
                 else None
             )
             if requested_types:
-                introspection_data = self._filter_introspection_data()
+                introspection_data = self._filter_introspection_data(
+                    introspection_data, requested_types
+                )
 
             # Emit response event (simplified - would need full implementation)
             node_id = getattr(self, "_node_id", "unknown")
@@ -189,7 +194,7 @@ class MixinEventHandler:
                 calling_function="_handle_introspection_request",
                 calling_line=124,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.DEBUG,
@@ -204,7 +209,7 @@ class MixinEventHandler:
                 calling_function="_handle_introspection_request",
                 calling_line=137,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -213,7 +218,7 @@ class MixinEventHandler:
             )
 
     def _handle_node_discovery_request(
-        self, envelope: "ModelEventEnvelope | OnexEvent"
+        self, envelope: "ModelEventEnvelope[Any] | OnexEvent"
     ) -> None:
         """
         Handle NODE_DISCOVERY_REQUEST events.
@@ -253,7 +258,7 @@ class MixinEventHandler:
                 calling_function="_handle_node_discovery_request",
                 calling_line=170,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.DEBUG,
@@ -268,7 +273,7 @@ class MixinEventHandler:
                 calling_function="_handle_node_discovery_request",
                 calling_line=183,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -312,6 +317,7 @@ class MixinEventHandler:
             # On error, default to responding
             return True
 
+    @staticmethod
     def _filter_introspection_data(
         introspection_data: dict[str, Any],
         requested_types: list[str],
@@ -348,7 +354,7 @@ class MixinEventHandler:
                     calling_function="cleanup_event_handlers",
                     calling_line=248,
                     timestamp=datetime.now().isoformat(),
-                    node_id=node_id,
+                    node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 )
                 emit_log_event_sync(
                     LogLevel.DEBUG,
@@ -362,7 +368,7 @@ class MixinEventHandler:
                     calling_function="cleanup_event_handlers",
                     calling_line=261,
                     timestamp=datetime.now().isoformat(),
-                    node_id=node_id,
+                    node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 )
                 emit_log_event_sync(
                     LogLevel.WARNING,

@@ -183,7 +183,7 @@ def lazy_cached(
 
     def decorator(func: Callable[..., T]) -> Callable[..., MixinLazyValue[T]]:
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs) -> MixinLazyValue[T]:
+        def wrapper(self: Any, *args: Any, **kwargs: Any) -> MixinLazyValue[T]:
             if not hasattr(self, "_lazy_cache"):
                 self._lazy_cache = {}
 

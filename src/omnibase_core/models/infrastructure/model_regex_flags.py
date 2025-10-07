@@ -124,7 +124,7 @@ class ModelRegexFlags(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol).
 
         Raises:
@@ -137,7 +137,7 @@ class ModelRegexFlags(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def configure(self, **kwargs) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:

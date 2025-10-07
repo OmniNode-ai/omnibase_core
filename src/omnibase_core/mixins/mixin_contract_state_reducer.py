@@ -39,7 +39,7 @@ class MixinContractStateReducer:
                 return self.process_action_with_transitions(input_state)
     """
 
-    def __init__(self, *args: Any, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize contract state reducer mixin."""
         super().__init__(*args, **kwargs)
 
@@ -89,7 +89,7 @@ class MixinContractStateReducer:
                 return []
 
             # Load and validate contract using safe YAML loader
-            contract: ModelGenericContract = load_and_validate_yaml_model()
+            contract: ModelGenericContract = load_and_validate_yaml_model(transitions_path, ModelGenericContract)
 
             # Extract state_transitions section
             contract_dict = contract.model_dump()
@@ -113,10 +113,20 @@ class MixinContractStateReducer:
                     )
                 elif transition_type == "tool_based":
                     tool_config = transition_data.get("tool_config", {})
+                    # Get tool_id from config or generate from tool_name
+                    from uuid import UUID, uuid5, NAMESPACE_DNS
+                    tool_id = tool_config.get("tool_id")
+                    if tool_id is None and tool_config.get("tool_name"):
+                        # Generate deterministic UUID from tool_name
+                        tool_id = uuid5(NAMESPACE_DNS, tool_config["tool_name"])
+                    elif isinstance(tool_id, str):
+                        tool_id = UUID(tool_id)
+
                     transition = ModelStateTransition.create_tool_based(
                         name=transition_data["name"],
                         triggers=transition_data.get("triggers", []),
-                        tool_name=tool_config.get("tool_name"),
+                        tool_id=tool_id,
+                        tool_display_name=tool_config.get("tool_name"),
                         tool_params=tool_config.get("tool_params"),
                         description=transition_data.get("description"),
                     )
@@ -249,6 +259,7 @@ class MixinContractStateReducer:
             )
 
     def _apply_simple_transition(
+        self,
         transition: ModelStateTransition,
         input_state: Any,
     ) -> None:
@@ -268,6 +279,7 @@ class MixinContractStateReducer:
         )
 
     def _apply_tool_based_transition(
+        self,
         transition: ModelStateTransition,
         input_state: Any,
     ) -> None:
@@ -291,6 +303,7 @@ class MixinContractStateReducer:
         )
 
     def _apply_conditional_transition(
+        self,
         transition: ModelStateTransition,
         input_state: Any,
     ) -> None:

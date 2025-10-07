@@ -55,7 +55,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
                 return MyWorkflow(input_state)
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the hybrid execution mixin."""
         super().__init__(**kwargs)
 
@@ -105,6 +105,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         return ExecutionMode.DIRECT
 
     def execute(
+        self,
         input_state: InputStateT,
         mode: str | None = None,
     ) -> OutputStateT:
@@ -238,7 +239,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
                 {
                     "node_class": self.__class__.__name__,
                     "workflow_name": workflow.__class__.__name__,
-                    "execution_time": self._workflow_metrics.execution_time,
+                    "execution_time": self._workflow_metrics.duration_seconds,
                 },
             )
 
@@ -321,7 +322,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         # Default modes
         return [ExecutionMode.DIRECT, ExecutionMode.WORKFLOW]
 
-    def create_workflow(self, input_state: InputStateT) -> None:
+    def create_workflow(self, input_state: InputStateT) -> Any:
         """
         Create LlamaIndex workflow for complex operations.
 
@@ -338,6 +339,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             f"No workflow implementation provided for {self.__class__.__name__}",
             {"execution_will_fallback": "direct"},
         )
+        return None
 
     @property
     def execution_mode(self) -> str | None:

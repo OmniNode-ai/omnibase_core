@@ -79,7 +79,10 @@ class MixinNodeExecutor(MixinEventDrivenNode):
     - Support asyncio event loop for concurrent operations
     """
 
-    def __init__(self, **kwargs) -> None:
+    # Type hints for inherited attributes
+    _node_id: str
+
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the executor mixin."""
         super().__init__(**kwargs)
 
@@ -185,7 +188,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 
-    async def handle_tool_invocation(self, envelope: "ModelEventEnvelope") -> None:
+    async def handle_tool_invocation(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """
         Handle a TOOL_INVOCATION event.
 
@@ -199,7 +202,14 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             envelope: The event envelope containing the tool invocation event
         """
         # Extract event from envelope
-        event = envelope.payload if hasattr(envelope, "payload") else envelope
+        extracted_event = envelope.payload if hasattr(envelope, "payload") else envelope
+
+        # Validate event type
+        if not isinstance(extracted_event, ModelToolInvocationEvent):
+            self._log_warning(f"Unexpected event type: {type(extracted_event)}")
+            return
+
+        event: ModelToolInvocationEvent = extracted_event
 
         start_time = time.time()
         correlation_id = event.correlation_id
@@ -230,13 +240,13 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_success_response(
                 correlation_id=correlation_id,
-                source_node_id=self._node_id,
+                source_node_id=UUID(self._node_id) if isinstance(self._node_id, str) else self._node_id,
                 source_node_name=self._extract_node_name(),
                 tool_name=event.tool_name,
                 action=event.action,
                 result=self._serialize_result(result),
                 execution_time_ms=execution_time_ms,
-                target_node_id=event.requester_node_id,
+                target_node_id=str(event.requester_node_id) if isinstance(event.requester_node_id, UUID) else event.requester_node_id,
                 requester_id=event.requester_id,
                 execution_priority=event.priority,
             )
@@ -254,14 +264,14 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
-                source_node_id=self._node_id,
+                source_node_id=UUID(self._node_id) if isinstance(self._node_id, str) else self._node_id,
                 source_node_name=self._extract_node_name(),
                 tool_name=event.tool_name,
                 action=event.action,
                 error=str(e),
                 error_code="TOOL_EXECUTION_ERROR",
                 execution_time_ms=execution_time_ms,
-                target_node_id=event.requester_node_id,
+                target_node_id=str(event.requester_node_id) if isinstance(event.requester_node_id, UUID) else event.requester_node_id,
                 requester_id=event.requester_id,
                 execution_priority=event.priority,
             )
@@ -373,6 +383,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         )
 
     async def _convert_event_to_input_state(
+        self,
         event: ModelToolInvocationEvent,
     ) -> Any:
         """
@@ -410,6 +421,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         return None
 
     async def _execute_tool(
+        self,
         input_state: Any,
         event: ModelToolInvocationEvent,
     ) -> Any:
@@ -420,7 +432,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             if asyncio.iscoroutinefunction(run_method):
                 return await run_method(input_state)
             # Run synchronous method in executor to avoid blocking
-            return await asyncio.get_event_loop().run_in_executor()
+            return await asyncio.get_event_loop().run_in_executor(
+                None, run_method, input_state
+            )
         msg = "Node does not have a 'run' method for tool execution"
         raise ModelOnexError(msg, EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED)
 
@@ -455,7 +469,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Emit a node shutdown event."""
         try:
             shutdown_event = ModelNodeShutdownEvent.create_graceful_shutdown(
-                node_id=self._node_id,
+                node_id=UUID(self._node_id) if isinstance(self._node_id, str) else self._node_id,
                 node_name=self._extract_node_name(),
             )
 
@@ -496,7 +510,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum, frame) -> None:
+            def signal_handler(signum: int, frame: Any) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown",
                 )
@@ -510,33 +524,36 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     def _log_info(self, message: str) -> None:
         """Log info message with context."""
+        node_id_raw = getattr(self, "_node_id", UUID("00000000-0000-0000-0000-000000000000"))
         context = ModelLogContext(
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,  # Required field
             timestamp=datetime.now().isoformat(),
-            node_id=getattr(self, "_node_id", "unknown"),
+            node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.INFO, message, context=context)
 
     def _log_warning(self, message: str) -> None:
         """Log warning message with context."""
+        node_id_raw = getattr(self, "_node_id", UUID("00000000-0000-0000-0000-000000000000"))
         context = ModelLogContext(
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,  # Required field
             timestamp=datetime.now().isoformat(),
-            node_id=getattr(self, "_node_id", "unknown"),
+            node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.WARNING, message, context=context)
 
     def _log_error(self, message: str) -> None:
         """Log error message with context."""
+        node_id_raw = getattr(self, "_node_id", UUID("00000000-0000-0000-0000-000000000000"))
         context = ModelLogContext(
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,  # Required field
             timestamp=datetime.now().isoformat(),
-            node_id=getattr(self, "_node_id", "unknown"),
+            node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.ERROR, message, context=context)

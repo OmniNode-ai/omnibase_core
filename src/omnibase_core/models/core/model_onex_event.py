@@ -241,7 +241,7 @@ try:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        from omnibase_core.enums.enum_events import EnumOnexEventType
+        from omnibase_core.enums.enum_events import EnumOnexEventType  # type: ignore[attr-defined]
 
     __all__ = [
         "ModelOnexEvent",

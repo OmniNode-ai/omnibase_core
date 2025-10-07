@@ -60,7 +60,7 @@ class ModelOnexInternalProcessingContext(BaseModel):
         correlation_id: UUID | None = None,
         event_id: UUID | None = None,
         session_id: UUID | None = None,
-        **additional_data,
+        **additional_data: Any,
     ) -> "ModelOnexInternalProcessingContext":
         """
         Create processing context for an operation, generating UUIDs as needed.

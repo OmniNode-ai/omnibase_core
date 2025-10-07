@@ -43,6 +43,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.load_balancer import LoadBalancer
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Import contract model for orchestrator nodes
@@ -490,10 +491,10 @@ class NodeOrchestrator(NodeCoreBase):
             dependency_resolution_enabled=True,
             failure_strategy="rollback",
             metadata={
-                "ticket_id": str(ticket_id),
-                "current_state": current_state,
-                "target_state": target_state,
-                "rsd_operation": "ticket_lifecycle",
+                "ticket_id": ModelSchemaValue.from_value(str(ticket_id)),
+                "current_state": ModelSchemaValue.from_value(current_state),
+                "target_state": ModelSchemaValue.from_value(target_state),
+                "rsd_operation": ModelSchemaValue.from_value("ticket_lifecycle"),
             },
         )
 

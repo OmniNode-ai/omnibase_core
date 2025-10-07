@@ -34,7 +34,7 @@ class MixinContractMetadata:
                 print(f"Tool: {self.node_name} v{self.node_version}")
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the contract metadata mixin."""
         super().__init__(**kwargs)
 

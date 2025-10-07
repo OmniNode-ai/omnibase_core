@@ -197,18 +197,18 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         # --- PATCH START: Protocol-compliant entrypoint and null omission ---
         # Remove all None/null/empty fields except protocol-required ones
         protocol_required = {"tools"}
-        filtered_dict = {}
+        filtered_dict: dict[str, Any] = {}
         canonical_versions = get_canonical_versions()
         for k, v in normalized_dict.items():
             # Always emit canonical version fields
             if k == "metadata_version":
-                filtered_dict[k] = canonical_versions.metadata_version
+                filtered_dict[k] = str(canonical_versions.metadata_version)
                 continue
             if k == "protocol_version":
-                filtered_dict[k] = canonical_versions.protocol_version
+                filtered_dict[k] = str(canonical_versions.protocol_version)
                 continue
             if k == "schema_version":
-                filtered_dict[k] = canonical_versions.schema_version
+                filtered_dict[k] = str(canonical_versions.schema_version)
                 continue
             # PATCH: Flatten entrypoint to URI string
             if k == "entrypoint":
@@ -250,6 +250,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         from omnibase_core.utils.safe_yaml_loader import _dump_yaml_content
 
         yaml_str = _dump_yaml_content(
+            filtered_dict,
             sort_keys=sort_keys,
             default_flow_style=default_flow_style,
             allow_unicode=allow_unicode,
@@ -280,6 +281,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         return norm
 
     def canonicalize_for_hash(
+        self,
         block: Union[dict[str, object], "NodeMetadataBlock"],
         body: str,
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
@@ -313,14 +315,14 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         return meta_yaml.rstrip("\n") + "\n\n" + norm_body.lstrip("\n")
 
 
-normalize_body = CanonicalYAMLSerializer().normalize_body
+normalize_body = MixinCanonicalYAMLSerializer().normalize_body
 
 
 def extract_metadata_block_and_body(
     content: str,
     open_delim: str,
     close_delim: str,
-    event_bus=None,
+    event_bus: Any = None,
 ) -> tuple[str | None, str]:
     """
     Canonical utility: Extract the metadata block (if present) and the rest of the file content.

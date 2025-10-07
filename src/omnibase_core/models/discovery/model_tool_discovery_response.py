@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.constants_contract_fields import TOOL_DISCOVERY_REQUEST
+from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """

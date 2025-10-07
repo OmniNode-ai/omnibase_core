@@ -68,7 +68,7 @@ def create_secret_manager_for_environment(
     )
 
 
-def validate_secret_configuration(config_type: str, **kwargs) -> dict[str, Any]:
+def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, Any]:
     """
     Validate secret configuration for specific type.
 

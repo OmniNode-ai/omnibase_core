@@ -173,6 +173,7 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def _extract_state_model_fields(
+        cls,
         model_class: type[BaseModel],
     ) -> list[StateFieldModel]:
         """Extract field information from a Pydantic model."""
@@ -390,7 +391,7 @@ class MixinNodeIntrospection(ABC):
         }
 
     @classmethod
-    def handle_introspect_command(cls, event_bus=None) -> None:
+    def handle_introspect_command(cls, event_bus: Any = None) -> None:
         """
         Handle the --introspect command by generating and emitting the response via the event bus/logger node.
         This method should be called from the node's main() function when --introspect is detected in the command line arguments.

@@ -409,7 +409,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         )
 
         # Direct field access for simple fields (more efficient than model_dump())
-        result = {
+        result: dict[str, Any] = {
             "envelope_id": str(self.envelope_id),
             "envelope_timestamp": self.envelope_timestamp.isoformat(),
             "correlation_id": str(self.correlation_id) if self.correlation_id else None,

@@ -237,13 +237,13 @@ class ModelNodeMetadataBlock(BaseModel):
         d = {}
         for k in self.__class__.model_fields:
             if k == "metadata_version":
-                d[k] = canonical_versions.metadata_version
+                d[k] = str(canonical_versions.metadata_version)
                 continue
             if k == "protocol_version":
-                d[k] = canonical_versions.protocol_version
+                d[k] = str(canonical_versions.protocol_version)
                 continue
             if k == "schema_version":
-                d[k] = canonical_versions.schema_version
+                d[k] = str(canonical_versions.schema_version)
                 continue
             v: object = getattr(self, k)
             # Omit if optional and value is '', None, {}, or [] (unless protocol-required)
@@ -321,7 +321,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ExtensionValueModel(value=val)
         return out
 
-    def model_dump(self, *args: Any, **kwargs) -> dict[str, Any]:
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d

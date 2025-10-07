@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import Field
 
-from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
+from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 """

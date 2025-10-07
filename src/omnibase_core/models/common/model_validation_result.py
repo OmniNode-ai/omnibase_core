@@ -275,7 +275,7 @@ class ModelValidationResult(BaseModel, Generic[T]):
         """Get all issues for a specific file."""
         return [issue for issue in self.issues if issue.file_path == file_path]
 
-    def merge(self, other: "ModelValidationResult") -> None:
+    def merge(self, other: "ModelValidationResult[T]") -> None:
         """Merge another validation result into this one."""
         self.issues.extend(other.issues)
         self.errors.extend(other.errors)

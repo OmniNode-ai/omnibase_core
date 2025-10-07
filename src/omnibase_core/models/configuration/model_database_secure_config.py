@@ -16,8 +16,10 @@ from omnibase_core.models.configuration.model_connection_parse_result import (
 # Moved to TYPE_CHECKING import
 
 if TYPE_CHECKING:
-    from omnibase_core.models.core import (
+    from omnibase_core.models.core.model_performance_profile import (
         ModelPerformanceProfile,
+    )
+    from omnibase_core.models.core.model_security_assessment import (
         ModelSecurityAssessment,
     )
 
@@ -422,7 +424,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     # === Security Assessment ===
 
-    def get_security_assessment(self) -> "ModelSecurityAssessment":
+    def get_security_assessment(self) -> dict[str, Any]:
         """Comprehensive security assessment of database configuration."""
 
         assessment: dict[str, Any] = {
@@ -538,34 +540,34 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Assess current pool configuration
         if self.pool_size < 5:
-            recommendations["recommendations"].append(
+            recommendations.recommendations.append(
                 "Consider increasing pool_size for better concurrency",
             )
         elif self.pool_size > 50:
-            recommendations["recommendations"].append(
+            recommendations.recommendations.append(
                 "Large pool_size may cause resource contention",
             )
 
         if self.max_overflow == 0:
-            recommendations["recommendations"].append(
+            recommendations.recommendations.append(
                 "Enable max_overflow for burst handling",
             )
 
         if self.pool_timeout < 10:
-            recommendations["recommendations"].append(
+            recommendations.recommendations.append(
                 "Low pool_timeout may cause frequent timeouts",
             )
 
         # Performance profile based on driver
         if self.driver == "postgresql":
-            recommendations["performance_profile"] = {
+            recommendations.performance_profile = {
                 "recommended_pool_size": min(20, max(5, self.pool_size)),
                 "recommended_max_overflow": min(30, max(10, self.max_overflow)),
                 "connection_overhead": "low",
                 "concurrent_connections_limit": 100,
             }
         elif self.driver == "mysql":
-            recommendations["performance_profile"] = {
+            recommendations.performance_profile = {
                 "recommended_pool_size": min(15, max(5, self.pool_size)),
                 "recommended_max_overflow": min(25, max(10, self.max_overflow)),
                 "connection_overhead": "medium",
@@ -576,7 +578,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     # === Performance Optimization ===
 
-    def get_performance_profile(self) -> "ModelPerformanceProfile":
+    def get_performance_profile(self) -> dict[str, Any]:
         """Get performance characteristics and optimization recommendations."""
         return {
             "latency_characteristics": self._get_latency_profile(),
@@ -596,17 +598,17 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # SSL impact
         if self.ssl_enabled:
-            profile["factors"].append("SSL handshake adds connection latency")
-            profile["connection_latency"] = "medium"
+            profile.factors.append("SSL handshake adds connection latency")
+            profile.connection_latency = "medium"
 
         # Timeout impact
         if self.connection_timeout > 60:
-            profile["factors"].append(
+            profile.factors.append(
                 "High connection timeout may delay error detection",
             )
 
         if self.query_timeout > 300:
-            profile["factors"].append("High query timeout may delay error detection")
+            profile.factors.append("High query timeout may delay error detection")
 
         # Driver-specific characteristics
         driver_latency = {
@@ -618,7 +620,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             "mongodb": "medium",
         }
 
-        profile["driver_latency"] = driver_latency.get(self.driver, "medium")
+        profile.driver_latency = driver_latency.get(self.driver, "medium")
 
         return profile
 
@@ -628,7 +630,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Pool-based recommendations
         pool_recommendations = self.get_pool_recommendations()
-        recommendations.extend(pool_recommendations["recommendations"])
+        recommendations.extend(pool_recommendations.recommendations)
 
         # Driver-specific recommendations
         if self.driver == "postgresql":
@@ -716,7 +718,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def can_connect(self) -> bool:
         """Test if configuration allows successful connection."""
         validation = self.validate_credentials()
-        if not validation["is_valid"]:
+        if not validation.is_valid:
             return False
 
         # Check SSL files exist if SSL is enabled

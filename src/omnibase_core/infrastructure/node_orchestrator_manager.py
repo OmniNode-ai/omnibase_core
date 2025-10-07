@@ -34,13 +34,11 @@ class NodeOrchestratorManager(
     - Standardized health checks via MixinHealthCheck
     """
 
-    @property
-    def node_id(self) -> str:  # type: ignore[override]
+    @property  # type: ignore[override]  # MixinEventDrivenNode expects str, NodeCoreBase expects UUID
+    def node_id(self) -> UUID:
         """Get the node ID from contract."""
         node_id_str = getattr(self, "_node_id", "00000000-0000-0000-0000-000000000000")
-        return (
-            str(UUID(node_id_str)) if isinstance(node_id_str, str) else str(node_id_str)
-        )
+        return UUID(node_id_str) if isinstance(node_id_str, str) else node_id_str
 
     @node_id.setter
     def node_id(self, value: str | UUID) -> None:

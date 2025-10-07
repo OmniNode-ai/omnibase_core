@@ -369,8 +369,15 @@ class ModelEventBusInputState(BaseModel):
         # Create instance with proper type handling
         # version is always ModelSemVer (set at line 331)
         # input_field is always str (from environment variable)
-        version = config_data["version"]
-        input_field = config_data["input_field"]
+        version_raw = config_data["version"]
+        input_field_raw = config_data["input_field"]
+
+        # Type narrowing - we know these are always ModelSemVer and str respectively
+        assert isinstance(version_raw, ModelSemVer), "version must be ModelSemVer"
+        assert isinstance(input_field_raw, str), "input_field must be str"
+
+        version: str = str(version_raw)
+        input_field: str = input_field_raw
 
         # Extract and validate fields with proper type checking
         correlation_id_raw = config_data.get("correlation_id")
@@ -395,7 +402,7 @@ class ModelEventBusInputState(BaseModel):
         )
 
         return cls(
-            version=version,
+            version=parse_semver_from_string(version) if isinstance(version, str) else version,
             input_field=input_field,
             correlation_id=correlation_id_validated,
             event_id=event_id_validated,

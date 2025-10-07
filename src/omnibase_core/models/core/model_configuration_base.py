@@ -185,7 +185,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         """Serialize configuration to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
-    def configure(self, **kwargs) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

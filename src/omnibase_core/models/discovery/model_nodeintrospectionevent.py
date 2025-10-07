@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
+from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.nodes.model_node_capability import ModelNodeCapability
@@ -84,9 +84,9 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             ModelNodeIntrospectionEvent instance
         """
         capabilities = ModelNodeCapability(
-            actions=actions,
-            protocols=protocols or ["event_bus"],
-            metadata=metadata or {},
+            value=f"node_{node_name.lower()}_capabilities",
+            description=f"Capabilities for {node_name}: {', '.join(actions)}",
+            capability_display_name=f"{node_name.upper()}_CAPABILITIES",
         )
 
         return cls(

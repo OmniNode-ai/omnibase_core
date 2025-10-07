@@ -16,7 +16,10 @@ from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
     ModelDiscoveryResponseModelMetadata,
 )
-from omnibase_core.models.core.model_event_type import create_event_type_from_registry
+from omnibase_core.models.core.model_event_type import (
+    create_event_type_from_registry,
+    is_event_equal,
+)
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
 
 if TYPE_CHECKING:
@@ -46,12 +49,12 @@ class MixinDiscoveryResponder:
     - Response time metrics
     """
 
-    def __init__(self, *args: Any, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._discovery_active = False
-        self._last_response_time = 0
+        self._last_response_time: float = 0.0
         self._response_throttle = 1.0  # Minimum seconds between responses
-        self._discovery_stats = {
+        self._discovery_stats: dict[str, int | float | None] = {
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
@@ -122,7 +125,7 @@ class MixinDiscoveryResponder:
             logger.log("[DiscoveryResponder] Stopped discovery responder")
             logger.log(f"[DiscoveryResponder] Stats: {self._discovery_stats}")
 
-    def _handle_discovery_request(self, envelope: "ModelEventEnvelope") -> None:
+    def _handle_discovery_request(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """
         Handle incoming discovery requests.
 

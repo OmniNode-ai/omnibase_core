@@ -50,7 +50,7 @@ class ModelNodeServiceConfig(BaseModel):
     node_name: str = Field(
         default=..., description="Name of the ONEX node", min_length=1
     )
-    node_version: ModelSemVer = Field(
+    node_version: str = Field(
         default="1.0.0", description="Version of the node"
     )
     service_mode: EnumServiceMode = Field(
@@ -244,7 +244,7 @@ class ModelNodeServiceConfig(BaseModel):
         ]
 
     @classmethod
-    def from_environment(cls, node_name: str, **overrides) -> "ModelNodeServiceConfig":
+    def from_environment(cls, node_name: str, **overrides: Any) -> "ModelNodeServiceConfig":
         """
         Create service configuration from environment variables.
 
@@ -328,7 +328,7 @@ class ModelNodeServiceConfig(BaseModel):
         return cls(**config)
 
     @classmethod
-    def for_node_registry(cls, **overrides) -> "ModelNodeServiceConfig":
+    def for_node_registry(cls, **overrides: Any) -> "ModelNodeServiceConfig":
         """
         Create a service configuration specifically for NodeRegistry.
 

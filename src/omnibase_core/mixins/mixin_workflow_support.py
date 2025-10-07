@@ -14,7 +14,7 @@ from uuid import UUID
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
-from omnibase_core.models.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 
 class MixinDagSupport:
@@ -28,7 +28,7 @@ class MixinDagSupport:
     - Supporting both Workflow and non-Workflow execution modes
     """
 
-    def __init__(self, event_bus: ProtocolEventBus | None = None, **kwargs) -> None:
+    def __init__(self, event_bus: ProtocolEventBus | None = None, **kwargs: Any) -> None:
         """Initialize Workflow support mixin."""
         super().__init__(**kwargs)
         self._event_bus = event_bus
@@ -70,6 +70,7 @@ class MixinDagSupport:
         self._workflow_node_id = str(node_id)
 
     def emit_dag_completion_event(
+        self,
         result: Any,
         status: str,
         error_message: str | None = None,
@@ -108,11 +109,11 @@ class MixinDagSupport:
             event_data["error_message"] = error_message
 
         # Create and emit the event
-        event = OnexEvent(
+        event = ModelOnexEvent(
             event_type=f"workflow_node_completed:{node_id}",
-            event_data=event_data,
-            correlation_id=correlation_id,
-            source_node_id=node_id,
+            data=event_data,
+            correlation_id=UUID(correlation_id) if isinstance(correlation_id, str) else correlation_id,
+            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
         )
 
         try:
@@ -123,7 +124,7 @@ class MixinDagSupport:
 
             envelope = ModelEventEnvelope.create_broadcast(
                 payload=event,
-                source_node_id=node_id,
+                source_node_id=str(node_id),
                 correlation_id=correlation_id,
             )
 
@@ -150,11 +151,11 @@ class MixinDagSupport:
             "timestamp": self._get_current_timestamp(),
         }
 
-        event = OnexEvent(
+        event = ModelOnexEvent(
             event_type=f"workflow_node_started:{node_id}",
-            event_data=event_data,
+            data=event_data,
             correlation_id=correlation_id,
-            source_node_id=node_id,
+            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
         )
 
         try:
@@ -165,7 +166,7 @@ class MixinDagSupport:
 
             envelope = ModelEventEnvelope.create_broadcast(
                 payload=event,
-                source_node_id=node_id,
+                source_node_id=str(node_id),
                 correlation_id=correlation_id,
             )
 

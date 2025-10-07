@@ -155,7 +155,7 @@ class ModelUnifiedHubContract(BaseModel):
             coordination_mode=EnumCoordinationMode.EVENT_ROUTER,
         )
 
-    def get_domain(self) -> str:
+    def get_domain(self) -> UUID:
         """Get hub domain from either format."""
         config = self.get_unified_config()
         return config.domain_id
@@ -165,7 +165,7 @@ class ModelUnifiedHubContract(BaseModel):
         config = self.get_unified_config()
         return config.service_port or 8080
 
-    def get_managed_tools(self) -> list[str]:
+    def get_managed_tools(self) -> list[UUID]:
         """Get managed tools from either format."""
         config = self.get_unified_config()
         return config.managed_tool_ids or []

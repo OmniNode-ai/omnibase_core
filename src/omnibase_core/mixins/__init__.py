@@ -39,7 +39,7 @@ from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
 from omnibase_core.mixins.mixin_introspect_from_contract import (
     MixinIntrospectFromContract,
 )
-from omnibase_core.mixins.mixin_introspection import NodeIntrospectionMixin
+from omnibase_core.mixins.mixin_introspection import MixinNodeIntrospection
 from omnibase_core.mixins.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,
 )
@@ -58,7 +58,7 @@ from omnibase_core.mixins.mixin_serializable import SerializableMixin
 from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
 from omnibase_core.mixins.mixin_workflow_support import MixinDagSupport
-from omnibase_core.mixins.mixin_yaml_serialization import YAMLSerializationMixin
+from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 from omnibase_core.mixins.protocol_event_bus import ProtocolEventBus
 
 __all__ = [
@@ -93,8 +93,8 @@ __all__ = [
     "ProtocolEventBus",
     "LogEmitter",
     "RegistryWithBus",
-    "NodeIntrospectionMixin",
+    "MixinNodeIntrospection",
     "MixinSensitiveFieldRedaction",
     "SerializableMixin",
-    "YAMLSerializationMixin",
+    "MixinYAMLSerialization",
 ]

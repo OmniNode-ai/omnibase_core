@@ -21,7 +21,9 @@ from omnibase_core.models.security.model_policy_validation_result import (
     ModelPolicyValidationResult,
 )
 from omnibase_core.models.security.model_rule_condition import ModelRuleCondition
-from omnibase_core.models.security.model_security_rule import ModelRuleConditionValue
+from omnibase_core.models.security.model_rule_condition_value import (
+    ModelRuleConditionValue,
+)
 from omnibase_core.models.security.model_signature_requirements import (
     ModelSignatureRequirements,
 )
@@ -383,9 +385,9 @@ class ModelTrustPolicy(BaseModel):
                 security_level=None,
                 environment=None,
                 operation_type_condition=ModelRuleConditionValue(
-                    in_values=["high_security"]
+                    **{"$in": ["high_security"]}
                 ),
-                security_level_condition=ModelRuleConditionValue(gte=3),
+                security_level_condition=ModelRuleConditionValue(**{"$gte": 3}),
                 source_node_id=None,
                 destination=None,
                 hop_count=None,

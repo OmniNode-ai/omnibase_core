@@ -302,7 +302,7 @@ class ModelMetadataFieldInfo(BaseModel):
         """String representation for current standards."""
         return self.field_name
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
             return self.field_name == other or self.name == other.upper()

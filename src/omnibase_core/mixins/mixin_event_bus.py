@@ -22,6 +22,7 @@ import threading
 from collections.abc import Callable as CallableABC
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -116,7 +117,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
     # --- Event Bus Access (Protocol-based) ----------------------------------
 
-    def _get_event_bus(self) -> "ProtocolAsyncEventBus | None":
+    def _get_event_bus(self) -> "ProtocolEventBus | None":
         """Resolve event bus using protocol-based polymorphism."""
         # Try registry first
         if hasattr(self, "registry") and hasattr(self.registry, "event_bus"):
@@ -131,6 +132,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     # --- Event Completion Publishing ----------------------------------------
 
     def publish_completion_event(
+        self,
         event_type: str,
         data: MixinCompletionData,
     ) -> None:
@@ -145,6 +147,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if bus is None:
             self._log_warn(
                 "No event bus available in registry for completion event",
+                pattern="event_bus.missing",
             )
             return
 
@@ -155,6 +158,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if has_async and not has_sync:
             self._log_error(
                 "registry.event_bus is async-only; call 'await apublish_completion_event(...)' instead",
+                pattern="event_bus.async_only",
             )
             return
 
@@ -171,7 +175,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             )
 
             # Wrap event in envelope before publishing
-            envelope: ModelEventEnvelope = ModelEventEnvelope(payload=event)
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(payload=event)
             # Use publish_async for envelope publishing
             if hasattr(bus, "publish_async"):
                 bus.publish_async(envelope)
@@ -181,10 +185,12 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
+                "publish_completion",
                 error=e,
             )
 
     async def apublish_completion_event(
+        self,
         event_type: str,
         data: MixinCompletionData,
     ) -> None:
@@ -201,6 +207,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if bus is None:
             self._log_warn(
                 "No event bus available in registry for completion event",
+                pattern="event_bus.missing",
             )
             return
 
@@ -208,7 +215,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Wrap event in envelope before publishing
-            envelope: ModelEventEnvelope = ModelEventEnvelope(payload=event)
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(payload=event)
 
             # Check if bus has async methods (async bus or hybrid bus)
             if hasattr(bus, "apublish") or hasattr(bus, "apublish_async"):
@@ -241,6 +248,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
+                "publish_completion",
                 error=e,
             )
 
@@ -356,7 +364,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             self._log_warn("Event listener already running", "event_listener")
             return
 
-        self.stop_event.clear()
+        if self.stop_event is not None:
+            self.stop_event.clear()
         self.event_listener_thread = threading.Thread(
             target=self._event_listener_loop,
             daemon=True,
@@ -371,7 +380,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if not self.event_listener_thread:
             return
 
-        self.stop_event.set()
+        if self.stop_event is not None:
+            self.stop_event.set()
 
         # Unsubscribe from all events
         bus = self._get_event_bus()
@@ -431,11 +441,12 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 except Exception as e:
                     self._log_error(
                         f"Failed to subscribe to {pattern}: {e!r}",
+                        "subscribe",
                         error=e,
                     )
 
             # Keep thread alive
-            while not self.stop_event.wait(1.0):
+            while self.stop_event is not None and not self.stop_event.wait(1.0):
                 pass
 
         except Exception as e:
@@ -448,10 +459,17 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     def _create_event_handler(self, pattern: str) -> Callable[..., Any]:
         """Create event handler for a specific pattern."""
 
-        def handler(envelope: "ModelEventEnvelope") -> None:
+        def handler(envelope: "ModelEventEnvelope[Any]") -> None:
             """Handle incoming event envelope."""
             # Extract event from envelope
-            event = envelope.payload if hasattr(envelope, "payload") else envelope
+            extracted_event = envelope.payload if hasattr(envelope, "payload") else envelope
+
+            # Validate event has required attributes
+            if not hasattr(extracted_event, "event_type"):
+                self._log_error("Event missing event_type attribute", pattern)
+                return
+
+            event = extracted_event
             try:
                 self._log_info(
                     f"Processing event: {event.event_type}",
@@ -496,6 +514,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 except Exception as publish_error:
                     self._log_error(
                         f"Failed to publish error event: {publish_error!r}",
+                        "publish_error",
                         error=publish_error,
                     )
 
@@ -508,6 +527,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             if not input_state_class:
                 msg = "Cannot determine input state class for event conversion"
                 raise ModelOnexError(
+                    message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
 
@@ -546,29 +566,17 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
     def _log_info(self, msg: str, pattern: str) -> None:
         """Log info message with pattern."""
-        emit_log_event(
-            LogLevel.INFO,
-            MixinLogData(pattern=pattern, node_name=self.get_node_name()),
-        )
+        emit_log_event(LogLevel.INFO, msg, context={"pattern": pattern, "node_name": self.get_node_name()})
 
     def _log_warn(self, msg: str, pattern: str) -> None:
         """Log warning message with pattern."""
-        emit_log_event(
-            LogLevel.WARNING,
-            MixinLogData(pattern=pattern, node_name=self.get_node_name()),
-        )
+        emit_log_event(LogLevel.WARNING, msg, context={"pattern": pattern, "node_name": self.get_node_name()})
 
     def _log_error(
+        self,
         msg: str,
         pattern: str,
         error: BaseException | None = None,
     ) -> None:
         """Log error message with pattern and optional error details."""
-        emit_log_event(
-            LogLevel.ERROR,
-            MixinLogData(
-                pattern=pattern,
-                node_name=self.get_node_name(),
-                error=None if error is None else repr(error),
-            ),
-        )
+        emit_log_event(LogLevel.ERROR, msg, context={"pattern": pattern, "node_name": self.get_node_name(), "error": None if error is None else repr(error)})

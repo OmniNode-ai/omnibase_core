@@ -208,7 +208,7 @@ class ModelProgressMetrics(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -222,7 +222,7 @@ class ModelProgressMetrics(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

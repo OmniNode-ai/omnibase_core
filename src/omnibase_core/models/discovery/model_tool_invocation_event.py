@@ -126,7 +126,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         action: str,
         requester_id: UUID,
         requester_node_id: UUID,
-        parameters: ModelToolParameters = None,
+        parameters: ModelToolParameters | None = None,
         timeout_ms: int = 30000,
         priority: str = "normal",
         **kwargs: Any,
@@ -169,7 +169,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         target_node_name: str,
         tool_name: str,
         action: str,
-        parameters: ModelToolParameters = None,
+        parameters: ModelToolParameters | None = None,
         timeout_ms: int = 10000,
         **kwargs: Any,
     ) -> "ModelToolInvocationEvent":
@@ -208,7 +208,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         target_node_name: str,
         tool_name: str,
         action: str,
-        parameters: ModelToolParameters = None,
+        parameters: ModelToolParameters | None = None,
         timeout_ms: int = 60000,
         **kwargs: Any,
     ) -> "ModelToolInvocationEvent":

@@ -67,3 +67,9 @@ class ModelPoolRecommendations(BaseModel):
         default=None,
         description="Additional database connections",
     )
+
+    # Performance profile
+    performance_profile: dict[str, Any] | None = Field(
+        default=None,
+        description="Driver-specific performance profile",
+    )

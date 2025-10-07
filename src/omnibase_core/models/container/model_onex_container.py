@@ -380,7 +380,7 @@ class ModelONEXContainer:
         node_id: UUID | None = None,
         workflow_id: UUID | None = None,
         session_id: UUID | None = None,
-    ) -> "NodeBase[Any]":
+    ) -> "NodeBase[Any, Any]":
         """
         Factory method for creating Enhanced NodeBase instances.
 

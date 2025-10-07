@@ -209,7 +209,7 @@ class ModelConnectionPool(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:

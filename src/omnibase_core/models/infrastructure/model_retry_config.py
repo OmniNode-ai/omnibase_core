@@ -141,7 +141,7 @@ class ModelRetryConfig(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -154,7 +154,7 @@ class ModelRetryConfig(BaseModel):
         ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def configure(self, **kwargs) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

@@ -214,7 +214,9 @@ class ModelComputationOutputData(BaseModel):
     def get_error_count(self) -> int:
         """Get total error count from output data."""
         if hasattr(self.output_data, "has_calculation_errors"):
-            return len(self.output_data.calculation_errors)
+            calculation_errors = getattr(self.output_data, "calculation_errors", [])
+            return len(calculation_errors)
         if hasattr(self.output_data, "has_processing_warnings"):
-            return len(self.output_data.processing_warnings)
+            processing_warnings = getattr(self.output_data, "processing_warnings", [])
+            return len(processing_warnings)
         return 0

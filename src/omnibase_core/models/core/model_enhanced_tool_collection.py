@@ -198,7 +198,7 @@ class ModelToolCollection(BaseModel):
             )
         return v
 
-    def register_tool(self, name: str, tool_class: Any, **metadata_kwargs) -> bool:
+    def register_tool(self, name: str, tool_class: Any, **metadata_kwargs: Any) -> bool:
         """Register a tool implementation with comprehensive validation and metadata."""
         try:
             # Check collection limits

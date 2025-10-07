@@ -279,8 +279,8 @@ class ModelSchemaDict(BaseModel):
         }
 
         # Build kwargs
-        kwargs = {}
-        additional_fields = {}
+        kwargs: dict[str, Any] = {}
+        additional_fields: dict[str, Any] = {}
 
         for key, value in data.items():
             if key == "items" and isinstance(value, dict):

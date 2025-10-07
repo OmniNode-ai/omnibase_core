@@ -31,7 +31,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, TypeVar
 from uuid import UUID, uuid4
 
-from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.enums.enum_effect_type import EnumEffectType
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -323,7 +322,7 @@ class NodeEffect(NodeCoreBase):
                         ref_path = (base_path / ref_file).resolve()
                     else:
                         # Absolute or root-relative reference
-                        ref_path = Path(ref_file)
+                        ref_path = Path(ref_file or ".")
 
                     return reference_resolver.resolve_reference(
                         str(ref_path),
@@ -433,6 +432,7 @@ class NodeEffect(NodeCoreBase):
             await self._update_processing_metrics(processing_time, True)
 
             # Wrap result in discriminated union based on type
+            wrapped_result: ModelEffectResult
             if isinstance(result, dict):
                 wrapped_result = ModelEffectResultDict(value=result)
             elif isinstance(result, bool):
@@ -448,7 +448,7 @@ class NodeEffect(NodeCoreBase):
             # Create output
             output = ModelEffectOutput(
                 result=wrapped_result,
-                operation_id=input_data.operation_id,
+                operation_id=input_data or uuid4().operation_id,
                 effect_type=input_data.effect_type,
                 transaction_state=(
                     transaction.state if transaction else EnumTransactionState.COMMITTED
@@ -459,9 +459,9 @@ class NodeEffect(NodeCoreBase):
                     [str(op) for op in transaction.operations] if transaction else []
                 ),
                 metadata={
-                    "timeout_ms": input_data.timeout_ms,
-                    "transaction_enabled": input_data.transaction_enabled,
-                    "circuit_breaker_enabled": input_data.circuit_breaker_enabled,
+                    "timeout_ms": ModelSchemaValue.from_value(input_data.timeout_ms),
+                    "transaction_enabled": ModelSchemaValue.from_value(input_data.transaction_enabled),
+                    "circuit_breaker_enabled": ModelSchemaValue.from_value(input_data.circuit_breaker_enabled),
                 },
             )
 

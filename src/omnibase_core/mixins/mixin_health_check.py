@@ -65,7 +65,7 @@ class MixinHealthCheck:
                 )
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the health check mixin."""
         super().__init__(**kwargs)
 

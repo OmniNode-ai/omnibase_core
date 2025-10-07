@@ -174,7 +174,7 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     def get_node_weight(self, node_id: UUID) -> float:
         """Get weight for a specific node"""
-        if not self.should_use_weights():
+        if not self.should_use_weights() or self.node_weights is None:
             return 1.0
         return self.node_weights.get_weight(node_id)
 

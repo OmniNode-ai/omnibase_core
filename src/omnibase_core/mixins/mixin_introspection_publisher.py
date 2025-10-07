@@ -2,8 +2,11 @@ from typing import Any, Dict, List
 
 from pydantic import Field
 
-from omnibase_core.constants.constants_contract_fields import NODE_INTROSPECTION_EVENT
+from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.discovery.model_nodeintrospectionevent import (
+    ModelNodeIntrospectionEvent,
+)
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -83,13 +86,13 @@ class MixinIntrospectionPublisher:
             introspection_data = self._gather_introspection_data()
 
             # Generate correlation ID for introspection
-            from uuid import uuid4
+            from uuid import uuid4, UUID
 
             correlation_id = uuid4()
 
             # Create and publish introspection event
             introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 node_name=introspection_data.node_name,
                 version=introspection_data.version,
                 actions=introspection_data.capabilities.actions,
@@ -108,7 +111,7 @@ class MixinIntrospectionPublisher:
                 calling_function="_publish_introspection_event",
                 calling_line=71,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.INFO,
@@ -123,7 +126,7 @@ class MixinIntrospectionPublisher:
                 calling_function="_publish_introspection_event",
                 calling_line=95,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -138,7 +141,7 @@ class MixinIntrospectionPublisher:
                 calling_function="_publish_introspection_event",
                 calling_line=95,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -180,7 +183,7 @@ class MixinIntrospectionPublisher:
                 calling_function="_gather_introspection_data",
                 calling_line=127,
                 timestamp=datetime.now().isoformat(),
-                node_id=node_id,
+                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             )
             emit_log_event_sync(
                 LogLevel.WARNING,
@@ -412,7 +415,7 @@ class MixinIntrospectionPublisher:
 
         return None
 
-    def _publish_with_retry(self, event, max_retries: int = 3) -> None:
+    def _publish_with_retry(self, event: Any, max_retries: int = 3) -> None:
         """Publish event with retry logic."""
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
@@ -425,7 +428,7 @@ class MixinIntrospectionPublisher:
 
         envelope = ModelEventEnvelope.create_broadcast(
             payload=event,
-            source_node_id=node_id,
+            source_node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
             correlation_id=event.correlation_id,
         )
 
@@ -441,7 +444,7 @@ class MixinIntrospectionPublisher:
                         calling_function="_publish_with_retry",
                         calling_line=350,
                         timestamp=datetime.now().isoformat(),
-                        node_id=node_id,
+                        node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                     )
                     emit_log_event_sync(
                         LogLevel.ERROR,

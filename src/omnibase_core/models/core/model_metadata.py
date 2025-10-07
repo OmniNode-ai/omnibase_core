@@ -32,7 +32,7 @@ class ModelMetadata(BaseModel):
     )
 
     @model_validator(mode="before")
-    def coerce_version(self, values) -> None:
+    def coerce_version(self, values: Any) -> Any:
         version = values.get("version")
         if version is not None and not isinstance(version, ModelSemVer):
             values["version"] = parse_semver_from_string(version)
