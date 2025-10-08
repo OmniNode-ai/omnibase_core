@@ -25,6 +25,7 @@ from omnibase_core.models.core.model_function_tool import ModelFunctionTool
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_io_block import ModelIOBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
@@ -84,10 +85,7 @@ class ModelNodeMetadataBlock(BaseModel):
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
     ] = Field(default="0.1.0")
     name: Annotated[str, StringConstraints(min_length=1)]
-    version: Annotated[
-        str,
-        StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
-    ] = Field(default="0.1.0")
+    version: ModelSemVer = Field(default=ModelSemVer(major=0, minor=1, patch=0))
     uuid: Annotated[
         str,
         StringConstraints(

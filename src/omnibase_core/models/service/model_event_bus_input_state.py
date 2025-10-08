@@ -39,13 +39,13 @@ class ModelEventBusInputState(BaseModel):
         max_length=1000,
     )
 
-    correlation_id: str | None = Field(
+    correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
         max_length=100,
     )
 
-    event_id: str | None = Field(
+    event_id: UUID | None = Field(
         default=None,
         description="Unique event identifier",
         max_length=100,
@@ -127,28 +127,6 @@ class ModelEventBusInputState(BaseModel):
 
         return v.strip()
 
-    @field_validator("correlation_id")
-    @classmethod
-    def validate_correlation_id(cls, v: str | None) -> str | None:
-        """Validate correlation ID format."""
-        if v is None:
-            return v
-
-        v = v.strip()
-        if not v:
-            return None
-
-        # Basic format validation (alphanumeric, hyphens, underscores)
-        import re
-
-        if not re.match(r"^[a-zA-Z0-9\-_]+$", v):
-            msg = "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
-            )
-
-        return v
 
     # === Business Logic Methods ===
 
@@ -195,10 +173,10 @@ class ModelEventBusInputState(BaseModel):
         }
 
         if self.correlation_id:
-            metadata["correlation_id"] = self.correlation_id
+            metadata["correlation_id"] = str(self.correlation_id)
 
         if self.event_id:
-            metadata["event_id"] = self.event_id
+            metadata["event_id"] = str(self.event_id)
 
         return metadata
 
@@ -281,15 +259,15 @@ class ModelEventBusInputState(BaseModel):
         cls,
         version: str,
         input_field: str,
-        correlation_id: str,
-        event_id: str | None = None,
+        correlation_id: UUID,
+        event_id: UUID | None = None,
     ) -> "ModelEventBusInputState":
         """Create input state with tracking information."""
         return cls(
             version=parse_semver_from_string(version),
             input_field=input_field,
             correlation_id=correlation_id,
-            event_id=event_id or f"evt_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            event_id=event_id or uuid4(),
         )
 
     @classmethod
@@ -379,11 +357,11 @@ class ModelEventBusInputState(BaseModel):
         # Extract and validate fields with proper type checking
         correlation_id_raw = config_data.get("correlation_id")
         correlation_id_validated = (
-            correlation_id_raw if isinstance(correlation_id_raw, str) else None
+            UUID(correlation_id_raw) if isinstance(correlation_id_raw, str) else None
         )
 
         event_id_raw = config_data.get("event_id")
-        event_id_validated = event_id_raw if isinstance(event_id_raw, str) else None
+        event_id_validated = UUID(event_id_raw) if isinstance(event_id_raw, str) else None
 
         priority_raw = config_data.get("priority")
         priority_validated = priority_raw if isinstance(priority_raw, str) else None

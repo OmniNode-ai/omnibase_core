@@ -1,0 +1,239 @@
+
+# Protocol Implementation Report
+
+## Summary
+- **Total Files**: 214
+- **Successfully Processed**: 205
+- **Errors**: 9
+- **Categories Completed**: 8
+- **Success Rate**: 95.8%
+
+## Protocol Mappings Implemented
+- **config**: Configurable, Serializable, Validatable
+- **metadata**: MetadataProvider, Serializable, Validatable
+- **operations**: Executable, Identifiable, Serializable, Validatable
+- **nodes**: Identifiable, MetadataProvider, Serializable, Validatable
+- **core**: Configurable, Serializable, Validatable, Nameable
+- **infrastructure**: Executable, Configurable, Serializable
+- **cli**: Serializable, Nameable, Validatable
+- **connections**: Configurable, Validatable, Serializable
+- **utils**: Serializable, Validatable
+- **common**: Serializable, Validatable
+- **validation**: Validatable, Serializable
+- **fsm**: Executable, Serializable, Validatable
+- **contracts**: Validatable, Serializable
+
+## Errors (9)
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_data.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_info.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_result.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/fsm/model_fsm_data.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_payload_structures.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_computation_data.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_metadata_structures.py
+- Could not find class in /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_example_string_reduction_improvements.py
+
+## Processed Files (202)
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/model_yaml_dump_options.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_field_accessor.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_typed_dict_field_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_custom_fields_accessor.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_item_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_generic_collection_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_typed_configuration.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_capability_factory.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_container.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_typed_dict_factory_kwargs.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_typed_accessor.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_generic_factory.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_validation_error_factory.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_result_factory.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_generic_collection.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_custom_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_result_accessor.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/core/model_environment_accessor.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_artifact_type_config.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_typed_property.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_property_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_fallback_strategy.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_examples_collection.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_environment_properties_collection.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_examples_collection_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_schema_example.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_context_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_input_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_metadata_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_fallback_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_property_collection.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_property_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_uri.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_namespace_config.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_environment_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_example_output_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/config/model_data_handling_declaration.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_connection_settings.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_information_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_node_connection_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_capabilities_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_node_performance.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_metadata_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_feature_flags.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_core_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_information.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_node_metadata_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_resource_limits.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_core_info_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_capabilities_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_configuration.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_node_feature_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_node_core.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_performance_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_node_resource_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_documentation.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_organization_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_configuration_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_type.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_deprecation_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_relationships.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_configuration_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_core_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_node_execution_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_function_relationships_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_node_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_node_capabilities_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_types_function_documentation_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_capability.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_node_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_node_execution_settings.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/model_function_node.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts/model_yaml_contract.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/utils/model_yaml_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/utils/model_yaml_option.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_output_format_options.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_advanced_params.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_node_execution_input.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_trace_info_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_core.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_action.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_performance_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_output_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_result_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_debug_info_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_context.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_input_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_input_dict.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_config.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_result_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_performance_metric_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_result.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_execution_resources.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_command_option.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_trace_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/cli/model_cli_debug_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/fsm/model_fsm_data_primary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/fsm/model_fsm_state.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/fsm/model_fsm_transition.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_message_payload.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_parameters_base.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_computation_output_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_operation_payload.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_payload.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_effect_parameters.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_event_payload.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_computation_input_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_workflow_parameters.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/operations/model_system_metadata.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_message_queue_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_connection_endpoint.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_performance_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_database_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_connection_pool.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_connection_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_connection_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_connection_auth.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_custom_connection_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_cloud_service_properties.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/connections/model_connection_security.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/common/model_numeric_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/common/model_error_context.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/common/model_onex_error.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/common/model_flexible_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/common/model_schema_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_retry_failure_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_timeout_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_metrics_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_retry_config.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_time_based.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_cli_result_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_progress_original.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_execution_result.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_retry_policy.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_execution_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_progress.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_environment_variables.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_metric.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_result.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_retry_conditions.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_test_result.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_result_dict.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_test_results.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_cli_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_retry_advanced.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_timeout_original.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_retry_execution.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_error_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_timeout.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_regex_flags.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/model_duration.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/progress/model_progress_milestones.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/progress/model_progress_core.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/progress/model_progress_timing.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/infrastructure/progress/model_progress_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_node_collection.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_node_union.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_field_validation_rules.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_analytics_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_typed_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_semver.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_structured_description.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_node_info_summary_original.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_input_state.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_usage_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_field_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_node_info.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_structured_display_name.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_node_analytics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_metadata_analytics_summary_original.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_nested_configuration.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_node_info_container.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_function_node_data.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_node_info_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_field_identity.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/model_structured_tags.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_categorization.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_timestamps.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_performance_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_core.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_quality_indicators.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/analytics/model_analytics_error_summary.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/analytics/model_analytics_error_tracking.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/analytics/model_analytics_core.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/analytics/model_analytics_quality_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/metadata/analytics/model_analytics_performance_metrics.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/validation/model_validation_error.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/validation/model_validation_value.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/validation/model_validation_container.py
+- /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/validation/model_validation_base.py

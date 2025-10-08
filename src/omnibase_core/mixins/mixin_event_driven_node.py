@@ -31,11 +31,12 @@ focused mixins for different concerns:
 
 Usage:
     class MyNode(MixinEventDrivenNode):
-        def __init__(self, node_id: str, event_bus: ProtocolEventBus, ...):
+        def __init__(self, node_id: UUID, event_bus: ProtocolEventBus, ...):
             super().__init__(node_id=node_id, event_bus=event_bus, ...)
 """
 
 from typing import Any, Protocol
+from uuid import UUID
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 from omnibase_spi.protocols.schema import ProtocolSchemaLoader
@@ -73,7 +74,7 @@ class MixinEventDrivenNode(
 
     def __init__(
         self,
-        node_id: str,
+        node_id: UUID,
         event_bus: ProtocolEventBus,
         metadata_loader: ProtocolSchemaLoader | None = None,
         registry: Any = None,

@@ -4,9 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails
 from omnibase_core.models.service.model_event_bus_output_field import (
@@ -62,13 +62,13 @@ class ModelEventBusOutputState(BaseModel):
         description="Canonical output field with processing results",
     )
 
-    correlation_id: str | None = Field(
+    correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
         max_length=100,
     )
 
-    event_id: str | None = Field(
+    event_id: UUID | None = Field(
         default=None,
         description="Unique event identifier",
         max_length=100,
@@ -308,8 +308,8 @@ class ModelEventBusOutputState(BaseModel):
                 "retryable": str(self.is_retryable()),
                 "next_retry_at": self.next_retry_at or "",
             },
-            error_id=UUID(self.correlation_id) if self.correlation_id else None,
-            correlation_id=UUID(self.correlation_id) if self.correlation_id else None,
+            error_id=self.correlation_id if self.correlation_id else None,
+            correlation_id=self.correlation_id if self.correlation_id else None,
             has_been_reported=False,
         )
 
@@ -401,10 +401,10 @@ class ModelEventBusOutputState(BaseModel):
         }
 
         if self.correlation_id:
-            context["correlation_id"] = self.correlation_id
+            context["correlation_id"] = str(self.correlation_id)
 
         if self.event_id:
-            context["event_id"] = self.event_id
+            context["event_id"] = str(self.event_id)
 
         if self.processing_time_ms:
             context["processing_time"] = self.get_processing_time_human()
@@ -641,8 +641,8 @@ class ModelEventBusOutputState(BaseModel):
         version: str,
         status: str,
         message: str,
-        correlation_id: str,
-        event_id: str,
+        correlation_id: UUID,
+        event_id: UUID,
         processing_time_ms: int | None = None,
     ) -> "ModelEventBusOutputState":
         """Create output state with full tracking information."""
