@@ -419,9 +419,7 @@ class ModelEventBusOutputState(BaseModel):
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the operation result."""
         from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
-        from omnibase_core.models.core.model_business_impact import (
-            ModelBusinessImpact,
-        )
+        from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
 
         severity = (
             EnumImpactSeverity.CRITICAL

@@ -21,9 +21,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.operations.model_binary_computation_input import (
     ModelBinaryComputationInput,
 )

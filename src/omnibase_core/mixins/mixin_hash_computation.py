@@ -51,11 +51,16 @@ class MixinHashComputation:
         placeholder: str = "<PLACEHOLDER>",
         comment_prefix: str = "",
     ) -> str:
+        # Convert EnumNodeMetadataField to str for protocol compliance
+        str_volatile_fields = tuple(
+            field.value if isinstance(field, EnumNodeMetadataField) else field
+            for field in volatile_fields
+        )
         canonical = MixinCanonicalYAMLSerializer().canonicalize_for_hash(
             self,  # type: ignore[arg-type]
             body,
-            volatile_fields=volatile_fields,
+            volatile_fields=str_volatile_fields,
             placeholder=placeholder,
-            comment_prefix=comment_prefix,
+            comment_prefix=comment_prefix,  # type: ignore[arg-type]
         )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

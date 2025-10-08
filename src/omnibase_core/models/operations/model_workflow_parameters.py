@@ -5,10 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-    ModelOnexError,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode, ModelOnexError
 from omnibase_core.models.operations.model_base_workflow_parameter import (
     ModelBaseWorkflowParameter,
 )

@@ -20,9 +20,7 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
-from omnibase_core.models.core.model_state_transition import (
-    ModelStateTransition,
-)
+from omnibase_core.models.core.model_state_transition import ModelStateTransition
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 

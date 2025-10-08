@@ -95,21 +95,26 @@ class ModelEventEnvelope(BaseModel):
         cls,
         payload: ModelOnexEvent,
         destination: str,
-        source_node_id: str,
+        source_node_id: str | UUID,
         **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for direct routing to destination."""
         route_spec = ModelRouteSpec.create_direct_route(destination)
 
+        # Convert source_node_id to UUID if string
+        node_id = (
+            UUID(source_node_id) if isinstance(source_node_id, str) else source_node_id
+        )
+
         envelope = cls(
             payload=payload,
             route_spec=route_spec,
-            source_node_id=source_node_id,
+            source_node_id=node_id,
             **kwargs,
         )
 
         # Add source hop to trace
-        envelope.add_source_hop(source_node_id)
+        envelope.add_source_hop(str(node_id))
         return envelope
 
     @classmethod
@@ -118,21 +123,26 @@ class ModelEventEnvelope(BaseModel):
         payload: ModelOnexEvent,
         destination: str,
         hops: list[str],
-        source_node_id: str,
+        source_node_id: str | UUID,
         **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope with explicit routing path."""
         route_spec = ModelRouteSpec.create_explicit_route(destination, hops)
 
+        # Convert source_node_id to UUID if string
+        node_id = (
+            UUID(source_node_id) if isinstance(source_node_id, str) else source_node_id
+        )
+
         envelope = cls(
             payload=payload,
             route_spec=route_spec,
-            source_node_id=source_node_id,
+            source_node_id=node_id,
             **kwargs,
         )
 
         # Add source hop to trace
-        envelope.add_source_hop(source_node_id)
+        envelope.add_source_hop(str(node_id))
         return envelope
 
     @classmethod
@@ -140,45 +150,57 @@ class ModelEventEnvelope(BaseModel):
         cls,
         payload: ModelOnexEvent,
         service_pattern: str,
-        source_node_id: str,
+        source_node_id: str | UUID,
         **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for anycast routing to service."""
         route_spec = ModelRouteSpec.create_anycast_route(service_pattern)
 
+        # Convert source_node_id to UUID if string
+        node_id = (
+            UUID(source_node_id) if isinstance(source_node_id, str) else source_node_id
+        )
+
         envelope = cls(
             payload=payload,
             route_spec=route_spec,
-            source_node_id=source_node_id,
+            source_node_id=node_id,
             **kwargs,
         )
 
         # Add source hop to trace
-        envelope.add_source_hop(source_node_id)
+        envelope.add_source_hop(str(node_id))
         return envelope
 
     @classmethod
     def create_broadcast(
         cls,
         payload: ModelOnexEvent,
-        source_node_id: str,
+        source_node_id: str | UUID,
         **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for broadcast routing."""
         route_spec = ModelRouteSpec.create_broadcast_route()
 
+        # Convert source_node_id to UUID if string
+        node_id = (
+            UUID(source_node_id) if isinstance(source_node_id, str) else source_node_id
+        )
+
         envelope = cls(
             payload=payload,
             route_spec=route_spec,
-            source_node_id=source_node_id,
+            source_node_id=node_id,
             **kwargs,
         )
 
         # Add source hop to trace
-        envelope.add_source_hop(source_node_id)
+        envelope.add_source_hop(str(node_id))
         return envelope
 
-    def add_source_hop(self, node_id: str, service_name: str | None = None) -> None:
+    def add_source_hop(
+        self, node_id: str | UUID, service_name: str | None = None
+    ) -> None:
         """Add source hop to the trace."""
         hop = ModelRouteHop.create_source_hop(
             UUID(node_id) if isinstance(node_id, str) else node_id, service_name
@@ -187,7 +209,7 @@ class ModelEventEnvelope(BaseModel):
 
     def add_router_hop(
         self,
-        node_id: str,
+        node_id: str | UUID,
         routing_decision: str,
         next_hop: str,
         **kwargs: Any,
@@ -204,7 +226,7 @@ class ModelEventEnvelope(BaseModel):
 
     def add_destination_hop(
         self,
-        node_id: str,
+        node_id: str | UUID,
         service_name: str | None = None,
     ) -> None:
         """Add destination hop and mark as delivered."""
@@ -313,4 +335,4 @@ class ModelEventEnvelope(BaseModel):
         """Human-readable representation of the envelope."""
         path = " -> ".join(self.get_routing_path()) if self.trace else "no hops"
         status = "delivered" if self.is_delivered else "in-transit"
-        return f"Envelope[{self.envelope_id[:8]}] {status}: {path} (TTL: {self.route_spec.ttl})"
+        return f"Envelope[{str(self.envelope_id)[:8]}] {status}: {path} (TTL: {self.route_spec.ttl})"

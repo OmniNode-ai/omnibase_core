@@ -33,7 +33,9 @@ def fix_id_field_with_uuid_factory(content: str) -> str:
     return re.sub(pattern, replacement, content)
 
 
-def fix_version_field_simple(content: str, field_name: str, default_version: str = "1.0.0") -> str:
+def fix_version_field_simple(
+    content: str, field_name: str, default_version: str = "1.0.0"
+) -> str:
     """Fix version field with simple string default"""
     # Match: field_name: str = Field(default="1.0.0", ...)
     pattern = rf'({field_name}:\s+)str(\s*=\s*Field\(\s*default=)"{default_version}"'
@@ -42,7 +44,7 @@ def fix_version_field_simple(content: str, field_name: str, default_version: str
     parts = default_version.split(".")
     major, minor, patch = parts[0], parts[1], parts[2] if len(parts) > 2 else "0"
 
-    replacement = rf'\1ModelSemVer\2_factory=lambda: ModelSemVer(major={major}, minor={minor}, patch={patch})'
+    replacement = rf"\1ModelSemVer\2_factory=lambda: ModelSemVer(major={major}, minor={minor}, patch={patch})"
     return re.sub(pattern, replacement, content)
 
 
@@ -62,11 +64,15 @@ def ensure_uuid_import(content: str) -> str:
                 lines[i] = line.replace("from uuid import", "from uuid import UUID, ")
             elif "from uuid import" in line and "uuid4" not in line and "UUID" in line:
                 # Add uuid4 to import
-                lines[i] = line.replace("from uuid import UUID", "from uuid import UUID, uuid4")
+                lines[i] = line.replace(
+                    "from uuid import UUID", "from uuid import UUID, uuid4"
+                )
     else:
         # Add new import after other imports
         for i, line in enumerate(lines):
-            if line.startswith("from pydantic import") or line.startswith("from omnibase_core"):
+            if line.startswith("from pydantic import") or line.startswith(
+                "from omnibase_core"
+            ):
                 lines.insert(i, "from uuid import UUID, uuid4\n")
                 break
 
@@ -80,8 +86,13 @@ def ensure_semver_import(content: str) -> str:
 
     lines = content.split("\n")
     for i, line in enumerate(lines):
-        if line.startswith("from omnibase_core.models") or line.startswith("from pydantic"):
-            lines.insert(i + 1, "from omnibase_core.models.core.model_semver import ModelSemVer\n")
+        if line.startswith("from omnibase_core.models") or line.startswith(
+            "from pydantic"
+        ):
+            lines.insert(
+                i + 1,
+                "from omnibase_core.models.core.model_semver import ModelSemVer\n",
+            )
             break
 
     return "\n".join(lines)
@@ -137,35 +148,44 @@ def main():
     base = Path("/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core")
 
     files_to_fix = {
-        base / "models/discovery/model_event_descriptor.py": {
+        base
+        / "models/discovery/model_event_descriptor.py": {
             "event_schema_version": "ModelSemVer"
         },
-        base / "models/discovery/model_tool_response_event.py": {
+        base
+        / "models/discovery/model_tool_response_event.py": {
             "target_node_id": "UUID",
             "requester_id": "UUID",
         },
-        base / "models/discovery/model_nodehealthevent.py": {
+        base
+        / "models/discovery/model_nodehealthevent.py": {
             "service_id": "UUID",
             "check_id": "UUID",
         },
-        base / "models/core/model_event_envelope.py": {
+        base
+        / "models/core/model_event_envelope.py": {
             "envelope_id": "UUID",
             "source_node_id": "UUID",
             "node_id": "UUID",
         },
-        base / "models/security/model_permission_scope.py": {
+        base
+        / "models/security/model_permission_scope.py": {
             "scope_id": "UUID",
         },
-        base / "models/security/model_detection_pattern.py": {
+        base
+        / "models/security/model_detection_pattern.py": {
             "pattern_id": "UUID",
         },
-        base / "models/core/model_system_data.py": {
+        base
+        / "models/core/model_system_data.py": {
             "system_id": "UUID",
         },
-        base / "models/core/model_instance_metadata.py": {
+        base
+        / "models/core/model_instance_metadata.py": {
             "deployment_id": "UUID",
         },
-        base / "models/service/model_event_bus_input_state.py": {
+        base
+        / "models/service/model_event_bus_input_state.py": {
             "correlation_id": "UUID",
             "event_id": "UUID",
             "version": "ModelSemVer",

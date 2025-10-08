@@ -10,12 +10,11 @@ Design Principles:
 - Protocol-based interfaces for flexibility
 """
 
-from .basic_error_context import BasicErrorContext
-from .protocol_error_context import ProtocolErrorContext
-from .protocol_schema_value import ProtocolSchemaValue
+from omnibase_spi.protocols.types import ProtocolSchemaValue
+
+from .typed_dict_basic_error_context import TypedDictBasicErrorContext
 
 __all__ = [
-    "BasicErrorContext",
-    "ProtocolErrorContext",
+    "TypedDictBasicErrorContext",
     "ProtocolSchemaValue",
 ]

@@ -25,12 +25,8 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,
 )
-from omnibase_core.models.metadata.model_typed_dict_core_data import (
-    TypedDictCoreData,
-)
-from omnibase_core.models.metadata.model_typed_dict_error_data import (
-    TypedDictErrorData,
-)
+from omnibase_core.models.metadata.model_typed_dict_core_data import TypedDictCoreData
+from omnibase_core.models.metadata.model_typed_dict_error_data import TypedDictErrorData
 from omnibase_core.models.metadata.model_typed_dict_performance_data import (
     TypedDictPerformanceData,
 )

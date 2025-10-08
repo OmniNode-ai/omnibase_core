@@ -68,6 +68,7 @@ def canonicalize_metadata_block(
     """
     return str(
         MixinCanonicalYAMLSerializer().canonicalize_metadata_block(
+            metadata_block=block,
             volatile_fields=volatile_fields,
             placeholder=placeholder,
             sort_keys=sort_keys,

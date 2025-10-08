@@ -49,9 +49,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_backend_config import ModelBackendConfig
 from .model_config_validation_result import ModelConfigValidationResult
-from .model_performance_optimization_config import (
-    ModelPerformanceOptimizationConfig,
-)
+from .model_performance_optimization_config import ModelPerformanceOptimizationConfig
 from .model_secret_backend import ModelSecretBackend
 from .model_secret_health_check_result import ModelSecretHealthCheckResult
 

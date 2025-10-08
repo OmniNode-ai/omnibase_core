@@ -12,21 +12,8 @@ Models for metadata collection, analytics, and field information.
 
 from typing import TYPE_CHECKING, Dict, TypedDict
 
-if TYPE_CHECKING:
-    # Use proper protocol type during type checking when available
-    try:
-        from omnibase_spi.protocols.types.protocol_core_types import (
-            ProtocolSupportedMetadataType,
-        )
-    except ImportError:
-        # Structured fallback type for development when SPI unavailable
-        from omnibase_core.types.constraints import BasicValueType
-
-        ProtocolSupportedMetadataType = BasicValueType
-else:
-    # Runtime fallback using structured type constraints
-
-    ProtocolSupportedMetadataType = BasicValueType
+# Import ProtocolSupportedMetadataType from omnibase_spi (authoritative source)
+from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -52,9 +39,7 @@ from .model_typed_dict_node_core import TypedDictNodeCore
 from .model_typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
 from .model_typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
 from .model_typed_dict_performance_data import TypedDictPerformanceData
-from .model_typed_dict_performance_update_data import (
-    TypedDictPerformanceUpdateData,
-)
+from .model_typed_dict_performance_update_data import TypedDictPerformanceUpdateData
 from .model_typed_dict_quality_data import TypedDictQualityData
 from .model_typed_dict_quality_update_data import TypedDictQualityUpdateData
 from .model_typed_dict_timestamp_data import TypedDictTimestampData

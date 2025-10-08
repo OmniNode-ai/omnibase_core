@@ -1,6 +1,5 @@
 import fnmatch
 from typing import Any
-
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -327,7 +326,7 @@ class ModelPermissionScope(BaseModel):
     @classmethod
     def create_global_scope(cls) -> "ModelPermissionScope":
         """Create global permission scope (no restrictions)"""
-        return cls(scope_id="global", scope_type="resource", include_subresources=True)
+        return cls(scope_id=uuid4(), scope_type="resource", include_subresources=True)
 
     @classmethod
     def create_organizational_scope(
@@ -336,7 +335,7 @@ class ModelPermissionScope(BaseModel):
     ) -> "ModelPermissionScope":
         """Create organizational permission scope"""
         return cls(
-            scope_id=f"org_{'_'.join(org_units)}",
+            scope_id=uuid4(),
             scope_type="organizational",
             organizational_units=org_units,
             include_subresources=True,
@@ -349,7 +348,7 @@ class ModelPermissionScope(BaseModel):
     ) -> "ModelPermissionScope":
         """Create resource-specific permission scope"""
         return cls(
-            scope_id=f"resource_{'_'.join(resource_hierarchy)}",
+            scope_id=uuid4(),
             scope_type="resource",
             resource_hierarchy=resource_hierarchy,
             include_subresources=True,
@@ -363,7 +362,7 @@ class ModelPermissionScope(BaseModel):
     ) -> "ModelPermissionScope":
         """Create temporal permission scope"""
         return cls(
-            scope_id=f"temporal_{valid_from.strftime('%Y%m%d')}_{valid_until.strftime('%Y%m%d')}",
+            scope_id=uuid4(),
             scope_type="temporal",
             temporal_constraints_enabled=True,
             valid_from=valid_from,
@@ -378,7 +377,7 @@ class ModelPermissionScope(BaseModel):
     ) -> "ModelPermissionScope":
         """Create business hours permission scope"""
         return cls(
-            scope_id="business_hours",
+            scope_id=uuid4(),
             scope_type="temporal",
             temporal_constraints_enabled=True,
             time_of_day_start=start_time,

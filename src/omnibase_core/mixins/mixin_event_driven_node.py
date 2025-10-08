@@ -37,8 +37,8 @@ Usage:
 
 from typing import Any, Protocol
 
-from omnibase_spi.protocols.core import ProtocolSchemaLoader
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
+from omnibase_spi.protocols.schema import ProtocolSchemaLoader
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError

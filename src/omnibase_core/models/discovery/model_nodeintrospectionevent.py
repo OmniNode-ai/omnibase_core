@@ -46,7 +46,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
     )
 
     # Consul-compatible fields for future adapter
-    service_id: str | None = Field(
+    service_id: UUID | None = Field(
         default=None,
         description="Service ID for Consul compatibility (future)",
     )

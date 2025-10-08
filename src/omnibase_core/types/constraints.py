@@ -52,14 +52,10 @@ if TYPE_CHECKING:
 from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
 from omnibase_spi.protocols.types import ProtocolExecutable as Executable
 from omnibase_spi.protocols.types import ProtocolIdentifiable as Identifiable
-from omnibase_spi.protocols.types import (
-    ProtocolMetadataProvider,
-)
+from omnibase_spi.protocols.types import ProtocolMetadataProvider
 from omnibase_spi.protocols.types import ProtocolNameable as Nameable
 from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
-from omnibase_spi.protocols.types import (
-    ProtocolValidatable,
-)
+from omnibase_spi.protocols.types import ProtocolValidatable
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 

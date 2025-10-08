@@ -63,7 +63,7 @@ from .converter_health_to_typed_dict import convert_health_to_typed_dict
 
 # Converter functions
 from .converter_stats_to_typed_dict import convert_stats_to_typed_dict
-from .core_types import BasicErrorContext, ProtocolErrorContext, ProtocolSchemaValue
+from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
 from .typed_dict_audit_info import TypedDictAuditInfo
 from .typed_dict_batch_processing_info import TypedDictBatchProcessingInfo
 from .typed_dict_cache_info import TypedDictCacheInfo
@@ -120,7 +120,7 @@ from .util_datetime_parser import parse_datetime
 
 __all__ = [
     # Core types (no dependencies)
-    "BasicErrorContext",
+    "TypedDictBasicErrorContext",
     "ProtocolErrorContext",
     "ProtocolSchemaValue",
     # Type constraints and protocols

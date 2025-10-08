@@ -22,9 +22,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelWorkflowInstanceMetadata(BaseModel):

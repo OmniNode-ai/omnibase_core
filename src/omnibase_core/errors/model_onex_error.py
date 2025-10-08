@@ -56,7 +56,7 @@ from omnibase_core.errors.error_codes import (
 )
 
 # Import basic types (no circular dependency risk)
-from omnibase_core.types.core_types import BasicErrorContext
+from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports
 # _ModelOnexErrorData moved here to break circular import chain
@@ -115,41 +115,39 @@ class ModelOnexError(Exception):
         )
 
         # Store simple context (no circular dependencies)
-        self._simple_context = BasicErrorContext(
-            file_path=(context.get("file_path") if isinstance(context, dict) else None),
-            line_number=(
-                context.get("line_number") if isinstance(context, dict) else None
-            ),
-            column_number=(
-                context.get("column_number") if isinstance(context, dict) else None
-            ),
-            function_name=(
-                context.get("function_name") if isinstance(context, dict) else None
-            ),
-            module_name=(
-                context.get("module_name") if isinstance(context, dict) else None
-            ),
-            stack_trace=(
-                context.get("stack_trace") if isinstance(context, dict) else None
-            ),
-            additional_context=(
-                {
-                    k: v
-                    for k, v in context.items()
-                    if k
-                    not in {
-                        "file_path",
-                        "line_number",
-                        "column_number",
-                        "function_name",
-                        "module_name",
-                        "stack_trace",
-                    }
+        # Build TypedDict with only non-None values
+        simple_context: TypedDictBasicErrorContext = {}
+        if isinstance(context, dict):
+            if context.get("file_path") is not None:
+                simple_context["file_path"] = context["file_path"]
+            if context.get("line_number") is not None:
+                simple_context["line_number"] = context["line_number"]
+            if context.get("column_number") is not None:
+                simple_context["column_number"] = context["column_number"]
+            if context.get("function_name") is not None:
+                simple_context["function_name"] = context["function_name"]
+            if context.get("module_name") is not None:
+                simple_context["module_name"] = context["module_name"]
+            if context.get("stack_trace") is not None:
+                simple_context["stack_trace"] = context["stack_trace"]
+
+            additional_ctx = {
+                k: v
+                for k, v in context.items()
+                if k
+                not in {
+                    "file_path",
+                    "line_number",
+                    "column_number",
+                    "function_name",
+                    "module_name",
+                    "stack_trace",
                 }
-                if isinstance(context, dict)
-                else {}
-            ),
-        )
+            }
+            if additional_ctx:
+                simple_context["additional_context"] = additional_ctx
+
+        self._simple_context = simple_context
 
         # Create the Pydantic model for structured data (using dict[str, Any]context, no circular deps)
         self.model = _ModelOnexErrorData(
@@ -257,8 +255,8 @@ class ModelOnexError(Exception):
     @property
     def context(self) -> dict[str, Any]:
         """Get the context information."""
-        # Return context as dict[str, Any]from BasicErrorContext (no circular dependencies)
-        return self._simple_context.to_dict()
+        # Return context as dict (TypedDict is already a dict, no conversion needed)
+        return dict(self._simple_context)
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""

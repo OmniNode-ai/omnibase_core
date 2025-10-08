@@ -147,8 +147,8 @@ class ModelToolResponseEvent(ModelOnexEvent):
         action: str,
         result: dict[str, str | int | float | bool | list[Any]],
         execution_time_ms: int,
-        target_node_id: str,
-        requester_id: str,
+        target_node_id: str | UUID,
+        requester_id: str | UUID,
         execution_priority: str = "normal",
         **kwargs: Any,
     ) -> "ModelToolResponseEvent":
@@ -171,6 +171,14 @@ class ModelToolResponseEvent(ModelOnexEvent):
         Returns:
             ModelToolResponseEvent for successful execution
         """
+        # Convert IDs to UUID if string
+        target_uuid = (
+            UUID(target_node_id) if isinstance(target_node_id, str) else target_node_id
+        )
+        requester_uuid = (
+            UUID(requester_id) if isinstance(requester_id, str) else requester_id
+        )
+
         return cls(
             node_id=source_node_id,
             correlation_id=correlation_id,
@@ -181,8 +189,8 @@ class ModelToolResponseEvent(ModelOnexEvent):
             success=True,
             result=result,
             execution_time_ms=execution_time_ms,
-            target_node_id=target_node_id,
-            requester_id=requester_id,
+            target_node_id=target_uuid,
+            requester_id=requester_uuid,
             execution_priority=execution_priority,
             execution_mode="synchronous",
             **kwargs,
@@ -199,8 +207,8 @@ class ModelToolResponseEvent(ModelOnexEvent):
         error: str,
         error_code: str,
         execution_time_ms: int,
-        target_node_id: str,
-        requester_id: str,
+        target_node_id: str | UUID,
+        requester_id: str | UUID,
         execution_priority: str = "normal",
         **kwargs: Any,
     ) -> "ModelToolResponseEvent":
@@ -224,6 +232,14 @@ class ModelToolResponseEvent(ModelOnexEvent):
         Returns:
             ModelToolResponseEvent for failed execution
         """
+        # Convert IDs to UUID if string
+        target_uuid = (
+            UUID(target_node_id) if isinstance(target_node_id, str) else target_node_id
+        )
+        requester_uuid = (
+            UUID(requester_id) if isinstance(requester_id, str) else requester_id
+        )
+
         return cls(
             node_id=source_node_id,
             correlation_id=correlation_id,
@@ -235,8 +251,8 @@ class ModelToolResponseEvent(ModelOnexEvent):
             error=error,
             error_code=error_code,
             execution_time_ms=execution_time_ms,
-            target_node_id=target_node_id,
-            requester_id=requester_id,
+            target_node_id=target_uuid,
+            requester_id=requester_uuid,
             execution_priority=execution_priority,
             execution_mode="synchronous",
             **kwargs,
@@ -251,8 +267,8 @@ class ModelToolResponseEvent(ModelOnexEvent):
         tool_name: str,
         action: str,
         timeout_ms: int,
-        target_node_id: str,
-        requester_id: str,
+        target_node_id: str | UUID,
+        requester_id: str | UUID,
         **kwargs: Any,
     ) -> "ModelToolResponseEvent":
         """
@@ -272,6 +288,14 @@ class ModelToolResponseEvent(ModelOnexEvent):
         Returns:
             ModelToolResponseEvent for timeout
         """
+        # Convert IDs to UUID if string
+        target_uuid = (
+            UUID(target_node_id) if isinstance(target_node_id, str) else target_node_id
+        )
+        requester_uuid = (
+            UUID(requester_id) if isinstance(requester_id, str) else requester_id
+        )
+
         return cls(
             node_id=source_node_id,
             correlation_id=correlation_id,
@@ -283,8 +307,8 @@ class ModelToolResponseEvent(ModelOnexEvent):
             error=f"Tool execution timed out after {timeout_ms}ms",
             error_code="TOOL_EXECUTION_TIMEOUT",
             execution_time_ms=timeout_ms,
-            target_node_id=target_node_id,
-            requester_id=requester_id,
+            target_node_id=target_uuid,
+            requester_id=requester_uuid,
             execution_priority="normal",
             execution_mode="synchronous",
             **kwargs,

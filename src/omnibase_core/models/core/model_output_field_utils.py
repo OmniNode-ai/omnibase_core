@@ -1,7 +1,7 @@
 from typing import Any, TypeVar
 
 # Import the protocol from omnibase_spi
-from omnibase_spi.protocols.core import OutputFieldTool
+from omnibase_spi.protocols.advanced import ProtocolOutputFieldTool as OutputFieldTool
 from pydantic import BaseModel, Field
 
 from omnibase_core.constants import (
@@ -72,7 +72,9 @@ def build_output_field_kwargs(
 
 
 class ModelComputeOutputFieldTool(OutputFieldTool):
-    def __call__(self, state: Any, input_state_dict: dict[str, Any]) -> ModelOnexField:
+    async def __call__(
+        self, state: Any, input_state_dict: dict[str, Any]
+    ) -> ModelOnexField:
         # If 'output_field' is present in the input dict[str, Any], always use it
         val = input_state_dict.get("output_field")
         if val is not None:

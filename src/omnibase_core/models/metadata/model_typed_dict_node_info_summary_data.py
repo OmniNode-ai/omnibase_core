@@ -6,9 +6,7 @@ from typing import Any, Dict, TypedDict
 Typed structure for node info summary serialization.
 """
 
-from omnibase_core.models.metadata.model_typed_dict_node_core import (
-    TypedDictNodeCore,
-)
+from omnibase_core.models.metadata.model_typed_dict_node_core import TypedDictNodeCore
 
 
 class TypedDictNodeInfoSummaryData(TypedDict):

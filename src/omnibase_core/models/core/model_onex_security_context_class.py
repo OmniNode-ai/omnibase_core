@@ -34,7 +34,7 @@ class ModelOnexSecurityContext(BaseModel):
     """
 
     # === AUTHENTICATION ===
-    user_id: str | None = Field(default=None, description="User identifier")
+    user_id: UUID | None = Field(default=None, description="User identifier")
     session_id: UUID | None = Field(default=None, description="Session identifier")
     authentication_token: str | None = Field(
         default=None,
@@ -239,7 +239,7 @@ class ModelOnexSecurityContext(BaseModel):
 
         audit_event = ModelOnexAuditEvent(
             event_type=event_type,
-            actor=self.user_id,
+            actor=str(self.user_id) if self.user_id else None,
             resource=resource,
             action=action,
             outcome=outcome,
@@ -297,7 +297,7 @@ class ModelOnexSecurityContext(BaseModel):
     def sanitize_for_logging(self) -> dict[str, str | None]:
         """Create sanitized version for logging (removes sensitive data)."""
         return {
-            "user_id": self.user_id or "anonymous",
+            "user_id": str(self.user_id) if self.user_id else "anonymous",
             "session_id": str(self.session_id)[:8] + "..." if self.session_id else None,
             "authentication_method": self.authentication_method,
             "security_profile": self.security_profile,

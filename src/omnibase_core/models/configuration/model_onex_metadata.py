@@ -17,9 +17,7 @@ from omnibase_core.models.core.model_node_metadata import Namespace
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
-    from omnibase_core.enums import (
-        EnumProtocolVersion,
-    )
+    from omnibase_core.enums import EnumProtocolVersion
     from omnibase_core.models.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )

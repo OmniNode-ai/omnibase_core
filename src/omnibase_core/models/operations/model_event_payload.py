@@ -6,10 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_event_type import EnumEventType
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-    ModelOnexError,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode, ModelOnexError
 from omnibase_core.models.operations.model_event_routing_info import (
     ModelEventRoutingInfo,
 )

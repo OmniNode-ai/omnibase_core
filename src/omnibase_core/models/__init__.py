@@ -28,11 +28,7 @@ from . import (
 )
 
 # Re-export key models for convenience
-from .common import (
-    ModelErrorContext,
-    ModelNumericValue,
-    ModelSchemaValue,
-)
+from .common import ModelErrorContext, ModelNumericValue, ModelSchemaValue
 from .infrastructure import err, ok
 from .model_yaml_dump_options import ModelYamlDumpOptions
 from .results import ModelOnexResult

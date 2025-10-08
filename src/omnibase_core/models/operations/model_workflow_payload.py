@@ -6,10 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-    ModelOnexError,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode, ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Import extracted workflow data classes

@@ -14,9 +14,7 @@ as part of contract-driven state transitions.
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_state_update_operation import (
-    EnumStateUpdateOperation,
-)
+from omnibase_core.enums.enum_state_update_operation import EnumStateUpdateOperation
 from omnibase_core.models.core.model_state_field_update import ModelStateFieldUpdate
 
 # ModelStateFieldUpdate has been extracted to model_state_field_update.py

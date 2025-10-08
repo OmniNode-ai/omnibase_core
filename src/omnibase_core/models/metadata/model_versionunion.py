@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, TypedDict, Union
+from typing import Any, Dict, Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -7,14 +7,7 @@ from omnibase_core.enums.enum_version_union_type import EnumVersionUnionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
-
-
-class TypedDictVersionDict(TypedDict):
-    """Version dictionary structure."""
-
-    major: int
-    minor: int
-    patch: int
+from omnibase_core.models.metadata.typed_dict_version_dict import TypedDictVersionDict
 
 
 class ModelVersionUnion(BaseModel):

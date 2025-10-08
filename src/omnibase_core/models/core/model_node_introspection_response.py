@@ -73,9 +73,7 @@ class ModelNodeIntrospectionResponse(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         if isinstance(v, str):
-            from omnibase_core.models.core.model_semver import (
-                parse_semver_from_string,
-            )
+            from omnibase_core.models.core.model_semver import parse_semver_from_string
 
             return parse_semver_from_string(v)
         msg = "introspection_version must be ModelSemVer, dict, or str"

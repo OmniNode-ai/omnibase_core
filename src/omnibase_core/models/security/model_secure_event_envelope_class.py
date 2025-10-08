@@ -124,7 +124,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         default_factory=list,
         description="Roles authorized to process this envelope",
     )
-    authorized_nodes: set[str] = Field(
+    authorized_nodes: set[UUID] = Field(
         default_factory=set,
         description="Specific nodes authorized to process envelope",
     )
@@ -168,7 +168,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         # Update signature chain with actual envelope ID
         temp_uuid = UUID("00000000-0000-0000-0000-000000000000")
         if self.signature_chain.envelope_id == temp_uuid:
-            self.signature_chain.envelope_id = UUID(self.envelope_id)
+            # envelope_id is already a UUID, no need to wrap it
+            self.signature_chain.envelope_id = self.envelope_id
 
         # Initialize content hash
         if not hasattr(self, "content_hash") or not self.content_hash:
@@ -431,9 +432,10 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
 
     def _get_policy_context(self) -> ModelPolicyContext:
         """Get context for policy evaluation."""
+        # Create base context with UUID types where required
         context = ModelPolicyContext(
-            envelope_id=self.envelope_id,
-            source_node_id=self.source_node_id,
+            envelope_id=str(self.envelope_id),
+            source_node_id=str(self.source_node_id),
             current_hop_count=self.current_hop_count,
             operation_type="routing",
             is_encrypted=self.is_encrypted,
@@ -453,6 +455,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         )
 
         if self.security_context:
+            # Convert user_id from UUID to str for policy context
             context.user_id = (
                 str(self.security_context.user_id)
                 if self.security_context.user_id
@@ -564,7 +567,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             event_id=uuid4(),
             event_type=event_type,
             timestamp=datetime.utcnow(),
-            envelope_id=self.envelope_id,
+            envelope_id=str(self.envelope_id),
             status=EnumSecurityEventStatus.SUCCESS,  # Required field
             **kwargs,
         )
@@ -593,7 +596,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             )
 
         return ModelSecuritySummary(
-            envelope_id=self.envelope_id,
+            envelope_id=str(self.envelope_id),
             security_level=self.required_trust_level.trust_category,
             is_encrypted=self.is_encrypted,
             signature_required=self.signature_required,

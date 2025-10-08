@@ -14,24 +14,11 @@ from datetime import UTC, datetime
 from typing import Any, Optional
 from uuid import UUID
 
+from omnibase_spi.protocols.types import ProtocolLogContext
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.pydantic_json_encoder import PydanticJSONEncoder
-
-try:
-    from omnibase_spi.protocols.types.core_types import (
-        ProtocolLogContext as _ProtocolLogContext,
-    )
-
-    ProtocolLogContext = _ProtocolLogContext
-except ImportError:
-    # Fallback for when omnibase_spi is not available
-    from omnibase_core.logging.protocol_log_context_fallback import (
-        ProtocolLogContextFallback,
-    )
-
-    ProtocolLogContext = ProtocolLogContextFallback
 
 
 def emit_log_event_sync(

@@ -1,7 +1,3 @@
-from typing import Any, Callable, Generic, List, TypeVar
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
 """
 Event Listener Mixin for ONEX Tool Nodes.
 
@@ -22,7 +18,6 @@ from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 from uuid import UUID
 
-from omnibase_spi.protocols.event_bus import ProtocolEventBus
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -32,6 +27,9 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.contracts import load_and_validate_yaml_model
+
+# Note: Event bus uses duck-typing interface, not a formal protocol
+# The omnibase_spi ProtocolEventBus is Kafka-based and incompatible with this interface
 
 # Generic type variables for input and output states
 InputStateT = TypeVar("InputStateT")
@@ -109,12 +107,12 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
 
     @property
-    def event_bus(self) -> ProtocolEventBus | None:
+    def event_bus(self) -> Any:
         """Get event bus instance from implementing class."""
         return getattr(self, "_event_bus", None)
 
     @event_bus.setter
-    def event_bus(self, value: ProtocolEventBus) -> None:
+    def event_bus(self, value: Any) -> None:
         """Set event bus instance."""
         self._event_bus = value
 
@@ -306,10 +304,10 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             self._stop_event.set()
 
             # Unsubscribe from all events
-            for pattern, handler in self._event_subscriptions:
+            for pattern, subscription in self._event_subscriptions:
                 try:
                     if self.event_bus is not None:
-                        self.event_bus.unsubscribe(pattern)
+                        self.event_bus.unsubscribe(subscription)  # type: ignore[attr-defined]  # Duck-typed event bus interface
                 except Exception as e:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -378,8 +376,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 )
 
                 if self.event_bus is not None:
-                    self.event_bus.subscribe(handler, pattern)
-                self._event_subscriptions.append((pattern, handler))
+                    subscription = self.event_bus.subscribe(handler, event_type=pattern)  # type: ignore[call-arg, arg-type]  # Duck-typed event bus interface
+                    self._event_subscriptions.append((pattern, subscription))
 
                 emit_log_event(
                     LogLevel.INFO,
@@ -980,7 +978,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         # Publish envelope
         if self.event_bus is not None:
-            self.event_bus.publish(envelope)
+            self.event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
 
         emit_log_event(
             LogLevel.INFO,
@@ -1041,7 +1039,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         if self.event_bus is not None:
-            self.event_bus.publish(envelope)
+            self.event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
 
         emit_log_event(
             LogLevel.ERROR,

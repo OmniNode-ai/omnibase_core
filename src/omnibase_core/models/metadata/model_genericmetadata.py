@@ -1,26 +1,19 @@
-from typing import Dict, Generic, Protocol, TypedDict, overload, runtime_checkable
+from typing import Dict, Generic, TypedDict, overload
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-
-# Define ProtocolSupportedMetadataType as a Protocol
-@runtime_checkable
-class ProtocolSupportedMetadataType(Protocol):
-    """Protocol for types that can be stored as metadata."""
-
-    pass
-
-
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_typed_dict_metadata_dict import (
     TypedDictMetadataDict,
+)
+from omnibase_core.models.metadata.protocol_supported_metadata_type import (
+    ProtocolSupportedMetadataType,
 )
 from omnibase_core.types.typed_dict_generic_value import BasicValueType
 from omnibase_core.utils.util_semver import parse_semver_from_string

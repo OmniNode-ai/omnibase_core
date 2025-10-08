@@ -6,15 +6,7 @@ import enum
 import json
 import uuid
 from pathlib import Path
-from typing import (
-    Annotated,
-    Any,
-    ClassVar,
-    Dict,
-    Optional,
-    TypeAlias,
-    cast,
-)
+from typing import Annotated, Any, ClassVar, Dict, Optional, TypeAlias, cast
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 

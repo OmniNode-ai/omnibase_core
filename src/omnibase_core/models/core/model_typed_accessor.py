@@ -16,9 +16,7 @@ Provides type-safe field access with generic type support.
 
 from typing import Any, Generic, TypeVar
 
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_field_accessor import ModelFieldAccessor

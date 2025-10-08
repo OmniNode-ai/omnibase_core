@@ -22,9 +22,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import (
-    EnumCoreErrorCode,
-)
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.operations.model_compute_operation_data import (
     ModelComputeOperationData,
 )

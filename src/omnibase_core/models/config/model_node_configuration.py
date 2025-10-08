@@ -1,8 +1,6 @@
 import os
 from typing import Any, Dict, Optional
 
-from omnibase_spi.protocols.core import ProtocolNodeConfiguration
-from omnibase_spi.protocols.types.core_types import ContextValue
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -110,9 +108,7 @@ class ModelNodeConfiguration(BaseModel):
             ),
         )
 
-    def get_config_value(
-        self, key: str, default: Optional[ContextValue] = None
-    ) -> ContextValue:
+    def get_config_value(self, key: str, default: Optional[Any] = None) -> Any:
         """Get configuration value by dot-separated key path."""
         parts = key.split(".")
         current = self.model_dump()
@@ -134,21 +130,15 @@ class ModelNodeConfiguration(BaseModel):
         """Get timeout configuration in milliseconds."""
         return getattr(self.timeouts, f"{timeout_type}_timeout_ms", default_ms)
 
-    def get_security_config(
-        self, key: str, default: Optional[ContextValue] = None
-    ) -> ContextValue:
+    def get_security_config(self, key: str, default: Optional[Any] = None) -> Any:
         """Get security-related configuration value."""
         return getattr(self.security, key, default)
 
-    def get_business_logic_config(
-        self, key: str, default: Optional[ContextValue] = None
-    ) -> ContextValue:
+    def get_business_logic_config(self, key: str, default: Optional[Any] = None) -> Any:
         """Get business logic configuration value."""
         return getattr(self.business_logic, key, default)
 
-    def get_performance_config(
-        self, key: str, default: Optional[ContextValue] = None
-    ) -> ContextValue:
+    def get_performance_config(self, key: str, default: Optional[Any] = None) -> Any:
         """Get performance-related configuration value."""
         return getattr(self.performance, key, default)
 
@@ -160,6 +150,6 @@ class ModelNodeConfiguration(BaseModel):
         except KeyError:
             return False
 
-    def get_all_config(self) -> Dict[str, ContextValue]:
-        """Get all configuration as dict[str, Any]ionary."""
+    def get_all_config(self) -> Dict[str, Any]:
+        """Get all configuration as dictionary."""
         return self.model_dump()

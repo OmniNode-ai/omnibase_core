@@ -1,5 +1,3 @@
-from typing import Any, Optional
-
 """
 Mixin for Workflow event support in ONEX tools.
 
@@ -9,12 +7,14 @@ and Workflow context detection for tools participating in workflows.
 
 import os
 import uuid
+from typing import Any
 from uuid import UUID
-
-from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+
+# Note: Event bus uses duck-typing interface, not a formal protocol
+# The omnibase_spi ProtocolEventBus is Kafka-based and incompatible with this interface
 
 
 class MixinDagSupport:
@@ -28,9 +28,7 @@ class MixinDagSupport:
     - Supporting both Workflow and non-Workflow execution modes
     """
 
-    def __init__(
-        self, event_bus: ProtocolEventBus | None = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, event_bus: Any = None, **kwargs: Any) -> None:
         """Initialize Workflow support mixin."""
         super().__init__(**kwargs)
         self._event_bus = event_bus
@@ -140,7 +138,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish(envelope)
+            self._event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
         except Exception as e:
             # Log error but don't fail the tool execution
             self._safe_log_error(f"Failed to emit Workflow completion event: {e}")
@@ -192,7 +190,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish(envelope)
+            self._event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
         except Exception as e:
             self._safe_log_error(f"Failed to emit Workflow start event: {e}")
 

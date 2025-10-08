@@ -26,6 +26,7 @@ import json
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from omnibase_spi.protocols.core import ProtocolCanonicalSerializer
+from omnibase_spi.protocols.types.protocol_core_types import ContextValue
 from pydantic import Field
 
 from omnibase_core.enums import EnumNodeMetadataField
@@ -77,7 +78,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
     """
 
     def canonicalize_metadata_block(
-        block: Union[dict[str, object], "NodeMetadataBlock"],
+        self,
+        metadata_block: Union[dict[str, Any], "NodeMetadataBlock"],
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
             EnumNodeMetadataField.LAST_MODIFIED_AT,
@@ -89,12 +91,12 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         default_flow_style: bool = False,
         allow_unicode: bool = True,
         comment_prefix: str = "",
-        **kwargs: object,
+        **kwargs: Any,
     ) -> str:
         """
         Canonicalize a metadata block for deterministic YAML serialization and hash computation.
         Args:
-            block: A dict[str, Any]or NodeMetadataBlock instance (must implement model_dump(mode="json")).
+            metadata_block: A dict[str, Any]or NodeMetadataBlock instance (must implement model_dump(mode="json")).
             volatile_fields: Fields to replace with protocol placeholder values.
             placeholder: Placeholder value for volatile fields.
             sort_keys: Whether to sort keys in YAML output.
@@ -109,20 +111,24 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         """
         import pydantic
 
-        if isinstance(block, dict):
+        if isinstance(metadata_block, dict):
             # Convert dict[str, Any]to NodeMetadataBlock, handling type conversions
-            if "entrypoint" in block and isinstance(block["entrypoint"], str):
+            if "entrypoint" in metadata_block and isinstance(
+                metadata_block["entrypoint"], str
+            ):
                 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 
-                if "://" in block["entrypoint"]:
-                    type_, target = block["entrypoint"].split("://", 1)
-                    block["entrypoint"] = EntrypointBlock(type=type_, target=target)
+                if "://" in metadata_block["entrypoint"]:
+                    type_, target = metadata_block["entrypoint"].split("://", 1)
+                    metadata_block["entrypoint"] = EntrypointBlock(  # type: ignore[assignment]
+                        type=type_, target=target
+                    )
             try:
-                block = NodeMetadataBlock(**block)  # type: ignore[arg-type]
+                metadata_block = NodeMetadataBlock(**metadata_block)  # type: ignore[arg-type]
             except (pydantic.ValidationError, TypeError):
-                block = NodeMetadataBlock.model_validate(block)
+                metadata_block = NodeMetadataBlock.model_validate(metadata_block)
 
-        block_dict = block.model_dump(mode="json")
+        block_dict = metadata_block.model_dump(mode="json")
         # Protocol-compliant placeholders
         protocol_placeholders = {
             EnumNodeMetadataField.HASH.value: "0" * 64,
@@ -282,31 +288,47 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_for_hash(
         self,
-        block: Union[dict[str, object], "NodeMetadataBlock"],
+        block: dict[str, ContextValue],
         body: str,
-        volatile_fields: tuple[EnumNodeMetadataField, ...] = (
-            EnumNodeMetadataField.HASH,
-            EnumNodeMetadataField.LAST_MODIFIED_AT,
-        ),
-        placeholder: str = "<PLACEHOLDER>",
-        comment_prefix: str = "",
-        **kwargs: object,
+        volatile_fields: tuple[str, ...] = ("hash", "last_modified_at"),
+        placeholder: str | None = None,
+        **kwargs: ContextValue,
     ) -> str:
         """
         Canonicalize a metadata block and file body for hash computation.
         Args:
-            block: A dict[str, Any]or NodeMetadataBlock instance (must implement model_dump(mode="json")).
+            block: A dict representing a metadata block.
             body: The file body content to normalize and include in hash.
             volatile_fields: Fields to replace with protocol placeholder values.
             placeholder: Placeholder value for volatile fields.
-            comment_prefix: Prefix to add to each line (for comment blocks).
-            **kwargs: Additional arguments for canonicalization.
+            **kwargs: Additional arguments for canonicalization (e.g., comment_prefix).
         Returns:
             Canonical string for hash computation.
         """
+        # Convert to dict if it's a model instance
+        from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
+
+        if hasattr(block, "model_dump"):
+            block_dict = block.model_dump(mode="json")  # type: ignore[union-attr]
+        else:
+            block_dict = block  # type: ignore[assignment]
+
+        # Convert string field names to EnumNodeMetadataField
+        enum_volatile_fields = tuple(
+            EnumNodeMetadataField(field) if isinstance(field, str) else field
+            for field in volatile_fields
+        )
+
+        # Use default placeholder if None
+        actual_placeholder = placeholder if placeholder is not None else "<PLACEHOLDER>"
+
+        # Extract comment_prefix from kwargs if present
+        comment_prefix = str(kwargs.get("comment_prefix", ""))
+
         meta_yaml = self.canonicalize_metadata_block(
-            volatile_fields=volatile_fields,
-            placeholder=placeholder,
+            metadata_block=block_dict,  # type: ignore[arg-type]
+            volatile_fields=enum_volatile_fields,
+            placeholder=actual_placeholder,
             explicit_start=False,
             explicit_end=False,
             comment_prefix=comment_prefix,

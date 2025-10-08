@@ -17,17 +17,8 @@ Generic metadata model for flexible data storage.
 from typing import TypedDict, overload
 from uuid import UUID
 
-# Import simplified type constraint from core
-from omnibase_core.types.constraints import BasicValueType
-
-from .model_genericmetadata import ModelGenericMetadata
-
-if TYPE_CHECKING:
-    from . import ProtocolSupportedMetadataType
-else:
-    # Runtime fallback - will be dict[str, object] from __init__.py
-    ProtocolSupportedMetadataType = dict[str, object]  # type: ignore[misc]
-
+# Import ProtocolSupportedMetadataType from omnibase_spi (authoritative source)
+from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -36,6 +27,11 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+
+# Import simplified type constraint from core
+from omnibase_core.types.constraints import BasicValueType
+
+from .model_genericmetadata import ModelGenericMetadata
 
 # Use simplified BasicValueType from core constraints instead of redundant TypeVar
 

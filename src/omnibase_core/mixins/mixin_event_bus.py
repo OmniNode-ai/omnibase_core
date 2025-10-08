@@ -32,7 +32,6 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 # Local imports from extracted classes
 from .mixin_completion_data import MixinCompletionData
 from .mixin_log_data import MixinLogData
-from .protocol_event_bus import ProtocolEventBus
 from .protocol_log_emitter import LogEmitter
 from .protocol_registry_with_bus import RegistryWithBus
 
@@ -128,8 +127,13 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
     # --- Event Bus Access (Protocol-based) ----------------------------------
 
-    def _get_event_bus(self) -> "ProtocolEventBus | None":
-        """Resolve event bus using protocol-based polymorphism."""
+    def _get_event_bus(self) -> Any:
+        """
+        Resolve event bus using duck-typed polymorphism.
+
+        Note: Returns Any because event bus implementations use duck-typing
+        and don't conform to a single protocol interface.
+        """
         # Try registry first
         if hasattr(self, "registry") and hasattr(self.registry, "event_bus"):
             return getattr(self.registry, "event_bus", None)

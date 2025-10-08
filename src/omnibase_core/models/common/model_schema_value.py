@@ -20,6 +20,7 @@ from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 if TYPE_CHECKING:
     from omnibase_core.errors.model_onex_error import ModelOnexError
+
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 

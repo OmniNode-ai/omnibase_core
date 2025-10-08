@@ -3,15 +3,18 @@
 # description: Discovery responder mixin for ONEX nodes to respond to discovery broadcasts
 # === /OmniNode:Metadata ===
 
+import asyncio
+import json
 import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, List, Optional, cast
 
-from omnibase_spi import ProtocolLogger
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
     ModelDiscoveryResponseModelMetadata,
@@ -24,6 +27,10 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEve
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
+    from omnibase_spi.protocols.types.protocol_event_bus_types import (
+        ProtocolEventMessage,
+    )
+
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 
@@ -61,72 +68,120 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "last_request_time": None,
         }
+        self._discovery_event_bus: ProtocolEventBus | None = None
+        self._discovery_unsubscribe: Any = None  # Callable to unsubscribe
 
-    def start_discovery_responder(
+    async def start_discovery_responder(
         self,
         event_bus: ProtocolEventBus,
-        logger: ProtocolLogger | None = None,
         response_throttle: float = 1.0,
     ) -> None:
         """
         Start responding to discovery broadcasts.
 
         Args:
-            event_bus: Event bus to list[Any]en on
-            logger: Optional logger for discovery operations
+            event_bus: Event bus to listen on
             response_throttle: Minimum seconds between responses (rate limiting)
         """
         if self._discovery_active:
-            if logger:
-                logger.log("[DiscoveryResponder] Discovery responder already active")
+            emit_log_event(
+                LogLevel.INFO,
+                "Discovery responder already active",
+                {"component": "DiscoveryResponder"},
+            )
             return
 
         self._response_throttle = response_throttle
+        self._discovery_event_bus = event_bus
 
         try:
+            # Get node_id for group_id
+            node_id = getattr(self, "node_id", "discovery-responder")
+            group_id = f"discovery-{node_id}"
+
             # Subscribe to discovery broadcast channel
-            event_bus.subscribe(
-                "onex.discovery.broadcast",
-                self._handle_discovery_request,
+            # Create wrapper for protocol message -> envelope conversion
+            self._discovery_unsubscribe = await event_bus.subscribe(
+                topic="onex.discovery.broadcast",
+                group_id=group_id,
+                on_message=self._on_discovery_message,
             )
 
             self._discovery_active = True
 
-            if logger:
-                logger.log(
-                    f"[DiscoveryResponder] Started discovery responder with {response_throttle}s throttle",
-                )
-                logger.log(
-                    f"[DiscoveryResponder] Node ID: {getattr(self, 'node_id', 'unknown')}",
-                )
+            emit_log_event(
+                LogLevel.INFO,
+                f"Started discovery responder with {response_throttle}s throttle",
+                {
+                    "component": "DiscoveryResponder",
+                    "node_id": node_id,
+                    "response_throttle": response_throttle,
+                },
+            )
 
         except Exception as e:
-            if logger:
-                logger.log(
-                    f"[DiscoveryResponder] Failed to start discovery responder: {e!s}",
-                )
+            emit_log_event(
+                LogLevel.ERROR,
+                f"Failed to start discovery responder: {e!s}",
+                {"component": "DiscoveryResponder", "error": str(e)},
+            )
             msg = f"Failed to start discovery responder: {e!s}"
             raise ModelOnexError(
                 EnumCoreErrorCode.DISCOVERY_SETUP_FAILED,
             )
 
-    def stop_discovery_responder(self, logger: ProtocolLogger | None = None) -> None:
+    async def stop_discovery_responder(self) -> None:
         """
         Stop responding to discovery broadcasts.
-
-        Args:
-            logger: Optional logger for discovery operations
         """
         if not self._discovery_active:
             return
 
         self._discovery_active = False
 
-        if logger:
-            logger.log("[DiscoveryResponder] Stopped discovery responder")
-            logger.log(f"[DiscoveryResponder] Stats: {self._discovery_stats}")
+        # Unsubscribe from event bus
+        if self._discovery_unsubscribe:
+            try:
+                await self._discovery_unsubscribe()
+            except Exception:
+                pass  # Ignore errors during cleanup
 
-    def _handle_discovery_request(self, envelope: "ModelEventEnvelope[Any]") -> None:
+        emit_log_event(
+            LogLevel.INFO,
+            "Stopped discovery responder",
+            {"component": "DiscoveryResponder", "stats": self._discovery_stats},
+        )
+
+    async def _on_discovery_message(self, message: "ProtocolEventMessage") -> None:
+        """
+        Adapter method to convert ProtocolEventMessage to ModelEventEnvelope.
+
+        Args:
+            message: Low-level protocol message from event bus
+        """
+        try:
+            # Import here to avoid circular dependencies
+            from omnibase_core.models.events.model_event_envelope import (
+                ModelEventEnvelope,
+            )
+
+            # Deserialize the envelope from message value
+            envelope_dict = json.loads(message.value.decode("utf-8"))
+            envelope: ModelEventEnvelope[Any] = ModelEventEnvelope(**envelope_dict)
+
+            # Acknowledge message receipt
+            await message.ack()
+
+            # Handle the discovery request
+            await self._handle_discovery_request(envelope)
+
+        except Exception:
+            # Silently handle errors to avoid disrupting discovery
+            pass
+
+    async def _handle_discovery_request(
+        self, envelope: "ModelEventEnvelope[Any]"
+    ) -> None:
         """
         Handle incoming discovery requests.
 
@@ -170,7 +225,7 @@ class MixinDiscoveryResponder:
                 return  # Doesn't match criteria
 
             # Generate discovery response
-            self._send_discovery_response(onex_event, request_metadata)
+            await self._send_discovery_response(onex_event, request_metadata)
 
             self._last_response_time = current_time
             current_responses = self._discovery_stats.get("responses_sent", 0)
@@ -229,7 +284,7 @@ class MixinDiscoveryResponder:
         # Default implementation accepts all
         return True
 
-    def _send_discovery_response(
+    async def _send_discovery_response(
         self,
         original_event: OnexEvent,
         request: ModelDiscoveryRequestModelMetadata,
@@ -308,7 +363,7 @@ class MixinDiscoveryResponder:
             )
 
             # Publish response (assuming we have access to event bus)
-            if hasattr(self, "_event_bus") and self._event_bus:
+            if self._discovery_event_bus:
                 # Local import to avoid circular dependency
                 from omnibase_core.models.events.model_event_envelope import (
                     ModelEventEnvelope,
@@ -320,7 +375,16 @@ class MixinDiscoveryResponder:
                     source_node_id=getattr(self, "node_id", "unknown"),
                     correlation_id=original_event.correlation_id,
                 )
-                self._event_bus.publish(envelope)
+
+                # Serialize envelope to bytes for protocol event bus
+                envelope_bytes = json.dumps(envelope.model_dump()).encode("utf-8")
+
+                # Publish to event bus (protocol requires topic, key, value, headers)
+                await self._discovery_event_bus.publish(
+                    topic="onex.discovery.response",
+                    key=None,
+                    value=envelope_bytes,
+                )
 
         except Exception:
             # Log error but don't disrupt discovery

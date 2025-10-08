@@ -1,5 +1,4 @@
 from typing import Any, Optional
-
 from uuid import UUID, uuid4
 
 from pydantic import Field
