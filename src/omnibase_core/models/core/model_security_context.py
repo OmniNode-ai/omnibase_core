@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field, field_validator
 
@@ -17,7 +18,7 @@ from pydantic import BaseModel, Field, field_validator
 class ModelSecurityContext(BaseModel):
     """Structured security context for action execution."""
 
-    user_id: str | None = Field(
+    user_id: UUID | None = Field(
         default=None,
         description="User identifier executing the action",
     )

@@ -94,7 +94,7 @@ def create_node_introspection_response(
     dependencies: ModelDependencies,
     capabilities: list[EnumNodeCapability] | None = None,
     event_channels: ModelEventChannels | None = None,
-    introspection_version: str = "1.0.0",
+    introspection_version: ModelSemVer = ModelSemVer(major=1, minor=0, patch=0),
 ) -> "ModelNodeIntrospectionResponse":
     """
     Factory function to create a standardized node introspection response.
@@ -124,7 +124,7 @@ def create_node_introspection_response(
         dependencies=dependencies,
         capabilities=capabilities or [],
         event_channels=event_channels,
-        introspection_version=parse_semver_from_string(introspection_version),
+        introspection_version=introspection_version,
     )
 
 

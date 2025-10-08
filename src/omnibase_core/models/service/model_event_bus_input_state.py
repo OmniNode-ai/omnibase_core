@@ -127,7 +127,6 @@ class ModelEventBusInputState(BaseModel):
 
         return v.strip()
 
-
     # === Business Logic Methods ===
 
     def get_processing_priority(self) -> int:
@@ -361,7 +360,9 @@ class ModelEventBusInputState(BaseModel):
         )
 
         event_id_raw = config_data.get("event_id")
-        event_id_validated = UUID(event_id_raw) if isinstance(event_id_raw, str) else None
+        event_id_validated = (
+            UUID(event_id_raw) if isinstance(event_id_raw, str) else None
+        )
 
         priority_raw = config_data.get("priority")
         priority_validated = priority_raw if isinstance(priority_raw, str) else None

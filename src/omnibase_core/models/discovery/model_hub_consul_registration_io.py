@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from pydantic import Field
 
@@ -42,7 +43,7 @@ class ModelHubConsulRegistrationInput(BaseModel):
         description="Hub registration event for manual registration",
     )
 
-    hub_id: str | None = Field(
+    hub_id: UUID | None = Field(
         default=None,
         description="Hub ID for status/deregistration operations",
     )

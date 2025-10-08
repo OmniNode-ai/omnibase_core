@@ -187,7 +187,7 @@ class MixinToolExecution:
 
     def _publish_execution_response(
         self,
-        correlation_id: str,
+        correlation_id: UUID,
         success: bool,
         result: dict[str, Any] | None,
         execution_time: float,
