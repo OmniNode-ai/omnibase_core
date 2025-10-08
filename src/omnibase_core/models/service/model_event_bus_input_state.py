@@ -195,7 +195,10 @@ class ModelEventBusInputState(BaseModel):
         cls, version: ModelSemVer | str, input_field: str
     ) -> "ModelEventBusInputState":
         """Create basic input state for simple operations."""
-        return cls(version=parse_semver_from_string(version), input_field=input_field)
+        parsed_version = (
+            parse_semver_from_string(version) if isinstance(version, str) else version
+        )
+        return cls(version=parsed_version, input_field=input_field)
 
     @classmethod
     def create_with_tracking(
@@ -206,8 +209,10 @@ class ModelEventBusInputState(BaseModel):
         event_id: UUID | None = None,
     ) -> "ModelEventBusInputState":
         """Create input state with tracking information."""
+        # Convert ModelSemVer to str if needed before parsing
+        version_str = str(version) if isinstance(version, ModelSemVer) else version
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(version_str),
             input_field=input_field,
             correlation_id=correlation_id,
             event_id=event_id or uuid4(),
@@ -218,8 +223,10 @@ class ModelEventBusInputState(BaseModel):
         cls, version: ModelSemVer | str, input_field: str, timeout_seconds: int = 60
     ) -> "ModelEventBusInputState":
         """Create high priority input state with extended timeout."""
+        # Convert ModelSemVer to str if needed before parsing
+        version_str = str(version) if isinstance(version, ModelSemVer) else version
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(version_str),
             input_field=input_field,
             priority="high",
             timeout_seconds=timeout_seconds,
@@ -274,7 +281,7 @@ class ModelEventBusInputState(BaseModel):
         input_field_raw = config_data["input_field"]
         assert isinstance(version_raw, ModelSemVer), "version must be ModelSemVer"
         assert isinstance(input_field_raw, str), "input_field must be str"
-        version: ModelSemVer = str(version_raw)
+        version_value: ModelSemVer = version_raw
         input_field: str = input_field_raw
         correlation_id_raw = config_data.get("correlation_id")
         correlation_id_validated = (
@@ -295,11 +302,7 @@ class ModelEventBusInputState(BaseModel):
             retry_count_raw if isinstance(retry_count_raw, int) else None
         )
         return cls(
-            version=(
-                parse_semver_from_string(version)
-                if isinstance(version, str)
-                else version
-            ),
+            version=version_value,
             input_field=input_field,
             correlation_id=correlation_id_validated,
             event_id=event_id_validated,

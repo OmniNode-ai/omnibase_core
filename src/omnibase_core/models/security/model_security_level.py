@@ -66,7 +66,7 @@ class ModelSecurityLevel(BaseModel):
     )
     minimum_tls_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=2, patch=0),
-        description="Minimum TLS version required"
+        description="Minimum TLS version required",
     )
     password_policy: ModelPasswordPolicy = Field(
         default_factory=ModelPasswordPolicy, description="Password policy requirements"

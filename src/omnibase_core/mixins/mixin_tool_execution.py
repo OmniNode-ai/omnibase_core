@@ -96,9 +96,7 @@ class MixinToolExecution:
 
             # Publish successful response
             self._publish_execution_response(
-                correlation_id=(
-                    str(event.correlation_id) if event.correlation_id else ""
-                ),
+                correlation_id=event.correlation_id,
                 success=True,
                 result=self._output_state_to_dict(output_state),
                 execution_time=execution_time,
@@ -118,9 +116,7 @@ class MixinToolExecution:
 
             # Publish error response
             self._publish_execution_response(
-                correlation_id=(
-                    str(event.correlation_id) if event.correlation_id else ""
-                ),
+                correlation_id=event.correlation_id,
                 success=False,
                 result=None,
                 execution_time=0,
@@ -187,7 +183,7 @@ class MixinToolExecution:
 
     def _publish_execution_response(
         self,
-        correlation_id: UUID,
+        correlation_id: UUID | None,
         success: bool,
         result: dict[str, Any] | None,
         execution_time: float,
@@ -203,7 +199,7 @@ class MixinToolExecution:
             return
 
         # Create response event
-        # Convert node_id and correlation_id to proper types
+        # Convert node_id to proper type
         node_id_uuid = (
             self.get_node_id()
             if hasattr(self, "get_node_id")
@@ -213,12 +209,11 @@ class MixinToolExecution:
                 else uuid4()
             )
         )
-        corr_id_uuid = UUID(correlation_id) if correlation_id else None
 
         response_event = ModelOnexEvent(
             event_type="tool.execution.response",
             node_id=node_id_uuid,
-            correlation_id=corr_id_uuid,
+            correlation_id=correlation_id,
             timestamp=datetime.fromtimestamp(time.time()),
             data={
                 "tool_name": self.get_node_name(),
@@ -234,7 +229,7 @@ class MixinToolExecution:
         # Wrap in envelope and publish
         envelope = ModelEventEnvelope.create_broadcast(
             payload=response_event,
-            source_node_id=self.get_node_name(),
+            source_node_id=node_id_uuid,
             correlation_id=correlation_id,
         )
 

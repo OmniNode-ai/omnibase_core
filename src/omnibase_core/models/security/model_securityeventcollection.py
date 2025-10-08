@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -113,7 +113,7 @@ class ModelSecurityEventCollection(BaseModel):
         """Get events of a specific type."""
         return [event for event in self.events if event.event_type == event_type]
 
-    def get_events_by_user(self, user_id: str) -> list[ModelSecurityEvent]:
+    def get_events_by_user(self, user_id: UUID) -> list[ModelSecurityEvent]:
         """Get events for a specific user."""
         if not user_id:
             raise ModelOnexError(
@@ -149,7 +149,7 @@ class ModelSecurityEventCollection(BaseModel):
             )
         return [event for event in self.events if event.status.value in severity_levels]
 
-    def get_events_by_node(self, node_id: str) -> list[ModelSecurityEvent]:
+    def get_events_by_node(self, node_id: UUID) -> list[ModelSecurityEvent]:
         """Get events for a specific node."""
         if not node_id:
             raise ModelOnexError(

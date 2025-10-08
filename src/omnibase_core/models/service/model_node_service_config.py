@@ -37,7 +37,8 @@ class ModelNodeServiceConfig(BaseModel):
         default=..., description="Name of the ONEX node", min_length=1
     )
     node_version: ModelSemVer = Field(
-        default="1.0.0", description="Version of the node"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the node",
     )
     service_mode: EnumServiceMode = Field(
         default=EnumServiceMode.STANDALONE, description="Service deployment mode"

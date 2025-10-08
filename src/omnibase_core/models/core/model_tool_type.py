@@ -33,7 +33,8 @@ class ModelToolType(BaseModel):
         default_factory=list, description="Other tools this tool depends on"
     )
     version_compatibility: ModelSemVer = Field(
-        default=">=1.0.0", description="Version compatibility constraint"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version compatibility constraint",
     )
     execution_priority: int = Field(
         default=50,

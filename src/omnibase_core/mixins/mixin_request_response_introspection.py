@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+from uuid import uuid4
 
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
@@ -262,7 +263,7 @@ class MixinRequestResponseIntrospection:
             # Create and publish response
             response = ModelIntrospectionResponseEvent.create_response(
                 correlation_id=request_event.correlation_id,
-                node_id=getattr(self, "node_id", "unknown_node"),
+                node_id=getattr(self, "node_id", uuid4()),
                 node_name=getattr(self, "node_name", "unknown_node"),
                 version=getattr(self, "version", parse_semver_from_string("1.0.0")),
                 current_status=current_status,
@@ -323,7 +324,7 @@ class MixinRequestResponseIntrospection:
 
                 response_envelope = ModelEventEnvelope.create_broadcast(
                     payload=response,
-                    source_node_id=getattr(self, "node_id", "unknown_node"),
+                    source_node_id=getattr(self, "node_id", uuid4()),
                     correlation_id=event.correlation_id,
                 )
 
@@ -403,7 +404,7 @@ class MixinRequestResponseIntrospection:
                 response_time_ms = (time.time() - start_time) * 1000
                 error_response = ModelIntrospectionResponseEvent.create_error_response(
                     correlation_id=event.correlation_id,
-                    node_id=getattr(self, "node_id", "unknown_node"),
+                    node_id=getattr(self, "node_id", uuid4()),
                     node_name=getattr(self, "node_name", "unknown_node"),
                     version=getattr(self, "version", parse_semver_from_string("1.0.0")),
                     error_message=str(e),
@@ -418,7 +419,7 @@ class MixinRequestResponseIntrospection:
 
                     error_envelope = ModelEventEnvelope.create_broadcast(
                         payload=error_response,
-                        source_node_id=getattr(self, "node_id", "unknown_node"),
+                        source_node_id=getattr(self, "node_id", uuid4()),
                         correlation_id=event.correlation_id,
                     )
 

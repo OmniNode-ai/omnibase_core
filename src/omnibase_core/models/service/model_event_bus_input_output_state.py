@@ -66,11 +66,23 @@ class ModelEventBusInputOutputState(BaseModel):
         from omnibase_core.enums.onex_status import OnexStatus
         from omnibase_core.models.core.model_semver import parse_semver_from_string
 
+        # Convert ModelSemVer to str if needed before parsing
+        input_version_str = (
+            str(input_version)
+            if isinstance(input_version, ModelSemVer)
+            else input_version
+        )
+        output_version_str = (
+            str(output_version)
+            if isinstance(output_version, ModelSemVer)
+            else output_version
+        )
+
         input_state = ModelEventBusInputState(
-            version=parse_semver_from_string(input_version), input_field=input_field
+            version=parse_semver_from_string(input_version_str), input_field=input_field
         )
         output_state = ModelEventBusOutputState(
-            version=parse_semver_from_string(output_version),
+            version=parse_semver_from_string(output_version_str),
             status=OnexStatus(status),
             message=message,
         )

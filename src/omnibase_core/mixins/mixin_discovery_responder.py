@@ -372,7 +372,7 @@ class MixinDiscoveryResponder:
                 # Wrap in envelope before publishing
                 envelope = ModelEventEnvelope.create_broadcast(
                     payload=response_event,
-                    source_node_id=getattr(self, "node_id", "unknown"),
+                    source_node_id=getattr(self, "node_id", uuid4()),
                     correlation_id=original_event.correlation_id,
                 )
 

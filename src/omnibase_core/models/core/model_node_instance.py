@@ -53,7 +53,8 @@ class ModelNodeInstance(BaseModel):
         default=None, description="Connection URL for remote instances"
     )
     protocol_version: ModelSemVer = Field(
-        default="1.0.0", description="Protocol version supported"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Protocol version supported",
     )
 
     def is_healthy(self) -> bool:

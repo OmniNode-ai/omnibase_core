@@ -1,6 +1,6 @@
 import os
 from typing import Any, List
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -132,7 +132,7 @@ class ModelEventBusConfig(BaseModel):
         base_config = cls(
             bootstrap_servers=["localhost:9092"],
             topics=["onex-default"],
-            group_id="onex-default-group",
+            group_id=uuid4(),
             security_protocol="PLAINTEXT",
         )
         return base_config.apply_environment_overrides()

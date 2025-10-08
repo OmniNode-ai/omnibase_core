@@ -1,5 +1,5 @@
 import json
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -103,7 +103,11 @@ class ModelDiscoveryRequest(BaseModel):
         Returns:
             ModelDiscoveryRequest for status query
         """
-        return cls(operation="get_client_status", client_id=client_id, **kwargs)
+        return cls(
+            operation="get_client_status",
+            client_id=uuid4() if isinstance(client_id, str) else client_id,
+            **kwargs,
+        )
 
     @classmethod
     def create_close_request(
@@ -119,4 +123,8 @@ class ModelDiscoveryRequest(BaseModel):
         Returns:
             ModelDiscoveryRequest for client closure
         """
-        return cls(operation="close_client", client_id=client_id, **kwargs)
+        return cls(
+            operation="close_client",
+            client_id=uuid4() if isinstance(client_id, str) else client_id,
+            **kwargs,
+        )

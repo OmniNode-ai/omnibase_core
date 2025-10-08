@@ -129,7 +129,7 @@ class ModelExecutionContext(BaseModel):
         env_dict["ONEX_TIMEOUT_MS"] = str(self.get_timeout_ms())
         env_dict["ONEX_RETRY_ATTEMPTS"] = str(self.retry_attempts)
         if self.user_id:
-            env_dict["ONEX_USER_ID"] = self.user_id
+            env_dict["ONEX_USER_ID"] = str(self.user_id)
         if self.session_id:
             env_dict["ONEX_SESSION_ID"] = str(self.session_id)
         if self.correlation_id:

@@ -18,6 +18,7 @@ from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.types.constraints import (
     Identifiable,
     ProtocolMetadataProvider,
@@ -55,7 +56,8 @@ class ModelNodeType(BaseModel):
         default_factory=list, description="Other node type names this node depends on"
     )
     version_compatibility: ModelSemVer = Field(
-        default=">=1.0.0", description="Version compatibility constraint"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version compatibility constraint",
     )
     execution_priority: int = Field(
         default=50,

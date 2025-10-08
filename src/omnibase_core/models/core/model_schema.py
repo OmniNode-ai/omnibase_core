@@ -40,9 +40,7 @@ class ModelSchema(BaseModel):
     ref: str | None = Field(
         default=None, alias="$ref", description="JSON Schema $ref reference"
     )
-    schema_version: ModelSemVer = Field(
-        default="draft-07", description="JSON Schema version"
-    )
+    schema_version: str = Field(default="draft-07", description="JSON Schema version")
     title: str | None = Field(default=None, description="Schema title")
     enum_values: list[str] | None = Field(
         default=None, alias="enum", description="Enum values for string types"

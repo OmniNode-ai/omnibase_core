@@ -211,7 +211,9 @@ class ModelGenericMetadata(BaseModel):
         metadata: TypedDictMetadataDict = TypedDictMetadataDict(
             name=self.metadata_display_name or "",
             description=self.description or "",
-            version=str(self.version) if self.version else "",
+            version=(
+                self.version if self.version else ModelSemVer(major=0, minor=0, patch=0)
+            ),
             tags=self.tags,
             metadata={},  # Will populate below
         )

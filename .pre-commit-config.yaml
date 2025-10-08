@@ -49,7 +49,7 @@ repos:
         entry: poetry run mypy
         language: system
         types: [python]
-        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
+        args: [--ignore-missing-imports, --show-error-codes, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
         files: ^src/omnibase_core/(core|models|enums|exceptions|types).*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 

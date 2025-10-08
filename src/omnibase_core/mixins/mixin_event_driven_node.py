@@ -123,7 +123,7 @@ class MixinEventDrivenNode(
         self._register_shutdown_hook()
 
     @property
-    def node_id(self) -> str:
+    def node_id(self) -> UUID:
         """Get the node ID."""
         return self._node_id
 

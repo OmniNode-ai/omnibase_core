@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 class ModelSessionAffinityMetadata(BaseModel):
     """Metadata for session affinity configuration."""
 
-    session_id_format: UUID = Field(
+    session_id_format: str = Field(
         default="uuid",
         description="Format for session IDs",
         pattern="^(uuid|ulid|nanoid|custom)$",

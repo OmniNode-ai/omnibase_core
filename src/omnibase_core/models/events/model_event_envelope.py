@@ -315,9 +315,12 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             return None
         assert self.trace_id is not None
         assert self.span_id is not None
-        context: dict[str, str] = {"trace_id": self.trace_id, "span_id": self.span_id}
+        context: dict[str, str] = {
+            "trace_id": str(self.trace_id),
+            "span_id": str(self.span_id),
+        }
         if self.request_id:
-            context["request_id"] = self.request_id
+            context["request_id"] = str(self.request_id)
         return context
 
     def to_dict_lazy(self) -> dict[str, Any]:

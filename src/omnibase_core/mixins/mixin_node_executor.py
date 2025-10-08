@@ -161,11 +161,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_success_response(
                 correlation_id=correlation_id,
-                source_node_id=(
-                    UUID(self._node_id)
-                    if isinstance(self._node_id, str)
-                    else self._node_id
-                ),
+                source_node_id=self._node_id,
                 source_node_name=self._extract_node_name(),
                 tool_name=event.tool_name,
                 action=event.action,
@@ -188,11 +184,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
-                source_node_id=(
-                    UUID(self._node_id)
-                    if isinstance(self._node_id, str)
-                    else self._node_id
-                ),
+                source_node_id=self._node_id,
                 source_node_name=self._extract_node_name(),
                 tool_name=event.tool_name,
                 action=event.action,
@@ -375,11 +367,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Emit a node shutdown event."""
         try:
             shutdown_event = ModelNodeShutdownEvent.create_graceful_shutdown(
-                node_id=(
-                    UUID(self._node_id)
-                    if isinstance(self._node_id, str)
-                    else self._node_id
-                ),
+                node_id=self._node_id,
                 node_name=self._extract_node_name(),
             )
             event_bus = getattr(self, "event_bus", None)

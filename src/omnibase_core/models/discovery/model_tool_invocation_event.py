@@ -59,7 +59,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
     )
     requester_id: UUID = Field(
         default=...,
-        description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
+        description="Identifier of the requesting service",
     )
     requester_node_id: UUID = Field(
         default=..., description="Node ID of the requester for response routing"
@@ -106,7 +106,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
             target_node_name=target_node_name,
             tool_name=tool_name,
             action=action,
-            requester_id=str(requester_id),
+            requester_id=requester_id,
             requester_node_id=requester_node_id,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,
@@ -141,11 +141,11 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         mcp_uuid = uuid5(NAMESPACE_DNS, "mcp_server")
         return cls(
             node_id=mcp_uuid,
-            target_node_id=f"{target_node_name}_service",
+            target_node_id=uuid4(),
             target_node_name=target_node_name,
             tool_name=tool_name,
             action=action,
-            requester_id="mcp_server",
+            requester_id=uuid4(),
             requester_node_id=mcp_uuid,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,
@@ -180,11 +180,11 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         cli_uuid = uuid5(NAMESPACE_DNS, "cli_client")
         return cls(
             node_id=cli_uuid,
-            target_node_id=f"{target_node_name}_service",
+            target_node_id=uuid4(),
             target_node_name=target_node_name,
             tool_name=tool_name,
             action=action,
-            requester_id="cli_client",
+            requester_id=uuid4(),
             requester_node_id=cli_uuid,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,

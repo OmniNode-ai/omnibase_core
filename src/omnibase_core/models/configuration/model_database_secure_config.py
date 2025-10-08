@@ -161,14 +161,6 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if v in ["localhost", "127.0.0.1", "::1"]:
             return v
 
-        # Validate hostname format
-        if not re.match(r"^[a-zA-Z0-9\-\.]+$", v):
-            msg = f"Invalid hostname format: {v}"
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
-            )
-
         # Check for valid domain format
         parts = v.split(".")
         for part in parts:

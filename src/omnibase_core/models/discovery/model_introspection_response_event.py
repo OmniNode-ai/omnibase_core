@@ -108,7 +108,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         """
         return cls(
             correlation_id=correlation_id,
-            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            node_id=node_id,
             node_name=node_name,
             version=version,
             current_status=current_status,
@@ -148,7 +148,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         """
         return cls(
             correlation_id=correlation_id,
-            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            node_id=node_id,
             node_name=node_name,
             version=version,
             current_status=EnumNodeCurrentStatus.READY,
@@ -188,7 +188,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         )
         return cls(
             correlation_id=correlation_id,
-            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            node_id=node_id,
             node_name=node_name,
             version=version,
             current_status=EnumNodeCurrentStatus.ERROR,

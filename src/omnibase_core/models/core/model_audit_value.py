@@ -4,7 +4,7 @@ from pydantic import Field
 
 "\nAudit value model to replace Dict[str, Any] usage in audit entries.\n"
 from typing import Any, Dict, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -89,7 +89,7 @@ class ModelAuditValue(BaseModel):
                     )
             return cls(
                 object_type="unknown",
-                object_id="unknown",
+                object_id=uuid4(),
                 field_changes=field_changes,
                 change_count=len(field_changes),
             )

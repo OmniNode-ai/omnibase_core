@@ -19,7 +19,7 @@ class ModelNodeWeights(BaseModel):
     multiple nodes, with normalization and validation capabilities.
     """
 
-    weights: dict[str, float] = Field(
+    weights: dict[UUID, float] = Field(
         default_factory=dict, description="Node identifier to weight mapping"
     )
     default_weight: float = Field(
@@ -77,8 +77,8 @@ class ModelNodeWeights(BaseModel):
         """Remove weight configuration for a node (will use default)"""
         self.weights.pop(node_id, None)
 
-    def get_all_nodes(self) -> list[str]:
-        """Get list[Any]of all configured node IDs"""
+    def get_all_nodes(self) -> list[UUID]:
+        """Get list of all configured node IDs"""
         return list(self.weights.keys())
 
     def get_total_weight(self) -> float:
@@ -108,7 +108,7 @@ class ModelNodeWeights(BaseModel):
             return normalized.get_weight(node_id)
         return self.get_weight(node_id)
 
-    def get_weight_distribution(self) -> dict[str, float]:
+    def get_weight_distribution(self) -> dict[UUID, float]:
         """Get weight distribution for all configured nodes"""
         if self.auto_normalize:
             normalized = self.normalize()
@@ -126,7 +126,7 @@ class ModelNodeWeights(BaseModel):
                 return False
         return True
 
-    def get_effective_weights(self, active_nodes: list[str]) -> dict[str, float]:
+    def get_effective_weights(self, active_nodes: list[UUID]) -> dict[UUID, float]:
         """Get effective weights for a subset of active nodes"""
         effective = {}
         for node_id in active_nodes:
@@ -139,15 +139,15 @@ class ModelNodeWeights(BaseModel):
 
     @classmethod
     def create_equal_weights(
-        cls, node_ids: list[str], weight: float = 1.0
+        cls, node_ids: list[UUID], weight: float = 1.0
     ) -> "ModelNodeWeights":
         """Create equal weights for all specified nodes"""
-        weights = dict[str, Any].fromkeys(node_ids, weight)
+        weights = dict[UUID, Any].fromkeys(node_ids, weight)
         return cls(weights=weights, auto_normalize=True)
 
     @classmethod
     def create_priority_weights(
-        cls, node_priorities: dict[str, int]
+        cls, node_priorities: dict[UUID, int]
     ) -> "ModelNodeWeights":
         """Create weights based on node priorities (higher priority = higher weight)"""
         max_priority = max(node_priorities.values()) if node_priorities else 1
@@ -159,14 +159,14 @@ class ModelNodeWeights(BaseModel):
 
     @classmethod
     def create_capacity_weights(
-        cls, node_capacities: dict[str, float]
+        cls, node_capacities: dict[UUID, float]
     ) -> "ModelNodeWeights":
         """Create weights based on node capacities"""
         return cls(weights=node_capacities.copy(), auto_normalize=True)
 
     @classmethod
     def create_custom_weights(
-        cls, node_weights: dict[str, float], normalize: bool = True
+        cls, node_weights: dict[UUID, float], normalize: bool = True
     ) -> "ModelNodeWeights":
         """Create custom weight configuration"""
         return cls(weights=node_weights.copy(), auto_normalize=normalize)

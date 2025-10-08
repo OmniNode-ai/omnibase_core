@@ -1,5 +1,5 @@
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -247,7 +247,7 @@ class ModelSignatureChain(BaseModel):
 
     def get_unique_signers(self) -> set[str]:
         """Get set of unique node IDs that signed this chain."""
-        return {signature.node_id for signature in self.signatures}
+        return {str(signature.node_id) for signature in self.signatures}
 
     def get_signature_by_node(self, node_id: UUID) -> ModelNodeSignature | None:
         """Get signature from specific node."""
@@ -289,7 +289,7 @@ class ModelSignatureChain(BaseModel):
 
     def get_routing_path(self) -> list[tuple[str, EnumNodeOperation]]:
         """Get the routing path as list[Any]of (node_id, operation) tuples."""
-        return [(sig.node_id, sig.operation) for sig in self.signatures]
+        return [(str(sig.node_id), sig.operation) for sig in self.signatures]
 
     def get_chain_summary(self) -> dict[str, str | int | float | bool | list[str]]:
         """Get summary information about the signature chain."""
@@ -358,7 +358,7 @@ class ModelSignatureChain(BaseModel):
     @classmethod
     def create_new_chain(
         cls,
-        envelope_id: UUID | UUID,
+        envelope_id: UUID,
         content_hash: str,
         signing_policy: ModelSigningPolicy | None = None,
         compliance_frameworks: list[EnumComplianceFramework] | None = None,
@@ -367,10 +367,8 @@ class ModelSignatureChain(BaseModel):
         import uuid
 
         return cls(
-            chain_id=uuid.uuid4(),
-            envelope_id=(
-                UUID(envelope_id) if isinstance(envelope_id, str) else envelope_id
-            ),
+            chain_id=uuid4(),
+            envelope_id=envelope_id,
             content_hash=content_hash,
             signing_policy=signing_policy,
             compliance_frameworks=compliance_frameworks or [],

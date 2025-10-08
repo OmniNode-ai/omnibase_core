@@ -118,7 +118,7 @@ class ModelRateLimitPolicy(BaseModel):
         self,
         endpoint: str = "",
         method: str = "GET",
-        user_id: UUID = "",
+        user_id: UUID | None = None,
         user_tier: str = "",
         priority: str = "normal",
     ) -> float:

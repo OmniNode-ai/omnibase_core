@@ -79,12 +79,12 @@ class ModelLoadBalancingPolicy(BaseModel):
         description="Retry policy for failed requests",
     )
 
-    excluded_nodes: list[str] = Field(
+    excluded_nodes: list[UUID] = Field(
         default_factory=list,
         description="Nodes to exclude from load balancing",
     )
 
-    preferred_nodes: list[str] = Field(
+    preferred_nodes: list[UUID] = Field(
         default_factory=list,
         description="Preferred nodes for routing",
     )
@@ -118,17 +118,15 @@ class ModelLoadBalancingPolicy(BaseModel):
         le=100,
     )
 
-    def is_node_excluded(self, node_id: UUID | str) -> bool:
+    def is_node_excluded(self, node_id: UUID) -> bool:
         """Check if a node is excluded from load balancing"""
-        node_uuid = UUID(node_id) if isinstance(node_id, str) else node_id
-        return node_uuid in self.excluded_nodes
+        return node_id in self.excluded_nodes
 
-    def is_node_preferred(self, node_id: UUID | str) -> bool:
+    def is_node_preferred(self, node_id: UUID) -> bool:
         """Check if a node is in the preferred list"""
-        node_uuid = UUID(node_id) if isinstance(node_id, str) else node_id
-        return node_uuid in self.preferred_nodes
+        return node_id in self.preferred_nodes
 
-    def get_effective_nodes(self, available_nodes: list[str]) -> list[str]:
+    def get_effective_nodes(self, available_nodes: list[UUID]) -> list[UUID]:
         """Get effective nodes after applying exclusions and preferences"""
         # Remove excluded nodes
         effective_nodes = [
@@ -176,7 +174,7 @@ class ModelLoadBalancingPolicy(BaseModel):
         """Get weight for a specific node"""
         if not self.should_use_weights() or self.node_weights is None:
             return 1.0
-        return self.node_weights.get_weight(str(node_id))
+        return self.node_weights.get_weight(node_id)
 
     def calculate_policy_score(
         self, performance_metrics: dict[str, Any] | None = None

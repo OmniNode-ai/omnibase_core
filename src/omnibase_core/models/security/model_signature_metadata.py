@@ -12,7 +12,8 @@ class ModelSignatureMetadata(BaseModel):
     """Metadata for cryptographic signatures."""
 
     signature_version: ModelSemVer = Field(
-        default="1.0", description="Signature format version"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Signature format version",
     )
     timestamp_source: str | None = Field(
         default=None, description="Source of timestamp (ntp, local, etc)"

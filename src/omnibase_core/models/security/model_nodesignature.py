@@ -17,10 +17,10 @@ from omnibase_core.models.core.model_signature_metadata import ModelSignatureMet
 
 class ModelNodeSignature(BaseModel):
     """
-        Cryptographic signature from a single node in the envelope routing chain.
+    Cryptographic signature from a single node in the envelope routing chain.
 
-        Provides non-repudiation, tamper detection, and audit trail capabilities
-        through PKI-based digital signatures.
+    Provides non-repudiation, tamper detection, and audit trail capabilities
+    through PKI-based digital signatures.
     """
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")

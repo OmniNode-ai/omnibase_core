@@ -134,7 +134,7 @@ class MixinDagSupport:
 
             envelope = ModelEventEnvelope.create_broadcast(
                 payload=event,
-                source_node_id=str(node_id),
+                source_node_id=node_uuid,
                 correlation_id=correlation_uuid,
             )
 
@@ -186,7 +186,7 @@ class MixinDagSupport:
 
             envelope = ModelEventEnvelope.create_broadcast(
                 payload=event,
-                source_node_id=str(node_id),
+                source_node_id=node_uuid,
                 correlation_id=correlation_uuid,
             )
 

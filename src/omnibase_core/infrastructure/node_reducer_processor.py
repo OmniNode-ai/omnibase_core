@@ -37,21 +37,21 @@ class NodeReducerProcessor(  # type: ignore[misc]  # get_introspection_data sign
     @property  # type: ignore[override]  # MixinEventDrivenNode expects str, NodeCoreBase expects UUID
     def node_id(self) -> UUID:
         """Get the node ID from contract."""
-        node_id_str = getattr(self, "_node_id", "00000000-0000-0000-0000-000000000000")
-        return UUID(node_id_str) if isinstance(node_id_str, str) else node_id_str
+        return self._node_id
 
     @node_id.setter
     def node_id(self, value: str | UUID) -> None:
         """Allow setting node_id (compatibility with NodeCoreBase)."""
-        self._node_id = str(value) if isinstance(value, UUID) else value
+        self._node_id = UUID(value) if isinstance(value, str) else value
 
     def __init__(self, container: ModelONEXContainer):
         """Initialize with proper mixin coordination."""
         # Initialize contract loading first
         MixinNodeIdFromContract.__init__(self)
 
-        # Load node_id from contract
-        self._node_id = self._load_node_id()
+        # Load node_id from contract and convert to UUID
+        node_id_str = self._load_node_id()
+        self._node_id = UUID(node_id_str)
 
         # Get services from the infrastructure container via duck typing
         event_bus: Any = container.get_service("ProtocolEventBus")  # type: ignore[arg-type]

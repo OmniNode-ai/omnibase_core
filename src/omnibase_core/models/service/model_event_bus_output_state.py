@@ -117,9 +117,7 @@ class ModelEventBusOutputState(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR.value, message=msg
-        )
+        raise ModelOnexError(error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
 
     @field_validator("status")
     @classmethod
@@ -134,7 +132,7 @@ class ModelEventBusOutputState(BaseModel):
         if not v or not v.strip():
             msg = "message cannot be empty or whitespace"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value, message=msg
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
         return v.strip()
 
@@ -151,7 +149,7 @@ class ModelEventBusOutputState(BaseModel):
 
         if not re.match("^[A-Z0-9_]+$", v):
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="error_code must contain only uppercase letters, numbers, and underscores",
             )
         return v
@@ -470,7 +468,11 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create successful output state."""
         return cls(
-            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
+            version=(
+                parse_semver_from_string(str(version))
+                if not isinstance(version, ModelSemVer)
+                else version
+            ),
             status=EnumOnexStatus.SUCCESS,
             message=message,
             processing_time_ms=processing_time_ms,
@@ -494,7 +496,11 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create error output state."""
         return cls(
-            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
+            version=(
+                parse_semver_from_string(str(version))
+                if not isinstance(version, ModelSemVer)
+                else version
+            ),
             status=EnumOnexStatus.ERROR,
             message=message,
             error_code=error_code,
@@ -514,7 +520,11 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create warning output state."""
         return cls(
-            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
+            version=(
+                parse_semver_from_string(str(version))
+                if not isinstance(version, ModelSemVer)
+                else version
+            ),
             status=EnumOnexStatus.WARNING,
             message=message,
             warnings=warnings,
@@ -542,7 +552,11 @@ class ModelEventBusOutputState(BaseModel):
             datetime.now() + timedelta(seconds=next_retry_delay_seconds)
         ).isoformat()
         return cls(
-            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
+            version=(
+                parse_semver_from_string(str(version))
+                if not isinstance(version, ModelSemVer)
+                else version
+            ),
             status=EnumOnexStatus.ERROR,
             message=message,
             retry_attempt=retry_attempt,
@@ -564,7 +578,11 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create output state with full tracking information."""
         return cls(
-            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
+            version=(
+                parse_semver_from_string(str(version))
+                if not isinstance(version, ModelSemVer)
+                else version
+            ),
             status=EnumOnexStatus(status),
             message=message,
             correlation_id=correlation_id,

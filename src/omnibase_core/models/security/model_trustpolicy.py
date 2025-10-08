@@ -365,7 +365,7 @@ class ModelTrustPolicy(BaseModel):
             severity = ModelPolicySeverity(level="info")
 
         return ModelPolicyValidationResult(
-            policy_id=str(self.policy_id),
+            policy_id=self.policy_id,
             policy_version=self.version,
             status=status,
             severity=severity,

@@ -25,12 +25,12 @@ class ModelPerUserLimits(BaseModel):
         ge=1,
         le=1000000,
     )
-    user_identification_method: UUID = Field(
+    user_identification_method: str = Field(
         default="user_id",
         description="Method to identify users",
         pattern="^(user_id|api_key|ip_address|session_id|custom_header|jwt_subject)$",
     )
-    user_identification_header: UUID | None = Field(
+    user_identification_header: str | None = Field(
         default=None,
         description="Header name for user identification (if using custom_header)",
     )
@@ -44,13 +44,13 @@ class ModelPerUserLimits(BaseModel):
         default_factory=lambda: {"free": 100, "premium": 1000, "enterprise": 10000},
         description="Rate limits by user tier",
     )
-    individual_user_overrides: dict[str, int] = Field(
+    individual_user_overrides: dict[UUID, int] = Field(
         default_factory=dict, description="Specific rate limits for individual users"
     )
-    blocked_users: list[str] = Field(
+    blocked_users: list[UUID] = Field(
         default_factory=list, description="Users that are completely blocked"
     )
-    unlimited_users: list[str] = Field(
+    unlimited_users: list[UUID] = Field(
         default_factory=list, description="Users with unlimited access"
     )
     user_quota_enabled: bool = Field(
@@ -78,7 +78,7 @@ class ModelPerUserLimits(BaseModel):
         ge=1.0,
         le=5.0,
     )
-    user_specific_burst: dict[str, float] = Field(
+    user_specific_burst: dict[UUID, float] = Field(
         default_factory=dict, description="User-specific burst multipliers"
     )
     escalation_enabled: bool = Field(

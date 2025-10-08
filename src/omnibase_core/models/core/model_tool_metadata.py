@@ -51,7 +51,10 @@ class ModelToolMetadata(BaseModel):
         description="Validation results",
     )
     description: str = Field(default="", description="Tool description")
-    version: ModelSemVer = Field(default="1.0.0", description="Tool version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Tool version",
+    )
     author: str = Field(default="Unknown", description="Tool author")
     documentation_url: str | None = Field(default=None, description="Documentation URL")
     configuration_schema: ModelSchema | None = Field(

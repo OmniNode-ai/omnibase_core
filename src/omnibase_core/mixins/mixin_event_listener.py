@@ -972,7 +972,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         # Create envelope
         envelope = ModelEventEnvelope.create_broadcast(
             payload=completion_event,
-            source_node_id=self.get_node_name(),
+            source_node_id=node_uuid,
             correlation_id=input_event.correlation_id,
         )
 
@@ -1034,7 +1034,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         # Wrap in envelope and publish
         envelope = ModelEventEnvelope.create_broadcast(
             payload=error_event,
-            source_node_id=self.get_node_name(),
+            source_node_id=node_uuid,
             correlation_id=input_event.correlation_id,
         )
 

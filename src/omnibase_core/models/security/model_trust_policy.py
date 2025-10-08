@@ -6,7 +6,7 @@ from .model_trustpolicy import ModelTrustPolicy
 
 "\nModelTrustPolicy: Flexible trust policy engine for signature requirements.\n\nThis model defines trust policies that control signature requirements,\ncertificate validation, and compliance rules for secure envelope routing.\n"
 from datetime import datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -22,9 +22,7 @@ from .model_trust_level import ModelTrustLevel
 class ModelPolicyRule(BaseModel):
     """Individual policy rule with conditions and actions."""
 
-    rule_id: UUID = Field(
-        default_factory=lambda: str(uuid4()), description="Unique rule identifier"
-    )
+    rule_id: UUID = Field(default_factory=uuid4, description="Unique rule identifier")
     name: str = Field(default=..., description="Human-readable rule name")
     description: str | None = Field(default=None, description="Rule description")
     conditions: ModelRuleCondition = Field(

@@ -410,10 +410,14 @@ class MixinNodeIntrospection(ABC):
         error_codes = cls._extract_error_codes()
 
         # Create dependencies model
+        # Parse python version requirement (e.g., ">=3.11" -> "3.11")
+        python_version_str = (
+            cls.get_python_version_requirement().replace(">=", "").strip()
+        )
         dependencies = ModelDependencies(
             runtime=cls.get_runtime_dependencies(),
             optional=cls.get_optional_dependencies(),
-            python_version=cls.get_python_version_requirement(),
+            python_version=parse_semver_from_string(python_version_str),
             external_tools=cls.get_external_tools(),
         )
 
@@ -432,7 +436,9 @@ class MixinNodeIntrospection(ABC):
             dependencies=dependencies,
             capabilities=capabilities,
             event_channels=event_channels,
-            introspection_version="1.1.0",  # Enhanced version with ecosystem info
+            introspection_version=ModelSemVer(
+                major=1, minor=1, patch=0
+            ),  # Enhanced version with ecosystem info
         )
 
     @classmethod

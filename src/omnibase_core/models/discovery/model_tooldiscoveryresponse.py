@@ -76,15 +76,8 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         Returns:
             ModelToolDiscoveryResponse instance
         """
-        correlation_uuid = None
-        request_corr_uuid = None
-        if request_correlation_id:
-            try:
-                correlation_uuid = UUID(request_correlation_id)
-                request_corr_uuid = correlation_uuid
-            except ValueError:
-                correlation_uuid = None
-                request_corr_uuid = None
+        correlation_uuid = request_correlation_id
+        request_corr_uuid = request_correlation_id
         return cls(
             node_id=node_id,
             requester_id=requester_id,
@@ -122,15 +115,8 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
             ModelToolDiscoveryResponse for timeout
         """
         tools = partial_tools or []
-        correlation_uuid = None
-        request_corr_uuid = None
-        if request_correlation_id:
-            try:
-                correlation_uuid = UUID(request_correlation_id)
-                request_corr_uuid = correlation_uuid
-            except ValueError:
-                correlation_uuid = None
-                request_corr_uuid = None
+        correlation_uuid = request_correlation_id
+        request_corr_uuid = request_correlation_id
         return cls(
             node_id=node_id,
             requester_id=requester_id,
