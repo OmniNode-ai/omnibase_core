@@ -4,24 +4,16 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-"""
-System Data Model.
-
-System information data structure.
-"""
-
+"\nSystem Data Model.\n\nSystem information data structure.\n"
 from pydantic import BaseModel, Field
 
 
 class ModelSystemData(BaseModel):
     """System information data."""
 
-    # System identifiers
-    system_id: str | None = Field(default=None, description="System identifier")
+    system_id: UUID | None = Field(default=None, description="System identifier")
     version: ModelSemVer | None = Field(default=None, description="System version")
     environment: str | None = Field(default=None, description="Environment name")
-
-    # System metrics
     uptime_seconds: int | None = Field(
         default=None, description="System uptime in seconds"
     )
@@ -30,22 +22,15 @@ class ModelSystemData(BaseModel):
     )
     memory_usage_mb: int | None = Field(default=None, description="Memory usage in MB")
     disk_usage_percent: float | None = Field(
-        default=None,
-        description="Disk usage percentage",
+        default=None, description="Disk usage percentage"
     )
-
-    # Configuration
     node_count: int | None = Field(default=None, description="Number of active nodes")
     service_count: int | None = Field(
         default=None, description="Number of active services"
     )
-
-    # Custom fields for extensibility
     custom_metrics: dict[str, float] | None = Field(
-        default=None,
-        description="Custom system metrics",
+        default=None, description="Custom system metrics"
     )
     custom_info: dict[str, str] | None = Field(
-        default=None,
-        description="Custom system information",
+        default=None, description="Custom system information"
     )

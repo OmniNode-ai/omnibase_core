@@ -2,19 +2,14 @@ from typing import Any
 
 from pydantic import Field
 
-"""
-Node Type Model.
-
-Extensible node type definition that replaces restrictive enums
-with flexible, plugin-extensible node type configuration.
-"""
-
+"\nNode Type Model.\n\nExtensible node type definition that replaces restrictive enums\nwith flexible, plugin-extensible node type configuration.\n"
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.configuration.model_performance_constraints import (
     ModelPerformanceConstraints,
 )
 from omnibase_core.models.core.model_capability import ModelCapability
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelNodeType(BaseModel):
@@ -26,9 +21,7 @@ class ModelNodeType(BaseModel):
     """
 
     type_name: str = Field(
-        default=...,
-        description="Node type identifier",
-        pattern="^[a-z][a-z0-9_]*$",
+        default=..., description="Node type identifier", pattern="^[a-z][a-z0-9_]*$"
     )
     category: str = Field(
         default=...,
@@ -40,12 +33,10 @@ class ModelNodeType(BaseModel):
         default=..., description="Description of what this node type does"
     )
     capabilities_provided: list[ModelCapability] = Field(
-        default_factory=list,
-        description="Capabilities this type provides",
+        default_factory=list, description="Capabilities this type provides"
     )
     capabilities_required: list[ModelCapability] = Field(
-        default_factory=list,
-        description="Capabilities this type requires",
+        default_factory=list, description="Capabilities this type requires"
     )
     resource_requirements: ModelPerformanceConstraints = Field(
         default_factory=lambda: ModelPerformanceConstraints(),
@@ -53,12 +44,10 @@ class ModelNodeType(BaseModel):
     )
     is_singleton: bool = Field(default=False, description="Only one instance allowed")
     supports_clustering: bool = Field(
-        default=True,
-        description="Supports multiple instances",
+        default=True, description="Supports multiple instances"
     )
-    version_compatibility: str | None = Field(
-        default=None,
-        description="Version compatibility pattern",
+    version_compatibility: ModelSemVer | None = Field(
+        default=None, description="Version compatibility pattern"
     )
 
     def is_compatible_with(self, available_capabilities: list[ModelCapability]) -> bool:
@@ -75,14 +64,11 @@ class ModelNodeType(BaseModel):
 
     def provides_capability(self, capability: ModelCapability) -> bool:
         """Check if type provides a capability."""
-        return any(cap.matches(capability) for cap in self.capabilities_provided)
+        return any((cap.matches(capability) for cap in self.capabilities_provided))
 
     @classmethod
     def create_core_type(
-        cls,
-        type_name: str,
-        display_name: str,
-        description: str,
+        cls, type_name: str, display_name: str, description: str
     ) -> "ModelNodeType":
         """Factory method for core node types."""
         return cls(

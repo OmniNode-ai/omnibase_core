@@ -2,13 +2,7 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-"""
-Node Capability Model
-
-Replaces EnumNodeCapability with a proper model that includes metadata,
-descriptions, and dependencies for each capability.
-"""
-
+"\nNode Capability Model\n\nReplaces EnumNodeCapability with a proper model that includes metadata,\ndescriptions, and dependencies for each capability.\n"
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -24,59 +18,41 @@ class ModelNodeCapability(BaseModel):
     about each node capability including dependencies and configuration.
     """
 
-    # Core fields (required)
     name: str = Field(
         default=...,
         description="Capability identifier (e.g., SUPPORTS_DRY_RUN)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
-
     value: str = Field(
         default=...,
         description="Lowercase value for current standards (e.g., supports_dry_run)",
     )
-
     description: str = Field(
-        default=...,
-        description="Human-readable description of the capability",
+        default=..., description="Human-readable description of the capability"
     )
-
-    # Metadata fields
     version_introduced: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="ONEX version when this capability was introduced",
     )
-
     dependencies: list[str] = Field(
-        default_factory=list,
-        description="Other capabilities this one depends on",
+        default_factory=list, description="Other capabilities this one depends on"
     )
-
     configuration_required: bool = Field(
-        default=False,
-        description="Whether this capability requires configuration",
+        default=False, description="Whether this capability requires configuration"
     )
-
     performance_impact: str = Field(
         default="low",
         description="Performance impact level (low, medium, high)",
         pattern="^(low|medium|high)$",
     )
-
-    # Optional fields
     deprecated: bool = Field(
-        default=False,
-        description="Whether this capability is deprecated",
+        default=False, description="Whether this capability is deprecated"
     )
-
     replacement: str | None = Field(
-        default=None,
-        description="Replacement capability if deprecated",
+        default=None, description="Replacement capability if deprecated"
     )
-
     example_config: dict[str, Any] | None = Field(
-        default=None,
-        description="Example configuration for this capability",
+        default=None, description="Example configuration for this capability"
     )
 
     @field_validator("version_introduced", mode="before")
@@ -94,7 +70,6 @@ class ModelNodeCapability(BaseModel):
         msg = "version_introduced must be ModelSemVer, dict, or str"
         raise ModelOnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
-    # Factory methods for standard capabilities
     @classmethod
     def SUPPORTS_DRY_RUN(cls) -> "ModelNodeCapability":
         """Dry run support capability."""
@@ -225,11 +200,9 @@ class ModelNodeCapability(BaseModel):
             "SUPPORTS_ERROR_RECOVERY": cls.SUPPORTS_ERROR_RECOVERY,
             "SUPPORTS_EVENT_DISCOVERY": cls.SUPPORTS_EVENT_DISCOVERY,
         }
-
         factory = factory_map.get(capability_upper)
         if factory:
             return factory()
-        # Unknown capability - create generic
         return cls(
             name=capability_upper,
             value=capability.lower(),
@@ -249,8 +222,10 @@ class ModelNodeCapability(BaseModel):
             return self.name == other.name
         return False
 
-    def is_compatible_with_version(self, version: str) -> bool:
+    def is_compatible_with_version(self, version: ModelSemVer | str) -> bool:
         """Check if this capability is available in a given ONEX version."""
-        # Parse the version string to ModelSemVer for comparison
-        target_version = parse_semver_from_string(version)
+        if isinstance(version, ModelSemVer):
+            target_version = version
+        else:
+            target_version = parse_semver_from_string(version)
         return self.version_introduced <= target_version

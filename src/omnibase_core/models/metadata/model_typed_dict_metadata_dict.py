@@ -6,12 +6,14 @@ Typed structure for metadata dictionary in protocol methods.
 
 from typing import Any, TypedDict
 
+from omnibase_core.models.core.model_semver import ModelSemVer
+
 
 class TypedDictMetadataDict(TypedDict, total=False):
     """Typed structure for metadata dictionary in protocol methods."""
 
     name: str
     description: str
-    version: str
+    version: ModelSemVer
     tags: list[str]
     metadata: dict[str, Any]

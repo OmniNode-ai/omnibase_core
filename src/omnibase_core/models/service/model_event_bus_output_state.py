@@ -35,69 +35,44 @@ class ModelEventBusOutputState(BaseModel):
     - Factory methods for common scenarios
     """
 
-    model_config = ConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-    )
-
+    model_config = ConfigDict(validate_assignment=True, extra="forbid")
     version: ModelSemVer = Field(
-        default=...,
-        description="Schema version for output state (matches input)",
+        default=..., description="Schema version for output state (matches input)"
     )
-
     status: EnumOnexStatus = Field(
-        default=...,
-        description="Execution status with business context",
+        default=..., description="Execution status with business context"
     )
-
     message: str = Field(
         default=...,
         description="Human-readable result message with details",
         min_length=1,
         max_length=2000,
     )
-
     output_field: ModelEventBusOutputField | None = Field(
-        default=None,
-        description="Canonical output field with processing results",
+        default=None, description="Canonical output field with processing results"
     )
-
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
         max_length=100,
     )
-
     event_id: UUID | None = Field(
-        default=None,
-        description="Unique event identifier",
-        max_length=100,
+        default=None, description="Unique event identifier", max_length=100
     )
-
     processing_time_ms: int | None = Field(
-        default=None,
-        description="Processing time in milliseconds",
-        ge=0,
+        default=None, description="Processing time in milliseconds", ge=0
     )
-
     retry_attempt: int | None = Field(
-        default=0,
-        description="Current retry attempt number",
-        ge=0,
-        le=10,
+        default=0, description="Current retry attempt number", ge=0, le=10
     )
-
     error_code: str | None = Field(
         default=None,
         description="Specific error code for programmatic handling",
         max_length=50,
     )
-
     error_details: ModelErrorDetails | None = Field(
-        default=None,
-        description="Detailed error information for debugging",
+        default=None, description="Detailed error information for debugging"
     )
-
     metrics: "ModelMonitoringMetrics" = Field(
         default_factory=lambda: ModelMonitoringMetrics(
             response_time_ms=None,
@@ -124,15 +99,11 @@ class ModelEventBusOutputState(BaseModel):
         ),
         description="Performance and operational metrics",
     )
-
     warnings: list[str] | None = Field(
-        default_factory=list,
-        description="Non-fatal warnings during processing",
+        default_factory=list, description="Non-fatal warnings during processing"
     )
-
     next_retry_at: str | None = Field(
-        default=None,
-        description="ISO timestamp for next retry attempt",
+        default=None, description="ISO timestamp for next retry attempt"
     )
 
     @field_validator("version", mode="before")
@@ -146,9 +117,8 @@ class ModelEventBusOutputState(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
-            message=msg,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR.value, message=msg
         )
 
     @field_validator("status")
@@ -163,11 +133,9 @@ class ModelEventBusOutputState(BaseModel):
         """Validate message content."""
         if not v or not v.strip():
             msg = "message cannot be empty or whitespace"
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
-                message=msg,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR.value, message=msg
             )
-
         return v.strip()
 
     @field_validator("error_code")
@@ -176,23 +144,17 @@ class ModelEventBusOutputState(BaseModel):
         """Validate error code format."""
         if v is None:
             return v
-
         v = v.strip().upper()
         if not v:
             return None
-
-        # Basic format validation (alphanumeric with underscores)
         import re
 
-        if not re.match(r"^[A-Z0-9_]+$", v):
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+        if not re.match("^[A-Z0-9_]+$", v):
+            raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR.value,
                 message="error_code must contain only uppercase letters, numbers, and underscores",
             )
-
         return v
-
-    # === Status Analysis ===
 
     def is_successful(self) -> bool:
         """Check if the operation was successful."""
@@ -204,13 +166,9 @@ class ModelEventBusOutputState(BaseModel):
 
     def is_retryable(self) -> bool:
         """Check if the operation can be retried."""
-        # Operations that can typically be retried
         retryable_statuses = [EnumOnexStatus.ERROR, EnumOnexStatus.PARTIAL]
-
-        # Don't retry if we've already exhausted attempts
         if self.retry_attempt and self.retry_attempt >= 5:
             return False
-
         return self.status in retryable_statuses
 
     def is_warning_only(self) -> bool:
@@ -235,13 +193,10 @@ class ModelEventBusOutputState(BaseModel):
         }
         return severity_map.get(self.status, "unknown")
 
-    # === Performance Analysis ===
-
     def get_performance_category(self) -> str:
         """Categorize performance based on processing time."""
         if not self.processing_time_ms:
             return "unknown"
-
         if self.processing_time_ms < 100:
             return "excellent"
         if self.processing_time_ms < 500:
@@ -261,7 +216,6 @@ class ModelEventBusOutputState(BaseModel):
         """Get human-readable processing time."""
         if not self.processing_time_ms:
             return "unknown"
-
         if self.processing_time_ms < 1000:
             return f"{self.processing_time_ms}ms"
         seconds = self.processing_time_ms / 1000
@@ -270,31 +224,24 @@ class ModelEventBusOutputState(BaseModel):
     def get_performance_recommendations(self) -> list[str]:
         """Get performance improvement recommendations."""
         recommendations = []
-
         if self.is_performance_concerning():
             recommendations.append(
-                "Consider optimizing processing logic for better performance",
+                "Consider optimizing processing logic for better performance"
             )
-
         if self.retry_attempt and self.retry_attempt > 2:
             recommendations.append(
-                "High retry count indicates potential systemic issues",
+                "High retry count indicates potential systemic issues"
             )
-
         if self.has_warnings():
             recommendations.append(
-                "Review warnings to prevent potential future failures",
+                "Review warnings to prevent potential future failures"
             )
-
         return recommendations
-
-    # === Error Analysis ===
 
     def get_error_summary(self) -> "ModelErrorSummary" | None:
         """Get comprehensive error summary."""
         if not self.is_failed():
             return None
-
         return ModelErrorSummary(
             error_code=self.error_code or "UNKNOWN",
             error_type=self.status.value,
@@ -316,22 +263,15 @@ class ModelEventBusOutputState(BaseModel):
     def get_troubleshooting_steps(self) -> list[str]:
         """Get troubleshooting recommendations based on error patterns."""
         steps = []
-
         if self.error_code:
             steps.append(f"Check documentation for error code: {self.error_code}")
-
         if self.retry_attempt and self.retry_attempt > 0:
             steps.append("Review system logs for patterns in retry failures")
-
         if self.processing_time_ms and self.processing_time_ms > 30000:
             steps.append("Check for timeout-related issues or resource constraints")
-
         if self.is_retryable():
             steps.append("Consider increasing retry delays or checking system capacity")
-
         return steps
-
-    # === Monitoring Integration ===
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get metrics suitable for monitoring systems."""
@@ -342,7 +282,6 @@ class ModelEventBusOutputState(BaseModel):
 
         success_rate = 100.0 if self.is_successful() else 0.0
         error_rate = 100.0 if self.is_failed() else 0.0
-
         return ModelMonitoringMetrics(
             response_time_ms=(
                 float(self.processing_time_ms) if self.processing_time_ms else None
@@ -399,22 +338,15 @@ class ModelEventBusOutputState(BaseModel):
             "severity": self.get_severity_level(),
             "version": str(self.version),
         }
-
         if self.correlation_id:
             context["correlation_id"] = str(self.correlation_id)
-
         if self.event_id:
             context["event_id"] = str(self.event_id)
-
         if self.processing_time_ms:
             context["processing_time"] = self.get_processing_time_human()
-
         if self.error_code:
             context["error_code"] = self.error_code
-
         return context
-
-    # === Business Intelligence ===
 
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the operation result."""
@@ -430,7 +362,6 @@ class ModelEventBusOutputState(BaseModel):
                 else EnumImpactSeverity.MINIMAL
             )
         )
-
         return ModelBusinessImpact(
             severity=severity,
             downtime_minutes=(
@@ -443,7 +374,7 @@ class ModelEventBusOutputState(BaseModel):
                 self.is_retryable() if self.is_failed() else None
             ),
             confidence_score=(
-                1.0 - (self.retry_attempt * 0.1) if self.retry_attempt else 1.0
+                1.0 - self.retry_attempt * 0.1 if self.retry_attempt else 1.0
             ),
             affected_users=None,
             revenue_impact_usd=None,
@@ -464,19 +395,12 @@ class ModelEventBusOutputState(BaseModel):
     def _calculate_reliability_score(self) -> float:
         """Calculate reliability score based on execution characteristics."""
         base_score = 1.0 if self.is_successful() else 0.0
-
-        # Deduct for retries
         if self.retry_attempt:
-            base_score *= 1.0 - (self.retry_attempt * 0.1)
-
-        # Deduct for warnings
+            base_score *= 1.0 - self.retry_attempt * 0.1
         if self.warnings:
-            base_score *= 1.0 - (len(self.warnings) * 0.05)
-
-        # Deduct for poor performance
+            base_score *= 1.0 - len(self.warnings) * 0.05
         if self.is_performance_concerning():
             base_score *= 0.8
-
         return max(0.0, base_score)
 
     def _assess_user_experience_impact(self) -> str:
@@ -503,8 +427,6 @@ class ModelEventBusOutputState(BaseModel):
         if self.has_warnings():
             return "low"
         return "minimal"
-
-    # === Factory Methods ===
 
     @classmethod
     def _create_metrics(
@@ -542,13 +464,13 @@ class ModelEventBusOutputState(BaseModel):
     @classmethod
     def create_success(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         message: str = "Operation completed successfully",
         processing_time_ms: int | None = None,
     ) -> "ModelEventBusOutputState":
         """Create successful output state."""
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
             status=EnumOnexStatus.SUCCESS,
             message=message,
             processing_time_ms=processing_time_ms,
@@ -565,36 +487,34 @@ class ModelEventBusOutputState(BaseModel):
     @classmethod
     def create_error(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         message: str,
         error_code: str | None = None,
         retry_attempt: int = 0,
     ) -> "ModelEventBusOutputState":
         """Create error output state."""
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
             status=EnumOnexStatus.ERROR,
             message=message,
             error_code=error_code,
             retry_attempt=retry_attempt,
             metrics=cls._create_metrics(
-                success_rate=0.0,
-                error_rate=100.0,
-                health_score=0.0,
+                success_rate=0.0, error_rate=100.0, health_score=0.0
             ),
         )
 
     @classmethod
     def create_warning(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         message: str,
         warnings: list[str],
         processing_time_ms: int | None = None,
     ) -> "ModelEventBusOutputState":
         """Create warning output state."""
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
             status=EnumOnexStatus.WARNING,
             message=message,
             warnings=warnings,
@@ -612,7 +532,7 @@ class ModelEventBusOutputState(BaseModel):
     @classmethod
     def create_retry(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         message: str,
         retry_attempt: int,
         next_retry_delay_seconds: int = 30,
@@ -621,24 +541,21 @@ class ModelEventBusOutputState(BaseModel):
         next_retry_at = (
             datetime.now() + timedelta(seconds=next_retry_delay_seconds)
         ).isoformat()
-
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
             status=EnumOnexStatus.ERROR,
             message=message,
             retry_attempt=retry_attempt,
             next_retry_at=next_retry_at,
             metrics=cls._create_metrics(
-                success_rate=0.0,
-                error_rate=100.0,
-                health_score=0.0,
+                success_rate=0.0, error_rate=100.0, health_score=0.0
             ),
         )
 
     @classmethod
     def create_with_tracking(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         status: str,
         message: str,
         correlation_id: UUID,
@@ -647,7 +564,7 @@ class ModelEventBusOutputState(BaseModel):
     ) -> "ModelEventBusOutputState":
         """Create output state with full tracking information."""
         return cls(
-            version=parse_semver_from_string(version),
+            version=parse_semver_from_string(str(version)) if not isinstance(version, ModelSemVer) else version,
             status=EnumOnexStatus(status),
             message=message,
             correlation_id=correlation_id,

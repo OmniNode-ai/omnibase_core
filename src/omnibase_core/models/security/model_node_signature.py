@@ -1,14 +1,9 @@
 from typing import Optional
+from uuid import UUID
 
 from pydantic import Field
 
-"""
-ModelNodeSignature: Cryptographic signature for envelope audit trails
-
-This model represents a single node's cryptographic signature in the envelope
-routing chain, providing non-repudiation and tamper detection capabilities.
-"""
-
+"\nModelNodeSignature: Cryptographic signature for envelope audit trails\n\nThis model represents a single node's cryptographic signature in the envelope\nrouting chain, providing non-repudiation and tamper detection capabilities.\n"
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -33,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ModelCertificateInfo:
     """Information extracted from an X.509 certificate."""
 
-    certificate_id: str
+    certificate_id: UUID
     subject_dn: str
     issuer_dn: str
     serial_number: str

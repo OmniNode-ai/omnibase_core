@@ -347,13 +347,7 @@ class MixinNodeIntrospection(ABC):
 
         # Get version information from resolver
         # TODO: Implement global_resolver for version information
-        # version_info = global_resolver.get_version_info(node_name)
-        version_info: dict[str, Any] = {
-            "available_versions": [],
-            "latest_version": None,
-            "total_versions": 0,
-            "version_status": None,
-        }
+        # Once implemented, global_resolver should return ModelSemVer objects directly
 
         # Create enhanced node metadata with version information
         node_metadata = ModelNodeMetadataInfo(
@@ -364,15 +358,11 @@ class MixinNodeIntrospection(ABC):
             schema_version=parse_semver_from_string(cls.get_schema_version()),
             created_at=None,  # Could be extracted from metadata if available
             last_modified_at=None,  # Could be extracted from metadata if available
-            # Enhanced version information
-            available_versions=version_info.get("available_versions", []),
-            latest_version=(
-                parse_semver_from_string(version_info["latest_version"])
-                if version_info.get("latest_version")
-                else None
-            ),
-            total_versions=version_info.get("total_versions", 0),
-            version_status=version_info.get("version_status"),
+            # Enhanced version information (not yet implemented)
+            available_versions=None,  # TODO: Get from global_resolver
+            latest_version=None,  # TODO: Get from global_resolver
+            total_versions=None,  # TODO: Get from global_resolver
+            version_status=None,  # TODO: Get from global_resolver
             # Ecosystem information
             category=cls._get_node_category(),
             tags=cls._get_node_tags(),

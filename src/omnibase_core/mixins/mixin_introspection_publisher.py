@@ -9,35 +9,7 @@ from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent,
 )
 
-# === OmniNode:Metadata ===
-# author: OmniNode Team
-# copyright: OmniNode.ai
-# created_at: '2025-07-04T02:00:00.000000'
-# description: Introspection publishing mixin for event-driven nodes
-# entrypoint: python://mixin_introspection_publisher
-# lifecycle: active
-# meta_type: mixin
-# metadata_version: 0.1.0
-# name: mixin_introspection_publisher.py
-# namespace: python://omnibase.mixin.mixin_introspection_publisher
-# owner: OmniNode Team
-# protocol_version: 0.1.0
-# runtime_language_hint: python>=3.11
-# schema_version: 0.1.0
-# state_contract: state_contract://default
-# version: 1.0.0
-# === /OmniNode:Metadata ===
-
-"""
-Introspection Publisher Mixin.
-
-This mixin handles:
-- Gathering node introspection data from various sources
-- Publishing NODE_INTROSPECTION_EVENT for service discovery
-- Extracting actions, protocols, metadata from nodes
-- Retry logic for failed publishes
-"""
-
+"\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
 import re
 from datetime import datetime
 from pathlib import Path
@@ -54,10 +26,7 @@ from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
 
-# Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
-
-# Constants
 DEFAULT_AUTHOR = "ONEX"
 
 
@@ -79,19 +48,12 @@ class MixinIntrospectionPublisher:
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             return
-
         node_id = getattr(self, "_node_id", "unknown")
-
         try:
-            # Gather introspection data (now strongly typed)
             introspection_data = self._gather_introspection_data()
-
-            # Generate correlation ID for introspection
             from uuid import UUID, uuid4
 
             correlation_id = uuid4()
-
-            # Create and publish introspection event
             introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
                 node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 node_name=introspection_data.node_name,
@@ -103,10 +65,7 @@ class MixinIntrospectionPublisher:
                 health_endpoint=introspection_data.health_endpoint,
                 correlation_id=correlation_id,
             )
-
-            # Publish with retry logic
             self._publish_with_retry(introspection_event)
-
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -119,9 +78,7 @@ class MixinIntrospectionPublisher:
                 f"Published introspection event for node {node_id}",
                 context=context,
             )
-
         except (ValueError, ValidationError) as e:
-            # FAIL-FAST: Re-raise validation errors immediately to crash the service
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -134,9 +91,8 @@ class MixinIntrospectionPublisher:
                 f"💥 FAIL-FAST: Introspection validation failed: {e}",
                 context=context,
             )
-            raise  # Re-raise to crash the service
+            raise
         except Exception as e:
-            # FAIL-FAST: Critical errors during startup should crash the service
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -149,7 +105,7 @@ class MixinIntrospectionPublisher:
                 f"💥 FAIL-FAST: Failed to publish introspection event: {e}",
                 context=context,
             )
-            raise  # Re-raise to crash the service
+            raise
 
     def _gather_introspection_data(self) -> MixinNodeIntrospectionData:
         """
@@ -159,13 +115,11 @@ class MixinIntrospectionPublisher:
             MixinNodeIntrospectionData: Strongly typed introspection data
         """
         try:
-            # Extract node information
             node_name = self._extract_node_name()
             version = self._extract_node_version()
             capabilities = self._extract_node_capabilities()
             tags = self._generate_discovery_tags()
             health_endpoint = self._detect_health_endpoint()
-
             return MixinNodeIntrospectionData(
                 node_name=node_name,
                 version=version,
@@ -173,11 +127,8 @@ class MixinIntrospectionPublisher:
                 tags=tags,
                 health_endpoint=health_endpoint,
             )
-
-        except (
-            Exception
-        ) as e:  # fallback-ok: introspection is non-critical, return minimal metadata with logging
-            # Fallback to basic introspection
+        except Exception as e:
+            # fallback-ok: Introspection failures use fallback data with logging
             node_id = getattr(self, "_node_id", "unknown")
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -191,7 +142,6 @@ class MixinIntrospectionPublisher:
                 f"Failed to gather full introspection data, using fallback: {e}",
                 context=context,
             )
-
             return MixinNodeIntrospectionData(
                 node_name=self.__class__.__name__.lower(),
                 version=ModelSemVer(major=1, minor=0, patch=0),
@@ -224,19 +174,14 @@ class MixinIntrospectionPublisher:
                     and hasattr(metadata, "namespace")
                     and getattr(metadata, "namespace", None)
                 ):
-                    # Extract from namespace like "omnibase.nodes.node_cli"
                     parts = str(metadata.namespace).split(".")
                     if len(parts) >= 3 and parts[-1].startswith("node_"):
                         return parts[-1]
         except Exception:
             pass
-
-        # Fallback to class name
         class_name = self.__class__.__name__
         if class_name.startswith("Node"):
-            # Convert "NodeCli" -> "node_cli"
-            return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
-
+            return re.sub("(?<!^)(?=[A-Z])", "_", class_name).lower()
         return class_name.lower()
 
     def _extract_node_version(self) -> ModelSemVer:
@@ -251,8 +196,6 @@ class MixinIntrospectionPublisher:
                     and getattr(metadata, "version", None)
                 ):
                     version_str = str(metadata.version)
-                    # Use basic parsing instead of from_string to avoid method access issues
-                    # Expect format like "1.0.0"
                     parts = version_str.split(".")
                     if len(parts) >= 3:
                         return ModelSemVer(
@@ -262,8 +205,6 @@ class MixinIntrospectionPublisher:
                         )
         except Exception:
             pass
-
-        # Fallback to default version
         return ModelSemVer(major=1, minor=0, patch=0)
 
     def _extract_node_capabilities(self) -> ModelNodeCapabilities:
@@ -276,69 +217,53 @@ class MixinIntrospectionPublisher:
                 "author": DEFAULT_AUTHOR,
             },
         )
-
         try:
             metadata_loader = getattr(self, "metadata_loader", None)
             if metadata_loader and hasattr(metadata_loader, "metadata"):
                 loader_metadata = getattr(metadata_loader, "metadata", None)
                 if loader_metadata:
                     if hasattr(loader_metadata, "description") and getattr(
-                        loader_metadata,
-                        "description",
-                        None,
+                        loader_metadata, "description", None
                     ):
                         capabilities.metadata["description"] = str(
-                            loader_metadata.description,
+                            loader_metadata.description
                         )
                     if hasattr(loader_metadata, "author") and getattr(
-                        loader_metadata,
-                        "author",
-                        None,
+                        loader_metadata, "author", None
                     ):
                         capabilities.metadata["author"] = str(loader_metadata.author)
                     if hasattr(loader_metadata, "copyright") and getattr(
-                        loader_metadata,
-                        "copyright",
-                        None,
+                        loader_metadata, "copyright", None
                     ):
                         capabilities.metadata["copyright"] = str(
-                            loader_metadata.copyright,
+                            loader_metadata.copyright
                         )
         except Exception:
             pass
-
         return capabilities
 
     def _extract_node_actions(self) -> list[str]:
         """Extract actions from node's contract or state models."""
         actions = []
-
         try:
-            # Try to extract from input state model annotations
             for attr_name in dir(self):
                 attr = getattr(self, attr_name, None)
                 if attr and hasattr(attr, "__annotations__"):
                     annotations = getattr(attr, "__annotations__", {})
                     if "action" in annotations:
                         action_type = annotations["action"]
-
-                        # Handle Enum types
                         if hasattr(action_type, "__members__"):
                             actions.extend(list[Any](action_type.__members__.keys()))
-                        # Handle Literal types
                         elif hasattr(action_type, "__args__"):
                             actions.extend(list[Any](action_type.__args__))
                         break
-
-            # Fallback to method introspection
             if not actions:
                 for method_name in dir(self):
                     if method_name.startswith("action_") or method_name.endswith(
-                        "_action",
+                        "_action"
                     ):
                         action_name = method_name.replace("action_", "").replace(
-                            "_action",
-                            "",
+                            "_action", ""
                         )
                         actions.append(action_name)
                     elif method_name in [
@@ -348,43 +273,32 @@ class MixinIntrospectionPublisher:
                         "configure",
                     ]:
                         actions.append(method_name)
-
         except Exception:
             pass
-
-        # Ensure we always have at least health_check
         if not actions:
             actions = ["health_check"]
         elif "health_check" not in actions:
             actions.append("health_check")
-
         return actions
 
     def _detect_supported_protocols(self) -> list[str]:
         """Detect what protocols this node supports."""
-        protocols = ["event_bus"]  # All event-driven nodes support event_bus
-
+        protocols = ["event_bus"]
         try:
-            # Check for MCP support
             if hasattr(self, "mcp_server") or hasattr(self, "supports_mcp"):
                 protocols.append("mcp")
-            # Check for GraphQL support
             if hasattr(self, "graphql_schema") or hasattr(self, "supports_graphql"):
                 protocols.append("graphql")
-            # Check for HTTP/REST support
             if hasattr(self, "http_server") or hasattr(self, "supports_http"):
                 protocols.append("http")
         except Exception:
             pass
-
         return protocols
 
     def _generate_discovery_tags(self) -> list[str]:
         """Generate tags for service discovery."""
         tags = ["event_driven"]
-
         try:
-            # Add class-based tags
             class_name = self.__class__.__name__.lower()
             if "node" in class_name:
                 tags.append("node")
@@ -398,20 +312,15 @@ class MixinIntrospectionPublisher:
                 tags.append("generator")
             if "logger" in class_name:
                 tags.append("logger")
-
-            # Add protocol-based tags
             if hasattr(self, "supports_mcp") and getattr(self, "supports_mcp", False):
                 tags.append("mcp")
             if hasattr(self, "supports_graphql") and getattr(
-                self,
-                "supports_graphql",
-                False,
+                self, "supports_graphql", False
             ):
                 tags.append("graphql")
         except Exception:
             pass
-
-        return list(set(tags))  # Remove duplicates
+        return list(set(tags))
 
     def _detect_health_endpoint(self) -> str | None:
         """Detect if this node has a health endpoint."""
@@ -421,7 +330,6 @@ class MixinIntrospectionPublisher:
                 return f"/health/{node_id}"
         except Exception:
             pass
-
         return None
 
     def _publish_with_retry(self, event: Any, max_retries: int = 3) -> None:
@@ -429,34 +337,27 @@ class MixinIntrospectionPublisher:
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             return
-
         node_id = getattr(self, "_node_id", "unknown")
-
-        # Create envelope for the event
         from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 
-        # Convert node_id to string for envelope
-        source_node_id_str: str
+        source_node_id_str: UUID
         if isinstance(node_id, str):
             source_node_id_str = node_id
         elif isinstance(node_id, UUID):
             source_node_id_str = str(node_id)
         else:
             source_node_id_str = "unknown"
-
         envelope = ModelEventEnvelope.create_broadcast(
             payload=event,
             source_node_id=source_node_id_str,
             correlation_id=event.correlation_id,
         )
-
         for attempt in range(max_retries):
             try:
                 event_bus.publish(envelope)
                 return
             except Exception as e:
                 if attempt == max_retries - 1:
-                    # Last attempt failed
                     context = ModelLogContext(
                         calling_module=_COMPONENT_NAME,
                         calling_function="_publish_with_retry",
@@ -470,4 +371,3 @@ class MixinIntrospectionPublisher:
                         context=context,
                     )
                     raise
-                # Retry without logging to keep it simple

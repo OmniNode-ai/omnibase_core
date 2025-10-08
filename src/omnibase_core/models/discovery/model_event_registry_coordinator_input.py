@@ -1,10 +1,8 @@
+from uuid import UUID
+
 from pydantic import Field
 
-"""Event Registry Coordinator Input model for ONEX Discovery & Integration Event Registry.
-
-This module defines the input model for Event Registry Coordinator operations.
-"""
-
+"Event Registry Coordinator Input model for ONEX Discovery & Integration Event Registry.\n\nThis module defines the input model for Event Registry Coordinator operations.\n"
 from typing import Dict
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,24 +19,16 @@ class ModelEventRegistryCoordinatorInput(BaseModel):
     coordinator_action: str = Field(
         default=..., description="Coordinator action to perform"
     )
-
     discovery_phase: EnumDiscoveryPhase | None = Field(
-        default=None,
-        description="Discovery phase to initialize",
+        default=None, description="Discovery phase to initialize"
     )
-
     event_descriptor: ModelEventDescriptor | None = Field(
-        default=None,
-        description="Event for routing/coordination",
+        default=None, description="Event for routing/coordination"
     )
-
-    adapter_id: str | None = Field(
+    adapter_id: UUID | None = Field(
         default=None, description="Target Container Adapter ID"
     )
-
     cross_adapter_coordination: bool = Field(
-        default=False,
-        description="Whether to coordinate across multiple adapters",
+        default=False, description="Whether to coordinate across multiple adapters"
     )
-
     model_config = ConfigDict(extra="forbid")

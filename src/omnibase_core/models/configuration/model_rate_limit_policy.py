@@ -1,14 +1,9 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 
-"""
-ModelRateLimitPolicy - Comprehensive rate limiting policy configuration
-
-Rate limiting policy model that combines window configuration, user limits,
-throttling behavior, and burst handling for complete rate limiting management.
-"""
-
+"\nModelRateLimitPolicy - Comprehensive rate limiting policy configuration\n\nRate limiting policy model that combines window configuration, user limits,\nthrottling behavior, and burst handling for complete rate limiting management.\n"
 from pydantic import BaseModel, Field
 
 from .model_burst_config import ModelBurstConfig
@@ -27,78 +22,58 @@ class ModelRateLimitPolicy(BaseModel):
     """
 
     policy_name: str = Field(
-        default=...,
-        description="Policy identifier",
-        pattern="^[a-z][a-z0-9_-]*$",
+        default=..., description="Policy identifier", pattern="^[a-z][a-z0-9_-]*$"
     )
-
     description: str = Field(
-        default="",
-        description="Human-readable policy description",
+        default="", description="Human-readable policy description"
     )
-
     enabled: bool = Field(
-        default=True,
-        description="Whether this rate limiting policy is enabled",
+        default=True, description="Whether this rate limiting policy is enabled"
     )
-
     global_rate_limit: float | None = Field(
         default=None,
         description="Global requests per second limit (overrides all other limits)",
         gt=0,
         le=100000,
     )
-
     window_config: ModelRateLimitWindow = Field(
         default_factory=lambda: ModelRateLimitWindow(),
         description="Time window configuration",
     )
-
     per_user_limits: ModelPerUserLimits | None = Field(
-        default=None,
-        description="Per-user rate limiting configuration",
+        default=None, description="Per-user rate limiting configuration"
     )
-
     throttling_behavior: ModelThrottlingBehavior = Field(
         default_factory=lambda: ModelThrottlingBehavior(),
         description="Behavior when rate limits are exceeded",
     )
-
     burst_config: ModelBurstConfig | None = Field(
-        default=None,
-        description="Burst handling configuration",
+        default=None, description="Burst handling configuration"
     )
-
     retry_policy: ModelRetryPolicy = Field(
         default_factory=lambda: ModelRetryPolicy(),
         description="Retry policy for rate limited requests",
     )
-
     per_endpoint_limits: dict[str, float] = Field(
         default_factory=dict,
         description="Per-endpoint rate limits (requests per second)",
     )
-
     per_method_limits: dict[str, float] = Field(
         default_factory=dict,
         description="Per-HTTP-method rate limits (requests per second)",
     )
-
     ip_whitelist: list[str] = Field(
         default_factory=list,
         description="IP addresses/CIDR blocks exempt from rate limiting",
     )
-
     ip_blacklist: list[str] = Field(
         default_factory=list,
         description="IP addresses/CIDR blocks that are completely blocked",
     )
-
     geographic_limits: dict[str, float] = Field(
         default_factory=dict,
         description="Rate limits by geographic region (country codes)",
     )
-
     priority_lanes: dict[str, float] = Field(
         default_factory=lambda: {
             "critical": 1000.0,
@@ -108,40 +83,33 @@ class ModelRateLimitPolicy(BaseModel):
         },
         description="Priority-based rate limits",
     )
-
     distributed_enabled: bool = Field(
         default=False,
         description="Whether rate limiting is distributed across multiple instances",
     )
-
     distributed_sync_interval_ms: int = Field(
         default=1000,
         description="Interval for syncing distributed rate limiting state",
         ge=100,
         le=10000,
     )
-
     cache_backend: str = Field(
         default="memory",
         description="Backend for storing rate limit state",
         pattern="^(memory|redis|database|memcached)$",
     )
-
     cache_key_prefix: str = Field(
-        default="rate_limit",
-        description="Prefix for cache keys",
+        default="rate_limit", description="Prefix for cache keys"
     )
-
     monitoring_enabled: bool = Field(
         default=True,
         description="Whether to enable rate limiting monitoring and metrics",
     )
-
     alert_thresholds: dict[str, float] = Field(
         default_factory=lambda: {
-            "high_rejection_rate": 0.1,  # 10% rejection rate
-            "burst_frequency": 0.05,  # 5% of windows have bursts
-            "queue_overflow": 0.8,  # 80% queue utilization
+            "high_rejection_rate": 0.1,
+            "burst_frequency": 0.05,
+            "queue_overflow": 0.8,
         },
         description="Thresholds for alerting on rate limiting metrics",
     )
@@ -150,53 +118,36 @@ class ModelRateLimitPolicy(BaseModel):
         self,
         endpoint: str = "",
         method: str = "GET",
-        user_id: str = "",
+        user_id: UUID = "",
         user_tier: str = "",
         priority: str = "normal",
     ) -> float:
         """Get effective rate limit based on all applicable limits"""
         if not self.enabled:
-            return float("inf")  # No limit when disabled
-
+            return float("inf")
         limits = []
-
-        # Global rate limit (highest priority)
         if self.global_rate_limit:
             limits.append(self.global_rate_limit)
-
-        # Window-based limit
         window_limit = self.window_config.get_requests_per_second_limit()
         limits.append(window_limit)
-
-        # Per-user limits
         if self.per_user_limits and user_id:
             user_limit = self.per_user_limits.get_user_limit(user_id, user_tier)
-            if user_limit > 0:  # 0 means blocked user
+            if user_limit > 0:
                 limits.append(user_limit / self.window_config.window_duration_seconds)
-
-        # Per-endpoint limits
         if endpoint and endpoint in self.per_endpoint_limits:
             limits.append(self.per_endpoint_limits[endpoint])
-
-        # Per-method limits
         if method and method in self.per_method_limits:
             limits.append(self.per_method_limits[method])
-
-        # Priority-based limits
         if priority and priority in self.priority_lanes:
             limits.append(self.priority_lanes[priority])
-
-        # Return the most restrictive limit
         return min(limits) if limits else float("inf")
 
     def is_ip_whitelisted(self, ip_address: str) -> bool:
         """Check if IP address is whitelisted"""
-        # Simple implementation - in production would use CIDR matching
         return ip_address in self.ip_whitelist
 
     def is_ip_blacklisted(self, ip_address: str) -> bool:
         """Check if IP address is blacklisted"""
-        # Simple implementation - in production would use CIDR matching
         return ip_address in self.ip_blacklist
 
     def get_geographic_limit(self, country_code: str) -> float | None:
@@ -204,14 +155,11 @@ class ModelRateLimitPolicy(BaseModel):
         return self.geographic_limits.get(country_code)
 
     def should_apply_burst_handling(
-        self,
-        current_rate: float,
-        base_limit: float,
+        self, current_rate: float, base_limit: float
     ) -> bool:
         """Check if burst handling should be applied"""
         if not self.burst_config or not self.burst_config.burst_detection_enabled:
             return False
-
         return self.burst_config.is_burst_triggered(current_rate, int(base_limit))
 
     def get_cache_key(self, identifier: str, scope: str = "global") -> str:
@@ -222,10 +170,8 @@ class ModelRateLimitPolicy(BaseModel):
         """Calculate retry-after value based on window configuration"""
         window_start = self.window_config.calculate_window_start(current_time)
         window_end = window_start + self.window_config.window_duration_seconds
-
-        # Time until window resets
         retry_after = max(1, int(window_end - current_time))
-        return min(retry_after, 3600)  # Cap at 1 hour
+        return min(retry_after, 3600)
 
     def get_monitoring_metrics(self) -> dict[str, bool]:
         """Get metrics that should be monitored for this policy"""
@@ -243,33 +189,21 @@ class ModelRateLimitPolicy(BaseModel):
     def validate_policy_consistency(self) -> list[str]:
         """Validate policy configuration for consistency and conflicts"""
         issues = []
-
-        # Check if global limit conflicts with other limits
         if self.global_rate_limit:
             window_limit = self.window_config.get_requests_per_second_limit()
             if self.global_rate_limit < window_limit:
                 issues.append("Global rate limit is lower than window-based limit")
-
-        # Check if throttling behavior is compatible with queue settings
         if (
             self.throttling_behavior.queue_enabled
             and self.throttling_behavior.behavior_type not in ["queue", "delay"]
         ):
             issues.append("Queue enabled but behavior type doesn't support queuing")
-
-        # Check burst configuration compatibility
         if (
             self.burst_config
             and self.burst_config.burst_detection_enabled
-            and self.window_config.window_type == "fixed"
+            and (self.window_config.window_type == "fixed")
         ):
             issues.append("Burst detection may not work optimally with fixed windows")
-
-        # Check distributed settings
         if self.distributed_enabled and self.cache_backend == "memory":
             issues.append("Distributed rate limiting requires shared cache backend")
-
         return issues
-
-    # Factory methods removed - ONEX Phase 3F remediation
-    # Use direct ModelRateLimitPolicy(...) instantiation with proper configuration

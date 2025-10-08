@@ -5,13 +5,9 @@ from pydantic import Field
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
-"""
-ModelPermissionEvaluationContext: Context for permission evaluation.
-
-This model provides structured context for permission evaluation without using Any types.
-"""
-
+"\nModelPermissionEvaluationContext: Context for permission evaluation.\n\nThis model provides structured context for permission evaluation without using Any types.\n"
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +15,7 @@ from pydantic import BaseModel, Field
 class ModelPermissionEvaluationContext(BaseModel):
     """Context for permission evaluation."""
 
-    user_id: str | None = Field(default=None, description="User identifier")
+    user_id: UUID | None = Field(default=None, description="User identifier")
     resource_path: str | None = Field(
         default=None, description="Resource being accessed"
     )
@@ -29,55 +25,43 @@ class ModelPermissionEvaluationContext(BaseModel):
     timestamp: datetime | None = Field(default=None, description="Request timestamp")
     client_ip: str | None = Field(default=None, description="Client IP address")
     user_agent: str | None = Field(default=None, description="Client user agent")
-    session_id: str | None = Field(default=None, description="Session identifier")
-
-    # Separate dict[str, Any]ionaries for different types to avoid Union
+    session_id: UUID | None = Field(default=None, description="Session identifier")
     string_attributes: dict[str, str] = Field(
-        default_factory=dict,
-        description="String context attributes",
+        default_factory=dict, description="String context attributes"
     )
     integer_attributes: dict[str, int] = Field(
-        default_factory=dict,
-        description="Integer context attributes",
+        default_factory=dict, description="Integer context attributes"
     )
     boolean_attributes: dict[str, bool] = Field(
-        default_factory=dict,
-        description="Boolean context attributes",
+        default_factory=dict, description="Boolean context attributes"
     )
 
     def get(
         self, key: str, default: str | int | bool | None = None
     ) -> str | int | bool | None:
         """Get a value from context attributes (dict[str, Any]-like behavior)."""
-        # Check built-in fields first
         if hasattr(self, key) and key not in [
             "string_attributes",
             "integer_attributes",
             "boolean_attributes",
         ]:
             return getattr(self, key)
-
-        # Check typed attribute dict[str, Any]ionaries
         if key in self.string_attributes:
             return self.string_attributes[key]
         if key in self.integer_attributes:
             return self.integer_attributes[key]
         if key in self.boolean_attributes:
             return self.boolean_attributes[key]
-
         return default
 
     def __contains__(self, key: str) -> bool:
         """Check if key exists in context (dict[str, Any]-like behavior)."""
-        # Check built-in fields
         if hasattr(self, key) and key not in [
             "string_attributes",
             "integer_attributes",
             "boolean_attributes",
         ]:
             return getattr(self, key) is not None
-
-        # Check typed attribute dict[str, Any]ionaries
         return (
             key in self.string_attributes
             or key in self.integer_attributes

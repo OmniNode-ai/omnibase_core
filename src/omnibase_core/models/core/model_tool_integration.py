@@ -8,50 +8,42 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.core.model_semver import ModelSemVer
+
 
 class ModelToolIntegration(BaseModel):
     """Service integration configuration for tool."""
 
     auto_load_strategy: str = Field(
-        default="current_stable",
-        description="Strategy for loading tool versions",
+        default="current_stable", description="Strategy for loading tool versions"
     )
     fallback_versions: list[str] = Field(
-        default_factory=list,
-        description="Fallback versions if preferred unavailable",
+        default_factory=list, description="Fallback versions if preferred unavailable"
     )
     version_directory_pattern: str = Field(
-        default="v{major}_{minor}_{patch}",
-        description="Directory pattern for versions",
+        default="v{major}_{minor}_{patch}", description="Directory pattern for versions"
     )
     implementation_file: str = Field(
-        default="node.py",
-        description="Main implementation file name",
+        default="node.py", description="Main implementation file name"
     )
     contract_file: str = Field(
-        default="contract.yaml",
-        description="Contract file name",
+        default="contract.yaml", description="Contract file name"
     )
     main_class_name: str = Field(description="Main implementation class name")
     load_as_module: bool = Field(
-        default=True,
-        description="Whether loaded as module by service",
+        default=True, description="Whether loaded as module by service"
     )
     requires_separate_port: bool = Field(
-        default=False,
-        description="Whether tool requires separate HTTP port",
+        default=False, description="Whether tool requires separate HTTP port"
     )
     initialization_order: int = Field(
-        default=5,
-        description="Initialization order relative to other tools",
+        default=5, description="Initialization order relative to other tools"
     )
     shutdown_timeout: int = Field(
-        default=30,
-        description="Graceful shutdown timeout in seconds",
+        default=30, description="Graceful shutdown timeout in seconds"
     )
     health_check_via_service: bool = Field(
-        default=True,
-        description="Whether health checked by parent service",
+        default=True, description="Whether health checked by parent service"
     )
 
     def get_load_strategy(self) -> str:

@@ -4,13 +4,7 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-"""
-Node Instance Model
-
-Node instance with health and load information for advanced
-instance management and service discovery.
-"""
-
+"\nNode Instance Model\n\nNode instance with health and load information for advanced\ninstance management and service discovery.\n"
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -33,51 +27,33 @@ class ModelNodeInstance(BaseModel):
     """
 
     reference: ModelNodeReference = Field(default=..., description="Node reference")
-
     status: EnumNodeStatus = Field(default=..., description="Current node status")
-
     node_type: ModelNodeType = Field(
         default=..., description="Type of this node instance"
     )
-
     health_metrics: ModelHealthMetrics = Field(
-        default_factory=lambda: ModelHealthMetrics(),
-        description="Health metrics",
+        default_factory=lambda: ModelHealthMetrics(), description="Health metrics"
     )
-
     load_metrics: ModelLoadMetrics = Field(
-        default_factory=lambda: ModelLoadMetrics(),
-        description="Load metrics",
+        default_factory=lambda: ModelLoadMetrics(), description="Load metrics"
     )
-
     last_heartbeat: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Last heartbeat timestamp",
+        default_factory=datetime.utcnow, description="Last heartbeat timestamp"
     )
-
     registration_time: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Registration timestamp",
+        default_factory=datetime.utcnow, description="Registration timestamp"
     )
-
     capabilities_verified: list[ModelCapability] = Field(
-        default_factory=list,
-        description="Verified capabilities",
+        default_factory=list, description="Verified capabilities"
     )
-
     instance_metadata: ModelInstanceMetadata | None = Field(
-        default=None,
-        description="Additional metadata",
+        default=None, description="Additional metadata"
     )
-
     connection_url: str | None = Field(
-        default=None,
-        description="Connection URL for remote instances",
+        default=None, description="Connection URL for remote instances"
     )
-
-    protocol_version: str = Field(
-        default="1.0.0",
-        description="Protocol version supported",
+    protocol_version: ModelSemVer = Field(
+        default="1.0.0", description="Protocol version supported"
     )
 
     def is_healthy(self) -> bool:
@@ -87,12 +63,9 @@ class ModelNodeInstance(BaseModel):
         Returns:
             True if instance is healthy and responsive
         """
-        # Check heartbeat recency (30 seconds threshold)
         heartbeat_age = (datetime.utcnow() - self.last_heartbeat).total_seconds()
         if heartbeat_age > 30:
             return False
-
-        # Check health metrics
         return self.health_metrics.is_healthy()
 
     def is_available(self) -> bool:
@@ -117,11 +90,8 @@ class ModelNodeInstance(BaseModel):
         """
         if not self.is_healthy():
             return 0.0
-
         health_score = self.health_metrics.get_health_score()
         load_score = 1.0 - self.load_metrics.get_load_score()
-
-        # Weight health and load equally
         return (health_score + load_score) / 2.0
 
     def has_capability(self, capability: ModelCapability) -> bool:
@@ -181,19 +151,13 @@ class ModelNodeInstance(BaseModel):
         Returns:
             True if instance matches all requirements
         """
-        # Check node type
         if required_type and self.node_type.type_name != required_type.type_name:
             return False
-
-        # Check capabilities
         if required_capabilities:
             for cap in required_capabilities:
                 if not self.has_capability(cap):
                     return False
-
-        # Check labels
         if required_labels and self.instance_metadata:
             if not self.instance_metadata.matches_selector(required_labels):
                 return False
-
         return True

@@ -2,18 +2,16 @@ from typing import Dict, List, Optional
 
 from pydantic import Field
 
-"""
-Audit value model to replace Dict[str, Any] usage in audit entries.
-"""
-
+"\nAudit value model to replace Dict[str, Any] usage in audit entries.\n"
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_audit_field_change import ModelAuditFieldChange
+from omnibase_core.models.core.model_semver import ModelSemVer
 
-# Compatibility alias
 AuditFieldChange = ModelAuditFieldChange
 
 
@@ -23,43 +21,31 @@ class ModelAuditValue(BaseModel):
     Replaces Dict[str, Any] for previous_value and new_value fields.
     """
 
-    # Object identification
     object_type: str = Field(default=..., description="Type of audited object")
-    object_id: str = Field(default=..., description="ID of audited object")
+    object_id: UUID = Field(default=..., description="ID of audited object")
     object_name: str | None = Field(default=None, description="Name of audited object")
-
-    # Change details
     field_changes: list[ModelAuditFieldChange] = Field(
-        default_factory=list,
-        description="List of field changes",
+        default_factory=list, description="List of field changes"
     )
-
-    # Metadata
-    version_before: str | None = Field(
+    version_before: ModelSemVer | None = Field(
         default=None, description="Version before change"
     )
-    version_after: str | None = Field(default=None, description="Version after change")
-
-    # Serialized representations (for complex objects)
+    version_after: ModelSemVer | None = Field(
+        default=None, description="Version after change"
+    )
     serialized_before: str | None = Field(
-        default=None,
-        description="JSON serialized state before",
+        default=None, description="JSON serialized state before"
     )
     serialized_after: str | None = Field(
-        default=None,
-        description="JSON serialized state after",
+        default=None, description="JSON serialized state after"
     )
-
-    # Summary
     change_summary: str | None = Field(
-        default=None,
-        description="Human-readable change summary",
+        default=None, description="Human-readable change summary"
     )
     change_count: int = Field(default=0, description="Number of fields changed")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dict[str, Any]ionary for current standards."""
-        # Custom logic to format changes for current standards
         result = {}
         for change in self.field_changes:
             if not change.is_sensitive():
@@ -71,30 +57,24 @@ class ModelAuditValue(BaseModel):
 
     @classmethod
     def from_dict(
-        cls,
-        data: dict[str, Any] | None,
-        is_new: bool = False,
+        cls, data: dict[str, Any] | None, is_new: bool = False
     ) -> Optional["ModelAuditValue"]:
         """Create from dict[str, Any]ionary for easy migration."""
         if data is None:
             return None
-
-        # Handle legacy format - flat dict[str, Any]of values
         if "field_changes" not in data and isinstance(data, dict):
             field_changes = []
             for key, value in data.items():
-                if isinstance(value, dict) and "old" in value and "new" in value:
-                    # Already in change format
+                if isinstance(value, dict) and "old" in value and ("new" in value):
                     field_changes.append(
                         ModelAuditFieldChange(
                             field_path=key,
                             old_value=ModelSchemaValue.from_value(value["old"]),
                             new_value=ModelSchemaValue.from_value(value["new"]),
                             value_type=type(value["new"]).__name__,
-                        ),
+                        )
                     )
                 else:
-                    # Simple value - determine if old or new
                     field_changes.append(
                         ModelAuditFieldChange(
                             field_path=key,
@@ -105,16 +85,14 @@ class ModelAuditValue(BaseModel):
                                 value if is_new else None
                             ),
                             value_type=type(value).__name__,
-                        ),
+                        )
                     )
-
             return cls(
                 object_type="unknown",
                 object_id="unknown",
                 field_changes=field_changes,
                 change_count=len(field_changes),
             )
-
         return cls(**data)
 
     def get_changed_fields(self) -> list[str]:
@@ -123,4 +101,4 @@ class ModelAuditValue(BaseModel):
 
     def has_sensitive_changes(self) -> bool:
         """Check if any changes involve sensitive fields."""
-        return any(change.is_sensitive() for change in self.field_changes)
+        return any((change.is_sensitive() for change in self.field_changes))

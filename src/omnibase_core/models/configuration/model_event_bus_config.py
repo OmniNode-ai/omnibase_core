@@ -1,5 +1,6 @@
 import os
 from typing import Any, List
+from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -12,12 +13,10 @@ class ModelEventBusConfig(BaseModel):
     """
 
     bootstrap_servers: list[str] = Field(
-        default=...,
-        description="List of event bus bootstrap servers (host:port)",
+        default=..., description="List of event bus bootstrap servers (host:port)"
     )
     topics: list[str] = Field(
-        default=...,
-        description="List of topics to use for event bus communication",
+        default=..., description="List of topics to use for event bus communication"
     )
     security_protocol: str | None = Field(
         default=None,
@@ -28,18 +27,16 @@ class ModelEventBusConfig(BaseModel):
         description="SASL mechanism if using SASL authentication (e.g., PLAIN, SCRAM-SHA-256)",
     )
     sasl_username: str | None = Field(
-        default=None,
-        description="SASL username for authentication",
+        default=None, description="SASL username for authentication"
     )
     sasl_password: SecretStr | None = Field(
         default=None,
         description="SASL password for authentication (automatically masked for security)",
     )
-    client_id: str | None = Field(
-        default=None,
-        description="Client ID for diagnostics",
+    client_id: UUID | None = Field(
+        default=None, description="Client ID for diagnostics"
     )
-    group_id: str | None = Field(default=None, description="Consumer group ID")
+    group_id: UUID | None = Field(default=None, description="Consumer group ID")
     partitions: int | None = Field(
         default=None,
         description="Number of partitions for topic creation (if applicable)",
@@ -53,16 +50,13 @@ class ModelEventBusConfig(BaseModel):
         description="Producer acknowledgment policy (e.g., 'all', '1', '0')",
     )
     enable_auto_commit: bool | None = Field(
-        default=True,
-        description="Enable auto-commit for consumer",
+        default=True, description="Enable auto-commit for consumer"
     )
     auto_offset_reset: str | None = Field(
-        default="earliest",
-        description="Offset reset policy (earliest/latest)",
+        default="earliest", description="Offset reset policy (earliest/latest)"
     )
     ssl_cafile: str | None = Field(
-        default=None,
-        description="Path to CA file for TLS (if using SSL/SASL_SSL)",
+        default=None, description="Path to CA file for TLS (if using SSL/SASL_SSL)"
     )
     ssl_certfile: str | None = Field(
         default=None,
@@ -72,7 +66,6 @@ class ModelEventBusConfig(BaseModel):
         default=None,
         description="Path to client key file for TLS (if using SSL/SASL_SSL)",
     )
-    # Add more fields as needed for advanced event bus features
 
     def get_sasl_password_value(self) -> str | None:
         """Safely get the SASL password value for use in authentication."""
@@ -83,8 +76,6 @@ class ModelEventBusConfig(BaseModel):
     def apply_environment_overrides(self) -> "ModelEventBusConfig":
         """Apply environment variable overrides for CI/local testing."""
         overrides: dict[str, Any] = {}
-
-        # Environment variable mappings
         env_mappings = {
             "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS": "bootstrap_servers",
             "ONEX_EVENT_BUS_TOPICS": "topics",
@@ -103,13 +94,10 @@ class ModelEventBusConfig(BaseModel):
             "ONEX_EVENT_BUS_SSL_CERTFILE": "ssl_certfile",
             "ONEX_EVENT_BUS_SSL_KEYFILE": "ssl_keyfile",
         }
-
         for env_var, field_name in env_mappings.items():
             env_value = os.environ.get(env_var)
             if env_value is not None:
-                # Type conversion for different field types
                 if field_name in ["bootstrap_servers", "topics"]:
-                    # Split comma-separated values into list
                     overrides[field_name] = [
                         item.strip() for item in env_value.split(",")
                     ]
@@ -117,7 +105,7 @@ class ModelEventBusConfig(BaseModel):
                     try:
                         overrides[field_name] = int(env_value)
                     except ValueError:
-                        continue  # Skip invalid values
+                        continue
                 elif field_name == "enable_auto_commit":
                     overrides[field_name] = env_value.lower() in (
                         "true",
@@ -126,17 +114,13 @@ class ModelEventBusConfig(BaseModel):
                         "on",
                     )
                 elif field_name == "sasl_password":
-                    # Handle SecretStr conversion for password
                     overrides[field_name] = SecretStr(env_value)
                 else:
                     overrides[field_name] = env_value
-
         if overrides:
-            # Create new instance with overrides
             current_data = self.model_dump()
             current_data.update(overrides)
             return ModelEventBusConfig(**current_data)
-
         return self
 
     @classmethod
@@ -150,8 +134,5 @@ class ModelEventBusConfig(BaseModel):
             topics=["onex-default"],
             group_id="onex-default-group",
             security_protocol="PLAINTEXT",
-            # Add other required fields with safe defaults as needed
         )
-
-        # Apply environment variable overrides
         return base_config.apply_environment_overrides()

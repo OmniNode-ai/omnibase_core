@@ -18,29 +18,19 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     metadata about the discovery operation.
     """
 
-    # Override event_type to be fixed for this event
     event_type: str = Field(
-        default=TOOL_DISCOVERY_RESPONSE,
-        description="Event type identifier",
+        default=TOOL_DISCOVERY_RESPONSE, description="Event type identifier"
     )
-
-    # Response identification
     request_correlation_id: UUID | None = Field(
-        default=None,
-        description="Correlation ID from the original request",
+        default=None, description="Correlation ID from the original request"
     )
-    requester_id: str = Field(
-        default=...,
-        description="ID of the service that made the request",
+    requester_id: UUID = Field(
+        default=..., description="ID of the service that made the request"
     )
-
-    # Discovery results
     tools: list[ModelDiscoveredTool] = Field(
         default_factory=list,
         description="List of discovered tools matching the request",
     )
-
-    # Response metadata
     total_count: int = Field(
         default=0,
         description="Total number of tools found (may be > len(tools) if limited)",
@@ -49,14 +39,10 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         default=0, description="Number of tools after applying filters"
     )
     response_time_ms: float | None = Field(
-        default=None,
-        description="Time taken to process the request in milliseconds",
+        default=None, description="Time taken to process the request in milliseconds"
     )
-
-    # Status flags
     partial_response: bool = Field(
-        default=False,
-        description="True if some registries didn't respond in time",
+        default=False, description="True if some registries didn't respond in time"
     )
     timeout_occurred: bool = Field(
         default=False, description="True if the request timed out"
@@ -70,9 +56,9 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     def create_success_response(
         cls,
         node_id: UUID,
-        requester_id: str,
+        requester_id: UUID,
         tools: list[ModelDiscoveredTool],
-        request_correlation_id: str | None = None,
+        request_correlation_id: UUID | None = None,
         response_time_ms: float | None = None,
         **kwargs: Any,
     ) -> "ModelToolDiscoveryResponse":
@@ -90,7 +76,6 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         Returns:
             ModelToolDiscoveryResponse instance
         """
-        # Convert string correlation_id to UUID if provided
         correlation_uuid = None
         request_corr_uuid = None
         if request_correlation_id:
@@ -98,10 +83,8 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
                 correlation_uuid = UUID(request_correlation_id)
                 request_corr_uuid = correlation_uuid
             except ValueError:
-                # If it's not a valid UUID string, leave correlation_id as None
                 correlation_uuid = None
                 request_corr_uuid = None
-
         return cls(
             node_id=node_id,
             requester_id=requester_id,
@@ -118,9 +101,9 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     def create_timeout_response(
         cls,
         node_id: UUID,
-        requester_id: str,
+        requester_id: UUID,
         partial_tools: list[ModelDiscoveredTool] | None = None,
-        request_correlation_id: str | None = None,
+        request_correlation_id: UUID | None = None,
         timeout_ms: int | None = None,
         **kwargs: Any,
     ) -> "ModelToolDiscoveryResponse":
@@ -139,20 +122,15 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
             ModelToolDiscoveryResponse for timeout
         """
         tools = partial_tools or []
-
-        # Convert string correlation_id to UUID if provided
         correlation_uuid = None
         request_corr_uuid = None
         if request_correlation_id:
             try:
-
                 correlation_uuid = UUID(request_correlation_id)
                 request_corr_uuid = correlation_uuid
             except ValueError:
-                # If it's not a valid UUID string, leave correlation_id as None
                 correlation_uuid = None
                 request_corr_uuid = None
-
         return cls(
             node_id=node_id,
             requester_id=requester_id,

@@ -6,17 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-"""
-Event Envelope Model
-
-ONEX-compliant envelope wrapper for all events in the system.
-Provides standardized event wrapping with metadata, correlation IDs, security context,
-QoS features, distributed tracing, and performance optimization.
-
-Pattern: Model<Name> - Pydantic model for event envelope
-Node Type: N/A (Data Model)
-"""
-
+"\nEvent Envelope Model\n\nONEX-compliant envelope wrapper for all events in the system.\nProvides standardized event wrapping with metadata, correlation IDs, security context,\nQoS features, distributed tracing, and performance optimization.\n\nPattern: Model<Name> - Pydantic model for event envelope\nNode Type: N/A (Data Model)\n"
 from datetime import datetime
 from typing import Any, Dict, Generic, Optional, TypeVar
 from uuid import UUID, uuid4
@@ -25,7 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
-T = TypeVar("T")  # For the wrapped event payload
+T = TypeVar("T")
 
 
 class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
@@ -69,10 +59,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         envelope_version: Envelope schema version
     """
 
-    # ============================================================================
-    # CORE ENVELOPE FIELDS
-    # ============================================================================
-
     payload: T = Field(default=..., description="The wrapped event payload")
     envelope_id: UUID = Field(
         default_factory=uuid4, description="Unique envelope identifier"
@@ -80,11 +66,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     envelope_timestamp: datetime = Field(
         default_factory=datetime.now, description="Envelope creation timestamp"
     )
-
-    # ============================================================================
-    # CORRELATION AND ROUTING
-    # ============================================================================
-
     correlation_id: UUID | None = Field(
         default=None, description="Correlation ID for request tracing"
     )
@@ -94,22 +75,12 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     target_tool: str | None = Field(
         default=None, description="Identifier of the intended recipient tool"
     )
-
-    # ============================================================================
-    # METADATA AND SECURITY
-    # ============================================================================
-
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional envelope metadata"
     )
     security_context: dict[str, Any] | None = Field(
         default=None, description="Security context for the event"
     )
-
-    # ============================================================================
-    # QUALITY OF SERVICE (QoS)
-    # ============================================================================
-
     priority: int = Field(
         default=5,
         ge=1,
@@ -122,26 +93,16 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     retry_count: int = Field(
         default=0, ge=0, description="Number of retry attempts (0 = first attempt)"
     )
-
-    # ============================================================================
-    # DISTRIBUTED TRACING
-    # ============================================================================
-
-    request_id: str | None = Field(
+    request_id: UUID | None = Field(
         default=None, description="Request identifier for tracing"
     )
-    trace_id: str | None = Field(
+    trace_id: UUID | None = Field(
         default=None,
         description="Distributed trace identifier (e.g., OpenTelemetry trace ID)",
     )
-    span_id: str | None = Field(
+    span_id: UUID | None = Field(
         default=None, description="Trace span identifier (e.g., OpenTelemetry span ID)"
     )
-
-    # ============================================================================
-    # ONEX COMPLIANCE
-    # ============================================================================
-
     onex_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="ONEX standard version",
@@ -155,10 +116,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """Initialize envelope with lazy evaluation capabilities."""
         super().__init__(**data)
         MixinLazyEvaluation.__init__(self)
-
-    # ============================================================================
-    # BUILDER METHODS - Immutable Updates
-    # ============================================================================
 
     def with_correlation_id(self, correlation_id: UUID) -> "ModelEventEnvelope[T]":
         """
@@ -220,10 +177,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         return self.model_copy(update=updates)
 
     def with_tracing(
-        self,
-        trace_id: str,
-        span_id: str,
-        request_id: str | None = None,
+        self, trace_id: UUID, span_id: UUID, request_id: UUID | None = None
     ) -> "ModelEventEnvelope[T]":
         """
         Create a new envelope with distributed tracing information.
@@ -236,10 +190,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         Returns:
             New envelope instance with tracing information
         """
-        updates = {
-            "trace_id": trace_id,
-            "span_id": span_id,
-        }
+        updates = {"trace_id": trace_id, "span_id": span_id}
         if request_id is not None:
             updates["request_id"] = request_id
         return self.model_copy(update=updates)
@@ -264,10 +215,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             New envelope instance with retry_count + 1
         """
         return self.model_copy(update={"retry_count": self.retry_count + 1})
-
-    # ============================================================================
-    # QUERY METHODS
-    # ============================================================================
 
     def extract_payload(self) -> T:
         """
@@ -309,10 +256,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         return self.metadata.get(key, default)
 
-    # ============================================================================
-    # QoS METHODS
-    # ============================================================================
-
     def is_high_priority(self) -> bool:
         """
         Check if envelope has high priority (>= 8).
@@ -331,7 +274,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         if self.timeout_seconds is None:
             return False
-
         elapsed = (datetime.now() - self.envelope_timestamp).total_seconds()
         return elapsed > self.timeout_seconds
 
@@ -353,10 +295,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         return (datetime.now() - self.envelope_timestamp).total_seconds()
 
-    # ============================================================================
-    # TRACING METHODS
-    # ============================================================================
-
     def has_trace_context(self) -> bool:
         """
         Check if envelope has distributed tracing context.
@@ -375,23 +313,12 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         if not self.has_trace_context():
             return None
-
-        # At this point, trace_id and span_id are guaranteed to be non-None
         assert self.trace_id is not None
         assert self.span_id is not None
-
-        context: dict[str, str] = {
-            "trace_id": self.trace_id,
-            "span_id": self.span_id,
-        }
+        context: dict[str, str] = {"trace_id": self.trace_id, "span_id": self.span_id}
         if self.request_id:
             context["request_id"] = self.request_id
-
         return context
-
-    # ============================================================================
-    # PERFORMANCE OPTIMIZATION - Lazy Evaluation
-    # ============================================================================
 
     def to_dict_lazy(self) -> dict[str, Any]:
         """
@@ -403,8 +330,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         Returns:
             Dictionary representation with lazy-evaluated nested structures
         """
-        # Create lazy values for expensive nested serializations
-        # Cast to BaseModel since we check for model_dump attribute
         lazy_payload = self.lazy_string_conversion(
             cast(
                 Optional[BaseModel],
@@ -412,8 +337,6 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             ),
             "payload",
         )
-
-        # Direct field access for simple fields (more efficient than model_dump())
         result: dict[str, Any] = {
             "envelope_id": str(self.envelope_id),
             "envelope_timestamp": self.envelope_timestamp.isoformat(),
@@ -431,24 +354,17 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             "onex_version": str(self.onex_version),
             "envelope_version": str(self.envelope_version),
         }
-
-        # Lazy evaluation - only computed when accessed
         if hasattr(self.payload, "model_dump"):
             result["payload"] = lazy_payload()
         else:
             result["payload"] = self.payload
-
         return result
-
-    # ============================================================================
-    # FACTORY METHODS
-    # ============================================================================
 
     @classmethod
     def create_broadcast(
         cls,
         payload: T,
-        source_node_id: str,
+        source_node_id: UUID,
         correlation_id: UUID | None = None,
         priority: int = 5,
     ) -> "ModelEventEnvelope[T]":
@@ -475,8 +391,8 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
     def create_directed(
         cls,
         payload: T,
-        source_node_id: str,
-        target_node_id: str,
+        source_node_id: UUID,
+        target_node_id: UUID,
         correlation_id: UUID | None = None,
         priority: int = 5,
     ) -> "ModelEventEnvelope[T]":

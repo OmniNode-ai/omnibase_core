@@ -7,14 +7,7 @@ from pydantic import Field
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
-"""
-Node Type Model
-
-Replaces EnumNodeType with a proper model that includes metadata,
-descriptions, and categorization for each node type.
-"""
-
-
+"\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
 from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
@@ -46,64 +39,44 @@ class ModelNodeType(BaseModel):
     - Validatable: Validation and verification
     """
 
-    # Core fields (required) - Entity reference with UUID
     type_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the node type entity",
+        default_factory=uuid4, description="Unique identifier for the node type entity"
     )
     type_name: EnumTypeName = Field(
-        default=...,
-        description="Node type identifier (e.g., CONTRACT_TO_MODEL)",
+        default=..., description="Node type identifier (e.g., CONTRACT_TO_MODEL)"
     )
-
     description: str = Field(
         default=..., description="Human-readable description of the node"
     )
-
     category: EnumConfigCategory = Field(
-        default=...,
-        description="Node category for organization",
+        default=..., description="Node category for organization"
     )
-
-    # Optional metadata
     dependencies: list[str] = Field(
-        default_factory=list,
-        description="Other node type names this node depends on",
+        default_factory=list, description="Other node type names this node depends on"
     )
-
-    version_compatibility: str = Field(
-        default=">=1.0.0",
-        description="Version compatibility constraint",
+    version_compatibility: ModelSemVer = Field(
+        default=">=1.0.0", description="Version compatibility constraint"
     )
-
     execution_priority: int = Field(
         default=50,
         description="Execution priority (0-100, higher = more priority)",
         ge=0,
         le=100,
     )
-
     is_generator: bool = Field(
-        default=False,
-        description="Whether this node generates code/files",
+        default=False, description="Whether this node generates code/files"
     )
-
     is_validator: bool = Field(
-        default=False,
-        description="Whether this node validates existing code/files",
+        default=False, description="Whether this node validates existing code/files"
     )
-
     requires_contract: bool = Field(
-        default=False,
-        description="Whether this node requires a contract.yaml",
+        default=False, description="Whether this node requires a contract.yaml"
     )
-
     output_type: EnumReturnType | None = Field(
         default=None,
         description="Type of output produced (models, files, reports, etc.)",
     )
 
-    # Factory methods for all node types
     @classmethod
     def CONTRACT_TO_MODEL(cls) -> ModelNodeType:
         """Generates Pydantic models from contract.yaml."""
@@ -520,12 +493,9 @@ class ModelNodeType(BaseModel):
             "LOGGING_UTILS": cls.LOGGING_UTILS,
             "SCENARIO_RUNNER": cls.SCENARIO_RUNNER,
         }
-
         factory = factory_map.get(name)
         if factory:
             return factory()
-        # Unknown node type - create generic
-        # Try to create from known enum values, otherwise create generic
         try:
             enum_value = EnumTypeName(name)
             return cls(
@@ -534,7 +504,6 @@ class ModelNodeType(BaseModel):
                 category=EnumConfigCategory.UNKNOWN,
             )
         except ValueError:
-            # If name is not in enum, we can't create it - this maintains type safety
             raise ModelOnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown node type: {name}. Must be one of {list[Any](EnumTypeName)}",
@@ -624,8 +593,6 @@ class ModelNodeType(BaseModel):
         "validate_assignment": True,
     }
 
-    # Protocol method implementations
-
     def get_id(self) -> str:
         """
         Get unique identifier for the node type instance.
@@ -684,7 +651,6 @@ class ModelNodeType(BaseModel):
             for identity semantics. The priority order is carefully designed
             to balance stability, uniqueness, and semantic clarity.
         """
-        # Try common ID field patterns, starting with type_id
         for field in [
             "type_id",
             "id",
@@ -700,9 +666,7 @@ class ModelNodeType(BaseModel):
                     return str(value)
         raise ModelOnexError(
             code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"{self.__class__.__name__} must have a valid ID field "
-            f"(type_id, id, uuid, identifier, etc.). "
-            f"Cannot generate stable ID without UUID field.",
+            message=f"{self.__class__.__name__} must have a valid ID field (type_id, id, uuid, identifier, etc.). Cannot generate stable ID without UUID field.",
         )
 
     def get_metadata(self) -> dict[str, Any]:
@@ -735,7 +699,6 @@ class ModelNodeType(BaseModel):
             tags, metadata.
         """
         metadata = {}
-        # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
             if hasattr(self, field):
                 value = getattr(self, field)
@@ -787,42 +750,42 @@ class ModelNodeType(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:
+            # fallback-ok: Metadata update failures should not break the system
             return False
 
     def serialize(self) -> dict[str, Any]:
         """
-        Serialize the node type to a dict[str, Any]ionary.
+                Serialize the node type to a dict[str, Any]ionary.
 
-        Implements the Serializable protocol by converting the instance
-        to a dict[str, Any]ionary representation suitable for JSON serialization,
-        storage, or transmission.
+                Implements the Serializable protocol by converting the instance
+                to a dict[str, Any]ionary representation suitable for JSON serialization,
+                storage, or transmission.
 
-        Returns:
-            Dictionary representation of the node type with all fields
-            including None values, using field aliases if defined.
+                Returns:
+                    Dictionary representation of the node type with all fields
+                    including None values, using field aliases if defined.
 
-        Example:
-            ```python
-            node = ModelNodeType.CONTRACT_TO_MODEL()
-            serialized = node.serialize()
+                Example:
+                    ```python
+                    node = ModelNodeType.CONTRACT_TO_MODEL()
+                    serialized = node.serialize()
 
-            # Contains all fields
-            assert 'type_name' in serialized
-            assert 'description' in serialized
-            assert 'category' in serialized
+                    # Contains all fields
+                    assert 'type_name' in serialized
+                    assert 'description' in serialized
+                    assert 'category' in serialized
 
-            # Can be used for JSON serialization
-            import json
-            json_str = json.dumps(serialized, default=str)
-            ```
+                    # Can be used for JSON serialization
+                    import json
+        from omnibase_core.models.core.model_semver import ModelSemVer
+                    json_str = json.dumps(serialized, default=str)
+                    ```
 
-        Note:
-            This method includes all fields regardless of their value,
-            including None values. Uses Pydantic's model_dump with
-            by_alias=True to support field aliases.
+                Note:
+                    This method includes all fields regardless of their value,
+                    including None values. Uses Pydantic's model_dump with
+                    by_alias=True to support field aliases.
         """
         return self.model_dump(exclude_none=False, by_alias=True)
 
@@ -857,10 +820,7 @@ class ModelNodeType(BaseModel):
             during instantiation and assignment.
         """
         try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:
+            # fallback-ok: Validation failures should not raise exceptions
             return False

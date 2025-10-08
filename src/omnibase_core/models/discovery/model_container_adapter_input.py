@@ -1,13 +1,9 @@
 from typing import Optional
+from uuid import UUID
 
 from pydantic import Field
 
-"""Container Adapter Input model for ONEX Discovery & Integration Event Registry.
-
-This module defines the input model used by the Container Adapter tool
-for ONEX Discovery & Integration Event Registry operations.
-"""
-
+"Container Adapter Input model for ONEX Discovery & Integration Event Registry.\n\nThis module defines the input model used by the Container Adapter tool\nfor ONEX Discovery & Integration Event Registry operations.\n"
 from typing import Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,46 +24,28 @@ class ModelContainerAdapterInput(BaseModel):
         default=...,
         description="Action to perform (discover_services, register_service, etc.)",
     )
-
-    # Optional inputs based on action
     discovery_request: ModelEventDiscoveryRequest | None = Field(
-        default=None,
-        description="Discovery request for service queries",
+        default=None, description="Discovery request for service queries"
     )
-
     event_descriptor: ModelEventDescriptor | None = Field(
-        default=None,
-        description="Event descriptor for registration/updates",
+        default=None, description="Event descriptor for registration/updates"
     )
-
     hub_registration: ModelHubRegistrationEvent | None = Field(
-        default=None,
-        description="Hub registration data for Consul",
+        default=None, description="Hub registration data for Consul"
     )
-
-    service_id: str | None = Field(
-        default=None,
-        description="Service ID for status/health operations",
+    service_id: UUID | None = Field(
+        default=None, description="Service ID for status/health operations"
     )
-
-    event_id: str | None = Field(
-        default=None,
-        description="Event ID for deregistration operations",
+    event_id: UUID | None = Field(
+        default=None, description="Event ID for deregistration operations"
     )
-
     health_data: dict[str, str] | None = Field(
-        default=None,
-        description="Health data for service updates",
+        default=None, description="Health data for service updates"
     )
-
     consul_query: dict[str, str] | None = Field(
-        default=None,
-        description="Direct Consul query parameters",
+        default=None, description="Direct Consul query parameters"
     )
-
     mesh_data: dict[str, str] | None = Field(
-        default=None,
-        description="Mesh coordination data (Phase 3)",
+        default=None, description="Mesh coordination data (Phase 3)"
     )
-
     model_config = ConfigDict(extra="forbid")

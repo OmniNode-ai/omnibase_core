@@ -6,13 +6,7 @@ from pydantic import Field
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
-"""
-Model for Claude Code agent instance.
-
-This model represents a running Claude Code agent instance with its
-configuration, status, and runtime information.
-"""
-
+"\nModel for Claude Code agent instance.\n\nThis model represents a running Claude Code agent instance with its\nconfiguration, status, and runtime information.\n"
 import uuid
 from datetime import datetime
 
@@ -28,49 +22,39 @@ from omnibase_core.models.core.model_agent_status import (
 class ModelAgentInstance(BaseModel):
     """Complete agent instance representation."""
 
-    agent_id: str = Field(description="Unique identifier for the agent instance")
+    agent_id: UUID = Field(description="Unique identifier for the agent instance")
     config: ModelLLMAgentConfig = Field(description="Unified LLM agent configuration")
     status: ModelAgentStatus = Field(description="Current agent status")
     process_id: int | None = Field(
-        default=None,
-        description="Operating system process ID",
+        default=None, description="Operating system process ID"
     )
     endpoint_url: str | None = Field(
-        default=None,
-        description="HTTP endpoint URL for agent communication",
+        default=None, description="HTTP endpoint URL for agent communication"
     )
     websocket_url: str | None = Field(
-        default=None,
-        description="WebSocket URL for real-time communication",
+        default=None, description="WebSocket URL for real-time communication"
     )
-    api_client_id: str | None = Field(
-        default=None,
-        description="Anthropic API client identifier",
+    api_client_id: UUID | None = Field(
+        default=None, description="Anthropic API client identifier"
     )
     session_token: str | None = Field(
-        default=None,
-        description="Session token for agent authentication",
+        default=None, description="Session token for agent authentication"
     )
     working_directory: str = Field(description="Current working directory")
     log_file_path: str | None = Field(
-        default=None,
-        description="Path to agent log file",
+        default=None, description="Path to agent log file"
     )
     created_at: datetime = Field(
-        default_factory=datetime.now,
-        description="Instance creation timestamp",
+        default_factory=datetime.now, description="Instance creation timestamp"
     )
     started_at: datetime | None = Field(
-        default=None,
-        description="Agent start timestamp",
+        default=None, description="Agent start timestamp"
     )
     terminated_at: datetime | None = Field(
-        default=None,
-        description="Agent termination timestamp",
+        default=None, description="Agent termination timestamp"
     )
     last_heartbeat: datetime | None = Field(
-        default=None,
-        description="Last heartbeat timestamp",
+        default=None, description="Last heartbeat timestamp"
     )
 
     @property
@@ -92,7 +76,6 @@ class ModelAgentInstance(BaseModel):
         """Calculate agent uptime in seconds."""
         if self.started_at is None:
             return 0
-
         end_time = self.terminated_at or datetime.now()
         return int((end_time - self.started_at).total_seconds())
 
@@ -112,20 +95,15 @@ class ModelAgentInstance(BaseModel):
         Returns:
             Agent ID string with UUID suffix
         """
-        # Validate task type format
         if not task_type.replace("_", "").isalnum():
             msg = "[Any]type must be alphanumeric with underscores only"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
         if task_type != task_type.lower():
             msg = "[Any]type must be lowercase"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
-
-        # Generate 8-character UUID suffix
         uuid_suffix = str(uuid.uuid4()).replace("-", "")[:8]
         return f"{task_type}_{uuid_suffix}"

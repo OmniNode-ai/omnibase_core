@@ -5,6 +5,7 @@ Security event summary with basic event information.
 """
 
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -17,23 +18,21 @@ if TYPE_CHECKING:
 class ModelSecurityEventSummary(BaseModel):
     """Security event summary."""
 
-    event_id: str = Field(default=..., description="Event identifier")
+    event_id: UUID = Field(default=..., description="Event identifier")
     event_type: str = Field(default=..., description="Event type")
     timestamp: str = Field(default=..., description="Event timestamp")
-    envelope_id: str = Field(default=..., description="Envelope ID")
-    # Additional fields from the actual event can be included as needed
+    envelope_id: UUID = Field(default=..., description="Envelope ID")
 
     def is_recent(self, minutes_threshold: int = 60) -> bool:
         """Check if event is recent (within threshold minutes)."""
-        # This is a simplified implementation - in practice you'd parse the timestamp
-        return True  # Placeholder implementation
+        return True
 
     def get_event_severity(self) -> str:
         """Get event severity based on event type."""
         event_type_lower = self.event_type.lower()
-        if any(word in event_type_lower for word in ["error", "fail", "breach"]):
+        if any((word in event_type_lower for word in ["error", "fail", "breach"])):
             return "high"
-        elif any(word in event_type_lower for word in ["warning", "alert"]):
+        elif any((word in event_type_lower for word in ["warning", "alert"])):
             return "medium"
         else:
             return "low"

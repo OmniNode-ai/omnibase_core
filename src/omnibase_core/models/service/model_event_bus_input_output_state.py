@@ -2,13 +2,9 @@ from typing import Any
 
 from pydantic import Field
 
-"""
-Event Bus Input/Output State Composite Model.
+from omnibase_core.models.core.model_semver import ModelSemVer
 
-This module provides a composite model that combines the input and output states
-for event bus operations, enabling unified handling of both states.
-"""
-
+"\nEvent Bus Input/Output State Composite Model.\n\nThis module provides a composite model that combines the input and output states\nfor event bus operations, enabling unified handling of both states.\n"
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
@@ -32,16 +28,11 @@ class ModelEventBusInputOutputState(BaseModel):
     """
 
     input_state: ModelEventBusInputState = Field(
-        default=...,
-        description="Input state for the event bus operation",
+        default=..., description="Input state for the event bus operation"
     )
-
     output_state: ModelEventBusOutputState = Field(
-        default=...,
-        description="Output state for the event bus operation",
+        default=..., description="Output state for the event bus operation"
     )
-
-    # === Utility Methods ===
 
     def is_successful(self) -> bool:
         """Check if the operation was successful based on output state."""
@@ -62,13 +53,11 @@ class ModelEventBusInputOutputState(BaseModel):
             "successful": self.is_successful(),
         }
 
-    # === Factory Methods ===
-
     @classmethod
     def create_from_versions(
         cls,
-        input_version: str,
-        output_version: str,
+        input_version: ModelSemVer | str,
+        output_version: ModelSemVer | str,
         input_field: str,
         status: str,
         message: str,
@@ -78,22 +67,19 @@ class ModelEventBusInputOutputState(BaseModel):
         from omnibase_core.models.core.model_semver import parse_semver_from_string
 
         input_state = ModelEventBusInputState(
-            version=parse_semver_from_string(input_version),
-            input_field=input_field,
+            version=parse_semver_from_string(input_version), input_field=input_field
         )
-
         output_state = ModelEventBusOutputState(
             version=parse_semver_from_string(output_version),
             status=OnexStatus(status),
             message=message,
         )
-
         return cls(input_state=input_state, output_state=output_state)
 
     @classmethod
     def create_successful(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         input_field: str,
         message: str = "Operation completed successfully",
     ) -> "ModelEventBusInputOutputState":
@@ -108,10 +94,7 @@ class ModelEventBusInputOutputState(BaseModel):
 
     @classmethod
     def create_failed(
-        cls,
-        version: str,
-        input_field: str,
-        error_message: str,
+        cls, version: ModelSemVer | str, input_field: str, error_message: str
     ) -> "ModelEventBusInputOutputState":
         """Create a failed operation state."""
         return cls.create_from_versions(

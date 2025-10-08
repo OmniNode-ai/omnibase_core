@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field, model_validator
 from typing_extensions import Self
@@ -6,13 +7,7 @@ from typing_extensions import Self
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
-"""
-ModelNodeWeights - Node weight configuration for load balancing
-
-Node weights model for configuring relative traffic distribution weights
-across multiple nodes in a load balancing system.
-"""
-
+"\nModelNodeWeights - Node weight configuration for load balancing\n\nNode weights model for configuring relative traffic distribution weights\nacross multiple nodes in a load balancing system.\n"
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -25,32 +20,23 @@ class ModelNodeWeights(BaseModel):
     """
 
     weights: dict[str, float] = Field(
-        default_factory=dict,
-        description="Node identifier to weight mapping",
+        default_factory=dict, description="Node identifier to weight mapping"
     )
-
     default_weight: float = Field(
         default=1.0,
         description="Default weight for nodes not explicitly configured",
         ge=0.0,
         le=100.0,
     )
-
     auto_normalize: bool = Field(
         default=True,
         description="Whether to automatically normalize weights to sum to 1.0",
     )
-
     min_weight: float = Field(
-        default=0.0,
-        description="Minimum allowed weight value",
-        ge=0.0,
+        default=0.0, description="Minimum allowed weight value", ge=0.0
     )
-
     max_weight: float = Field(
-        default=100.0,
-        description="Maximum allowed weight value",
-        ge=0.0,
+        default=100.0, description="Maximum allowed weight value", ge=0.0
     )
 
     @model_validator(mode="after")
@@ -60,39 +46,34 @@ class ModelNodeWeights(BaseModel):
             if weight < self.min_weight:
                 msg = f"Weight for {node_id} ({weight}) is below minimum ({self.min_weight})"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
             if weight > self.max_weight:
                 msg = f"Weight for {node_id} ({weight}) exceeds maximum ({self.max_weight})"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return self
 
-    def get_weight(self, node_id: str) -> float:
+    def get_weight(self, node_id: UUID) -> float:
         """Get weight for a specific node, using default if not configured"""
         return self.weights.get(node_id, self.default_weight)
 
-    def set_weight(self, node_id: str, weight: float) -> None:
+    def set_weight(self, node_id: UUID, weight: float) -> None:
         """Set weight for a specific node with validation"""
         if weight < self.min_weight:
             msg = f"Weight ({weight}) is below minimum ({self.min_weight})"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
         if weight > self.max_weight:
             msg = f"Weight ({weight}) exceeds maximum ({self.max_weight})"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
-
         self.weights[node_id] = weight
 
-    def remove_weight(self, node_id: str) -> None:
+    def remove_weight(self, node_id: UUID) -> None:
         """Remove weight configuration for a node (will use default)"""
         self.weights.pop(node_id, None)
 
@@ -109,7 +90,6 @@ class ModelNodeWeights(BaseModel):
         total = self.get_total_weight()
         if total == 0:
             return self
-
         normalized_weights = {k: v / total for k, v in self.weights.items()}
         return ModelNodeWeights(
             weights=normalized_weights,
@@ -121,7 +101,7 @@ class ModelNodeWeights(BaseModel):
             max_weight=self.max_weight,
         )
 
-    def get_normalized_weight(self, node_id: str) -> float:
+    def get_normalized_weight(self, node_id: UUID) -> float:
         """Get normalized weight for a specific node"""
         if self.auto_normalize:
             normalized = self.normalize()
@@ -139,10 +119,8 @@ class ModelNodeWeights(BaseModel):
         """Check if weights are roughly balanced (within tolerance)"""
         if not self.weights:
             return True
-
         weights = list(self.weights.values())
         avg_weight = sum(weights) / len(weights)
-
         for weight in weights:
             if abs(weight - avg_weight) / avg_weight > tolerance:
                 return False
@@ -153,20 +131,15 @@ class ModelNodeWeights(BaseModel):
         effective = {}
         for node_id in active_nodes:
             effective[node_id] = self.get_weight(node_id)
-
-        # Normalize if requested
         if self.auto_normalize:
             total = sum(effective.values())
             if total > 0:
                 effective = {k: v / total for k, v in effective.items()}
-
         return effective
 
     @classmethod
     def create_equal_weights(
-        cls,
-        node_ids: list[str],
-        weight: float = 1.0,
+        cls, node_ids: list[str], weight: float = 1.0
     ) -> "ModelNodeWeights":
         """Create equal weights for all specified nodes"""
         weights = dict[str, Any].fromkeys(node_ids, weight)
@@ -174,33 +147,26 @@ class ModelNodeWeights(BaseModel):
 
     @classmethod
     def create_priority_weights(
-        cls,
-        node_priorities: dict[str, int],
+        cls, node_priorities: dict[str, int]
     ) -> "ModelNodeWeights":
         """Create weights based on node priorities (higher priority = higher weight)"""
         max_priority = max(node_priorities.values()) if node_priorities else 1
         weights = {}
-
         for node_id, priority in node_priorities.items():
-            # Convert priority to weight (priority 1 = weight 1.0, max priority = weight 10.0)
             weight = 1.0 + (priority - 1) * (9.0 / max(1, max_priority - 1))
             weights[node_id] = weight
-
         return cls(weights=weights, auto_normalize=True)
 
     @classmethod
     def create_capacity_weights(
-        cls,
-        node_capacities: dict[str, float],
+        cls, node_capacities: dict[str, float]
     ) -> "ModelNodeWeights":
         """Create weights based on node capacities"""
         return cls(weights=node_capacities.copy(), auto_normalize=True)
 
     @classmethod
     def create_custom_weights(
-        cls,
-        node_weights: dict[str, float],
-        normalize: bool = True,
+        cls, node_weights: dict[str, float], normalize: bool = True
     ) -> "ModelNodeWeights":
         """Create custom weight configuration"""
         return cls(weights=node_weights.copy(), auto_normalize=normalize)

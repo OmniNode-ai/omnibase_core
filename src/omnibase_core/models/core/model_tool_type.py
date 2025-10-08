@@ -2,14 +2,10 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-"""
-Tool Type Model
-
-Replaces EnumToolType with a proper model that includes metadata,
-descriptions, and categorization for each tool type.
-"""
-
+"\nTool Type Model\n\nReplaces EnumToolType with a proper model that includes metadata,\ndescriptions, and categorization for each tool type.\n"
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelToolType(BaseModel):
@@ -20,62 +16,45 @@ class ModelToolType(BaseModel):
     about each tool while maintaining compatibility.
     """
 
-    # Core fields (required)
     name: str = Field(
         default=...,
         description="Tool type identifier (e.g., CONTRACT_TO_MODEL)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
-
     description: str = Field(
         default=..., description="Human-readable description of the tool"
     )
-
     category: str = Field(
         default=...,
         description="Tool category for organization",
         pattern="^[a-z][a-z0-9_]*$",
     )
-
-    # Optional metadata
     dependencies: list[str] = Field(
-        default_factory=list,
-        description="Other tools this tool depends on",
+        default_factory=list, description="Other tools this tool depends on"
     )
-
-    version_compatibility: str = Field(
-        default=">=1.0.0",
-        description="Version compatibility constraint",
+    version_compatibility: ModelSemVer = Field(
+        default=">=1.0.0", description="Version compatibility constraint"
     )
-
     execution_priority: int = Field(
         default=50,
         description="Execution priority (0-100, higher = more priority)",
         ge=0,
         le=100,
     )
-
     is_generator: bool = Field(
-        default=False,
-        description="Whether this tool generates code/files",
+        default=False, description="Whether this tool generates code/files"
     )
-
     is_validator: bool = Field(
-        default=False,
-        description="Whether this tool validates existing code/files",
+        default=False, description="Whether this tool validates existing code/files"
     )
-
     requires_contract: bool = Field(
-        default=False,
-        description="Whether this tool requires a contract.yaml",
+        default=False, description="Whether this tool requires a contract.yaml"
     )
-
     output_type: str | None = Field(
         default=None,
         description="Type of output produced (models, files, reports, etc.)",
     )
 
-    # Factory methods for all tool types
     @classmethod
     def CONTRACT_TO_MODEL(cls) -> "ModelToolType":
         """Generates Pydantic models from contract.yaml."""
@@ -384,7 +363,7 @@ class ModelToolType(BaseModel):
     def LOGGER_EMIT_LOG_EVENT(cls) -> "ModelToolType":
         """Emits structured log events."""
         return cls(
-            name="tool_logger_emit_log_event",  # Keep original name
+            name="tool_logger_emit_log_event",
             description="Emits structured log events",
             category="logging",
             output_type="logs",
@@ -404,7 +383,7 @@ class ModelToolType(BaseModel):
     def SCENARIO_RUNNER(cls) -> "ModelToolType":
         """Runs test scenarios."""
         return cls(
-            name="scenario_runner",  # Keep original name
+            name="scenario_runner",
             description="Runs test scenarios",
             category="testing",
             output_type="results",
@@ -445,11 +424,9 @@ class ModelToolType(BaseModel):
             "LOGGING_UTILS": cls.LOGGING_UTILS,
             "scenario_runner": cls.SCENARIO_RUNNER,
         }
-
         factory = factory_map.get(name)
         if factory:
             return factory()
-        # Unknown tool type - create generic
         return cls(name=name, description=f"Tool: {name}", category="unknown")
 
     def __str__(self) -> str:

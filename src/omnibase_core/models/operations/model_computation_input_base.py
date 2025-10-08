@@ -2,15 +2,9 @@ from __future__ import annotations
 
 from pydantic import Field
 
-"""
-Base computation input model for discriminated union.
-
-Provides common interface for all computation input types.
-Follows ONEX strong typing principles and one-model-per-file architecture.
-"""
-
-
+"\nBase computation input model for discriminated union.\n\nProvides common interface for all computation input types.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -26,26 +20,19 @@ class ModelComputationInputBase(BaseModel):
     """
 
     computation_type: EnumComputationType = Field(
-        description="Type of computation operation",
+        description="Type of computation operation"
     )
     input_data_type: EnumInputDataType = Field(
-        description="Type of input data structure",
+        description="Type of input data structure"
     )
-    input_id: str = Field(
-        description="Unique identifier for this input",
-    )
-    timestamp: str = Field(
-        description="Timestamp of input creation",
-    )
+    input_id: UUID = Field(description="Unique identifier for this input")
+    timestamp: str = Field(description="Timestamp of input creation")
     priority: int = Field(
-        default=0,
-        description="Priority level for execution ordering",
+        default=0, description="Priority level for execution ordering"
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata for computation input",
+        default_factory=dict, description="Additional metadata for computation input"
     )
-
     model_config = {
         "extra": "forbid",
         "use_enum_values": False,
@@ -53,5 +40,4 @@ class ModelComputationInputBase(BaseModel):
     }
 
 
-# Export for use
 __all__ = ["ModelComputationInputBase"]

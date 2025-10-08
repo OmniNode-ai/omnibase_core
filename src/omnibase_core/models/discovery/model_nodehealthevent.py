@@ -18,37 +18,25 @@ class ModelNodeHealthEvent(ModelOnexEvent):
     monitoring.
     """
 
-    # Override event_type to be fixed for this event
     event_type: str = Field(
-        default=NODE_HEALTH_EVENT,
-        description="Event type identifier",
+        default=NODE_HEALTH_EVENT, description="Event type identifier"
     )
-
-    # Node identification
     node_name: str = Field(default=..., description="Name of the node reporting health")
-
-    # Health information
     health_metrics: ModelHealthMetrics = Field(
-        default=...,
-        description="Current health metrics for the node",
+        default=..., description="Current health metrics for the node"
     )
-
-    # Reporting metadata
     report_interval_seconds: int | None = Field(
-        default=None,
-        description="How often this node reports health (for scheduling)",
+        default=None, description="How often this node reports health (for scheduling)"
     )
     next_report_time: datetime | None = Field(
-        default=None,
-        description="When the next health report is expected",
+        default=None, description="When the next health report is expected"
     )
-
-    # Consul compatibility
-    service_id: str | None = Field(
-        default=None,
-        description="Service ID for Consul health checks",
+    service_id: UUID | None = Field(
+        default=None, description="Service ID for Consul health checks"
     )
-    check_id: str | None = Field(default=None, description="Health check ID for Consul")
+    check_id: UUID | None = Field(
+        default=None, description="Health check ID for Consul"
+    )
 
     @classmethod
     def create_healthy_report(
@@ -73,16 +61,15 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             ModelNodeHealthEvent for healthy status
         """
         health_metrics = ModelHealthMetrics(
-            cpu_usage_percent=10.0,  # Low CPU usage
-            memory_usage_percent=20.0,  # Low memory usage
+            cpu_usage_percent=10.0,
+            memory_usage_percent=20.0,
             response_time_ms=response_time_ms or 50.0,
-            error_rate=0.0,  # No errors
-            success_rate=100.0,  # Perfect success rate
+            error_rate=0.0,
+            success_rate=100.0,
             uptime_seconds=uptime_seconds or 0,
             consecutive_errors=0,
-            custom_metrics={"status": 1.0},  # 1.0 = healthy
+            custom_metrics={"status": 1.0},
         )
-
         return cls(
             node_id=node_id,
             node_name=node_name,
@@ -117,18 +104,17 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             ModelNodeHealthEvent for warning status
         """
         health_metrics = ModelHealthMetrics(
-            cpu_usage_percent=cpu_usage or 85.0,  # High CPU usage
-            memory_usage_percent=memory_usage or 85.0,  # High memory usage
-            error_rate=error_rate or 5.0,  # Elevated error rate
-            success_rate=95.0,  # Reduced success rate
-            response_time_ms=500.0,  # Slower response
-            consecutive_errors=2,  # Some consecutive errors
+            cpu_usage_percent=cpu_usage or 85.0,
+            memory_usage_percent=memory_usage or 85.0,
+            error_rate=error_rate or 5.0,
+            success_rate=95.0,
+            response_time_ms=500.0,
+            consecutive_errors=2,
             custom_metrics={
-                "status": 0.5,  # 0.5 = warning
+                "status": 0.5,
                 "warning_code": hash(warning_reason) % 1000 / 1000.0,
             },
         )
-
         return cls(
             node_id=node_id,
             node_name=node_name,
@@ -138,11 +124,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     @classmethod
     def create_critical_report(
-        cls,
-        node_id: UUID,
-        node_name: str,
-        error_message: str,
-        **kwargs: Any,
+        cls, node_id: UUID, node_name: str, error_message: str, **kwargs: Any
     ) -> "ModelNodeHealthEvent":
         """
         Factory method to create a critical status report.
@@ -157,19 +139,18 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             ModelNodeHealthEvent for critical status
         """
         health_metrics = ModelHealthMetrics(
-            cpu_usage_percent=95.0,  # Critical CPU usage
-            memory_usage_percent=95.0,  # Critical memory usage
-            error_rate=50.0,  # High error rate
-            success_rate=50.0,  # Low success rate
-            response_time_ms=2000.0,  # Very slow response
-            consecutive_errors=10,  # Many consecutive errors
+            cpu_usage_percent=95.0,
+            memory_usage_percent=95.0,
+            error_rate=50.0,
+            success_rate=50.0,
+            response_time_ms=2000.0,
+            consecutive_errors=10,
             last_error_timestamp=datetime.now(),
             custom_metrics={
-                "status": 0.0,  # 0.0 = critical
+                "status": 0.0,
                 "error_code": hash(error_message) % 1000 / 1000.0,
             },
         )
-
         return cls(
             node_id=node_id,
             node_name=node_name,
@@ -179,10 +160,8 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     def is_healthy(self) -> bool:
         """Check if the node is healthy"""
-        # Use ModelHealthMetrics.is_healthy() method
         return self.health_metrics.is_healthy()
 
     def needs_attention(self) -> bool:
         """Check if the node needs attention (warning or critical)"""
-        # Node needs attention if it's not healthy
         return not self.health_metrics.is_healthy()

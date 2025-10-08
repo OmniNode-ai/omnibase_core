@@ -32,17 +32,16 @@ Migration Examples:
 # DEPRECATED: JsonSerializable - Do not use in new code
 # JSON-serializable value types (most common replacement for Any)
 # Recursive type alias for JSON-compatible data structures
-# Using PEP 695 type statement to avoid RecursionError with Pydantic
 #
 # WARNING: This type alias provides no validation and should be replaced
 # with proper Pydantic models or more specific type aliases below.
-type JsonSerializable = (
+JsonSerializable = (
     str
     | int
     | float
     | bool
-    | list[JsonSerializable]
-    | dict[str, JsonSerializable]
+    | list[Any]  # Cannot be fully recursive in Python 3.11
+    | dict[str, Any]  # Cannot be fully recursive in Python 3.11
     | None
 )
 

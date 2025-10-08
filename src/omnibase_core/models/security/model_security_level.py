@@ -2,15 +2,10 @@ from typing import Any, List
 
 from pydantic import Field
 
-"""
-Security Level Model
-
-Extensible security configuration model that replaces hardcoded
-security enums with flexible, nuanced security settings.
-"""
-
+"\nSecurity Level Model\n\nExtensible security configuration model that replaces hardcoded\nsecurity enums with flexible, nuanced security settings.\n"
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_custom_security_settings import (
     ModelCustomSecuritySettings,
 )
@@ -34,84 +29,58 @@ class ModelSecurityLevel(BaseModel):
         description="Security level name",
         pattern="^[a-z][a-z0-9_-]*$",
     )
-
     display_name: str = Field(
-        default="Standard Security",
-        description="Human-readable security level name",
+        default="Standard Security", description="Human-readable security level name"
     )
-
     security_score: float = Field(
         default=0.5,
         description="Numeric security score (0.0 = none, 1.0 = maximum)",
         ge=0.0,
         le=1.0,
     )
-
     encryption_required: bool = Field(
-        default=True,
-        description="Whether encryption is required",
+        default=True, description="Whether encryption is required"
     )
-
     authentication_required: bool = Field(
-        default=True,
-        description="Whether authentication is required",
+        default=True, description="Whether authentication is required"
     )
-
     authorization_required: bool = Field(
-        default=True,
-        description="Whether authorization is required",
+        default=True, description="Whether authorization is required"
     )
-
     audit_logging_required: bool = Field(
-        default=True,
-        description="Whether audit logging is required",
+        default=True, description="Whether audit logging is required"
     )
-
     input_validation_strict: bool = Field(
-        default=True,
-        description="Whether strict input validation is required",
+        default=True, description="Whether strict input validation is required"
     )
-
     rate_limiting_enabled: bool = Field(
-        default=True,
-        description="Whether rate limiting is enabled",
+        default=True, description="Whether rate limiting is enabled"
     )
-
     allowed_protocols: list[str] = Field(
         default_factory=lambda: ["https", "tls"],
         description="List of allowed communication protocols",
     )
-
     blocked_protocols: list[str] = Field(
         default_factory=lambda: ["http", "ftp", "telnet"],
         description="List of blocked communication protocols",
     )
-
-    minimum_tls_version: str = Field(
-        default="1.2",
-        description="Minimum TLS version required",
+    minimum_tls_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=2, patch=0),
+        description="Minimum TLS version required"
     )
-
     password_policy: ModelPasswordPolicy = Field(
-        default_factory=ModelPasswordPolicy,
-        description="Password policy requirements",
+        default_factory=ModelPasswordPolicy, description="Password policy requirements"
     )
-
     session_policy: ModelSessionPolicy = Field(
-        default_factory=ModelSessionPolicy,
-        description="Session management policy",
+        default_factory=ModelSessionPolicy, description="Session management policy"
     )
-
     network_restrictions: ModelNetworkRestrictions = Field(
         default_factory=ModelNetworkRestrictions,
         description="Network access restrictions",
     )
-
     compliance_requirements: list[str] = Field(
-        default_factory=list,
-        description="Compliance standards that must be met",
+        default_factory=list, description="Compliance standards that must be met"
     )
-
     security_headers: dict[str, str] = Field(
         default_factory=lambda: {
             "X-Content-Type-Options": "nosniff",
@@ -121,7 +90,6 @@ class ModelSecurityLevel(BaseModel):
         },
         description="Required security headers",
     )
-
     custom_security_settings: ModelCustomSecuritySettings = Field(
         default_factory=ModelCustomSecuritySettings,
         description="Custom security settings",
@@ -196,7 +164,7 @@ class ModelSecurityLevel(BaseModel):
 
     def meets_compliance(self, required_standards: list[str]) -> bool:
         """Check if this security level meets required compliance standards."""
-        return all(std in self.compliance_requirements for std in required_standards)
+        return all((std in self.compliance_requirements for std in required_standards))
 
     def to_environment_dict(self) -> dict[str, str]:
         """Convert to environment variables dict[str, Any]ionary."""
@@ -209,7 +177,7 @@ class ModelSecurityLevel(BaseModel):
             "ONEX_AUDIT_LOGGING": str(self.audit_logging_required).lower(),
             "ONEX_STRICT_VALIDATION": str(self.input_validation_strict).lower(),
             "ONEX_RATE_LIMITING": str(self.rate_limiting_enabled).lower(),
-            "ONEX_MIN_TLS_VERSION": self.minimum_tls_version,
+            "ONEX_MIN_TLS_VERSION": str(self.minimum_tls_version),
             "ONEX_SESSION_TIMEOUT": str(self.get_session_timeout_minutes()),
             "ONEX_MAX_SESSION_DURATION": str(self.get_max_session_duration_minutes()),
         }
@@ -259,7 +227,7 @@ class ModelSecurityLevel(BaseModel):
             audit_logging_required=True,
             input_validation_strict=True,
             rate_limiting_enabled=True,
-            minimum_tls_version="1.3",
+            minimum_tls_version=ModelSemVer(major=1, minor=3, patch=0),
             password_policy=ModelPasswordPolicy.create_strict(),
             session_policy=ModelSessionPolicy.create_strict(),
             compliance_requirements=["SOC2", "ISO27001"],
@@ -278,7 +246,7 @@ class ModelSecurityLevel(BaseModel):
             audit_logging_required=True,
             input_validation_strict=True,
             rate_limiting_enabled=True,
-            minimum_tls_version="1.3",
+            minimum_tls_version=ModelSemVer(major=1, minor=3, patch=0),
             allowed_protocols=["https"],
             blocked_protocols=["http", "ftp", "telnet", "ssh"],
             password_policy=ModelPasswordPolicy.create_maximum(),

@@ -5,6 +5,7 @@ Collection of detection patterns organized by type for sensitive information det
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,46 +20,35 @@ class ModelDetectionRuleSet(BaseModel):
     Collection of detection patterns organized by type.
     """
 
-    ruleset_id: str = Field(description="Unique identifier for this ruleset")
+    ruleset_id: UUID = Field(description="Unique identifier for this ruleset")
     ruleset_name: str = Field(description="Human-readable name for this ruleset")
     version: ModelSemVer = Field(description="Version of this ruleset")
     patterns: list[ModelDetectionPattern] = Field(
-        default_factory=list,
-        description="Detection patterns in this ruleset",
+        default_factory=list, description="Detection patterns in this ruleset"
     )
     detection_types: list[EnumDetectionType] = Field(
-        default_factory=list,
-        description="Types of detection covered by this ruleset",
+        default_factory=list, description="Types of detection covered by this ruleset"
     )
     supported_languages: list[EnumLanguageCode] = Field(
-        default_factory=list,
-        description="Languages supported by this ruleset",
+        default_factory=list, description="Languages supported by this ruleset"
     )
     performance_target_docs_per_minute: int | None = Field(
-        default=None,
-        description="Target processing speed for this ruleset",
+        default=None, description="Target processing speed for this ruleset"
     )
     memory_limit_mb: int | None = Field(
-        default=None,
-        description="Memory limit for processing with this ruleset",
+        default=None, description="Memory limit for processing with this ruleset"
     )
     created_date: str | None = Field(
-        default=None,
-        description="Creation date (ISO format)",
+        default=None, description="Creation date (ISO format)"
     )
     last_updated: str | None = Field(
-        default=None,
-        description="Last update date (ISO format)",
+        default=None, description="Last update date (ISO format)"
     )
     tags: list[str] = Field(
-        default_factory=list,
-        description="Tags for categorizing this ruleset",
+        default_factory=list, description="Tags for categorizing this ruleset"
     )
-
     model_config = ConfigDict(
-        use_enum_values=True,
-        validate_assignment=True,
-        extra="forbid",
+        use_enum_values=True, validate_assignment=True, extra="forbid"
     )
 
     def add_pattern(self, pattern: ModelDetectionPattern) -> "ModelDetectionRuleSet":
@@ -66,7 +56,7 @@ class ModelDetectionRuleSet(BaseModel):
         new_patterns = [*self.patterns, pattern]
         return self.model_copy(update={"patterns": new_patterns})
 
-    def remove_pattern(self, pattern_id: str) -> "ModelDetectionRuleSet":
+    def remove_pattern(self, pattern_id: UUID) -> "ModelDetectionRuleSet":
         """Remove a pattern from the ruleset."""
         new_patterns = [p for p in self.patterns if p.pattern_id != pattern_id]
         return self.model_copy(update={"patterns": new_patterns})

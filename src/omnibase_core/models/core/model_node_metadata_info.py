@@ -28,7 +28,7 @@ class ModelNodeMetadataInfo(BaseModel):
     )
 
     # Enhanced version information
-    available_versions: list[str] | None = Field(
+    available_versions: list[ModelSemVer] | None = Field(
         default=None,
         description="All available versions of this node",
     )

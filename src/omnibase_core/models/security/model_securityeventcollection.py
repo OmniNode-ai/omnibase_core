@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -13,27 +14,17 @@ from omnibase_core.models.security.model_security_event import ModelSecurityEven
 class ModelSecurityEventCollection(BaseModel):
     """Collection of security events for audit trails."""
 
-    # Class configuration
-    model_config = ConfigDict(
-        validate_assignment=True,
-        extra="forbid",
-    )
-
-    # Constants
+    model_config = ConfigDict(validate_assignment=True, extra="forbid")
     MAX_EVENTS: ClassVar[int] = 10000
     MAX_RECENT_EVENTS: ClassVar[int] = 1000
     MAX_QUERY_LIMIT: ClassVar[int] = 1000
-
-    # Core collection data
     events: list[ModelSecurityEvent] = Field(
         default_factory=list,
         description="List of security events",
         max_length=MAX_EVENTS,
     )
-
-    # Collection metadata
-    collection_id: str = Field(
-        default_factory=lambda: f"sec_evt_col_{datetime.now(UTC).timestamp()}",
+    collection_id: UUID = Field(
+        default_factory=uuid4,
         description="Unique identifier for this collection",
     )
     created_at: datetime = Field(
@@ -45,11 +36,8 @@ class ModelSecurityEventCollection(BaseModel):
         description="When this collection was last updated",
     )
     description: str | None = Field(
-        default=None,
-        description="Description of this collection",
+        default=None, description="Description of this collection"
     )
-
-    # Collection configuration
     max_events: int = Field(
         default=MAX_EVENTS,
         description="Maximum number of events this collection can hold",
@@ -57,8 +45,7 @@ class ModelSecurityEventCollection(BaseModel):
         le=MAX_EVENTS,
     )
     auto_prune: bool = Field(
-        default=True,
-        description="Automatically prune old events when limit is reached",
+        default=True, description="Automatically prune old events when limit is reached"
     )
     retention_days: int | None = Field(
         default=None,
@@ -98,7 +85,6 @@ class ModelSecurityEventCollection(BaseModel):
                     message=f"Cannot add event: collection has reached maximum size of {self.max_events}",
                     error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
                 )
-
         self.events.append(event)
         self.updated_at = datetime.now(UTC)
 
@@ -114,8 +100,6 @@ class ModelSecurityEventCollection(BaseModel):
                 message=f"Limit cannot exceed {self.MAX_RECENT_EVENTS}",
                 error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-
-        # Sort by timestamp descending and return the most recent
         sorted_events = sorted(self.events, key=lambda e: e.timestamp, reverse=True)
         return sorted_events[:limit]
 
@@ -124,8 +108,7 @@ class ModelSecurityEventCollection(BaseModel):
         return len(self.events)
 
     def get_events_by_type(
-        self,
-        event_type: EnumSecurityEventType,
+        self, event_type: EnumSecurityEventType
     ) -> list[ModelSecurityEvent]:
         """Get events of a specific type."""
         return [event for event in self.events if event.event_type == event_type]
@@ -140,28 +123,23 @@ class ModelSecurityEventCollection(BaseModel):
         return [event for event in self.events if event.user_id == user_id]
 
     def get_events_by_time_range(
-        self,
-        start_time: datetime | None = None,
-        end_time: datetime | None = None,
+        self, start_time: datetime | None = None, end_time: datetime | None = None
     ) -> list[ModelSecurityEvent]:
         """Get events within a specific time range."""
-        if start_time and end_time and start_time >= end_time:
+        if start_time and end_time and (start_time >= end_time):
             raise ModelOnexError(
                 message="Start time must be before end time",
                 error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-
         filtered_events = self.events
         if start_time:
             filtered_events = [e for e in filtered_events if e.timestamp >= start_time]
         if end_time:
             filtered_events = [e for e in filtered_events if e.timestamp <= end_time]
-
         return filtered_events
 
     def get_events_by_severity(
-        self,
-        severity_levels: list[str],
+        self, severity_levels: list[str]
     ) -> list[ModelSecurityEvent]:
         """Get events with specific status levels (severity proxy)."""
         if not severity_levels:
@@ -189,25 +167,19 @@ class ModelSecurityEventCollection(BaseModel):
                 message="Search query cannot be empty",
                 error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-
         query_lower = query.lower()
         matching_events = []
-
         for event in self.events:
-            # Search in various event fields
             searchable_content = [
                 getattr(event, "description", ""),
                 getattr(event, "user_id", ""),
                 getattr(event, "node_id", ""),
                 getattr(event, "details", ""),
             ]
-
-            # Convert to strings and check if any contain the query
             for content in searchable_content:
                 if content and query_lower in str(content).lower():
                     matching_events.append(event)
                     break
-
         return matching_events
 
     def get_event_statistics(self) -> dict[str, Any]:
@@ -221,44 +193,31 @@ class ModelSecurityEventCollection(BaseModel):
                 "nodes_involved": [],
                 "time_range": None,
             }
-
-        # Count by event type
         event_types: dict[str, int] = {}
         severity_distribution: dict[str, int] = {}
         users_involved = set()
         nodes_involved = set()
-
         timestamps = []
         for event in self.events:
-            # Count event types
             event_type = (
                 event.event_type.value
                 if hasattr(event.event_type, "value")
                 else str(event.event_type)
             )
             event_types[event_type] = event_types.get(event_type, 0) + 1
-
-            # Count severity
             severity = getattr(event, "severity", "unknown")
             severity_distribution[severity] = severity_distribution.get(severity, 0) + 1
-
-            # Collect users and nodes
             if hasattr(event, "user_id") and event.user_id:
                 users_involved.add(event.user_id)
             if hasattr(event, "node_id") and event.node_id:
                 nodes_involved.add(event.node_id)
-
-            # Collect timestamps
             timestamps.append(event.timestamp)
-
-        # Calculate time range
         time_range = None
         if timestamps:
             time_range = {
                 "earliest": min(timestamps).isoformat(),
                 "latest": max(timestamps).isoformat(),
             }
-
         return {
             "total_events": len(self.events),
             "event_types": event_types,
@@ -278,18 +237,14 @@ class ModelSecurityEventCollection(BaseModel):
         original_count = len(self.events)
         self.events = [event for event in self.events if event.timestamp >= cutoff_date]
         removed_count = original_count - len(self.events)
-
         if removed_count > 0:
             self.updated_at = datetime.now(UTC)
-
         return removed_count
 
     def _prune_oldest_events(self) -> None:
         """Remove oldest events when collection is full."""
         if len(self.events) < self.max_events:
             return
-
-        # Sort by timestamp and remove oldest 10% of events
         sorted_events = sorted(self.events, key=lambda e: e.timestamp)
         prune_count = max(1, len(self.events) // 10)
         self.events = sorted_events[prune_count:]
@@ -299,7 +254,6 @@ class ModelSecurityEventCollection(BaseModel):
         """Apply retention policy and remove expired events. Returns number of events removed."""
         if self.retention_days is None:
             return 0
-
         cutoff_date = datetime.now(UTC) - timedelta(days=self.retention_days)
         return self.remove_old_events(cutoff_date)
 
@@ -310,21 +264,16 @@ class ModelSecurityEventCollection(BaseModel):
                 message="Format must be 'dict' or 'json'",
                 error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-
         event_data = []
         for event in self.events:
             if hasattr(event, "model_dump"):
                 event_dict = event.model_dump()
             else:
                 event_dict = event.dict() if hasattr(event, "dict") else event.__dict__
-
-            # Convert datetime objects to ISO format strings
             for key, value in event_dict.items():
                 if isinstance(value, datetime):
                     event_dict[key] = value.isoformat()
-
             event_data.append(event_dict)
-
         return event_data
 
     def __len__(self) -> int:

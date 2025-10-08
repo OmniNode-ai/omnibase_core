@@ -1,36 +1,7 @@
 import uuid
 from typing import Any, Optional
 
-# === OmniNode:Metadata ===
-# author: OmniNode Team
-# copyright: OmniNode.ai
-# created_at: '2025-07-05T12:00:00.000000'
-# description: Tool invocation event model for persistent service communication
-# entrypoint: python://model_tool_invocation_event
-# hash: auto-generated
-# last_modified_at: '2025-07-05T12:00:00.000000'
-# lifecycle: active
-# meta_type: model
-# metadata_version: 0.1.0
-# name: model_tool_invocation_event.py
-# namespace: python://omnibase.model.discovery.model_tool_invocation_event
-# owner: OmniNode Team
-# protocol_version: 0.1.0
-# runtime_language_hint: python>=3.11
-# schema_version: 0.1.0
-# state_contract: state_contract://default
-# tools: null
-# uuid: auto-generated
-# version: 1.0.0
-# === /OmniNode:Metadata ===
-
-"""
-Tool Invocation Event Model
-
-Event sent to invoke a tool on a specific node through the persistent service pattern.
-Enables distributed tool execution through event-driven routing.
-"""
-
+"\nTool Invocation Event Model\n\nEvent sent to invoke a tool on a specific node through the persistent service pattern.\nEnables distributed tool execution through event-driven routing.\n"
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from pydantic import Field
@@ -49,26 +20,18 @@ class ModelToolInvocationEvent(ModelOnexEvent):
     with a TOOL_RESPONSE event.
     """
 
-    # Override event_type to be fixed for this event
     event_type: str = Field(
-        default=TOOL_INVOCATION,
-        description="Event type identifier",
+        default=TOOL_INVOCATION, description="Event type identifier"
     )
-
-    # Target node identification
-    target_node_id: str = Field(
+    target_node_id: UUID = Field(
         default=...,
         description="Unique identifier of the target node that should execute the tool",
     )
     target_node_name: str = Field(
-        default=...,
-        description="Name of the target node (e.g., 'node_generator')",
+        default=..., description="Name of the target node (e.g., 'node_generator')"
     )
-
-    # Tool execution details
     tool_name: str = Field(
-        default=...,
-        description="Name of the tool to invoke (e.g., 'generate_node')",
+        default=..., description="Name of the tool to invoke (e.g., 'generate_node')"
     )
     action: str = Field(
         default=...,
@@ -78,8 +41,6 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         default_factory=ModelToolParameters,
         description="Parameters to pass to the tool execution",
     )
-
-    # Request control
     correlation_id: UUID = Field(
         default_factory=uuid4,
         description="Unique ID for matching responses to this invocation",
@@ -88,39 +49,29 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         default=30000,
         description="Tool execution timeout in milliseconds",
         ge=1000,
-        le=300000,  # Max 5 minutes
+        le=300000,
     )
-
-    # Execution options
     priority: str = Field(
-        default="normal",
-        description="Execution priority (low, normal, high, urgent)",
+        default="normal", description="Execution priority (low, normal, high, urgent)"
     )
     async_execution: bool = Field(
-        default=False,
-        description="Whether to execute asynchronously (fire-and-forget)",
+        default=False, description="Whether to execute asynchronously (fire-and-forget)"
     )
-
-    # Request metadata
-    requester_id: str = Field(
+    requester_id: UUID = Field(
         default=...,
         description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
     )
     requester_node_id: UUID = Field(
-        default=...,
-        description="Node ID of the requester for response routing",
+        default=..., description="Node ID of the requester for response routing"
     )
-
-    # Optional routing hints
     routing_hints: dict[str, str | int | float | bool] = Field(
-        default_factory=dict,
-        description="Optional hints for routing optimization",
+        default_factory=dict, description="Optional hints for routing optimization"
     )
 
     @classmethod
     def create_tool_invocation(
         cls,
-        target_node_id: str,
+        target_node_id: UUID,
         target_node_name: str,
         tool_name: str,
         action: str,
@@ -198,7 +149,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
             requester_node_id=mcp_uuid,
             parameters=parameters or ModelToolParameters(),
             timeout_ms=timeout_ms,
-            priority="high",  # MCP requests are high priority
+            priority="high",
             **kwargs,
         )
 

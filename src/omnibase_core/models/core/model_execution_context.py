@@ -21,71 +21,45 @@ class ModelExecutionContext(BaseModel):
         default=ModelExecutionMode.DIRECT(),
         description="Execution mode (direct, inmemory, event_bus)",
     )
-
     environment: ModelEnvironment = Field(
         default=..., description="Environment configuration"
     )
-
     timeout: ModelDuration = Field(
         default_factory=lambda: ModelDuration(milliseconds=30000),
         description="Execution timeout",
     )
-
     retry_attempts: int = Field(
-        default=3,
-        description="Number of retry attempts on failure",
-        ge=0,
-        le=10,
+        default=3, description="Number of retry attempts on failure", ge=0, le=10
     )
-
     debug_enabled: bool = Field(
-        default=False,
-        description="Whether debug mode is enabled",
+        default=False, description="Whether debug mode is enabled"
     )
-
     trace_enabled: bool = Field(
-        default=False,
-        description="Whether execution tracing is enabled",
+        default=False, description="Whether execution tracing is enabled"
     )
-
     dry_run: bool = Field(
-        default=False,
-        description="Whether this is a dry run (no actual execution)",
+        default=False, description="Whether this is a dry run (no actual execution)"
     )
-
     verbose: bool = Field(
-        default=False,
-        description="Whether verbose output is enabled",
+        default=False, description="Whether verbose output is enabled"
     )
-
     working_directory: str | None = Field(
-        default=None,
-        description="Working directory for command execution",
+        default=None, description="Working directory for command execution"
     )
-
     environment_variables: dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional environment variables",
+        default_factory=dict, description="Additional environment variables"
     )
-
     execution_metadata: ModelContextMetadata = Field(
-        default_factory=lambda: ModelContextMetadata(),
-        description="Execution metadata",
+        default_factory=lambda: ModelContextMetadata(), description="Execution metadata"
     )
-
-    user_id: str | None = Field(
-        default=None,
-        description="User ID for audit and permissions",
+    user_id: UUID | None = Field(
+        default=None, description="User ID for audit and permissions"
     )
-
     session_id: UUID | None = Field(
-        default=None,
-        description="Session ID for tracking related commands",
+        default=None, description="Session ID for tracking related commands"
     )
-
     correlation_id: UUID | None = Field(
-        default=None,
-        description="Correlation ID for distributed tracing",
+        default=None, description="Correlation ID for distributed tracing"
     )
 
     def is_async_mode(self) -> bool:
@@ -120,27 +94,21 @@ class ModelExecutionContext(BaseModel):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add execution metadata."""
-        # Use setattr for known fields or add to custom tags
         if hasattr(self.execution_metadata, key):
             setattr(self.execution_metadata, key, value)
         else:
-            # Convert to string and add to custom tags
             self.execution_metadata.custom_tags[key] = str(value)
 
     def get_environment_variable(
-        self,
-        key: str,
-        default: str | None = None,
+        self, key: str, default: str | None = None
     ) -> str | None:
         """Get environment variable value."""
         return self.environment_variables.get(key, default)
 
     def get_metadata(self, key: str, default: Any = None) -> Any:
         """Get execution metadata value."""
-        # Check known fields first
         if hasattr(self.execution_metadata, key):
             return getattr(self.execution_metadata, key, default)
-        # Check custom tags
         return self.execution_metadata.custom_tags.get(key, default)
 
     def create_child_context(self, **overrides: Any) -> "ModelExecutionContext":
@@ -152,8 +120,6 @@ class ModelExecutionContext(BaseModel):
     def to_environment_dict(self) -> dict[str, str]:
         """Convert to environment variables dict[str, Any]ionary."""
         env_dict = self.environment_variables.copy()
-
-        # Add standard execution context variables
         env_dict["ONEX_EXECUTION_MODE"] = self.execution_mode.value
         env_dict["ONEX_ENVIRONMENT"] = self.environment.name
         env_dict["ONEX_DEBUG_ENABLED"] = str(self.debug_enabled).lower()
@@ -162,7 +128,6 @@ class ModelExecutionContext(BaseModel):
         env_dict["ONEX_VERBOSE"] = str(self.verbose).lower()
         env_dict["ONEX_TIMEOUT_MS"] = str(self.get_timeout_ms())
         env_dict["ONEX_RETRY_ATTEMPTS"] = str(self.retry_attempts)
-
         if self.user_id:
             env_dict["ONEX_USER_ID"] = self.user_id
         if self.session_id:
@@ -171,7 +136,6 @@ class ModelExecutionContext(BaseModel):
             env_dict["ONEX_CORRELATION_ID"] = str(self.correlation_id)
         if self.working_directory:
             env_dict["ONEX_WORKING_DIRECTORY"] = self.working_directory
-
         return env_dict
 
     @classmethod
@@ -186,8 +150,7 @@ class ModelExecutionContext(BaseModel):
 
     @classmethod
     def create_debug(
-        cls,
-        environment_name: str = "development",
+        cls, environment_name: str = "development"
     ) -> "ModelExecutionContext":
         """Create a debug execution context."""
         context = cls.create_default(environment_name)
@@ -198,14 +161,13 @@ class ModelExecutionContext(BaseModel):
 
     @classmethod
     def create_production(
-        cls,
-        environment_name: str = "production",
+        cls, environment_name: str = "production"
     ) -> "ModelExecutionContext":
         """Create a production execution context."""
         environment = ModelEnvironment.create_default(environment_name)
         return cls(
             execution_mode=ModelExecutionMode.EVENT_BUS(),
             environment=environment,
-            timeout=ModelDuration(milliseconds=60000),  # Longer timeout for production
-            retry_attempts=5,  # More retries for production
+            timeout=ModelDuration(milliseconds=60000),
+            retry_attempts=5,
         )

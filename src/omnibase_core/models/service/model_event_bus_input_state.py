@@ -28,57 +28,38 @@ class ModelEventBusInputState(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        default=...,
-        description="Schema version for input state (semantic version)",
+        default=..., description="Schema version for input state (semantic version)"
     )
-
     input_field: str = Field(
         default=...,
         description="Required input field for event bus processing",
         min_length=1,
         max_length=1000,
     )
-
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
         max_length=100,
     )
-
     event_id: UUID | None = Field(
-        default=None,
-        description="Unique event identifier",
-        max_length=100,
+        default=None, description="Unique event identifier", max_length=100
     )
-
     integration: bool | None = Field(
-        default=None,
-        description="Integration mode flag for testing and validation",
+        default=None, description="Integration mode flag for testing and validation"
     )
-
     custom: ModelCustomFields | None = Field(
-        default=None,
-        description="Custom metadata and configuration",
+        default=None, description="Custom metadata and configuration"
     )
-
     priority: str | None = Field(
         default="normal",
         description="Processing priority level",
-        pattern=r"^(low|normal|high|critical)$",
+        pattern="^(low|normal|high|critical)$",
     )
-
     timeout_seconds: int | None = Field(
-        default=30,
-        description="Processing timeout in seconds",
-        ge=1,
-        le=3600,
+        default=30, description="Processing timeout in seconds", ge=1, le=3600
     )
-
     retry_count: int | None = Field(
-        default=3,
-        description="Maximum retry attempts",
-        ge=0,
-        le=10,
+        default=3, description="Maximum retry attempts", ge=0, le=10
     )
 
     @field_validator("version", mode="before")
@@ -92,10 +73,7 @@ class ModelEventBusInputState(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=msg,
-        )
+        raise ModelOnexError(error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
 
     @field_validator("input_field")
     @classmethod
@@ -104,11 +82,8 @@ class ModelEventBusInputState(BaseModel):
         if not v or not v.strip():
             msg = "input_field cannot be empty or whitespace"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
-
-        # Remove any potential script injection patterns
         dangerous_patterns = [
             "<script",
             "javascript:",
@@ -121,13 +96,9 @@ class ModelEventBusInputState(BaseModel):
             if pattern in v_lower:
                 msg = f"input_field contains potentially dangerous pattern: {pattern}"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
-
         return v.strip()
-
-    # === Business Logic Methods ===
 
     def get_processing_priority(self) -> int:
         """Get numeric priority for processing queue ordering."""
@@ -141,21 +112,15 @@ class ModelEventBusInputState(BaseModel):
     def get_effective_timeout(self) -> int:
         """Get effective timeout with priority adjustments."""
         base_timeout = self.timeout_seconds or 30
-
-        # High priority gets extended timeout
         if self.is_high_priority():
             return min(base_timeout * 2, 3600)
-
         return base_timeout
 
     def get_retry_strategy(self) -> ModelRetryStrategy:
         """Get retry configuration strategy."""
         max_retries = self.retry_count or 3
-
-        # High priority operations get more retries
         if self.is_high_priority():
             max_retries = min(max_retries + 2, 10)
-
         return ModelRetryStrategy(
             max_retries=max_retries,
             backoff_multiplier=2.0 if self.is_high_priority() else 1.5,
@@ -170,72 +135,51 @@ class ModelEventBusInputState(BaseModel):
             "priority": self.priority or "normal",
             "timestamp": datetime.now().isoformat(),
         }
-
         if self.correlation_id:
             metadata["correlation_id"] = str(self.correlation_id)
-
         if self.event_id:
             metadata["event_id"] = str(self.event_id)
-
         return metadata
 
     def validate_for_processing(self) -> list[str]:
         """Validate state is ready for processing."""
         issues = []
-
-        # Check required fields
         if not self.input_field or not self.input_field.strip():
             issues.append("input_field is required and cannot be empty")
-
-        # Check version compatibility
         if self.version.major == 0:
             issues.append("Pre-release versions (0.x.x) not recommended for production")
-
-        # Check configuration consistency
         if self.timeout_seconds and self.timeout_seconds < 5:
             issues.append("timeout_seconds should be at least 5 seconds")
-
-        if self.retry_count and self.retry_count > 5 and not self.is_high_priority():
+        if self.retry_count and self.retry_count > 5 and (not self.is_high_priority()):
             issues.append(
-                "High retry_count should be reserved for high priority operations",
+                "High retry_count should be reserved for high priority operations"
             )
-
         return issues
 
     def is_valid_for_processing(self) -> bool:
         """Check if state is valid for processing."""
         return len(self.validate_for_processing()) == 0
 
-    # === Configuration Integration ===
-
     def apply_environment_overrides(
-        self,
-        env_prefix: str = "ONEX_EVENT_BUS_",
+        self, env_prefix: str = "ONEX_EVENT_BUS_"
     ) -> "ModelEventBusInputState":
         """Apply environment variable overrides."""
         updates: dict[str, int | str] = {}
-
-        # Check for environment variable overrides
         if timeout := os.getenv(f"{env_prefix}TIMEOUT_SECONDS"):
             with contextlib.suppress(ValueError):
                 updates["timeout_seconds"] = int(timeout)
-
         if priority := os.getenv(f"{env_prefix}PRIORITY"):
             if priority.lower() in ["low", "normal", "high", "critical"]:
                 updates["priority"] = priority.lower()
-
         if retry_count := os.getenv(f"{env_prefix}RETRY_COUNT"):
             with contextlib.suppress(ValueError):
                 updates["retry_count"] = int(retry_count)
-
         if updates:
             return self.model_copy(update=updates)
-
         return self
 
     def get_environment_mapping(
-        self,
-        env_prefix: str = "ONEX_EVENT_BUS_",
+        self, env_prefix: str = "ONEX_EVENT_BUS_"
     ) -> dict[str, str]:
         """Get mapping of fields to environment variable names."""
         return {
@@ -246,17 +190,17 @@ class ModelEventBusInputState(BaseModel):
             "event_id": f"{env_prefix}EVENT_ID",
         }
 
-    # === Factory Methods ===
-
     @classmethod
-    def create_basic(cls, version: str, input_field: str) -> "ModelEventBusInputState":
+    def create_basic(
+        cls, version: ModelSemVer | str, input_field: str
+    ) -> "ModelEventBusInputState":
         """Create basic input state for simple operations."""
         return cls(version=parse_semver_from_string(version), input_field=input_field)
 
     @classmethod
     def create_with_tracking(
         cls,
-        version: str,
+        version: ModelSemVer | str,
         input_field: str,
         correlation_id: UUID,
         event_id: UUID | None = None,
@@ -271,10 +215,7 @@ class ModelEventBusInputState(BaseModel):
 
     @classmethod
     def create_high_priority(
-        cls,
-        version: str,
-        input_field: str,
-        timeout_seconds: int = 60,
+        cls, version: ModelSemVer | str, input_field: str, timeout_seconds: int = 60
     ) -> "ModelEventBusInputState":
         """Create high priority input state with extended timeout."""
         return cls(
@@ -287,35 +228,26 @@ class ModelEventBusInputState(BaseModel):
 
     @classmethod
     def create_from_environment(
-        cls,
-        env_prefix: str = "ONEX_EVENT_BUS_",
+        cls, env_prefix: str = "ONEX_EVENT_BUS_"
     ) -> "ModelEventBusInputState":
         """Create input state from environment variables."""
         version_env = os.getenv(f"{env_prefix}VERSION", "1.0.0")
         input_field_env = os.getenv(f"{env_prefix}INPUT_FIELD", "")
-
         if not input_field_env:
             msg = f"Environment variable {env_prefix}INPUT_FIELD is required"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
             )
-
         config_data: dict[str, str | int | ModelSemVer | None] = {
             "version": parse_semver_from_string(version_env),
             "input_field": input_field_env,
         }
-
-        # Optional environment variables
         if correlation_id := os.getenv(f"{env_prefix}CORRELATION_ID"):
             config_data["correlation_id"] = correlation_id
-
         if event_id := os.getenv(f"{env_prefix}EVENT_ID"):
             config_data["event_id"] = event_id
-
         if priority := os.getenv(f"{env_prefix}PRIORITY"):
             config_data["priority"] = priority
-
         if timeout := os.getenv(f"{env_prefix}TIMEOUT_SECONDS"):
             try:
                 config_data["timeout_seconds"] = int(timeout)
@@ -327,7 +259,6 @@ class ModelEventBusInputState(BaseModel):
                     timestamp=datetime.now(),
                     node_name="ModelEventBusInputState",
                 ) from e
-
         if retry_count := os.getenv(f"{env_prefix}RETRY_COUNT"):
             try:
                 config_data["retry_count"] = int(retry_count)
@@ -339,44 +270,30 @@ class ModelEventBusInputState(BaseModel):
                     timestamp=datetime.now(),
                     node_name="ModelEventBusInputState",
                 ) from e
-
-        # Create instance with proper type handling
-        # version is always ModelSemVer (set at line 331)
-        # input_field is always str (from environment variable)
         version_raw = config_data["version"]
         input_field_raw = config_data["input_field"]
-
-        # Type narrowing - we know these are always ModelSemVer and str respectively
         assert isinstance(version_raw, ModelSemVer), "version must be ModelSemVer"
         assert isinstance(input_field_raw, str), "input_field must be str"
-
-        version: str = str(version_raw)
+        version: ModelSemVer = str(version_raw)
         input_field: str = input_field_raw
-
-        # Extract and validate fields with proper type checking
         correlation_id_raw = config_data.get("correlation_id")
         correlation_id_validated = (
             UUID(correlation_id_raw) if isinstance(correlation_id_raw, str) else None
         )
-
         event_id_raw = config_data.get("event_id")
         event_id_validated = (
             UUID(event_id_raw) if isinstance(event_id_raw, str) else None
         )
-
         priority_raw = config_data.get("priority")
         priority_validated = priority_raw if isinstance(priority_raw, str) else None
-
         timeout_seconds_raw = config_data.get("timeout_seconds")
         timeout_seconds_validated = (
             timeout_seconds_raw if isinstance(timeout_seconds_raw, int) else None
         )
-
         retry_count_raw = config_data.get("retry_count")
         retry_count_validated = (
             retry_count_raw if isinstance(retry_count_raw, int) else None
         )
-
         return cls(
             version=(
                 parse_semver_from_string(version)

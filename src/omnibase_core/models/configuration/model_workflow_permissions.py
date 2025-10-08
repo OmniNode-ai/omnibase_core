@@ -4,11 +4,9 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
-"""
-Workflow permissions model.
-"""
-
+"\nWorkflow permissions model.\n"
 from typing import Any, Dict
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -19,10 +17,8 @@ class ModelWorkflowPermissions(BaseModel):
     Replaces Dict[str, Any] for permissions fields.
     """
 
-    # Standard permissions - Explicit type safety with defaults
     actions: str = Field(
-        default="read",
-        description="Actions permission (read/write/none)",
+        default="read", description="Actions permission (read/write/none)"
     )
     attestations: str = Field(default="read", description="Attestations permission")
     checks: str = Field(default="read", description="Checks permission")
@@ -35,19 +31,14 @@ class ModelWorkflowPermissions(BaseModel):
     pages: str = Field(default="read", description="Pages permission")
     pull_requests: str = Field(default="read", description="Pull requests permission")
     repository_projects: str = Field(
-        default="read",
-        description="Repository projects permission",
+        default="read", description="Repository projects permission"
     )
     security_events: str = Field(
-        default="read",
-        description="Security events permission",
+        default="read", description="Security events permission"
     )
     statuses: str = Field(default="read", description="Statuses permission")
-
-    # Additional permissions
     custom_permissions: dict[str, str] = Field(
-        default_factory=dict,
-        description="Custom permissions",
+        default_factory=dict, description="Custom permissions"
     )
 
     @property
@@ -69,8 +60,6 @@ class ModelWorkflowPermissions(BaseModel):
             "security-events": self.security_events,
             "statuses": self.statuses,
         }
-
-        # Include custom permissions
         result = {**standard_permissions, **self.custom_permissions}
         return result
 

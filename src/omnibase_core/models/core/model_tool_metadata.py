@@ -8,10 +8,7 @@ from omnibase_core.enums.enum_tool_compatibility_mode import EnumToolCompatibili
 from omnibase_core.enums.enum_tool_registration_status import EnumToolRegistrationStatus
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-"""
-Tool metadata model.
-"""
-
+"\nTool metadata model.\n"
 from datetime import datetime
 from enum import Enum
 
@@ -31,26 +28,20 @@ class ModelToolMetadata(BaseModel):
     tool_class: str = Field(default=..., description="Tool class name")
     module_path: str = Field(default=..., description="Tool module path")
     registration_time: datetime = Field(
-        default_factory=datetime.now,
-        description="When tool was registered",
+        default_factory=datetime.now, description="When tool was registered"
     )
     status: EnumToolRegistrationStatus = Field(
-        default=EnumToolRegistrationStatus.REGISTERED,
-        description="Registration status",
+        default=EnumToolRegistrationStatus.REGISTERED, description="Registration status"
     )
     category: EnumToolCategory = Field(
         default=EnumToolCategory.CUSTOM, description="Tool category"
     )
     capability_level: EnumToolCapabilityLevel = Field(
-        default=EnumToolCapabilityLevel.BASIC,
-        description="Capability level",
+        default=EnumToolCapabilityLevel.BASIC, description="Capability level"
     )
     compatibility_mode: EnumToolCompatibilityMode = Field(
-        default=EnumToolCompatibilityMode.COMPATIBLE,
-        description="Compatibility mode",
+        default=EnumToolCompatibilityMode.COMPATIBLE, description="Compatibility mode"
     )
-
-    # Performance and usage tracking
     performance_metrics: ModelToolPerformanceMetrics = Field(
         default_factory=lambda: ModelToolPerformanceMetrics(),
         description="Performance metrics",
@@ -59,40 +50,28 @@ class ModelToolMetadata(BaseModel):
         default_factory=lambda: ModelToolValidationResult(),
         description="Validation results",
     )
-
-    # Documentation and configuration
     description: str = Field(default="", description="Tool description")
-    version: str = Field(default="1.0.0", description="Tool version")
+    version: ModelSemVer = Field(default="1.0.0", description="Tool version")
     author: str = Field(default="Unknown", description="Tool author")
     documentation_url: str | None = Field(default=None, description="Documentation URL")
     configuration_schema: ModelSchema | None = Field(
-        default=None,
-        description="Configuration schema",
+        default=None, description="Configuration schema"
     )
-
-    # Dependencies and requirements
     dependencies: list[str] = Field(
-        default_factory=list,
-        description="Tool dependencies",
+        default_factory=list, description="Tool dependencies"
     )
     required_protocols: list[str] = Field(
-        default_factory=list,
-        description="Required protocol interfaces",
+        default_factory=list, description="Required protocol interfaces"
     )
     optional_protocols: list[str] = Field(
-        default_factory=list,
-        description="Optional protocol interfaces",
+        default_factory=list, description="Optional protocol interfaces"
     )
-
-    # Security and compliance
     security_level: str = Field(
         default="standard", description="Security clearance level"
     )
     compliance_tags: list[str] = Field(
-        default_factory=list,
-        description="Compliance tags",
+        default_factory=list, description="Compliance tags"
     )
     audit_trail: list[ModelAuditEntry] = Field(
-        default_factory=list,
-        description="Audit trail entries",
+        default_factory=list, description="Audit trail entries"
     )

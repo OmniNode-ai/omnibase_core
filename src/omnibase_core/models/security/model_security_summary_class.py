@@ -5,6 +5,7 @@ Comprehensive security summary for reporting with component summaries.
 """
 
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 class ModelSecuritySummary(BaseModel):
     """Comprehensive security summary for reporting."""
 
-    envelope_id: str = Field(default=..., description="Envelope identifier")
+    envelope_id: UUID = Field(default=..., description="Envelope identifier")
     security_level: str = Field(default=..., description="Required security level")
     is_encrypted: bool = Field(default=..., description="Whether payload is encrypted")
     signature_required: bool = Field(
@@ -34,47 +35,34 @@ class ModelSecuritySummary(BaseModel):
     )
     content_hash: str = Field(default=..., description="Content hash for integrity")
     signature_chain: "ModelSignatureChainSummary" = Field(
-        default=...,
-        description="Signature chain summary",
+        default=..., description="Signature chain summary"
     )
     compliance: "ModelComplianceSummary" = Field(
-        default=...,
-        description="Compliance information",
+        default=..., description="Compliance information"
     )
     authorization: "ModelAuthorizationSummary" = Field(
-        default=...,
-        description="Authorization requirements",
+        default=..., description="Authorization requirements"
     )
     security_events_count: int = Field(
         default=..., description="Number of security events"
     )
     last_security_event: "ModelSecurityEventSummary" | None = Field(
-        default=None,
-        description="Most recent security event",
+        default=None, description="Most recent security event"
     )
 
     def get_security_score(self) -> float:
         """Calculate overall security score (0-100)."""
-        score = 50  # Base score
-
-        # Encryption bonus
+        score = 50
         if self.is_encrypted:
             score += 20
-
-        # Signature validation bonus
         if self.signature_chain.is_valid():
             score += 15
         if self.signature_chain.is_trusted():
             score += 10
-
-        # Compliance bonus
         if self.compliance.get_data_risk_level() == "low":
             score += 5
-
-        # Authorization bonus
         if self.authorization.get_clearance_level() != "none":
             score += 5
-
         return min(score, 100)
 
     def get_risk_level(self) -> str:
@@ -124,22 +112,16 @@ class ModelSecuritySummary(BaseModel):
     def validate_security_posture(self) -> dict[str, Any]:
         """Validate overall security posture."""
         issues = []
-
         if not self.is_encrypted:
             issues.append("Content is not encrypted")
-
         if not self.signature_chain.is_valid():
             issues.append("Signature chain is not valid")
-
         if not self.signature_chain.is_trusted():
             issues.append("Signature chain is not trusted")
-
         if self.has_recent_security_events():
             issues.append("Recent security events detected")
-
         if self.compliance.get_data_risk_level() == "high":
             issues.append("High risk data classification")
-
         return {
             "is_secure": len(issues) == 0,
             "issue_count": len(issues),

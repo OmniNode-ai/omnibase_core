@@ -5,13 +5,7 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 
-"""
-Additional Context Model.
-
-Type-safe additional context replacing Dict[str, Any]
-with structured context information.
-"""
-
+"\nAdditional Context Model.\n\nType-safe additional context replacing Dict[str, Any]\nwith structured context information.\n"
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -32,30 +26,24 @@ class ModelAdditionalContext(BaseModel):
     request_id: UUID | None = Field(
         default=None, description="Unique request identifier"
     )
-    user_id: str | None = Field(
-        default=None,
-        description="User identifier",
-        pattern="^[a-zA-Z0-9_-]+$",
+    user_id: UUID | None = Field(
+        default=None, description="User identifier", pattern="^[a-zA-Z0-9_-]+$"
     )
     session_id: UUID | None = Field(default=None, description="Session identifier")
     environment: ModelEnvironment | None = Field(
-        default=None,
-        description="Execution environment",
+        default=None, description="Execution environment"
     )
     feature_flags: ModelFeatureFlags | None = Field(
-        default=None,
-        description="Feature flag configuration",
+        default=None, description="Feature flag configuration"
     )
     custom_fields: ModelCustomFields | None = Field(
-        default=None,
-        description="Custom extension fields",
+        default=None, description="Custom extension fields"
     )
-    trace_id: str | None = Field(
+    trace_id: UUID | None = Field(
         default=None, description="Distributed tracing identifier"
     )
-    parent_span_id: str | None = Field(
-        default=None,
-        description="Parent span identifier for tracing",
+    parent_span_id: UUID | None = Field(
+        default=None, description="Parent span identifier for tracing"
     )
 
     def has_tracing_context(self) -> bool:
@@ -69,17 +57,12 @@ class ModelAdditionalContext(BaseModel):
     def get_context_summary(self) -> str:
         """Get a summary of available context."""
         contexts = []
-
         if self.request_id:
             contexts.append(f"request:{str(self.request_id)[:8]}")
-
         if self.user_id:
             contexts.append(f"user:{self.user_id}")
-
         if self.environment:
             contexts.append(f"env:{self.environment.name}")
-
         if self.trace_id:
-            contexts.append(f"trace:{self.trace_id[:8]}")
-
+            contexts.append(f"trace:{str(self.trace_id)[:8]}")
         return " | ".join(contexts) if contexts else "no-context"

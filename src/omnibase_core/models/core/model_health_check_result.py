@@ -2,10 +2,7 @@ from typing import Any, Dict
 
 from pydantic import Field
 
-"""
-Health check result model to replace Dict[str, Any] usage for health checks.
-"""
-
+"\nHealth check result model to replace Dict[str, Any] usage for health checks.\n"
 from datetime import datetime
 from typing import Any, Dict
 
@@ -14,8 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from omnibase_core.models.core.model_health_check_component import (
     ModelHealthCheckComponent,
 )
+from omnibase_core.models.core.model_semver import ModelSemVer
 
-# Compatibility alias
 HealthCheckComponent = ModelHealthCheckComponent
 
 
@@ -25,30 +22,22 @@ class ModelHealthCheckResult(BaseModel):
     Replaces Dict[str, Any] for health_check() returns.
     """
 
-    # Overall status
     status: str = Field(
-        default=...,
-        description="Overall health status (healthy/unhealthy/degraded)",
+        default=..., description="Overall health status (healthy/unhealthy/degraded)"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Check timestamp",
+        default_factory=datetime.utcnow, description="Check timestamp"
     )
-
-    # Component statuses
     components: list[ModelHealthCheckComponent] = Field(
-        default_factory=list,
-        description="Individual component statuses",
+        default_factory=list, description="Individual component statuses"
     )
-
-    # Service information
     service_name: str = Field(default=..., description="Service name")
-    service_version: str | None = Field(default=None, description="Service version")
+    service_version: ModelSemVer | None = Field(
+        default=None, description="Service version"
+    )
     uptime_seconds: int | None = Field(
         default=None, description="Service uptime in seconds"
     )
-
-    # Resource usage
     cpu_usage_percent: float | None = Field(
         default=None, description="CPU usage percentage"
     )
@@ -56,11 +45,8 @@ class ModelHealthCheckResult(BaseModel):
         default=None, description="Memory usage in MB"
     )
     disk_usage_gb: float | None = Field(default=None, description="Disk usage in GB")
-
-    # Connection status
     database_connected: bool | None = Field(
-        default=None,
-        description="Database connection status",
+        default=None, description="Database connection status"
     )
     cache_connected: bool | None = Field(
         default=None, description="Cache connection status"
@@ -68,23 +54,16 @@ class ModelHealthCheckResult(BaseModel):
     queue_connected: bool | None = Field(
         default=None, description="Queue connection status"
     )
-
-    # Performance metrics
     average_response_time_ms: float | None = Field(
-        default=None,
-        description="Average response time",
+        default=None, description="Average response time"
     )
     requests_per_second: float | None = Field(
-        default=None,
-        description="Current requests per second",
+        default=None, description="Current requests per second"
     )
     error_rate: float | None = Field(default=None, description="Error rate percentage")
-
-    # Additional checks
     checks_passed: int = Field(default=0, description="Number of checks passed")
     checks_failed: int = Field(default=0, description="Number of checks failed")
     warnings: list[str] = Field(default_factory=list, description="Warning messages")
-
     model_config = ConfigDict()
 
     @classmethod

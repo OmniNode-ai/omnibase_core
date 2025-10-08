@@ -7,11 +7,7 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-"""
-Metadata usage metrics model for tracking node performance.
-"""
-
-
+"\nMetadata usage metrics model for tracking node performance.\n"
 from datetime import UTC, datetime
 from typing import TypedDict
 
@@ -23,12 +19,11 @@ from omnibase_core.types.constraints import BasicValueType
 from .model_metadatausagemetrics import ModelMetadataUsageMetrics
 
 
-# TypedDict for protocol method parameters
 class TypedDictUsageMetadataDict(TypedDict, total=False):
     """Typed structure for usage metadata dict[str, Any]ionary in protocol methods."""
 
     name: str
     description: str
-    version: ModelSemVer | str
+    version: ModelSemVer | ModelSemVer
     tags: list[str]
     metadata: dict[str, str]

@@ -9,7 +9,6 @@ from omnibase_core.models.core.model_regeneration_target import ModelRegeneratio
 from omnibase_core.models.core.model_rendered_template import ModelRenderedTemplate
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-# Re-export for current standards
 __all__ = ["ModelRegenerationTarget", "ModelRenderedTemplate", "ModelTemplateContext"]
 
 
@@ -20,29 +19,22 @@ class ModelTemplateContext(BaseModel):
     """
 
     node_name: str
-    node_class: str  # Main node class name
-    node_id: UUID  # Node ID string (lowercase, underscores)
-    node_id_upper: str  # Node ID in uppercase (for constants)
+    node_class: str
+    node_id: UUID
+    node_id_upper: UUID
     author: str
-    year: int  # Copyright year
-    version: ModelSemVer  # Required version field
+    year: int
+    version: ModelSemVer
     description: str | None = None
     metadata: ModelMetadata | None = None
-    # Additional fields for template tokenization
-    version_string: str | None = (
-        None  # String version for template tokens like {VERSION}
-    )
+    version_string: ModelSemVer | None = None
     bundle_hash: str | None = None
     last_modified: str | None = None
     deployment_timestamp: str | None = None
-
-    # Contract-derived fields for template token replacement
     contract_hash: str | None = None
     contract_version: ModelSemVer | None = None
     node_version: ModelSemVer | None = None
     input_fields: str | None = None
     output_fields: str | None = None
     uuid: str | None = None
-
-    # Output directory handling for dynamic path generation
     output_directory: Path | None = None

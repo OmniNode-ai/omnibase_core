@@ -5,13 +5,7 @@ from pydantic import Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-"""
-CLI Execution Model
-
-Complete CLI command execution model that tracks all aspects
-of command execution from start to finish.
-"""
-
+"\nCLI Execution Model\n\nComplete CLI command execution model that tracks all aspects\nof command execution from start to finish.\n"
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -37,79 +31,51 @@ class ModelCliExecution(BaseModel):
     """
 
     execution_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique execution identifier",
+        default_factory=uuid4, description="Unique execution identifier"
     )
-
     command_definition: ModelCliCommandDefinition = Field(
-        default=...,
-        description="Command being executed",
+        default=..., description="Command being executed"
     )
-
     parsed_arguments: ModelParsedArguments = Field(
-        default=...,
-        description="Parsed and validated arguments",
+        default=..., description="Parsed and validated arguments"
     )
-
     execution_context: ModelExecutionContext = Field(
-        default=...,
-        description="Execution environment and settings",
+        default=..., description="Execution environment and settings"
     )
-
     target_node: ModelNodeReference = Field(
-        default=...,
-        description="Node that will execute the command",
+        default=..., description="Node that will execute the command"
     )
-
     start_time: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Execution start timestamp",
+        default_factory=datetime.utcnow, description="Execution start timestamp"
     )
-
     end_time: datetime | None = Field(
         default=None, description="Execution end timestamp"
     )
-
     correlation_id: UUID = Field(
-        default_factory=uuid4,
-        description="Correlation ID for distributed tracing",
+        default_factory=uuid4, description="Correlation ID for distributed tracing"
     )
-
     parent_execution_id: UUID | None = Field(
-        default=None,
-        description="Parent execution ID for nested commands",
+        default=None, description="Parent execution ID for nested commands"
     )
-
-    user_id: str | None = Field(
-        default=None,
-        description="User ID for audit and permissions",
+    user_id: UUID | None = Field(
+        default=None, description="User ID for audit and permissions"
     )
-
     session_id: UUID | None = Field(
-        default=None,
-        description="Session ID for tracking related commands",
+        default=None, description="Session ID for tracking related commands"
     )
-
     source_location: str | None = Field(
-        default=None,
-        description="Source location (CLI, API, script, etc.)",
+        default=None, description="Source location (CLI, API, script, etc.)"
     )
-
     execution_metadata: ModelCliExecutionMetadata = Field(
         default_factory=lambda: ModelCliExecutionMetadata(),
         description="Execution metadata",
     )
-
     is_dry_run: bool = Field(
-        default=False,
-        description="Whether this is a dry run execution",
+        default=False, description="Whether this is a dry run execution"
     )
-
     is_test_execution: bool = Field(
-        default=False,
-        description="Whether this is a test execution",
+        default=False, description="Whether this is a test execution"
     )
-
     priority: int = Field(
         default=50,
         description="Execution priority (0-100, higher = more important)",
@@ -143,7 +109,6 @@ class ModelCliExecution(BaseModel):
 
     def add_metadata(self, key: str, value: ModelSchemaValue) -> None:
         """Add execution metadata."""
-        # Use setattr for known fields or add to custom properties
         if hasattr(self.execution_metadata, key):
             setattr(self.execution_metadata, key, value.to_value())
         else:
@@ -152,17 +117,13 @@ class ModelCliExecution(BaseModel):
             self.execution_metadata.custom_properties[key] = str(value.to_value())
 
     def get_metadata(
-        self,
-        key: str,
-        default: ModelSchemaValue | None = None,
+        self, key: str, default: ModelSchemaValue | None = None
     ) -> ModelSchemaValue | None:
         """Get execution metadata."""
-        # Check known fields first
         if hasattr(self.execution_metadata, key):
             value = getattr(self.execution_metadata, key, None)
             if value is not None:
                 return ModelSchemaValue.from_value(value)
-        # Check custom properties
         if self.execution_metadata.custom_properties:
             value = self.execution_metadata.custom_properties.get(key)
             if value is not None:
@@ -211,10 +172,7 @@ class ModelCliExecution(BaseModel):
 
     def to_execution_dict(self) -> dict[str, Any]:
         """Convert to dict[str, Any]ionary for node execution."""
-        # Get the base execution dict[str, Any]ionary from parsed arguments
         execution_dict = self.parsed_arguments.to_execution_dict()
-
-        # Add execution context information
         execution_dict.update(
             {
                 "execution_id": str(self.execution_id),
@@ -229,16 +187,11 @@ class ModelCliExecution(BaseModel):
                 "trace_enabled": self.is_trace_enabled(),
                 "timeout_ms": self.get_timeout_ms(),
                 "retry_attempts": self.execution_context.retry_attempts,
-            },
+            }
         )
-
-        # Add environment variables from execution context
         execution_dict.update(self.execution_context.to_environment_dict())
-
-        # Add execution metadata (excluding None values)
         metadata_dict = self.execution_metadata.model_dump(exclude_none=True)
         execution_dict.update(metadata_dict)
-
         return execution_dict
 
     def get_summary(self) -> dict[str, Any]:
@@ -275,7 +228,7 @@ class ModelCliExecution(BaseModel):
         parsed_arguments: ModelParsedArguments,
         execution_context: ModelExecutionContext,
         target_node: ModelNodeReference,
-        user_id: str | None = None,
+        user_id: UUID | None = None,
         session_id: UUID | None = None,
         parent_execution_id: UUID | None = None,
         **kwargs: Any,
@@ -308,7 +261,7 @@ class ModelCliExecution(BaseModel):
             target_node=target_node,
             is_test_execution=True,
             source_location="test",
-            priority=10,  # Low priority for test executions
+            priority=10,
         )
 
     @classmethod
@@ -320,9 +273,7 @@ class ModelCliExecution(BaseModel):
         target_node: ModelNodeReference,
     ) -> "ModelCliExecution":
         """Create a dry run execution."""
-        # Create a modified execution context for dry run
         dry_run_context = execution_context.create_child_context(dry_run=True)
-
         return cls(
             command_definition=command_definition,
             parsed_arguments=parsed_arguments,

@@ -1,27 +1,20 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import Field
 
-"""
-ModelPolicyContext: Context for policy evaluation.
-
-This model represents the context used for evaluating trust policies
-against secure envelopes.
-"""
-
+"\nModelPolicyContext: Context for policy evaluation.\n\nThis model represents the context used for evaluating trust policies\nagainst secure envelopes.\n"
 from pydantic import BaseModel, Field
 
 
 class ModelPolicyContext(BaseModel):
     """Context for policy evaluation."""
 
-    envelope_id: str = Field(default=..., description="Envelope identifier")
-    source_node_id: str = Field(default=..., description="Source node ID")
+    envelope_id: UUID = Field(default=..., description="Envelope identifier")
+    source_node_id: UUID = Field(default=..., description="Source node ID")
     current_hop_count: int = Field(default=..., description="Current hop count")
     operation_type: str = Field(default="routing", description="Type of operation")
     is_encrypted: bool = Field(default=..., description="Whether payload is encrypted")
-
-    # Compliance information
     frameworks: list[str] = Field(default=..., description="Compliance frameworks")
     classification: str = Field(default=..., description="Data classification")
     retention_period_days: int | None = Field(
@@ -38,9 +31,7 @@ class ModelPolicyContext(BaseModel):
     export_controlled: bool = Field(
         default=..., description="Subject to export controls"
     )
-
-    # Security context
-    user_id: str | None = Field(default=None, description="User identifier")
+    user_id: UUID | None = Field(default=None, description="User identifier")
     roles: list[str] = Field(default_factory=list, description="User roles")
     security_clearance: str | None = Field(
         default=None, description="Security clearance"

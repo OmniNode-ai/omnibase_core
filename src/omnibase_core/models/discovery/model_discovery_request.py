@@ -5,13 +5,7 @@ from pydantic import Field
 
 from omnibase_core.models.core.model_discovery_filters import ModelDiscoveryFilters
 
-"""
-Discovery Request Model
-
-Model for discovery client requests with proper typing and validation
-following ONEX canonical patterns.
-"""
-
+"\nDiscovery Request Model\n\nModel for discovery client requests with proper typing and validation\nfollowing ONEX canonical patterns.\n"
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -29,68 +23,42 @@ class ModelDiscoveryRequest(BaseModel):
     All discovery operations use this standardized request format.
     """
 
-    # Operation identification
     operation: str = Field(
         default=...,
         description="Discovery operation type",
         json_schema_extra={
-            "enum": ["discover_tools", "get_client_status", "close_client"],
+            "enum": ["discover_tools", "get_client_status", "close_client"]
         },
     )
-
-    # Discovery parameters
     filters: ModelDiscoveryFilters | None = Field(
-        default=None,
-        description="Discovery filters for tool matching",
+        default=None, description="Discovery filters for tool matching"
     )
-
-    # Request control
     timeout_seconds: float | None = Field(
-        default=5.0,
-        description="Request timeout in seconds",
-        ge=0.1,
-        le=300.0,
+        default=5.0, description="Request timeout in seconds", ge=0.1, le=300.0
     )
-
     max_results: int | None = Field(
-        default=None,
-        description="Maximum number of results to return",
-        ge=1,
-        le=1000,
+        default=None, description="Maximum number of results to return", ge=1, le=1000
     )
-
     include_metadata: bool = Field(
-        default=True,
-        description="Whether to include full metadata in response",
+        default=True, description="Whether to include full metadata in response"
     )
-
-    # Retry configuration
     retry_count: int = Field(
         default=0, description="Number of retries on timeout", ge=0, le=5
     )
-
     retry_delay: float = Field(
         default=1.0,
         description="Initial delay between retries in seconds",
         ge=0.1,
         le=60.0,
     )
-
-    # Client identification
-    client_id: str | None = Field(
+    client_id: UUID | None = Field(
         default=None, description="Client identifier for tracking"
     )
-
-    # Request tracking
     correlation_id: UUID | None = Field(
-        default=None,
-        description="Correlation ID for request tracking",
+        default=None, description="Correlation ID for request tracking"
     )
-
-    # Additional metadata
     metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional request metadata",
+        default_factory=dict, description="Additional request metadata"
     )
 
     @classmethod
@@ -123,9 +91,7 @@ class ModelDiscoveryRequest(BaseModel):
 
     @classmethod
     def create_status_request(
-        cls,
-        client_id: str | None = None,
-        **kwargs: Any,
+        cls, client_id: str | None = None, **kwargs: Any
     ) -> "ModelDiscoveryRequest":
         """
         Factory method for client status requests.
@@ -141,9 +107,7 @@ class ModelDiscoveryRequest(BaseModel):
 
     @classmethod
     def create_close_request(
-        cls,
-        client_id: str | None = None,
-        **kwargs: Any,
+        cls, client_id: str | None = None, **kwargs: Any
     ) -> "ModelDiscoveryRequest":
         """
         Factory method for client close requests.
