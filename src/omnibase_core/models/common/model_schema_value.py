@@ -304,10 +304,8 @@ class ModelSchemaValue(BaseModel):
     def get_string(self) -> str:
         """Get string value, raising error if not a string."""
         if not self.is_string():
-            from omnibase_core.errors.error_codes import (
-                EnumCoreErrorCode,
-                ModelOnexError,
-            )
+            from omnibase_core.errors.error_codes import EnumCoreErrorCode
+            from omnibase_core.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected string value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)

@@ -76,10 +76,6 @@ class ModelWorkflowCoordinator:
 
         except Exception as e:
             # Log workflow failure
-            from omnibase_core.errors.error_codes import (
-                EnumCoreErrorCode,
-                ModelOnexError,
-            )
             from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
             )

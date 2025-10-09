@@ -434,7 +434,10 @@ class ModelMissingTool(BaseModel):
             EnumToolCategory.EXTERNAL_SERVICE: 0.7,
             EnumToolCategory.UTILITY: 0.3,
         }
-        score *= category_multipliers.get(self.tool_category, 0.5)
+        if self.tool_category is not None:
+            score *= category_multipliers.get(self.tool_category, 0.5)
+        else:
+            score *= 0.5
 
         # Adjust for affected operations
         if self.affected_operations:

@@ -70,11 +70,6 @@ class EnumTimeUnit(str, Enum):
         multiplier_keys = set(cls._get_millisecond_multipliers().keys())
 
         if display_keys != all_members:
-            from omnibase_core.errors.error_codes import (
-                EnumCoreErrorCode,
-                ModelOnexError,
-            )
-
             missing = all_members - display_keys
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,

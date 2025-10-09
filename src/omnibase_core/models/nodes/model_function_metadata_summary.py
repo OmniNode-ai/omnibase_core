@@ -8,10 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 if TYPE_CHECKING:
-    from omnibase_core.models.nodes.model_function_deprecation_info import (
-        ModelDeprecationSummary,
-    )
-
+    from .model_deprecation_summary import ModelDeprecationSummary
     from .model_documentation_summary_filtered import ModelDocumentationSummaryFiltered
 
 

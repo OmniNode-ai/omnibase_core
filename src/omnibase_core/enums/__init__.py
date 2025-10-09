@@ -114,6 +114,9 @@ from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
 from .enum_state_update_operation import EnumStateUpdateOperation
 
+# Tool-related enums
+from .enum_tool_category import EnumToolCategory
+
 # Tool lifecycle enums
 from .enum_tool_status import EnumToolStatus
 from .enum_tool_type import EnumToolType
@@ -133,18 +136,17 @@ from .enum_version_status import EnumVersionStatus
 # Workflow-related enums
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
-# Status migration enums
-# from .enum_status_migrator import ModelEnumStatusMigrator  # MISSING MODULE
+# NOTE: ModelEnumStatusMigrator causes circular import when imported at module level
+# It's defined in models.core.model_status_migrator and re-exported from enum_status_migration
+# Users should import it directly: from omnibase_core.enums.enum_status_migration import ModelEnumStatusMigrator
 
-# Tool-related enums
-# from .enum_tool_category import EnumToolCategory  # MISSING MODULE
-# from .enum_tool_criticality import EnumToolCriticality  # MISSING MODULE
-# from .enum_tool_health_status import EnumToolHealthStatus  # MISSING MODULE
-# from .enum_tool_missing_reason import EnumToolMissingReason  # MISSING MODULE
-
-
-# Tree sync enums
-# from .enum_tree_sync_status import EnumTreeSyncStatus  # MISSING MODULE
+# NOTE: The following enums are referenced but their module files don't exist:
+# - enum_tool_criticality.py (referenced by model_missing_tool.py)
+# - enum_tool_health_status.py (referenced by model_tool_health.py)
+# - enum_tool_missing_reason.py (referenced by model_missing_tool.py)
+# - enum_tree_sync_status.py
+# - enum_registry_type.py
+# These need to be created or their references need to be updated.
 
 
 # Event and logging enums
@@ -235,23 +237,23 @@ __all__ = [
     "EnumFunctionLanguage",
     # Registry-related domain
     "EnumRegistryHealthStatus",
-    "EnumRegistryType",
     # Service-related domain
     "EnumServiceHealthStatus",
-    "ModelServiceModeEnum",
+    "EnumServiceMode",
     "EnumServiceStatus",
     "EnumServiceTypeCategory",
-    # Status migration domain
-    "ModelEnumStatusMigrator",
     # Tool-related domain
     "EnumToolCategory",
-    "EnumToolCriticality",
-    "EnumToolHealthStatus",
-    "EnumToolMissingReason",
     "EnumToolType",
-    # Tree sync domain
-    "EnumTreeSyncStatus",
     # GitHub Actions domain
     "EnumGitHubActionEvent",
     "EnumGitHubRunnerOS",
+    # NOTE: Removed from __all__ due to missing module files or circular imports:
+    # - "EnumRegistryType" (module doesn't exist)
+    # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
+    # - "ModelEnumStatusMigrator" (causes circular import - import from enum_status_migration directly)
+    # - "EnumToolCriticality" (module doesn't exist)
+    # - "EnumToolHealthStatus" (module doesn't exist)
+    # - "EnumToolMissingReason" (module doesn't exist)
+    # - "EnumTreeSyncStatus" (module doesn't exist)
 ]
