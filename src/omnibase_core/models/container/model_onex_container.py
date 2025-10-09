@@ -581,6 +581,19 @@ async def create_model_onex_container(
                 "default_timeout": int(os.getenv("WORKFLOW_TIMEOUT", "300")),
                 "max_concurrent_workflows": int(os.getenv("MAX_WORKFLOWS", "10")),
             },
+            "database": {
+                "circuit_breaker": {
+                    "failure_threshold": int(
+                        os.getenv("DB_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5")
+                    ),
+                    "recovery_timeout": int(
+                        os.getenv("DB_CIRCUIT_BREAKER_RECOVERY_TIMEOUT", "60")
+                    ),
+                    "half_open_max_calls": int(
+                        os.getenv("DB_CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS", "3")
+                    ),
+                },
+            },
         },
     )
 
