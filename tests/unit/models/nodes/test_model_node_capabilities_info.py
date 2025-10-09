@@ -272,7 +272,7 @@ class TestModelNodeCapabilitiesInfo:
 
     def test_get_id_protocol(self):
         """Test get_id protocol method raises OnexError without ID field."""
-        from omnibase_core.errors.error_codes import OnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
         info = ModelNodeCapabilitiesInfo()
 

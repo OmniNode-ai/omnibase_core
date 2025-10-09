@@ -37,11 +37,11 @@ def test_import_core_types():
 def test_import_error_codes():
     """Test that error_codes module can be imported."""
     from omnibase_core.errors.error_codes import (
-        CoreErrorCode,
+        EnumCoreErrorCode,
         OnexError,
     )
 
-    assert CoreErrorCode is not None
+    assert EnumCoreErrorCode is not None
     assert OnexError is not None
 
 
@@ -182,19 +182,20 @@ def test_model_error_context_conversion():
 
 def test_onex_error_no_circular_dependency():
     """Test that OnexError can be created without triggering circular imports."""
-    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+    from omnibase_core.errors.error_codes import EnumCoreErrorCode
+    from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
     # Create an OnexError
     error = OnexError(
         message="Test error",
-        error_code=CoreErrorCode.VALIDATION_ERROR,
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         file_path="/test/file.py",
         line_number=42,
     )
 
     # Verify error was created
     assert error.message == "Test error"
-    assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+    assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
     assert error.context.get("file_path") == "/test/file.py"
     assert error.context.get("line_number") == 42
 
@@ -243,7 +244,7 @@ def test_type_checking_imports_not_runtime() -> None:
 
     # Check that the TYPE_CHECKING imports are not in the module's namespace
     # (they should only be available during type checking)
-    type_checking_imports = ["CoreErrorCode", "OnexError"]
+    type_checking_imports = ["EnumCoreErrorCode", "OnexError"]
 
     for import_name in type_checking_imports:
         # These should NOT be directly accessible at runtime

@@ -18,7 +18,7 @@ from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_function_type import EnumFunctionType
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
 from omnibase_core.models.nodes.model_function_node_core import ModelFunctionNodeCore
 from omnibase_core.models.nodes.model_function_node_metadata import (

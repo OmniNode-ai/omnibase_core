@@ -22,7 +22,7 @@ from omnibase_core.enums.enum_status_migration import (
     EnumStatusMigrationValidator,
     EnumStatusMigrator,
 )
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
 
 class TestBaseStatus:

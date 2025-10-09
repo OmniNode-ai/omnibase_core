@@ -76,6 +76,11 @@ from .enum_metadata import (
     EnumRuntimeLanguage,
 )
 
+# Metadata tool enums
+from .enum_metadata_tool_complexity import EnumMetadataToolComplexity
+from .enum_metadata_tool_status import EnumMetadataToolStatus
+from .enum_metadata_tool_type import EnumMetadataToolType
+
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_health_status import EnumNodeHealthStatus
@@ -181,6 +186,9 @@ __all__ = [
     "EnumNodeMetadataField",
     "EnumProtocolVersion",
     "EnumRuntimeLanguage",
+    "EnumMetadataToolComplexity",
+    "EnumMetadataToolStatus",
+    "EnumMetadataToolType",
     # Namespace domain
     "EnumNamespaceStrategy",
     # URI domain

@@ -17,9 +17,10 @@ ZERO TOLERANCE: Every code path must be tested thoroughly.
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import ModelEnumNodeType
+from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.errors.error_codes import ModelCoreErrorCode, ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.metadata.model_semver import ModelSemVer
@@ -55,7 +56,7 @@ class TestModelContractBase:
             "name": "test_contract",
             "version": self.valid_semver,
             "description": "Test contract description",
-            "node_type": ModelEnumNodeType.COMPUTE,
+            "node_type": EnumNodeType.COMPUTE,
             "input_model": "omnibase_core.models.test.TestInputModel",
             "output_model": "omnibase_core.models.test.TestOutputModel",
         }
@@ -69,7 +70,7 @@ class TestModelContractBase:
         assert contract.name == "test_contract"
         assert contract.version == self.valid_semver
         assert contract.description == "Test contract description"
-        assert contract.node_type == ModelEnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE
         assert contract.input_model == "omnibase_core.models.test.TestInputModel"
         assert contract.output_model == "omnibase_core.models.test.TestOutputModel"
 
@@ -157,8 +158,8 @@ class TestModelContractBase:
     # =================== NODE TYPE VALIDATION TESTS ===================
 
     def test_node_type_enum_validation_valid_enum(self):
-        """Test node_type validation with valid ModelEnumNodeType values."""
-        for node_type in ModelEnumNodeType:
+        """Test node_type validation with valid EnumNodeType values."""
+        for node_type in EnumNodeType:
             data = {**self.minimal_valid_data, "node_type": node_type}
             contract = TestableContractModel(**data)
             assert contract.node_type == node_type
@@ -168,7 +169,7 @@ class TestModelContractBase:
         # Test valid string conversion
         data = {**self.minimal_valid_data, "node_type": "COMPUTE"}
         contract = TestableContractModel(**data)
-        assert contract.node_type == ModelEnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE
 
     def test_node_type_invalid_string_raises_onex_error(self):
         """Test node_type validation with invalid string raises ModelOnexError."""
@@ -178,9 +179,9 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.model.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "invalid_node_type" in error.message
-        assert "valid ModelEnumNodeType value" in error.message
+        assert "valid EnumNodeType value" in error.message
         assert error.model.context is not None
         assert "invalid_value" in error.model.context
 
@@ -192,8 +193,8 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
-        assert "ModelEnumNodeType enum or valid string" in error.message
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "EnumNodeType enum or valid string" in error.message
 
     # =================== DEPENDENCY VALIDATION TESTS ===================
 
@@ -250,7 +251,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "must be a list" in error.message
 
     def test_dependencies_validation_string_dependency_security_rejection(self):
@@ -263,7 +264,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.model.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Batch validation failed" in error.message
         assert "string_dependency" in str(error.model.context)
 
@@ -280,7 +281,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Too many dependencies" in error.message
         assert "101" in error.message
         assert "100" in error.message
@@ -300,7 +301,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Batch validation failed" in error.message
 
     # =================== POST-INIT VALIDATION TESTS ===================
@@ -319,7 +320,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Direct circular dependency" in error.message
         assert "test_contract" in error.message
 
@@ -336,7 +337,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Duplicate dependency detected" in error.message
 
     def test_circular_dependency_detection_module_reference(self):
@@ -353,7 +354,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Potential circular dependency" in error.message
 
     def test_dependency_complexity_limit_enforcement(self):
@@ -369,7 +370,7 @@ class TestModelContractBase:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == ModelCoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "too many dependencies" in error.message
         assert "51" in error.message
 
@@ -497,8 +498,8 @@ class TestModelContractBase:
     def test_model_config_enum_values_preservation(self):
         """Test that enum objects are preserved, not converted to strings."""
         contract = TestableContractModel(**self.minimal_valid_data)
-        assert isinstance(contract.node_type, ModelEnumNodeType)
-        assert contract.node_type == ModelEnumNodeType.COMPUTE
+        assert isinstance(contract.node_type, EnumNodeType)
+        assert contract.node_type == EnumNodeType.COMPUTE
 
     # =================== INTEGRATION WITH ONEX ERROR SYSTEM ===================
 

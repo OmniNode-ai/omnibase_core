@@ -17,6 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "valida
 
 from check_error_raising import ErrorRaisingDetector, check_file
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 
 class TestErrorRaisingDetector:
     """Test suite for ErrorRaisingDetector."""
@@ -88,12 +90,12 @@ def get_value(data, key):
         """Test that OnexError raises are allowed."""
         code = """
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 def validate_input(value):
     if value < 0:
         raise OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message="Value must be positive"
         )
     return value
@@ -138,14 +140,14 @@ def process_data(data):
         """Test that re-raising as OnexError is allowed."""
         code = """
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 def process_data(data):
     try:
         return int(data)
     except ValueError as e:
         raise OnexError(
-            error_code=CoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message="Invalid data format"
         ) from e
 """
@@ -262,10 +264,10 @@ def process():
             f.write(
                 """
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 def process():
-    raise OnexError(error_code=CoreErrorCode.VALIDATION_ERROR, message="Test")
+    raise OnexError(error_code=EnumCoreErrorCode.VALIDATION_ERROR, message="Test")
 """
             )
             f.flush()

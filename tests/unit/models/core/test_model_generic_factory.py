@@ -11,7 +11,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_generic_factory import ModelGenericFactory
 

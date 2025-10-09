@@ -18,7 +18,8 @@ from enum import Enum
 
 import pytest
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.utils.model_field_converter import (
     FieldConverter,
@@ -65,9 +66,9 @@ class TestFieldConverter:
         assert result == 42
 
         # Invalid negative number
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             converter.convert("-5")
-        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Validation failed" in exc_info.value.message
 
     def test_field_converter_successful_conversion(self) -> None:
@@ -91,22 +92,22 @@ class TestFieldConverter:
         assert result == 0
 
     def test_field_converter_raises_onex_error_without_default(self) -> None:
-        """Test field converter raises OnexError when no default provided."""
+        """Test field converter raises ModelOnexError when no default provided."""
         converter = FieldConverter(
             field_name="required_field",
             converter=int,
         )
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             converter.convert("invalid")
-        assert exc_info.value.error_code == CoreErrorCode.CONVERSION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.CONVERSION_ERROR
         assert "Failed to convert field" in exc_info.value.message
 
     def test_field_converter_reraises_onex_error(self) -> None:
-        """Test field converter re-raises OnexError from converter."""
+        """Test field converter re-raises ModelOnexError from converter."""
 
         def raises_onex_error(value: str) -> int:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Custom error",
             )
 
@@ -114,9 +115,9 @@ class TestFieldConverter:
             field_name="error_field",
             converter=raises_onex_error,
         )
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             converter.convert("anything")
-        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Custom error" in exc_info.value.message
 
 
@@ -191,9 +192,9 @@ class TestModelFieldConverterRegistry:
         assert result == 25
 
         # Invalid value below minimum
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("age", "-5")
-        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_register_integer_field_with_max_value(self) -> None:
         """Test integer field with maximum value validation."""
@@ -205,9 +206,9 @@ class TestModelFieldConverterRegistry:
         assert result == 75
 
         # Invalid value above maximum
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("percentage", "150")
-        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_register_integer_field_with_bounds(self) -> None:
         """Test integer field with both min and max bounds."""
@@ -220,9 +221,9 @@ class TestModelFieldConverterRegistry:
         assert registry.convert_field("score", "100") == 100
 
         # Invalid values
-        with pytest.raises(OnexError):
+        with pytest.raises(ModelOnexError):
             registry.convert_field("score", "-1")
-        with pytest.raises(OnexError):
+        with pytest.raises(ModelOnexError):
             registry.convert_field("score", "101")
 
     def test_register_integer_field_with_default(self) -> None:
@@ -259,9 +260,9 @@ class TestModelFieldConverterRegistry:
         registry = ModelFieldConverterRegistry()
         registry.register_enum_field("status", TestStatus)
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("status", "invalid_status")
-        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Invalid TestStatus value" in exc_info.value.message
 
     def test_register_enum_field_with_default(self) -> None:
@@ -328,9 +329,9 @@ class TestModelFieldConverterRegistry:
         assert registry.convert_field("even_number", "42") == 42
 
         # Invalid odd number
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("even_number", "43")
-        assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_register_custom_field_with_default(self) -> None:
         """Test custom field with default value."""
@@ -348,9 +349,9 @@ class TestModelFieldConverterRegistry:
         """Test converting field that is not registered."""
         registry = ModelFieldConverterRegistry()
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("unknown_field", "value")
-        assert exc_info.value.error_code == CoreErrorCode.NOT_FOUND
+        assert exc_info.value.error_code == EnumCoreErrorCode.NOT_FOUND
         assert "No converter registered" in exc_info.value.message
 
     def test_convert_data_multiple_fields(self) -> None:
