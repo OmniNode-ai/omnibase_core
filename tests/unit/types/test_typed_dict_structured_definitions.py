@@ -35,7 +35,7 @@ from omnibase_core.types import (
     TypedDictSystemState,
     TypedDictValidationResult,
     TypedDictWorkflowState,
-    _parse_datetime,
+    parse_datetime,
 )
 
 
@@ -43,32 +43,32 @@ class TestTypedDictStructuredDefinitions:
     """Test TypedDict structured definitions can be instantiated."""
 
     def test_parse_datetime_with_datetime_object(self) -> None:
-        """Test _parse_datetime with datetime object."""
+        """Test parse_datetime with datetime object."""
         now = datetime.now()
-        result = _parse_datetime(now)
+        result = parse_datetime(now)
         assert result == now
 
     def test_parse_datetime_with_iso_string(self) -> None:
-        """Test _parse_datetime with ISO format string."""
+        """Test parse_datetime with ISO format string."""
         iso_string = "2025-01-01T12:00:00"
-        result = _parse_datetime(iso_string)
+        result = parse_datetime(iso_string)
         assert isinstance(result, datetime)
         assert result.year == 2025
 
     def test_parse_datetime_with_z_suffix(self) -> None:
-        """Test _parse_datetime with Z suffix."""
+        """Test parse_datetime with Z suffix."""
         iso_string = "2025-01-01T12:00:00Z"
-        result = _parse_datetime(iso_string)
+        result = parse_datetime(iso_string)
         assert isinstance(result, datetime)
 
     def test_parse_datetime_with_invalid_string(self) -> None:
-        """Test _parse_datetime with invalid string."""
-        result = _parse_datetime("invalid")
+        """Test parse_datetime with invalid string."""
+        result = parse_datetime("invalid")
         assert isinstance(result, datetime)
 
     def test_parse_datetime_with_none(self) -> None:
-        """Test _parse_datetime with None."""
-        result = _parse_datetime(None)
+        """Test parse_datetime with None."""
+        result = parse_datetime(None)
         assert isinstance(result, datetime)
 
     def test_semver_dict(self) -> None:
