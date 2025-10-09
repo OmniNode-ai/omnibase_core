@@ -10,7 +10,7 @@ from datetime import datetime
 
 import pytest
 
-from omnibase_core.types.typed_dict_structured_definitions import (
+from omnibase_core.types import (
     TypedDictAuditInfo,
     TypedDictBatchProcessingInfo,
     TypedDictCacheInfo,

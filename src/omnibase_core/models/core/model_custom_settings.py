@@ -46,7 +46,7 @@ class ModelCustomSettings(BaseModel):
         if v is None:
             return ModelSemVer(major=1, minor=0, patch=0)
         if isinstance(v, str):
-            from omnibase_core.utils.util_semver import parse_semver_from_string
+            from omnibase_core.utils.util_semver_parser import parse_semver_from_string
 
             return parse_semver_from_string(v)
         return v

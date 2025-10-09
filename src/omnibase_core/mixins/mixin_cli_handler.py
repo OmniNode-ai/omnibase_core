@@ -1,7 +1,6 @@
 from typing import Any, Generic, TypeVar
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.util_serialization import serialize_data_to_yaml
 
 """
 CLI Handler Mixin for ONEX Tool Nodes.

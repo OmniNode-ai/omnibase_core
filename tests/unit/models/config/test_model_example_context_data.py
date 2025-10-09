@@ -12,7 +12,7 @@ from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
 from omnibase_core.models.config.model_example_context_data import (
     ModelExampleContextData,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class TestModelExampleContextData:

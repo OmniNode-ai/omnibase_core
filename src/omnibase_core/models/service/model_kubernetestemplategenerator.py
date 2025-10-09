@@ -4,7 +4,7 @@ from typing import Any, Dict
 from omnibase_core.models.configuration.model_node_service_config import (
     ModelNodeServiceConfig,
 )
-from omnibase_core.utils.util_serialization import serialize_data_to_yaml
+from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
 
 class ModelKubernetesTemplateGenerator:
