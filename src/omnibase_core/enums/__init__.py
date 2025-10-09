@@ -39,6 +39,9 @@ from .enum_detection_type import EnumDetectionType
 # Execution-related enums
 from .enum_execution import EnumExecutionMode, EnumOperationStatus
 
+# Function-related enums
+from .enum_function_language import EnumFunctionLanguage
+
 # GitHub Actions enums
 from .enum_github_action_event import EnumGitHubActionEvent
 from .enum_github_runner_os import EnumGitHubRunnerOS
@@ -66,9 +69,7 @@ from .enum_log_level import EnumLogLevel
 from .enum_message_type import EnumMessageType
 
 # Metadata-related enums
-# Function-related enums
 from .enum_metadata import (
-    EnumFunctionLanguage,
     EnumLifecycle,
     EnumMetaType,
     EnumNodeMetadataField,

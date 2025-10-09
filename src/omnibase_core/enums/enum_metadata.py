@@ -77,18 +77,6 @@ class EnumRuntimeLanguage(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumFunctionLanguage(str, Enum):
-    """Enum for supported function discovery languages."""
-
-    PYTHON = "python"
-    JAVASCRIPT = "javascript"
-    TYPESCRIPT = "typescript"
-    BASH = "bash"
-    SHELL = "shell"
-    YAML = "yaml"
-    JSON = "json"
-
-
 class EnumNodeMetadataField(Enum):
     """
     Canonical Enum for all NodeMetadataBlock field names.
