@@ -22,6 +22,9 @@ from .enum_authentication_method import EnumAuthenticationMethod
 from .enum_backoff_strategy import EnumBackoffStrategy
 from .enum_business_logic_pattern import EnumBusinessLogicPattern
 
+# Category filter enums
+from .enum_category_filter import EnumCategoryFilter
+
 # Computation and processing enums
 from .enum_computation_type import EnumComputationType
 from .enum_contract_compliance import EnumContractCompliance
@@ -85,8 +88,12 @@ from .enum_notification_method import EnumNotificationMethod
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
 
+# Parameter and return type enums
+from .enum_parameter_type import EnumParameterType
+
 # Registry-related enums
 from .enum_registry_health_status import EnumRegistryHealthStatus
+from .enum_return_type import EnumReturnType
 
 # from .enum_registry_type import EnumRegistryType  # MISSING MODULE
 from .enum_security_profile import EnumSecurityProfile
@@ -141,6 +148,8 @@ from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 __all__ = [
     # Artifact domain
     "EnumArtifactType",
+    # Category filter domain
+    "EnumCategoryFilter",
     # Security domain
     "EnumDataClassification",
     "EnumSecurityProfile",
@@ -160,6 +169,9 @@ __all__ = [
     "EnumOperationStatus",
     "EnumValidationLevel",
     "EnumValidationMode",
+    # Parameter and return type domain
+    "EnumParameterType",
+    "EnumReturnType",
     # File pattern domain
     "EnumIgnorePatternSource",
     "EnumTraversalMode",

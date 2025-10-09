@@ -63,11 +63,8 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
         return ModelCLIAdapter
-    # Raise ModelOnexError for unknown attributes
-    from omnibase_core.errors.error_codes import EnumCoreErrorCode
-    from omnibase_core.errors.model_onex_error import ModelOnexError
-
-    raise ModelOnexError(
-        message=f"module '{__name__}' has no attribute '{name}'",
-        error_code=EnumCoreErrorCode.NOT_FOUND,
+    # Raise standard AttributeError for unknown attributes
+    # Cannot use ModelOnexError here as it would cause circular import
+    raise AttributeError(  # error-ok: avoid circular import in lazy loader
+        f"module '{__name__}' has no attribute '{name}'"
     )

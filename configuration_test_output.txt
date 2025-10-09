@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.11, pytest-8.4.1, pluggy-1.6.0 -- /Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/python
+cachedir: .pytest_cache
+rootdir: /Volumes/PRO-G40/Code/omnibase_core
+configfile: pyproject.toml
+plugins: asyncio-0.25.3, anyio-4.10.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None
+collecting ... ERROR: file or directory not found: tests/unit/models/configuration/
+
+collected 0 items
+
+============================ no tests ran in 0.01s =============================

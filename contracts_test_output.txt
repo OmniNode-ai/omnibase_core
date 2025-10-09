@@ -1,0 +1,71 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.11, pytest-8.4.1, pluggy-1.6.0 -- /Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/python
+cachedir: .pytest_cache
+rootdir: /Volumes/PRO-G40/Code/omnibase_core/tests
+configfile: pytest.ini
+plugins: asyncio-0.25.3, anyio-4.10.0, cov-7.0.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None
+collecting ... collected 0 items / 5 errors
+
+==================================== ERRORS ====================================
+_______ ERROR collecting unit/contracts/test_model_compensation_plan.py ________
+ImportError while importing test module '/Volumes/PRO-G40/Code/omnibase_core/tests/unit/contracts/test_model_compensation_plan.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/contracts/test_model_compensation_plan.py:23: in <module>
+    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+E   ImportError: cannot import name 'CoreErrorCode' from 'omnibase_core.errors.error_codes' (/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/errors/error_codes.py)
+_________ ERROR collecting unit/contracts/test_model_contract_base.py __________
+ImportError while importing test module '/Volumes/PRO-G40/Code/omnibase_core/tests/unit/contracts/test_model_contract_base.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/contracts/test_model_contract_base.py:20: in <module>
+    from omnibase_core.enums import ModelEnumNodeType
+E   ImportError: cannot import name 'ModelEnumNodeType' from 'omnibase_core.enums' (/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/enums/__init__.py)
+______ ERROR collecting unit/contracts/test_model_effect_retry_config.py _______
+ImportError while importing test module '/Volumes/PRO-G40/Code/omnibase_core/tests/unit/contracts/test_model_effect_retry_config.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/contracts/test_model_effect_retry_config.py:12: in <module>
+    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+E   ImportError: cannot import name 'CoreErrorCode' from 'omnibase_core.errors.error_codes' (/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/errors/error_codes.py)
+____ ERROR collecting unit/contracts/test_model_external_service_config.py _____
+tests/unit/contracts/test_model_external_service_config.py:12: in <module>
+    from omnibase_core.models.contracts.model_external_service_config import (
+src/omnibase_core/models/__init__.py:3: in <module>
+    from omnibase_core.models.common.model_error_context import ModelErrorContext
+src/omnibase_core/models/common/__init__.py:8: in <module>
+    from .model_error_context import ModelErrorContext
+src/omnibase_core/models/common/model_error_context.py:18: in <module>
+    class ModelErrorContext(BaseModel):
+src/omnibase_core/models/common/model_error_context.py:107: in ModelErrorContext
+    def to_simple_context(self) -> TypedDictBasicErrorContext:
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   NameError: name 'TypedDictBasicErrorContext' is not defined
+________ ERROR collecting unit/contracts/test_model_trigger_mappings.py ________
+ImportError while importing test module '/Volumes/PRO-G40/Code/omnibase_core/tests/unit/contracts/test_model_trigger_mappings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/contracts/test_model_trigger_mappings.py:21: in <module>
+    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+E   ImportError: cannot import name 'CoreErrorCode' from 'omnibase_core.errors.error_codes' (/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/errors/error_codes.py)
+=========================== short test summary info ============================
+ERROR tests/unit/contracts/test_model_compensation_plan.py
+ERROR tests/unit/contracts/test_model_contract_base.py
+ERROR tests/unit/contracts/test_model_effect_retry_config.py
+ERROR tests/unit/contracts/test_model_external_service_config.py - NameError:...
+ERROR tests/unit/contracts/test_model_trigger_mappings.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 5 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 5 errors in 0.30s ===============================

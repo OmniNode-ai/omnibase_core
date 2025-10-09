@@ -1,0 +1,48 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.11, pytest-8.4.1, pluggy-1.6.0 -- /Users/jonah/Library/Caches/pypoetry/virtualenvs/omnibase-core-Twd7t-Wn-py3.12/bin/python
+cachedir: .pytest_cache
+rootdir: /Volumes/PRO-G40/Code/omnibase_core/tests
+configfile: pytest.ini
+plugins: asyncio-0.25.3, anyio-4.10.0, cov-7.0.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None
+collecting ... collected 545 items / 1 error
+
+==================================== ERRORS ====================================
+_________ ERROR collecting unit/enums/test_unified_status_hierarchy.py _________
+ImportError while importing test module '/Volumes/PRO-G40/Code/omnibase_core/tests/unit/enums/test_unified_status_hierarchy.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/enums/test_unified_status_hierarchy.py:21: in <module>
+    from omnibase_core.enums.enum_status_migration import (
+src/omnibase_core/enums/enum_status_migration.py:21: in <module>
+    from omnibase_core.models.core.model_status_migrator import (
+src/omnibase_core/models/__init__.py:3: in <module>
+    from omnibase_core.models.common.model_error_context import ModelErrorContext
+src/omnibase_core/models/common/__init__.py:12: in <module>
+    from .model_validation_result import (
+src/omnibase_core/models/common/model_validation_result.py:8: in <module>
+    from omnibase_core.models.common.model_validation_metadata import (
+src/omnibase_core/models/common/model_validation_metadata.py:3: in <module>
+    from omnibase_core.models.core.model_semver import ModelSemVer
+src/omnibase_core/models/core/__init__.py:14: in <module>
+    from .model_configuration_base import ModelConfigurationBase
+src/omnibase_core/models/core/model_configuration_base.py:34: in <module>
+    from omnibase_core.models.infrastructure.model_result import ModelResult
+src/omnibase_core/models/infrastructure/__init__.py:15: in <module>
+    from .model_metric import ModelMetric
+src/omnibase_core/models/infrastructure/model_metric.py:27: in <module>
+    from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+src/omnibase_core/models/metadata/__init__.py:21: in <module>
+    from .model_generic_metadata import ModelGenericMetadata
+src/omnibase_core/models/metadata/model_generic_metadata.py:34: in <module>
+    from .model_genericmetadata import ModelGenericMetadata
+src/omnibase_core/models/metadata/model_genericmetadata.py:17: in <module>
+    from omnibase_core.utils.util_semver import parse_semver_from_string
+E   ModuleNotFoundError: No module named 'omnibase_core.utils.util_semver'
+=========================== short test summary info ============================
+ERROR tests/unit/enums/test_unified_status_hierarchy.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 1.99s ===============================

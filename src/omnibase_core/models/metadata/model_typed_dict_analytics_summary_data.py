@@ -10,10 +10,10 @@ Typed structure for analytics summary serialization.
 from typing import TypedDict
 
 # Import component classes for type hints
-from omnibase_core.models.analytics.model_analytics_error_summary import (
+from omnibase_core.models.metadata.analytics.model_analytics_error_summary import (
     ModelAnalyticsErrorSummary,
 )
-from omnibase_core.models.analytics.model_analytics_performance_summary import (
+from omnibase_core.models.metadata.analytics.model_analytics_performance_summary import (
     ModelAnalyticsPerformanceSummary,
 )
 from omnibase_core.models.metadata.model_typed_dict_core_analytics import (
