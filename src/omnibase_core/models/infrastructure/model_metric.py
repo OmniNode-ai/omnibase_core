@@ -1,20 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeVar, Union
-
-from pydantic import Field
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
-"""
-Metric model.
-
-Individual metric model with strong typing using TypeVar generics.
-Follows ONEX one-model-per-file naming conventions and strong typing standards.
-"""
-
-
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
@@ -23,8 +9,17 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-# Import metadata value for type-safe metric handling
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+# TYPE_CHECKING guard to break circular import with metadata layer
+# Infrastructure layer should not depend on metadata at runtime
+if TYPE_CHECKING:
+    from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+
+"""
+Metric model.
+
+Individual metric model with strong typing using TypeVar generics.
+Follows ONEX one-model-per-file naming conventions and strong typing standards.
+"""
 
 
 class ModelMetric(BaseModel):
@@ -40,7 +35,7 @@ class ModelMetric(BaseModel):
     """
 
     key: str = Field(default=..., description="Metric key")
-    value: ModelMetadataValue = Field(
+    value: "ModelMetadataValue" = Field(
         default=..., description="Strongly-typed metric value"
     )
     unit: ModelSchemaValue = Field(
@@ -53,7 +48,7 @@ class ModelMetric(BaseModel):
     )
 
     @property
-    def typed_value(self) -> ModelMetadataValue:
+    def typed_value(self) -> "ModelMetadataValue":
         """Get the strongly-typed metric value."""
         return self.value
 
@@ -63,8 +58,13 @@ class ModelMetric(BaseModel):
         key: str,
         value: str,
         description: str | None = None,
-    ) -> ModelMetric:
+    ) -> "ModelMetric":
         """Create a string metric with strong typing."""
+        # Import at runtime to avoid circular dependency
+        from omnibase_core.models.metadata.model_metadata_value import (
+            ModelMetadataValue,
+        )
+
         return cls(
             key=key,
             value=ModelMetadataValue.from_string(value),
@@ -79,8 +79,13 @@ class ModelMetric(BaseModel):
         value: ModelNumericValue,
         unit: str | None = None,
         description: str | None = None,
-    ) -> ModelMetric:
+    ) -> "ModelMetric":
         """Create a numeric metric with ModelNumericValue."""
+        # Import at runtime to avoid circular dependency
+        from omnibase_core.models.metadata.model_metadata_value import (
+            ModelMetadataValue,
+        )
+
         # Convert ModelNumericValue to basic numeric type for ModelMetadataValue
         if value.value_type == "integer":
             metadata_value = ModelMetadataValue.from_int(value.integer_value)
@@ -105,8 +110,13 @@ class ModelMetric(BaseModel):
         key: str,
         value: bool,
         description: str | None = None,
-    ) -> ModelMetric:
+    ) -> "ModelMetric":
         """Create a boolean metric with strong typing."""
+        # Import at runtime to avoid circular dependency
+        from omnibase_core.models.metadata.model_metadata_value import (
+            ModelMetadataValue,
+        )
+
         return cls(
             key=key,
             value=ModelMetadataValue.from_bool(value),
@@ -121,7 +131,7 @@ class ModelMetric(BaseModel):
         value: ModelNumericValue,
         unit: str | None = None,
         description: str | None = None,
-    ) -> ModelMetric:
+    ) -> "ModelMetric":
         """Create numeric metric from ModelNumericValue."""
         return cls.create_numeric_metric(key, value, unit, description)
 
@@ -132,7 +142,7 @@ class ModelMetric(BaseModel):
         value: object,
         unit: str | None = None,
         description: str | None = None,
-    ) -> ModelMetric:
+    ) -> "ModelMetric":
         """Create metric from bounded type values with automatic type detection."""
         if isinstance(value, str):
             return cls.create_string_metric(key, value, description)

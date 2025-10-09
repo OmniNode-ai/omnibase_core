@@ -18,8 +18,6 @@ from typing import Any, Dict, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-# Type alias for condition value that can be single or list[Any]
-ConditionValueType = PrimitiveValueType | list[PrimitiveValueType]
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -34,6 +32,9 @@ from omnibase_core.types.constraints import (
     PrimitiveValueType,
     is_primitive_value,
 )
+
+# Type alias for condition value that can be single or list
+ConditionValueType = PrimitiveValueType | list[PrimitiveValueType]
 
 
 class ModelWorkflowCondition(BaseModel):

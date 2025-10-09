@@ -86,6 +86,15 @@ except ImportError:
     # Graceful degradation if circular imports prevent loading
     _NODE_MODELS_AVAILABLE = False
 
+# Workflow models
+try:
+    from .model_workflow import ModelWorkflow
+
+    _WORKFLOW_MODELS_AVAILABLE = True
+except ImportError:
+    # Graceful degradation if circular imports prevent loading
+    _WORKFLOW_MODELS_AVAILABLE = False
+
 __all__ = [
     # Configuration base classes
     "ModelConfigurationBase",
@@ -141,4 +150,6 @@ __all__ = [
     "ModelNodeTemplateConfig",
     "ModelNodeType",
     "ModelNodeVersionConstraints",
+    # Workflow models
+    "ModelWorkflow",
 ]

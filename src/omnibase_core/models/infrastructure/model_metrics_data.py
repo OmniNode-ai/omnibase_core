@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
@@ -13,9 +14,6 @@ Clean, strongly-typed replacement for custom metrics union types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-
-from typing import Any
-
 # Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
@@ -26,9 +24,12 @@ from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .model_metric import ModelMetric
+
+# TYPE_CHECKING guard to break circular import with metadata layer
+if TYPE_CHECKING:
+    from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelMetricsData(BaseModel):
@@ -85,7 +86,7 @@ class ModelMetricsData(BaseModel):
         )
         self.metrics.append(metric)
 
-    def get_metric_by_key(self, key: str) -> ModelMetadataValue | None:
+    def get_metric_by_key(self, key: str) -> "ModelMetadataValue | None":
         """Get metric value by key with bounded return type."""
         for metric in self.metrics:
             if metric.key == key:

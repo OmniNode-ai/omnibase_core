@@ -16,8 +16,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_examples import ModelExample
 
-from .model_typedproperties import ModelTypedProperties
-
 
 class ModelSchema(BaseModel):
     """

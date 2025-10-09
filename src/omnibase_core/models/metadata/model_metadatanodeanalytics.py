@@ -51,7 +51,7 @@ from omnibase_core.models.metadata.model_typed_dict_metadata_dict import (
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 if TYPE_CHECKING:
-    from omnibase_core.models.cli.model_cli_value import ModelCliValue
+    from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
     from omnibase_core.models.metadata.model_metadata_analytics_summary import (
         ModelMetadataAnalyticsSummary,
     )
@@ -230,6 +230,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def add_custom_metric(self, name: str, value: ModelMetadataValue) -> None:
         """Add a custom metric using strongly-typed value."""
+        # Runtime import to avoid circular dependency
+        from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+
         # Use the already typed metadata value directly
         cli_value = ModelCliValue.from_any(value.to_python_value())
         self.custom_metrics.add_metric(name, cli_value.to_python_value())
@@ -237,9 +240,12 @@ class ModelMetadataNodeAnalytics(BaseModel):
     def get_custom_metric(
         self,
         name: str,
-        default: ModelCliValue | None = None,
-    ) -> ModelCliValue | None:
+        default: "ModelCliValue | None" = None,
+    ) -> "ModelCliValue | None":
         """Get a custom metric value."""
+        # Runtime import to avoid circular dependency
+        from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+
         value = self.custom_metrics.get_metric_by_key(name)
         if value is not None:
             return ModelCliValue.from_any(value)
@@ -275,8 +281,13 @@ class ModelMetadataNodeAnalytics(BaseModel):
         )
         return self.health_score
 
-    def to_summary(self) -> ModelMetadataAnalyticsSummary:
+    def to_summary(self) -> "ModelMetadataAnalyticsSummary":
         """Get analytics summary with clean typing."""
+        # Runtime import to avoid circular dependency
+        from omnibase_core.models.metadata.model_metadata_analytics_summary import (
+            ModelMetadataAnalyticsSummary,
+        )
+
         summary = ModelMetadataAnalyticsSummary(
             last_modified=None,
             last_validated=None,
@@ -312,7 +323,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
         return summary
 
     @classmethod
-    def create_default(cls, collection_name: str = "") -> ModelMetadataNodeAnalytics:
+    def create_default(cls, collection_name: str = "") -> "ModelMetadataNodeAnalytics":
         """Create default analytics instance."""
         return cls(
             collection_id=uuid_from_string(collection_name or "default", "collection"),
@@ -324,7 +335,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
     def create_documentation_analytics(
         cls,
         collection_name: str = "documentation",
-    ) -> ModelMetadataNodeAnalytics:
+    ) -> "ModelMetadataNodeAnalytics":
         """Create analytics optimized for documentation collections."""
         return cls(
             collection_id=uuid_from_string(collection_name, "collection"),
@@ -368,7 +379,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
             # fallback-ok: metadata update failure in analytics does not impact core functionality
             return False
 
-    def serialize(self) -> dict[str, BasicValueType]:
+    def serialize(self) -> dict[str, "BasicValueType"]:
         """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

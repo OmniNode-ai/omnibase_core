@@ -1,18 +1,13 @@
-import uuid
-from typing import Any, Dict
-
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 """
 OnexEventMetadata model.
 """
 
-# Forward reference to avoid circular imports
 from typing import TYPE_CHECKING, Any, Dict
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
+
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_node_announce_metadata import (

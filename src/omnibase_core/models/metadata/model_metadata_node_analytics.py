@@ -34,7 +34,7 @@ from omnibase_core.utils.uuid_utilities import uuid_from_string
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
 from .model_metadata_value import ModelMetadataValue
 from .model_metadatanodeanalytics import ModelMetadataNodeAnalytics
-from .typed_dict_metadata_dict import TypedDictMetadataDict
+from .model_typed_dict_metadata_dict import TypedDictMetadataDict
 
 
 def _create_default_metrics_data() -> ModelMetricsData:
