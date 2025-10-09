@@ -1,23 +1,19 @@
-from typing import Any
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
-from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
-from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
-from omnibase_core.utils.util_semver_parser import parse_semver_from_string
-
 """
 Metadata tool info model.
 """
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
+from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
+from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
+
 from .model_audit_entry import ModelAuditEntry
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
-from .model_semver import ModelSemVer
+from .model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelMetadataToolInfo(BaseModel):

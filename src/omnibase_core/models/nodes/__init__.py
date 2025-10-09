@@ -4,10 +4,10 @@ Node Management Models
 Models for node definitions, capabilities, configurations, and information.
 """
 
-from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_node import ModelFunctionNode
 from .model_function_relationships import ModelFunctionRelationships
+from .model_functiondeprecationinfo import ModelFunctionDeprecationInfo
 from .model_node_capabilities_info import ModelNodeCapabilitiesInfo
 
 # Node summary models

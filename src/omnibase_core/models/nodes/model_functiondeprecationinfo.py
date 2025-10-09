@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from enum import Enum
 from typing import Any
@@ -9,7 +11,9 @@ from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
-from omnibase_core.models.nodes.model_deprecation_summary import ModelDeprecationSummary
+from omnibase_core.models.nodes.model_function_deprecation_info import (
+    ModelDeprecationSummary,
+)
 
 
 class ModelFunctionDeprecationInfo(BaseModel):

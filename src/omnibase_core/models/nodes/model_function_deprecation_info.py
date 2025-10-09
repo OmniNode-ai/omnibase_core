@@ -24,8 +24,6 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
-from .model_functiondeprecationinfo import ModelFunctionDeprecationInfo
-
 
 class ModelDeprecationSummary(TypedDict):
     """Type-safe dict[str, Any]ionary for deprecation summary."""
@@ -38,4 +36,4 @@ class ModelDeprecationSummary(TypedDict):
 
 
 # Export for use
-__all__ = ["ModelDeprecationSummary", "ModelFunctionDeprecationInfo"]
+__all__ = ["ModelDeprecationSummary"]

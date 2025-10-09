@@ -32,8 +32,6 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 # Local imports from extracted classes
 from .mixin_completion_data import MixinCompletionData
 from .mixin_log_data import MixinLogData
-from .protocol_log_emitter import LogEmitter
-from .protocol_registry_with_bus import RegistryWithBus
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope

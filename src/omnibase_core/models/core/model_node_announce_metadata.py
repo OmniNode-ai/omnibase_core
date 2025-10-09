@@ -96,10 +96,12 @@ class ModelNodeAnnounceMetadata(BaseModel):
 
 # Resolve forward references after all models are defined
 try:
-    # Import the models needed for forward references
+    # Import all models needed for forward references
+    from omnibase_core.models.core.model_io_block import ModelIOBlock
     from omnibase_core.models.core.model_node_metadata_block import (
         ModelNodeMetadataBlock,
     )
+    from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 
     # Rebuild the model to resolve forward references
     ModelNodeAnnounceMetadata.model_rebuild()

@@ -4,7 +4,7 @@ State Transition Models.
 Re-export module for state transition components.
 """
 
-from omnibase_core.enums.enum_state_transition import EnumTransitionType
+from omnibase_core.enums.enum_transition_type import EnumTransitionType
 from omnibase_core.models.core.model_conditional_transition import (
     ModelConditionalTransition,
 )

@@ -8,9 +8,7 @@ Strongly-typed model for canonicalization policies.
 from collections.abc import Callable
 from typing import Any
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.core.model_canonicalization_policy_config import ModelConfig
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCanonicalizationPolicy(BaseModel):
@@ -19,6 +17,8 @@ class ModelCanonicalizationPolicy(BaseModel):
 
     Represents canonicalization configuration with proper type safety.
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     canonicalize_body: Callable[..., Any] = Field(
         default=...,
