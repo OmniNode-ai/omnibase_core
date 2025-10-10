@@ -427,8 +427,8 @@ def discover_model_imports() -> Dict[str, str]:
             "from omnibase_core.models.core.model_action_config_value import ModelActionConfigValue",
         ),
         (
-            "ModelTypedDictGenericMetadataDict",
-            "from omnibase_core.models.metadata.model_typed_dict_metadata_dict import ModelTypedDictGenericMetadataDict",
+            "TypedDictMetadataDict",
+            "from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict",
         ),
         (
             "ModelEnumTransitionType",

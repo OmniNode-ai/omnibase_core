@@ -11,10 +11,10 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.metadata.model_input_state_fields_type import (
-        ModelInputStateFieldsType,
-    )
     from omnibase_core.models.metadata.model_versionunion import ModelVersionUnion
+    from omnibase_core.types.typed_dict_input_state_fields import (
+        TypedDictInputStateFields,
+    )
 
 
 class ModelInputState(BaseModel):
@@ -37,8 +37,8 @@ class ModelInputState(BaseModel):
     )
 
     # Additional fields that might be present in input state
-    additional_fields: "ModelInputStateFieldsType" = Field(
-        default_factory=lambda: ModelInputStateFieldsType(),
+    additional_fields: "TypedDictInputStateFields" = Field(
+        default_factory=lambda: TypedDictInputStateFields(),
         description="Additional fields in the input state",
     )
 

@@ -1,26 +1,21 @@
-from __future__ import annotations
-
-import uuid
-from typing import Dict, TypedDict
-
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 """
 TypedDict for node metadata summary.
 
-Replaces dict[str, Any] return type with structured typing.
+Replaces dict[str, Any] return type with structured typing following ONEX patterns.
 """
 
+from __future__ import annotations
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_semver import ModelSemVer
 
 
-class ModelNodeMetadataSummaryType(TypedDict):
+class TypedDictNodeMetadataSummary(TypedDict):
     """
-    Typed dict[str, Any]ionary for node metadata info summary.
+    Typed dictionary for node metadata info summary.
 
     Replaces dict[str, Any] return type from get_summary()
     with proper type structure.
@@ -31,7 +26,7 @@ class ModelNodeMetadataSummaryType(TypedDict):
     node_type: str
     status: str
     health: str
-    version: ModelSemVer | None
+    version: "ModelSemVer | None"
     usage_count: int
     error_rate: float
     success_rate: float
@@ -45,5 +40,4 @@ class ModelNodeMetadataSummaryType(TypedDict):
     is_high_usage: bool
 
 
-# Export for use
-__all__ = ["ModelNodeMetadataSummaryType"]
+__all__ = ["TypedDictNodeMetadataSummary"]

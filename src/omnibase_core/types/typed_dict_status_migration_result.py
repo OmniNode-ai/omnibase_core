@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 """
-Validation result model for status migration operations.
+TypedDict for status migration validation results.
 
 This module defines the structure for validation results when migrating
 status enums from legacy to new formats.
 """
 
 
-from typing import TypedDict
-
-
-class ValidationResult(TypedDict):
-    """Typed dictionary for migration validation results."""
+class TypedDictStatusMigrationResult(TypedDict):
+    """TypedDict for status migration validation results."""
 
     success: bool
     old_value: str
@@ -26,7 +23,6 @@ class ValidationResult(TypedDict):
     errors: list[str]
 
 
-# Export for use
 __all__ = [
-    "ValidationResult",
+    "TypedDictStatusMigrationResult",
 ]

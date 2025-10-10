@@ -29,10 +29,12 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
+from omnibase_core.types.typed_dict_node_metadata_summary import (
+    TypedDictNodeMetadataSummary,
+)
 
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
-from .model_types_node_metadata_summary import ModelNodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -279,7 +281,7 @@ class ModelNodeMetadataInfo(BaseModel):
             memory_usage_mb,
         )
 
-    def get_summary(self) -> ModelNodeMetadataSummaryType:
+    def get_summary(self) -> TypedDictNodeMetadataSummary:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
         core_summary = self.core.get_status_summary()

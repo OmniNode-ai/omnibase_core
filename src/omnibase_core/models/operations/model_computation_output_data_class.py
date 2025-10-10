@@ -4,7 +4,7 @@ Computation Output Data Model.
 Strongly-typed output data for computation operations with discriminated unions.
 """
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -29,10 +29,12 @@ if TYPE_CHECKING:
 
 # Discriminated union type for computation output data (defined after constituent types)
 ModelComputationOutputUnion = Annotated[
-    "ModelNumericComputationOutput"
-    | "ModelTextComputationOutput"
-    | "ModelBinaryComputationOutput"
-    | "ModelStructuredComputationOutput",
+    Union[
+        "ModelNumericComputationOutput",
+        "ModelTextComputationOutput",
+        "ModelBinaryComputationOutput",
+        "ModelStructuredComputationOutput",
+    ],
     Field(discriminator="computation_type"),
 ]
 

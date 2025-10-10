@@ -29,12 +29,12 @@ from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.types.constraints import BasicValueType
+from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
 from .model_metadata_value import ModelMetadataValue
 from .model_metadatanodeanalytics import ModelMetadataNodeAnalytics
-from .model_typed_dict_metadata_dict import TypedDictMetadataDict
 
 
 def _create_default_metrics_data() -> ModelMetricsData:

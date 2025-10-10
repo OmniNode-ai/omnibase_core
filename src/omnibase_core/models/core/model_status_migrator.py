@@ -1,9 +1,18 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
-from omnibase_core.enums.enum_status_migration import EnumStatusMigrator
+from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.enums.enum_function_lifecycle_status import (
+    EnumFunctionLifecycleStatus,
+)
+from omnibase_core.enums.enum_general_status import EnumGeneralStatus
+from omnibase_core.enums.enum_scenario_status_v2 import EnumScenarioStatusV2
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 """
 Status Enum Migration Utilities.
@@ -13,23 +22,9 @@ new unified status hierarchy.
 
 Usage:
     # Migrate enum values
-    migrator = EnumStatusMigrator()
+    migrator = ModelEnumStatusMigrator()
     new_status = migrator.migrate_execution_status(old_value)
 """
-
-
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
-from omnibase_core.enums.enum_function_lifecycle_status import (
-    EnumFunctionLifecycleStatus,
-)
-from omnibase_core.enums.enum_general_status import EnumGeneralStatus
-from omnibase_core.enums.enum_scenario_status_v2 import EnumScenarioStatusV2
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Legacy enum value mappings for migration
 LEGACY_ENUM_STATUS_VALUES = {
@@ -282,17 +277,19 @@ class ModelEnumStatusMigrator:
         """
         # Migrate to appropriate new enum and convert to base status directly
         if source_enum.lower() == "enumstatus":
-            return EnumStatusMigrator.migrate_general_status(old_value).to_base_status()
+            return ModelEnumStatusMigrator.migrate_general_status(
+                old_value
+            ).to_base_status()
         if source_enum.lower() == "enumexecutionstatus":
-            return EnumStatusMigrator.migrate_execution_status(
+            return ModelEnumStatusMigrator.migrate_execution_status(
                 old_value,
             ).to_base_status()
         if source_enum.lower() == "enumscenariostatus":
-            return EnumStatusMigrator.migrate_scenario_status(
+            return ModelEnumStatusMigrator.migrate_scenario_status(
                 old_value,
             ).to_base_status()
         if source_enum.lower() in ["enumfunctionstatus", "enummetadatanodestatus"]:
-            return EnumStatusMigrator.migrate_function_status(
+            return ModelEnumStatusMigrator.migrate_function_status(
                 old_value,
             ).to_base_status()
 
@@ -309,5 +306,5 @@ __all__ = [
     "LEGACY_FUNCTION_STATUS_VALUES",
     "LEGACY_METADATA_NODE_STATUS_VALUES",
     "LEGACY_SCENARIO_STATUS_VALUES",
-    "EnumStatusMigrator",
+    "ModelEnumStatusMigrator",
 ]

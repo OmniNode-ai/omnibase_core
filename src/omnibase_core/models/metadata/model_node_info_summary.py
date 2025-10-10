@@ -25,11 +25,13 @@ from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQual
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_node_core_update_data import (
+    TypedDictNodeCoreUpdateData,
+)
 
 from .model_typed_dict_categorization_update_data import (
     TypedDictCategorizationUpdateData,
 )
-from .model_typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
 from .model_typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
 from .model_typed_dict_performance_update_data import TypedDictPerformanceUpdateData
 from .model_typed_dict_quality_update_data import TypedDictQualityUpdateData

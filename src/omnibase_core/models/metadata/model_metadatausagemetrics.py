@@ -1,12 +1,9 @@
 from datetime import UTC, datetime
-from typing import Any, Dict, TypedDict
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.types.constraints import BasicValueType
-
-# Define TypedDict for metadata - using TypedDict pattern from other models
-TypedDictUsageMetadataDict = Dict[str, Any]
+from omnibase_core.types.typed_dict_usage_metadata import TypedDictUsageMetadata
 
 
 class ModelMetadataUsageMetrics(BaseModel):
@@ -94,9 +91,9 @@ class ModelMetadataUsageMetrics(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> TypedDictUsageMetadataDict:
-        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
-        metadata: TypedDictUsageMetadataDict = {}
+    def get_metadata(self) -> TypedDictUsageMetadata:
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        metadata: TypedDictUsageMetadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
             if hasattr(self, field):
@@ -110,8 +107,8 @@ class ModelMetadataUsageMetrics(BaseModel):
                         metadata[field] = str(value)  # type: ignore[literal-required]
         return metadata
 
-    def set_metadata(self, metadata: TypedDictUsageMetadataDict) -> bool:
-        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+    def set_metadata(self, metadata: TypedDictUsageMetadata) -> bool:
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -123,7 +120,7 @@ class ModelMetadataUsageMetrics(BaseModel):
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

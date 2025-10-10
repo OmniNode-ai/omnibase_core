@@ -5,15 +5,15 @@ and the main input state class.
 """
 
 from omnibase_core.models.metadata.model_input_state_class import ModelInputState
-from omnibase_core.models.metadata.model_input_state_fields_type import (
-    ModelInputStateFieldsType,
-)
 from omnibase_core.models.metadata.model_input_state_source_type import (
     ModelInputStateSourceType,
 )
+from omnibase_core.types.typed_dict_input_state_fields import (
+    TypedDictInputStateFields,
+)
 
 __all__ = [
-    "ModelInputStateFieldsType",
+    "TypedDictInputStateFields",
     "ModelInputStateSourceType",
     "ModelInputState",
 ]

@@ -155,6 +155,11 @@ else:
             "BaseCollection",
             "BaseFactory",
         ):
+            # Lazy import - happens only when these names are accessed
+            from omnibase_core.models.base import (
+                ModelBaseCollection,
+                ModelBaseFactory,
+            )
 
             globals()["ModelBaseCollection"] = ModelBaseCollection
             globals()["ModelBaseFactory"] = ModelBaseFactory

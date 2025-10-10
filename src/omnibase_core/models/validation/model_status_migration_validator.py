@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Dict
 
-from omnibase_core.enums.enum_status_migration import EnumStatusMigrator
+from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
+from omnibase_core.types import TypedDictStatusMigrationResult
 
 """
 Status Migration Validation Utilities.
@@ -11,15 +12,9 @@ Validates status enum migrations and identifies potential issues.
 
 Usage:
     # Validate migration
-    validator = EnumStatusMigrationValidator()
+    validator = ModelEnumStatusMigrationValidator()
     issues = validator.validate_model_migration(model_class)
 """
-
-
-from typing import Any, Dict
-
-from omnibase_core.enums.enum_status_migrator import ModelEnumStatusMigrator
-from omnibase_core.models.core.model_validation_result_status import ValidationResult
 
 
 class ModelEnumStatusMigrationValidator:
@@ -32,7 +27,7 @@ class ModelEnumStatusMigrationValidator:
         old_value: str,
         old_enum_name: str,
         expected_new_enum: type,
-    ) -> ValidationResult:
+    ) -> TypedDictStatusMigrationResult:
         """
         Validate that a value can be safely migrated.
 
@@ -44,7 +39,7 @@ class ModelEnumStatusMigrationValidator:
         Returns:
             Validation result with success status and details
         """
-        result: ValidationResult = {
+        result: TypedDictStatusMigrationResult = {
             "success": False,
             "old_value": old_value,
             "old_enum": old_enum_name,
@@ -57,7 +52,7 @@ class ModelEnumStatusMigrationValidator:
 
         try:
             # Attempt migration
-            migrator = EnumStatusMigrator()
+            migrator = ModelEnumStatusMigrator()
 
             if old_enum_name.lower() == "enumstatus":
                 from omnibase_core.enums.enum_general_status import EnumGeneralStatus
@@ -236,5 +231,5 @@ class ModelEnumStatusMigrationValidator:
 
 # Export for use
 __all__ = [
-    "EnumStatusMigrationValidator",
+    "ModelEnumStatusMigrationValidator",
 ]

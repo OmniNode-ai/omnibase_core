@@ -12,10 +12,8 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
-from omnibase_core.models.metadata.model_typed_dict_metadata_dict import (
-    TypedDictMetadataDict,
-)
 from omnibase_core.types.constraints import BasicValueType
+from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 
 
 class ModelGenericMetadata(BaseModel):

@@ -45,9 +45,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.models.metadata.model_typed_dict_metadata_dict import (
-    TypedDictMetadataDict,
-)
+from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 if TYPE_CHECKING:

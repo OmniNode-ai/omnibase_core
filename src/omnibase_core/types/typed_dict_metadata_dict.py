@@ -4,9 +4,10 @@ TypedDictMetadataDict - ONEX Standards Compliant.
 Typed structure for metadata dictionary in protocol methods.
 """
 
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class TypedDictMetadataDict(TypedDict, total=False):
@@ -14,6 +15,6 @@ class TypedDictMetadataDict(TypedDict, total=False):
 
     name: str
     description: str
-    version: ModelSemVer
+    version: "ModelSemVer"
     tags: list[str]
     metadata: dict[str, Any]

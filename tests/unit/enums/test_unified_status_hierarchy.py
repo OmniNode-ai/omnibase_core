@@ -18,11 +18,11 @@ from omnibase_core.enums.enum_function_lifecycle_status import (
     EnumMetadataNodeStatus,
 )
 from omnibase_core.enums.enum_general_status import EnumGeneralStatus, EnumStatus
-from omnibase_core.enums.enum_status_migration import (
-    EnumStatusMigrationValidator,
-    EnumStatusMigrator,
-)
 from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.core.model_status_migrator import EnumStatusMigrator
+from omnibase_core.models.validation.model_status_migration_validator import (
+    EnumStatusMigrationValidator,
+)
 
 
 class TestBaseStatus:

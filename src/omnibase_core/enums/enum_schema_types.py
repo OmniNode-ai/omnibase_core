@@ -1,10 +1,3 @@
-from typing import Dict, List
-
-from pydantic import Field
-
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.core.model_semver import ModelSemVer
-
 """
 Schema type enumeration for AST generation.
 
@@ -12,7 +5,7 @@ Provides standardized mapping between JSON schema types and Python types.
 """
 
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 class EnumSchemaTypes(str, Enum):

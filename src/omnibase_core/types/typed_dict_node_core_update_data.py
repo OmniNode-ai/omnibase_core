@@ -25,4 +25,4 @@ class TypedDictNodeCoreUpdateData(TypedDict, total=False):
     complexity: EnumConceptualComplexity
 
 
-__all__ = ["ModelTypedDictNodeCoreUpdateData"]
+__all__ = ["TypedDictNodeCoreUpdateData"]

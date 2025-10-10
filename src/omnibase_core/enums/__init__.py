@@ -50,6 +50,7 @@ from .enum_github_runner_os import EnumGitHubRunnerOS
 from .enum_group_status import EnumGroupStatus
 
 # Health and status enums
+from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_status_type import EnumHealthStatusType
 
 # Hub and coordination enums
@@ -136,9 +137,9 @@ from .enum_version_status import EnumVersionStatus
 # Workflow-related enums
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
-# NOTE: ModelEnumStatusMigrator causes circular import when imported at module level
-# It's defined in models.core.model_status_migrator and re-exported from enum_status_migration
-# Users should import it directly: from omnibase_core.enums.enum_status_migration import ModelEnumStatusMigrator
+# NOTE: ModelEnumStatusMigrator is defined in models.core.model_status_migrator
+# It was moved from enums to eliminate circular imports
+# Users should import it directly: from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
 
 # NOTE: The following enums are referenced but their module files don't exist:
 # - enum_tool_criticality.py (referenced by model_missing_tool.py)
@@ -169,6 +170,7 @@ __all__ = [
     # Events domain
     "EnumLogLevel",
     # Health and status domain
+    "EnumHealthCheckType",
     "EnumHealthStatusType",
     "EnumNodeHealthStatus",
     "EnumNodeStatus",
@@ -251,7 +253,7 @@ __all__ = [
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
-    # - "ModelEnumStatusMigrator" (causes circular import - import from enum_status_migration directly)
+    # - "ModelEnumStatusMigrator" (moved to models.core - import from model_status_migrator directly)
     # - "EnumToolCriticality" (module doesn't exist)
     # - "EnumToolHealthStatus" (module doesn't exist)
     # - "EnumToolMissingReason" (module doesn't exist)
