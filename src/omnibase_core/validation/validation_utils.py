@@ -10,12 +10,15 @@ import hashlib
 import logging
 from pathlib import Path
 
+from omnibase_core.types.typed_dict_validation_metadata_type import (
+    TypedDictValidationMetadataType,
+)
+
 from .exceptions import InputValidationError
 from .model_duplication_info import DuplicationInfo
 from .model_protocol_info import ModelProtocolInfo
 from .model_protocol_signature_extractor import ProtocolSignatureExtractor
 from .model_validation_result import ValidationResult
-from .typed_dict_validation_metadata_type import ValidationMetadataType
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -293,7 +296,6 @@ def extract_protocols_from_directory(directory: Path) -> list[ModelProtocolInfo]
 __all__ = [
     "DuplicationInfo",
     "ModelProtocolInfo",
-    "ValidationMetadataType",
     "ValidationResult",
     "determine_repository_name",
     "extract_protocol_signature",

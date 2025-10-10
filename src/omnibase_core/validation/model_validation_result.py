@@ -14,7 +14,7 @@ Safe Runtime Imports (OK to import at module level):
 from dataclasses import dataclass
 
 from omnibase_core.types.typed_dict_validation_metadata_type import (
-    ValidationMetadataType,
+    TypedDictValidationMetadataType,
 )
 
 
@@ -27,7 +27,7 @@ class ValidationResult:
     files_checked: int = 0
     violations_found: int = 0
     files_with_violations: int = 0
-    metadata: ValidationMetadataType | None = None
+    metadata: TypedDictValidationMetadataType | None = None
 
     def __post_init__(self) -> None:
         if self.metadata is None:

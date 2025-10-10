@@ -23,13 +23,13 @@ def test_import_core_types():
     """Test that core types can be imported without issues."""
     # Should import cleanly
     from omnibase_core.types.core_types import (
-        BasicErrorContext,
         ProtocolErrorContext,
         ProtocolSchemaValue,
+        TypedDictBasicErrorContext,
     )
 
     # Verify types are available
-    assert BasicErrorContext is not None
+    assert TypedDictBasicErrorContext is not None
     assert ProtocolErrorContext is not None
     assert ProtocolSchemaValue is not None
 
@@ -125,11 +125,11 @@ def test_no_circular_dependency_chain():
 
 
 def test_simple_error_context_functionality():
-    """Test that BasicErrorContext works as expected."""
-    from omnibase_core.types.core_types import BasicErrorContext
+    """Test that TypedDictBasicErrorContext works as expected."""
+    from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
     # Create a simple context
-    context = BasicErrorContext(
+    context = TypedDictBasicErrorContext(
         file_path="/test/file.py",
         line_number=42,
         function_name="test_function",
@@ -144,7 +144,7 @@ def test_simple_error_context_functionality():
     assert context_dict["key"] == "value"
 
     # Test from_dict
-    restored = BasicErrorContext.from_dict(context_dict)
+    restored = TypedDictBasicErrorContext.from_dict(context_dict)
     assert restored.file_path == context.file_path
     assert restored.line_number == context.line_number
     assert restored.function_name == context.function_name
@@ -152,10 +152,10 @@ def test_simple_error_context_functionality():
 
 
 def test_model_error_context_conversion():
-    """Test conversion between ModelErrorContext and BasicErrorContext."""
+    """Test conversion between ModelErrorContext and TypedDictBasicErrorContext."""
     from omnibase_core.models.common.model_error_context import ModelErrorContext
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-    from omnibase_core.types.core_types import BasicErrorContext
+    from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
     # Create a ModelErrorContext
     model_context = ModelErrorContext(
@@ -166,9 +166,9 @@ def test_model_error_context_conversion():
         },
     )
 
-    # Convert to BasicErrorContext
+    # Convert to TypedDictBasicErrorContext
     simple_context = model_context.to_simple_context()
-    assert isinstance(simple_context, BasicErrorContext)
+    assert isinstance(simple_context, TypedDictBasicErrorContext)
     assert simple_context.file_path == "/test/file.py"
     assert simple_context.line_number == 42
     assert simple_context.additional_context["key"] == "value"

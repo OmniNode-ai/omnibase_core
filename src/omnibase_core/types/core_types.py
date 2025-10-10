@@ -14,10 +14,7 @@ from omnibase_spi.protocols.types import ProtocolSchemaValue
 
 from .typed_dict_basic_error_context import TypedDictBasicErrorContext
 
-BasicErrorContext = TypedDictBasicErrorContext
-
 __all__ = [
-    "BasicErrorContext",
     "TypedDictBasicErrorContext",
     "ProtocolSchemaValue",
 ]

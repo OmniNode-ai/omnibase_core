@@ -23,9 +23,9 @@ from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import (
     STATUS_TO_EXIT_CODE,
     EnumCLIExitCode,
+    EnumCoreErrorCode,
     EnumOnexErrorCode,
-    ModelCoreErrorCode,
-    ModelRegistryErrorCode,
+    EnumRegistryErrorCode,
     get_error_codes_for_component,
     get_exit_code_for_core_error,
     get_exit_code_for_status,
@@ -35,10 +35,10 @@ from omnibase_core.errors.error_codes import (
 
 # Compatibility aliases for old test naming
 CLIExitCode = EnumCLIExitCode
-CoreErrorCode = ModelCoreErrorCode
+CoreErrorCode = EnumCoreErrorCode
 OnexError = ModelOnexError
 OnexErrorCode = EnumOnexErrorCode
-RegistryErrorCode = ModelRegistryErrorCode
+RegistryErrorCode = EnumRegistryErrorCode
 
 
 # Import ModelCLIAdapter only when needed (lazy import to avoid circular dependency)
