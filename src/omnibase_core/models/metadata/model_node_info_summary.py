@@ -28,13 +28,17 @@ from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_node_core_update_data import (
     TypedDictNodeCoreUpdateData,
 )
+from omnibase_core.types.typed_dict_performance_update_data import (
+    TypedDictPerformanceUpdateData,
+)
+from omnibase_core.types.typed_dict_quality_update_data import (
+    TypedDictQualityUpdateData,
+)
 
 from .model_typed_dict_categorization_update_data import (
     TypedDictCategorizationUpdateData,
 )
 from .model_typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
-from .model_typed_dict_performance_update_data import TypedDictPerformanceUpdateData
-from .model_typed_dict_quality_update_data import TypedDictQualityUpdateData
 from .model_typed_dict_timestamp_update_data import TypedDictTimestampUpdateData
 from .node_info.model_node_categorization import ModelNodeCategorization
 from .node_info.model_node_core import ModelNodeCore

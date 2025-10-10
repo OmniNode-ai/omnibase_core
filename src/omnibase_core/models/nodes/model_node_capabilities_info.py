@@ -21,8 +21,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from .model_types_node_capabilities_summary import ModelNodeCapabilitiesSummaryType
+from omnibase_core.types.typed_dict_node_capabilities_summary import (
+    TypedDictNodeCapabilitiesSummary,
+)
 
 
 class ModelNodeCapabilitiesInfo(BaseModel):
@@ -109,7 +110,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
 
     def get_capabilities_summary(
         self,
-    ) -> ModelNodeCapabilitiesSummaryType:
+    ) -> TypedDictNodeCapabilitiesSummary:
         """Get capabilities information summary."""
         return {
             "capabilities_count": len(self.capabilities),

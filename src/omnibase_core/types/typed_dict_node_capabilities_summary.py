@@ -1,20 +1,13 @@
-from __future__ import annotations
+"""TypedDict for node capabilities summary.
 
-from typing import Dict, TypedDict
-
+Type-safe dictionary for node capabilities information.
 """
-TypedDict for node capabilities summary.
-
-Replaces dict[str, Any] return type with structured typing.
-"""
-
 
 from typing import TypedDict
 
 
-class ModelNodeCapabilitiesSummaryType(TypedDict):
-    """
-    Typed dict[str, Any]ionary for node capabilities info summary.
+class TypedDictNodeCapabilitiesSummary(TypedDict):
+    """Typed dictionary for node capabilities info summary.
 
     Replaces dict[str, Any] return type from get_capabilities_summary()
     with proper type structure.
@@ -31,5 +24,4 @@ class ModelNodeCapabilitiesSummaryType(TypedDict):
     metrics_count: int
 
 
-# Export for use
-__all__ = ["ModelNodeCapabilitiesSummaryType"]
+__all__ = ["TypedDictNodeCapabilitiesSummary"]

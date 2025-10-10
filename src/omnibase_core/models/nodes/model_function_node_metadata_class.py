@@ -19,15 +19,15 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.types.typed_dict_documentation_summary_filtered import (
+    TypedDictDocumentationSummaryFiltered,
+)
 
 from .model_deprecation_summary import ModelDeprecationSummary
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_metadata_summary import ModelFunctionMetadataSummary
 from .model_function_relationships import ModelFunctionRelationships
-
-if TYPE_CHECKING:
-    from .model_documentation_summary_filtered import ModelDocumentationSummaryFiltered
 
 
 class ModelFunctionNodeMetadata(BaseModel):
@@ -253,7 +253,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         rel_summary = self.relationships.get_relationships_summary()
 
         # Convert documentation summary to expected format (exclude quality_score - handled separately)
-        doc_filtered: ModelDocumentationSummaryFiltered = {
+        doc_filtered: TypedDictDocumentationSummaryFiltered = {
             "has_documentation": doc_summary.get("has_documentation", False),
             "has_examples": doc_summary.get("has_examples", False),
             "has_notes": doc_summary.get("has_notes", False),

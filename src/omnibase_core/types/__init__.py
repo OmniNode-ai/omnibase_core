@@ -64,10 +64,12 @@ from .converter_health_to_typed_dict import convert_health_to_typed_dict
 # Converter functions
 from .converter_stats_to_typed_dict import convert_stats_to_typed_dict
 from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
+from .typed_dict_analytics_summary_data import TypedDictAnalyticsSummaryData
 from .typed_dict_audit_info import TypedDictAuditInfo
 from .typed_dict_batch_processing_info import TypedDictBatchProcessingInfo
 from .typed_dict_cache_info import TypedDictCacheInfo
 from .typed_dict_capability_factory_kwargs import TypedDictCapabilityFactoryKwargs
+from .typed_dict_categorization_update_data import TypedDictCategorizationUpdateData
 from .typed_dict_cli_input_dict import TypedDictCliInputDict
 from .typed_dict_collection_kwargs import (
     TypedDictCollectionCreateKwargs,
@@ -75,9 +77,15 @@ from .typed_dict_collection_kwargs import (
 )
 from .typed_dict_configuration_settings import TypedDictConfigurationSettings
 from .typed_dict_connection_info import TypedDictConnectionInfo
+from .typed_dict_core_analytics import TypedDictCoreAnalytics
+from .typed_dict_core_data import TypedDictCoreData
 from .typed_dict_core_summary import TypedDictCoreSummary
 from .typed_dict_debug_info_data import TypedDictDebugInfoData
 from .typed_dict_dependency_info import TypedDictDependencyInfo
+from .typed_dict_deprecation_summary import TypedDictDeprecationSummary
+from .typed_dict_documentation_summary_filtered import (
+    TypedDictDocumentationSummaryFiltered,
+)
 from .typed_dict_error_data import TypedDictErrorData
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_event_info import TypedDictEventInfo
@@ -90,24 +98,52 @@ from .typed_dict_factory_kwargs import (
 )
 from .typed_dict_feature_flags import TypedDictFeatureFlags
 from .typed_dict_field_value import TypedDictFieldValue
+from .typed_dict_function_documentation_summary_type import (
+    TypedDictFunctionDocumentationSummaryType,
+)
+from .typed_dict_function_relationships_summary import (
+    TypedDictFunctionRelationshipsSummary,
+)
+from .typed_dict_generic_metadata_dict import TypedDictGenericMetadataDict
 from .typed_dict_health_status import TypedDictHealthStatus
 from .typed_dict_input_state_fields import TypedDictInputStateFields
+from .typed_dict_input_state_source_type import TypedDictInputStateSourceType
 from .typed_dict_legacy_error import TypedDictLegacyError
 from .typed_dict_legacy_health import TypedDictLegacyHealth
 from .typed_dict_legacy_stats import TypedDictLegacyStats
 from .typed_dict_metadata_dict import TypedDictMetadataDict
 from .typed_dict_metrics import TypedDictMetrics
+from .typed_dict_migration_conflict_base_dict import TypedDictMigrationConflictBaseDict
+from .typed_dict_migration_duplicate_conflict_dict import (
+    TypedDictMigrationDuplicateConflictDict,
+)
+from .typed_dict_migration_name_conflict_dict import TypedDictMigrationNameConflictDict
 from .typed_dict_migration_step_dict import TypedDictMigrationStepDict
+from .typed_dict_node_capabilities_summary import TypedDictNodeCapabilitiesSummary
 from .typed_dict_node_configuration_summary import TypedDictNodeConfigurationSummary
+from .typed_dict_node_connection_summary_type import (
+    TypedDictNodeConnectionSummaryType,
+)
+from .typed_dict_node_core import TypedDictNodeCore
 from .typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
+from .typed_dict_node_execution_summary import TypedDictNodeExecutionSummary
+from .typed_dict_node_feature_summary_type import TypedDictNodeFeatureSummaryType
+from .typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
 from .typed_dict_node_metadata_summary import TypedDictNodeMetadataSummary
 from .typed_dict_node_resource_constraint_kwargs import (
     TypedDictNodeResourceConstraintKwargs,
 )
+from .typed_dict_node_resource_summary_type import TypedDictNodeResourceSummaryType
+from .typed_dict_node_rule_structure import TypedDictNodeRuleStructure
 from .typed_dict_operation_result import TypedDictOperationResult
 from .typed_dict_output_format_options_kwargs import TypedDictOutputFormatOptionsKwargs
+from .typed_dict_performance_data import TypedDictPerformanceData
 from .typed_dict_performance_metric_data import TypedDictPerformanceMetricData
+from .typed_dict_performance_metrics import TypedDictPerformanceMetrics
+from .typed_dict_performance_update_data import TypedDictPerformanceUpdateData
 from .typed_dict_property_metadata import TypedDictPropertyMetadata
+from .typed_dict_quality_data import TypedDictQualityData
+from .typed_dict_quality_update_data import TypedDictQualityUpdateData
 from .typed_dict_resource_usage import TypedDictResourceUsage
 from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
 from .typed_dict_security_context import TypedDictSecurityContext
@@ -119,9 +155,14 @@ from .typed_dict_ssl_context_options import TypedDictSSLContextOptions
 from .typed_dict_stats_collection import TypedDictStatsCollection
 from .typed_dict_status_migration_result import TypedDictStatusMigrationResult
 from .typed_dict_system_state import TypedDictSystemState
+from .typed_dict_timestamp_data import TypedDictTimestampData
+from .typed_dict_timestamp_update_data import TypedDictTimestampUpdateData
 from .typed_dict_trace_info_data import TypedDictTraceInfoData
 from .typed_dict_usage_metadata import TypedDictUsageMetadata
+from .typed_dict_validation_metadata_type import TypedDictValidationMetadataType
 from .typed_dict_validation_result import TypedDictValidationResult
+from .typed_dict_validator_info import TypedDictValidatorInfo
+from .typed_dict_version_dict import TypedDictVersionDict
 from .typed_dict_workflow_state import TypedDictWorkflowState
 
 # Utility functions
@@ -173,26 +214,51 @@ __all__ = [
     "validate_context_value",
     "validate_primitive_value",
     # TypedDict definitions
+    "TypedDictAnalyticsSummaryData",
     "TypedDictCapabilityFactoryKwargs",
+    "TypedDictCategorizationUpdateData",
     "TypedDictCliInputDict",
     "TypedDictCollectionCreateKwargs",
     "TypedDictCollectionFromItemsKwargs",
+    "TypedDictCoreAnalytics",
     "TypedDictDebugInfoData",
+    "TypedDictDeprecationSummary",
+    "TypedDictDocumentationSummaryFiltered",
     "TypedDictExecutionParams",
     "TypedDictFactoryKwargs",
     "TypedDictFieldValue",
+    "TypedDictFunctionDocumentationSummaryType",
+    "TypedDictFunctionRelationshipsSummary",
+    "TypedDictGenericMetadataDict",
+    "TypedDictInputStateSourceType",
     "TypedDictMessageParams",
     "TypedDictMetadataParams",
+    "TypedDictMigrationConflictBaseDict",
+    "TypedDictMigrationDuplicateConflictDict",
+    "TypedDictMigrationNameConflictDict",
+    "TypedDictNodeCapabilitiesSummary",
     "TypedDictNodeConfigurationSummary",
+    "TypedDictNodeConnectionSummaryType",
+    "TypedDictNodeCore",
+    "TypedDictNodeExecutionSummary",
+    "TypedDictNodeFeatureSummaryType",
+    "TypedDictNodeInfoSummaryData",
     "TypedDictNodeMetadataSummary",
     "TypedDictNodeResourceConstraintKwargs",
+    "TypedDictNodeResourceSummaryType",
+    "TypedDictNodeRuleStructure",
     "TypedDictOutputFormatOptionsKwargs",
     "TypedDictPerformanceMetricData",
+    "TypedDictPerformanceMetrics",
     "TypedDictPropertyMetadata",
+    "TypedDictQualityData",
     "TypedDictResultFactoryKwargs",
     "TypedDictSSLContextOptions",
+    "TypedDictTimestampUpdateData",
     "TypedDictTraceInfoData",
     "TypedDictUsageMetadata",
+    "TypedDictValidationMetadataType",
+    "TypedDictVersionDict",
     # New individual TypedDict classes extracted from typed_dict_structured_definitions.py
     "TypedDictSemVer",
     "TypedDictExecutionStats",
@@ -200,6 +266,7 @@ __all__ = [
     "TypedDictInputStateFields",
     "TypedDictResourceUsage",
     "TypedDictConfigurationSettings",
+    "TypedDictCoreData",
     "TypedDictValidationResult",
     "TypedDictMetrics",
     "TypedDictMetadataDict",
@@ -207,6 +274,7 @@ __all__ = [
     "TypedDictErrorDetails",
     "TypedDictOperationResult",
     "TypedDictWorkflowState",
+    "TypedDictValidatorInfo",
     "TypedDictEventInfo",
     "TypedDictConnectionInfo",
     "TypedDictServiceInfo",
@@ -223,7 +291,11 @@ __all__ = [
     "TypedDictLegacyError",
     "TypedDictMigrationStepDict",
     "TypedDictNodeCoreUpdateData",
+    "TypedDictPerformanceData",
+    "TypedDictPerformanceUpdateData",
+    "TypedDictQualityUpdateData",
     "TypedDictStatusMigrationResult",
+    "TypedDictTimestampData",
     # Converter functions
     "convert_stats_to_typed_dict",
     "convert_health_to_typed_dict",

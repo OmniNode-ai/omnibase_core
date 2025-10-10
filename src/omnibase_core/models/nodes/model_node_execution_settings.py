@@ -21,8 +21,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from .model_types_node_execution_summary import ModelNodeExecutionSummaryType
+from omnibase_core.types.typed_dict_node_execution_summary import (
+    TypedDictNodeExecutionSummary,
+)
 
 
 class ModelNodeExecutionSettings(BaseModel):
@@ -51,7 +52,7 @@ class ModelNodeExecutionSettings(BaseModel):
         description="Enable parallel execution",
     )
 
-    def get_execution_summary(self) -> ModelNodeExecutionSummaryType:
+    def get_execution_summary(self) -> TypedDictNodeExecutionSummary:
         """Get execution settings summary."""
         return {
             "max_retries": self.max_retries,

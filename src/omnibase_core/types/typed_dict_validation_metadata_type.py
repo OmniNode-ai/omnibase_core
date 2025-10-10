@@ -1,23 +1,15 @@
-from typing import Dict
-
 """
-ValidationMetadataType TypedDict
+TypedDict for validation metadata.
 
-Type-safe validation metadata structure.
-
-IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
-This module is part of a carefully managed import chain to avoid circular dependencies.
-
-Safe Runtime Imports (OK to import at module level):
-- Standard library modules only
+Strongly-typed representation for validation metadata structure.
+Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
 from typing import TypedDict
 
 
-class ValidationMetadataType(TypedDict, total=False):
-    """Type-safe validation metadata structure."""
+class TypedDictValidationMetadataType(TypedDict, total=False):
+    """Strongly-typed validation metadata structure."""
 
     protocols_found: int
     recommendations: list[str]
@@ -37,3 +29,6 @@ class ValidationMetadataType(TypedDict, total=False):
     error: str
     max_unions: int
     complex_patterns: int
+
+
+__all__ = ["TypedDictValidationMetadataType"]

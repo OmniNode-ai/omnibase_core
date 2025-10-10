@@ -1,20 +1,18 @@
-from __future__ import annotations
-
-from typing import Dict, TypedDict
-
 """
 TypedDict for node feature flags summary.
 
-Replaces dict[str, str] return type with structured typing.
+Strongly-typed representation for node feature flags summary data.
+Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 
 
-class ModelNodeFeatureSummaryType(TypedDict):
+class TypedDictNodeFeatureSummaryType(TypedDict):
     """
-    Typed dict[str, Any]ionary for node feature flags summary.
+    Strongly-typed dictionary for node feature flags summary.
 
     Replaces dict[str, str] return type from get_feature_summary()
     with proper type structure.
@@ -29,5 +27,4 @@ class ModelNodeFeatureSummaryType(TypedDict):
     is_debug_mode: str
 
 
-# Export for use
-__all__ = ["ModelNodeFeatureSummaryType"]
+__all__ = ["TypedDictNodeFeatureSummaryType"]

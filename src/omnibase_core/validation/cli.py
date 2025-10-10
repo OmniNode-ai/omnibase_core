@@ -28,10 +28,10 @@ from typing import Any, Callable, TypedDict
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_validator_info import TypedDictValidatorInfo
 
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
-from .model_validator_info import ValidatorInfo
 from .patterns import validate_patterns_directory
 from .types import validate_union_usage_directory
 from .validation_utils import ValidationResult
@@ -41,7 +41,7 @@ class ModelValidationSuite:
     """Unified validation suite for ONEX compliance."""
 
     def __init__(self) -> None:
-        self.validators: dict[str, ValidatorInfo] = {
+        self.validators: dict[str, TypedDictValidatorInfo] = {
             "architecture": {
                 "func": validate_architecture_directory,
                 "description": "Validate ONEX one-model-per-file architecture",

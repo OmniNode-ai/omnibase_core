@@ -1,20 +1,18 @@
-from __future__ import annotations
-
-from typing import Dict, TypedDict
-
 """
 TypedDict for node resource limits summary.
 
-Replaces dict[str, Any] return type with structured typing.
+Strongly-typed representation for node resource limits summary data.
+Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 
 
-class ModelNodeResourceSummaryType(TypedDict):
+class TypedDictNodeResourceSummaryType(TypedDict):
     """
-    Typed dict[str, Any]ionary for node resource limits summary.
+    Strongly-typed dictionary for node resource limits summary.
 
     Replaces dict[str, Any] return type from get_resource_summary()
     with proper type structure.
@@ -27,5 +25,4 @@ class ModelNodeResourceSummaryType(TypedDict):
     has_any_limits: bool
 
 
-# Export for use
-__all__ = ["ModelNodeResourceSummaryType"]
+__all__ = ["TypedDictNodeResourceSummaryType"]

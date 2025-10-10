@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import NotRequired, TypedDict
 
+from omnibase_core.models.core.model_semver import ModelSemVer
+
 
 class TypedDictUsageMetadata(TypedDict, total=False):
     """Typed structure for usage metadata dictionary in protocol methods.
@@ -14,6 +16,6 @@ class TypedDictUsageMetadata(TypedDict, total=False):
 
     name: NotRequired[str]
     description: NotRequired[str]
-    version: NotRequired[str]  # String representation of ModelSemVer
+    version: NotRequired[ModelSemVer]
     tags: NotRequired[list[str]]
     metadata: NotRequired[dict[str, str]]

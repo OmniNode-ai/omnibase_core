@@ -1,20 +1,18 @@
-from __future__ import annotations
-
-from typing import Dict, TypedDict
-
 """
 TypedDict for function documentation summary.
 
-Replaces dict[str, Any] return type with structured typing.
+Strongly-typed representation for function documentation summary data.
+Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 
 
-class ModelFunctionDocumentationSummaryType(TypedDict):
+class TypedDictFunctionDocumentationSummaryType(TypedDict):
     """
-    Typed dict[str, Any]ionary for function documentation summary.
+    Strongly-typed dictionary for function documentation summary.
 
     Replaces dict[str, Any] return type from get_documentation_summary()
     with proper type structure.
@@ -28,5 +26,4 @@ class ModelFunctionDocumentationSummaryType(TypedDict):
     quality_score: float
 
 
-# Export for use
-__all__ = ["ModelFunctionDocumentationSummaryType"]
+__all__ = ["TypedDictFunctionDocumentationSummaryType"]

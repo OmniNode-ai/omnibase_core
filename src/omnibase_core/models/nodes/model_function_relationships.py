@@ -22,9 +22,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from .model_types_function_relationships_summary import (
-    ModelFunctionRelationshipsSummaryType,
+from omnibase_core.types.typed_dict_function_relationships_summary import (
+    TypedDictFunctionRelationshipsSummary,
 )
 
 
@@ -102,7 +101,7 @@ class ModelFunctionRelationships(BaseModel):
 
     def get_relationships_summary(
         self,
-    ) -> ModelFunctionRelationshipsSummaryType:
+    ) -> TypedDictFunctionRelationshipsSummary:
         """Get relationships summary."""
         return {
             "dependencies_count": len(self.dependencies),

@@ -1,20 +1,18 @@
-from __future__ import annotations
-
-from typing import Dict, TypedDict
-
 """
 TypedDict for node connection summary.
 
-Replaces dict[str, Any] return type with structured typing.
+Strongly-typed representation for node connection settings summary data.
+Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 
 
-class ModelNodeConnectionSummaryType(TypedDict):
+class TypedDictNodeConnectionSummaryType(TypedDict):
     """
-    Typed dict[str, Any]ionary for node connection settings summary.
+    Strongly-typed dictionary for node connection settings summary.
 
     Replaces dict[str, Any] return type from get_connection_summary()
     with proper type structure.
@@ -31,5 +29,4 @@ class ModelNodeConnectionSummaryType(TypedDict):
     connection_url: str | None
 
 
-# Export for use
-__all__ = ["ModelNodeConnectionSummaryType"]
+__all__ = ["TypedDictNodeConnectionSummaryType"]

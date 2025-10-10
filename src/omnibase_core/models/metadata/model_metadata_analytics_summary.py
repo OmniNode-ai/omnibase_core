@@ -22,17 +22,15 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.metadata.model_typed_dict_analytics_summary_data import (
+from omnibase_core.types.typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,
 )
-from omnibase_core.models.metadata.model_typed_dict_core_data import TypedDictCoreData
-from omnibase_core.models.metadata.model_typed_dict_performance_data import (
+from omnibase_core.types.typed_dict_core_data import TypedDictCoreData
+from omnibase_core.types.typed_dict_error_data import TypedDictErrorData
+from omnibase_core.types.typed_dict_performance_data import (
     TypedDictPerformanceData,
 )
-from omnibase_core.models.metadata.model_typed_dict_quality_data import (
-    TypedDictQualityData,
-)
-from omnibase_core.types.typed_dict_error_data import TypedDictErrorData
+from omnibase_core.types.typed_dict_quality_data import TypedDictQualityData
 
 from .analytics.model_analytics_core import ModelAnalyticsCore
 from .analytics.model_analytics_error_summary import ModelAnalyticsErrorSummary

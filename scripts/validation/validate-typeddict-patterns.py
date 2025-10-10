@@ -134,7 +134,9 @@ def main() -> int:
                     print(
                         f"  Line {line_num}: ❌ TypedDict class '{class_name}' uses Model prefix"
                     )
-                    print(f"    Should be: {class_name.replace('Model', 'TypedDict', 1)}")
+                    print(
+                        f"    Should be: {class_name.replace('Model', 'TypedDict', 1)}"
+                    )
 
                 elif violation_type == "basemodel_with_typeddict_prefix":
                     print(
