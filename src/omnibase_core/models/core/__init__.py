@@ -8,6 +8,9 @@ from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 
 This module contains only core domain models to prevent circular dependencies.
 Other domains should import from their respective modules directly.
+
+Note: ModelSemVer has been moved to omnibase_core.primitives to break circular imports.
+Import directly from primitives: from omnibase_core.primitives import ModelSemVer
 """
 
 # Configuration base classes

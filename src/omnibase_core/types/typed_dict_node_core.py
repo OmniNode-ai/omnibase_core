@@ -5,10 +5,11 @@ Strongly-typed representation for node core data structure.
 Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class TypedDictNodeCore(TypedDict):
@@ -20,7 +21,7 @@ class TypedDictNodeCore(TypedDict):
     node_type: str
     status: str
     complexity: str
-    version: ModelSemVer
+    version: "ModelSemVer"
     is_active: bool
     is_complex: bool
 

@@ -12,7 +12,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.utils.model_contract_data import ModelContractData
-from omnibase_core.models.utils.model_typed_dict_node_rule_structure import (
+from omnibase_core.types.typed_dict_node_rule_structure import (
     TypedDictNodeRuleStructure,
 )
 

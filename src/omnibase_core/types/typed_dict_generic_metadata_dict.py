@@ -7,10 +7,11 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class TypedDictGenericMetadataDict(TypedDict, total=False):
@@ -19,7 +20,7 @@ class TypedDictGenericMetadataDict(TypedDict, total=False):
     metadata_id: UUID | None
     metadata_display_name: str | None
     description: str | None
-    version: ModelSemVer | None
+    version: "ModelSemVer | None"
     tags: list[str]
     custom_fields: dict[str, object]
 
