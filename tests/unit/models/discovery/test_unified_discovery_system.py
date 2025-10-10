@@ -13,7 +13,10 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.models.core.model_onex_event import OnexEventTypeEnum
+from omnibase_core.constants.event_types import (
+    NODE_INTROSPECTION_EVENT,
+    REAL_TIME_INTROSPECTION_RESPONSE,
+)
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
@@ -182,7 +185,7 @@ class TestToolDiscoveryCoordinator:
         # Simulate response event
         sample_introspection_response_event.correlation_id = correlation_id
         sample_introspection_response_event.event_type = (
-            OnexEventTypeEnum.REAL_TIME_INTROSPECTION_RESPONSE
+            REAL_TIME_INTROSPECTION_RESPONSE
         )
 
         # Handle the response
@@ -286,9 +289,7 @@ class TestToolUnifiedDiscovery:
         )
 
         # Simulate introspection event
-        sample_node_introspection_event.event_type = (
-            OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
-        )
+        sample_node_introspection_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(sample_node_introspection_event)
 
         # Verify catalog was updated
@@ -313,9 +314,7 @@ class TestToolUnifiedDiscovery:
         )
 
         # Add node to catalog
-        sample_node_introspection_event.event_type = (
-            OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
-        )
+        sample_node_introspection_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(sample_node_introspection_event)
 
         # Get available nodes
@@ -341,9 +340,7 @@ class TestToolUnifiedDiscovery:
         )
 
         # Add node to catalog
-        sample_node_introspection_event.event_type = (
-            OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
-        )
+        sample_node_introspection_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(sample_node_introspection_event)
 
         # Get available nodes with matching filters
@@ -410,9 +407,7 @@ class TestToolUnifiedDiscovery:
         )
 
         # Add node to catalog
-        sample_node_introspection_event.event_type = (
-            OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
-        )
+        sample_node_introspection_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(sample_node_introspection_event)
 
         expected_correlation_id = uuid4()
@@ -449,9 +444,7 @@ class TestToolUnifiedDiscovery:
         unified_discovery.catalog_ttl_seconds = 0.1
 
         # Add node to catalog
-        sample_node_introspection_event.event_type = (
-            OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
-        )
+        sample_node_introspection_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(sample_node_introspection_event)
 
         # Verify node is in catalog
@@ -482,9 +475,7 @@ class TestToolUnifiedDiscovery:
         )
 
         # Add node to catalog
-        sample_node_introspection_event.event_type = (
-            OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
-        )
+        sample_node_introspection_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(sample_node_introspection_event)
 
         assert len(unified_discovery.catalog) == 1
@@ -567,7 +558,7 @@ class TestIntegrationScenarios:
             tags=["test_tag"],
             health_endpoint="/health",
         )
-        node_event.event_type = OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
+        node_event.event_type = NODE_INTROSPECTION_EVENT
         unified_discovery._handle_node_introspection(node_event)
 
         # 2. Get cached results
@@ -595,7 +586,7 @@ class TestIntegrationScenarios:
                 total_tools=1,
             ),
         )
-        response_event.event_type = OnexEventTypeEnum.REAL_TIME_INTROSPECTION_RESPONSE
+        response_event.event_type = REAL_TIME_INTROSPECTION_RESPONSE
         coordinator._handle_introspection_response(response_event)
 
         # 5. Get real-time results
@@ -635,7 +626,7 @@ class TestIntegrationScenarios:
                 tags=[f"tag_{capability}"],
                 health_endpoint="/health",
             )
-            node_event.event_type = OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
+            node_event.event_type = NODE_INTROSPECTION_EVENT
             unified_discovery._handle_node_introspection(node_event)
 
         # Test filtering by capability
@@ -685,7 +676,7 @@ class TestUnifiedDiscoverySystem:
             tags=["test_tag"],
             health_endpoint="/health",
         )
-        node_event.event_type = OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
+        node_event.event_type = NODE_INTROSPECTION_EVENT
 
         # Simulate node introspection event
         unified_discovery._handle_node_introspection(node_event)
@@ -742,7 +733,7 @@ class TestUnifiedDiscoverySystem:
                 tags=[f"{capability}_tag"],
                 health_endpoint="/health",
             )
-            node_event.event_type = OnexEventTypeEnum.NODE_INTROSPECTION_EVENT
+            node_event.event_type = NODE_INTROSPECTION_EVENT
             unified_discovery._handle_node_introspection(node_event)
 
         # Test filtering by capability
@@ -806,7 +797,7 @@ class TestUnifiedDiscoverySystem:
             tools=tools,
             response_time_ms=50.0,
         )
-        response_event.event_type = OnexEventTypeEnum.REAL_TIME_INTROSPECTION_RESPONSE
+        response_event.event_type = REAL_TIME_INTROSPECTION_RESPONSE
 
         # Handle response
         coordinator._handle_introspection_response(response_event)

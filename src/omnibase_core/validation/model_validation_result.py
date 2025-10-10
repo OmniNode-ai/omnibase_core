@@ -13,7 +13,9 @@ Safe Runtime Imports (OK to import at module level):
 
 from dataclasses import dataclass
 
-from .typed_dict_validation_metadata_type import ValidationMetadataType
+from omnibase_core.types.typed_dict_validation_metadata_type import (
+    ValidationMetadataType,
+)
 
 
 @dataclass

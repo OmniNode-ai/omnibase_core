@@ -25,6 +25,7 @@ from omnibase_core.errors.error_codes import (
 __all__ = [
     # Base error classes
     "ModelOnexError",
+    "OnexError",  # Alias for ModelOnexError
     "ModelOnexWarning",
     # Error codes and enums
     "EnumCoreErrorCode",
@@ -47,7 +48,7 @@ __all__ = [
 # Lazy import to avoid circular dependencies
 def __getattr__(name: str) -> Any:
     """Lazy import mechanism to avoid circular dependencies."""
-    if name == "ModelOnexError":
+    if name == "ModelOnexError" or name == "OnexError":
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
         return ModelOnexError
