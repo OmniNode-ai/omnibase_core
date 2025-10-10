@@ -29,7 +29,7 @@ full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 python = "^3.12"
 # ONEX SPI dependency - HTTPS format for improved CI/CD compatibility
 # Authentication via git config with Personal Access Token
-omnibase_spi = {path = "/Volumes/PRO-G40/Code/omnibase_spi", develop = true}
+omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
 pydantic = "^2.11.7"
 llama-index = "^0.12.0"
 fastapi = "^0.115.0"
