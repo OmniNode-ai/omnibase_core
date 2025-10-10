@@ -21,8 +21,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from .model_types_node_feature_summary import ModelNodeFeatureSummaryType
+from omnibase_core.types.typed_dict_node_feature_summary_type import (
+    TypedDictNodeFeatureSummaryType,
+)
 
 
 class ModelNodeFeatureFlags(BaseModel):
@@ -66,7 +67,7 @@ class ModelNodeFeatureFlags(BaseModel):
             features.append("tracing")
         return features
 
-    def get_feature_summary(self) -> ModelNodeFeatureSummaryType:
+    def get_feature_summary(self) -> TypedDictNodeFeatureSummaryType:
         """Get feature flags summary as string values for type safety."""
         enabled = self.get_enabled_features()
         return {

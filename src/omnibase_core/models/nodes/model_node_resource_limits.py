@@ -25,8 +25,9 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_node_resource_constraint_kwargs import (
     TypedDictNodeResourceConstraintKwargs,
 )
-
-from .model_types_node_resource_summary import ModelNodeResourceSummaryType
+from omnibase_core.types.typed_dict_node_resource_summary_type import (
+    TypedDictNodeResourceSummaryType,
+)
 
 
 class ModelNodeResourceLimits(BaseModel):
@@ -69,7 +70,7 @@ class ModelNodeResourceLimits(BaseModel):
         """Check if any resource limits are configured."""
         return self.has_memory_limit() or self.has_cpu_limit()
 
-    def get_resource_summary(self) -> ModelNodeResourceSummaryType:
+    def get_resource_summary(self) -> TypedDictNodeResourceSummaryType:
         """Get resource limits summary."""
         return {
             "max_memory_mb": self.max_memory_mb,

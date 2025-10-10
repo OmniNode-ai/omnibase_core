@@ -21,9 +21,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from .model_types_function_documentation_summary import (
-    ModelFunctionDocumentationSummaryType,
+from omnibase_core.types.typed_dict_function_documentation_summary_type import (
+    TypedDictFunctionDocumentationSummaryType,
 )
 
 
@@ -86,7 +85,7 @@ class ModelFunctionDocumentation(BaseModel):
 
         return min(score, 1.0)
 
-    def get_documentation_summary(self) -> ModelFunctionDocumentationSummaryType:
+    def get_documentation_summary(self) -> TypedDictFunctionDocumentationSummaryType:
         """Get documentation summary."""
         return {
             "has_documentation": self.has_documentation(),

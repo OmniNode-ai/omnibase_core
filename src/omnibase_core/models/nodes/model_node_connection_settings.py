@@ -22,8 +22,9 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_protocol_type import EnumProtocolType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-from .model_types_node_connection_summary import ModelNodeConnectionSummaryType
+from omnibase_core.types.typed_dict_node_connection_summary_type import (
+    TypedDictNodeConnectionSummaryType,
+)
 
 
 class ModelNodeConnectionSettings(BaseModel):
@@ -89,7 +90,7 @@ class ModelNodeConnectionSettings(BaseModel):
         protocol_prefix = self.protocol.value.lower()
         return f"{protocol_prefix}://{self.endpoint}:{self.port}"
 
-    def get_connection_summary(self) -> ModelNodeConnectionSummaryType:
+    def get_connection_summary(self) -> TypedDictNodeConnectionSummaryType:
         """Get connection settings summary."""
         return {
             "endpoint": self.endpoint,

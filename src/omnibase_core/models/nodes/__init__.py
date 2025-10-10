@@ -4,7 +4,10 @@ Node Management Models
 Models for node definitions, capabilities, configurations, and information.
 """
 
-from .model_deprecation_summary import ModelDeprecationSummary
+from omnibase_core.types.typed_dict_deprecation_summary import (
+    TypedDictDeprecationSummary,
+)
+
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_node import ModelFunctionNode
@@ -48,7 +51,7 @@ __all__ = [
     "ModelNodeFeatureFlags",
     "ModelNodeConnectionSettings",
     "ModelFunctionDocumentation",
-    "ModelDeprecationSummary",
+    "TypedDictDeprecationSummary",
     "ModelFunctionDeprecationInfo",
     "ModelFunctionRelationships",
     "ModelNodeCoreInfo",

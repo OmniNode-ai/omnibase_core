@@ -19,11 +19,13 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_deprecation_summary import (
+    TypedDictDeprecationSummary,
+)
 from omnibase_core.types.typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )
 
-from .model_deprecation_summary import ModelDeprecationSummary
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_metadata_summary import ModelFunctionMetadataSummary
