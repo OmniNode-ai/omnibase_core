@@ -16,7 +16,6 @@ from omnibase_core.enums.enum_version_manifest import (
 )
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer, SemVerField
 from omnibase_core.models.core.model_version_contract import ModelVersionContract
 from omnibase_core.models.core.model_version_deployment import ModelVersionDeployment
 from omnibase_core.models.core.model_version_documentation import (
@@ -29,6 +28,7 @@ from omnibase_core.models.core.model_version_implementation import (
 from omnibase_core.models.core.model_version_manifest_class_config import ModelConfig
 from omnibase_core.models.core.model_version_security import ModelVersionSecurity
 from omnibase_core.models.core.model_version_testing import ModelVersionTesting
+from omnibase_core.primitives.model_semver import ModelSemVer, SemVerField
 
 
 class ModelVersionManifest(BaseModel):

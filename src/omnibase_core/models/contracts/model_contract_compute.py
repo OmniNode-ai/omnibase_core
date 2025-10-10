@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Compute Contract Model - ONEX Standards Compliant.
@@ -39,7 +39,6 @@ from omnibase_core.models.contracts.subcontracts.model_caching_subcontract impor
 from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
     ModelEventTypeSubcontract,
 )
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
@@ -48,6 +47,7 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
 from omnibase_core.models.utils.model_validation_rules_converter import (
     ModelValidationRulesInputValue,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import configuration models from individual files
 from .model_algorithm_config import ModelAlgorithmConfig

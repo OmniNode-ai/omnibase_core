@@ -2,7 +2,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nSystem Data Model.\n\nSystem information data structure.\n"
 from pydantic import BaseModel, Field

@@ -17,7 +17,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.cli.model_cli_result_metadata import (
     ModelCliResultMetadata,
 )
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelCliResultMetadata:

@@ -21,7 +21,7 @@ from omnibase_core.models.core.model_group_service_configuration import (
     ModelGroupServiceConfiguration,
 )
 from omnibase_core.models.core.model_group_tool import ModelGroupTool
-from omnibase_core.models.core.model_semver import ModelSemVer, SemVerField
+from omnibase_core.primitives.model_semver import ModelSemVer, SemVerField
 
 if TYPE_CHECKING:
     pass

@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Metadata Node Info Model.
@@ -28,11 +28,11 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.enums.enum_validation_level import EnumValidationLevel
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary

@@ -14,7 +14,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.models.core.model_onex_event import OnexEventTypeEnum
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
@@ -40,6 +39,7 @@ from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_discovery_coordinator i
 from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_unified_discovery import (
     ToolUnifiedDiscovery,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 @pytest.fixture

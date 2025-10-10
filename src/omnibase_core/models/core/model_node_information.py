@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_node_configuration import ModelNodeConfiguration
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     pass

@@ -19,7 +19,7 @@ from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,
 )
 from omnibase_core.models.core.model_onex_reply_config import ModelConfig
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.protocols.protocol_onex_validation import (

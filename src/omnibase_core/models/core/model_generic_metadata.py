@@ -2,7 +2,7 @@ from typing import Any, Dict, Generic, Optional
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.

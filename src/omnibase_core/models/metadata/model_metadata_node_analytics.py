@@ -5,7 +5,7 @@ from typing import Dict, TypedDict
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Metadata Node Analytics Model.
@@ -25,9 +25,9 @@ from omnibase_core.enums.enum_collection_purpose import EnumCollectionPurpose
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
+from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.types.constraints import BasicValueType
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 from omnibase_core.utils.uuid_utilities import uuid_from_string

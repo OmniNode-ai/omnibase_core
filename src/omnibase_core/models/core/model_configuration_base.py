@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Generic Configuration Base Class.
@@ -30,8 +30,8 @@ from pydantic import (
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.infrastructure.model_result import ModelResult
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Type variable for configuration data - using Any to avoid Pydantic schema generation issues
 T = TypeVar("T")

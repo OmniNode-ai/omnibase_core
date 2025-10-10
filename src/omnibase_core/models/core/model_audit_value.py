@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_audit_field_change import ModelAuditFieldChange
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 AuditFieldChange = ModelAuditFieldChange
 

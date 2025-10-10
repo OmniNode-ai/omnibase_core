@@ -4,7 +4,6 @@ Basic tests for discovery event models to validate schema definitions.
 
 from uuid import uuid4
 
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery import (
     ModelNodeHealthEvent,
     ModelNodeIntrospectionEvent,
@@ -22,6 +21,7 @@ from omnibase_core.models.discovery.model_tool_discovery_request import (
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestNodeIntrospectionEvent:

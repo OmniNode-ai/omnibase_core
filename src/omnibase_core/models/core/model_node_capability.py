@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelNodeCapability(BaseModel):
@@ -64,7 +64,7 @@ class ModelNodeCapability(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         if isinstance(v, str):
-            from omnibase_core.models.core.model_semver import parse_semver_from_string
+            from omnibase_core.primitives.model_semver import parse_semver_from_string
 
             return parse_semver_from_string(v)
         msg = "version_introduced must be ModelSemVer, dict, or str"

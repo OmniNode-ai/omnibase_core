@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.enums.enum_audit_action import EnumAuditAction
 from omnibase_core.models.core.model_audit_value import ModelAuditValue
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelAuditEntry(BaseModel):

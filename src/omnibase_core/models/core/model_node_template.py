@@ -40,7 +40,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.core.model_node_template_config import (
     ModelNodeTemplateConfigConfig,
 )
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeTemplateConfig(BaseModel):

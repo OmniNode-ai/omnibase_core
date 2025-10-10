@@ -46,12 +46,12 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelExample
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.metadata.model_metadata_constants import (
     CONTRACT_SCHEMA_VERSION_KEY,
     CONTRACT_VERSION_KEY,
     NODE_VERSION_KEY,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_error_state import ModelErrorState
 from .model_generic_metadata import ModelGenericMetadata
@@ -180,7 +180,7 @@ class ModelStateContract(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         # v must be str since union type is exhaustive
-        from omnibase_core.models.core.model_semver import parse_semver_from_string
+        from omnibase_core.primitives.model_semver import parse_semver_from_string
 
         return parse_semver_from_string(v)
 
@@ -195,7 +195,7 @@ class ModelStateContract(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         # v must be str since union type is exhaustive
-        from omnibase_core.models.core.model_semver import parse_semver_from_string
+        from omnibase_core.primitives.model_semver import parse_semver_from_string
 
         return parse_semver_from_string(v)
 

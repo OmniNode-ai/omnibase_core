@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.decorators import allow_dict_str_any
 from omnibase_core.models.core.model_contract_metadata import ModelContractMetadata
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 @allow_dict_str_any("input_state")

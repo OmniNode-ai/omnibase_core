@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_version_manifest import EnumContractCompliance
-from omnibase_core.models.core.model_semver import SemVerField
+from omnibase_core.primitives.model_semver import SemVerField
 
 if TYPE_CHECKING:
     pass

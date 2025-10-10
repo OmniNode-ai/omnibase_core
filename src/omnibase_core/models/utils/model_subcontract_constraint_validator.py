@@ -7,11 +7,14 @@ consistent ONEX compliance.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from omnibase_core.types.typed_dict_node_rule_structure import (
+    TypedDictNodeRuleStructure,
+)
+
 from .model_contract_data import ModelContractData
 from .model_subcontract_constraint_validator_class import (
     ModelSubcontractConstraintValidator,
 )
-from .model_typed_dict_node_rule_structure import TypedDictNodeRuleStructure
 
 __all__ = [
     "ModelContractData",

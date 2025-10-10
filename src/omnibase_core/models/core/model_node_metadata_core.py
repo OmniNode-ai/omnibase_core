@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Core model for node metadata information.

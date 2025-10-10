@@ -13,7 +13,7 @@ from omnibase_core.models.core import (
     ModelConfigurationBase,
     ModelTypedConfiguration,
 )
-from omnibase_core.models.core.model_semver import (
+from omnibase_core.primitives.model_semver import (
     parse_semver_from_string,
 )
 

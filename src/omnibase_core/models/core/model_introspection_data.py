@@ -10,8 +10,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 from .model_schema import ModelSchema
-from .model_semver import ModelSemVer
 
 
 class ModelIntrospectionData(BaseModel):

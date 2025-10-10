@@ -245,7 +245,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 self.root["_tool_info"][name] = tool_info.model_dump()
             elif name not in self.root.get("_tool_info", {}):
                 # Create default tool info
-                from omnibase_core.models.core.model_semver import (
+                from omnibase_core.primitives.model_semver import (
                     parse_semver_from_string,
                 )
 
@@ -620,7 +620,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         collection = cls(tools_dict)
 
         # Add basic tool info for each tool
-        from omnibase_core.models.core.model_semver import parse_semver_from_string
+        from omnibase_core.primitives.model_semver import parse_semver_from_string
 
         for name, tool in tools_dict.items():
             if hasattr(tool, "name") and hasattr(tool, "description"):

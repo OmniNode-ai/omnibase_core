@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Configuration Management Subcontract Model - ONEX Standards Compliant.
@@ -31,7 +31,7 @@ from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import individual configuration model components
 from .model_configuration_source import ModelConfigurationSource

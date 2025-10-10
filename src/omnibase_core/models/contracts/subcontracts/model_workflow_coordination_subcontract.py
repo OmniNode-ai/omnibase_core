@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Workflow Coordination Subcontract Model - ONEX Standards Compliant.
@@ -23,7 +23,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import all individual model components
 

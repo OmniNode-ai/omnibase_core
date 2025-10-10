@@ -7,7 +7,7 @@ Provides structured information about discovered tools from contract.yaml files.
 from dataclasses import dataclass
 from pathlib import Path
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 @dataclass

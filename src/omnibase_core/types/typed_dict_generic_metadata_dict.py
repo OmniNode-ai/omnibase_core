@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from omnibase_core.models.core.model_semver import ModelSemVer
+    from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TypedDictGenericMetadataDict(TypedDict, total=False):

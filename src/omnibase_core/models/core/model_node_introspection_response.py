@@ -19,8 +19,8 @@ from omnibase_core.models.core.model_node_introspection_response_config import (
     ModelNodeIntrospectionResponseConfig,
 )
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_state_models import ModelStates
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeIntrospectionResponse(BaseModel):
@@ -73,7 +73,7 @@ class ModelNodeIntrospectionResponse(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         if isinstance(v, str):
-            from omnibase_core.models.core.model_semver import parse_semver_from_string
+            from omnibase_core.primitives.model_semver import parse_semver_from_string
 
             return parse_semver_from_string(v)
         msg = "introspection_version must be ModelSemVer, dict, or str"

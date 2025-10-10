@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Internal Input State Model for ONEX.
@@ -20,7 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.core_uuid_service import UUIDService
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_base_state import ModelOnexInputState

@@ -6,7 +6,7 @@ from omnibase_core.enums.enum_tool_capability_level import EnumToolCapabilityLev
 from omnibase_core.enums.enum_tool_category import EnumToolCategory
 from omnibase_core.enums.enum_tool_compatibility_mode import EnumToolCompatibilityMode
 from omnibase_core.enums.enum_tool_registration_status import EnumToolRegistrationStatus
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nTool metadata model.\n"
 from datetime import datetime

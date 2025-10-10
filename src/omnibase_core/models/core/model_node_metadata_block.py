@@ -25,11 +25,11 @@ from omnibase_core.models.core.model_function_tool import ModelFunctionTool
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_io_block import ModelIOBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 from omnibase_core.models.metadata.model_metadata_constants import get_namespace_prefix
+from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
 from .model_data_handling_declaration import ModelDataHandlingDeclaration

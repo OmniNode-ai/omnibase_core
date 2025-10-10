@@ -15,7 +15,7 @@ from omnibase_core.models.core.model_connection_metrics import ModelConnectionMe
 from omnibase_core.models.core.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Compatibility alias
 ConnectionMetrics = ModelConnectionMetrics
