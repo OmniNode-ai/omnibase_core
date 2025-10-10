@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nEvent Bus Input/Output State Composite Model.\n\nThis module provides a composite model that combines the input and output states\nfor event bus operations, enabling unified handling of both states.\n"
 from pydantic import BaseModel, Field
@@ -64,7 +64,7 @@ class ModelEventBusInputOutputState(BaseModel):
     ) -> "ModelEventBusInputOutputState":
         """Create a composite state from basic parameters."""
         from omnibase_core.enums.onex_status import OnexStatus
-        from omnibase_core.models.core.model_semver import parse_semver_from_string
+        from omnibase_core.primitives.model_semver import parse_semver_from_string
 
         # Convert ModelSemVer to str if needed before parsing
         input_version_str = (

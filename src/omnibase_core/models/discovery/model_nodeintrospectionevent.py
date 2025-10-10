@@ -5,8 +5,8 @@ from pydantic import Field
 
 from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.nodes.model_node_capability import ModelNodeCapability
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeIntrospectionEvent(ModelOnexEvent):

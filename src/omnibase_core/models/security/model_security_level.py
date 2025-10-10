@@ -5,7 +5,6 @@ from pydantic import Field
 "\nSecurity Level Model\n\nExtensible security configuration model that replaces hardcoded\nsecurity enums with flexible, nuanced security settings.\n"
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_custom_security_settings import (
     ModelCustomSecuritySettings,
 )
@@ -14,6 +13,7 @@ from omnibase_core.models.security.model_network_restrictions import (
 )
 from omnibase_core.models.security.model_password_policy import ModelPasswordPolicy
 from omnibase_core.models.security.model_session_policy import ModelSessionPolicy
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelSecurityLevel(BaseModel):

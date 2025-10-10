@@ -11,8 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_language_code import EnumLanguageCode
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_detection_pattern import ModelDetectionPattern
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelDetectionRuleSet(BaseModel):

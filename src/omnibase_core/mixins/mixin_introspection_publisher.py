@@ -4,10 +4,10 @@ from uuid import UUID
 from pydantic import Field
 
 from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
 import re

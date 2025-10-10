@@ -6,7 +6,7 @@ from pydantic import Field
 "\nModelPolicyValidationResult: Result of policy validation against signature chain.\n\nThis model represents the result of validating a signature chain against a trust policy.\n"
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_policy_severity import ModelPolicySeverity
 from .model_signature_requirements import ModelSignatureRequirements

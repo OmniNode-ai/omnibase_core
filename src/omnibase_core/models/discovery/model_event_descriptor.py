@@ -6,7 +6,7 @@ from pydantic import Field
 from omnibase_core.enums.enum_discovery_phase import EnumDiscoveryPhase
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.enums.enum_service_status import EnumServiceStatus
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """Event Descriptor model for ONEX Discovery & Integration Event Registry.
 

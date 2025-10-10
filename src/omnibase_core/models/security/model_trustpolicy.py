@@ -8,7 +8,6 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
 )
@@ -28,6 +27,7 @@ from omnibase_core.models.security.model_signature_requirements import (
     ModelSignatureRequirements,
 )
 from omnibase_core.models.security.model_trust_level import ModelTrustLevel
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelTrustPolicy(BaseModel):

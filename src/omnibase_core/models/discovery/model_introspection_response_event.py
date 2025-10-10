@@ -1,7 +1,7 @@
 import uuid
 from typing import Any, Optional
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nIntrospection Response Event Model\n\nEvent sent by nodes in response to REQUEST_REAL_TIME_INTROSPECTION events.\nProvides real-time node status and capabilities for discovery coordination.\n"
 from uuid import UUID

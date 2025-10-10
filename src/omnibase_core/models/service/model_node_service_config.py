@@ -4,7 +4,7 @@ from pydantic import Field, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nONEX Node Service Configuration Model.\n\nThis module provides a comprehensive Pydantic schema for ONEX node service configuration,\nsupporting Docker, Kubernetes, and compose file generation from contracts.\n\nAuthor: OmniNode Team\n"
 import os

@@ -4,7 +4,7 @@ from typing import Dict, Generic, Optional, TypeVar, cast
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nEvent Envelope Model\n\nONEX-compliant envelope wrapper for all events in the system.\nProvides standardized event wrapping with metadata, correlation IDs, security context,\nQoS features, distributed tracing, and performance optimization.\n\nPattern: Model<Name> - Pydantic model for event envelope\nNode Type: N/A (Data Model)\n"
 from datetime import datetime

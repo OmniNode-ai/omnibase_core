@@ -5,7 +5,7 @@ from typing import Dict, Generic
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelGenericMetadata(BaseModel):

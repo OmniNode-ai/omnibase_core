@@ -11,7 +11,7 @@ Type-safe health check metadata that replaces Dict[str, Any] usage.
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelHealthCheckMetadata(BaseModel):

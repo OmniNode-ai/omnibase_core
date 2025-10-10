@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 MetadataBlock model.
@@ -93,7 +93,7 @@ class ModelMetadataBlock(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         # v must be str since union type is exhaustive
-        from omnibase_core.models.core.model_semver import parse_semver_from_string
+        from omnibase_core.primitives.model_semver import parse_semver_from_string
 
         return parse_semver_from_string(v)
 
@@ -127,7 +127,7 @@ class ModelMetadataBlock(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         # v must be str since union type is exhaustive
-        from omnibase_core.models.core.model_semver import parse_semver_from_string
+        from omnibase_core.primitives.model_semver import parse_semver_from_string
 
         return parse_semver_from_string(v)
 

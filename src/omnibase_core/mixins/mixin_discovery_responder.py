@@ -24,7 +24,7 @@ from omnibase_core.models.core.model_event_type import (
     is_event_equal,
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_spi.protocols.types.protocol_event_bus_types import (

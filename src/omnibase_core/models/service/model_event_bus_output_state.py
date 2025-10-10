@@ -7,11 +7,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails
 from omnibase_core.models.service.model_event_bus_output_field import (
     ModelEventBusOutputField,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_business_impact import ModelBusinessImpact

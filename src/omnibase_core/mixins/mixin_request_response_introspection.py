@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 """
 Request-Response Introspection Mixin

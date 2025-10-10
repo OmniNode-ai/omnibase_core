@@ -3,7 +3,7 @@ from typing import Dict
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.
@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_orchestrator_metrics import ModelOrchestratorMetrics
 

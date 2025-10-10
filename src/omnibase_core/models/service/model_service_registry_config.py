@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.registry.model_registry_mode_config import (
