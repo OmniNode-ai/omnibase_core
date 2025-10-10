@@ -78,7 +78,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             if v >= main_value:
                 msg = "Warning threshold must be less than main value"
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return v
 
@@ -88,7 +88,9 @@ class ModelTimeBased(BaseModel, Generic[T]):
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
-            raise ModelOnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
         return v
 
     def model_post_init(self, __context: object) -> None:
@@ -393,7 +395,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -406,7 +408,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

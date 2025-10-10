@@ -3,8 +3,6 @@ from typing import Any, Dict
 
 from pydantic import Field
 
-from .model_toolparameters import ModelToolParameters
-
 """
 Tool Parameters Model
 

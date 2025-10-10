@@ -121,7 +121,7 @@ class ModelFieldConverterRegistry:
                 return default
 
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid {enum_class.__name__} value: {value}",
                 details=ModelErrorContext.with_context(
                     {
@@ -190,7 +190,7 @@ class ModelFieldConverterRegistry:
         """
         if field_name not in self._converters:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"No converter registered for field: {field_name}",
                 details=ModelErrorContext.with_context(
                     {

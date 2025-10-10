@@ -52,7 +52,7 @@ class ModelProgressMilestones(BaseModel):
             if not 0.0 <= percentage <= 100.0:
                 msg = f"Milestone '{name}' percentage must be between 0.0 and 100.0"
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return v
 
@@ -72,7 +72,9 @@ class ModelProgressMilestones(BaseModel):
         """Add a progress milestone."""
         if not 0.0 <= percentage <= 100.0:
             msg = "Milestone percentage must be between 0.0 and 100.0"
-            raise ModelOnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
         self.milestones[name] = percentage
 
     def remove_milestone(self, name: str) -> bool:
@@ -204,7 +206,7 @@ class ModelProgressMilestones(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -217,7 +219,7 @@ class ModelProgressMilestones(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

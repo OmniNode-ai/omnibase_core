@@ -50,23 +50,23 @@ class ModelNodeUnion(BaseModel):
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="function_node must be set when node_type is 'function_node'",
                 )
             if self.function_node_data is not None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="function_node_data must be None when node_type is 'function_node'",
                 )
         elif self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="function_node_data must be set when node_type is 'function_node_data'",
                 )
             if self.function_node is not None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="function_node must be None when node_type is 'function_node_data'",
                 )
 
@@ -112,19 +112,19 @@ class ModelNodeUnion(BaseModel):
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE:
             if self.function_node is None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node is None but node_type is FUNCTION_NODE",
                 )
             return self.function_node
         if self.node_type == EnumNodeUnionType.FUNCTION_NODE_DATA:
             if self.function_node_data is None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid state: function_node_data is None but node_type is FUNCTION_NODE_DATA",
                 )
             return self.function_node_data
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unknown node_type: {self.node_type}",
         )
 

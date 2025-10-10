@@ -88,7 +88,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                         f"Must be one of {valid_values}"
                     )
                     raise ModelOnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=message,
                         details=ModelErrorContext.with_context(
                             {
@@ -104,7 +104,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
             # Invalid type
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Category must be None or EnumActionCategory, got {type(v)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -134,7 +134,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 "numbers, and underscores"
             )
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=message,
                 details=ModelErrorContext.with_context(
                     {
@@ -301,6 +301,6 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

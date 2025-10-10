@@ -66,7 +66,7 @@ class ModelValidationRulesConverter:
 
             # This should never be reached due to type checking
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unsupported validation rules format: {type(v)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -79,7 +79,7 @@ class ModelValidationRulesConverter:
             )
         except (TypeError, ValueError) as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to convert validation rules: {e!s}",
                 details=ModelErrorContext.with_context(
                     {

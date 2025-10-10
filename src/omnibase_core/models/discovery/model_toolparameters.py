@@ -2,7 +2,7 @@ from typing import Any, List
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.discovery.model_tool_parameter import ModelToolParameter
+from omnibase_core.models.discovery.model_tool_parameters import ModelToolParameter
 
 
 class ModelToolParameters(BaseModel):

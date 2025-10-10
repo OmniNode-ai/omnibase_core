@@ -150,7 +150,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Convert raw values to ModelCliValue objects for node_config_overrides."""
         if not isinstance(v, dict):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="node_config_overrides must be a dict[str, Any]ionary",
             )
 
@@ -179,7 +179,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Convert raw values to ModelCliValue objects for custom_parameters."""
         if not isinstance(v, dict):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="custom_parameters must be a dict[str, Any]ionary",
             )
 
@@ -208,7 +208,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Set timeout with validation."""
         if seconds <= 0:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Timeout must be positive",
             )
         self.timeout_seconds = seconds
@@ -217,7 +217,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Set memory limit with validation."""
         if mb <= 0:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Memory limit must be positive",
             )
         self.memory_limit_mb = mb
@@ -226,7 +226,7 @@ class ModelCliAdvancedParams(BaseModel):
         """Set CPU limit with validation."""
         if not 0.0 <= percent <= 100.0:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="CPU limit must be between 0.0 and 100.0",
             )
         self.cpu_limit_percent = percent
@@ -301,7 +301,7 @@ class ModelCliAdvancedParams(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

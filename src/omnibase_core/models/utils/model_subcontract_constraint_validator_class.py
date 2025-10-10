@@ -165,7 +165,7 @@ class ModelSubcontractConstraintValidator:
         # Raise validation error if any violations found
         if violations:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="\n".join(violations),
                 details=ModelErrorContext.with_context(
                     {

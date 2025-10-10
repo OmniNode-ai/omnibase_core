@@ -324,7 +324,7 @@ class ModelNodeCapability(BaseModel):
                 if value is not None:
                     return str(value)
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

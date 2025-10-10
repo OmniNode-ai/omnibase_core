@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.discovery.model_output_metadata_item import (
+from omnibase_core.models.discovery.model_output_metadata import (
     ModelOutputMetadataItem,
 )
 

@@ -54,7 +54,7 @@ class ModelRegexFlags(BaseModel):
         if self.flag_type in expected_values:
             if self.flag_value != expected_values[self.flag_type]:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Flag value {self.flag_value} doesn't match type {self.flag_type}",
                 )
         elif self.flag_type == EnumRegexFlagType.COMBINED:
@@ -62,7 +62,7 @@ class ModelRegexFlags(BaseModel):
             valid_flags = {re.DOTALL, re.IGNORECASE, re.MULTILINE}
             if not isinstance(self.flag_value, int) or self.flag_value <= 0:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid combined flag value: {self.flag_value}",
                 )
 

@@ -48,7 +48,7 @@ class ModelNodeConfigurationStringValue(BaseModel):
             return int(self.value)
         except ValueError as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Cannot convert string '{self.value}' to int",
                 details={"value": self.value, "target_type": "int"},
                 cause=e,

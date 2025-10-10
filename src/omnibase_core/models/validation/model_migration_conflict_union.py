@@ -68,7 +68,7 @@ class ModelMigrationConflictUnion(BaseModel):
         conflict_type = info.data.get("conflict_type")
         if conflict_type == EnumMigrationConflictType.NAME_CONFLICT and v is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="source_signature and spi_signature required for name conflicts",
                 details={
                     "conflict_type": str(conflict_type),
@@ -87,7 +87,7 @@ class ModelMigrationConflictUnion(BaseModel):
         conflict_type = info.data.get("conflict_type")
         if conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE and v is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="signature_hash required for exact duplicate conflicts",
                 details={
                     "conflict_type": str(conflict_type),
@@ -130,7 +130,7 @@ class ModelMigrationConflictUnion(BaseModel):
         """Convert to name conflict TypedDict format."""
         if self.conflict_type != EnumMigrationConflictType.NAME_CONFLICT:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Cannot convert to name conflict: wrong conflict type",
                 details={
                     "current_conflict_type": str(self.conflict_type),
@@ -143,7 +143,7 @@ class ModelMigrationConflictUnion(BaseModel):
 
         if self.source_signature is None or self.spi_signature is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Missing required fields for name conflict conversion",
                 details={
                     "source_signature": self.source_signature,
@@ -166,7 +166,7 @@ class ModelMigrationConflictUnion(BaseModel):
         """Convert to duplicate conflict TypedDict format."""
         if self.conflict_type != EnumMigrationConflictType.EXACT_DUPLICATE:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Cannot convert to duplicate conflict: wrong conflict type",
                 details={
                     "current_conflict_type": str(self.conflict_type),
@@ -179,7 +179,7 @@ class ModelMigrationConflictUnion(BaseModel):
 
         if self.signature_hash is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Missing required fields for duplicate conflict conversion",
                 details={
                     "signature_hash": self.signature_hash,

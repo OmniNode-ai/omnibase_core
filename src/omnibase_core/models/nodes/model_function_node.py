@@ -259,7 +259,7 @@ class ModelFunctionNode(BaseModel):
             function_type_enum = EnumFunctionType(function_type)
         except ValueError as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid function type '{function_type}' for EnumFunctionType. "
                 f"Must be one of {[t.value for t in EnumFunctionType]}.",
             ) from e
@@ -293,7 +293,7 @@ class ModelFunctionNode(BaseModel):
                 return_type_enum = EnumReturnType(normalized_return_type)
             except ValueError as e:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid return type '{return_type}' for EnumReturnType. "
                     f"Must be one of {[t.value for t in EnumReturnType]}.",
                 ) from e
@@ -362,7 +362,7 @@ class ModelFunctionNode(BaseModel):
                 if value is not None:
                     return str(value)
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",

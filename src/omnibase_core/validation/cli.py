@@ -73,7 +73,7 @@ class ModelValidationSuite:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown validation type: {validation_type}",
             )
 

@@ -3,8 +3,6 @@ from typing import Any, Dict
 
 from pydantic import Field
 
-from .model_outputmetadata import ModelOutputMetadata
-
 """
 Output Metadata Model
 

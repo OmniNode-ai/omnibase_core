@@ -58,12 +58,12 @@ class ModelEnvironmentVariables(BaseModel):
             if not name.isidentifier() and not name.replace("_", "").isalnum():
                 msg = f"Invalid environment variable name: {name}"
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
             if name.startswith("__"):
                 msg = f"Environment variable name cannot start with double underscore: {name}"
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
                 )
         return v
 

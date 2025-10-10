@@ -145,7 +145,7 @@ class ModelCustomProperties(BaseModel):
         else:
             # Raise error for unsupported types
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unsupported custom value type: {type(value)}",
                 details=ModelErrorContext.with_context(
                     {

@@ -23,8 +23,6 @@ from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParam
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-from .model_operationparameters import ModelOperationParameters
-
 
 # Discriminated parameter union to replace primitive soup pattern
 class ModelOperationParameterValue(BaseModel):
@@ -210,4 +208,4 @@ class ModelOperationParameterValue(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelOperationParameterValue", "ModelOperationParameters"]
+__all__ = ["ModelOperationParameterValue"]

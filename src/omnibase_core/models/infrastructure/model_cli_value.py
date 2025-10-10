@@ -55,37 +55,37 @@ class ModelCliValue(BaseModel):
 
         if value_type == EnumCliValueType.STRING and not isinstance(v, str):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String value type must contain str data",
             )
         if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Integer value type must contain int data",
             )
         if value_type == EnumCliValueType.FLOAT and not isinstance(v, float):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Float value type must contain float data",
             )
         if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean value type must contain bool data",
             )
         if value_type == EnumCliValueType.DICT and not isinstance(v, dict):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Dict value type must contain dict[str, Any]data",
             )
         if value_type == EnumCliValueType.LIST and not isinstance(v, list):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="List value type must contain list[Any]data",
             )
         if value_type == EnumCliValueType.NULL and v is not None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Null value type must contain None",
             )
 
@@ -191,7 +191,7 @@ class ModelCliValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -205,7 +205,7 @@ class ModelCliValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -221,7 +221,7 @@ class ModelCliValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

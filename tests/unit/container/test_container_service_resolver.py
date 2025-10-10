@@ -19,7 +19,7 @@ from omnibase_core.container.container_service_resolver import (
     bind_get_service_method,
     create_get_service_method,
 )
-from omnibase_core.errors import CoreErrorCode, OnexError
+from omnibase_core.errors import EnumCoreErrorCode, OnexError
 from omnibase_core.models.container.model_service import ModelService
 
 
@@ -211,7 +211,7 @@ class TestErrorHandling:
         with pytest.raises(OnexError) as exc_info:
             get_service(container, "unknown_service")
 
-        assert exc_info.value.error_code == CoreErrorCode.REGISTRY_RESOLUTION_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED
         assert "Unable to resolve service: unknown_service" in str(exc_info.value)
 
     def test_raises_error_when_vault_client_unavailable(self):
@@ -227,7 +227,7 @@ class TestErrorHandling:
         with pytest.raises(OnexError) as exc_info:
             get_service(container, protocol_type)
 
-        assert exc_info.value.error_code == CoreErrorCode.REGISTRY_RESOLUTION_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED
         assert "Vault client not available" in str(exc_info.value)
 
     def test_raises_error_for_invalid_protocol(self):
@@ -242,7 +242,7 @@ class TestErrorHandling:
         with pytest.raises(OnexError) as exc_info:
             get_service(container, "nonexistent_service")
 
-        assert exc_info.value.error_code == CoreErrorCode.REGISTRY_RESOLUTION_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED
 
 
 class TestMethodBinding:

@@ -85,7 +85,7 @@ class ModelYamlValue(BaseModel):
         if self.value_type == EnumYamlValueType.LIST:
             return [v.to_serializable() for v in (self.list_value or [])]
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid value_type: {self.value_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -124,7 +124,7 @@ class ModelYamlValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

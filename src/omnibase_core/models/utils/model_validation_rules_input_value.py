@@ -53,7 +53,7 @@ class ModelValidationRulesInputValue(BaseModel):
         required_field = required_fields.get(input_type)
         if required_field == field_name and v is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Field {field_name} is required for input type {input_type}",
             )
 
@@ -102,7 +102,7 @@ class ModelValidationRulesInputValue(BaseModel):
 
         # This should never be reached given the type annotations
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported data type: {type(data)}",
         )
 

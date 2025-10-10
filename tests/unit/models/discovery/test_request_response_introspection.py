@@ -10,14 +10,12 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
 from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
-)
-from omnibase_core.models.discovery.model_enum_node_current_status import (
-    NodeCurrentStatusEnum,
 )
 from omnibase_core.models.discovery.model_introspection_filters import (
     ModelIntrospectionFilters,
@@ -136,7 +134,7 @@ class TestIntrospectionResponseEvent:
             node_id=node_id,
             node_name="test_node",
             version=ModelSemVer.parse("1.0.0"),
-            current_status=NodeCurrentStatusEnum.READY,
+            current_status=EnumNodeCurrentStatus.READY,
             capabilities=capabilities,
             response_time_ms=25.5,
         )
@@ -145,7 +143,7 @@ class TestIntrospectionResponseEvent:
         assert response.node_id == node_id
         assert response.node_name == "test_node"
         assert response.version.major == 1
-        assert response.current_status == NodeCurrentStatusEnum.READY
+        assert response.current_status == EnumNodeCurrentStatus.READY
         assert response.capabilities.actions == ["health_check", "validate"]
         assert response.response_time_ms == 25.5
 
@@ -165,13 +163,13 @@ class TestIntrospectionResponseEvent:
             node_id=node_id,
             node_name="test_node",
             version=ModelSemVer.parse("1.0.0"),
-            current_status=NodeCurrentStatusEnum.READY,
+            current_status=EnumNodeCurrentStatus.READY,
             capabilities=capabilities,
             response_time_ms=15.0,
         )
 
         assert response.correlation_id == correlation_id
-        assert response.current_status == NodeCurrentStatusEnum.READY
+        assert response.current_status == EnumNodeCurrentStatus.READY
         assert response.response_time_ms == 15.0
 
         # Test ready response creation
@@ -184,7 +182,7 @@ class TestIntrospectionResponseEvent:
             response_time_ms=10.0,
         )
 
-        assert ready_response.current_status == NodeCurrentStatusEnum.READY
+        assert ready_response.current_status == EnumNodeCurrentStatus.READY
         assert ready_response.response_time_ms == 10.0
 
         # Test error response creation
@@ -197,7 +195,7 @@ class TestIntrospectionResponseEvent:
             response_time_ms=5.0,
         )
 
-        assert error_response.current_status == NodeCurrentStatusEnum.ERROR
+        assert error_response.current_status == EnumNodeCurrentStatus.ERROR
         assert error_response.additional_info["error_message"] == "Test error"
         assert error_response.capabilities.metadata["error"] == "Test error"
 
@@ -234,14 +232,14 @@ class TestIntrospectionResponseEvent:
         # Test tool availability
         tool_availability = ModelCurrentToolAvailability(
             tool_name="tool_validation",
-            status=NodeCurrentStatusEnum.READY,
+            status=EnumNodeCurrentStatus.READY,
             last_execution="2025-01-01T12:00:00Z",
             execution_count=42,
             average_execution_time_ms=15.7,
         )
 
         assert tool_availability.tool_name == "tool_validation"
-        assert tool_availability.status == NodeCurrentStatusEnum.READY
+        assert tool_availability.status == EnumNodeCurrentStatus.READY
         assert tool_availability.execution_count == 42
 
 
@@ -310,21 +308,21 @@ class TestMixinRequestResponseIntrospection:
         node = self.create_test_node()
 
         # Test default ready status
-        assert node._get_current_node_status() == NodeCurrentStatusEnum.READY
+        assert node._get_current_node_status() == EnumNodeCurrentStatus.READY
 
         # Test stopping status
         node._is_shutting_down = True
-        assert node._get_current_node_status() == NodeCurrentStatusEnum.STOPPING
+        assert node._get_current_node_status() == EnumNodeCurrentStatus.STOPPING
 
         # Test starting status
         node._is_shutting_down = False
         node._is_starting = True
-        assert node._get_current_node_status() == NodeCurrentStatusEnum.STARTING
+        assert node._get_current_node_status() == EnumNodeCurrentStatus.STARTING
 
         # Test degraded status (disconnected event bus)
         node._is_starting = False
         node._event_bus.is_connected = Mock(return_value=False)
-        assert node._get_current_node_status() == NodeCurrentStatusEnum.DEGRADED
+        assert node._get_current_node_status() == EnumNodeCurrentStatus.DEGRADED
 
     def test_handle_introspection_request(self):
         """Test handling introspection requests."""
@@ -355,7 +353,7 @@ class TestMixinRequestResponseIntrospection:
         assert isinstance(published_event, ModelIntrospectionResponseEvent)
         assert published_event.correlation_id == correlation_id
         assert isinstance(published_event.node_id, UUID)
-        assert published_event.current_status == NodeCurrentStatusEnum.READY
+        assert published_event.current_status == EnumNodeCurrentStatus.READY
         assert published_event.capabilities.actions == ["health_check"]
         assert published_event.response_time_ms > 0
 
@@ -408,7 +406,7 @@ class TestMixinRequestResponseIntrospection:
 
         assert isinstance(published_event, ModelIntrospectionResponseEvent)
         assert published_event.correlation_id == correlation_id
-        assert published_event.current_status == NodeCurrentStatusEnum.ERROR
+        assert published_event.current_status == EnumNodeCurrentStatus.ERROR
         assert "Test error" in published_event.additional_info["error_message"]
 
 

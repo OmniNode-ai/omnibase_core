@@ -74,7 +74,7 @@ class ModelTimeout(BaseModel):
         # Type validation and conversion
         if not isinstance(timeout_seconds_raw, (int, float)):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="timeout_seconds must be a number",
                 details=ModelErrorContext.with_context(
                     {
@@ -91,7 +91,7 @@ class ModelTimeout(BaseModel):
         if warning_threshold_seconds_raw is not None:
             if not isinstance(warning_threshold_seconds_raw, (int, float)):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="warning_threshold_seconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -106,7 +106,7 @@ class ModelTimeout(BaseModel):
 
         if not isinstance(is_strict_raw, bool):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="is_strict must be a boolean",
                 details=ModelErrorContext.with_context(
                     {
@@ -121,7 +121,7 @@ class ModelTimeout(BaseModel):
 
         if not isinstance(allow_extension_raw, bool):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="allow_extension must be a boolean",
                 details=ModelErrorContext.with_context(
                     {
@@ -138,7 +138,7 @@ class ModelTimeout(BaseModel):
         if extension_limit_seconds_raw is not None:
             if not isinstance(extension_limit_seconds_raw, (int, float)):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="extension_limit_seconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -155,7 +155,7 @@ class ModelTimeout(BaseModel):
         if runtime_category_raw is not None:
             if not isinstance(runtime_category_raw, EnumRuntimeCategory):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="runtime_category must be an EnumRuntimeCategory",
                     details=ModelErrorContext.with_context(
                         {
@@ -172,7 +172,7 @@ class ModelTimeout(BaseModel):
         if description_raw is not None:
             if not isinstance(description_raw, str):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="description must be a string",
                     details=ModelErrorContext.with_context(
                         {
@@ -195,7 +195,7 @@ class ModelTimeout(BaseModel):
                     processed_metadata[key] = ModelSchemaValue.from_value(value)
         elif custom_metadata_raw != {}:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="custom_metadata must be a dict[str, Any]ionary",
                 details=ModelErrorContext.with_context(
                     {
@@ -563,7 +563,7 @@ class ModelTimeout(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Execution failed: {e}",
             ) from e
 
@@ -580,7 +580,7 @@ class ModelTimeout(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
@@ -600,7 +600,7 @@ class ModelTimeout(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

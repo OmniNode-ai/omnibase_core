@@ -12,11 +12,11 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.operations.model_event_payload import (
-    ModelErrorEventData,
-    ModelEventPayload,
-    ModelSystemEventData,
-    ModelUserEventData,
+from omnibase_core.models.operations.model_error_event_data import ModelErrorEventData
+from omnibase_core.models.operations.model_event_payload import ModelEventPayload
+from omnibase_core.models.operations.model_system_event_data import ModelSystemEventData
+from omnibase_core.models.operations.model_user_event_data import ModelUserEventData
+from omnibase_core.models.operations.model_workflow_event_data import (
     ModelWorkflowEventData,
 )
 

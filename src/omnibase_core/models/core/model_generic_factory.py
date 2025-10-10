@@ -94,7 +94,7 @@ class ModelGenericFactory(Generic[T]):
         """
         if name not in self._factories:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown factory: {name} for {self.model_class.__name__}",
                 details=ModelErrorContext.with_context(
                     {
@@ -123,7 +123,7 @@ class ModelGenericFactory(Generic[T]):
         """
         if builder_name not in self._builders:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown builder: {builder_name} for {self.model_class.__name__}",
                 details=ModelErrorContext.with_context(
                     {
@@ -215,7 +215,7 @@ class ModelGenericFactory(Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -236,7 +236,7 @@ class ModelGenericFactory(Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

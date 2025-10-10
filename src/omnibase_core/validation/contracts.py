@@ -39,7 +39,7 @@ VALIDATION_TIMEOUT = 300  # 5 minutes
 def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
     raise ModelOnexError(
-        code=EnumCoreErrorCode.TIMEOUT_ERROR,
+        error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
         message="Validation timed out",
     )
 
@@ -103,7 +103,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except Exception as e:
             # Re-raise validation errors with context
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract validation failed for {file_path}: {e}",
             ) from e
 
@@ -116,7 +116,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     except Exception as e:
         # Re-raise file reading errors with context
         raise ModelOnexError(
-            code=EnumCoreErrorCode.FILE_ACCESS_ERROR,
+            error_code=EnumCoreErrorCode.FILE_ACCESS_ERROR,
             message=f"Error reading file {file_path}: {e}",
         ) from e
 

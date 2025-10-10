@@ -236,7 +236,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeEffect: {e!s}",
                 details={
                     "contract_model_type": "ModelContractEffect",
@@ -278,14 +278,14 @@ class NodeEffect(NodeCoreBase):
 
             # Fallback: this shouldn't happen but provide error
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for effect node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -388,7 +388,7 @@ class NodeEffect(NodeCoreBase):
                 )
                 if not circuit_breaker.can_execute():
                     raise ModelOnexError(
-                        code=EnumCoreErrorCode.OPERATION_FAILED,
+                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         message=f"Circuit breaker open for {input_data.effect_type.value}",
                         context={
                             "node_id": str(self.node_id),
@@ -528,7 +528,7 @@ class NodeEffect(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise ModelOnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Effect execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -613,7 +613,7 @@ class NodeEffect(NodeCoreBase):
         if isinstance(result.result, ModelEffectResultDict):
             return result.result.value
         raise ModelOnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message="File operation did not return expected dict[str, Any]result",
             context={"result_type": result.result.result_type},
         )
@@ -657,7 +657,7 @@ class NodeEffect(NodeCoreBase):
         if isinstance(result.result, ModelEffectResultBool):
             return result.result.value
         raise ModelOnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message="Event emission did not return expected bool result",
             context={"result_type": result.result.result_type},
         )
@@ -740,7 +740,7 @@ class NodeEffect(NodeCoreBase):
 
         if not isinstance(input_data.effect_type, EnumEffectType):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Effect type must be valid EnumEffectType enum",
                 context={
                     "node_id": str(self.node_id),
@@ -750,7 +750,7 @@ class NodeEffect(NodeCoreBase):
 
         if not isinstance(input_data.operation_data, dict):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Operation data must be a dict[str, Any]ionary",
                 context={
                     "node_id": str(self.node_id),
@@ -772,7 +772,7 @@ class NodeEffect(NodeCoreBase):
         """Execute effect with retry logic."""
         retry_count = 0
         last_exception: Exception = ModelOnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message="No retries executed",
         )
 
@@ -819,7 +819,7 @@ class NodeEffect(NodeCoreBase):
             handler = self.effect_handlers[effect_type]
             return await handler(input_data.operation_data, transaction)
         raise ModelOnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"No handler registered for effect type: {effect_type.value}",
             context={
                 "node_id": str(self.node_id),
@@ -888,7 +888,7 @@ class NodeEffect(NodeCoreBase):
             if operation_type == "read":
                 if not file_path.exists():
                     raise ModelOnexError(
-                        code=EnumCoreErrorCode.RESOURCE_UNAVAILABLE,
+                        error_code=EnumCoreErrorCode.RESOURCE_UNAVAILABLE,
                         message=f"File not found: {file_path}",
                         context={"file_path": str(file_path)},
                     )
@@ -958,7 +958,7 @@ class NodeEffect(NodeCoreBase):
 
             else:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Unknown file operation: {operation_type}",
                     context={"operation_type": operation_type},
                 )

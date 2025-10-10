@@ -42,7 +42,7 @@ class ModelConflictResolver:
             return self._merge_values(existing_value, new_value)
         if self.strategy == EnumConflictResolution.ERROR:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Conflict detected for key: {key}",
                 context={
                     "existing_value": str(existing_value),

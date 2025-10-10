@@ -78,7 +78,7 @@ class ModelCliCommandOption(BaseModel):
 
             if value_type == EnumCliOptionValueType.STRING and not isinstance(v, str):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"String value type must contain str data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.INTEGER and not isinstance(
@@ -86,7 +86,7 @@ class ModelCliCommandOption(BaseModel):
                 int,
             ):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Integer value type must contain int data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.BOOLEAN and not isinstance(
@@ -94,7 +94,7 @@ class ModelCliCommandOption(BaseModel):
                 bool,
             ):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Boolean value type must contain bool data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.FLOAT and not isinstance(
@@ -102,19 +102,19 @@ class ModelCliCommandOption(BaseModel):
                 (int, float),
             ):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Float value type must contain float data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.STRING_LIST and not (
                 isinstance(v, list) and all(isinstance(item, str) for item in v)
             ):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"StringList value type must contain list[str] data, got {type(v)}",
                 )
             if value_type == EnumCliOptionValueType.UUID and not isinstance(v, UUID):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"UUID value type must contain UUID data, got {type(v)}",
                 )
 

@@ -55,7 +55,7 @@ def validate_union_usage_file(
     except Exception as e:
         # Re-raise with context for other errors
         raise ModelOnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Failed to validate union usage in {file_path}: {e}",
             cause=e,
         ) from e

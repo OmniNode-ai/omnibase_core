@@ -276,3 +276,4 @@ REFACTORING_EXAMPLE.py
 examples_*.py
 factory_pattern_analysis.md
 migration_guide_*.md
+coverage.json

@@ -171,7 +171,7 @@ class ModelGenericMetadata(BaseModel):
                 self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value type {type(value)} not supported for metadata storage",
                 details=ModelErrorContext.with_context(
                     {

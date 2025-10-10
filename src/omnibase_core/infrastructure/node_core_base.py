@@ -68,7 +68,7 @@ class NodeCoreBase(ABC):
         """
         if container is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Container cannot be None for NodeCoreBase initialization",
                 context={"node_type": self.__class__.__name__},
             )
@@ -139,7 +139,7 @@ class NodeCoreBase(ABC):
             # Validate container
             if not hasattr(self.container, "get_service"):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message="Container does not implement get_service method",
                     context={
                         "node_id": self.node_id,
@@ -187,7 +187,7 @@ class NodeCoreBase(ABC):
             self.metrics["error_count"] += 1
 
             raise ModelOnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Node initialization failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -496,7 +496,7 @@ class NodeCoreBase(ABC):
         """
         if input_data is None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Input data cannot be None",
                 context={"node_id": self.node_id, "node_type": self.__class__.__name__},
             )

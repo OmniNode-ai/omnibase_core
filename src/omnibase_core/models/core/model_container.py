@@ -175,7 +175,7 @@ class ModelContainer(BaseModel, Generic[T]):
             )
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -215,7 +215,7 @@ class ModelContainer(BaseModel, Generic[T]):
             self.is_validated = False
             self.validation_notes = error_message
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=error_message,
                 details=ModelErrorContext.with_context(
                     {
@@ -230,7 +230,7 @@ class ModelContainer(BaseModel, Generic[T]):
             if isinstance(e, ModelOnexError):
                 raise
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation error: {e!s}",
                 details=ModelErrorContext.with_context(
                     {
@@ -311,7 +311,7 @@ class ModelContainer(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -327,7 +327,7 @@ class ModelContainer(BaseModel, Generic[T]):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

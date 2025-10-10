@@ -8,7 +8,7 @@ from pydantic import Field
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.discovery.model_tool_parameters import ModelToolParameters
+from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
 
 
 class ModelToolInvocationEvent(ModelOnexEvent):

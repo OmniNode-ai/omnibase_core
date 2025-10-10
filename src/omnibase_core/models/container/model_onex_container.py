@@ -68,7 +68,7 @@ T = TypeVar("T")
 
 # === CORE CONTAINER DEFINITION ===
 
-from .base_model_onex_container import _BaseModelONEXContainer
+from .model_base_model_onex_container import _BaseModelONEXContainer
 
 
 class ModelONEXContainer:

@@ -81,7 +81,9 @@ class ModelProgressCore(BaseModel):
         """Validate current step doesn't exceed total steps."""
         if self.current_step > self.total_steps:
             msg = "Current step cannot exceed total steps"
-            raise ModelOnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
         return self
 
     def model_post_init(self, __context: object) -> None:

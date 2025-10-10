@@ -196,7 +196,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeOrchestrator: {e!s}",
                 details={
                     "contract_model_type": "ModelContractOrchestrator",
@@ -238,14 +238,14 @@ class NodeOrchestrator(NodeCoreBase):
 
             # Fallback: this shouldn't happen but provide error
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for orchestrator node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -356,7 +356,7 @@ class NodeOrchestrator(NodeCoreBase):
                     # Check for cycles
                     if dependency_graph.has_cycles():
                         raise ModelOnexError(
-                            code=EnumCoreErrorCode.VALIDATION_ERROR,
+                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                             message="Workflow contains dependency cycles",
                             context={
                                 "node_id": self.node_id,
@@ -434,7 +434,7 @@ class NodeOrchestrator(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise ModelOnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow orchestration failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -587,14 +587,14 @@ class NodeOrchestrator(NodeCoreBase):
         """
         if condition_name in self.condition_functions:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Condition function already registered: {condition_name}",
                 context={"node_id": self.node_id, "condition_name": condition_name},
             )
 
         if not callable(function):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Condition function must be callable: {condition_name}",
                 context={"node_id": self.node_id, "condition_name": condition_name},
             )
@@ -680,7 +680,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not input_data.workflow_id:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Workflow ID cannot be empty",
                 context={
                     "node_id": self.node_id,
@@ -690,7 +690,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not input_data.steps:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Workflow must have at least one step",
                 context={
                     "node_id": self.node_id,
@@ -700,7 +700,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         if not isinstance(input_data.execution_mode, EnumExecutionMode):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Execution mode must be valid EnumExecutionMode enum",
                 context={
                     "node_id": self.node_id,

@@ -59,7 +59,7 @@ class ModelMetadataValue(BaseModel):
             # Type validation based on declared type
             if value_type == EnumCliValueType.STRING and not isinstance(v, str):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be string, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -71,7 +71,7 @@ class ModelMetadataValue(BaseModel):
                 )
             if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be integer, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -83,7 +83,7 @@ class ModelMetadataValue(BaseModel):
                 )
             if value_type == EnumCliValueType.FLOAT and not isinstance(v, (int, float)):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be numeric, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -95,7 +95,7 @@ class ModelMetadataValue(BaseModel):
                 )
             if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be boolean, got {type(v)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -160,7 +160,7 @@ class ModelMetadataValue(BaseModel):
         if isinstance(value, float):
             return cls.from_float(value, source)
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported value type: {type(value)}",
             details=ModelErrorContext.with_context(
                 {
@@ -184,7 +184,7 @@ class ModelMetadataValue(BaseModel):
         if self.value_type == EnumCliValueType.INTEGER:
             if not isinstance(self.value, (int, float, str)):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Expected numeric or string type, got {type(self.value)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -206,7 +206,7 @@ class ModelMetadataValue(BaseModel):
                 return int(self.value)
             except ValueError:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Cannot convert string '{self.value}' to int",
                     details=ModelErrorContext.with_context(
                         {
@@ -217,7 +217,7 @@ class ModelMetadataValue(BaseModel):
                     ),
                 )
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to int",
             details=ModelErrorContext.with_context(
                 {
@@ -233,7 +233,7 @@ class ModelMetadataValue(BaseModel):
         if self.value_type in (EnumCliValueType.FLOAT, EnumCliValueType.INTEGER):
             if not isinstance(self.value, (int, float, str)):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Expected numeric or string type, got {type(self.value)}",
                     details=ModelErrorContext.with_context(
                         {
@@ -255,7 +255,7 @@ class ModelMetadataValue(BaseModel):
                 return float(self.value)
             except ValueError:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Cannot convert string '{self.value}' to float",
                     details=ModelErrorContext.with_context(
                         {
@@ -266,7 +266,7 @@ class ModelMetadataValue(BaseModel):
                     ),
                 )
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Cannot convert {self.value_type} to float",
             details=ModelErrorContext.with_context(
                 {
@@ -324,7 +324,7 @@ class ModelMetadataValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -340,7 +340,7 @@ class ModelMetadataValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

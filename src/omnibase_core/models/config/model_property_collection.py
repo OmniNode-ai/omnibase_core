@@ -130,7 +130,7 @@ class ModelPropertyCollection(BaseModel):
 
         # If no handler matches, raise error
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported property type: {type(value)}",
             details=ModelErrorContext.with_context(
                 {
@@ -189,7 +189,7 @@ class ModelPropertyCollection(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -205,6 +205,6 @@ class ModelPropertyCollection(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

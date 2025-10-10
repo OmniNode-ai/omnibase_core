@@ -56,22 +56,22 @@ class ModelValidationValue(BaseModel):
 
         if value_type == EnumValidationValueType.STRING and not isinstance(v, str):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String validation value must contain str data",
             )
         if value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Integer validation value must contain int data",
             )
         if value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean validation value must contain bool data",
             )
         if value_type == EnumValidationValueType.NULL and v is not None:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Null validation value must contain None",
             )
 
@@ -141,7 +141,7 @@ class ModelValidationValue(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

@@ -507,7 +507,7 @@ class ModelNodeType(BaseModel):
             )
         except ValueError:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unknown node type: {name}. Must be one of {list[Any](EnumTypeName)}",
             )
 
@@ -667,7 +667,7 @@ class ModelNodeType(BaseModel):
                 if value is not None:
                     return str(value)
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field (type_id, id, uuid, identifier, etc.). Cannot generate stable ID without UUID field.",
         )
 

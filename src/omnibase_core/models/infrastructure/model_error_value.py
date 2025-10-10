@@ -53,7 +53,7 @@ class ModelErrorValue(BaseModel):
         if self.error_type == EnumErrorValueType.STRING:
             if self.string_error is None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be set when error_type is 'string'",
                 )
             if any(
@@ -64,18 +64,18 @@ class ModelErrorValue(BaseModel):
                 ],
             ):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="exception fields must be None when error_type is 'string'",
                 )
         elif self.error_type == EnumErrorValueType.EXCEPTION:
             if self.exception_class is None or self.exception_message is None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="exception_class and exception_message must be set when error_type is 'exception'",
                 )
             if self.string_error is not None:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="string_error must be None when error_type is 'exception'",
                 )
         elif self.error_type == EnumErrorValueType.NONE:
@@ -88,7 +88,7 @@ class ModelErrorValue(BaseModel):
                 ],
             ):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="All error values must be None when error_type is 'none'",
                 )
 
@@ -165,7 +165,7 @@ class ModelErrorValue(BaseModel):
         except Exception as e:
             # If recreation fails, raise error with context about the failure
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to recreate exception {self.exception_class}: {e}",
             ) from e
 

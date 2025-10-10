@@ -81,12 +81,12 @@ class ProtocolMigrator:
             for protocol in protocols:
                 if not protocol.file_path:
                     raise ModelOnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Protocol must have a file_path specified",
                     )
                 if not protocol.name:
                     raise ModelOnexError(
-                        code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Protocol must have a name specified",
                     )
                 # Note: File existence is not required for planning phase
@@ -436,6 +436,6 @@ class ProtocolMigrator:
         except Exception as e:
             # Re-raise rollback errors with context
             raise ModelOnexError(
-                code=EnumCoreErrorCode.MIGRATION_ERROR,
+                error_code=EnumCoreErrorCode.MIGRATION_ERROR,
                 message=f"Rollback failed: {e}",
             ) from e

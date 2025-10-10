@@ -56,7 +56,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="milliseconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -77,7 +77,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="seconds must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -98,7 +98,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="minutes must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -119,7 +119,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="hours must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -140,7 +140,7 @@ class ModelDuration(BaseModel):
                 )
             else:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="days must be a number",
                     details=ModelErrorContext.with_context(
                         {
@@ -261,7 +261,7 @@ class ModelDuration(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -274,7 +274,7 @@ class ModelDuration(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

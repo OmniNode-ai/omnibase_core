@@ -71,7 +71,7 @@ class FieldConverter(Generic[T]):
             # Validate if validator provided
             if self.validator and not self.validator(result):
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Validation failed for field {self.field_name}",
                     details=ModelErrorContext.with_context(
                         {
@@ -92,7 +92,7 @@ class FieldConverter(Generic[T]):
                 return self.default_value
 
             raise ModelOnexError(
-                code=EnumCoreErrorCode.CONVERSION_ERROR,
+                error_code=EnumCoreErrorCode.CONVERSION_ERROR,
                 message=f"Failed to convert field {self.field_name}: {e!s}",
                 details=ModelErrorContext.with_context(
                     {

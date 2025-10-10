@@ -104,7 +104,7 @@ class ModelCliDebugInfo(BaseModel):
         """Convert raw values to ModelCliValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="custom_debug_fields must be a dict[str, Any]ionary",
                 details=ModelErrorContext.with_context(
                     {
@@ -211,7 +211,7 @@ class ModelCliDebugInfo(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

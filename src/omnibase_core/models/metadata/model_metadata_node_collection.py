@@ -58,7 +58,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             validated_root = root
         else:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"root must be dict[str, Any]or None, got {type(root).__name__}",
                 details={
                     "received_type": type(root).__name__,

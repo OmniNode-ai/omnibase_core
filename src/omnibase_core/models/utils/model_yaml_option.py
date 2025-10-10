@@ -72,7 +72,7 @@ class ModelYamlOption(BaseModel):
         if self.option_type == EnumYamlOptionType.STRING:
             return self.string_value
         raise ModelOnexError(
-            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid option_type: {self.option_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -104,7 +104,7 @@ class ModelYamlOption(BaseModel):
             return True
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

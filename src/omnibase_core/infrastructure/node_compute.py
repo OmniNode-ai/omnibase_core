@@ -183,7 +183,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeCompute: {e!s}",
                 details={
                     "contract_model_type": "ModelContractCompute",
@@ -225,14 +225,14 @@ class NodeCompute(NodeCoreBase):
 
             # Fallback: this shouldn't happen but provide error
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for compute node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -433,7 +433,7 @@ class NodeCompute(NodeCoreBase):
             await self._update_processing_metrics(processing_time, False)
 
             raise ModelOnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Computation failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -524,14 +524,14 @@ class NodeCompute(NodeCoreBase):
         """
         if computation_type in self.computation_registry:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Computation type already registered: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
 
         if not callable(computation_func):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Computation function must be callable: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )
@@ -614,7 +614,7 @@ class NodeCompute(NodeCoreBase):
 
         if not hasattr(input_data, "data"):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'data' attribute",
                 context={
                     "node_id": self.node_id,
@@ -624,7 +624,7 @@ class NodeCompute(NodeCoreBase):
 
         if not hasattr(input_data, "computation_type"):
             raise ModelOnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Input data must have 'computation_type' attribute",
                 context={
                     "node_id": self.node_id,
@@ -656,7 +656,7 @@ class NodeCompute(NodeCoreBase):
             computation_func = self.computation_registry[computation_type]
             return computation_func(input_data.data)
         raise ModelOnexError(
-            code=EnumCoreErrorCode.OPERATION_FAILED,
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Unknown computation type: {computation_type}",
             context={
                 "node_id": self.node_id,
@@ -679,7 +679,7 @@ class NodeCompute(NodeCoreBase):
 
         if not computation_func:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Unknown computation type: {computation_type}",
                 context={"node_id": self.node_id, "computation_type": computation_type},
             )

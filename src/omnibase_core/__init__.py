@@ -73,7 +73,7 @@ def __getattr__(name: str) -> object:
 
     msg = f"module '{__name__}' has no attribute '{name}'"
     raise ModelOnexError(
-        code=EnumCoreErrorCode.IMPORT_ERROR,
+        error_code=EnumCoreErrorCode.IMPORT_ERROR,
         message=msg,
         details={"module": __name__, "attribute": name},
     )
