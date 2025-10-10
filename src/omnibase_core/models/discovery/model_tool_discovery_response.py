@@ -20,8 +20,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.constants.event_types import TOOL_DISCOVERY_RESPONSE
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
-from .model_tooldiscoveryresponse import ModelToolDiscoveryResponse
-
 
 class ModelDiscoveredTool(BaseModel):
     """Information about a discovered tool"""

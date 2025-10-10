@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_onex_error_details_config import ModelConfig
+from omnibase_core.errors.model_onex_error_details_config import ModelConfig
 
 if TYPE_CHECKING:
     pass

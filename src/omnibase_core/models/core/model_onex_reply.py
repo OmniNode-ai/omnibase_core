@@ -6,7 +6,7 @@ error details, performance metrics, and the main reply class.
 """
 
 from omnibase_core.enums.enum_onex_reply import EnumOnexReplyStatus
-from omnibase_core.models.core.model_onex_error_details import ModelOnexErrorDetails
+from omnibase_core.errors.model_onex_error_details import ModelOnexErrorDetails
 from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,
 )

@@ -64,9 +64,11 @@ from .model_performance_metrics import ModelPerformanceMetrics
 from .model_request_introspection_event import ModelRequestIntrospectionEvent
 from .model_resource_usage import ModelResourceUsage
 from .model_tool_discovery_error import *
-from .model_tool_discovery_request import ModelToolDiscoveryRequest
-from .model_tool_discovery_response import ModelToolDiscoveryResponse
+from .model_tool_discovery_request import ModelDiscoveryFilters
+from .model_tool_discovery_response import ModelDiscoveredTool
 from .model_tool_discovery_result import *
+from .model_tooldiscoveryrequest import ModelToolDiscoveryRequest
+from .model_tooldiscoveryresponse import ModelToolDiscoveryResponse
 
 __all__ = [
     "EnumDiscoveryPhase",

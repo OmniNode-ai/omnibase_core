@@ -3,7 +3,9 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_discovery_filters import ModelDiscoveryFilters
+from omnibase_core.models.discovery.model_tool_discovery_request import (
+    ModelDiscoveryFilters,
+)
 
 "\nDiscovery Request Model\n\nModel for discovery client requests with proper typing and validation\nfollowing ONEX canonical patterns.\n"
 from typing import Any

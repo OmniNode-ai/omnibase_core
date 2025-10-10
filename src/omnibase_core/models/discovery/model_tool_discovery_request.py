@@ -14,8 +14,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
-from .model_tooldiscoveryrequest import ModelToolDiscoveryRequest
-
 
 class ModelDiscoveryFilters(BaseModel):
     """Filters for tool discovery requests"""

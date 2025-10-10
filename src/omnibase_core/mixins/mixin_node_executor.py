@@ -1,8 +1,10 @@
 import uuid
-from typing import Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 "\nNode Executor Mixin.\n\nCanonical mixin for persistent node executor capabilities. Enables nodes to run\nas persistent executors that respond to TOOL_INVOCATION events, providing\ntool-as-a-service functionality for MCP, GraphQL, and other integrations.\n"
 import asyncio
@@ -352,6 +354,8 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         event_bus = getattr(self, "event_bus", None)
         if event_bus:
             envelope = ModelEventEnvelope.create_broadcast(
@@ -365,6 +369,8 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     async def _emit_shutdown_event(self) -> None:
         """Emit a node shutdown event."""
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         try:
             shutdown_event = ModelNodeShutdownEvent.create_graceful_shutdown(
                 node_id=self._node_id,

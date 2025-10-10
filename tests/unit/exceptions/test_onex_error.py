@@ -4,7 +4,7 @@ Comprehensive unit tests for ModelOnexError exception class.
 Tests cover:
 - ModelOnexError initialization and basic behaviors
 - Error code validation and handling
-- Error context handling with BasicErrorContext
+- Error context handling with TypedDictBasicErrorContext
 - Exception inheritance and chaining
 - Message formatting with and without context
 - Edge cases and error scenarios
@@ -14,7 +14,7 @@ import pytest
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.core_types import BasicErrorContext
+from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
 
 class TestModelOnexErrorBasicBehavior:
@@ -489,4 +489,4 @@ class TestModelOnexErrorIntegration:
         # Context should be accessible and valid
         assert error._simple_context.file_path == "/test/file.py"
         assert error._simple_context.line_number == 42
-        assert isinstance(error._simple_context, BasicErrorContext)
+        assert isinstance(error._simple_context, TypedDictBasicErrorContext)

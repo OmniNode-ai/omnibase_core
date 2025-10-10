@@ -14,8 +14,8 @@ from typing import Any, Callable, TypeVar
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.core.model_onex_error import ModelOnexError
 
 from .error_contract_violation import ContractViolationError
 from .error_dependency_failed import DependencyFailedError
