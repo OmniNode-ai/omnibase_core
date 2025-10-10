@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import NotRequired, TypedDict
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+if TYPE_CHECKING:
+    from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TypedDictUsageMetadata(TypedDict, total=False):
@@ -16,6 +17,6 @@ class TypedDictUsageMetadata(TypedDict, total=False):
 
     name: NotRequired[str]
     description: NotRequired[str]
-    version: NotRequired[ModelSemVer]
+    version: NotRequired["ModelSemVer"]
     tags: NotRequired[list[str]]
     metadata: NotRequired[dict[str, str]]
