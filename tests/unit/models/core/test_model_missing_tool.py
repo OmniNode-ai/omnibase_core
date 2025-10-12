@@ -43,7 +43,7 @@ class TestModelMissingToolBasic:
             expected_type="CriticalProcessor",
             reason_category=EnumToolMissingReason.IMPORT_ERROR,
             criticality=EnumToolCriticality.HIGH,
-            tool_category=EnumToolCategory.PROCESSOR,
+            tool_category=EnumToolCategory.DATA_PROCESSING,
             expected_interface="ProcessorProtocol",
             actual_type_found="None",
             error_details="ModuleNotFoundError: No module named 'critical_processor'",
@@ -54,7 +54,7 @@ class TestModelMissingToolBasic:
         assert tool.expected_type == "CriticalProcessor"
         assert tool.reason_category == EnumToolMissingReason.IMPORT_ERROR
         assert tool.criticality == EnumToolCriticality.HIGH
-        assert tool.tool_category == EnumToolCategory.PROCESSOR
+        assert tool.tool_category == EnumToolCategory.DATA_PROCESSING
         assert tool.expected_interface == "ProcessorProtocol"
         assert tool.actual_type_found == "None"
         assert (
@@ -104,9 +104,9 @@ class TestModelMissingToolBasic:
         assert data["tool_name"] == "serialization_test"
         assert data["reason"] == "Testing serialization"
         assert data["expected_type"] == "SerializationType"
-        assert data["reason_category"] == "NOT_FOUND"
-        assert data["criticality"] == "MEDIUM"
-        assert data["tool_category"] == "UTILITY"
+        assert data["reason_category"] == "not_found"
+        assert data["criticality"] == "medium"
+        assert data["tool_category"] == "utility"
 
     def test_missing_tool_deserialization(self):
         """Test missing tool deserialization."""
@@ -114,9 +114,9 @@ class TestModelMissingToolBasic:
             "tool_name": "deserialization_test",
             "reason": "Testing deserialization",
             "expected_type": "DeserializationType",
-            "reason_category": "IMPORT_ERROR",
-            "criticality": "HIGH",
-            "tool_category": "PROCESSOR",
+            "reason_category": "import_error",
+            "criticality": "high",
+            "tool_category": "data_processing",
         }
 
         tool = ModelMissingTool.model_validate(data)
@@ -125,7 +125,7 @@ class TestModelMissingToolBasic:
         assert tool.expected_type == "DeserializationType"
         assert tool.reason_category == EnumToolMissingReason.IMPORT_ERROR
         assert tool.criticality == EnumToolCriticality.HIGH
-        assert tool.tool_category == EnumToolCategory.PROCESSOR
+        assert tool.tool_category == EnumToolCategory.DATA_PROCESSING
 
 
 class TestModelMissingToolEnums:
@@ -243,9 +243,11 @@ class TestModelMissingToolEdgeCases:
     def test_unicode_characters(self):
         """Test with unicode characters."""
         tool = ModelMissingTool(
-            tool_name="测试工具", reason="Unicode测试原因", expected_type="Unicode类型"
+            tool_name="unicode_test_tool",
+            reason="Unicode测试原因",
+            expected_type="Unicode类型",
         )
-        assert tool.tool_name == "测试工具"
+        assert tool.tool_name == "unicode_test_tool"
         assert tool.reason == "Unicode测试原因"
         assert tool.expected_type == "Unicode类型"
 
@@ -272,13 +274,13 @@ class TestModelMissingToolBusinessScenarios:
             expected_type="MissingDependency",
             reason_category=EnumToolMissingReason.IMPORT_ERROR,
             criticality=EnumToolCriticality.HIGH,
-            tool_category=EnumToolCategory.DEPENDENCY,
+            tool_category=EnumToolCategory.EXTERNAL_SERVICE,
             error_details="Traceback (most recent call last):\n  File 'main.py', line 1, in <module>\n    import missing_dependency\nModuleNotFoundError: No module named 'missing_dependency'",
         )
 
         assert tool.reason_category == EnumToolMissingReason.IMPORT_ERROR
         assert tool.criticality == EnumToolCriticality.HIGH
-        assert tool.tool_category == EnumToolCategory.DEPENDENCY
+        assert tool.tool_category == EnumToolCategory.EXTERNAL_SERVICE
 
     def test_type_mismatch_scenario(self):
         """Test type mismatch scenario."""
@@ -288,7 +290,7 @@ class TestModelMissingToolBusinessScenarios:
             expected_type="Processor",
             reason_category=EnumToolMissingReason.TYPE_MISMATCH,
             criticality=EnumToolCriticality.MEDIUM,
-            tool_category=EnumToolCategory.PROCESSOR,
+            tool_category=EnumToolCategory.DATA_PROCESSING,
             actual_type_found="StringProcessor",
             expected_interface="ProcessorProtocol",
         )
@@ -415,7 +417,7 @@ class TestModelMissingToolSerialization:
             expected_type="JsonTestType",
             reason_category=EnumToolMissingReason.IMPORT_ERROR,
             criticality=EnumToolCriticality.HIGH,
-            tool_category=EnumToolCategory.PROCESSOR,
+            tool_category=EnumToolCategory.DATA_PROCESSING,
         )
 
         json_data = tool.model_dump_json()
