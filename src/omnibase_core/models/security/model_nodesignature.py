@@ -11,8 +11,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.models.core.model_operation_details import ModelOperationDetails
-from omnibase_core.models.core.model_signature_metadata import ModelSignatureMetadata
+from omnibase_core.models.security.model_operation_details import ModelOperationDetails
+from omnibase_core.models.security.model_signature_metadata import (
+    ModelSignatureMetadata,
+)
 
 
 class ModelNodeSignature(BaseModel):
@@ -28,7 +30,7 @@ class ModelNodeSignature(BaseModel):
     MAX_PROCESSING_TIME_MS: ClassVar[int] = 300000
     MAX_SIGNATURE_TIME_MS: ClassVar[int] = 60000
     node_id: UUID = Field(
-        default=..., description="Unique identifier of the signing node", min_length=1
+        default=..., description="Unique identifier of the signing node"
     )
     node_name: str | None = Field(
         default=None, description="Human-readable name of the signing node"
@@ -47,7 +49,6 @@ class ModelNodeSignature(BaseModel):
     key_id: UUID = Field(
         default=...,
         description="Certificate fingerprint or key identifier",
-        min_length=1,
     )
     certificate_thumbprint: str | None = Field(
         default=None, description="SHA-256 thumbprint of the signing certificate"

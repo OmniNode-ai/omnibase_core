@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 
@@ -86,9 +86,17 @@ class ModelEventEnvelope(BaseModel):
         description="Additional envelope metadata",
     )
 
-    model_config = ConfigDict(
-        json_encoders={datetime: lambda v: v.isoformat(), UUID: lambda v: str(v)},
-    )
+    model_config = ConfigDict()
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value: datetime) -> str:
+        """Serialize datetime to ISO format."""
+        return value.isoformat()
+
+    @field_serializer("envelope_id")
+    def serialize_envelope_id(self, value: UUID) -> str:
+        """Serialize UUID to string."""
+        return str(value)
 
     @classmethod
     def create_direct(

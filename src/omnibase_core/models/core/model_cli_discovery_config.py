@@ -10,7 +10,3 @@ from datetime import datetime
 
 class ModelConfig:
     """Pydantic model configuration for CLI discovery stats."""
-
-    json_encoders = {
-        datetime: lambda v: v.isoformat(),
-    }

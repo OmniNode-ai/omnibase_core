@@ -30,3 +30,20 @@ class ModelSchemaProperty(BaseModel):
     properties: Optional["ModelSchemaPropertiesModel"] = None
     required: Optional["ModelRequiredFieldsModel"] = None
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
+
+
+# Rebuild the model to resolve forward references
+def _rebuild_model():
+    """Rebuild the model to resolve forward references."""
+    try:
+        from .model_required_fields_model import ModelRequiredFieldsModel
+        from .model_schema_properties_model import ModelSchemaPropertiesModel
+
+        ModelSchemaProperty.model_rebuild()
+    except ImportError:
+        # Forward references will be resolved when the modules are imported
+        pass
+
+
+# Call rebuild on module import
+_rebuild_model()

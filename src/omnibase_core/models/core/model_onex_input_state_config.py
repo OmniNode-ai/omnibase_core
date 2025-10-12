@@ -12,5 +12,3 @@ from omnibase_core.models.core.model_onex_input_state import ModelOnexInputState
 
 class ModelConfig:
     """Pydantic model configuration for ONEX compliance."""
-
-    json_encoders = {UUID: str}

@@ -15,7 +15,3 @@ class ModelConfig:
 
     frozen = True
     use_enum_values = True
-    json_encoders = {
-        UUID: str,
-        datetime: lambda v: v.isoformat(),
-    }

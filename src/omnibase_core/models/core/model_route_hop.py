@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ModelRouteHop(BaseModel):
@@ -67,7 +67,12 @@ class ModelRouteHop(BaseModel):
         description="Load factor (0.0-1.0) at this hop",
     )
 
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
+    model_config = ConfigDict()
+
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, value: datetime) -> str:
+        """Serialize datetime to ISO format."""
+        return value.isoformat()
 
     @classmethod
     def create_source_hop(

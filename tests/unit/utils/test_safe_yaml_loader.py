@@ -574,7 +574,7 @@ examples:
         # Should raise an error due to YAML parsing failure
         with pytest.raises(ModelOnexError) as exc_info:
             extract_example_from_schema(schema_file)
-        assert exc_info.value.code in [
+        assert exc_info.value.error_code in [
             EnumCoreErrorCode.INTERNAL_ERROR,
             EnumCoreErrorCode.VALIDATION_ERROR,
         ]

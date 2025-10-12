@@ -39,11 +39,7 @@ class ModelTrustPolicy(BaseModel):
     """
 
     # Class configuration
-    model_config = ConfigDict(
-        json_encoders={datetime: lambda v: v.isoformat()},
-        validate_assignment=True,
-        extra="forbid",
-    )
+    model_config = ConfigDict(validate_assignment=True, extra="forbid")
 
     # Constants
     MAX_MINIMUM_SIGNATURES: ClassVar[int] = 100
@@ -54,8 +50,7 @@ class ModelTrustPolicy(BaseModel):
 
     # Policy identification
     policy_id: UUID = Field(
-        default_factory=uuid.uuid4,
-        description="Unique policy identifier",
+        default_factory=uuid.uuid4, description="Unique policy identifier"
     )
     name: str = Field(default=..., description="Policy name", min_length=1)
     version: ModelSemVer = Field(
@@ -67,8 +62,7 @@ class ModelTrustPolicy(BaseModel):
 
     # Policy metadata
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="When policy was created",
+        default_factory=lambda: datetime.now(UTC), description="When policy was created"
     )
     created_by: str = Field(default=..., description="Policy creator", min_length=1)
     organization: str | None = Field(default=None, description="Organization name")
@@ -104,48 +98,37 @@ class ModelTrustPolicy(BaseModel):
         le=MAX_SIGNATURE_AGE_HOURS,
     )
     require_timestamp_verification: bool = Field(
-        default=True,
-        description="Require timestamp signature verification",
+        default=True, description="Require timestamp signature verification"
     )
 
     # Certificate and PKI settings
     trusted_certificate_authorities: list[str] = Field(
-        default_factory=list,
-        description="Trusted CA certificate fingerprints",
+        default_factory=list, description="Trusted CA certificate fingerprints"
     )
     certificate_revocation_check: bool = Field(
-        default=True,
-        description="Enable certificate revocation checking",
+        default=True, description="Enable certificate revocation checking"
     )
     require_certificate_transparency: bool = Field(
-        default=False,
-        description="Require certificates to be in CT logs",
+        default=False, description="Require certificates to be in CT logs"
     )
 
     # Node trust settings
     globally_trusted_nodes: set[str] = Field(
-        default_factory=set,
-        description="Globally trusted node IDs",
+        default_factory=set, description="Globally trusted node IDs"
     )
-    blocked_nodes: set[str] = Field(
-        default_factory=set,
-        description="Blocked node IDs",
-    )
+    blocked_nodes: set[str] = Field(default_factory=set, description="Blocked node IDs")
     require_node_registration: bool = Field(
-        default=True,
-        description="Require nodes to be registered",
+        default=True, description="Require nodes to be registered"
     )
 
     # Policy rules
     rules: list[ModelPolicyRule] = Field(
-        default_factory=list,
-        description="Ordered list of policy rules",
+        default_factory=list, description="Ordered list of policy rules"
     )
 
     # Compliance and audit
     compliance_frameworks: list[str] = Field(
-        default_factory=list,
-        description="Required compliance frameworks",
+        default_factory=list, description="Required compliance frameworks"
     )
     audit_retention_days: int = Field(
         default=2555,  # 7 years for SOX compliance
@@ -153,8 +136,7 @@ class ModelTrustPolicy(BaseModel):
         ge=1,
     )
     require_audit_trail: bool = Field(
-        default=True,
-        description="Require complete audit trail",
+        default=True, description="Require complete audit trail"
     )
 
     # Performance settings
@@ -171,8 +153,7 @@ class ModelTrustPolicy(BaseModel):
         le=MAX_VERIFICATION_TIMEOUT_MS,
     )
     cache_verification_results: bool = Field(
-        default=True,
-        description="Cache signature verification results",
+        default=True, description="Cache signature verification results"
     )
     verification_cache_ttl_seconds: int = Field(
         default=3600,
@@ -188,12 +169,10 @@ class ModelTrustPolicy(BaseModel):
         pattern=r"^(strict|permissive|monitor)$",
     )
     allow_emergency_override: bool = Field(
-        default=False,
-        description="Allow emergency policy override",
+        default=False, description="Allow emergency policy override"
     )
     emergency_override_roles: list[str] = Field(
-        default_factory=list,
-        description="Roles authorized for emergency override",
+        default_factory=list, description="Roles authorized for emergency override"
     )
 
     # Policy lifecycle
@@ -202,10 +181,7 @@ class ModelTrustPolicy(BaseModel):
         description="When policy becomes effective",
     )
     expires_at: datetime | None = Field(default=None, description="When policy expires")
-    auto_renewal: bool = Field(
-        default=False,
-        description="Automatically renew policy",
-    )
+    auto_renewal: bool = Field(default=False, description="Automatically renew policy")
 
     @field_validator("global_minimum_signatures")
     @classmethod
@@ -278,8 +254,7 @@ class ModelTrustPolicy(BaseModel):
         return applicable_rules
 
     def evaluate_signature_requirements(
-        self,
-        context: ModelRuleCondition,
+        self, context: ModelRuleCondition
     ) -> ModelSignatureRequirements:
         """Evaluate signature requirements for given context."""
         applicable_rules = self.get_applicable_rules(context)
@@ -301,8 +276,7 @@ class ModelTrustPolicy(BaseModel):
         # Apply rules in order (later rules override earlier ones)
         for rule in applicable_rules:
             requirements.minimum_signatures = max(
-                requirements.minimum_signatures,
-                rule.minimum_signatures,
+                requirements.minimum_signatures, rule.minimum_signatures
             )
 
             if rule.required_algorithms:

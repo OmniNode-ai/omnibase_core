@@ -11,7 +11,5 @@ from datetime import datetime
 class ModelConfig:
     """Pydantic configuration for container instance."""
 
-    json_encoders = {
-        datetime: lambda v: v.isoformat(),
-    }
-    frozen = False
+
+frozen = False

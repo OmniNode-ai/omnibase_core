@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         ModelChainValidation,
         ModelPolicyValidation,
         ModelSignatureVerificationResult,
+        field_serializer,
     )
 
 
@@ -159,7 +160,12 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         description="Maximum time allowed for encryption operations",
     )
 
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
+    model_config = ConfigDict()
+
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, value: datetime) -> str:
+        """Serialize datetime to ISO format."""
+        return value.isoformat()
 
     def __init__(self, **data: Any):
         """Initialize secure envelope with proper signature chain setup."""

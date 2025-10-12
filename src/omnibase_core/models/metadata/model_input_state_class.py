@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
-    from omnibase_core.models.metadata.model_versionunion import ModelVersionUnion
     from omnibase_core.types.typed_dict_input_state_fields import (
         TypedDictInputStateFields,
     )
@@ -30,27 +30,25 @@ class ModelInputState(BaseModel):
     - Validatable: Validation and verification
     """
 
-    # Version field (required for parsing) - structured discriminated union
-    version: "ModelVersionUnion | None" = Field(
+    # Version field (required for parsing) - canonical ModelSemVer
+    version: ModelSemVer | None = Field(
         default=None,
-        description="Version information as discriminated union or None",
+        description="Version information as ModelSemVer or None",
     )
 
     # Additional fields that might be present in input state
-    additional_fields: "TypedDictInputStateFields" = Field(
-        default_factory=lambda: TypedDictInputStateFields(),
+    additional_fields: dict[str, Any] = Field(
+        default_factory=dict,
         description="Additional fields in the input state",
     )
 
-    def get_version_data(self) -> object:
-        """Get the version data for parsing. Use isinstance() to check specific type."""
-        if self.version is None:
-            return None
-        return self.version.get_version()
+    def get_version_data(self) -> ModelSemVer | None:
+        """Get the version data for parsing."""
+        return self.version
 
     def has_version(self) -> bool:
         """Check if input state has version information."""
-        return self.version is not None and self.version.has_version()
+        return self.version is not None
 
     def get_field(self, key: str) -> object | None:
         """Get a field from the input state."""

@@ -162,7 +162,6 @@ from .typed_dict_usage_metadata import TypedDictUsageMetadata
 from .typed_dict_validation_metadata_type import TypedDictValidationMetadataType
 from .typed_dict_validation_result import TypedDictValidationResult
 from .typed_dict_validator_info import TypedDictValidatorInfo
-from .typed_dict_version_dict import TypedDictVersionDict
 from .typed_dict_workflow_state import TypedDictWorkflowState
 
 # Utility functions
@@ -257,7 +256,6 @@ __all__ = [
     "TypedDictTraceInfoData",
     "TypedDictUsageMetadata",
     "TypedDictValidationMetadataType",
-    "TypedDictVersionDict",
     # New individual TypedDict classes extracted from typed_dict_structured_definitions.py
     "TypedDictSemVer",
     "TypedDictExecutionStats",

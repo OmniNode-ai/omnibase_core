@@ -12,8 +12,4 @@ from uuid import UUID
 class ModelConfig:
     """Pydantic configuration for ONEX error details."""
 
-    json_encoders = {
-        datetime: lambda v: v.isoformat(),
-        UUID: lambda v: str(v),
-    }
     frozen = True

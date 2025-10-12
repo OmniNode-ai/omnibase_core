@@ -15,7 +15,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -38,12 +38,10 @@ class ModelSignatureChain(BaseModel):
     chain_id: UUID = Field(
         default=...,
         description="Unique identifier for this signature chain",
-        min_length=1,
     )
     envelope_id: UUID = Field(
         default=...,
         description="ID of the envelope this chain belongs to",
-        min_length=1,
     )
     signatures: list[ModelNodeSignature] = Field(
         default_factory=list, description="Ordered list[Any]of signatures in the chain"
@@ -83,8 +81,9 @@ class ModelSignatureChain(BaseModel):
         default=None, description="Performance metrics for chain operations"
     )
 
-    @validator("signatures")
-    def validate_signature_order(self, v: Any) -> Any:
+    @field_validator("signatures")
+    @classmethod
+    def validate_signature_order(cls, v: Any) -> Any:
         """Validate signatures are in correct hop order."""
         if not v:
             return v

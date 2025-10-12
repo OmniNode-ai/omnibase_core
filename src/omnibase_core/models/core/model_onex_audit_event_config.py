@@ -12,8 +12,5 @@ from uuid import UUID
 class ModelConfig:
     """Pydantic configuration for ONEX audit event."""
 
-    json_encoders = {
-        datetime: lambda v: v.isoformat(),
-        UUID: lambda v: str(v),
-    }
-    frozen = True
+
+frozen = True
