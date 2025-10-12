@@ -521,7 +521,10 @@ class TestConnectionStringGeneration:
             application_name="TestApp",
         )
         conn_str = config.get_connection_string()
-        assert "mongodb://mongo_user:mongo_pass@mongo.example.com:27017/test_db" in conn_str
+        assert (
+            "mongodb://mongo_user:mongo_pass@mongo.example.com:27017/test_db"
+            in conn_str
+        )
         assert "appName=TestApp" in conn_str
 
     def test_mongodb_connection_string_with_ssl(self):
@@ -667,9 +670,7 @@ class TestSecurityAssessment:
             driver="postgresql",
         )
         assessment = config.get_security_assessment()
-        assert any(
-            "postgres" in rec for rec in assessment["recommendations"]
-        )
+        assert any("postgres" in rec for rec in assessment["recommendations"])
 
     def test_security_assessment_mysql_root_user(self):
         """Test security assessment warns about MySQL root user."""
@@ -682,9 +683,7 @@ class TestSecurityAssessment:
             driver="mysql",
         )
         assessment = config.get_security_assessment()
-        assert any(
-            "root" in rec for rec in assessment["recommendations"]
-        )
+        assert any("root" in rec for rec in assessment["recommendations"])
 
     def test_security_assessment_compliance_status(self):
         """Test security assessment compliance status."""
@@ -806,9 +805,7 @@ class TestPoolRecommendations:
             max_overflow=0,
         )
         recommendations = config.get_pool_recommendations()
-        assert any(
-            "max_overflow" in rec for rec in recommendations.recommendations
-        )
+        assert any("max_overflow" in rec for rec in recommendations.recommendations)
 
     def test_pool_recommendations_postgresql_profile(self):
         """Test PostgreSQL-specific pool recommendations."""
@@ -1113,9 +1110,7 @@ class TestFactoryMethods:
 
     def test_create_sqlite(self):
         """Test SQLite factory method."""
-        config = ModelDatabaseSecureConfig.create_sqlite(
-            database_path="/data/app.db"
-        )
+        config = ModelDatabaseSecureConfig.create_sqlite(database_path="/data/app.db")
         assert config.driver == "sqlite"
         assert config.database == "/data/app.db"
 

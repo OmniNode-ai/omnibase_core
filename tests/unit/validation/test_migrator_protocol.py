@@ -765,7 +765,9 @@ class TestValidationErrors:
         (spi_path / "src" / "omnibase_spi" / "protocols").mkdir(parents=True)
 
         # Create a test protocol file in SPI
-        spi_protocol = spi_path / "src" / "omnibase_spi" / "protocols" / "protocol_test.py"
+        spi_protocol = (
+            spi_path / "src" / "omnibase_spi" / "protocols" / "protocol_test.py"
+        )
         spi_protocol.write_text(
             """
 from typing import Protocol

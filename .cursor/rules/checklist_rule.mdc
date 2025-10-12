@@ -1,0 +1,114 @@
+---
+description: create a checklist
+globs:
+alwaysApply: false
+---
+⸻
+
+=== Cursor Rule: Checklist Rule v3 ===
+
+rule_id: "cursor_rule_checklist_v3"
+title: "Checklist Rule v3 - Simplified"
+alias: ["checklist rule", "work ticket system", "agent-first tickets"]
+status: "CANONICAL"
+last_updated: "2025-01-30"
+description: >
+  Defines the simplified agent-first work ticket system. Epics → Tickets (that's it).
+  Tickets ARE checklists. No complex features, just files and directories.
+
+purpose:
+  • Enforce simple file-based ticket system
+  • Epic → Ticket hierarchy (no sub-tasks)
+  • Agent-first design (no human UI/dashboards)
+  • Code proximity (tickets live near the code)
+  • Simple status tracking via directory location
+
+# === Directory Organization ===
+ticket_organization:
+  structure: "status_directories"  # Same at both levels
+    location: "work_tickets/"
+    subdirectories:
+      - "active/"      # Currently being worked
+      - "completed/"   # Finished work
+      - "blocked/"     # Waiting on dependencies
+      - "backlog/"     # Planned but not started
+      - "epics/"       # Epic-level organization
+
+# === Simplified Hierarchy ===
+hierarchy:
+  level_1: "Epic (strategic checklist .md file)"
+  level_2: "Work Ticket (self-contained checklist .yaml file)"
+  # NO LEVEL 3/4 - Each ticket contains its own checklist
+
+# === Naming ===
+naming:
+  epic_pattern: "{system}_{area}_checklist_{sequence:02d}_{scope}.md"
+  ticket_pattern: "{area}_{sequence:03d}_{scope}.yaml"
+
+  components:
+    area: "Domain area (e.g. nm_arch, core, cli)"
+    sequence: "Three-digit ID (e.g. 001, 002)"
+    scope: "Brief description (e.g. model_split, validation)"
+
+# === Simplified Ticket Format ===
+work_ticket_format:
+  # Minimal metadata
+  ticket_id: "nm_arch_001"
+  epic: "onex_core_checklist_06"
+  title: "Split model files"
+  status: "active"  # Redundant with directory, but useful
+  priority: "P0"
+
+  # The ticket IS the checklist
+  checklist:
+    - "[ ] Analyze dependencies"
+    - "[x] Extract models"
+    - "[ ] Update imports"
+    - "[ ] Run tests"
+
+  # Context for agents
+  context:
+    files: ["model_service_configuration.py"]
+    validation: "Run pytest after changes"
+
+# === Agent Operations ===
+agent_operations:
+  create: "Write YAML file to appropriate status directory"
+  update: "Edit YAML file directly"
+  move_status: "mv between status directories"
+  list: "ls work_tickets/{status}/"
+  read: "cat work_tickets/{status}/{ticket}.yaml"
+
+  # No special commands or CLIs needed
+
+# === What We DON'T Have ===
+removed_features:
+  - "Complex CLI with subcommands"
+  - "Web dashboards and analytics"
+  - "AI-powered suggestions"
+  - "Visual dependency graphs"
+  - "Resource allocation"
+  - "Permission models"
+  - "APIs (REST/GraphQL)"
+  - "Webhooks"
+  - "Audit trails"
+  - "Performance metrics"
+  - "Sub-tickets (level 3/4)"
+  - "Complex metadata"
+  - "Auto-generation tools"
+
+# === Validation (Minimal) ===
+validation:
+  required_fields: ["ticket_id", "epic", "title", "checklist"]
+  file_location: "Must be in status subdirectory"
+  checklist_format: "Simple markdown checkboxes"
+
+# === Migration ===
+migration:
+  from_complex_to_simple:
+    - "Remove sub-ticket levels"
+    - "Strip complex metadata"
+    - "Flatten to status directories"
+    - "Convert to simple checklists"
+
+⸻

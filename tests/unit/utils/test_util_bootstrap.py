@@ -51,7 +51,9 @@ class TestGetService:
         mock_registry.get_service.return_value = mock_service
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_service(MockServiceProtocol)
 
         # Assert
@@ -65,7 +67,9 @@ class TestGetService:
         mock_registry.get_service.return_value = None
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_service(MockServiceProtocol)
 
         # Assert - when registry returns None, get_service returns None (no fallback)
@@ -78,7 +82,9 @@ class TestGetService:
 
         # Act
         with patch.object(util_bootstrap, "_get_registry_node", return_value=None):
-            with patch.object(util_bootstrap, "_get_fallback_service", return_value=mock_fallback) as mock_fallback_fn:
+            with patch.object(
+                util_bootstrap, "_get_fallback_service", return_value=mock_fallback
+            ) as mock_fallback_fn:
                 result = util_bootstrap.get_service(MockServiceProtocol)
 
         # Assert
@@ -91,8 +97,14 @@ class TestGetService:
         mock_fallback = Mock()
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", side_effect=RuntimeError("Registry error")):
-            with patch.object(util_bootstrap, "_get_fallback_service", return_value=mock_fallback) as mock_fallback_fn:
+        with patch.object(
+            util_bootstrap,
+            "_get_registry_node",
+            side_effect=RuntimeError("Registry error"),
+        ):
+            with patch.object(
+                util_bootstrap, "_get_fallback_service", return_value=mock_fallback
+            ) as mock_fallback_fn:
                 result = util_bootstrap.get_service(MockServiceProtocol)
 
         # Assert
@@ -107,8 +119,12 @@ class TestGetService:
         mock_fallback = Mock()
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
-            with patch.object(util_bootstrap, "_get_fallback_service", return_value=mock_fallback) as mock_fallback_fn:
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
+            with patch.object(
+                util_bootstrap, "_get_fallback_service", return_value=mock_fallback
+            ) as mock_fallback_fn:
                 result = util_bootstrap.get_service(MockServiceProtocol)
 
         # Assert
@@ -119,7 +135,9 @@ class TestGetService:
         """Test when both registry and fallback return None."""
         # Act
         with patch.object(util_bootstrap, "_get_registry_node", return_value=None):
-            with patch.object(util_bootstrap, "_get_fallback_service", return_value=None):
+            with patch.object(
+                util_bootstrap, "_get_fallback_service", return_value=None
+            ):
                 result = util_bootstrap.get_service(MockServiceProtocol)
 
         # Assert
@@ -142,7 +160,9 @@ class TestGetLoggingService:
         mock_registry.get_protocol.return_value = mock_protocol
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_logging_service()
 
         # Assert
@@ -156,7 +176,9 @@ class TestGetLoggingService:
         mock_registry.get_protocol.return_value = None
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_logging_service()
 
         # Assert
@@ -174,7 +196,11 @@ class TestGetLoggingService:
     def test_get_logging_service_registry_exception(self):
         """Test fallback when registry raises exception."""
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", side_effect=Exception("Registry error")):
+        with patch.object(
+            util_bootstrap,
+            "_get_registry_node",
+            side_effect=Exception("Registry error"),
+        ):
             result = util_bootstrap.get_logging_service()
 
         # Assert
@@ -187,7 +213,9 @@ class TestGetLoggingService:
         mock_registry.get_protocol.side_effect = RuntimeError("Protocol error")
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_logging_service()
 
         # Assert
@@ -209,7 +237,9 @@ class TestEmitLogEvent:
         mock_logging_service.emit_log_event.return_value = None
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             result = util_bootstrap.emit_log_event(
                 LogLevel.INFO, "test_event", "Test message", extra="data"
             )
@@ -225,8 +255,12 @@ class TestEmitLogEvent:
         mock_logging_service = Mock(spec=[])  # No methods
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
-            result = util_bootstrap.emit_log_event(LogLevel.INFO, "test_event", "Test message")
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
+            result = util_bootstrap.emit_log_event(
+                LogLevel.INFO, "test_event", "Test message"
+            )
 
         # Assert - should not raise exception
         assert result is None
@@ -234,8 +268,14 @@ class TestEmitLogEvent:
     def test_emit_log_event_get_logging_service_raises_exception(self):
         """Test when get_logging_service raises exception."""
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", side_effect=Exception("Service error")):
-            result = util_bootstrap.emit_log_event(LogLevel.ERROR, "error_event", "Error message")
+        with patch.object(
+            util_bootstrap,
+            "get_logging_service",
+            side_effect=Exception("Service error"),
+        ):
+            result = util_bootstrap.emit_log_event(
+                LogLevel.ERROR, "error_event", "Error message"
+            )
 
         # Assert - should not raise exception, falls back to stderr
         assert result is None
@@ -247,8 +287,12 @@ class TestEmitLogEvent:
         mock_logging_service.emit_log_event.side_effect = ValueError("Emit error")
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
-            result = util_bootstrap.emit_log_event(LogLevel.WARNING, "warn_event", "Warning")
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
+            result = util_bootstrap.emit_log_event(
+                LogLevel.WARNING, "warn_event", "Warning"
+            )
 
         # Assert - should not raise exception
         assert result is None
@@ -270,7 +314,9 @@ class TestEmitLogEvent:
         ]
 
         # Act & Assert
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             for level in log_levels:
                 util_bootstrap.emit_log_event(level, "event", f"Message for {level}")
                 mock_logging_service.emit_log_event.assert_called_with(
@@ -283,7 +329,9 @@ class TestEmitLogEvent:
         mock_logging_service = Mock()
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             util_bootstrap.emit_log_event(
                 LogLevel.INFO,
                 "complex_event",
@@ -319,7 +367,9 @@ class TestEmitLogEventSync:
         mock_logging_service.emit_log_event_sync.return_value = None
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             result = util_bootstrap.emit_log_event_sync(
                 LogLevel.INFO, "Test message", "test_event", extra="data"
             )
@@ -335,7 +385,9 @@ class TestEmitLogEventSync:
         mock_logging_service = Mock()
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             util_bootstrap.emit_log_event_sync(LogLevel.DEBUG, "Debug message")
 
         # Assert
@@ -349,7 +401,9 @@ class TestEmitLogEventSync:
         mock_logging_service = Mock(spec=[])  # No methods
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             result = util_bootstrap.emit_log_event_sync(LogLevel.INFO, "Test message")
 
         # Assert
@@ -358,7 +412,11 @@ class TestEmitLogEventSync:
     def test_emit_log_event_sync_get_logging_service_raises_exception(self):
         """Test when get_logging_service raises exception."""
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", side_effect=Exception("Service error")):
+        with patch.object(
+            util_bootstrap,
+            "get_logging_service",
+            side_effect=Exception("Service error"),
+        ):
             result = util_bootstrap.emit_log_event_sync(LogLevel.ERROR, "Error message")
 
         # Assert
@@ -368,10 +426,14 @@ class TestEmitLogEventSync:
         """Test when emit_log_event_sync itself raises exception."""
         # Arrange
         mock_logging_service = Mock()
-        mock_logging_service.emit_log_event_sync.side_effect = RuntimeError("Emit error")
+        mock_logging_service.emit_log_event_sync.side_effect = RuntimeError(
+            "Emit error"
+        )
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             result = util_bootstrap.emit_log_event_sync(LogLevel.WARNING, "Warning")
 
         # Assert
@@ -383,7 +445,9 @@ class TestEmitLogEventSync:
         mock_logging_service = Mock()
 
         # Act
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             util_bootstrap.emit_log_event_sync(
                 LogLevel.INFO,
                 "Message",
@@ -418,6 +482,7 @@ class TestGetRegistryNode:
 
         # Mock the module import
         import sys
+
         mock_module = Mock()
         mock_module.get_spi_registry = mock_get_spi_registry
 
@@ -462,6 +527,7 @@ class TestGetFallbackService:
 
     def test_get_fallback_service_logger_protocol(self):
         """Test fallback for logger protocol types."""
+
         # Arrange
         class MockLoggerProtocol:
             __name__ = "LoggerProtocol"
@@ -474,6 +540,7 @@ class TestGetFallbackService:
 
     def test_get_fallback_service_logger_in_name(self):
         """Test fallback for any protocol with Logger in name."""
+
         # Arrange
         class MockServiceLogger:
             __name__ = "ServiceLoggerInterface"
@@ -486,6 +553,7 @@ class TestGetFallbackService:
 
     def test_get_fallback_service_non_logger_protocol(self):
         """Test fallback returns None for non-logger protocols."""
+
         # Arrange
         class MockDatabaseProtocol:
             __name__ = "DatabaseProtocol"
@@ -590,7 +658,9 @@ class TestIsServiceAvailable:
     def test_is_service_available_get_service_raises_exception(self):
         """Test when get_service raises exception."""
         # Act
-        with patch.object(util_bootstrap, "get_service", side_effect=Exception("Error")):
+        with patch.object(
+            util_bootstrap, "get_service", side_effect=Exception("Error")
+        ):
             # Exception will be raised and propagated
             with pytest.raises(Exception):
                 util_bootstrap.is_service_available(MockServiceProtocol)
@@ -598,7 +668,11 @@ class TestIsServiceAvailable:
     def test_is_service_available_various_protocols(self):
         """Test is_service_available with various protocol types."""
         # Arrange
-        protocols = [MockServiceProtocol, MockLoggerProtocol, type("CustomProtocol", (), {})]
+        protocols = [
+            MockServiceProtocol,
+            MockLoggerProtocol,
+            type("CustomProtocol", (), {}),
+        ]
 
         # Act & Assert
         with patch.object(util_bootstrap, "get_service") as mock_get_service:
@@ -624,7 +698,9 @@ class TestGetAvailableServices:
         mock_registry.list_services.return_value = ["logging", "database", "cache"]
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_available_services()
 
         # Assert
@@ -637,7 +713,9 @@ class TestGetAvailableServices:
         mock_registry = Mock(spec=[])  # No list_services method
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_available_services()
 
         # Assert
@@ -659,7 +737,9 @@ class TestGetAvailableServices:
         mock_registry.list_services.side_effect = RuntimeError("List error")
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             result = util_bootstrap.get_available_services()
 
         # Assert
@@ -668,7 +748,11 @@ class TestGetAvailableServices:
     def test_get_available_services_get_registry_node_raises_exception(self):
         """Test when _get_registry_node raises exception."""
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", side_effect=Exception("Registry error")):
+        with patch.object(
+            util_bootstrap,
+            "_get_registry_node",
+            side_effect=Exception("Registry error"),
+        ):
             result = util_bootstrap.get_available_services()
 
         # Assert
@@ -705,7 +789,9 @@ class TestBootstrapIntegration:
         mock_registry.list_services.return_value = ["logging", "database"]
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             # Get service
             service = util_bootstrap.get_service(MockServiceProtocol)
             assert service == mock_service
@@ -752,7 +838,9 @@ class TestBootstrapIntegration:
         mock_registry.get_protocol.return_value = mock_protocol
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             # Emit async log event
             util_bootstrap.emit_log_event(LogLevel.INFO, "test_event", "Test message")
             mock_protocol.emit_log_event.assert_called_once()
@@ -771,7 +859,9 @@ class TestBootstrapIntegration:
         mock_registry.list_services.side_effect = Exception("List error")
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             # Service should fallback
             service = util_bootstrap.get_service(MockServiceProtocol)
             assert service is None
@@ -811,8 +901,12 @@ class TestBootstrapEdgeCases:
         mock_registry.get_service.return_value = Mock()
 
         # Act - simulate concurrent calls
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
-            results = [util_bootstrap.get_service(MockServiceProtocol) for _ in range(10)]
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
+            results = [
+                util_bootstrap.get_service(MockServiceProtocol) for _ in range(10)
+            ]
 
         # Assert
         assert len(results) == 10
@@ -826,7 +920,9 @@ class TestBootstrapEdgeCases:
         mock_registry.get_protocol.return_value = mock_protocol
 
         # Act
-        with patch.object(util_bootstrap, "_get_registry_node", return_value=mock_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", return_value=mock_registry
+        ):
             service = util_bootstrap.get_logging_service()
 
         # Assert
@@ -866,7 +962,9 @@ class TestBootstrapEdgeCases:
         ]
 
         # Act & Assert
-        with patch.object(util_bootstrap, "get_logging_service", return_value=mock_logging_service):
+        with patch.object(
+            util_bootstrap, "get_logging_service", return_value=mock_logging_service
+        ):
             for message in special_messages:
                 util_bootstrap.emit_log_event(LogLevel.INFO, "special_event", message)
                 mock_logging_service.emit_log_event.assert_called()
@@ -885,7 +983,9 @@ class TestBootstrapEdgeCases:
             return mock_reg
 
         # Act - call get_service multiple times
-        with patch.object(util_bootstrap, "_get_registry_node", side_effect=counting_registry):
+        with patch.object(
+            util_bootstrap, "_get_registry_node", side_effect=counting_registry
+        ):
             util_bootstrap.get_service(MockServiceProtocol)
             util_bootstrap.get_service(MockServiceProtocol)
             util_bootstrap.get_service(MockServiceProtocol)

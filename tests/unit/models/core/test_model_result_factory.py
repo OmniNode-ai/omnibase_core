@@ -112,10 +112,7 @@ class TestModelResultFactory:
         factory = ModelResultFactory(TestResultModel)
 
         result = factory.build(
-            "error",
-            error_message="Error occurred",
-            data="error context",
-            count=3
+            "error", error_message="Error occurred", data="error context", count=3
         )
 
         assert result.success is False
@@ -138,10 +135,7 @@ class TestModelResultFactory:
         """Test building validation error with custom message."""
         factory = ModelResultFactory(TestResultModel)
 
-        result = factory.build(
-            "validation_error",
-            error_message="Invalid input format"
-        )
+        result = factory.build("validation_error", error_message="Invalid input format")
 
         assert result.success is False
         assert result.exit_code == 2
@@ -152,9 +146,7 @@ class TestModelResultFactory:
         factory = ModelResultFactory(TestResultModel)
 
         result = factory.build(
-            "validation_error",
-            exit_code=400,
-            error_message="Bad request"
+            "validation_error", exit_code=400, error_message="Bad request"
         )
 
         assert result.success is False
@@ -192,7 +184,7 @@ class TestModelResultFactory:
             "success",
             success=False,  # Should be ignored
             error_message="ignored",  # Should be ignored
-            data="kept"
+            data="kept",
         )
 
         assert result.success is True  # Forced by builder
@@ -209,7 +201,7 @@ class TestModelResultFactory:
             success=True,  # Should be ignored
             exit_code=999,  # Should be kept
             error_message="custom error",  # Should be kept
-            data="kept"
+            data="kept",
         )
 
         assert result.success is False  # Forced by builder
@@ -234,10 +226,7 @@ class TestModelResultFactory:
 
         # Direct instantiation via model_class
         result = factory.model_class(
-            success=True,
-            exit_code=0,
-            error_message=None,
-            data="test"
+            success=True, exit_code=0, error_message=None, data="test"
         )
 
         assert result.success is True

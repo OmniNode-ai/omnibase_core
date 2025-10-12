@@ -267,7 +267,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         else:
             # Non-SQLite databases require valid port numbers
             if self.port == 0:
-                msg = f"Port 0 is only valid for SQLite driver, got driver: {self.driver}"
+                msg = (
+                    f"Port 0 is only valid for SQLite driver, got driver: {self.driver}"
+                )
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,

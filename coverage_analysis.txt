@@ -72,30 +72,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:19: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:19:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -112,30 +112,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:35: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:35:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -152,30 +152,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:64: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:64:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -192,30 +192,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:77: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:77:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -232,30 +232,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:90: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:90:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -272,30 +272,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:103: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:103:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -312,30 +312,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:116: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:116:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -352,30 +352,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:129: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:129:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -392,30 +392,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:150: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:150:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -432,30 +432,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:167: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:167:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -472,30 +472,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:182: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:182:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -512,30 +512,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:196: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:196:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -552,30 +552,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:215: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:215:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -592,30 +592,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModelFastContrac
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:229: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:229:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -630,30 +630,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that base() returns ModelContractBase."""
 >       from omnibase_core.models.contracts.model_fast_imports import base
 
-tests/unit/models/contracts/test_model_fast_imports.py:249: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:249:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -668,30 +668,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that compute() returns ModelContractCompute."""
 >       from omnibase_core.models.contracts.model_fast_imports import compute
 
-tests/unit/models/contracts/test_model_fast_imports.py:258: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:258:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -706,30 +706,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that effect() returns ModelContractEffect."""
 >       from omnibase_core.models.contracts.model_fast_imports import effect
 
-tests/unit/models/contracts/test_model_fast_imports.py:267: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:267:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -744,30 +744,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that reducer() returns ModelContractReducer."""
 >       from omnibase_core.models.contracts.model_fast_imports import reducer
 
-tests/unit/models/contracts/test_model_fast_imports.py:276: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:276:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -782,30 +782,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that orchestrator() returns ModelContractOrchestrator."""
 >       from omnibase_core.models.contracts.model_fast_imports import orchestrator
 
-tests/unit/models/contracts/test_model_fast_imports.py:285: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:285:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -820,30 +820,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that all_contracts() returns all contract types."""
 >       from omnibase_core.models.contracts.model_fast_imports import all_contracts
 
-tests/unit/models/contracts/test_model_fast_imports.py:294: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:294:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -858,30 +858,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that factory_stats() returns factory statistics."""
 >       from omnibase_core.models.contracts.model_fast_imports import factory_stats
 
-tests/unit/models/contracts/test_model_fast_imports.py:303: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:303:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -896,30 +896,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestModuleLevelFunct
         """Test that module-level functions use the global factory instance."""
 >       from omnibase_core.models.contracts.model_fast_imports import base, compute
 
-tests/unit/models/contracts/test_model_fast_imports.py:313: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:313:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -936,30 +936,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestCreationHelpers 
             create_compute_contract,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:333: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:333:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -976,30 +976,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestCreationHelpers 
             create_effect_contract,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:343: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:343:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1016,30 +1016,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestCreationHelpers 
             create_base_contract,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:353: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:353:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1057,30 +1057,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestPreloadingFuncti
             preload_critical_contracts,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:367: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:367:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1097,30 +1097,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestPreloadingFuncti
             preload_all_contracts,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:383: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:383:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1137,30 +1137,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestPerformanceMonit
             ModelPerformanceMonitor,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:405: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:405:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1177,30 +1177,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestPerformanceMonit
             ModelPerformanceMonitor,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:413: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:413:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1217,30 +1217,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestPerformanceMonit
             ModelPerformanceMonitor,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:426: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:426:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1257,30 +1257,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestPerformanceMonit
             ModelPerformanceMonitor,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:444: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:444:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1293,7 +1293,7 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestZeroImportTimeLo
 
     def test_no_imports_at_module_level(self):
         """Test that no contract imports occur at module import time."""
-    
+
         # Remove any cached contract modules
         modules_to_remove = [
             key
@@ -1302,34 +1302,34 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestZeroImportTimeLo
         ]
         for mod in modules_to_remove:
             del sys.modules[mod]
-    
+
         # Import the fast imports module
 >       from omnibase_core.models.contracts import model_fast_imports
 
-tests/unit/models/contracts/test_model_fast_imports.py:471: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:471:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1342,36 +1342,36 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestZeroImportTimeLo
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""
-    
+
         # Create a new factory to test fresh import behavior
 >       from omnibase_core.models.contracts.model_fast_imports import (
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:489: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:489:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1386,30 +1386,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestZeroImportTimeLo
         """Test that __all__ exports the correct functions."""
 >       from omnibase_core.models.contracts import model_fast_imports
 
-tests/unit/models/contracts/test_model_fast_imports.py:508: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:508:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1426,30 +1426,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestErrorHandling ob
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:536: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:536:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1466,30 +1466,30 @@ self = <tests.unit.models.contracts.test_model_fast_imports.TestErrorHandling ob
             ModelFastContractFactory,
         )
 
-tests/unit/models/contracts/test_model_fast_imports.py:550: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/models/contracts/test_model_fast_imports.py:550:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
     from typing import TYPE_CHECKING, Any, Dict, TypeVar
-    
+
     from omnibase_core.errors.model_onex_error import ModelOnexError
-    
+
     """
     Fast Import Module - Aggressive Performance Optimization
-    
+
     CRITICAL: This module provides zero-import-time loading for contract models.
     NO imports are executed at module level to eliminate cascade effects.
-    
+
     Performance Target: Module import <5ms, contract loading <50ms total
     """
-    
+
     from typing import TypedDict, TypeVar, cast
-    
+
     # NO RUNTIME IMPORTS AT MODULE LEVEL
     # All imports moved to function level to eliminate cascade
-    
+
     # Type variables for proper typing
     ContractType = TypeVar("ContractType", bound="ModelContractBase")
-    
+
 >   from omnibase_core.models.contracts.model_performance_metrics import (
         ModelPerformanceMetrics,
     )
@@ -1506,10 +1506,10 @@ self = <tests.unit.models.core.test_model_container.TestModelContainerIntegratio
             value="invalid_number",
             container_type="numeric_string",
         )
-    
+
         with pytest.raises(OnexError) as exc_info:
             container.map_value(lambda x: int(x))
-    
+
         error = exc_info.value
 >       assert "numeric_string" in str(error.details)
                                        ^^^^^^^^^^^^^
@@ -1523,14 +1523,14 @@ self = <tests.unit.models.core.test_model_custom_fields_generic.TestModelCustomF
     def test_generic_field_type_detection(self):
         """Test field type detection with generic implementations."""
         fields = ModelCustomFieldsAccessor[Any]()
-    
+
         # Set different types and check detection
         fields.set_field("str_field", "string")
         fields.set_field("int_field", 42)
         fields.set_field("float_field", 3.14)
         fields.set_field("bool_field", True)
         fields.set_field("list_field", [1, 2, 3])
-    
+
         # Test type detection
         assert fields.get_field_type("str_field") == "string"
         assert fields.get_field_type("int_field") == "int"
@@ -1538,7 +1538,7 @@ self = <tests.unit.models.core.test_model_custom_fields_generic.TestModelCustomF
         assert fields.get_field_type("bool_field") == "bool"
 >       assert fields.get_field_type("list_field") == "list"
 E       AssertionError: assert 'list[Any]' == 'list'
-E         
+E
 E         - list
 E         + list[Any]
 
@@ -1548,7 +1548,7 @@ ____________________ test_validation_functions_lazy_import _____________________
     def test_validation_functions_lazy_import() -> None:
         """
         Test that validation functions use lazy imports correctly.
-    
+
         The validate_primitive_value and validate_context_value functions
         should import error_codes only when they need to raise an error.
         """
@@ -1556,24 +1556,24 @@ ____________________ test_validation_functions_lazy_import _____________________
         modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
         for module in modules_to_remove:
             del sys.modules[module]
-    
+
         # Import types.constraints
         from omnibase_core.types.constraints import (
             validate_context_value,
             validate_primitive_value,
         )
-    
+
         # Test successful validation (should not trigger import)
         assert validate_primitive_value("test")
         assert validate_context_value("test")
-    
+
         # Test failed validation (should trigger lazy import)
         try:
             validate_primitive_value(object())  # Invalid type
         except Exception:
             # Expected - validation should fail
             pass
-    
+
         # After the failed validation, error_codes should now be imported
 >       assert (
             "omnibase_core.errors.error_codes" in sys.modules
@@ -1591,12 +1591,12 @@ tmp_path = PosixPath('/private/var/folders/1h/z37k4b691hxb6jkyhllgmqpw0000gn/T/p
     def test_run_validation_unknown_type(self, tmp_path: Path) -> None:
         """Test run_validation raises error for unknown validation type."""
         suite = ModelValidationSuite()
-    
+
         with pytest.raises(ValueError, match="Unknown validation type"):
 >           suite.run_validation("nonexistent", tmp_path)
 
-tests/unit/validation/test_cli.py:55: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/validation/test_cli.py:55:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <omnibase_core.validation.cli.ModelValidationSuite object at 0x1123a52e0>
 validation_type = 'nonexistent'
@@ -1632,31 +1632,31 @@ intermixed = False
         else:
             # make sure that args are mutable
             args = list(args)
-    
+
         # default Namespace built from parser defaults
         if namespace is None:
             namespace = Namespace()
-    
+
         # add any action defaults that aren't present
         for action in self._actions:
             if action.dest is not SUPPRESS:
                 if not hasattr(namespace, action.dest):
                     if action.default is not SUPPRESS:
                         setattr(namespace, action.dest, action.default)
-    
+
         # add any parser defaults that aren't present
         for dest in self._defaults:
             if not hasattr(namespace, dest):
                 setattr(namespace, dest, self._defaults[dest])
-    
+
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
 >               namespace, args = self._parse_known_args(args, namespace, intermixed)
                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2188: in _parse_known_args
     stop_index = consume_positionals(start_index)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1667,7 +1667,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2514: in _get_values
     self._check_value(action, value)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='pytest', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 action = _StoreAction(option_strings=[], dest='validation_type', nargs=None, const=None, default=None, type=None, choices=['arc...on-usage', 'contracts', 'patterns', 'all', 'list[Any]'], required=True, help='Type of validation to run', metavar=None)
@@ -1695,7 +1695,7 @@ self = <tests.unit.validation.test_cli.TestCreateParser object at 0x11247c350>
     def test_parser_validation_type_choices(self) -> None:
         """Test parser accepts valid validation types."""
         parser = create_parser()
-    
+
         # Test valid choices
         for validation_type in [
             "architecture",
@@ -1708,8 +1708,8 @@ self = <tests.unit.validation.test_cli.TestCreateParser object at 0x11247c350>
 >           args = parser.parse_args([validation_type])
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/unit/validation/test_cli.py:150: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/validation/test_cli.py:150:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1904: in parse_args
     args, argv = self.parse_known_args(args, namespace)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1720,7 +1720,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     self.error(str(err))
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2650: in error
     self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='pytest', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 status = 2
@@ -1753,31 +1753,31 @@ intermixed = False
         else:
             # make sure that args are mutable
             args = list(args)
-    
+
         # default Namespace built from parser defaults
         if namespace is None:
             namespace = Namespace()
-    
+
         # add any action defaults that aren't present
         for action in self._actions:
             if action.dest is not SUPPRESS:
                 if not hasattr(namespace, action.dest):
                     if action.default is not SUPPRESS:
                         setattr(namespace, action.dest, action.default)
-    
+
         # add any parser defaults that aren't present
         for dest in self._defaults:
             if not hasattr(namespace, dest):
                 setattr(namespace, dest, self._defaults[dest])
-    
+
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
 >               namespace, args = self._parse_known_args(args, namespace, intermixed)
                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2188: in _parse_known_args
     stop_index = consume_positionals(start_index)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1788,7 +1788,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2514: in _get_values
     self._check_value(action, value)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='prog', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 action = _StoreAction(option_strings=[], dest='validation_type', nargs=None, const=None, default=None, type=None, choices=['arc...on-usage', 'contracts', 'patterns', 'all', 'list[Any]'], required=True, help='Type of validation to run', metavar=None)
@@ -1822,12 +1822,12 @@ capsys = <_pytest.capture.CaptureFixture object at 0x10443b9e0>
     ) -> None:
         """Test CLI list command to show available validators."""
         monkeypatch.setattr(sys, "argv", ["prog", "list"])
-    
+
 >       exit_code = run_validation_cli()
                     ^^^^^^^^^^^^^^^^^^^^
 
-tests/unit/validation/test_cli_entry_point.py:42: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/validation/test_cli_entry_point.py:42:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 src/omnibase_core/validation/cli.py:241: in run_validation_cli
     args = parser.parse_args()
            ^^^^^^^^^^^^^^^^^^^
@@ -1841,7 +1841,7 @@ src/omnibase_core/validation/cli.py:241: in run_validation_cli
     self.error(str(err))
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2650: in error
     self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='prog', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 status = 2
@@ -1868,7 +1868,7 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x1127bd9d0>
             """Test detection of if 'field' in info.data patterns."""
             code = """
     from pydantic import field_validator, ValidationInfo
-    
+
     class MyModel:
         @field_validator("max_value")
         @classmethod
@@ -1880,7 +1880,7 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x1127bd9d0>
             tree = ast.parse(code)
             detector = FallbackDetector("test.py", code.splitlines())
             detector.visit(tree)
-    
+
 >           assert len(detector.violations) == 1
 E           assert 0 == 1
 E            +  where 0 = len([])
@@ -1895,11 +1895,11 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x112787f50>
             """Test detection of enum UNKNOWN assignment in except blocks."""
             code = """
     from enum import Enum
-    
+
     class MyEnum(Enum):
         VALUE1 = "value1"
         UNKNOWN = "unknown"
-    
+
     def process(value: str):
         try:
             result = MyEnum(value)
@@ -1910,7 +1910,7 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x112787f50>
             tree = ast.parse(code)
             detector = FallbackDetector("test.py", code.splitlines())
             detector.visit(tree)
-    
+
 >           assert len(detector.violations) == 1
 E           assert 0 == 1
 E            +  where 0 = len([])

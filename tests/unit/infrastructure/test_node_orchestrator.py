@@ -110,7 +110,9 @@ def sample_orchestrator_input(sample_workflow_step):
 class TestNodeOrchestratorInitialization:
     """Test cases for NodeOrchestrator initialization and configuration."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     def test_initialization_success(self, mock_load_contract, mock_container):
         """Test successful NodeOrchestrator initialization."""
         # Mock contract loading
@@ -133,8 +135,12 @@ class TestNodeOrchestratorInitialization:
         assert isinstance(orchestrator.orchestration_metrics, dict)
         assert isinstance(orchestrator.condition_functions, dict)
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
-    def test_initialization_with_builtin_conditions(self, mock_load_contract, mock_container):
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
+    def test_initialization_with_builtin_conditions(
+        self, mock_load_contract, mock_container
+    ):
         """Test that built-in condition functions are registered."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -148,7 +154,9 @@ class TestNodeOrchestratorInitialization:
         assert "has_previous_results" in orchestrator.condition_functions
         assert "previous_step_success" in orchestrator.condition_functions
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     def test_initialization_creates_semaphore(self, mock_load_contract, mock_container):
         """Test that workflow semaphore is created with correct limit."""
         mock_contract = MagicMock()
@@ -160,8 +168,12 @@ class TestNodeOrchestratorInitialization:
         assert isinstance(orchestrator.workflow_semaphore, asyncio.Semaphore)
         assert orchestrator.workflow_semaphore._value == 5  # max_concurrent_workflows
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
-    def test_initialization_with_load_balancer(self, mock_load_contract, mock_container):
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
+    def test_initialization_with_load_balancer(
+        self, mock_load_contract, mock_container
+    ):
         """Test that load balancer is initialized."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -176,7 +188,9 @@ class TestNodeOrchestratorInitialization:
 class TestNodeOrchestratorWorkflowExecution:
     """Test cases for workflow execution patterns."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_sequential_workflow_execution(
         self, mock_load_contract, mock_container, sample_orchestrator_input
@@ -199,7 +213,9 @@ class TestNodeOrchestratorWorkflowExecution:
         assert len(result.thunks_emitted) > 0
         assert result.processing_time_ms > 0
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_parallel_workflow_execution(
         self, mock_load_contract, mock_container, sample_workflow_step
@@ -224,7 +240,9 @@ class TestNodeOrchestratorWorkflowExecution:
         assert result.workflow_state == EnumWorkflowState.COMPLETED
         assert result.parallel_executions >= 0
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_batch_workflow_execution(
         self, mock_load_contract, mock_container, sample_workflow_step
@@ -250,9 +268,13 @@ class TestNodeOrchestratorWorkflowExecution:
         assert result.workflow_state == EnumWorkflowState.COMPLETED
         assert result.metadata.get("execution_mode") == "batch"
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
-    async def test_workflow_with_multiple_steps(self, mock_load_contract, mock_container):
+    async def test_workflow_with_multiple_steps(
+        self, mock_load_contract, mock_container
+    ):
         """Test workflow execution with multiple steps."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -298,7 +320,9 @@ class TestNodeOrchestratorWorkflowExecution:
 class TestNodeOrchestratorDependencyResolution:
     """Test cases for dependency resolution and ordering."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_dependency_resolution_enabled(
         self, mock_load_contract, mock_container
@@ -362,7 +386,9 @@ class TestNodeOrchestratorDependencyResolution:
         assert result.workflow_state == EnumWorkflowState.COMPLETED
         assert result.steps_completed == 2
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_circular_dependency_detection(
         self, mock_load_contract, mock_container
@@ -428,14 +454,22 @@ class TestNodeOrchestratorDependencyResolution:
             await orchestrator.process(circular_input)
 
         # Circular dependency raises OPERATION_FAILED during graph building
-        assert exc_info.value.error_code in [EnumCoreErrorCode.VALIDATION_ERROR, EnumCoreErrorCode.OPERATION_FAILED]
-        assert "cycle" in str(exc_info.value).lower() or "workflow" in str(exc_info.value).lower()
+        assert exc_info.value.error_code in [
+            EnumCoreErrorCode.VALIDATION_ERROR,
+            EnumCoreErrorCode.OPERATION_FAILED,
+        ]
+        assert (
+            "cycle" in str(exc_info.value).lower()
+            or "workflow" in str(exc_info.value).lower()
+        )
 
 
 class TestNodeOrchestratorThunkEmission:
     """Test cases for thunk emission patterns."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_emit_thunk_success(self, mock_load_contract, mock_container):
         """Test successful thunk emission."""
@@ -461,9 +495,13 @@ class TestNodeOrchestratorThunkEmission:
         assert thunk.priority == 2
         assert thunk.timeout_ms == 10000
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
-    async def test_emit_thunk_with_dependencies(self, mock_load_contract, mock_container):
+    async def test_emit_thunk_with_dependencies(
+        self, mock_load_contract, mock_container
+    ):
         """Test thunk emission with dependencies."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -483,7 +521,9 @@ class TestNodeOrchestratorThunkEmission:
 
         assert dep_id in thunk.dependencies
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_emitted_thunks_tracking(self, mock_load_contract, mock_container):
         """Test that emitted thunks are tracked."""
@@ -507,8 +547,12 @@ class TestNodeOrchestratorThunkEmission:
 class TestNodeOrchestratorConditionFunctions:
     """Test cases for condition function registration and evaluation."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
-    def test_register_condition_function_success(self, mock_load_contract, mock_container):
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
+    def test_register_condition_function_success(
+        self, mock_load_contract, mock_container
+    ):
         """Test successful condition function registration."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -524,7 +568,9 @@ class TestNodeOrchestratorConditionFunctions:
         assert "custom_test" in orchestrator.condition_functions
         assert orchestrator.condition_functions["custom_test"] == custom_condition
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     def test_register_duplicate_condition_raises_error(
         self, mock_load_contract, mock_container
     ):
@@ -549,8 +595,12 @@ class TestNodeOrchestratorConditionFunctions:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "already registered" in str(exc_info.value)
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
-    def test_register_non_callable_raises_error(self, mock_load_contract, mock_container):
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
+    def test_register_non_callable_raises_error(
+        self, mock_load_contract, mock_container
+    ):
         """Test that registering non-callable raises error."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -564,9 +614,13 @@ class TestNodeOrchestratorConditionFunctions:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "must be callable" in str(exc_info.value)
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
-    async def test_builtin_always_true_condition(self, mock_load_contract, mock_container):
+    async def test_builtin_always_true_condition(
+        self, mock_load_contract, mock_container
+    ):
         """Test built-in always_true condition function."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -579,9 +633,13 @@ class TestNodeOrchestratorConditionFunctions:
 
         assert result is True
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
-    async def test_builtin_always_false_condition(self, mock_load_contract, mock_container):
+    async def test_builtin_always_false_condition(
+        self, mock_load_contract, mock_container
+    ):
         """Test built-in always_false condition function."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -594,7 +652,9 @@ class TestNodeOrchestratorConditionFunctions:
 
         assert result is False
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_builtin_has_previous_results_condition(
         self, mock_load_contract, mock_container
@@ -615,7 +675,9 @@ class TestNodeOrchestratorConditionFunctions:
 class TestNodeOrchestratorErrorHandling:
     """Test cases for error handling and recovery."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_invalid_workflow_id_raises_error(
         self, mock_load_contract, mock_container
@@ -634,7 +696,9 @@ class TestNodeOrchestratorErrorHandling:
                 steps=[],
             )
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_empty_steps_raises_error(self, mock_load_contract, mock_container):
         """Test that empty steps list raises validation error."""
@@ -653,12 +717,17 @@ class TestNodeOrchestratorErrorHandling:
             await orchestrator.process(empty_input)
 
         # Empty steps can raise either VALIDATION_ERROR or OPERATION_FAILED depending on validation flow
-        assert exc_info.value.error_code in [EnumCoreErrorCode.VALIDATION_ERROR, EnumCoreErrorCode.OPERATION_FAILED]
+        assert exc_info.value.error_code in [
+            EnumCoreErrorCode.VALIDATION_ERROR,
+            EnumCoreErrorCode.OPERATION_FAILED,
+        ]
         # Check for relevant error message
         error_msg = str(exc_info.value).lower()
         assert "step" in error_msg or "workflow" in error_msg
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_workflow_state_tracking_on_failure(
         self, mock_load_contract, mock_container, sample_workflow_step
@@ -682,13 +751,18 @@ class TestNodeOrchestratorErrorHandling:
         # Workflow should be marked as FAILED in state tracking
         workflow_id_str = str(invalid_input.workflow_id)
         if workflow_id_str in orchestrator.workflow_states:
-            assert orchestrator.workflow_states[workflow_id_str] == EnumWorkflowState.FAILED
+            assert (
+                orchestrator.workflow_states[workflow_id_str]
+                == EnumWorkflowState.FAILED
+            )
 
 
 class TestNodeOrchestratorMetrics:
     """Test cases for orchestration metrics and monitoring."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_get_orchestration_metrics(self, mock_load_contract, mock_container):
         """Test retrieving orchestration metrics."""
@@ -706,7 +780,9 @@ class TestNodeOrchestratorMetrics:
         assert "active_workflows" in metrics["workflow_management"]
         assert "total_thunks_emitted" in metrics["workflow_management"]
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_metrics_updated_after_workflow_execution(
         self, mock_load_contract, mock_container, sample_orchestrator_input
@@ -732,7 +808,9 @@ class TestNodeOrchestratorMetrics:
 class TestNodeOrchestratorLifecycle:
     """Test cases for lifecycle management."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_initialize_node_resources(self, mock_load_contract, mock_container):
         """Test node resource initialization."""
@@ -747,7 +825,9 @@ class TestNodeOrchestratorLifecycle:
         # Should complete without errors
         assert orchestrator.thunk_emission_enabled is True
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_cleanup_node_resources(self, mock_load_contract, mock_container):
         """Test node resource cleanup."""
@@ -774,7 +854,9 @@ class TestNodeOrchestratorLifecycle:
 class TestNodeOrchestratorRSDTicketLifecycle:
     """Test cases for RSD ticket lifecycle transitions."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_orchestrate_rsd_ticket_lifecycle(
         self, mock_load_contract, mock_container
@@ -801,7 +883,9 @@ class TestNodeOrchestratorRSDTicketLifecycle:
         assert result["state_transition"] == "draft -> in_progress"
         assert result["success"] is True
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_rsd_lifecycle_with_dependencies(
         self, mock_load_contract, mock_container
@@ -830,7 +914,9 @@ class TestNodeOrchestratorRSDTicketLifecycle:
 class TestNodeOrchestratorIntrospection:
     """Test cases for node introspection capabilities."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_get_introspection_data(self, mock_load_contract, mock_container):
         """Test retrieving introspection data."""
@@ -850,7 +936,9 @@ class TestNodeOrchestratorIntrospection:
         assert "configuration_details" in introspection
         assert "rsd_specific_information" in introspection
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
     async def test_introspection_node_capabilities(
         self, mock_load_contract, mock_container
@@ -874,9 +962,13 @@ class TestNodeOrchestratorIntrospection:
 class TestNodeOrchestratorIntegration:
     """Integration test cases for complete workflow scenarios."""
 
-    @patch("omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model")
+    @patch(
+        "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"
+    )
     @pytest.mark.asyncio
-    async def test_complete_workflow_lifecycle(self, mock_load_contract, mock_container):
+    async def test_complete_workflow_lifecycle(
+        self, mock_load_contract, mock_container
+    ):
         """Test complete workflow from creation to completion."""
         mock_contract = MagicMock()
         mock_contract.validate_node_specific_config = MagicMock()
@@ -886,7 +978,11 @@ class TestNodeOrchestratorIntegration:
 
         # Create complex workflow with multiple step types
         thunks = []
-        for thunk_type in [EnumThunkType.COMPUTE, EnumThunkType.EFFECT, EnumThunkType.REDUCE]:
+        for thunk_type in [
+            EnumThunkType.COMPUTE,
+            EnumThunkType.EFFECT,
+            EnumThunkType.REDUCE,
+        ]:
             thunk = ModelThunk(
                 thunk_id=uuid4(),
                 thunk_type=thunk_type,

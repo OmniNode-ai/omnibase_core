@@ -13,7 +13,7 @@ Type-safe metadata value container that replaces Union[str, int, float, bool]
 with structured validation and proper type handling for metadata fields.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -49,64 +49,72 @@ class ModelMetadataValue(BaseModel):
 
     source: str | None = Field(default=None, description="Source of the metadata value")
 
-    @field_validator("value")
-    @classmethod
-    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
+    @model_validator(mode="after")
+    def validate_value_type(self) -> "ModelMetadataValue":
         """Validate that value matches its declared type."""
-        if info.data is not None and "value_type" in info.data:
-            value_type = info.data["value_type"]
+        value_type = self.value_type
 
-            # Type validation based on declared type
-            if value_type == EnumCliValueType.STRING and not isinstance(v, str):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be string, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("string"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        }
-                    ),
-                )
-            if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be integer, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("integer"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        }
-                    ),
-                )
-            if value_type == EnumCliValueType.FLOAT and not isinstance(v, (int, float)):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be numeric, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("float"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        }
-                    ),
-                )
-            if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be boolean, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("boolean"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        }
-                    ),
-                )
+        # Type validation based on declared type
+        if value_type == EnumCliValueType.STRING and not isinstance(self.value, str):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be string, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("string"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    }
+                ),
+            )
+        if value_type == EnumCliValueType.INTEGER and not isinstance(self.value, int):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be integer, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("integer"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    }
+                ),
+            )
+        if value_type == EnumCliValueType.FLOAT and not isinstance(
+            self.value, (int, float)
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be numeric, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("float"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    }
+                ),
+            )
+        if value_type == EnumCliValueType.BOOLEAN and not isinstance(self.value, bool):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be boolean, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("boolean"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    }
+                ),
+            )
 
-        return v
+        return self
 
     @classmethod
     def from_string(cls, value: str, source: str | None = None) -> ModelMetadataValue:

@@ -1077,8 +1077,8 @@ class ModelUser(BaseModel):
         capsys: pytest.CaptureFixture,
     ) -> None:
         """Test CLI defaults to src/ directory."""
-        import sys
         import os
+        import sys
 
         # Change to tmp_path and create src/
         src_dir = tmp_path / "src"

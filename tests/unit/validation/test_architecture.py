@@ -691,7 +691,8 @@ class ModelPost(BaseModel):
         )
 
         monkeypatch.setattr(
-            "sys.argv", ["script.py", str(valid_dir), str(nonexistent_dir), str(invalid_dir)]
+            "sys.argv",
+            ["script.py", str(valid_dir), str(nonexistent_dir), str(invalid_dir)],
         )
 
         from omnibase_core.validation.architecture import validate_architecture_cli

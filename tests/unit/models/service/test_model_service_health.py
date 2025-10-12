@@ -280,7 +280,10 @@ class TestModelServiceHealthValidators:
                 connection_string=conn_str,
             )
             # The secret should be masked
-            assert secret not in service.connection_string or "***" in service.connection_string
+            assert (
+                secret not in service.connection_string
+                or "***" in service.connection_string
+            )
 
     def test_connection_string_validator_empty_or_whitespace(self):
         """Test connection_string validator rejects empty strings."""
@@ -718,7 +721,9 @@ class TestModelServiceHealthConnectionAnalysis:
             connection_string="postgresql://user:password=secret@localhost",
         )
         recommendations = service.get_security_recommendations()
-        assert any("credentials" in r.lower() or "masked" in r.lower() for r in recommendations)
+        assert any(
+            "credentials" in r.lower() or "masked" in r.lower() for r in recommendations
+        )
 
 
 class TestModelServiceHealthPerformanceAnalysis:

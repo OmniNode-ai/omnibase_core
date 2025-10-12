@@ -52,9 +52,7 @@ class TestModelHealthStatusBasics:
             last_seen=datetime.now(UTC),
         )
 
-        status = ModelHealthStatus(
-            status="degraded", health_score=0.6, issues=[issue1]
-        )
+        status = ModelHealthStatus(status="degraded", health_score=0.6, issues=[issue1])
 
         assert len(status.issues) == 1
         assert status.issues[0].severity == "high"
@@ -161,9 +159,7 @@ class TestModelHealthStatusHealthChecking:
             last_seen=datetime.now(UTC),
         )
 
-        status = ModelHealthStatus(
-            status="degraded", health_score=0.8, issues=[issue]
-        )
+        status = ModelHealthStatus(status="degraded", health_score=0.8, issues=[issue])
         assert status.is_critical() is True
 
     def test_is_critical_unhealthy_status(self):

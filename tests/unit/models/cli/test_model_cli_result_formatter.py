@@ -409,7 +409,6 @@ class TestModelCliResultFormatterEdgeCases:
         assert formatter is not None
 
         # Static methods should work the same way
-        assert (
-            ModelCliResultFormatter.format_output("test", None)
-            == formatter.format_output("test", None)
-        )
+        assert ModelCliResultFormatter.format_output(
+            "test", None
+        ) == formatter.format_output("test", None)

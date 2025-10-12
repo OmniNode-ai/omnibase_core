@@ -191,9 +191,7 @@ class TestLogContextSerialization:
 
     def test_serialize_multiple_log_contexts(self):
         """Test serialization of multiple log contexts."""
-        contexts = [
-            MockLogContext({"id": i, "name": f"context_{i}"}) for i in range(3)
-        ]
+        contexts = [MockLogContext({"id": i, "name": f"context_{i}"}) for i in range(3)]
 
         result = json.dumps(contexts, cls=PydanticJSONEncoder)
 

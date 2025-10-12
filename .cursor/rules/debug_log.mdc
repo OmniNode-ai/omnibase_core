@@ -1,0 +1,153 @@
+---
+description: Create a debug log
+alwaysApply: false
+---
+# === Cursor Rule: Debug Log Format and Process ===
+rule_id: "cursor_rule_debug_logs"
+title: "Debug Log Format and Process"
+alias: ["debug logs", "debugging protocol", "engineer debug trail"]
+status: "CANONICAL"
+last_updated: "2025-06-18"
+description: >
+  This rule defines the canonical format, metadata structure, entry style, and integration
+  process for all debug logs within the ONEX project. It ensures that debugging sessions
+  are reproducible, linkable to checklist steps, and traceable across GitHub Issues, PRs,
+  and project milestones. Logs serve as permanent engineering artifacts and are designed
+  for onboarding, retrospectives, and root-cause diagnosis.
+
+purpose:
+  - Capture detailed, high-signal debugging records
+  - Link debugging work to the ONEX checklist system and GitHub Issues
+  - Support retrospective analysis and team onboarding
+  - Prepare logs for future automation and metadata stamping
+
+log_format:
+  type: "weekly_cumulative"
+  structure:
+    - One file per engineer per week
+    - Organized by day and timestamped entries
+    - Stored in: `docs_private/dev_logs/<engineer>/debug/debug_log_YYYY_MM_DD.md`
+    - Each file must begin with a metadata header (see below)
+    - **Auto-Date Generation**: Always use current date from `date +"%Y_%m_%d"` command
+
+metadata_header: |
+  # === Debug Log Metadata ===
+  log_owner: "jgray"
+  week: "2025-06-17"
+  repo_version: "v0.3.7"
+  created_at: "2025-06-17"
+  tags: ["infra", "debug", "velocity"]
+  linked_issues: ["#342", "#348"]
+  linked_prs: ["#412"]
+  linked_checklists: ["foundation_infra_checklist_01_bootstrap"]
+  thread_id: "onex_consul_fatal_debug_2025_06"  # Optional
+  # === /Debug Log Metadata ===
+
+entry_template: |
+  ### [2025-06-17 14:25 UTC] — jgray
+  **Tags:** #infra #blocker
+  **Checklist:** foundation_infra_checklist_01_bootstrap
+  **Linked Issue:** #342
+  **Linked PR:** #412
+
+  **Prompt Reminder:**
+  This entry must be detailed and self-contained. Include:
+  - What broke or triggered the investigation
+  - All hypotheses you considered
+  - Step-by-step actions taken
+  - What failed, what succeeded
+  - What you’re going to try next
+  - Why this matters in the context of system progress
+
+  **Context:**
+  Brief summary of where the issue occurred (component, system state, etc.)
+
+  **Problem Statement:**
+  Clear description of the issue being debugged
+
+  **Hypotheses:**
+  - Hypothesis 1
+  - Hypothesis 2
+  - etc.
+
+  **Investigation Steps:**
+  1. Action or observation
+  2. Logs, traces, commands run
+  3. Changes or config diffs
+
+  **Findings:**
+  - Result of each investigation step
+  - What was ruled out or confirmed
+
+  **Next Steps:**
+  - Plan of action
+  - Follow-up checklist or issue references
+
+github_integration:
+  supported: true
+  strategy:
+    - Allow debug logs to reference GitHub Issues and PRs
+    - Fields `linked_issues` and `linked_prs` accepted in metadata and per-entry
+    - Encourage referencing debug log entries in GitHub issue/PR comments
+    - Prepare for future bots that auto-backlink from GitHub
+
+checklist_integration:
+  supported: true
+  strategy:
+    - Debug logs may reference `linked_checklists` in metadata or entries
+    - Individual entries may call out a specific checklist task in scope
+    - Enables traceable debug trail from task → failure → resolution
+
+alignment_with_velocity_log:
+  - Weekly debug logs must match the structure and clarity of velocity logs
+  - Weekly summaries required at the bottom of each file:
+      - engineers involved
+      - major issues encountered
+      - key fixes or breakthroughs
+      - blockers or unresolved threads
+
+enforcement:
+  required_for:
+    - Any PR involving protocol, node behavior, debugging, or infra work
+  code_review:
+    - PR must include or reference relevant debug log updates
+    - Missing or retroactively added logs require maintainer justification
+  ci_hooks:
+    - (Planned) Validate presence of debug logs in relevant PRs
+    - (Planned) Warn on missing checklist or issue references in logs
+
+rotation_archival:
+  strategy:
+    - Logs are rolled up quarterly or by milestone
+    - Archived under `docs/archive/dev_logs/`
+    - Crosslinked in `docs/future_enhancements.md`
+
+canonical_sources:
+  - Canonical template file: `src/omnibase/templates/debug_log.tmpl`
+  - Rotation/archive rules: `docs/future_enhancements.md`
+  - Checklist integration: `cursor_rule_checklist.yaml`
+
+authority: >
+  This rule governs all debug-related logging within the ONEX project. It is enforceable
+  for all protocol, infra, CLI, validator, or runtime changes. All engineers must follow
+  this rule for traceability and review. This rule is forward-compatible with metadata
+  stamping and logging automation systems.
+
+automation_triggers:
+  supported: true
+  triggers:
+    - "create a debug log"
+    - "add debug entry"
+    - "create debug entry"
+    - "debug log"
+    - "log debug"
+    - "create debug session"
+    - "start debug log"
+  automated_process:
+    1. "Get Current Date: date +\"%Y_%m_%d\""
+    2. "Check Existing Logs: Look for current weekly debug log in docs_private/dev_logs/jonah/debug/"
+    3. "Generate Entry: Create timestamped debug entry"
+    4. "File Naming: debug_log_YYYY_MM_DD.md"
+    5. "Template: Use src/omnibase/templates/dev_logs/debug_log.tmpl"
+
+# === /Cursor Rule ===

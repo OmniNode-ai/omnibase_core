@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.models.validation.model_validation_container import ModelValidationContainer
+from omnibase_core.models.validation.model_validation_container import (
+    ModelValidationContainer,
+)
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 from omnibase_core.models.validation.model_validation_value import ModelValidationValue
 
@@ -25,8 +27,7 @@ class TestModelValidationContainerInstantiation:
     def test_initialization_with_errors(self):
         """Test initialization with errors."""
         error = ModelValidationError.create_error(
-            message="Test error",
-            field_name="test_field"
+            message="Test error", field_name="test_field"
         )
         container = ModelValidationContainer(errors=[error])
         assert len(container.errors) == 1
@@ -55,7 +56,7 @@ class TestModelValidationContainerAddErrorBranches:
         container = ModelValidationContainer()
         details = {
             "value": ModelValidationValue.from_string("test"),
-            "expected": ModelValidationValue.from_string("expected_value")
+            "expected": ModelValidationValue.from_string("expected_value"),
         }
         container.add_error("Test error", field="test_field", details=details)
 
@@ -66,9 +67,7 @@ class TestModelValidationContainerAddErrorBranches:
         """Test add_error_with_raw_details with None raw_details (branch: raw_details is None)."""
         container = ModelValidationContainer()
         container.add_error_with_raw_details(
-            message="Test error",
-            field="test_field",
-            raw_details=None
+            message="Test error", field="test_field", raw_details=None
         )
 
         assert len(container.errors) == 1
@@ -77,16 +76,9 @@ class TestModelValidationContainerAddErrorBranches:
     def test_add_error_with_raw_details_provided(self):
         """Test add_error_with_raw_details with provided raw_details (branch: raw_details not None)."""
         container = ModelValidationContainer()
-        raw_details = {
-            "value": "test_string",
-            "count": 42,
-            "flag": True,
-            "empty": None
-        }
+        raw_details = {"value": "test_string", "count": 42, "flag": True, "empty": None}
         container.add_error_with_raw_details(
-            message="Test error",
-            field="test_field",
-            raw_details=raw_details
+            message="Test error", field="test_field", raw_details=raw_details
         )
 
         assert len(container.errors) == 1
@@ -101,9 +93,7 @@ class TestModelValidationContainerAddErrorBranches:
         """Test add_error with all parameters."""
         container = ModelValidationContainer()
         container.add_error(
-            message="Full error",
-            field="field_name",
-            error_code="ERROR_001"
+            message="Full error", field="field_name", error_code="ERROR_001"
         )
 
         assert len(container.errors) == 1
@@ -138,8 +128,7 @@ class TestModelValidationContainerAddCriticalErrorBranches:
         """Test add_critical_error_with_raw_details with None (branch: raw_details is None)."""
         container = ModelValidationContainer()
         container.add_critical_error_with_raw_details(
-            message="Critical",
-            raw_details=None
+            message="Critical", raw_details=None
         )
 
         assert len(container.errors) == 1
@@ -149,8 +138,7 @@ class TestModelValidationContainerAddCriticalErrorBranches:
         """Test add_critical_error_with_raw_details with data (branch: raw_details not None)."""
         container = ModelValidationContainer()
         container.add_critical_error_with_raw_details(
-            message="Critical",
-            raw_details={"reason": "security_violation"}
+            message="Critical", raw_details={"reason": "security_violation"}
         )
 
         assert len(container.errors) == 1
@@ -370,8 +358,7 @@ class TestModelValidationContainerBulkOperations:
         """Test adding pre-constructed error."""
         container = ModelValidationContainer()
         error = ModelValidationError.create_error(
-            message="Pre-constructed",
-            field_name="field"
+            message="Pre-constructed", field_name="field"
         )
         container.add_validation_error(error)
         assert len(container.errors) == 1

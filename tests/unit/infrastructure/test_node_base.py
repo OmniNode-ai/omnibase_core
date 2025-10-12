@@ -29,7 +29,6 @@ from omnibase_core.models.infrastructure.model_action import ModelAction
 from omnibase_core.models.infrastructure.model_state import ModelState
 from omnibase_core.primitives.model_semver import ModelSemVer
 
-
 # ===== TEST FIXTURES =====
 
 
@@ -59,9 +58,9 @@ def valid_contract_file(tmp_path, mock_contract_content):
         "contract_version": "1.0.0",
         "tool_specification": {
             "main_tool_class": "tests.unit.infrastructure.test_node_base.MockTool",
-            "business_logic_pattern": "test_pattern"
+            "business_logic_pattern": "test_pattern",
         },
-        "dependencies": []
+        "dependencies": [],
     }
 
     with open(contract_path, "w") as f:
@@ -74,6 +73,7 @@ def valid_contract_file(tmp_path, mock_contract_content):
 def mock_container():
     """Create a mock ONEX container."""
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
     return ModelONEXContainer()
 
 
@@ -134,15 +134,17 @@ class TestNodeBaseInitialization:
             "contract_version": "1.0.0",
             "tool_specification": {
                 "main_tool_class": "tests.unit.infrastructure.test_node_base.MockTool",
-                "business_logic_pattern": "test_pattern"
+                "business_logic_pattern": "test_pattern",
             },
-            "dependencies": []
+            "dependencies": [],
         }
 
         with open(contract_path, "w") as f:
             yaml.dump(contract_data, f)
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -150,7 +152,9 @@ class TestNodeBaseInitialization:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -173,9 +177,9 @@ class TestNodeBaseInitialization:
             "contract_version": "1.0.0",
             "tool_specification": {
                 "main_tool_class": "tests.unit.infrastructure.test_node_base.MockTool",
-                "business_logic_pattern": "test_pattern"
+                "business_logic_pattern": "test_pattern",
             },
-            "dependencies": []
+            "dependencies": [],
         }
 
         with open(contract_path, "w") as f:
@@ -183,7 +187,9 @@ class TestNodeBaseInitialization:
 
         provided_node_id = uuid4()
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -191,7 +197,9 @@ class TestNodeBaseInitialization:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -201,12 +209,14 @@ class TestNodeBaseInitialization:
             node = NodeBase(
                 contract_path=contract_path,
                 node_id=provided_node_id,
-                container=mock_container
+                container=mock_container,
             )
 
             assert node.node_id == provided_node_id
 
-    def test_should_initialize_with_workflow_and_session_ids(self, tmp_path, mock_container):
+    def test_should_initialize_with_workflow_and_session_ids(
+        self, tmp_path, mock_container
+    ):
         """Test NodeBase with provided workflow_id and session_id."""
         contract_path = tmp_path / "test_contract.yaml"
         contract_data = {
@@ -214,9 +224,9 @@ class TestNodeBaseInitialization:
             "contract_version": "1.0.0",
             "tool_specification": {
                 "main_tool_class": "tests.unit.infrastructure.test_node_base.MockTool",
-                "business_logic_pattern": "test_pattern"
+                "business_logic_pattern": "test_pattern",
             },
-            "dependencies": []
+            "dependencies": [],
         }
 
         with open(contract_path, "w") as f:
@@ -225,7 +235,9 @@ class TestNodeBaseInitialization:
         workflow_id = uuid4()
         session_id = uuid4()
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -233,7 +245,9 @@ class TestNodeBaseInitialization:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -244,7 +258,7 @@ class TestNodeBaseInitialization:
                 contract_path=contract_path,
                 workflow_id=workflow_id,
                 session_id=session_id,
-                container=mock_container
+                container=mock_container,
             )
 
             assert node.workflow_id == workflow_id
@@ -254,9 +268,13 @@ class TestNodeBaseInitialization:
         """Test NodeBase fails with non-existent contract path."""
         contract_path = tmp_path / "nonexistent.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
-            mock_loader.load_contract.side_effect = FileNotFoundError("Contract file not found")
+            mock_loader.load_contract.side_effect = FileNotFoundError(
+                "Contract file not found"
+            )
             mock_loader_class.return_value = mock_loader
 
             with pytest.raises(ModelOnexError) as exc_info:
@@ -280,15 +298,17 @@ class TestNodeBaseToolResolution:
             "contract_version": "1.0.0",
             "tool_specification": {
                 "main_tool_class": "tests.unit.infrastructure.test_node_base.MockTool",
-                "business_logic_pattern": "test_pattern"
+                "business_logic_pattern": "test_pattern",
             },
-            "dependencies": []
+            "dependencies": [],
         }
 
         with open(contract_path, "w") as f:
             yaml.dump(contract_data, f)
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -296,7 +316,9 @@ class TestNodeBaseToolResolution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -313,7 +335,9 @@ class TestNodeBaseToolResolution:
         """Test that invalid tool class format raises error."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -339,7 +363,9 @@ class TestNodeBaseToolResolution:
         """Test that nonexistent module raises error."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -364,7 +390,9 @@ class TestNodeBaseToolResolution:
         """Test that nonexistent class in valid module raises error."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -372,7 +400,9 @@ class TestNodeBaseToolResolution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.NonexistentClass"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.NonexistentClass"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -393,11 +423,15 @@ class TestNodeBaseAsyncExecution:
     """Test NodeBase async execution methods."""
 
     @pytest.mark.asyncio
-    async def test_should_execute_run_async_successfully(self, tmp_path, mock_container):
+    async def test_should_execute_run_async_successfully(
+        self, tmp_path, mock_container
+    ):
         """Test run_async executes successfully."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -405,7 +439,9 @@ class TestNodeBaseAsyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -422,11 +458,15 @@ class TestNodeBaseAsyncExecution:
             assert node.main_tool.process_async_called
 
     @pytest.mark.asyncio
-    async def test_should_execute_process_async_successfully(self, tmp_path, mock_container):
+    async def test_should_execute_process_async_successfully(
+        self, tmp_path, mock_container
+    ):
         """Test process_async executes successfully."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -434,7 +474,9 @@ class TestNodeBaseAsyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -450,7 +492,9 @@ class TestNodeBaseAsyncExecution:
             assert result == {"result": "async_success"}
 
     @pytest.mark.asyncio
-    async def test_should_handle_tool_with_sync_process_method(self, tmp_path, mock_container):
+    async def test_should_handle_tool_with_sync_process_method(
+        self, tmp_path, mock_container
+    ):
         """Test handling tool with only sync process method."""
         contract_path = tmp_path / "test_contract.yaml"
 
@@ -462,7 +506,9 @@ class TestNodeBaseAsyncExecution:
             def process(self, input_state):
                 return {"result": "sync_only"}
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -470,7 +516,9 @@ class TestNodeBaseAsyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -492,7 +540,9 @@ class TestNodeBaseAsyncExecution:
         """Test handling tool with run method."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -500,7 +550,9 @@ class TestNodeBaseAsyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -518,11 +570,15 @@ class TestNodeBaseAsyncExecution:
             assert result == {"result": "run_success"}
 
     @pytest.mark.asyncio
-    async def test_should_fail_when_tool_has_no_execution_method(self, tmp_path, mock_container):
+    async def test_should_fail_when_tool_has_no_execution_method(
+        self, tmp_path, mock_container
+    ):
         """Test failure when tool has no process/run method."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -530,7 +586,9 @@ class TestNodeBaseAsyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -546,14 +604,19 @@ class TestNodeBaseAsyncExecution:
                 await node.process_async({"test": "input"})
 
             assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
-            assert "does not implement process_async(), process(), or run() method" in exc_info.value.message
+            assert (
+                "does not implement process_async(), process(), or run() method"
+                in exc_info.value.message
+            )
 
     @pytest.mark.asyncio
     async def test_should_fail_when_main_tool_is_none(self, tmp_path, mock_container):
         """Test failure when main_tool is not initialized."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -561,7 +624,9 @@ class TestNodeBaseAsyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -590,7 +655,9 @@ class TestNodeBaseSyncExecution:
         """Test run (sync) executes successfully."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -598,7 +665,9 @@ class TestNodeBaseSyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -617,7 +686,9 @@ class TestNodeBaseSyncExecution:
         """Test process (sync) executes successfully."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -625,7 +696,9 @@ class TestNodeBaseSyncExecution:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -651,7 +724,9 @@ class TestNodeBaseReducerPattern:
         """Test initial_state returns empty ModelState."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -659,7 +734,9 @@ class TestNodeBaseReducerPattern:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -676,7 +753,9 @@ class TestNodeBaseReducerPattern:
         """Test dispatch returns unchanged state by default."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -684,7 +763,9 @@ class TestNodeBaseReducerPattern:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -701,11 +782,15 @@ class TestNodeBaseReducerPattern:
             assert new_state == state
 
     @pytest.mark.asyncio
-    async def test_should_dispatch_action_asynchronously(self, tmp_path, mock_container):
+    async def test_should_dispatch_action_asynchronously(
+        self, tmp_path, mock_container
+    ):
         """Test dispatch_async delegates to dispatch."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -713,7 +798,9 @@ class TestNodeBaseReducerPattern:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -740,7 +827,9 @@ class TestNodeBaseProperties:
         """Test container property access."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -748,7 +837,9 @@ class TestNodeBaseProperties:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -766,7 +857,9 @@ class TestNodeBaseProperties:
         """Test container property raises error when not initialized."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -774,7 +867,9 @@ class TestNodeBaseProperties:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -796,7 +891,9 @@ class TestNodeBaseProperties:
         """Test main_tool property access."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -804,7 +901,9 @@ class TestNodeBaseProperties:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -822,7 +921,9 @@ class TestNodeBaseProperties:
         """Test current_state property access."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -830,7 +931,9 @@ class TestNodeBaseProperties:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -843,11 +946,15 @@ class TestNodeBaseProperties:
 
             assert isinstance(state, ModelState)
 
-    def test_should_fail_when_current_state_not_initialized(self, tmp_path, mock_container):
+    def test_should_fail_when_current_state_not_initialized(
+        self, tmp_path, mock_container
+    ):
         """Test current_state property raises error when not initialized."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -855,7 +962,9 @@ class TestNodeBaseProperties:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -877,7 +986,9 @@ class TestNodeBaseProperties:
         """Test workflow_instance property access."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -885,7 +996,9 @@ class TestNodeBaseProperties:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -910,7 +1023,9 @@ class TestNodeBaseWorkflow:
         """Test create_workflow returns None by default."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -918,7 +1033,9 @@ class TestNodeBaseWorkflow:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -939,7 +1056,9 @@ class TestNodeBaseEdgeCases:
     """Test NodeBase edge cases and error scenarios."""
 
     @pytest.mark.asyncio
-    async def test_should_handle_exception_during_execution(self, tmp_path, mock_container):
+    async def test_should_handle_exception_during_execution(
+        self, tmp_path, mock_container
+    ):
         """Test exception handling during execution."""
         contract_path = tmp_path / "test_contract.yaml"
 
@@ -951,7 +1070,9 @@ class TestNodeBaseEdgeCases:
             async def process_async(self, input_state):
                 raise ValueError("Tool execution failed")
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -959,7 +1080,9 @@ class TestNodeBaseEdgeCases:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -977,7 +1100,9 @@ class TestNodeBaseEdgeCases:
             assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
 
     @pytest.mark.asyncio
-    async def test_should_preserve_onex_error_during_execution(self, tmp_path, mock_container):
+    async def test_should_preserve_onex_error_during_execution(
+        self, tmp_path, mock_container
+    ):
         """Test that OnexError is preserved during execution."""
         contract_path = tmp_path / "test_contract.yaml"
 
@@ -989,10 +1114,12 @@ class TestNodeBaseEdgeCases:
             async def process_async(self, input_state):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Validation failed in tool"
+                    message="Validation failed in tool",
                 )
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -1000,7 +1127,9 @@ class TestNodeBaseEdgeCases:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -1023,7 +1152,9 @@ class TestNodeBaseEdgeCases:
         """Test handling of contract dependencies."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -1039,7 +1170,9 @@ class TestNodeBaseEdgeCases:
             mock_contract.dependencies = [dep1, "string_dependency"]
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -1056,7 +1189,9 @@ class TestNodeBaseEdgeCases:
         """Test exception handling in dispatch_async."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -1064,7 +1199,9 @@ class TestNodeBaseEdgeCases:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 
@@ -1092,7 +1229,9 @@ class TestNodeBaseEdgeCases:
         """Test handling of None business_logic_pattern."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -1100,7 +1239,9 @@ class TestNodeBaseEdgeCases:
             mock_contract.dependencies = []
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = None  # Test None case
             mock_contract.tool_specification = tool_spec
 
@@ -1116,7 +1257,9 @@ class TestNodeBaseEdgeCases:
         """Test handling of enum business_logic_pattern."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -1127,7 +1270,9 @@ class TestNodeBaseEdgeCases:
             # Create mock enum with value attribute
             enum_pattern = Mock()
             enum_pattern.value = "enum_pattern_value"
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = enum_pattern
             mock_contract.tool_specification = tool_spec
 
@@ -1143,7 +1288,9 @@ class TestNodeBaseEdgeCases:
         """Test handling of enum type in dependencies."""
         contract_path = tmp_path / "test_contract.yaml"
 
-        with patch("omnibase_core.utils.util_contract_loader.ProtocolContractLoader") as mock_loader_class:
+        with patch(
+            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+        ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
             mock_contract.node_name = "test_node"
@@ -1161,7 +1308,9 @@ class TestNodeBaseEdgeCases:
             mock_contract.dependencies = [dep]
 
             tool_spec = Mock()
-            tool_spec.main_tool_class = "tests.unit.infrastructure.test_node_base.MockTool"
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
             tool_spec.business_logic_pattern = "test_pattern"
             mock_contract.tool_specification = tool_spec
 

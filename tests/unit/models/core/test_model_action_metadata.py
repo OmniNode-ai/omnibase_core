@@ -5,15 +5,16 @@ Comprehensive tests for action metadata model including timing,
 trust scores, performance metrics, and service discovery.
 """
 
-import pytest
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_performance_metrics import ModelPerformanceMetrics
 from omnibase_core.models.core.model_security_context import ModelSecurityContext
 
@@ -21,15 +22,13 @@ from omnibase_core.models.core.model_security_context import ModelSecurityContex
 def create_test_action_type() -> ModelNodeActionType:
     """Helper to create test action type with proper structure."""
     category = ModelActionCategory(
-        name="compute",
-        display_name="Compute",
-        description="Computation actions"
+        name="compute", display_name="Compute", description="Computation actions"
     )
     return ModelNodeActionType(
         name="test_action",
         category=category,
         display_name="Test Action",
-        description="Test action for unit tests"
+        description="Test action for unit tests",
     )
 
 
@@ -40,8 +39,7 @@ class TestModelActionMetadata:
         """Test initialization with default values."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         assert isinstance(metadata.action_id, UUID)
@@ -71,7 +69,7 @@ class TestModelActionMetadata:
             trust_score=0.5,
             timeout_seconds=60,
             parameters={"key": "value"},
-            tool_discovery_tags=["tag1", "tag2"]
+            tool_discovery_tags=["tag1", "tag2"],
         )
 
         assert metadata.correlation_id == correlation_id
@@ -86,8 +84,7 @@ class TestModelActionMetadata:
         """Test marking action as started."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         assert metadata.status == "created"
@@ -103,8 +100,7 @@ class TestModelActionMetadata:
         """Test marking action as completed without result data."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
         metadata.mark_started()
 
@@ -122,8 +118,7 @@ class TestModelActionMetadata:
         """Test marking action as completed with result data."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
         metadata.mark_started()
 
@@ -137,8 +132,7 @@ class TestModelActionMetadata:
         """Test marking action as failed."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
         metadata.mark_started()
 
@@ -153,8 +147,7 @@ class TestModelActionMetadata:
         """Test getting execution duration."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         # No duration before started
@@ -175,8 +168,7 @@ class TestModelActionMetadata:
         """Test adding valid performance metric."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         # This will fail if ModelPerformanceMetrics doesn't have these fields
@@ -188,8 +180,7 @@ class TestModelActionMetadata:
         """Test adding invalid performance metric raises error."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -202,8 +193,7 @@ class TestModelActionMetadata:
         """Test adding resource usage information."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         assert metadata.resource_usage == {}
@@ -226,7 +216,7 @@ class TestModelActionMetadata:
             mcp_endpoint="http://localhost:8000/mcp",
             graphql_endpoint="http://localhost:8000/graphql",
             tool_discovery_tags=["tag1", "tag2"],
-            service_metadata={"version": "1.0"}
+            service_metadata={"version": "1.0"},
         )
         metadata.mark_started()
         metadata.mark_completed()
@@ -249,23 +239,17 @@ class TestModelActionMetadata:
         action_type = create_test_action_type()
 
         metadata1 = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action",
-            trust_score=0.0
+            action_type=action_type, action_name="Test Action", trust_score=0.0
         )
         assert metadata1.validate_trust_score() is True
 
         metadata2 = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action",
-            trust_score=0.5
+            action_type=action_type, action_name="Test Action", trust_score=0.5
         )
         assert metadata2.validate_trust_score() is True
 
         metadata3 = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action",
-            trust_score=1.0
+            action_type=action_type, action_name="Test Action", trust_score=1.0
         )
         assert metadata3.validate_trust_score() is True
 
@@ -273,8 +257,7 @@ class TestModelActionMetadata:
         """Test expiration check with no timeout."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action"
+            action_type=action_type, action_name="Test Action"
         )
 
         assert metadata.is_expired() is False
@@ -283,9 +266,7 @@ class TestModelActionMetadata:
         """Test expiration check when not expired."""
         action_type = create_test_action_type()
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action",
-            timeout_seconds=60
+            action_type=action_type, action_name="Test Action", timeout_seconds=60
         )
 
         assert metadata.is_expired() is False
@@ -298,7 +279,7 @@ class TestModelActionMetadata:
             action_type=action_type,
             action_name="Test Action",
             timeout_seconds=60,
-            created_at=past_time
+            created_at=past_time,
         )
 
         assert metadata.is_expired() is True
@@ -310,7 +291,7 @@ class TestModelActionMetadata:
             action_type=action_type,
             action_name="Test Action",
             trust_score=0.8,
-            status="created"
+            status="created",
         )
 
         assert metadata.can_execute(minimum_trust_score=0.5) is True
@@ -322,7 +303,7 @@ class TestModelActionMetadata:
             action_type=action_type,
             action_name="Test Action",
             trust_score=0.3,
-            status="created"
+            status="created",
         )
 
         assert metadata.can_execute(minimum_trust_score=0.5) is False
@@ -337,7 +318,7 @@ class TestModelActionMetadata:
             trust_score=0.8,
             timeout_seconds=60,
             created_at=past_time,
-            status="created"
+            status="created",
         )
 
         assert metadata.can_execute(minimum_trust_score=0.5) is False
@@ -349,7 +330,7 @@ class TestModelActionMetadata:
             action_type=action_type,
             action_name="Test Action",
             trust_score=0.8,
-            status="running"
+            status="running",
         )
 
         assert metadata.can_execute(minimum_trust_score=0.5) is False
@@ -360,9 +341,7 @@ class TestModelActionMetadata:
 
         # Test within bounds
         metadata = ModelActionMetadata(
-            action_type=action_type,
-            action_name="Test Action",
-            trust_score=0.5
+            action_type=action_type, action_name="Test Action", trust_score=0.5
         )
         assert 0.0 <= metadata.trust_score <= 1.0
 
@@ -371,12 +350,12 @@ class TestModelActionMetadata:
             ModelActionMetadata(
                 action_type=action_type,
                 action_name="Test Action",
-                trust_score=1.5  # Out of bounds
+                trust_score=1.5,  # Out of bounds
             )
 
         with pytest.raises(Exception):  # Pydantic validation error
             ModelActionMetadata(
                 action_type=action_type,
                 action_name="Test Action",
-                trust_score=-0.1  # Out of bounds
+                trust_score=-0.1,  # Out of bounds
             )

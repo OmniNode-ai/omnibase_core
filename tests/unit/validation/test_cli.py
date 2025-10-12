@@ -612,7 +612,10 @@ class TestRunValidationCLI:
 
         assert exit_code == 1
         captured = capsys.readouterr()
-        assert "No valid directories" in captured.out or "not found" in captured.out.lower()
+        assert (
+            "No valid directories" in captured.out
+            or "not found" in captured.out.lower()
+        )
 
     def test_cli_no_valid_directories_with_exit_zero(
         self,

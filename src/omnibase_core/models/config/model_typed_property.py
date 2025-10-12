@@ -14,7 +14,7 @@ typed property with validation in the environment property system.
 
 from typing import Any, TypeVar, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 
@@ -48,25 +48,18 @@ class ModelTypedProperty(BaseModel):
     value: ModelPropertyValue = Field(description="Structured property value")
     metadata: ModelPropertyMetadata = Field(description="Property metadata")
 
-    @field_validator("value")
-    @classmethod
-    def validate_value_consistency(
-        cls,
-        v: ModelPropertyValue,
-        info: ValidationInfo,
-    ) -> ModelPropertyValue:
+    @model_validator(mode="after")
+    def validate_value_consistency(self) -> "ModelTypedProperty":
         """Validate that value type matches metadata type."""
-        if hasattr(info, "data") and "metadata" in info.data:
-            metadata = info.data["metadata"]
-            if metadata.property_type != v.value_type:
-                # Create a new ModelPropertyValue with correct type from metadata
-                return ModelPropertyValue(
-                    value=v.value,
-                    value_type=metadata.property_type,
-                    source=v.source,
-                    is_validated=True,
-                )
-        return v
+        if self.metadata.property_type != self.value.value_type:
+            # Create a new ModelPropertyValue with correct type from metadata
+            self.value = ModelPropertyValue(
+                value=self.value.value,
+                value_type=self.metadata.property_type,
+                source=self.value.source,
+                is_validated=True,
+            )
+        return self
 
     def get_typed_value(self, expected_type: type[T], default: T) -> T:
         """Get the value with specific type checking."""

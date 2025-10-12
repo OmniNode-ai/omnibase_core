@@ -5,25 +5,26 @@ This module tests dynamic command discovery, registration, and retrieval
 from node contracts, supporting third-party extensibility.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.core.model_cli_command_registry import (
-    ModelCliCommandRegistry,
-    get_global_command_registry,
-    discover_commands_from_contracts,
-    get_command_definition,
+from omnibase_core.models.core.model_argument_description import (
+    ModelArgumentDescription,
 )
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
-from omnibase_core.models.core.model_event_type import ModelEventType
-from omnibase_core.models.core.model_argument_description import (
-    ModelArgumentDescription,
+from omnibase_core.models.core.model_cli_command_registry import (
+    ModelCliCommandRegistry,
+    discover_commands_from_contracts,
+    get_command_definition,
+    get_global_command_registry,
 )
+from omnibase_core.models.core.model_event_type import ModelEventType
+from omnibase_core.models.core.model_node_reference import ModelNodeReference
 
 
 class TestModelCliCommandRegistryCreation:
@@ -43,9 +44,7 @@ class TestModelCliCommandRegistryCreation:
 
     def test_registry_initialization_with_data(self):
         """Test registry initialization with provided data."""
-        commands = {
-            "test_cmd": self._create_test_command("test_cmd", "test_node")
-        }
+        commands = {"test_cmd": self._create_test_command("test_cmd", "test_node")}
         registry = ModelCliCommandRegistry(
             commands=commands,
             commands_by_node={"test_node": ["test_cmd"]},
@@ -264,7 +263,9 @@ class TestCommandRetrieval:
         """Test retrieving all commands in a category."""
         registry = ModelCliCommandRegistry()
         cmd1 = self._create_test_command("unit_test", "node1", category="testing")
-        cmd2 = self._create_test_command("integration_test", "node2", category="testing")
+        cmd2 = self._create_test_command(
+            "integration_test", "node2", category="testing"
+        )
         cmd3 = self._create_test_command("build", "node3", category="build")
 
         registry.register_command(cmd1)
@@ -401,7 +402,9 @@ class TestCommandDiscovery:
 
     @patch("omnibase_core.models.core.model_cli_command_registry.Path.exists")
     @patch("omnibase_core.models.core.model_cli_command_registry.Path.iterdir")
-    def test_discover_from_contracts_skips_non_node_dirs(self, mock_iterdir, mock_exists):
+    def test_discover_from_contracts_skips_non_node_dirs(
+        self, mock_iterdir, mock_exists
+    ):
         """Test discovery skips directories not starting with 'node_'."""
         mock_exists.return_value = True
 
@@ -610,6 +613,7 @@ class TestGlobalRegistry:
         """Test global registry is created on first access."""
         # Clear any existing global instance
         import omnibase_core.models.core.model_cli_command_registry as registry_module
+
         registry_module._global_command_registry = None
 
         registry = get_global_command_registry()
@@ -620,6 +624,7 @@ class TestGlobalRegistry:
     def test_get_global_command_registry_returns_same_instance(self):
         """Test global registry returns same instance on subsequent calls."""
         import omnibase_core.models.core.model_cli_command_registry as registry_module
+
         registry_module._global_command_registry = None
 
         registry1 = get_global_command_registry()
@@ -630,6 +635,7 @@ class TestGlobalRegistry:
     def test_discover_commands_from_contracts_uses_global_registry(self, tmp_path):
         """Test module-level discovery function uses global registry."""
         import omnibase_core.models.core.model_cli_command_registry as registry_module
+
         registry_module._global_command_registry = None
 
         # Create test contract
@@ -642,7 +648,9 @@ cli_interface:
         contract_file.write_text(contract_content)
 
         # Mock the discovery to find our test file
-        with patch.object(ModelCliCommandRegistry, 'discover_from_contracts') as mock_discover:
+        with patch.object(
+            ModelCliCommandRegistry, "discover_from_contracts"
+        ) as mock_discover:
             mock_discover.return_value = 1
 
             count = discover_commands_from_contracts(tmp_path)
@@ -652,6 +660,7 @@ cli_interface:
     def test_get_command_definition_uses_global_registry(self):
         """Test module-level get command function uses global registry."""
         import omnibase_core.models.core.model_cli_command_registry as registry_module
+
         registry_module._global_command_registry = None
 
         # Register a test command

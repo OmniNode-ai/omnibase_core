@@ -1,0 +1,60 @@
+
+# Cursor Rule: DAG-Based Tool Bootstrapping
+
+> **Status:** Canonical | **Updated:** 2025-07-10 | **Enforcement:** MANDATORY
+
+## Rule: Use DAG Orchestration for All Tool Bootstrapping
+
+```yaml
+mandatory_patterns:
+  tool_bootstrapping:
+    method: "DAG orchestration ONLY"
+    forbidden: "manual scripts"
+
+available_dag_scenarios:
+  bootstrap_all_tools:
+    command: "poetry run pytest node_tests/test_scenarios.py::test_scenario_yaml -k 'scenario_dag_bootstrap_validation' -v"
+    purpose: "Regenerate all 20 bootstrap tools with 160/160 validation"
+
+  extract_node_to_tool:
+    command: "poetry run pytest node_tests/test_scenarios.py::test_scenario_yaml -k 'scenario_dag_node_generator_extraction' -v"
+    purpose: "Extract node_generator into bootstrap tool microservice"
+
+  extract_specific_tool:
+    command: "poetry run pytest node_tests/test_scenarios.py::test_scenario_yaml -k 'scenario_dag_tool_contract_parser_extraction' -v"
+    purpose: "Extract individual tool (e.g., tool_contract_parser)"
+
+dag_system_features:
+  - Event-driven coordination
+  - Comprehensive validation (100% success rate required)
+  - Retry policies and error recovery
+  - Health monitoring and rollback capabilities
+  - Tool-as-a-Service ready architecture
+
+anti_patterns:
+  forbidden_commands:
+    - "python scripts/simple_tool_regenerator.py"
+    - "python scripts/bootstrap_model_generator.py"
+    - "Manual tool creation/editing"
+
+  enforcement:
+    - All tool operations must use DAG orchestration
+    - Manual processes rejected in code review
+    - 100% validation success rate required
+    - Template-first development only
+
+workflow:
+  1. Identify tool bootstrapping need
+  2. Select appropriate DAG scenario
+  3. Execute DAG workflow via pytest
+  4. Verify 100% success rate
+  5. Commit generated artifacts
+
+current_status:
+  bootstrap_tools_count: 20
+  scenarios_per_tool: 8
+  total_scenarios: 160
+  success_rate: "100% required"
+```
+
+**Key Message:** NEVER use manual scripts. ALWAYS use DAG orchestration for tool bootstrapping, extraction, and generation.

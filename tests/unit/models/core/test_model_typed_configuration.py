@@ -5,8 +5,9 @@ Comprehensive tests for typed configuration model including merge operations,
 validation, protocol implementations, and custom properties.
 """
 
-import pytest
 from typing import Any
+
+import pytest
 
 from omnibase_core.models.core.model_typed_configuration import ModelTypedConfiguration
 
@@ -30,13 +31,14 @@ class TestModelTypedConfiguration:
     def test_initialization_with_values(self):
         """Test initialization with custom values."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config_data = {"key": "value", "setting": True}
 
         config = ModelTypedConfiguration[dict[str, Any]](
             name="test_config",
             description="Test configuration",
             version=ModelSemVer(major=1, minor=0, patch=0),
-            config_data=config_data
+            config_data=config_data,
         )
 
         assert config.name == "test_config"
@@ -47,18 +49,19 @@ class TestModelTypedConfiguration:
     def test_merge_configuration_basic(self):
         """Test basic configuration merging."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config1 = ModelTypedConfiguration[dict[str, Any]](
             name="config1",
             description="First config",
             version=ModelSemVer(major=1, minor=0, patch=0),
-            config_data={"key1": "value1"}
+            config_data={"key1": "value1"},
         )
 
         config2 = ModelTypedConfiguration[dict[str, Any]](
             name="config2",
             description="Second config",
             version=ModelSemVer(major=2, minor=0, patch=0),
-            config_data={"key2": "value2"}
+            config_data={"key2": "value2"},
         )
 
         config1.merge_configuration(config2)
@@ -94,18 +97,16 @@ class TestModelTypedConfiguration:
     def test_merge_configuration_none_values(self):
         """Test merging with None values doesn't overwrite."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config1 = ModelTypedConfiguration[dict[str, Any]](
             name="config1",
             description="First config",
             version=ModelSemVer(major=1, minor=0, patch=0),
-            config_data={"key": "value"}
+            config_data={"key": "value"},
         )
 
         config2 = ModelTypedConfiguration[dict[str, Any]](
-            name=None,
-            description=None,
-            version=None,
-            config_data=None
+            name=None, description=None, version=None, config_data=None
         )
 
         config1.merge_configuration(config2)
@@ -119,9 +120,7 @@ class TestModelTypedConfiguration:
     def test_copy_configuration(self):
         """Test configuration copying."""
         original = ModelTypedConfiguration[dict[str, Any]](
-            name="original",
-            description="Original config",
-            config_data={"key": "value"}
+            name="original", description="Original config", config_data={"key": "value"}
         )
         original.custom_strings["test"] = "value"
 
@@ -136,8 +135,7 @@ class TestModelTypedConfiguration:
     def test_copy_configuration_deep(self):
         """Test deep copying of configuration."""
         original = ModelTypedConfiguration[dict[str, Any]](
-            name="original",
-            config_data={"nested": {"key": "value"}}
+            name="original", config_data={"nested": {"key": "value"}}
         )
 
         copy = original.copy_configuration()
@@ -153,8 +151,7 @@ class TestModelTypedConfiguration:
     def test_validate_and_enable_with_config_data(self):
         """Test validate_and_enable with config_data present."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            config_data={"key": "value"}
+            name="test", config_data={"key": "value"}
         )
 
         assert config.enabled is False or config.enabled is True  # Check initial state
@@ -174,9 +171,7 @@ class TestModelTypedConfiguration:
     def test_disable_with_reason(self):
         """Test disabling configuration with reason."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            description="Test config",
-            config_data={"key": "value"}
+            name="test", description="Test config", config_data={"key": "value"}
         )
         config.validate_and_enable()
         assert config.enabled is True
@@ -189,12 +184,13 @@ class TestModelTypedConfiguration:
     def test_configure_protocol(self):
         """Test Configurable protocol implementation."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config = ModelTypedConfiguration[dict[str, Any]](name="test")
 
         result = config.configure(
             name="configured",
             description="Configured via protocol",
-            version=ModelSemVer(major=2, minor=0, patch=0)
+            version=ModelSemVer(major=2, minor=0, patch=0),
         )
 
         assert result is True
@@ -205,11 +201,12 @@ class TestModelTypedConfiguration:
     def test_serialize_protocol(self):
         """Test Serializable protocol implementation."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config = ModelTypedConfiguration[dict[str, Any]](
             name="test",
             description="Test config",
             version=ModelSemVer(major=1, minor=0, patch=0),
-            config_data={"key": "value"}
+            config_data={"key": "value"},
         )
         config.custom_strings["custom"] = "value"
 
@@ -262,22 +259,17 @@ class TestModelTypedConfiguration:
         """Test with different type parameters."""
         # String config
         str_config = ModelTypedConfiguration[str](
-            name="string_config",
-            config_data="string value"
+            name="string_config", config_data="string value"
         )
         assert str_config.config_data == "string value"
 
         # Int config
-        int_config = ModelTypedConfiguration[int](
-            name="int_config",
-            config_data=42
-        )
+        int_config = ModelTypedConfiguration[int](name="int_config", config_data=42)
         assert int_config.config_data == 42
 
         # List config
         list_config = ModelTypedConfiguration[list[str]](
-            name="list_config",
-            config_data=["a", "b", "c"]
+            name="list_config", config_data=["a", "b", "c"]
         )
         assert list_config.config_data == ["a", "b", "c"]
 
@@ -287,7 +279,9 @@ class TestModelTypedConfiguration:
         original_timestamp = config.updated_at
 
         # Operations that should update timestamp
-        config.merge_configuration(ModelTypedConfiguration[dict[str, Any]](name="other"))
+        config.merge_configuration(
+            ModelTypedConfiguration[dict[str, Any]](name="other")
+        )
 
         # Timestamp should be updated (or at least not fail)
         # Note: Depending on implementation, this might be the same if very fast
@@ -309,10 +303,7 @@ class TestModelTypedConfigurationEdgeCases:
 
     def test_none_config_data(self):
         """Test with None config_data."""
-        config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            config_data=None
-        )
+        config = ModelTypedConfiguration[dict[str, Any]](name="test", config_data=None)
 
         assert config.config_data is None
         assert config.validate_and_enable() is False
@@ -320,8 +311,7 @@ class TestModelTypedConfigurationEdgeCases:
     def test_merge_same_configuration(self):
         """Test merging configuration with itself."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            config_data={"key": "value"}
+            name="test", config_data={"key": "value"}
         )
         config.custom_strings["test"] = "value"
 
@@ -334,8 +324,7 @@ class TestModelTypedConfigurationEdgeCases:
     def test_special_characters_in_strings(self):
         """Test with special characters in string fields."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test<>&\"'",
-            description="Description with\nnewlines\tand\ttabs"
+            name="test<>&\"'", description="Description with\nnewlines\tand\ttabs"
         )
 
         assert config.name == "test<>&\"'"
@@ -360,10 +349,7 @@ class TestModelTypedConfigurationEdgeCases:
         config = ModelTypedConfiguration[dict[str, Any]](name="test")
 
         # Should not raise, but also shouldn't set invalid attrs
-        result = config.configure(
-            name="valid",
-            nonexistent_field="should_be_ignored"
-        )
+        result = config.configure(name="valid", nonexistent_field="should_be_ignored")
 
         assert result is True
         assert config.name == "valid"
@@ -372,9 +358,7 @@ class TestModelTypedConfigurationEdgeCases:
     def test_disable_multiple_times(self):
         """Test disabling configuration multiple times."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            description="Original",
-            config_data={"key": "value"}
+            name="test", description="Original", config_data={"key": "value"}
         )
 
         config.disable_with_reason("Reason 1")
@@ -390,13 +374,12 @@ class TestModelTypedConfigurationBranchCoverage:
     def test_merge_configuration_none_name_branch(self):
         """Test merge when other.name is None (False branch)."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config1 = ModelTypedConfiguration[dict[str, Any]](
-            name="original_name",
-            description="original"
+            name="original_name", description="original"
         )
         config2 = ModelTypedConfiguration[dict[str, Any]](
-            name=None,  # None should not overwrite
-            description="new_description"
+            name=None, description="new_description"  # None should not overwrite
         )
 
         config1.merge_configuration(config2)
@@ -439,6 +422,7 @@ class TestModelTypedConfigurationBranchCoverage:
     def test_merge_configuration_none_version_branch(self):
         """Test merge when other.version is None (False branch)."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config1 = ModelTypedConfiguration[dict[str, Any]](
             version=ModelSemVer(major=1, minor=0, patch=0)
         )
@@ -452,6 +436,7 @@ class TestModelTypedConfigurationBranchCoverage:
     def test_merge_configuration_non_none_version_branch(self):
         """Test merge when other.version is not None (True branch)."""
         from omnibase_core.primitives.model_semver import ModelSemVer
+
         config1 = ModelTypedConfiguration[dict[str, Any]](
             version=ModelSemVer(major=1, minor=0, patch=0)
         )
@@ -492,10 +477,7 @@ class TestModelTypedConfigurationBranchCoverage:
 
     def test_validate_and_enable_none_config_data_branch(self):
         """Test validate_and_enable when config_data is None (False branch)."""
-        config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            config_data=None
-        )
+        config = ModelTypedConfiguration[dict[str, Any]](name="test", config_data=None)
 
         result = config.validate_and_enable()
 
@@ -505,8 +487,7 @@ class TestModelTypedConfigurationBranchCoverage:
     def test_validate_and_enable_non_none_config_data_branch(self):
         """Test validate_and_enable when config_data is not None (True branch)."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            config_data={"key": "value"}
+            name="test", config_data={"key": "value"}
         )
 
         result = config.validate_and_enable()
@@ -518,9 +499,7 @@ class TestModelTypedConfigurationBranchCoverage:
     def test_disable_with_reason_none_description_branch(self):
         """Test disable_with_reason when description is None (or branch True)."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            description=None,
-            config_data={"key": "value"}
+            name="test", description=None, config_data={"key": "value"}
         )
 
         config.disable_with_reason("Security issue")
@@ -532,9 +511,7 @@ class TestModelTypedConfigurationBranchCoverage:
     def test_disable_with_reason_existing_description_branch(self):
         """Test disable_with_reason when description exists (or branch False)."""
         config = ModelTypedConfiguration[dict[str, Any]](
-            name="test",
-            description="My Config",
-            config_data={"key": "value"}
+            name="test", description="My Config", config_data={"key": "value"}
         )
 
         config.disable_with_reason("Security issue")
@@ -560,8 +537,7 @@ class TestModelTypedConfigurationBranchCoverage:
 
         # Attempting to set non-existent attribute
         result = config.configure(
-            name="updated",
-            nonexistent_attribute="should be ignored"
+            name="updated", nonexistent_attribute="should be ignored"
         )
 
         # Should succeed but ignore non-existent attributes (False branch)

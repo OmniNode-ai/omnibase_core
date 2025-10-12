@@ -173,7 +173,9 @@ class TestModelCliExecutionInputDataValueValidation:
                 value="not_a_list",  # Invalid: string instead of list
                 data_type=EnumDataType.TEXT,
             )
-        assert "StringList value type must contain list[str] data" in str(exc_info.value)
+        assert "StringList value type must contain list[str] data" in str(
+            exc_info.value
+        )
 
     def test_validate_string_list_value_type_invalid_non_string_items(self):
         """Test validation fails for list with non-string items."""
@@ -184,7 +186,9 @@ class TestModelCliExecutionInputDataValueValidation:
                 value=["item1", 123, "item3"],  # Invalid: contains non-string
                 data_type=EnumDataType.TEXT,
             )
-        assert "StringList value type must contain list[str] data" in str(exc_info.value)
+        assert "StringList value type must contain list[str] data" in str(
+            exc_info.value
+        )
 
 
 class TestModelCliExecutionInputDataFactoryMethods:

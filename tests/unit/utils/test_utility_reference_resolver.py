@@ -217,9 +217,7 @@ class TestResolveTypeName:
     def test_resolve_internal_reference_enum(self):
         """Test resolving internal reference with Enum prefix."""
         resolver = UtilityReferenceResolver()
-        ref_info = ModelRefInfo(
-            file_path="", type_name="EnumStatus", is_internal=True
-        )
+        ref_info = ModelRefInfo(file_path="", type_name="EnumStatus", is_internal=True)
 
         result = resolver.resolve_type_name(ref_info)
 
@@ -766,9 +764,7 @@ class TestResolveByFilePath:
     def test_resolve_by_file_path_action_spec(self):
         """Test resolving by file path for action_spec."""
         resolver = UtilityReferenceResolver()
-        ref_info = ModelRefInfo(
-            file_path="models/action_spec.yaml", type_name="Action"
-        )
+        ref_info = ModelRefInfo(file_path="models/action_spec.yaml", type_name="Action")
 
         result = resolver._resolve_by_file_path(ref_info)
 
@@ -788,9 +784,7 @@ class TestResolveByFilePath:
     def test_resolve_by_file_path_case_insensitive(self):
         """Test resolving by file path is case insensitive."""
         resolver = UtilityReferenceResolver()
-        ref_info = ModelRefInfo(
-            file_path="Models/SemVer.YAML", type_name="SemVer"
-        )
+        ref_info = ModelRefInfo(file_path="Models/SemVer.YAML", type_name="SemVer")
 
         result = resolver._resolve_by_file_path(ref_info)
 

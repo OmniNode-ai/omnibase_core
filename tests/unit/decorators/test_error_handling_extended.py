@@ -413,7 +413,9 @@ class TestErrorContextPreservation:
 
         @validation_error_handling("Schema validation")
         def validate_schema():
-            raise ValueError("Field 'email' is required and must be a valid email address")
+            raise ValueError(
+                "Field 'email' is required and must be a valid email address"
+            )
 
         with pytest.raises(ModelOnexError) as exc_info:
             validate_schema()

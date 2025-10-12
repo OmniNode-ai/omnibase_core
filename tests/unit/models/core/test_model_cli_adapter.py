@@ -5,16 +5,17 @@ This module tests the CLI adapter's exit code mapping, status handling,
 and error reporting functionality.
 """
 
-import pytest
 import sys
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, call, patch
 from uuid import uuid4
 
-from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
-from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+import pytest
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
 
 class TestExitWithStatus:
@@ -187,7 +188,9 @@ class TestExitWithError:
         assert "context" in call_args.kwargs["data"]
         assert "additional_context" in call_args.kwargs["data"]["context"]
         assert "context" in call_args.kwargs["data"]["context"]["additional_context"]
-        inner_context = call_args.kwargs["data"]["context"]["additional_context"]["context"]
+        inner_context = call_args.kwargs["data"]["context"]["additional_context"][
+            "context"
+        ]
         assert inner_context["field"] == "email"
         assert inner_context["value"] == "invalid"
 
@@ -203,7 +206,9 @@ class TestExitWithError:
         ModelCLIAdapter.exit_with_error(error)
 
         call_args = mock_emit.call_args
-        assert call_args.kwargs["data"]["error_code"] == str(EnumCoreErrorCode.OPERATION_FAILED)
+        assert call_args.kwargs["data"]["error_code"] == str(
+            EnumCoreErrorCode.OPERATION_FAILED
+        )
 
     @patch("sys.exit")
     @patch("omnibase_core.models.core.model_cli_adapter.emit_log_event_sync")
@@ -240,15 +245,11 @@ class TestAdapterStaticMethods:
 
     def test_exit_with_status_is_static(self):
         """Test exit_with_status is a static method."""
-        assert isinstance(
-            ModelCLIAdapter.__dict__["exit_with_status"], staticmethod
-        )
+        assert isinstance(ModelCLIAdapter.__dict__["exit_with_status"], staticmethod)
 
     def test_exit_with_error_is_static(self):
         """Test exit_with_error is a static method."""
-        assert isinstance(
-            ModelCLIAdapter.__dict__["exit_with_error"], staticmethod
-        )
+        assert isinstance(ModelCLIAdapter.__dict__["exit_with_error"], staticmethod)
 
 
 class TestAdapterIntegration:

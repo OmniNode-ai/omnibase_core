@@ -9,6 +9,10 @@ Target: +5-8% branch coverage
 """
 
 import asyncio
+
+# Direct module import to avoid infrastructure/__init__.py dependencies
+import importlib.util
+import sys
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock, patch
@@ -32,10 +36,6 @@ from omnibase_core.models.operations.model_effect_input import ModelEffectInput
 from omnibase_core.models.operations.model_effect_result import (
     ModelEffectResultList,
 )
-
-# Direct module import to avoid infrastructure/__init__.py dependencies
-import importlib.util
-import sys
 
 node_effect_path = (
     Path(__file__).parent.parent.parent.parent
@@ -154,9 +154,7 @@ class TestContractLoadingErrorBranches:
 
                 assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
-    def test_find_contract_path_exception_wrapping(
-        self, mock_container, mock_contract
-    ):
+    def test_find_contract_path_exception_wrapping(self, mock_container, mock_contract):
         """Test _find_contract_path wraps exceptions properly."""
         # Test the exception wrapping in the except block of _find_contract_path
         with patch.object(
@@ -352,6 +350,7 @@ class TestFileOperationErrorBranches:
     @pytest.mark.asyncio
     async def test_execute_file_operation_wrong_result_type(self, node_effect):
         """Test execute_file_operation when handler returns wrong type."""
+
         # Mock handler that returns wrong type
         async def bad_handler(data, transaction):
             return "string instead of dict"
@@ -397,6 +396,7 @@ class TestEventEmissionErrorBranches:
     @pytest.mark.asyncio
     async def test_emit_event_wrong_result_type(self, node_effect, mock_container):
         """Test emit_state_change_event when handler returns wrong type."""
+
         # Mock handler that returns dict instead of bool
         async def bad_handler(data, transaction):
             return {"wrong": "type"}
@@ -613,9 +613,7 @@ class TestTransactionRollbackErrorBranches:
 class TestValidationErrorBranches:
     """Test validation error branches."""
 
-    def test_validate_effect_input_wrong_operation_data_type_string(
-        self, node_effect
-    ):
+    def test_validate_effect_input_wrong_operation_data_type_string(self, node_effect):
         """Test validation with operation_data as string."""
         effect_input = ModelEffectInput(
             effect_type=EnumEffectType.FILE_OPERATION,

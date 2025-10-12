@@ -16,7 +16,7 @@ Improve validation module coverage for patterns.py and types.py from ~19% and ~1
    - Added 7 new test classes for GenericPatternChecker
    - Total: 49 tests covering all pattern validation logic
 
-2. **tests/unit/validation/test_types_extended.py** 
+2. **tests/unit/validation/test_types_extended.py**
    - Added 8 new tests for validate_union_usage_directory
    - Total: 28 tests covering all type validation logic
 

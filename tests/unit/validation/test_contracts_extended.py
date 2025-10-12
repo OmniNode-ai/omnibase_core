@@ -820,7 +820,10 @@ operations: []
         exit_code = validate_contracts_cli()
 
         captured = capsys.readouterr()
-        assert "Contract Validation" in captured.out or "validation" in captured.out.lower()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
 
     def test_cli_with_errors(
         self,
@@ -839,7 +842,10 @@ operations: []
 
         captured = capsys.readouterr()
         # Should report issues
-        assert "Contract Validation" in captured.out or "validation" in captured.out.lower()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
 
     def test_cli_nonexistent_directory(
         self,
@@ -859,7 +865,10 @@ operations: []
         exit_code = validate_contracts_cli()
 
         captured = capsys.readouterr()
-        assert "Directory not found" in captured.out or "validation" in captured.out.lower()
+        assert (
+            "Directory not found" in captured.out
+            or "validation" in captured.out.lower()
+        )
 
     def test_cli_multiple_directories(
         self,
@@ -905,7 +914,10 @@ operations: []
         exit_code = validate_contracts_cli()
 
         captured = capsys.readouterr()
-        assert "Contract Validation" in captured.out or "validation" in captured.out.lower()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
 
     def test_cli_timeout_flag(
         self,
@@ -936,7 +948,10 @@ operations: []
         exit_code = validate_contracts_cli()
 
         captured = capsys.readouterr()
-        assert "Contract Validation" in captured.out or "validation" in captured.out.lower()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
 
     def test_cli_keyboard_interrupt(
         self,
@@ -1001,7 +1016,10 @@ operations: []
             exit_code = validate_contracts_cli()
 
             captured = capsys.readouterr()
-            assert "Contract Validation" in captured.out or "validation" in captured.out.lower()
+            assert (
+                "Contract Validation" in captured.out
+                or "validation" in captured.out.lower()
+            )
         finally:
             os.chdir(original_cwd)
 

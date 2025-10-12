@@ -58,8 +58,9 @@ class TestBaseModelAvailability:
 
     def test_basemodel_type_checking(self) -> None:
         """Test that imported BaseModel has correct type."""
-        from omnibase_core.models.workflows.model_config import BaseModel
         from pydantic import BaseModel as PydanticBaseModel
+
+        from omnibase_core.models.workflows.model_config import BaseModel
 
         # Verify it's the actual Pydantic BaseModel
         assert BaseModel is PydanticBaseModel

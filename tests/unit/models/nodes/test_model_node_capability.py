@@ -398,6 +398,7 @@ class TestModelNodeCapability:
     def test_capability_with_dependencies(self):
         """Test capability with multiple dependencies."""
         from uuid import uuid4
+
         dep1 = uuid4()
         dep2 = uuid4()
 

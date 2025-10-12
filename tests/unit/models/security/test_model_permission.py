@@ -16,13 +16,13 @@ Tests cover:
 - Error scenarios and ONEX compliance
 """
 
-import pytest
-from datetime import UTC, datetime, timedelta
-from uuid import UUID
-
 # Direct imports to avoid broken __init__.py
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import UUID
+
+import pytest
 
 # Add src to path for direct imports
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
@@ -152,9 +152,7 @@ class TestModelPermissionFieldValidation:
         ]
 
         for resource in valid_resources:
-            permission = ModelPermission(
-                name="test", resource=resource, action="read"
-            )
+            permission = ModelPermission(name="test", resource=resource, action="read")
             assert permission.resource == resource
 
     def test_action_pattern_validation_valid(self):
@@ -180,7 +178,13 @@ class TestModelPermissionFieldValidation:
 
     def test_scope_type_validation(self):
         """Test scope_type field validation."""
-        valid_scopes = ["global", "organizational", "resource", "temporal", "conditional"]
+        valid_scopes = [
+            "global",
+            "organizational",
+            "resource",
+            "temporal",
+            "conditional",
+        ]
 
         for scope in valid_scopes:
             permission = ModelPermission(
@@ -441,9 +445,7 @@ class TestModelPermissionResourceMatching:
 
     def test_matches_resource_wildcard(self):
         """Test wildcard resource matching."""
-        permission = ModelPermission(
-            name="test", resource="projects/*", action="read"
-        )
+        permission = ModelPermission(name="test", resource="projects/*", action="read")
 
         assert permission.matches_resource("projects/test") is True
         assert permission.matches_resource("projects/anything") is True
@@ -548,9 +550,7 @@ class TestModelPermissionTemporalValidation:
         assert perm_expired.is_expired() is True
 
         # No expiration
-        perm_no_expiry = ModelPermission(
-            name="test", resource="test", action="read"
-        )
+        perm_no_expiry = ModelPermission(name="test", resource="test", action="read")
         assert perm_no_expiry.is_expired() is False
 
     def test_is_active(self):
@@ -576,9 +576,7 @@ class TestModelPermissionTemporalValidation:
         assert perm_future.is_active() is False
 
         # No activation time
-        perm_no_start = ModelPermission(
-            name="test", resource="test", action="read"
-        )
+        perm_no_start = ModelPermission(name="test", resource="test", action="read")
         assert perm_no_start.is_active() is True
 
 
@@ -631,9 +629,7 @@ class TestModelPermissionConditionEvaluation:
 
     def test_evaluate_conditions_no_conditions(self):
         """Test condition evaluation with no conditions."""
-        permission = ModelPermission(
-            name="test", resource="test", action="read"
-        )
+        permission = ModelPermission(name="test", resource="test", action="read")
         context = ModelPermissionEvaluationContext()
 
         assert permission.evaluate_conditions(context) is True
@@ -647,8 +643,12 @@ class TestModelPermissionConditionEvaluation:
             conditions=["role == 'admin'"],
         )
 
-        context_pass = ModelPermissionEvaluationContext(string_attributes={"role": "admin"})
-        context_fail = ModelPermissionEvaluationContext(string_attributes={"role": "user"})
+        context_pass = ModelPermissionEvaluationContext(
+            string_attributes={"role": "admin"}
+        )
+        context_fail = ModelPermissionEvaluationContext(
+            string_attributes={"role": "user"}
+        )
 
         assert permission.evaluate_conditions(context_pass) is True
         assert permission.evaluate_conditions(context_fail) is False
@@ -662,8 +662,12 @@ class TestModelPermissionConditionEvaluation:
             conditions=["has_permission"],
         )
 
-        context_pass = ModelPermissionEvaluationContext(boolean_attributes={"has_permission": True})
-        context_fail = ModelPermissionEvaluationContext(boolean_attributes={"has_permission": False})
+        context_pass = ModelPermissionEvaluationContext(
+            boolean_attributes={"has_permission": True}
+        )
+        context_fail = ModelPermissionEvaluationContext(
+            boolean_attributes={"has_permission": False}
+        )
 
         assert permission.evaluate_conditions(context_pass) is True
         assert permission.evaluate_conditions(context_fail) is False
@@ -1034,7 +1038,10 @@ class TestModelPermissionBranchCoverage:
         assert permission.is_temporally_valid(test_time) is True
 
         # Test with current_time = None (uses default datetime.now)
-        assert permission.is_temporally_valid(None) in [True, False]  # Depends on actual current time
+        assert permission.is_temporally_valid(None) in [
+            True,
+            False,
+        ]  # Depends on actual current time
 
     def test_evaluate_conditions_with_malformed_equality(self):
         """Test condition evaluation with malformed equality check (lines 517-519)."""
@@ -1042,7 +1049,9 @@ class TestModelPermissionBranchCoverage:
             name="test",
             resource="test",
             action="read",
-            conditions=["role == 'admin' and extra_condition"],  # Multiple operators, will cause parsing issues
+            conditions=[
+                "role == 'admin' and extra_condition"
+            ],  # Multiple operators, will cause parsing issues
         )
 
         context = ModelPermissionEvaluationContext(string_attributes={"role": "admin"})
@@ -1188,7 +1197,9 @@ class TestModelPermissionBranchCoverage:
 
         resource_risk_score = resource_permission.get_risk_score()
 
-        assert risk_score > resource_risk_score  # Organizational scope should be higher risk
+        assert (
+            risk_score > resource_risk_score
+        )  # Organizational scope should be higher risk
 
     def test_get_risk_score_with_geographic_constraints(self):
         """Test risk score with geographic constraints (line 620)."""
@@ -1214,7 +1225,9 @@ class TestModelPermissionBranchCoverage:
 
         no_geo_risk_score = no_geo_permission.get_risk_score()
 
-        assert risk_score < no_geo_risk_score  # Geographic constraints should reduce risk
+        assert (
+            risk_score < no_geo_risk_score
+        )  # Geographic constraints should reduce risk
 
     def test_get_risk_score_with_usage_limits(self):
         """Test risk score with usage limits enabled (line 622)."""
@@ -1280,8 +1293,14 @@ class TestModelPermissionBranchCoverage:
         )
 
         # Only country code provided
-        assert permission.is_geographically_valid(country_code="US", ip_address=None) is True
-        assert permission.is_geographically_valid(country_code="CA", ip_address=None) is False
+        assert (
+            permission.is_geographically_valid(country_code="US", ip_address=None)
+            is True
+        )
+        assert (
+            permission.is_geographically_valid(country_code="CA", ip_address=None)
+            is False
+        )
 
     def test_is_geographically_valid_with_ip_but_no_country(self):
         """Test geographic validation with IP but no country code."""
@@ -1294,5 +1313,13 @@ class TestModelPermissionBranchCoverage:
         )
 
         # Only IP address provided
-        assert permission.is_geographically_valid(country_code=None, ip_address="192.168.1.50") is True
-        assert permission.is_geographically_valid(country_code=None, ip_address="10.0.0.1") is False
+        assert (
+            permission.is_geographically_valid(
+                country_code=None, ip_address="192.168.1.50"
+            )
+            is True
+        )
+        assert (
+            permission.is_geographically_valid(country_code=None, ip_address="10.0.0.1")
+            is False
+        )

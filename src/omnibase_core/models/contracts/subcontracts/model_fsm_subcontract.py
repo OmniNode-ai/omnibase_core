@@ -24,7 +24,14 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -169,18 +176,35 @@ class ModelFSMSubcontract(BaseModel):
         description="Whether state transition events are logged",
     )
 
-    @field_validator("states")
-    @classmethod
-    def validate_initial_state_exists(
-        cls,
-        v: list[ModelFSMStateDefinition],
-        info: ValidationInfo,
-    ) -> list[ModelFSMStateDefinition]:
+    @model_validator(mode="after")
+    def validate_initial_state_exists(self) -> "ModelFSMSubcontract":
         """Validate that initial state is defined in states list[Any]."""
-        if info.data and "initial_state" in info.data:
-            state_names = [state.state_name for state in v]
-            if info.data["initial_state"] not in state_names:
-                msg = f"Initial state '{info.data['initial_state']}' not found in states list[Any]"
+        state_names = [state.state_name for state in self.states]
+        if self.initial_state not in state_names:
+            msg = f"Initial state '{self.initial_state}' not found in states list[Any]"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
+                        ),
+                    },
+                ),
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_special_states_exist(self) -> "ModelFSMSubcontract":
+        """Validate that terminal and error states are defined in states list[Any]."""
+        state_names = [state.state_name for state in self.states]
+
+        # Validate terminal states
+        for state_name in self.terminal_states:
+            if state_name not in state_names:
+                msg = f"Terminal state '{state_name}' not found in states list[Any]"
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -193,79 +217,63 @@ class ModelFSMSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
 
-    @field_validator("terminal_states", "error_states")
-    @classmethod
-    def validate_special_states_exist(
-        cls,
-        v: list[str],
-        info: ValidationInfo,
-    ) -> list[str]:
-        """Validate that terminal and error states are defined in states list[Any]."""
-        if info.data and "states" in info.data and v:
-            state_names = [state.state_name for state in info.data["states"]]
-            for state_name in v:
-                if state_name not in state_names:
-                    msg = f"State '{state_name}' not found in states list[Any]"
-                    raise ModelOnexError(
-                        message=msg,
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        details=ModelErrorContext.with_context(
-                            {
-                                "error_type": ModelSchemaValue.from_value("valueerror"),
-                                "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation",
-                                ),
-                            },
-                        ),
-                    )
-        return v
+        # Validate error states
+        for state_name in self.error_states:
+            if state_name not in state_names:
+                msg = f"Error state '{state_name}' not found in states list[Any]"
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
+        return self
 
-    @field_validator("transitions")
-    @classmethod
-    def validate_transition_states_exist(
-        cls,
-        v: list[ModelFSMStateTransition],
-        info: ValidationInfo,
-    ) -> list[ModelFSMStateTransition]:
+    @model_validator(mode="after")
+    def validate_transition_states_exist(self) -> "ModelFSMSubcontract":
         """Validate that all transition source and target states exist."""
-        if info.data and "states" in info.data:
-            state_names = [state.state_name for state in info.data["states"]]
-            # Add wildcard state to supported states for global transitions
-            state_names_with_wildcard = [*state_names, "*"]
+        state_names = [state.state_name for state in self.states]
+        # Add wildcard state to supported states for global transitions
+        state_names_with_wildcard = [*state_names, "*"]
 
-            for transition in v:
-                # Support wildcard transitions (from_state: '*')
-                if transition.from_state not in state_names_with_wildcard:
-                    msg = f"Transition from_state '{transition.from_state}' not found in states list[Any]"
-                    raise ModelOnexError(
-                        message=msg,
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        details=ModelErrorContext.with_context(
-                            {
-                                "error_type": ModelSchemaValue.from_value("valueerror"),
-                                "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation",
-                                ),
-                            },
-                        ),
-                    )
-                if transition.to_state not in state_names:
-                    msg = f"Transition to_state '{transition.to_state}' not found in states list[Any]"
-                    raise ModelOnexError(
-                        message=msg,
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        details=ModelErrorContext.with_context(
-                            {
-                                "error_type": ModelSchemaValue.from_value("valueerror"),
-                                "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation",
-                                ),
-                            },
-                        ),
-                    )
-        return v
+        for transition in self.transitions:
+            # Support wildcard transitions (from_state: '*')
+            if transition.from_state not in state_names_with_wildcard:
+                msg = f"Transition from_state '{transition.from_state}' not found in states list[Any]"
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
+            if transition.to_state not in state_names:
+                msg = f"Transition to_state '{transition.to_state}' not found in states list[Any]"
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

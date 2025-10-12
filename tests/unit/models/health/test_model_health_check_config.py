@@ -173,9 +173,7 @@ class TestModelHealthCheckConfigHeaders:
 
     def test_get_check_headers_custom(self):
         """Test headers with custom values."""
-        config = ModelHealthCheckConfig(
-            check_headers={"Authorization": "Bearer token"}
-        )
+        config = ModelHealthCheckConfig(check_headers={"Authorization": "Bearer token"})
 
         headers = config.get_check_headers_with_defaults()
         assert headers["Authorization"] == "Bearer token"
@@ -230,17 +228,13 @@ class TestModelHealthCheckConfigTimeout:
 
     def test_get_effective_timeout_normal(self):
         """Test effective timeout normal case."""
-        config = ModelHealthCheckConfig(
-            timeout_seconds=5, check_interval_seconds=30
-        )
+        config = ModelHealthCheckConfig(timeout_seconds=5, check_interval_seconds=30)
 
         assert config.get_effective_timeout() == 5
 
     def test_get_effective_timeout_exceeds_interval(self):
         """Test effective timeout when exceeding interval."""
-        config = ModelHealthCheckConfig(
-            timeout_seconds=20, check_interval_seconds=30
-        )
+        config = ModelHealthCheckConfig(timeout_seconds=20, check_interval_seconds=30)
 
         # Should be capped at half the interval
         assert config.get_effective_timeout() == 15

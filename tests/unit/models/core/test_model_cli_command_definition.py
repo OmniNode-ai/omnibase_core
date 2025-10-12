@@ -8,15 +8,15 @@ and command matching for dynamically discovered CLI commands.
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.core.model_cli_command_definition import (
-    ModelCliCommandDefinition,
-)
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
-from omnibase_core.models.core.model_event_type import ModelEventType
+from omnibase_core.enums.enum_argument_type import EnumArgumentType
 from omnibase_core.models.core.model_argument_description import (
     ModelArgumentDescription,
 )
-from omnibase_core.enums.enum_argument_type import EnumArgumentType
+from omnibase_core.models.core.model_cli_command_definition import (
+    ModelCliCommandDefinition,
+)
+from omnibase_core.models.core.model_event_type import ModelEventType
+from omnibase_core.models.core.model_node_reference import ModelNodeReference
 
 
 class TestModelCliCommandDefinitionCreation:
@@ -75,7 +75,10 @@ class TestModelCliCommandDefinitionCreation:
                 namespace="onex",
                 description="Data processing event",
             ),
-            examples=["process --input data.txt", "process --input data.txt --output result.txt"],
+            examples=[
+                "process --input data.txt",
+                "process --input data.txt --output result.txt",
+            ],
             category="data",
             deprecated=True,
             deprecation_message="Use 'process_v2' instead",
@@ -338,7 +341,9 @@ class TestHelpTextGeneration:
         assert "[DEPRECATED]" in help_text
         assert "Please use 'new_command' instead" in help_text
         # Deprecation message should appear before description
-        assert help_text.index("[DEPRECATED]") < help_text.index("Old command functionality")
+        assert help_text.index("[DEPRECATED]") < help_text.index(
+            "Old command functionality"
+        )
 
     def test_get_help_text_deprecated_without_message(self):
         """Test help text for deprecated command without custom message."""
@@ -383,7 +388,10 @@ class TestHelpTextGeneration:
             event_type=ModelEventType(
                 event_name="NODE_START", namespace="onex", description="Test"
             ),
-            examples=["copy --source /data", "copy --source /data --destination /backup"],
+            examples=[
+                "copy --source /data",
+                "copy --source /data --destination /backup",
+            ],
             deprecated=True,
             deprecation_message="Use 'rsync' command instead",
         )
@@ -465,13 +473,22 @@ class TestCommandDefinitionIntegration:
         """Test command with multiple required arguments."""
         args = [
             ModelArgumentDescription(
-                name="input", description="Input", type=EnumArgumentType.STRING, required=True
+                name="input",
+                description="Input",
+                type=EnumArgumentType.STRING,
+                required=True,
             ),
             ModelArgumentDescription(
-                name="config", description="Config", type=EnumArgumentType.STRING, required=True
+                name="config",
+                description="Config",
+                type=EnumArgumentType.STRING,
+                required=True,
             ),
             ModelArgumentDescription(
-                name="format", description="Format", type=EnumArgumentType.STRING, required=True
+                name="format",
+                description="Format",
+                type=EnumArgumentType.STRING,
+                required=True,
             ),
         ]
         command = ModelCliCommandDefinition(

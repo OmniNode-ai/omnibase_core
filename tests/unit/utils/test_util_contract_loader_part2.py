@@ -43,7 +43,6 @@ from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaOb
 from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
 
-
 # ===== Test Fixtures =====
 
 
@@ -189,9 +188,7 @@ class TestResolveAllReferences:
             contract_version=ModelSemVer(major=2, minor=3, patch=4),
             node_name="PreservedNode",
             node_type=EnumNodeType.EFFECT,
-            tool_specification=ModelToolSpecification(
-                main_tool_class="PreservedClass"
-            ),
+            tool_specification=ModelToolSpecification(main_tool_class="PreservedClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
             ),
@@ -442,7 +439,9 @@ contract_version:
 
         assert result is True
         # Contract should be cached
-        assert str(valid_contract_yaml.resolve()) in contract_loader.state.loaded_contracts
+        assert (
+            str(valid_contract_yaml.resolve()) in contract_loader.state.loaded_contracts
+        )
 
     def test_validate_multiple_contracts(
         self,
@@ -494,10 +493,14 @@ class TestCacheBehavior:
 
         assert result.node_name == "TestNode"
         # Should use loaded_contracts cache, not reload file
-        assert str(valid_contract_yaml.resolve()) in contract_loader.state.loaded_contracts
+        assert (
+            str(valid_contract_yaml.resolve()) in contract_loader.state.loaded_contracts
+        )
 
     def test_cache_miss_with_disabled_cache(
-        self, contract_loader_no_cache: ProtocolContractLoader, valid_contract_yaml: Path
+        self,
+        contract_loader_no_cache: ProtocolContractLoader,
+        valid_contract_yaml: Path,
     ) -> None:
         """Test cache miss behavior when caching is disabled."""
         # Load multiple times
@@ -579,7 +582,10 @@ tool_specification:
         assert cache_entry.content_hash is not None
 
     def test_cache_with_symlinks(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path, tmp_path: Path
+        self,
+        contract_loader: ProtocolContractLoader,
+        valid_contract_yaml: Path,
+        tmp_path: Path,
     ) -> None:
         """Test cache behavior with symlinked contracts."""
         # Create symlink

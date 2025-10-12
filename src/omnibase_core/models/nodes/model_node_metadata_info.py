@@ -117,8 +117,11 @@ class ModelNodeMetadataInfo(BaseModel):
         """Set node health from string."""
         try:
             self.core.health = EnumNodeHealthStatus(value)
-        except ValueError:
-            self.core.health = EnumNodeHealthStatus.UNKNOWN
+        except ValueError as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid health status '{value}': {e}",
+            ) from e
 
     @property
     def version(self) -> ModelSemVer | None:
@@ -343,8 +346,11 @@ class ModelNodeMetadataInfo(BaseModel):
         health_str = getattr(node_info, "health", "healthy")
         try:
             core.health = EnumNodeHealthStatus(health_str)
-        except ValueError:
-            core.health = EnumNodeHealthStatus.UNKNOWN
+        except ValueError as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid health status '{health_str}': {e}",
+            ) from e
 
         organization = ModelNodeOrganizationMetadata(
             description=getattr(node_info, "description", None),

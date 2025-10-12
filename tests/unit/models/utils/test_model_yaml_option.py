@@ -20,8 +20,7 @@ class TestModelYamlOptionInstantiation:
     def test_create_boolean_option(self):
         """Test creating boolean option directly."""
         option = ModelYamlOption(
-            option_type=EnumYamlOptionType.BOOLEAN,
-            boolean_value=True
+            option_type=EnumYamlOptionType.BOOLEAN, boolean_value=True
         )
         assert option.option_type == EnumYamlOptionType.BOOLEAN
         assert option.boolean_value is True
@@ -31,8 +30,7 @@ class TestModelYamlOptionInstantiation:
     def test_create_integer_option(self):
         """Test creating integer option directly."""
         option = ModelYamlOption(
-            option_type=EnumYamlOptionType.INTEGER,
-            integer_value=42
+            option_type=EnumYamlOptionType.INTEGER, integer_value=42
         )
         assert option.option_type == EnumYamlOptionType.INTEGER
         assert option.integer_value == 42
@@ -42,8 +40,7 @@ class TestModelYamlOptionInstantiation:
     def test_create_string_option(self):
         """Test creating string option directly."""
         option = ModelYamlOption(
-            option_type=EnumYamlOptionType.STRING,
-            string_value="test"
+            option_type=EnumYamlOptionType.STRING, string_value="test"
         )
         assert option.option_type == EnumYamlOptionType.STRING
         assert option.string_value == "test"
@@ -143,8 +140,7 @@ class TestModelYamlOptionToValueBranches:
         """Test to_value with invalid type raises error (else branch, line 74)."""
         # Create option with invalid enum value by bypassing validation
         option = ModelYamlOption(
-            option_type=EnumYamlOptionType.BOOLEAN,
-            boolean_value=True
+            option_type=EnumYamlOptionType.BOOLEAN, boolean_value=True
         )
         # Manually change to invalid type (simulating corruption)
         # Use object.__setattr__ to bypass Pydantic validate_assignment

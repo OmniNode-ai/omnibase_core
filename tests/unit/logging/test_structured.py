@@ -28,7 +28,7 @@ class SampleContext(BaseModel):
     """Sample Pydantic model for context testing."""
 
     correlation_id: UUID
-    node_id: str
+    node_id: UUID
     operation: str
 
 
@@ -199,8 +199,9 @@ class TestContextHandling:
     def test_context_pydantic_model(self, caplog):
         """Test emit with Pydantic model context."""
         test_uuid = uuid4()
+        node_uuid = uuid4()
         context_model = SampleContext(
-            correlation_id=test_uuid, node_id="node-123", operation="test_op"
+            correlation_id=test_uuid, node_id=node_uuid, operation="test_op"
         )
 
         with caplog.at_level(logging.INFO):
@@ -335,9 +336,7 @@ class TestJSONEncoding:
 
     def test_json_encoding_handles_pydantic_model(self, caplog):
         """Test JSON encoding handles Pydantic model in context."""
-        model = SampleContext(
-            correlation_id=uuid4(), node_id="node-123", operation="test"
-        )
+        model = SampleContext(correlation_id=uuid4(), node_id=uuid4(), operation="test")
 
         with caplog.at_level(logging.INFO):
             emit_log_event_sync(LogLevel.INFO, "Test", context=model)
@@ -437,9 +436,7 @@ class TestEdgeCases:
         """Test multiple consecutive log emissions."""
         with caplog.at_level(logging.INFO):
             for i in range(5):
-                emit_log_event_sync(
-                    LogLevel.INFO, f"Message {i}", context={"count": i}
-                )
+                emit_log_event_sync(LogLevel.INFO, f"Message {i}", context={"count": i})
 
         assert len(caplog.records) == 5
         for i, record in enumerate(caplog.records):
@@ -460,9 +457,7 @@ class TestEdgeCases:
                 )
 
         with caplog.at_level(logging.INFO):
-            threads = [
-                threading.Thread(target=emit_logs, args=(i,)) for i in range(3)
-            ]
+            threads = [threading.Thread(target=emit_logs, args=(i,)) for i in range(3)]
 
             for thread in threads:
                 thread.start()

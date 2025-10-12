@@ -4,20 +4,20 @@ Tests targeting conditional branch coverage in utils/safe_yaml_loader.py.
 Focus on exception handling branches and edge cases.
 """
 
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
 import tempfile
+from pathlib import Path
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.safe_yaml_loader import (
-    load_yaml_content_as_model,
-    serialize_pydantic_model_to_yaml,
-    serialize_data_to_yaml,
     _dump_yaml_content,
+    load_yaml_content_as_model,
+    serialize_data_to_yaml,
+    serialize_pydantic_model_to_yaml,
 )
 
 
@@ -252,7 +252,11 @@ class TestGenericExceptionHandlers:
 
         try:
             # Mock model_validate to raise unexpected exception
-            with patch.object(SimpleModel, 'model_validate', side_effect=RuntimeError("Unexpected error")):
+            with patch.object(
+                SimpleModel,
+                "model_validate",
+                side_effect=RuntimeError("Unexpected error"),
+            ):
                 with pytest.raises(ModelOnexError) as exc_info:
                     load_and_validate_yaml_model(temp_path, SimpleModel)
 
@@ -266,7 +270,9 @@ class TestGenericExceptionHandlers:
         content = "name: test\nvalue: 42"
 
         # Mock model_validate to raise unexpected exception
-        with patch.object(SimpleModel, 'model_validate', side_effect=RuntimeError("Unexpected error")):
+        with patch.object(
+            SimpleModel, "model_validate", side_effect=RuntimeError("Unexpected error")
+        ):
             with pytest.raises(ModelOnexError) as exc_info:
                 load_yaml_content_as_model(content, SimpleModel)
 
@@ -278,7 +284,10 @@ class TestGenericExceptionHandlers:
         model = SimpleModel(name="test", value=42)
 
         # Mock ModelYamlValue.from_schema_value to raise unexpected exception
-        with patch('omnibase_core.utils.safe_yaml_loader.ModelYamlValue.from_schema_value', side_effect=RuntimeError("Unexpected error")):
+        with patch(
+            "omnibase_core.utils.safe_yaml_loader.ModelYamlValue.from_schema_value",
+            side_effect=RuntimeError("Unexpected error"),
+        ):
             with pytest.raises(ModelOnexError) as exc_info:
                 serialize_pydantic_model_to_yaml(model)
 
@@ -290,7 +299,10 @@ class TestGenericExceptionHandlers:
         data = {"key": "value"}
 
         # Mock _dump_yaml_content to raise unexpected exception
-        with patch('omnibase_core.utils.safe_yaml_loader._dump_yaml_content', side_effect=RuntimeError("Unexpected error")):
+        with patch(
+            "omnibase_core.utils.safe_yaml_loader._dump_yaml_content",
+            side_effect=RuntimeError("Unexpected error"),
+        ):
             with pytest.raises(ModelOnexError) as exc_info:
                 serialize_data_to_yaml(data)
 
@@ -321,7 +333,7 @@ class TestDumpYamlContentErrorHandling:
         data = {"key": "value"}
         mock_result = PersistentCarriageReturnString("key: value\r\n")
 
-        with patch('yaml.dump', return_value=mock_result):
+        with patch("yaml.dump", return_value=mock_result):
             with pytest.raises(ModelOnexError) as exc_info:
                 _dump_yaml_content(data)
 
@@ -335,10 +347,12 @@ class TestDumpYamlContentErrorHandling:
 
         class BadString(str):
             def encode(self, encoding):
-                if encoding == 'utf-8':
+                if encoding == "utf-8":
                     # UnicodeEncodeError(encoding, object, start, end, reason)
                     # object must be str, not bytes
-                    raise UnicodeEncodeError('utf-8', 'test string', 0, 1, 'invalid utf-8')
+                    raise UnicodeEncodeError(
+                        "utf-8", "test string", 0, 1, "invalid utf-8"
+                    )
                 return super().encode(encoding)
 
             def replace(self, old, new, count=-1):
@@ -347,7 +361,7 @@ class TestDumpYamlContentErrorHandling:
 
         mock_result = BadString("key: value\n")
 
-        with patch('yaml.dump', return_value=mock_result):
+        with patch("yaml.dump", return_value=mock_result):
             with pytest.raises(ModelOnexError) as exc_info:
                 _dump_yaml_content(data)
 
@@ -361,7 +375,9 @@ class TestDumpYamlContentErrorHandling:
         data = {"key": "value"}
 
         # Mock yaml.dump to raise YAMLError
-        with patch('yaml.dump', side_effect=yaml.YAMLError("YAML serialization failed")):
+        with patch(
+            "yaml.dump", side_effect=yaml.YAMLError("YAML serialization failed")
+        ):
             with pytest.raises(ModelOnexError) as exc_info:
                 _dump_yaml_content(data)
 

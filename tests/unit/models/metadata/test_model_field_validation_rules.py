@@ -410,19 +410,21 @@ class TestModelFieldValidationRulesErrorBranches:
         """Test set_metadata with keys that don't exist (line 159->158 branch)."""
         rules = ModelFieldValidationRules()
         # Try to set fields including non-existent ones
-        result = rules.set_metadata({
-            "allow_empty": False,
-            "non_existent_field": "invalid",  # Should be ignored
-            "another_invalid": 123,  # Should be ignored
-        })
+        result = rules.set_metadata(
+            {
+                "allow_empty": False,
+                "non_existent_field": "invalid",  # Should be ignored
+                "another_invalid": 123,  # Should be ignored
+            }
+        )
         assert result is True
         assert rules.allow_empty is False
         # Non-existent fields should not cause errors
 
     def test_set_metadata_with_validation_error(self):
         """Test set_metadata exception handling (lines 162-163 branch)."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         rules = ModelFieldValidationRules()
         # Try to set min_length to invalid type

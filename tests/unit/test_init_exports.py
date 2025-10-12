@@ -42,14 +42,18 @@ class TestInitExports:
 
         # No private modules (starting with _) should be in __all__
         for export in omnibase_core.__all__:
-            assert not export.startswith("_"), f"Private module {export} leaked in __all__"
+            assert not export.startswith(
+                "_"
+            ), f"Private module {export} leaked in __all__"
 
     def test_init_exports_are_accessible(self):
         """Test that all exports in __all__ are actually accessible."""
         import omnibase_core
 
         for export_name in omnibase_core.__all__:
-            assert hasattr(omnibase_core, export_name), f"Export {export_name} not accessible"
+            assert hasattr(
+                omnibase_core, export_name
+            ), f"Export {export_name} not accessible"
             export_obj = getattr(omnibase_core, export_name)
             assert export_obj is not None, f"Export {export_name} is None"
 
@@ -61,7 +65,8 @@ class TestInitImportPerformance:
         """Test that importing omnibase_core is fast (lazy loading works)."""
         # Clear cached imports
         modules_to_remove = [
-            key for key in list(sys.modules.keys())
+            key
+            for key in list(sys.modules.keys())
             if key.startswith("omnibase_core") and key != "omnibase_core.__init__"
         ]
         for mod in modules_to_remove:
@@ -70,18 +75,20 @@ class TestInitImportPerformance:
         # Time the import
         start = time.perf_counter()
         import omnibase_core
+
         import_time_ms = (time.perf_counter() - start) * 1000
 
         # Import should be fast (< 100ms for lazy loading)
         # This is a reasonable threshold for lazy loading
-        assert import_time_ms < 100, f"Import took {import_time_ms:.2f}ms (expected < 100ms)"
+        assert (
+            import_time_ms < 100
+        ), f"Import took {import_time_ms:.2f}ms (expected < 100ms)"
 
     def test_init_lazy_loading_delays_validation_imports(self):
         """Test that validation modules are not imported until accessed."""
         # Clear cached validation imports
         modules_to_remove = [
-            key for key in list(sys.modules.keys())
-            if "omnibase_core.validation" in key
+            key for key in list(sys.modules.keys()) if "omnibase_core.validation" in key
         ]
         for mod in modules_to_remove:
             del sys.modules[mod]
@@ -91,22 +98,24 @@ class TestInitImportPerformance:
 
         # Validation modules should NOT be imported yet
         validation_modules = [
-            key for key in sys.modules
+            key
+            for key in sys.modules
             if "omnibase_core.validation" in key and key != "omnibase_core"
         ]
-        assert len(validation_modules) == 0, (
-            f"Validation modules imported too early: {validation_modules}"
-        )
+        assert (
+            len(validation_modules) == 0
+        ), f"Validation modules imported too early: {validation_modules}"
 
         # Now access a validation function - should trigger lazy import
         _ = omnibase_core.validate_architecture
 
         # Now validation modules SHOULD be imported
         validation_modules = [
-            key for key in sys.modules
-            if "omnibase_core.validation" in key
+            key for key in sys.modules if "omnibase_core.validation" in key
         ]
-        assert len(validation_modules) > 0, "Lazy loading did not import validation modules"
+        assert (
+            len(validation_modules) > 0
+        ), "Lazy loading did not import validation modules"
 
 
 class TestInitCircularImports:
@@ -116,8 +125,7 @@ class TestInitCircularImports:
         """Test that importing omnibase_core does not cause circular imports."""
         # Clear all omnibase_core imports
         modules_to_remove = [
-            key for key in list(sys.modules.keys())
-            if key.startswith("omnibase_core")
+            key for key in list(sys.modules.keys()) if key.startswith("omnibase_core")
         ]
         for mod in modules_to_remove:
             del sys.modules[mod]
@@ -125,6 +133,7 @@ class TestInitCircularImports:
         # Should import without circular import errors
         try:
             import omnibase_core
+
             assert omnibase_core is not None
         except ImportError as e:
             pytest.fail(f"Circular import detected: {e}")
@@ -221,7 +230,8 @@ class TestInitLazyLoadingBehavior:
         """Test that error classes are lazily loaded through __getattr__."""
         # Clear cached imports
         modules_to_remove = [
-            key for key in list(sys.modules.keys())
+            key
+            for key in list(sys.modules.keys())
             if key.startswith("omnibase_core.errors")
         ]
         for mod in modules_to_remove:
@@ -237,8 +247,7 @@ class TestInitLazyLoadingBehavior:
         """Test that validation functions are lazily loaded through __getattr__."""
         # Clear cached validation imports
         modules_to_remove = [
-            key for key in list(sys.modules.keys())
-            if "omnibase_core.validation" in key
+            key for key in list(sys.modules.keys()) if "omnibase_core.validation" in key
         ]
         for mod in modules_to_remove:
             del sys.modules[mod]
@@ -256,12 +265,8 @@ class TestInitLazyLoadingBehavior:
 
     def test_init_multiple_lazy_loads_return_same_object(self):
         """Test that multiple lazy loads return the same object instance."""
-        from omnibase_core import (
-            ModelOnexError as error1,
-        )
-        from omnibase_core import (
-            ModelOnexError as error2,
-        )
+        from omnibase_core import ModelOnexError as error1
+        from omnibase_core import ModelOnexError as error2
 
         # Should be the exact same class object (identity check)
         assert error1 is error2

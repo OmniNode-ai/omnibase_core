@@ -9,10 +9,10 @@ Tests all aspects of project metadata including:
 - Edge cases and error conditions
 """
 
+from uuid import uuid4
+
 import pytest
 from pydantic import ValidationError
-
-from uuid import uuid4
 
 from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -63,8 +63,7 @@ class TestModelProjectMetadataBlock:
         entrypoint = EntrypointBlock(type="python", target="main.py")
 
         tools = ModelToolCollection(
-            collection_id=uuid4(),
-            tools={"tool1": {"version": "1.0"}}
+            collection_id=uuid4(), tools={"tool1": {"version": "1.0"}}
         )
 
         metadata = ModelProjectMetadataBlock(
@@ -187,7 +186,9 @@ class TestModelProjectMetadataBlock:
         assert isinstance(metadata.entrypoint, EntrypointBlock)
         assert metadata.entrypoint.type == "python"
         assert metadata.entrypoint.target == "main.py"
-        assert metadata.versions.metadata_version == ModelSemVer(major=1, minor=0, patch=0)
+        assert metadata.versions.metadata_version == ModelSemVer(
+            major=1, minor=0, patch=0
+        )
 
     def test_from_dict_with_entrypoint_block(self):
         """Test from_dict handles EntrypointBlock object."""
@@ -247,9 +248,15 @@ class TestModelProjectMetadataBlock:
 
         metadata = ModelProjectMetadataBlock.from_dict(data)
 
-        assert metadata.versions.metadata_version == ModelSemVer(major=2, minor=5, patch=0)
-        assert metadata.versions.protocol_version == ModelSemVer(major=1, minor=8, patch=0)
-        assert metadata.versions.schema_version == ModelSemVer(major=3, minor=0, patch=0)
+        assert metadata.versions.metadata_version == ModelSemVer(
+            major=2, minor=5, patch=0
+        )
+        assert metadata.versions.protocol_version == ModelSemVer(
+            major=1, minor=8, patch=0
+        )
+        assert metadata.versions.schema_version == ModelSemVer(
+            major=3, minor=0, patch=0
+        )
         # Ensure version fields were popped from original dict
         assert "metadata_version" not in metadata.model_dump()
 
@@ -327,10 +334,7 @@ class TestModelProjectMetadataBlock:
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-        tools = ModelToolCollection(
-            collection_id=uuid4(),
-            tools={}
-        )
+        tools = ModelToolCollection(collection_id=uuid4(), tools={})
 
         metadata = ModelProjectMetadataBlock(
             author="Test Author",

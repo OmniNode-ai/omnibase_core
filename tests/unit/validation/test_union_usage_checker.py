@@ -36,7 +36,10 @@ class TestUnionUsageCheckerInitialization:
 
         assert len(checker.problematic_combinations) > 0
         # Verify some expected combinations
-        assert frozenset(["str", "int", "bool", "float"]) in checker.problematic_combinations
+        assert (
+            frozenset(["str", "int", "bool", "float"])
+            in checker.problematic_combinations
+        )
 
 
 class TestExtractTypeName:
@@ -132,7 +135,9 @@ class TestAnalyzeUnionPattern:
     def test_primitive_overload(self):
         """Test detection of primitive overload unions."""
         checker = UnionUsageChecker("/test/path.py")
-        pattern = ModelUnionPattern(["str", "int", "bool", "float"], 20, "/test/path.py")
+        pattern = ModelUnionPattern(
+            ["str", "int", "bool", "float"], 20, "/test/path.py"
+        )
 
         checker._analyze_union_pattern(pattern)
 
@@ -143,9 +148,7 @@ class TestAnalyzeUnionPattern:
     def test_mixed_primitive_complex(self):
         """Test detection of mixed primitive/complex unions."""
         checker = UnionUsageChecker("/test/path.py")
-        pattern = ModelUnionPattern(
-            ["str", "int", "bool", "dict"], 25, "/test/path.py"
-        )
+        pattern = ModelUnionPattern(["str", "int", "bool", "dict"], 25, "/test/path.py")
 
         checker._analyze_union_pattern(pattern)
 
@@ -536,7 +539,9 @@ def func(x: str | int) -> None:
     def test_pattern_hash_and_equality(self):
         """Test that patterns can be hashed and compared."""
         pattern1 = ModelUnionPattern(["str", "int"], 10, "/test/path.py")
-        pattern2 = ModelUnionPattern(["int", "str"], 15, "/test/path.py")  # Different order
+        pattern2 = ModelUnionPattern(
+            ["int", "str"], 15, "/test/path.py"
+        )  # Different order
         pattern3 = ModelUnionPattern(["str", "float"], 20, "/test/path.py")
 
         # Same types (order doesn't matter due to sorting)

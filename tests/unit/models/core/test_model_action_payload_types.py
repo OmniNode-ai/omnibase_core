@@ -68,8 +68,7 @@ class TestCreateSpecificActionPayload:
     """Test create_specific_action_payload factory function."""
 
     @pytest.mark.parametrize(
-        "name",
-        ["read", "write", "create", "update", "delete", "search", "query"]
+        "name", ["read", "write", "create", "update", "delete", "search", "query"]
     )
     def test_data_actions(self, name):
         """Test special data action names create ModelDataActionPayload."""

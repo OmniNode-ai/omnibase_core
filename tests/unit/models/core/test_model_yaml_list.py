@@ -5,8 +5,9 @@ Comprehensive tests for YAML list model including initialization,
 list handling, and edge cases.
 """
 
-import pytest
 from typing import Any
+
+import pytest
 
 from omnibase_core.models.core.model_yaml_list import ModelYamlList
 
@@ -96,10 +97,7 @@ class TestModelYamlList:
 
     def test_extra_fields_allowed(self):
         """Test that extra fields are allowed (ConfigDict extra='allow')."""
-        model = ModelYamlList(
-            data=["item1"],
-            extra_field="extra_value"
-        )
+        model = ModelYamlList(data=["item1"], extra_field="extra_value")
 
         assert model.root_list == ["item1"]
         assert model.extra_field == "extra_value"  # type: ignore
@@ -174,17 +172,10 @@ class TestModelYamlList:
         data = [
             {
                 "name": "item1",
-                "nested": {
-                    "level2": {
-                        "level3": ["deep", "values"]
-                    }
-                },
-                "list": [1, 2, 3]
+                "nested": {"level2": {"level3": ["deep", "values"]}},
+                "list": [1, 2, 3],
             },
-            {
-                "name": "item2",
-                "values": [{"a": 1}, {"b": 2}]
-            }
+            {"name": "item2", "values": [{"a": 1}, {"b": 2}]},
         ]
 
         model = ModelYamlList(data=data)
@@ -212,9 +203,9 @@ class TestModelYamlListEdgeCases:
         data = [
             "line1\nline2",
             "tab\there",
-            "quote\"inside",
+            'quote"inside',
             "single'quote",
-            "backslash\\here"
+            "backslash\\here",
         ]
 
         model = ModelYamlList(data=data)

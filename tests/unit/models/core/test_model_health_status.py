@@ -5,12 +5,13 @@ Comprehensive tests for health status model including timestamp validation,
 metrics, and health details.
 """
 
-import pytest
 from datetime import UTC, datetime
 
+import pytest
+
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.models.core.model_health_status import ModelHealthStatus
 from omnibase_core.models.core.model_health_details import ModelHealthDetails
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
 
 
 class TestModelHealthStatus:
@@ -40,7 +41,7 @@ class TestModelHealthStatus:
             details=details,
             uptime_seconds=3600.0,
             memory_usage_mb=512.5,
-            cpu_usage_percent=25.8
+            cpu_usage_percent=25.8,
         )
 
         assert status.status == EnumNodeHealthStatus.HEALTHY
@@ -55,10 +56,7 @@ class TestModelHealthStatus:
         """Test timestamp validator converts datetime to ISO string."""
         dt = datetime(2024, 1, 15, 12, 30, 45)
 
-        status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            timestamp=dt
-        )
+        status = ModelHealthStatus(status=EnumNodeHealthStatus.HEALTHY, timestamp=dt)
 
         assert status.timestamp is not None
         assert isinstance(status.timestamp, str)
@@ -69,27 +67,20 @@ class TestModelHealthStatus:
         timestamp_str = "2024-01-15T12:30:45"
 
         status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            timestamp=timestamp_str
+            status=EnumNodeHealthStatus.HEALTHY, timestamp=timestamp_str
         )
 
         assert status.timestamp == timestamp_str
 
     def test_timestamp_none_handling(self):
         """Test timestamp validator handles None."""
-        status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            timestamp=None
-        )
+        status = ModelHealthStatus(status=EnumNodeHealthStatus.HEALTHY, timestamp=None)
 
         assert status.timestamp is None
 
     def test_timestamp_other_type_conversion(self):
         """Test timestamp validator converts other types to string."""
-        status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            timestamp=12345
-        )
+        status = ModelHealthStatus(status=EnumNodeHealthStatus.HEALTHY, timestamp=12345)
 
         assert status.timestamp == "12345"
 
@@ -120,8 +111,7 @@ class TestModelHealthStatus:
     def test_uptime_seconds_precision(self):
         """Test uptime_seconds accepts float values."""
         status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            uptime_seconds=3661.234
+            status=EnumNodeHealthStatus.HEALTHY, uptime_seconds=3661.234
         )
 
         assert status.uptime_seconds == 3661.234
@@ -130,8 +120,7 @@ class TestModelHealthStatus:
     def test_memory_usage_precision(self):
         """Test memory_usage_mb accepts float values."""
         status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            memory_usage_mb=1024.75
+            status=EnumNodeHealthStatus.HEALTHY, memory_usage_mb=1024.75
         )
 
         assert status.memory_usage_mb == 1024.75
@@ -140,8 +129,7 @@ class TestModelHealthStatus:
     def test_cpu_usage_precision(self):
         """Test cpu_usage_percent accepts float values."""
         status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            cpu_usage_percent=45.67
+            status=EnumNodeHealthStatus.HEALTHY, cpu_usage_percent=45.67
         )
 
         assert status.cpu_usage_percent == 45.67
@@ -154,7 +142,7 @@ class TestModelHealthStatus:
 
         status_with_message = ModelHealthStatus(
             status=EnumNodeHealthStatus.DEGRADED,
-            message="Performance degradation detected"
+            message="Performance degradation detected",
         )
         assert status_with_message.message == "Performance degradation detected"
 
@@ -166,7 +154,7 @@ class TestModelHealthStatus:
             timestamp="2024-01-15T12:30:45",
             uptime_seconds=3600.0,
             memory_usage_mb=512.0,
-            cpu_usage_percent=25.0
+            cpu_usage_percent=25.0,
         )
 
         data = status.model_dump()
@@ -187,7 +175,7 @@ class TestModelHealthStatus:
             "timestamp": "2024-01-15T12:30:45",
             "uptime_seconds": 3600.0,
             "memory_usage_mb": 512.0,
-            "cpu_usage_percent": 25.0
+            "cpu_usage_percent": 25.0,
         }
 
         status = ModelHealthStatus(**data)
@@ -203,7 +191,7 @@ class TestModelHealthStatus:
             status=EnumNodeHealthStatus.HEALTHY,
             uptime_seconds=0.0,
             memory_usage_mb=0.0,
-            cpu_usage_percent=0.0
+            cpu_usage_percent=0.0,
         )
 
         assert status.uptime_seconds == 0.0
@@ -216,7 +204,7 @@ class TestModelHealthStatus:
             status=EnumNodeHealthStatus.HEALTHY,
             uptime_seconds=999999999.99,
             memory_usage_mb=999999.99,
-            cpu_usage_percent=100.0
+            cpu_usage_percent=100.0,
         )
 
         assert status.uptime_seconds == 999999999.99
@@ -230,7 +218,7 @@ class TestModelHealthStatus:
             status=EnumNodeHealthStatus.HEALTHY,
             uptime_seconds=-1.0,
             memory_usage_mb=-1.0,
-            cpu_usage_percent=-1.0
+            cpu_usage_percent=-1.0,
         )
 
         assert status.uptime_seconds == -1.0
@@ -243,10 +231,7 @@ class TestModelHealthStatusEdgeCases:
 
     def test_empty_message(self):
         """Test with empty string message."""
-        status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            message=""
-        )
+        status = ModelHealthStatus(status=EnumNodeHealthStatus.HEALTHY, message="")
 
         assert status.message == ""
 
@@ -255,8 +240,7 @@ class TestModelHealthStatusEdgeCases:
         long_message = "x" * 10000
 
         status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.DEGRADED,
-            message=long_message
+            status=EnumNodeHealthStatus.DEGRADED, message=long_message
         )
 
         assert status.message == long_message
@@ -267,8 +251,7 @@ class TestModelHealthStatusEdgeCases:
         special_message = "Error: \n\t\r\"'<>&"
 
         status = ModelHealthStatus(
-            status=EnumNodeHealthStatus.UNHEALTHY,
-            message=special_message
+            status=EnumNodeHealthStatus.UNHEALTHY, message=special_message
         )
 
         assert status.message == special_message
@@ -284,8 +267,7 @@ class TestModelHealthStatusEdgeCases:
 
         for ts in timestamps:
             status = ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                timestamp=ts
+                status=EnumNodeHealthStatus.HEALTHY, timestamp=ts
             )
             assert status.timestamp == ts
 
@@ -294,7 +276,7 @@ class TestModelHealthStatusEdgeCases:
         original = ModelHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
             message="Original",
-            uptime_seconds=3600.0
+            uptime_seconds=3600.0,
         )
 
         copy = original.model_copy()
@@ -307,8 +289,7 @@ class TestModelHealthStatusEdgeCases:
     def test_model_copy_deep(self):
         """Test deep model copying."""
         original = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            message="Original"
+            status=EnumNodeHealthStatus.HEALTHY, message="Original"
         )
 
         copy = original.model_copy(deep=True)

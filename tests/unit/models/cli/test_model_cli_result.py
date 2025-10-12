@@ -625,7 +625,9 @@ class TestModelCliResultDataManagement:
         result = ModelCliResult.create_success(execution)
         assert result.performance_metrics is None
 
-        result.add_performance_metric("cpu_usage", 45.5, "percent", EnumConfigCategory.RUNTIME)
+        result.add_performance_metric(
+            "cpu_usage", 45.5, "percent", EnumConfigCategory.RUNTIME
+        )
 
         assert result.performance_metrics is not None
 

@@ -20,14 +20,12 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure with existing attributes
         result = uri.configure(
-            type="validator",
-            namespace="updated://namespace",
-            version_spec="2.0.0"
+            type="validator", namespace="updated://namespace", version_spec="2.0.0"
         )
 
         # Should update existing attributes (True branch)
@@ -42,14 +40,14 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure with mix of existing and non-existing attributes
         result = uri.configure(
             type="agent",
             nonexistent_field="should_be_ignored",
-            another_invalid_field=123
+            another_invalid_field=123,
         )
 
         # Should succeed, update existing fields, ignore non-existing (False branch)
@@ -64,7 +62,7 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         original_type = uri.type
@@ -72,9 +70,7 @@ class TestModelOnexUriBranchCoverage:
 
         # Configure with only non-existent attributes
         result = uri.configure(
-            invalid_field_1="value1",
-            invalid_field_2="value2",
-            invalid_field_3="value3"
+            invalid_field_1="value1", invalid_field_2="value2", invalid_field_3="value3"
         )
 
         # Should succeed but make no changes (all False branches)
@@ -89,7 +85,7 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure with no parameters
@@ -106,7 +102,7 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure updating only namespace
@@ -124,7 +120,7 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure updating all fields
@@ -132,7 +128,7 @@ class TestModelOnexUriBranchCoverage:
             type="model",
             namespace="updated://namespace",
             version_spec="3.0.0",
-            original="model://updated://namespace@3.0.0"
+            original="model://updated://namespace@3.0.0",
         )
 
         # Should update all attributes
@@ -148,7 +144,7 @@ class TestModelOnexUriBranchCoverage:
             type="plugin",
             namespace="extension://ui.components",
             version_spec=">=2.0.0",
-            original="plugin://extension://ui.components@>=2.0.0"
+            original="plugin://extension://ui.components@>=2.0.0",
         )
 
         serialized = uri.serialize()
@@ -166,7 +162,7 @@ class TestModelOnexUriBranchCoverage:
             type="schema",
             namespace="api://definitions.rest",
             version_spec="1.0.0",
-            original="schema://api://definitions.rest@1.0.0"
+            original="schema://api://definitions.rest@1.0.0",
         )
 
         result = uri.validate_instance()
@@ -180,7 +176,7 @@ class TestModelOnexUriBranchCoverage:
             type="agent",
             namespace="ai://assistant",
             version_spec="latest",
-            original="agent://ai://assistant@latest"
+            original="agent://ai://assistant@latest",
         )
 
         # Chain protocol method calls
@@ -195,7 +191,7 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure with invalid type value (not in Literal)
@@ -209,7 +205,7 @@ class TestModelOnexUriBranchCoverage:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Try to set extra field (should be ignored per model_config)
@@ -229,7 +225,7 @@ class TestModelOnexUriProtocolEdgeCases:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure with None (should trigger validation error for required fields)
@@ -242,7 +238,7 @@ class TestModelOnexUriProtocolEdgeCases:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         uri.configure(type="model", namespace="updated://namespace")
@@ -257,9 +253,15 @@ class TestModelOnexUriProtocolEdgeCases:
         """Test that validate_instance always returns True."""
         # Test with various valid URIs
         uris = [
-            ModelOnexUri(type="tool", namespace="a", version_spec="1.0.0", original="x"),
-            ModelOnexUri(type="agent", namespace="b", version_spec="2.0.0", original="y"),
-            ModelOnexUri(type="model", namespace="c", version_spec="3.0.0", original="z"),
+            ModelOnexUri(
+                type="tool", namespace="a", version_spec="1.0.0", original="x"
+            ),
+            ModelOnexUri(
+                type="agent", namespace="b", version_spec="2.0.0", original="y"
+            ),
+            ModelOnexUri(
+                type="model", namespace="c", version_spec="3.0.0", original="z"
+            ),
         ]
 
         for uri in uris:
@@ -271,7 +273,7 @@ class TestModelOnexUriProtocolEdgeCases:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # First configure
@@ -292,7 +294,7 @@ class TestModelOnexUriProtocolEdgeCases:
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",
-            original="tool://test://namespace@1.0.0"
+            original="tool://test://namespace@1.0.0",
         )
 
         # Configure with special characters

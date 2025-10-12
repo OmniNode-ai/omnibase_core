@@ -290,7 +290,11 @@ class TestModelEventEnvelopeSecurity:
 
         assert envelope.security_context is None
 
-        security_context = {"user": "admin", "role": "superuser", "permissions": ["read", "write"]}
+        security_context = {
+            "user": "admin",
+            "role": "superuser",
+            "permissions": ["read", "write"],
+        }
         new_envelope = envelope.with_security_context(security_context)
 
         # Original unchanged
@@ -597,7 +601,9 @@ class TestModelEventEnvelopeFactoryMethods:
         target_node_id = uuid4()
 
         envelope = ModelEventEnvelope.create_directed(
-            payload=payload, source_node_id=source_node_id, target_node_id=target_node_id
+            payload=payload,
+            source_node_id=source_node_id,
+            target_node_id=target_node_id,
         )
 
         assert envelope.priority == 5  # Default priority

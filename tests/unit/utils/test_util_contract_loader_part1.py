@@ -42,7 +42,6 @@ from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaOb
 from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
 
-
 # ===== Test Fixtures =====
 
 
@@ -346,7 +345,9 @@ class TestLoadContractFile:
         assert result1["tool_specification"] == result2["tool_specification"]
 
     def test_load_contract_file_no_cache(
-        self, contract_loader_no_cache: ProtocolContractLoader, valid_contract_yaml: Path
+        self,
+        contract_loader_no_cache: ProtocolContractLoader,
+        valid_contract_yaml: Path,
     ) -> None:
         """Test file loading with caching disabled."""
         result = contract_loader_no_cache._load_contract_file(valid_contract_yaml)
@@ -882,7 +883,9 @@ class TestContractLoaderIntegration:
         assert result.node_type == EnumNodeType.COMPUTE
 
         # Verify caching
-        assert str(valid_contract_yaml.resolve()) in contract_loader.state.loaded_contracts
+        assert (
+            str(valid_contract_yaml.resolve()) in contract_loader.state.loaded_contracts
+        )
 
     def test_multiple_contracts_loaded(
         self,

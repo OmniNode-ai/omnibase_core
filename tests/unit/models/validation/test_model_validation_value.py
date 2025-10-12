@@ -21,8 +21,7 @@ class TestModelValidationValueInstantiation:
     def test_create_string_value_valid(self):
         """Test creating string validation value with valid data."""
         value = ModelValidationValue(
-            value_type=EnumValidationValueType.STRING,
-            raw_value="test_string"
+            value_type=EnumValidationValueType.STRING, raw_value="test_string"
         )
         assert value.value_type == EnumValidationValueType.STRING
         assert value.raw_value == "test_string"
@@ -30,8 +29,7 @@ class TestModelValidationValueInstantiation:
     def test_create_integer_value_valid(self):
         """Test creating integer validation value with valid data."""
         value = ModelValidationValue(
-            value_type=EnumValidationValueType.INTEGER,
-            raw_value=42
+            value_type=EnumValidationValueType.INTEGER, raw_value=42
         )
         assert value.value_type == EnumValidationValueType.INTEGER
         assert value.raw_value == 42
@@ -39,8 +37,7 @@ class TestModelValidationValueInstantiation:
     def test_create_boolean_value_valid(self):
         """Test creating boolean validation value with valid data."""
         value = ModelValidationValue(
-            value_type=EnumValidationValueType.BOOLEAN,
-            raw_value=True
+            value_type=EnumValidationValueType.BOOLEAN, raw_value=True
         )
         assert value.value_type == EnumValidationValueType.BOOLEAN
         assert value.raw_value is True
@@ -48,8 +45,7 @@ class TestModelValidationValueInstantiation:
     def test_create_null_value_valid(self):
         """Test creating null validation value with None."""
         value = ModelValidationValue(
-            value_type=EnumValidationValueType.NULL,
-            raw_value=None
+            value_type=EnumValidationValueType.NULL, raw_value=None
         )
         assert value.value_type == EnumValidationValueType.NULL
         assert value.raw_value is None
@@ -62,8 +58,7 @@ class TestModelValidationValueValidatorBranches:
         """Test STRING type with non-string value raises error (validator branch)."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationValue(
-                value_type=EnumValidationValueType.STRING,
-                raw_value=123  # Wrong type
+                value_type=EnumValidationValueType.STRING, raw_value=123  # Wrong type
             )
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "String validation value must contain str data" in str(exc_info.value)
@@ -73,7 +68,7 @@ class TestModelValidationValueValidatorBranches:
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationValue(
                 value_type=EnumValidationValueType.INTEGER,
-                raw_value="not_an_int"  # Wrong type
+                raw_value="not_an_int",  # Wrong type
             )
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Integer validation value must contain int data" in str(exc_info.value)
@@ -83,7 +78,7 @@ class TestModelValidationValueValidatorBranches:
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationValue(
                 value_type=EnumValidationValueType.BOOLEAN,
-                raw_value="true"  # Wrong type (string, not bool)
+                raw_value="true",  # Wrong type (string, not bool)
             )
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Boolean validation value must contain bool data" in str(exc_info.value)
@@ -93,7 +88,7 @@ class TestModelValidationValueValidatorBranches:
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationValue(
                 value_type=EnumValidationValueType.NULL,
-                raw_value="not_none"  # Wrong value
+                raw_value="not_none",  # Wrong value
             )
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Null validation value must contain None" in str(exc_info.value)
@@ -103,7 +98,7 @@ class TestModelValidationValueValidatorBranches:
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationValue(
                 value_type=EnumValidationValueType.INTEGER,
-                raw_value=False  # bool is subclass of int in Python
+                raw_value=False,  # bool is subclass of int in Python
             )
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -168,6 +163,7 @@ class TestModelValidationValueFromAnyBranches:
 
     def test_from_any_with_unknown_type_converts_to_string(self):
         """Test from_any with unknown type converts to string (fallback branch)."""
+
         class CustomClass:
             def __str__(self):
                 return "custom_value"

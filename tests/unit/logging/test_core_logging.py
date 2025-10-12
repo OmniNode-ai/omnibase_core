@@ -20,9 +20,9 @@ import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.core_logging import (
-    _SimpleFallbackLogger,
     _get_correlation_id,
     _get_registry_logger,
+    _SimpleFallbackLogger,
     emit_log_event,
     get_correlation_id,
     set_correlation_id,
@@ -401,7 +401,9 @@ class TestThreadSafety:
 
             results[thread_id] = get_correlation_id()
 
-        threads = [threading.Thread(target=emit_with_thread_id, args=(i,)) for i in range(3)]
+        threads = [
+            threading.Thread(target=emit_with_thread_id, args=(i,)) for i in range(3)
+        ]
 
         for thread in threads:
             thread.start()

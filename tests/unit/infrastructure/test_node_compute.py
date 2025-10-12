@@ -41,11 +41,12 @@ class TestNodeComputeInitialization:
         """Test successful NodeCompute initialization with valid container."""
         container = ModelONEXContainer()
 
-        with patch.object(
-            NodeCompute, "_load_contract_model"
-        ) as mock_load_contract, patch.object(
-            NodeCompute, "_register_rsd_computations"
-        ) as mock_register_rsd:
+        with (
+            patch.object(NodeCompute, "_load_contract_model") as mock_load_contract,
+            patch.object(
+                NodeCompute, "_register_rsd_computations"
+            ) as mock_register_rsd,
+        ):
             mock_contract = Mock()
             mock_contract.node_type = "compute"
             mock_contract.version = "1.0.0"
@@ -60,7 +61,9 @@ class TestNodeComputeInitialization:
             assert node.cache_ttl_minutes == 30
             assert node.performance_threshold_ms == 100.0
             assert node.computation_cache is not None
-            assert node.thread_pool is None  # Not initialized until _initialize_node_resources
+            assert (
+                node.thread_pool is None
+            )  # Not initialized until _initialize_node_resources
             assert isinstance(node.computation_registry, dict)
             assert isinstance(node.computation_metrics, dict)
 
@@ -90,10 +93,9 @@ class TestNodeComputeInitialization:
         """Test error handling when contract loading fails."""
         container = ModelONEXContainer()
 
-        with patch.object(
-            NodeCompute, "_find_contract_path"
-        ) as mock_find_path, patch.object(
-            NodeCompute, "_register_rsd_computations"
+        with (
+            patch.object(NodeCompute, "_find_contract_path") as mock_find_path,
+            patch.object(NodeCompute, "_register_rsd_computations"),
         ):
             mock_find_path.side_effect = FileNotFoundError("Contract not found")
 
@@ -139,6 +141,7 @@ class TestNodeComputeProcessing:
     @pytest.mark.asyncio
     async def test_process_with_cache_miss_sequential(self, node_compute):
         """Test process method with cache miss and sequential execution."""
+
         # Register a simple computation
         def simple_computation(data: dict[str, Any]) -> int:
             return data["value"] * 2
@@ -167,6 +170,7 @@ class TestNodeComputeProcessing:
     @pytest.mark.asyncio
     async def test_process_with_cache_hit(self, node_compute):
         """Test process method with cache hit."""
+
         # Register computation
         def simple_computation(data: dict[str, Any]) -> int:
             return data["value"] * 2
@@ -218,6 +222,7 @@ class TestNodeComputeProcessing:
     @pytest.mark.asyncio
     async def test_process_parallel_execution(self, node_compute):
         """Test process method with parallel execution enabled."""
+
         # Register batch computation
         def batch_computation(data: list[int]) -> list[int]:
             return [x * 2 for x in data]
@@ -246,6 +251,7 @@ class TestNodeComputeProcessing:
     @pytest.mark.asyncio
     async def test_process_performance_threshold_warning(self, node_compute):
         """Test that slow computations trigger performance warnings."""
+
         # Register slow computation
         def slow_computation(data: dict[str, Any]) -> int:
             time.sleep(0.15)  # Exceed 100ms threshold
@@ -800,7 +806,9 @@ class TestNodeComputeLifecycle:
         await node_compute._initialize_node_resources()
 
         assert node_compute.thread_pool is not None
-        assert node_compute.thread_pool._max_workers == node_compute.max_parallel_workers
+        assert (
+            node_compute.thread_pool._max_workers == node_compute.max_parallel_workers
+        )
 
         # Cleanup
         await node_compute._cleanup_node_resources()

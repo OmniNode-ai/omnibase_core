@@ -53,7 +53,10 @@ class FallbackDetector(ast.NodeVisitor):
                 break
             elif isinstance(decorator, ast.Call):
                 # Handle @field_validator("field_name") pattern
-                if isinstance(decorator.func, ast.Name) and decorator.func.id == "field_validator":
+                if (
+                    isinstance(decorator.func, ast.Name)
+                    and decorator.func.id == "field_validator"
+                ):
                     has_field_validator = True
                     break
 

@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -68,114 +68,124 @@ class ModelPropertyValue(BaseModel):
         description="Source of the property value",
     )
 
-    @field_validator("value")
-    @classmethod
-    def validate_value_type(
-        cls,
-        v: PropertyValueType,
-        info: ValidationInfo,
-    ) -> PropertyValueType:
+    @model_validator(mode="after")
+    def validate_value_type(self) -> "ModelPropertyValue":
         """Validate that value matches its declared type."""
-        if hasattr(info, "data") and "value_type" in info.data:
-            value_type = info.data["value_type"]
+        value_type = self.value_type
 
-            # Type validation based on declared type
-            if value_type == EnumPropertyType.STRING and not isinstance(v, str):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be string, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("string"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
-            if value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be integer, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("integer"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
-            if value_type == EnumPropertyType.FLOAT and not isinstance(
-                v,
-                (int, float),
-            ):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be float, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("float"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
-            if value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be boolean, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("boolean"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
-            if value_type in (
-                EnumPropertyType.STRING_LIST,
-                EnumPropertyType.INTEGER_LIST,
-                EnumPropertyType.FLOAT_LIST,
-            ) and not isinstance(v, list):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be list[Any], got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("list[Any]"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
-            if value_type == EnumPropertyType.DATETIME and not isinstance(
-                v,
-                datetime,
-            ):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be datetime, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("datetime"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
-            if value_type == EnumPropertyType.UUID and not isinstance(v, (UUID, str)):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Value must be UUID or string, got {type(v)}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "expected_type": ModelSchemaValue.from_value("uuid"),
-                            "actual_type": ModelSchemaValue.from_value(str(type(v))),
-                            "value": ModelSchemaValue.from_value(str(v)),
-                        },
-                    ),
-                )
+        # Type validation based on declared type
+        if value_type == EnumPropertyType.STRING and not isinstance(self.value, str):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be string, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("string"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
+        if value_type == EnumPropertyType.INTEGER and not isinstance(self.value, int):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be integer, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("integer"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
+        if value_type == EnumPropertyType.FLOAT and not isinstance(
+            self.value,
+            (int, float),
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be float, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("float"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
+        if value_type == EnumPropertyType.BOOLEAN and not isinstance(self.value, bool):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be boolean, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("boolean"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
+        if value_type in (
+            EnumPropertyType.STRING_LIST,
+            EnumPropertyType.INTEGER_LIST,
+            EnumPropertyType.FLOAT_LIST,
+        ) and not isinstance(self.value, list):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be list[Any], got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("list[Any]"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
+        if value_type == EnumPropertyType.DATETIME and not isinstance(
+            self.value,
+            datetime,
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be datetime, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("datetime"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
+        if value_type == EnumPropertyType.UUID and not isinstance(
+            self.value, (UUID, str)
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Value must be UUID or string, got {type(self.value)}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "expected_type": ModelSchemaValue.from_value("uuid"),
+                        "actual_type": ModelSchemaValue.from_value(
+                            str(type(self.value))
+                        ),
+                        "value": ModelSchemaValue.from_value(str(self.value)),
+                    },
+                ),
+            )
 
-        return v
+        return self
 
     @classmethod
     def from_string(cls, value: str, source: str | None = None) -> ModelPropertyValue:

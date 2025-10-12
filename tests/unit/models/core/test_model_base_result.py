@@ -5,11 +5,12 @@ Comprehensive tests for base result model including metadata handling,
 serialization, and error tracking.
 """
 
-import pytest
 from typing import Any
 
-from omnibase_core.models.core.model_base_result import ModelBaseResult
+import pytest
+
 from omnibase_core.models.core.model_base_error import ModelBaseError
+from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.results.model_generic_metadata import ModelGenericMetadata
 
 
@@ -39,11 +40,7 @@ class TestModelBaseResult:
         error1 = ModelBaseError(message="Error 1", code="E001")
         error2 = ModelBaseError(message="Error 2", code="E002")
 
-        result = ModelBaseResult(
-            exit_code=1,
-            success=False,
-            errors=[error1, error2]
-        )
+        result = ModelBaseResult(exit_code=1, success=False, errors=[error1, error2])
 
         assert len(result.errors) == 2
         assert result.errors[0] == error1
@@ -53,11 +50,7 @@ class TestModelBaseResult:
         """Test initialization with metadata."""
         metadata = ModelGenericMetadata()
 
-        result = ModelBaseResult(
-            exit_code=0,
-            success=True,
-            metadata=metadata
-        )
+        result = ModelBaseResult(exit_code=0, success=True, metadata=metadata)
 
         assert result.metadata == metadata
         assert isinstance(result.metadata, ModelGenericMetadata)
@@ -77,11 +70,7 @@ class TestModelBaseResult:
     def test_model_dump_with_metadata(self):
         """Test model_dump with metadata."""
         metadata = ModelGenericMetadata()
-        result = ModelBaseResult(
-            exit_code=0,
-            success=True,
-            metadata=metadata
-        )
+        result = ModelBaseResult(exit_code=0, success=True, metadata=metadata)
 
         dumped = result.model_dump()
 
@@ -111,11 +100,7 @@ class TestModelBaseResult:
     def test_dict_method_with_kwargs(self):
         """Test dict() method passes kwargs to model_dump()."""
         metadata = ModelGenericMetadata()
-        result = ModelBaseResult(
-            exit_code=0,
-            success=True,
-            metadata=metadata
-        )
+        result = ModelBaseResult(exit_code=0, success=True, metadata=metadata)
 
         dict_result = result.dict(exclude_none=False)
 
@@ -124,11 +109,7 @@ class TestModelBaseResult:
 
     def test_parse_obj_without_metadata(self):
         """Test parse_obj without metadata."""
-        obj = {
-            "exit_code": 0,
-            "success": True,
-            "errors": []
-        }
+        obj = {"exit_code": 0, "success": True, "errors": []}
 
         result = ModelBaseResult.parse_obj(obj)
 
@@ -138,12 +119,7 @@ class TestModelBaseResult:
 
     def test_parse_obj_with_metadata_dict(self):
         """Test parse_obj converts metadata dict to ModelGenericMetadata."""
-        obj = {
-            "exit_code": 0,
-            "success": True,
-            "errors": [],
-            "metadata": {}
-        }
+        obj = {"exit_code": 0, "success": True, "errors": [], "metadata": {}}
 
         result = ModelBaseResult.parse_obj(obj)
 
@@ -154,12 +130,7 @@ class TestModelBaseResult:
     def test_parse_obj_with_metadata_model(self):
         """Test parse_obj with metadata already as model."""
         metadata = ModelGenericMetadata()
-        obj = {
-            "exit_code": 0,
-            "success": True,
-            "errors": [],
-            "metadata": metadata
-        }
+        obj = {"exit_code": 0, "success": True, "errors": [], "metadata": metadata}
 
         result = ModelBaseResult.parse_obj(obj)
 
@@ -167,12 +138,7 @@ class TestModelBaseResult:
 
     def test_parse_obj_with_none_metadata(self):
         """Test parse_obj with None metadata."""
-        obj = {
-            "exit_code": 0,
-            "success": True,
-            "errors": [],
-            "metadata": None
-        }
+        obj = {"exit_code": 0, "success": True, "errors": [], "metadata": None}
 
         result = ModelBaseResult.parse_obj(obj)
 
@@ -181,15 +147,10 @@ class TestModelBaseResult:
     def test_multiple_errors(self):
         """Test handling multiple errors."""
         errors = [
-            ModelBaseError(message=f"Error {i}", code=f"E{i:03d}")
-            for i in range(10)
+            ModelBaseError(message=f"Error {i}", code=f"E{i:03d}") for i in range(10)
         ]
 
-        result = ModelBaseResult(
-            exit_code=1,
-            success=False,
-            errors=errors
-        )
+        result = ModelBaseResult(exit_code=1, success=False, errors=errors)
 
         assert len(result.errors) == 10
         assert all(isinstance(e, ModelBaseError) for e in result.errors)
@@ -197,10 +158,7 @@ class TestModelBaseResult:
     def test_exit_code_variations(self):
         """Test various exit codes."""
         for code in [0, 1, 2, 127, 255]:
-            result = ModelBaseResult(
-                exit_code=code,
-                success=(code == 0)
-            )
+            result = ModelBaseResult(exit_code=code, success=(code == 0))
             assert result.exit_code == code
 
     def test_success_false_exit_code_zero(self):
@@ -223,11 +181,7 @@ class TestModelBaseResultEdgeCases:
 
     def test_empty_errors_list(self):
         """Test with explicitly empty errors list."""
-        result = ModelBaseResult(
-            exit_code=0,
-            success=True,
-            errors=[]
-        )
+        result = ModelBaseResult(exit_code=0, success=True, errors=[])
 
         assert result.errors == []
         assert len(result.errors) == 0
@@ -237,7 +191,7 @@ class TestModelBaseResultEdgeCases:
         original = ModelBaseResult(
             exit_code=1,
             success=False,
-            errors=[ModelBaseError(message="Error", code="E001")]
+            errors=[ModelBaseError(message="Error", code="E001")],
         )
 
         copy = original.model_copy()
@@ -252,7 +206,7 @@ class TestModelBaseResultEdgeCases:
         original = ModelBaseResult(
             exit_code=1,
             success=False,
-            errors=[ModelBaseError(message="Error", code="E001")]
+            errors=[ModelBaseError(message="Error", code="E001")],
         )
 
         copy = original.model_copy(deep=True)
@@ -281,7 +235,7 @@ class TestModelBaseResultEdgeCases:
         original = ModelBaseResult(
             exit_code=1,
             success=False,
-            errors=[ModelBaseError(message="Error", code="E001")]
+            errors=[ModelBaseError(message="Error", code="E001")],
         )
 
         # Serialize
@@ -296,10 +250,7 @@ class TestModelBaseResultEdgeCases:
 
     def test_model_validate(self):
         """Test model validation."""
-        data = {
-            "exit_code": 0,
-            "success": True
-        }
+        data = {"exit_code": 0, "success": True}
 
         result = ModelBaseResult.model_validate(data)
 
@@ -308,16 +259,9 @@ class TestModelBaseResultEdgeCases:
 
     def test_errors_with_complex_messages(self):
         """Test errors with complex messages."""
-        error = ModelBaseError(
-            message="Error with\nnewlines\tand\ttabs",
-            code="E001"
-        )
+        error = ModelBaseError(message="Error with\nnewlines\tand\ttabs", code="E001")
 
-        result = ModelBaseResult(
-            exit_code=1,
-            success=False,
-            errors=[error]
-        )
+        result = ModelBaseResult(exit_code=1, success=False, errors=[error])
 
         assert "\n" in result.errors[0].message
         assert "\t" in result.errors[0].message
@@ -377,7 +321,7 @@ class TestModelBaseResultBranchCoverage:
         obj = {
             "exit_code": 0,
             "success": True,
-            "errors": []
+            "errors": [],
             # No metadata key
         }
 
@@ -388,12 +332,7 @@ class TestModelBaseResultBranchCoverage:
 
     def test_parse_obj_dict_with_metadata_key_none_value(self):
         """Test parse_obj when dict has 'metadata' key but value is None (False branch)."""
-        obj = {
-            "exit_code": 0,
-            "success": True,
-            "errors": [],
-            "metadata": None
-        }
+        obj = {"exit_code": 0, "success": True, "errors": [], "metadata": None}
 
         result = ModelBaseResult.parse_obj(obj)
 
@@ -403,12 +342,7 @@ class TestModelBaseResultBranchCoverage:
     def test_parse_obj_dict_with_metadata_already_model(self):
         """Test parse_obj when metadata is already ModelGenericMetadata (False branch of inner if)."""
         metadata = ModelGenericMetadata()
-        obj = {
-            "exit_code": 0,
-            "success": True,
-            "errors": [],
-            "metadata": metadata
-        }
+        obj = {"exit_code": 0, "success": True, "errors": [], "metadata": metadata}
 
         result = ModelBaseResult.parse_obj(obj)
 
@@ -422,7 +356,7 @@ class TestModelBaseResultBranchCoverage:
             "exit_code": 0,
             "success": True,
             "errors": [],
-            "metadata": {"some_field": "some_value"}
+            "metadata": {"some_field": "some_value"},
         }
 
         result = ModelBaseResult.parse_obj(obj)

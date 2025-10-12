@@ -124,8 +124,14 @@ class TestEventTypeSpecificValues:
         from omnibase_core.constants import event_types
 
         assert event_types.NODE_INTROSPECTION_EVENT == "node_introspection_event"
-        assert event_types.REQUEST_REAL_TIME_INTROSPECTION == "request_real_time_introspection"
-        assert event_types.REAL_TIME_INTROSPECTION_RESPONSE == "real_time_introspection_response"
+        assert (
+            event_types.REQUEST_REAL_TIME_INTROSPECTION
+            == "request_real_time_introspection"
+        )
+        assert (
+            event_types.REAL_TIME_INTROSPECTION_RESPONSE
+            == "real_time_introspection_response"
+        )
 
     def test_health_event_types(self):
         """Test health-related event type values."""

@@ -20,7 +20,9 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
 # Import from actual implementation files for proper coverage tracking
 from omnibase_core.models.validation.model_validate_message import ModelValidateMessage
-from omnibase_core.models.validation.model_validate_message_context import ModelValidateMessageContext
+from omnibase_core.models.validation.model_validate_message_context import (
+    ModelValidateMessageContext,
+)
 from omnibase_core.models.validation.model_validate_result import ModelValidateResult
 
 # Compatibility aliases for backward compatibility

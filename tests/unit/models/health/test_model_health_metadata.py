@@ -116,7 +116,9 @@ class TestModelHealthMetadataAutoHeal:
 
     def test_should_auto_heal_enabled(self):
         """Test should_auto_heal when enabled."""
-        metadata = ModelHealthMetadata(auto_healing_enabled=True, maintenance_mode=False)
+        metadata = ModelHealthMetadata(
+            auto_healing_enabled=True, maintenance_mode=False
+        )
         assert metadata.should_auto_heal() is True
 
     def test_should_auto_heal_disabled(self):
@@ -151,9 +153,7 @@ class TestModelHealthMetadataNotifications:
 
     def test_should_send_notifications_maintenance(self):
         """Test should_send_notifications during maintenance."""
-        metadata = ModelHealthMetadata(
-            notification_enabled=True, maintenance_mode=True
-        )
+        metadata = ModelHealthMetadata(notification_enabled=True, maintenance_mode=True)
         assert metadata.should_send_notifications() is False
 
 
@@ -196,9 +196,7 @@ class TestModelHealthMetadataCheckInterval:
 
     def test_get_effective_check_interval_maintenance(self):
         """Test effective check interval in maintenance mode."""
-        metadata = ModelHealthMetadata(
-            check_interval_seconds=30, maintenance_mode=True
-        )
+        metadata = ModelHealthMetadata(check_interval_seconds=30, maintenance_mode=True)
 
         # Should be 3x longer in maintenance, up to 300 max
         assert metadata.get_effective_check_interval() == 90

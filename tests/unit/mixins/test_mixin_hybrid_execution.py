@@ -93,7 +93,9 @@ class TestMixinInitialization:
 
     def test_initialization_logging(self) -> None:
         """Test that initialization emits log events."""
-        with patch("omnibase_core.mixins.mixin_hybrid_execution.emit_log_event") as mock_log:
+        with patch(
+            "omnibase_core.mixins.mixin_hybrid_execution.emit_log_event"
+        ) as mock_log:
             tool = MockTool()
 
             # Should emit initialization log
@@ -278,7 +280,9 @@ class TestExecuteDirect:
         tool = MockTool()
         input_state = SimpleInputState(value="test")
 
-        with patch("omnibase_core.mixins.mixin_hybrid_execution.emit_log_event") as mock_log:
+        with patch(
+            "omnibase_core.mixins.mixin_hybrid_execution.emit_log_event"
+        ) as mock_log:
             result = tool._execute_direct(input_state)
 
             # Should emit start and completion logs
@@ -584,7 +588,9 @@ class TestCreateWorkflowDefault:
         tool = MockToolWithoutWorkflow()
         input_state = SimpleInputState(value="test")
 
-        with patch("omnibase_core.mixins.mixin_hybrid_execution.emit_log_event") as mock_log:
+        with patch(
+            "omnibase_core.mixins.mixin_hybrid_execution.emit_log_event"
+        ) as mock_log:
             workflow = tool.create_workflow(input_state)
 
             # Should log warning
@@ -598,13 +604,17 @@ class TestProcessNotImplemented:
     def test_process_must_be_implemented(self) -> None:
         """Test that process method must be implemented by subclass."""
 
-        class IncompleteToolClass(MixinHybridExecution[SimpleInputState, SimpleInputState]):
+        class IncompleteToolClass(
+            MixinHybridExecution[SimpleInputState, SimpleInputState]
+        ):
             pass
 
         tool = IncompleteToolClass()
         input_state = SimpleInputState(value="test")
 
-        with pytest.raises(NotImplementedError, match="Tool must implement process method"):
+        with pytest.raises(
+            NotImplementedError, match="Tool must implement process method"
+        ):
             tool.process(input_state)
 
 
@@ -671,7 +681,9 @@ class TestEdgeCases:
 
         # Mock asyncio.new_event_loop to raise exception
         with patch("llama_index.core.workflow"):
-            with patch("asyncio.new_event_loop", side_effect=RuntimeError("Loop failed")):
+            with patch(
+                "asyncio.new_event_loop", side_effect=RuntimeError("Loop failed")
+            ):
                 result = tool._execute_workflow(input_state)
 
         # Should fall back to direct execution

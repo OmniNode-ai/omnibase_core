@@ -272,11 +272,6 @@ class ModelOnexError(Exception):
         return self.model.error_code
 
     @property
-    def code(self) -> EnumOnexErrorCode | str | None:
-        """Alias for error_code for backward compatibility."""
-        return self.error_code
-
-    @property
     def status(self) -> EnumOnexStatus:
         """Get the error status."""
         return self.model.status

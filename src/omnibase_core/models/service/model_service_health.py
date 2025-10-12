@@ -576,11 +576,12 @@ class ModelServiceHealth(BaseModel):
         )
 
 
+from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
+
 # Fix forward references for Pydantic models
 # Import the forward-referenced models to resolve string annotations
 from omnibase_core.models.core.model_generic_properties import ModelGenericProperties
 from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
-from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
 
 # Now rebuild the model to resolve the forward references
 ModelServiceHealth.model_rebuild()

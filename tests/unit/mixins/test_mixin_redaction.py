@@ -238,7 +238,12 @@ class TestRedactSensitiveFields:
 
         model = TestModel(name="user")
 
-        data = {"name": "user", "username": "admin", "password": "secret", "token": "abc123"}
+        data = {
+            "name": "user",
+            "username": "admin",
+            "password": "secret",
+            "token": "abc123",
+        }
 
         redacted = model.redact_sensitive_fields(data)
 

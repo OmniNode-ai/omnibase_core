@@ -62,7 +62,9 @@ class TestNodeReducerInitialization:
     """Tests for NodeReducer initialization."""
 
     @pytest.mark.asyncio
-    async def test_initialization_with_container(self, mock_container, mock_contract_model):
+    async def test_initialization_with_container(
+        self, mock_container, mock_contract_model
+    ):
         """Test NodeReducer initializes with valid container."""
         with patch.object(
             NodeReducer, "_load_contract_model", return_value=mock_contract_model

@@ -22,8 +22,7 @@ class TestModelYamlValueInstantiation:
         """Test creating SCHEMA_VALUE type directly."""
         schema_val = ModelSchemaValue.create_string("test")
         yaml_val = ModelYamlValue(
-            value_type=EnumYamlValueType.SCHEMA_VALUE,
-            schema_value=schema_val
+            value_type=EnumYamlValueType.SCHEMA_VALUE, schema_value=schema_val
         )
         assert yaml_val.value_type == EnumYamlValueType.SCHEMA_VALUE
         assert yaml_val.schema_value == schema_val
@@ -34,11 +33,10 @@ class TestModelYamlValueInstantiation:
         """Test creating DICT type directly."""
         inner = ModelYamlValue(
             value_type=EnumYamlValueType.SCHEMA_VALUE,
-            schema_value=ModelSchemaValue.create_string("inner")
+            schema_value=ModelSchemaValue.create_string("inner"),
         )
         yaml_val = ModelYamlValue(
-            value_type=EnumYamlValueType.DICT,
-            dict_value={"key": inner}
+            value_type=EnumYamlValueType.DICT, dict_value={"key": inner}
         )
         assert yaml_val.value_type == EnumYamlValueType.DICT
         assert yaml_val.dict_value is not None
@@ -48,12 +46,9 @@ class TestModelYamlValueInstantiation:
         """Test creating LIST type directly."""
         inner = ModelYamlValue(
             value_type=EnumYamlValueType.SCHEMA_VALUE,
-            schema_value=ModelSchemaValue.create_string("item")
+            schema_value=ModelSchemaValue.create_string("item"),
         )
-        yaml_val = ModelYamlValue(
-            value_type=EnumYamlValueType.LIST,
-            list_value=[inner]
-        )
+        yaml_val = ModelYamlValue(value_type=EnumYamlValueType.LIST, list_value=[inner])
         assert yaml_val.value_type == EnumYamlValueType.LIST
         assert yaml_val.list_value is not None
         assert len(yaml_val.list_value) == 1
@@ -233,7 +228,7 @@ class TestModelYamlValueToSerializableBranches:
         # Create value with invalid enum by bypassing validation
         yaml_val = ModelYamlValue(
             value_type=EnumYamlValueType.SCHEMA_VALUE,
-            schema_value=ModelSchemaValue.create_string("test")
+            schema_value=ModelSchemaValue.create_string("test"),
         )
         # Manually change to invalid type
         # Use object.__setattr__ to bypass Pydantic validate_assignment
@@ -347,10 +342,7 @@ class TestModelYamlValueEdgeCases:
 
     def test_large_dict(self):
         """Test with large dictionary."""
-        dict_data = {
-            f"key{i}": ModelSchemaValue.create_number(i)
-            for i in range(100)
-        }
+        dict_data = {f"key{i}": ModelSchemaValue.create_number(i) for i in range(100)}
         yaml_val = ModelYamlValue.from_dict_data(dict_data)
         result = yaml_val.to_serializable()
         assert isinstance(result, dict)
@@ -358,10 +350,7 @@ class TestModelYamlValueEdgeCases:
 
     def test_large_list(self):
         """Test with large list."""
-        list_data = [
-            ModelSchemaValue.create_number(i)
-            for i in range(100)
-        ]
+        list_data = [ModelSchemaValue.create_number(i) for i in range(100)]
         yaml_val = ModelYamlValue.from_list(list_data)
         result = yaml_val.to_serializable()
         assert isinstance(result, list)

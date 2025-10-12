@@ -90,7 +90,9 @@ class TestModelHealthMetricThresholds:
 
     def test_is_warning_no_threshold(self):
         """Test is_warning without threshold."""
-        metric = ModelHealthMetric(metric_name="cpu_usage", current_value=90.0, unit="%")
+        metric = ModelHealthMetric(
+            metric_name="cpu_usage", current_value=90.0, unit="%"
+        )
 
         assert metric.is_warning() is False
 
@@ -118,7 +120,9 @@ class TestModelHealthMetricThresholds:
 
     def test_is_critical_no_threshold(self):
         """Test is_critical without threshold."""
-        metric = ModelHealthMetric(metric_name="cpu_usage", current_value=99.0, unit="%")
+        metric = ModelHealthMetric(
+            metric_name="cpu_usage", current_value=99.0, unit="%"
+        )
 
         assert metric.is_critical() is False
 

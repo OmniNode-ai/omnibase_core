@@ -7,6 +7,12 @@ Follows ONEX testing standards with proper mocking and error handling.
 """
 
 import asyncio
+
+# Use importlib to import node_effect directly without triggering infrastructure/__init__.py
+# This is necessary because infrastructure/__init__.py imports NodeBase which has
+# missing SPI protocol dependencies (protocol_workflow_reducer)
+import importlib.util
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -34,13 +40,6 @@ from omnibase_core.models.operations.model_effect_result import (
     ModelEffectResultDict,
     ModelEffectResultStr,
 )
-
-# Use importlib to import node_effect directly without triggering infrastructure/__init__.py
-# This is necessary because infrastructure/__init__.py imports NodeBase which has
-# missing SPI protocol dependencies (protocol_workflow_reducer)
-import importlib.util
-import sys
-from pathlib import Path
 
 # Construct path to node_effect.py
 node_effect_path = (
@@ -333,7 +332,9 @@ class TestCircuitBreakerManagement:
         assert "circuit breaker open" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_circuit_breaker_records_success(self, node_effect, sample_effect_input):
+    async def test_circuit_breaker_records_success(
+        self, node_effect, sample_effect_input
+    ):
         """Test that circuit breaker records successful operations."""
         sample_effect_input.circuit_breaker_enabled = True
 
@@ -354,7 +355,9 @@ class TestCircuitBreakerManagement:
         assert cb.state == EnumCircuitBreakerState.CLOSED
 
     @pytest.mark.asyncio
-    async def test_circuit_breaker_records_failure(self, node_effect, sample_effect_input):
+    async def test_circuit_breaker_records_failure(
+        self, node_effect, sample_effect_input
+    ):
         """Test that circuit breaker records failed operations."""
         sample_effect_input.circuit_breaker_enabled = True
 
@@ -555,7 +558,9 @@ class TestRetryLogic:
 
         assert call_count == 2  # Failed once, succeeded on retry
         assert isinstance(result, ModelEffectOutput)
-        assert result.retry_count == 0  # Internal counter not exposed in this implementation
+        assert (
+            result.retry_count == 0
+        )  # Internal counter not exposed in this implementation
 
     @pytest.mark.asyncio
     async def test_retry_exponential_backoff(self, node_effect):
@@ -843,7 +848,9 @@ class TestEventEmission:
         mock_event_bus.emit_event.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_emit_state_change_event_no_event_bus(self, node_effect, mock_container):
+    async def test_emit_state_change_event_no_event_bus(
+        self, node_effect, mock_container
+    ):
         """Test event emission gracefully handles missing event bus."""
         mock_container.event_bus = None
 
@@ -860,7 +867,9 @@ class TestEventEmission:
         """Test event emission handles event bus errors gracefully."""
         # Mock event bus that raises exception
         mock_event_bus = AsyncMock()
-        mock_event_bus.emit_event = AsyncMock(side_effect=RuntimeError("Event bus error"))
+        mock_event_bus.emit_event = AsyncMock(
+            side_effect=RuntimeError("Event bus error")
+        )
         mock_container.event_bus = mock_event_bus
 
         result = await node_effect.emit_state_change_event(
@@ -1071,7 +1080,10 @@ class TestIntrospection:
 
         # Should return fallback data
         assert "node_capabilities" in introspection
-        assert introspection["introspection_metadata"]["supports_full_introspection"] is False
+        assert (
+            introspection["introspection_metadata"]["supports_full_introspection"]
+            is False
+        )
 
     def test_get_effect_health_status_healthy(self, node_effect):
         """Test health status check returns healthy."""

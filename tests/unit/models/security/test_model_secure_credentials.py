@@ -18,21 +18,24 @@ Tests cover:
 """
 
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
 from pydantic import SecretStr
 
-from omnibase_core.models.security.model_secure_credentials import ModelSecureCredentials
-from omnibase_core.models.security.model_credentials_analysis import (
-    ModelCredentialsAnalysis,
-)
+from omnibase_core.models.security.model_audit_data import ModelAuditData
 from omnibase_core.models.security.model_credential_validation_result import (
     ModelCredentialValidationResult,
 )
-from omnibase_core.models.security.model_mask_data import ModelMaskData
-from omnibase_core.models.security.model_log_safe_data import ModelLogSafeData
+from omnibase_core.models.security.model_credentials_analysis import (
+    ModelCredentialsAnalysis,
+)
 from omnibase_core.models.security.model_debug_data import ModelDebugData
-from omnibase_core.models.security.model_audit_data import ModelAuditData
+from omnibase_core.models.security.model_log_safe_data import ModelLogSafeData
+from omnibase_core.models.security.model_mask_data import ModelMaskData
+from omnibase_core.models.security.model_secure_credentials import (
+    ModelSecureCredentials,
+)
 
 
 # Concrete implementation for testing abstract base class
@@ -51,9 +54,7 @@ class TestCredentials(ModelSecureCredentials):
         """Load credentials from environment variables."""
         return cls(
             username=os.getenv(f"{env_prefix}USERNAME", "test_user"),
-            password=SecretStr(
-                os.getenv(f"{env_prefix}PASSWORD", "default_password")
-            ),
+            password=SecretStr(os.getenv(f"{env_prefix}PASSWORD", "default_password")),
             api_key=(
                 SecretStr(os.getenv(f"{env_prefix}API_KEY"))
                 if os.getenv(f"{env_prefix}API_KEY")
@@ -196,8 +197,7 @@ class TestModelSecureCredentialsSecretMasking:
         # Hex string pattern (32+ chars)
         hex_value = "abcdef1234567890abcdef1234567890"
         assert (
-            creds._mask_if_sensitive_string(hex_value, "aggressive")
-            == "***REDACTED***"
+            creds._mask_if_sensitive_string(hex_value, "aggressive") == "***REDACTED***"
         )
 
         # API key pattern
@@ -208,7 +208,10 @@ class TestModelSecureCredentialsSecretMasking:
 
         # Normal strings should not be masked
         normal_string = "hello world"
-        assert creds._mask_if_sensitive_string(normal_string, "aggressive") == "hello world"
+        assert (
+            creds._mask_if_sensitive_string(normal_string, "aggressive")
+            == "hello world"
+        )
 
     def test_mask_secrets_recursive_dict(self):
         """Test recursive masking of nested dictionaries."""
@@ -500,6 +503,7 @@ class TestModelSecureCredentialsValidation:
 
     def test_validate_credentials_empty_required_field(self):
         """Test validation with empty required SecretStr field."""
+
         # Create a model with required secret field
         class RequiredSecretCreds(ModelSecureCredentials):
             api_key: SecretStr
@@ -548,7 +552,10 @@ class TestModelSecureCredentialsFactoryMethods:
 
     @patch.dict(
         os.environ,
-        {"SECONDARY_USERNAME": "secondary_user", "SECONDARY_PASSWORD": "secondary_pass"},
+        {
+            "SECONDARY_USERNAME": "secondary_user",
+            "SECONDARY_PASSWORD": "secondary_pass",
+        },
     )
     def test_create_from_env_with_fallbacks_fallback_success(self):
         """Test factory falls back to secondary prefix."""
@@ -745,7 +752,9 @@ class TestModelSecureCredentialsEdgeCases:
 
         masked = creds._mask_secrets_recursive(nested_data, "standard")
 
-        assert masked["level1"]["level2"]["level3"]["level4"]["secret"] == "***MASKED***"
+        assert (
+            masked["level1"]["level2"]["level3"]["level4"]["secret"] == "***MASKED***"
+        )
         assert masked["level1"]["level2"]["level3"]["level4"]["normal"] == "value"
 
     def test_validation_comprehensive_report(self):
@@ -810,6 +819,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_validate_environment_variables_with_missing_required(self):
         """Test environment validation with missing required variables (lines 207-209)."""
+
         # Create a model with required fields
         class RequiredFieldsCreds(ModelSecureCredentials):
             required_field: str
@@ -857,6 +867,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_validate_credentials_with_non_empty_required_field(self):
         """Test credential validation when required non-SecretStr field is empty (lines 392-394)."""
+
         # Create model with required non-secret field
         class RequiredNonSecretCreds(ModelSecureCredentials):
             username: str  # Required non-secret field

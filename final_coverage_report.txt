@@ -69,7 +69,7 @@ ____________________ test_validation_functions_lazy_import _____________________
     def test_validation_functions_lazy_import() -> None:
         """
         Test that validation functions use lazy imports correctly.
-    
+
         The validate_primitive_value and validate_context_value functions
         should import error_codes only when they need to raise an error.
         """
@@ -77,24 +77,24 @@ ____________________ test_validation_functions_lazy_import _____________________
         modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
         for module in modules_to_remove:
             del sys.modules[module]
-    
+
         # Import types.constraints
         from omnibase_core.types.constraints import (
             validate_context_value,
             validate_primitive_value,
         )
-    
+
         # Test successful validation (should not trigger import)
         assert validate_primitive_value("test")
         assert validate_context_value("test")
-    
+
         # Test failed validation (should trigger lazy import)
         try:
             validate_primitive_value(object())  # Invalid type
         except Exception:
             # Expected - validation should fail
             pass
-    
+
         # After the failed validation, error_codes should now be imported
 >       assert (
             "omnibase_core.errors.error_codes" in sys.modules
@@ -112,12 +112,12 @@ tmp_path = PosixPath('/private/var/folders/1h/z37k4b691hxb6jkyhllgmqpw0000gn/T/p
     def test_run_validation_unknown_type(self, tmp_path: Path) -> None:
         """Test run_validation raises error for unknown validation type."""
         suite = ModelValidationSuite()
-    
+
         with pytest.raises(ValueError, match="Unknown validation type"):
 >           suite.run_validation("nonexistent", tmp_path)
 
-tests/unit/validation/test_cli.py:55: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/validation/test_cli.py:55:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <omnibase_core.validation.cli.ModelValidationSuite object at 0x11fccb4a0>
 validation_type = 'nonexistent'
@@ -153,31 +153,31 @@ intermixed = False
         else:
             # make sure that args are mutable
             args = list(args)
-    
+
         # default Namespace built from parser defaults
         if namespace is None:
             namespace = Namespace()
-    
+
         # add any action defaults that aren't present
         for action in self._actions:
             if action.dest is not SUPPRESS:
                 if not hasattr(namespace, action.dest):
                     if action.default is not SUPPRESS:
                         setattr(namespace, action.dest, action.default)
-    
+
         # add any parser defaults that aren't present
         for dest in self._defaults:
             if not hasattr(namespace, dest):
                 setattr(namespace, dest, self._defaults[dest])
-    
+
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
 >               namespace, args = self._parse_known_args(args, namespace, intermixed)
                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2188: in _parse_known_args
     stop_index = consume_positionals(start_index)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -188,7 +188,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2514: in _get_values
     self._check_value(action, value)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='pytest', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 action = _StoreAction(option_strings=[], dest='validation_type', nargs=None, const=None, default=None, type=None, choices=['arc...on-usage', 'contracts', 'patterns', 'all', 'list[Any]'], required=True, help='Type of validation to run', metavar=None)
@@ -216,7 +216,7 @@ self = <tests.unit.validation.test_cli.TestCreateParser object at 0x10df84140>
     def test_parser_validation_type_choices(self) -> None:
         """Test parser accepts valid validation types."""
         parser = create_parser()
-    
+
         # Test valid choices
         for validation_type in [
             "architecture",
@@ -229,8 +229,8 @@ self = <tests.unit.validation.test_cli.TestCreateParser object at 0x10df84140>
 >           args = parser.parse_args([validation_type])
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/unit/validation/test_cli.py:150: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/validation/test_cli.py:150:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1904: in parse_args
     args, argv = self.parse_known_args(args, namespace)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -241,7 +241,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     self.error(str(err))
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2650: in error
     self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='pytest', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 status = 2
@@ -274,31 +274,31 @@ intermixed = False
         else:
             # make sure that args are mutable
             args = list(args)
-    
+
         # default Namespace built from parser defaults
         if namespace is None:
             namespace = Namespace()
-    
+
         # add any action defaults that aren't present
         for action in self._actions:
             if action.dest is not SUPPRESS:
                 if not hasattr(namespace, action.dest):
                     if action.default is not SUPPRESS:
                         setattr(namespace, action.dest, action.default)
-    
+
         # add any parser defaults that aren't present
         for dest in self._defaults:
             if not hasattr(namespace, dest):
                 setattr(namespace, dest, self._defaults[dest])
-    
+
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
 >               namespace, args = self._parse_known_args(args, namespace, intermixed)
                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1943:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2188: in _parse_known_args
     stop_index = consume_positionals(start_index)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -309,7 +309,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2514: in _get_values
     self._check_value(action, value)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='prog', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 action = _StoreAction(option_strings=[], dest='validation_type', nargs=None, const=None, default=None, type=None, choices=['arc...on-usage', 'contracts', 'patterns', 'all', 'list[Any]'], required=True, help='Type of validation to run', metavar=None)
@@ -343,12 +343,12 @@ capsys = <_pytest.capture.CaptureFixture object at 0x11fde73b0>
     ) -> None:
         """Test CLI list command to show available validators."""
         monkeypatch.setattr(sys, "argv", ["prog", "list"])
-    
+
 >       exit_code = run_validation_cli()
                     ^^^^^^^^^^^^^^^^^^^^
 
-tests/unit/validation/test_cli_entry_point.py:42: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/validation/test_cli_entry_point.py:42:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 src/omnibase_core/validation/cli.py:241: in run_validation_cli
     args = parser.parse_args()
            ^^^^^^^^^^^^^^^^^^^
@@ -362,7 +362,7 @@ src/omnibase_core/validation/cli.py:241: in run_validation_cli
     self.error(str(err))
 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2650: in error
     self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = ArgumentParser(prog='prog', usage=None, description='Unified validation CLI for omnibase_core', formatter_class=<class 'argparse.RawDescriptionHelpFormatter'>, conflict_handler='error', add_help=True)
 status = 2
@@ -389,7 +389,7 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x10e2b0c20>
             """Test detection of if 'field' in info.data patterns."""
             code = """
     from pydantic import field_validator, ValidationInfo
-    
+
     class MyModel:
         @field_validator("max_value")
         @classmethod
@@ -401,7 +401,7 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x10e2b0c20>
             tree = ast.parse(code)
             detector = FallbackDetector("test.py", code.splitlines())
             detector.visit(tree)
-    
+
 >           assert len(detector.violations) == 1
 E           assert 0 == 1
 E            +  where 0 = len([])
@@ -416,11 +416,11 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x10e2b2a50>
             """Test detection of enum UNKNOWN assignment in except blocks."""
             code = """
     from enum import Enum
-    
+
     class MyEnum(Enum):
         VALUE1 = "value1"
         UNKNOWN = "unknown"
-    
+
     def process(value: str):
         try:
             result = MyEnum(value)
@@ -431,7 +431,7 @@ self = <test_check_no_fallbacks.TestFallbackDetector object at 0x10e2b2a50>
             tree = ast.parse(code)
             detector = FallbackDetector("test.py", code.splitlines())
             detector.visit(tree)
-    
+
 >           assert len(detector.violations) == 1
 E           assert 0 == 1
 E            +  where 0 = len([])

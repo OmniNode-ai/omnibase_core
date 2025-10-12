@@ -729,7 +729,9 @@ class TestIsProtocolFile:
         """Test detection by file content containing 'class Protocol'."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             # Write content that includes "class Protocol" within first 1000 chars
-            f.write("# Regular Python file\nfrom typing import Protocol\n\nclass Protocol:\n    pass")
+            f.write(
+                "# Regular Python file\nfrom typing import Protocol\n\nclass Protocol:\n    pass"
+            )
             temp_path = Path(f.name)
 
         try:

@@ -13,7 +13,9 @@ import pytest
 from pydantic import Field
 
 from omnibase_core.models.validation.model_validation_base import ModelValidationBase
-from omnibase_core.models.validation.model_validation_container import ModelValidationContainer
+from omnibase_core.models.validation.model_validation_container import (
+    ModelValidationContainer,
+)
 
 
 # Test fixture models
@@ -108,10 +110,7 @@ class TestModelValidationBaseAddValidationErrorBranches:
         """Test add_validation_error with critical=False (else branch)."""
         model = SimpleTestModel(name="test", value=42)
         model.add_validation_error(
-            message="Normal error",
-            field="name",
-            error_code="ERROR_001",
-            critical=False
+            message="Normal error", field="name", error_code="ERROR_001", critical=False
         )
 
         assert len(model.validation.errors) == 1
@@ -124,7 +123,7 @@ class TestModelValidationBaseAddValidationErrorBranches:
             message="Critical error",
             field="value",
             error_code="ERROR_002",
-            critical=True
+            critical=True,
         )
 
         assert len(model.validation.errors) == 1
@@ -178,7 +177,7 @@ class TestModelValidationBaseValidateModelDataBranches:
         model.validate_model_data()
         # Should not raise error, normal validation proceeds
 
-    @patch('importlib.import_module')
+    @patch("importlib.import_module")
     def test_validate_model_data_import_error_fallback(self, mock_import):
         """Test validate_model_data with ImportError uses fallback codes (except branch line 95)."""
         mock_import.side_effect = ImportError("Module not found")
@@ -187,11 +186,11 @@ class TestModelValidationBaseValidateModelDataBranches:
         model.validate_model_data()
         # Should use fallback error codes, not raise
 
-    @patch('importlib.import_module')
+    @patch("importlib.import_module")
     def test_validate_model_data_attribute_error_fallback(self, mock_import):
         """Test validate_model_data with AttributeError uses fallback codes (except branch line 95)."""
         mock_module = MagicMock()
-        delattr(mock_module, 'EnumCoreErrorCode')  # Remove attribute
+        delattr(mock_module, "EnumCoreErrorCode")  # Remove attribute
         mock_import.return_value = mock_module
 
         model = SimpleTestModel(name="test", value=42)
@@ -204,7 +203,7 @@ class TestModelValidationBaseValidateModelDataBranches:
         # Mock validation object without add_error method
         mock_validation = MagicMock(spec=[])  # Empty spec means no methods
         # Bypass Pydantic validation by using object.__setattr__
-        object.__setattr__(model, 'validation', mock_validation)
+        object.__setattr__(model, "validation", mock_validation)
 
         model.validate_model_data()
         # Should return early without error (no exception raised)
@@ -214,20 +213,31 @@ class TestModelValidationBaseValidateModelDataBranches:
         model = SimpleTestModel(name="test", value=42)
 
         # Patch the class-level model_fields to return empty dict
-        with patch.object(SimpleTestModel, 'model_fields', {}):
+        with patch.object(SimpleTestModel, "model_fields", {}):
             model.validate_model_data()
             # Should add warning about no fields
-            assert any("no defined fields" in w.lower() for w in model.validation.warnings)
+            assert any(
+                "no defined fields" in w.lower() for w in model.validation.warnings
+            )
 
     def test_validate_model_data_field_access_error(self):
         """Test validate_model_data when field access fails (line 136 except branch)."""
         model = SimpleTestModel(name="test", value=42)
 
         # Patch class-level model_fields to raise an exception
-        with patch.object(SimpleTestModel, 'model_fields', new_callable=lambda: property(lambda self: (_ for _ in ()).throw(Exception("Field error")))):
+        with patch.object(
+            SimpleTestModel,
+            "model_fields",
+            new_callable=lambda: property(
+                lambda self: (_ for _ in ()).throw(Exception("Field error"))
+            ),
+        ):
             model.validate_model_data()
             # Should add validation error about field access
-            assert any("Failed to access model fields" in e.message for e in model.validation.errors)
+            assert any(
+                "Failed to access model fields" in e.message
+                for e in model.validation.errors
+            )
 
     def test_validate_model_data_serialization_empty_dict(self):
         """Test validate_model_data when serialization returns empty dict (line 145 branch)."""
@@ -235,18 +245,22 @@ class TestModelValidationBaseValidateModelDataBranches:
 
         # Store original method and create a wrapper
         original_model_dump = model.model_dump
+
         def mock_model_dump(*args, **kwargs):
             return {}
 
         # Use object.__setattr__ to bypass Pydantic
-        object.__setattr__(model, 'model_dump', mock_model_dump)
+        object.__setattr__(model, "model_dump", mock_model_dump)
         try:
             model.validate_model_data()
             # Should add error about empty serialization
-            assert any("empty" in e.message.lower() and "dict" in e.message.lower() for e in model.validation.errors)
+            assert any(
+                "empty" in e.message.lower() and "dict" in e.message.lower()
+                for e in model.validation.errors
+            )
         finally:
             # Restore original method
-            object.__setattr__(model, 'model_dump', original_model_dump)
+            object.__setattr__(model, "model_dump", original_model_dump)
 
     def test_validate_model_data_serialization_fails(self):
         """Test validate_model_data when serialization fails (line 151 except branch)."""
@@ -254,46 +268,56 @@ class TestModelValidationBaseValidateModelDataBranches:
 
         # Store original method and create a wrapper that raises
         original_model_dump = model.model_dump
+
         def mock_model_dump(*args, **kwargs):
             raise Exception("Serialization error")
 
         # Use object.__setattr__ to bypass Pydantic
-        object.__setattr__(model, 'model_dump', mock_model_dump)
+        object.__setattr__(model, "model_dump", mock_model_dump)
         try:
             model.validate_model_data()
             # Should add error about serialization failure
-            assert any("serialization failed" in e.message.lower() for e in model.validation.errors)
+            assert any(
+                "serialization failed" in e.message.lower()
+                for e in model.validation.errors
+            )
         finally:
             # Restore original method
-            object.__setattr__(model, 'model_dump', original_model_dump)
+            object.__setattr__(model, "model_dump", original_model_dump)
 
     def test_validate_model_data_circular_reference_detected(self):
         """Test validate_model_data detects circular references (line 165 branch)."""
         model = SimpleTestModel(name="test", value=42)
 
-        with patch('json.dumps', side_effect=RecursionError("Circular reference")):
+        with patch("json.dumps", side_effect=RecursionError("Circular reference")):
             model.validate_model_data()
             # Should add critical error about circular references
             critical_errors = [e for e in model.validation.errors if e.is_critical()]
-            assert any("circular reference" in e.message.lower() for e in critical_errors)
+            assert any(
+                "circular reference" in e.message.lower() for e in critical_errors
+            )
 
     def test_validate_model_data_value_error_in_json(self):
         """Test validate_model_data with ValueError in JSON (line 175 else branch)."""
         model = SimpleTestModel(name="test", value=42)
 
-        with patch('json.dumps', side_effect=ValueError("JSON error")):
+        with patch("json.dumps", side_effect=ValueError("JSON error")):
             model.validate_model_data()
             # Should add warning (not critical error)
-            assert any("serialization issues" in w.lower() for w in model.validation.warnings)
+            assert any(
+                "serialization issues" in w.lower() for w in model.validation.warnings
+            )
 
     def test_validate_model_data_type_error_in_json(self):
         """Test validate_model_data with TypeError in JSON (line 175 else branch)."""
         model = SimpleTestModel(name="test", value=42)
 
-        with patch('json.dumps', side_effect=TypeError("Type not serializable")):
+        with patch("json.dumps", side_effect=TypeError("Type not serializable")):
             model.validate_model_data()
             # Should add warning
-            assert any("serialization issues" in w.lower() for w in model.validation.warnings)
+            assert any(
+                "serialization issues" in w.lower() for w in model.validation.warnings
+            )
 
     def test_validate_model_data_unexpected_error(self):
         """Test validate_model_data with unexpected error (line 180 except branch)."""
@@ -306,7 +330,7 @@ class TestModelValidationBaseValidateModelDataBranches:
         # Need these methods to exist for hasattr check
         mock_validation.add_warning = MagicMock()
         # Bypass Pydantic validation by using object.__setattr__
-        object.__setattr__(model, 'validation', mock_validation)
+        object.__setattr__(model, "validation", mock_validation)
 
         # The outer except block will try to add_validation_error, which will also fail
         # This should cause the RuntimeError to bubble up
@@ -349,7 +373,9 @@ class TestModelValidationBasePerformValidation:
         model.perform_validation()
 
         # Custom validation should have added error
-        assert any("Count must be non-negative" in e.message for e in model.validation.errors)
+        assert any(
+            "Count must be non-negative" in e.message for e in model.validation.errors
+        )
 
 
 class TestModelValidationBaseValidateInstance:
@@ -427,6 +453,7 @@ class TestModelValidationBaseEdgeCases:
 
     def test_model_with_many_fields(self):
         """Test validation on model with many fields."""
+
         class LargeModel(ModelValidationBase):
             field1: str
             field2: int
@@ -434,12 +461,7 @@ class TestModelValidationBaseEdgeCases:
             field4: float
             field5: str | None = None
 
-        model = LargeModel(
-            field1="test",
-            field2=42,
-            field3=True,
-            field4=3.14
-        )
+        model = LargeModel(field1="test", field2=42, field3=True, field4=3.14)
 
         result = model.perform_validation()
         assert result is True
@@ -454,10 +476,7 @@ class TestModelValidationBaseEdgeCases:
         """Test adding validation error with all parameters."""
         model = SimpleTestModel(name="test", value=42)
         model.add_validation_error(
-            message="Complete error",
-            field="name",
-            error_code="ERR_001",
-            critical=True
+            message="Complete error", field="name", error_code="ERR_001", critical=True
         )
 
         assert len(model.validation.errors) == 1

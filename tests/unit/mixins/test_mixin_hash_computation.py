@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.mixins.mixin_hash_computation import MixinHashComputation
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestMixinHashComputationBasicBehavior:
@@ -24,10 +25,10 @@ class TestMixinHashComputationBasicBehavior:
 
         class TestModel(MixinHashComputation, BaseModel):
             name: str
-            version: str
+            version: ModelSemVer
             hash: str | None = None
 
-        model = TestModel(name="test", version="1.0.0")
+        model = TestModel(name="test", version=ModelSemVer(major=1, minor=0, patch=0))
         assert isinstance(model, MixinHashComputation)
         assert isinstance(model, BaseModel)
 

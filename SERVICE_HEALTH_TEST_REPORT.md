@@ -152,7 +152,7 @@ These protocol files are imported but don't exist in the codebase. Creating them
    ```python
    # protocol_model_json_serializable.py
    from typing import Protocol
-   
+
    class ModelProtocolJsonSerializable(Protocol):
        def model_dump(self) -> dict: ...
        def model_dump_json(self) -> str: ...

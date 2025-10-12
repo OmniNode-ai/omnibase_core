@@ -4,7 +4,7 @@ Tests for utils/service_logging.py - Protocol-based logging service.
 Target: 100% coverage for this simple delegation module.
 """
 
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -59,9 +59,7 @@ class TestServiceLoggingEmitMethods:
         service = ServiceLogging(protocol=mock_protocol)
         result = service.emit_log_event_async("arg1", key="value")
 
-        mock_protocol.emit_log_event_async.assert_called_once_with(
-            "arg1", key="value"
-        )
+        mock_protocol.emit_log_event_async.assert_called_once_with("arg1", key="value")
         assert result == "async_result"
 
 

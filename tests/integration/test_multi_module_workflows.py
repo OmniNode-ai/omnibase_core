@@ -89,7 +89,9 @@ class TestEnumModelIntegration:
         # Verify all enums are usable together
         assert workflow_data["environment"] == EnumEnvironment.PRODUCTION
         assert workflow_data["execution_status"] == EnumExecutionStatus.RUNNING
-        assert workflow_data["data_classification"] == EnumDataClassification.CONFIDENTIAL
+        assert (
+            workflow_data["data_classification"] == EnumDataClassification.CONFIDENTIAL
+        )
 
         # Test enum comparisons
         assert workflow_data["environment"] != EnumEnvironment.DEVELOPMENT
@@ -161,7 +163,9 @@ class TestErrorHandlingIntegration:
 
         # Verify both errors were caught
         assert len(errors_encountered) == 2
-        assert all(code == EnumCoreErrorCode.VALIDATION_ERROR for _, code in errors_encountered)
+        assert all(
+            code == EnumCoreErrorCode.VALIDATION_ERROR for _, code in errors_encountered
+        )
 
 
 class TestSemVerIntegration:

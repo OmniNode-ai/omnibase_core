@@ -879,12 +879,28 @@ class NodeEffect(NodeCoreBase):
         ) -> dict[str, Any]:
             """Handle file operations with atomic guarantees."""
             # Unwrap ModelSchemaValue objects to get raw values
-            operation_type = operation_data["operation_type"].to_value() if isinstance(operation_data["operation_type"], ModelSchemaValue) else operation_data["operation_type"]
-            file_path = Path(operation_data["file_path"].to_value() if isinstance(operation_data["file_path"], ModelSchemaValue) else operation_data["file_path"])
+            operation_type = (
+                operation_data["operation_type"].to_value()
+                if isinstance(operation_data["operation_type"], ModelSchemaValue)
+                else operation_data["operation_type"]
+            )
+            file_path = Path(
+                operation_data["file_path"].to_value()
+                if isinstance(operation_data["file_path"], ModelSchemaValue)
+                else operation_data["file_path"]
+            )
             data_val = operation_data.get("data")
-            data = data_val.to_value() if isinstance(data_val, ModelSchemaValue) else data_val
+            data = (
+                data_val.to_value()
+                if isinstance(data_val, ModelSchemaValue)
+                else data_val
+            )
             atomic_val = operation_data.get("atomic", True)
-            atomic = atomic_val.to_value() if isinstance(atomic_val, ModelSchemaValue) else atomic_val
+            atomic = (
+                atomic_val.to_value()
+                if isinstance(atomic_val, ModelSchemaValue)
+                else atomic_val
+            )
 
             result = {"operation_type": operation_type, "file_path": str(file_path)}
 
@@ -974,11 +990,23 @@ class NodeEffect(NodeCoreBase):
         ) -> bool:
             """Handle event emission to event bus."""
             # Unwrap ModelSchemaValue objects to get raw values
-            event_type = operation_data["event_type"].to_value() if isinstance(operation_data["event_type"], ModelSchemaValue) else operation_data["event_type"]
+            event_type = (
+                operation_data["event_type"].to_value()
+                if isinstance(operation_data["event_type"], ModelSchemaValue)
+                else operation_data["event_type"]
+            )
             payload_val = operation_data["payload"]
-            payload = payload_val.to_value() if isinstance(payload_val, ModelSchemaValue) else payload_val
+            payload = (
+                payload_val.to_value()
+                if isinstance(payload_val, ModelSchemaValue)
+                else payload_val
+            )
             correlation_id_val = operation_data.get("correlation_id")
-            correlation_id = correlation_id_val.to_value() if isinstance(correlation_id_val, ModelSchemaValue) else correlation_id_val
+            correlation_id = (
+                correlation_id_val.to_value()
+                if isinstance(correlation_id_val, ModelSchemaValue)
+                else correlation_id_val
+            )
 
             try:
                 # Get event bus from container - access via attribute instead of get_service

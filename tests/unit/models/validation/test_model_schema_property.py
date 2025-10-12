@@ -298,9 +298,7 @@ class TestModelSchemaPropertyObjectType:
         )
 
         level1_props = ModelSchemaPropertiesModel(
-            root={
-                "nested": ModelSchemaProperty(type="object", properties=level2_props)
-            }
+            root={"nested": ModelSchemaProperty(type="object", properties=level2_props)}
         )
 
         prop = ModelSchemaProperty(

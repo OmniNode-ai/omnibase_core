@@ -381,7 +381,10 @@ class TestModelFieldIdentityErrorBranches:
         )
         metadata = identity.get_metadata()
         # Should not include None values in metadata
-        assert "identity_display_name" not in metadata or metadata.get("identity_display_name") is not None
+        assert (
+            "identity_display_name" not in metadata
+            or metadata.get("identity_display_name") is not None
+        )
         assert isinstance(metadata, dict)
 
     def test_get_metadata_without_common_fields(self):
@@ -402,18 +405,20 @@ class TestModelFieldIdentityErrorBranches:
         field_id = uuid4()
         identity = ModelFieldIdentity(identity_id=identity_id, field_id=field_id)
         # Try to set a field that doesn't exist
-        result = identity.set_metadata({
-            "description": "Valid field",
-            "non_existent_field": "Invalid field",  # Should be ignored
-        })
+        result = identity.set_metadata(
+            {
+                "description": "Valid field",
+                "non_existent_field": "Invalid field",  # Should be ignored
+            }
+        )
         assert result is True
         assert identity.description == "Valid field"
         # Non-existent field should not cause error, just be ignored
 
     def test_set_metadata_with_validation_error(self):
         """Test set_metadata exception handling (lines 104-105 branch)."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         identity_id = uuid4()
         field_id = uuid4()
