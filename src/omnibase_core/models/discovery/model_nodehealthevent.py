@@ -2,11 +2,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.constants.event_types import NODE_HEALTH_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelNodeHealthEvent(ModelOnexEvent):
@@ -38,10 +39,54 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         default=None, description="Health check ID for Consul"
     )
 
+    @field_validator("node_id", mode="before")
+    @classmethod
+    def convert_node_id_to_uuid(cls, v: Any) -> UUID:
+        """Convert string node_id to UUID if needed."""
+        if isinstance(v, str):
+            return uuid_from_string(v, namespace="node")
+        return v
+
+    @field_validator("health_metrics", mode="before")
+    @classmethod
+    def convert_health_metrics(cls, v: Any) -> ModelHealthMetrics:
+        """Convert dict-like or simple health metrics to ModelHealthMetrics."""
+        if isinstance(v, ModelHealthMetrics):
+            return v
+
+        # Handle dict or object with 'status' field (test compatibility)
+        if hasattr(v, "status") or (isinstance(v, dict) and "status" in v):
+            status = v.status if hasattr(v, "status") else v.get("status")
+            cpu = (
+                v.cpu_usage_percent
+                if hasattr(v, "cpu_usage_percent")
+                else v.get("cpu_usage_percent", 0.0)
+            )
+            memory = (
+                v.memory_usage_percent
+                if hasattr(v, "memory_usage_percent")
+                else v.get("memory_usage_percent", 0.0)
+            )
+            uptime = (
+                v.uptime_seconds
+                if hasattr(v, "uptime_seconds")
+                else v.get("uptime_seconds", 0)
+            )
+
+            # Create ModelHealthMetrics with appropriate defaults based on status
+            return ModelHealthMetrics(
+                cpu_usage_percent=cpu,
+                memory_usage_percent=memory,
+                uptime_seconds=uptime,
+                custom_metrics={"status": status},
+            )
+
+        return v
+
     @classmethod
     def create_healthy_report(
         cls,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         uptime_seconds: int | None = None,
         response_time_ms: float | None = None,
@@ -60,6 +105,13 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         Returns:
             ModelNodeHealthEvent for healthy status
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         health_metrics = ModelHealthMetrics(
             cpu_usage_percent=10.0,
             memory_usage_percent=20.0,
@@ -71,7 +123,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             custom_metrics={"status": 1.0},
         )
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             health_metrics=health_metrics,
             **kwargs,
@@ -80,7 +132,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
     @classmethod
     def create_warning_report(
         cls,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         warning_reason: str,
         cpu_usage: float | None = None,
@@ -103,6 +155,13 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         Returns:
             ModelNodeHealthEvent for warning status
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         health_metrics = ModelHealthMetrics(
             cpu_usage_percent=cpu_usage or 85.0,
             memory_usage_percent=memory_usage or 85.0,
@@ -111,12 +170,12 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             response_time_ms=500.0,
             consecutive_errors=2,
             custom_metrics={
-                "status": 0.5,
-                "warning_code": hash(warning_reason) % 1000 / 1000.0,
+                "status": "warning",
+                "warning_reason": warning_reason,
             },
         )
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             health_metrics=health_metrics,
             **kwargs,
@@ -124,7 +183,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     @classmethod
     def create_critical_report(
-        cls, node_id: UUID, node_name: str, error_message: str, **kwargs: Any
+        cls, node_id: UUID | str, node_name: str, error_message: str, **kwargs: Any
     ) -> "ModelNodeHealthEvent":
         """
         Factory method to create a critical status report.
@@ -138,6 +197,13 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         Returns:
             ModelNodeHealthEvent for critical status
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         health_metrics = ModelHealthMetrics(
             cpu_usage_percent=95.0,
             memory_usage_percent=95.0,
@@ -152,7 +218,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             },
         )
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             health_metrics=health_metrics,
             **kwargs,

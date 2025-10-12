@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
 from uuid import UUID
 
@@ -293,22 +295,22 @@ class ModelEventBusOutputState(BaseModel):
             ),
             custom_metrics={
                 "status": ModelMetricValue(
-                    value=self.status.value, unit="enum", timestamp=datetime.utcnow()
+                    value=self.status.value, unit="enum", timestamp=datetime.now(UTC)
                 ),
                 "severity": ModelMetricValue(
                     value=self.get_severity_level(),
                     unit="category",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                 ),
                 "retry_attempt": ModelMetricValue(
                     value=self.retry_attempt or 0,
                     unit="count",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                 ),
                 "warnings": ModelMetricValue(
                     value=len(self.warnings) if self.warnings else 0,
                     unit="count",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                 ),
             },
             throughput_rps=None,

@@ -23,13 +23,12 @@ from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+
+# Import from common layer instead of metadata layer to avoid circular dependency
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_metric import ModelMetric
-
-# TYPE_CHECKING guard to break circular import with metadata layer
-if TYPE_CHECKING:
-    from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelMetricsData(BaseModel):
@@ -86,7 +85,7 @@ class ModelMetricsData(BaseModel):
         )
         self.metrics.append(metric)
 
-    def get_metric_by_key(self, key: str) -> "ModelMetadataValue | None":
+    def get_metric_by_key(self, key: str) -> ModelFlexibleValue | None:
         """Get metric value by key with bounded return type."""
         for metric in self.metrics:
             if metric.key == key:
@@ -173,6 +172,11 @@ class ModelMetricsData(BaseModel):
         """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
+
+# NOTE: model_rebuild() removed - Pydantic v2 handles forward references automatically
+# The explicit rebuild at module level caused import failures because ModelMetadataValue
+# is only available under TYPE_CHECKING guard to break circular imports
+# Pydantic will rebuild the model lazily when first accessed
 
 # Export for use
 __all__ = ["ModelMetricsData"]

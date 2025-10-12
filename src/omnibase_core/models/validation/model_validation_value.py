@@ -59,11 +59,13 @@ class ModelValidationValue(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String validation value must contain str data",
             )
-        if value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Integer validation value must contain int data",
-            )
+        # Check INTEGER type - must reject bool since bool is subclass of int in Python
+        if value_type == EnumValidationValueType.INTEGER:
+            if isinstance(v, bool) or not isinstance(v, int):
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Integer validation value must contain int data",
+                )
         if value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

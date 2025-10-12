@@ -11,7 +11,7 @@ Base class for all metadata models in the system,
 providing common fields and functionality.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -52,4 +52,4 @@ class ModelMetadataBase(BaseModel):
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp."""
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)

@@ -145,15 +145,15 @@ class TestModelItemSummary:
         assert item.item_display_name == "Valid"
 
     def test_configure_with_exception(self):
-        """Test configure handles exceptions gracefully."""
+        """Test configure raises ModelOnexError for invalid input."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
         item = ModelItemSummary()
 
         # Create a scenario that would cause an exception
         # by trying to set a field with an incompatible type
-        result = item.configure(priority="not_an_int")
-
-        # Should return False on exception
-        assert result is False
+        with pytest.raises(ModelOnexError, match="Operation failed"):
+            item.configure(priority="not_an_int")
 
     def test_serialize_protocol_method(self):
         """Test serialize method (Serializable protocol)."""

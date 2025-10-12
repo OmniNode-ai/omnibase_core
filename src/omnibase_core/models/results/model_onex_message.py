@@ -78,3 +78,8 @@ class ModelOnexMessage(BaseModel):
         default=None,
         description="Type of message (error, warning, note, etc.)",
     )
+
+    @property
+    def error_code(self) -> str | None:
+        """Alias for code field for backward compatibility."""
+        return self.code

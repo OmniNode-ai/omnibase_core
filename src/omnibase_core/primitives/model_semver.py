@@ -95,6 +95,23 @@ class ModelSemVer(BaseModel):
         """Hash function for use in sets and as dict[str, Any]keys."""
         return hash((self.major, self.minor, self.patch))
 
+    @classmethod
+    def parse(cls, version_str: str) -> "ModelSemVer":
+        """
+        Parse semantic version string into ModelSemVer (class method alias).
+
+        Args:
+            version_str: Semantic version string (e.g., "1.2.3")
+
+        Returns:
+            ModelSemVer instance
+
+        Example:
+            >>> version = ModelSemVer.parse("1.2.3")
+            >>> assert version.major == 1
+        """
+        return parse_semver_from_string(version_str)
+
 
 # Type alias for use in models - enforce proper ModelSemVer instances only
 SemVerField = ModelSemVer

@@ -5,7 +5,7 @@ Health issue model for tracking specific problems, their severity,
 category, occurrence patterns, and recovery recommendations.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -81,8 +81,8 @@ class ModelHealthIssue(BaseModel):
             severity=severity,
             category="performance",
             message=message,
-            first_detected=datetime.utcnow(),
-            last_seen=datetime.utcnow(),
+            first_detected=datetime.now(UTC),
+            last_seen=datetime.now(UTC),
         )
 
     @classmethod
@@ -97,8 +97,8 @@ class ModelHealthIssue(BaseModel):
             severity=severity,
             category="connectivity",
             message=message,
-            first_detected=datetime.utcnow(),
-            last_seen=datetime.utcnow(),
+            first_detected=datetime.now(UTC),
+            last_seen=datetime.now(UTC),
         )
 
     @classmethod
@@ -113,6 +113,6 @@ class ModelHealthIssue(BaseModel):
             severity=severity,
             category="resource",
             message=message,
-            first_detected=datetime.utcnow(),
-            last_seen=datetime.utcnow(),
+            first_detected=datetime.now(UTC),
+            last_seen=datetime.now(UTC),
         )

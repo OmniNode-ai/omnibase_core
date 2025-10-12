@@ -46,7 +46,7 @@ class ModelResultFactory(ModelGenericFactory[T]):
         """Build a success result with standard fields."""
         # Remove conflicting fields and set standard success values
         filtered_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ["success", "error_message"]
+            k: v for k, v in kwargs.items() if k not in ["success", "error_message", "exit_code"]
         }
         return self.model_class(
             success=True,

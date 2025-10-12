@@ -6,7 +6,7 @@ Node Action Validator Model.
 Comprehensive validator for node actions with security and trust scoring.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any, Optional
 
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
@@ -104,7 +104,7 @@ class ModelNodeActionValidator:
 
     def _is_cache_expired(self, result: ModelActionValidationResult) -> bool:
         """Check if cached validation result has expired."""
-        return datetime.utcnow() - result.validated_at > timedelta(minutes=5)
+        return datetime.now(UTC) - result.validated_at > timedelta(minutes=5)
 
     def _perform_validation(
         self,

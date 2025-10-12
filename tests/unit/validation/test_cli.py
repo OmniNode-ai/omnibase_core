@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.cli import (
     ModelValidationSuite,
     create_parser,
@@ -51,7 +52,7 @@ class TestModelValidationSuite:
         """Test run_validation raises error for unknown validation type."""
         suite = ModelValidationSuite()
 
-        with pytest.raises(ValueError, match="Unknown validation type"):
+        with pytest.raises(ModelOnexError, match="Unknown validation type"):
             suite.run_validation("nonexistent", tmp_path)
 
     def test_run_validation_filters_kwargs(self, tmp_path: Path) -> None:
@@ -520,3 +521,358 @@ def func(x: Union[str, int, bool, float]) -> None:  # Complex union
                 == suite2.validators[key]["description"]
             )
             assert suite1.validators[key]["args"] == suite2.validators[key]["args"]
+
+
+class TestRunValidationCLI:
+    """Test run_validation_cli function."""
+
+    def test_cli_list_command(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI list command."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        monkeypatch.setattr(sys, "argv", ["cli", "list"])
+
+        exit_code = run_validation_cli()
+
+        assert exit_code == 0
+        captured = capsys.readouterr()
+        assert "Available Validation Tools" in captured.out
+
+    def test_cli_nonexistent_directory(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI with nonexistent directory."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        nonexistent = tmp_path / "does_not_exist"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(nonexistent)],
+        )
+
+        exit_code = run_validation_cli()
+
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.out.lower()
+
+    def test_cli_nonexistent_directory_with_exit_zero(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test CLI with nonexistent directory and exit-zero flag."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        nonexistent = tmp_path / "does_not_exist"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(nonexistent), "--exit-zero"],
+        )
+
+        exit_code = run_validation_cli()
+
+        assert exit_code == 0
+
+    def test_cli_no_valid_directories(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI with no valid directories."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        nonexistent1 = tmp_path / "dir1"
+        nonexistent2 = tmp_path / "dir2"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(nonexistent1), str(nonexistent2)],
+        )
+
+        exit_code = run_validation_cli()
+
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "No valid directories" in captured.out or "not found" in captured.out.lower()
+
+    def test_cli_no_valid_directories_with_exit_zero(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test CLI with no valid directories and exit-zero flag."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        nonexistent1 = tmp_path / "dir1"
+        nonexistent2 = tmp_path / "dir2"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "cli",
+                "architecture",
+                str(nonexistent1),
+                str(nonexistent2),
+                "--exit-zero",
+            ],
+        )
+
+        exit_code = run_validation_cli()
+
+        assert exit_code == 0
+
+    def test_cli_single_validation_success(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI with single validation type."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        # Create test file
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Test\n")
+
+        monkeypatch.setattr(sys, "argv", ["cli", "architecture", str(tmp_path)])
+
+        exit_code = run_validation_cli()
+
+        captured = capsys.readouterr()
+        assert "ARCHITECTURE" in captured.out
+        assert "Final Result" in captured.out
+
+    def test_cli_all_validations(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI with all validations."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        # Create test file
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Test\n")
+
+        monkeypatch.setattr(sys, "argv", ["cli", "all", str(tmp_path)])
+
+        exit_code = run_validation_cli()
+
+        captured = capsys.readouterr()
+        assert "Final Result" in captured.out
+
+    def test_cli_multiple_directories(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI with multiple directories."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        dir1 = tmp_path / "dir1"
+        dir1.mkdir()
+        dir2 = tmp_path / "dir2"
+        dir2.mkdir()
+
+        (dir1 / "test1.py").write_text("# Test 1\n")
+        (dir2 / "test2.py").write_text("# Test 2\n")
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(dir1), str(dir2)],
+        )
+
+        exit_code = run_validation_cli()
+
+        captured = capsys.readouterr()
+        assert "Validating" in captured.out
+
+    def test_cli_quiet_mode(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI quiet mode."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Test\n")
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(tmp_path), "--quiet"],
+        )
+
+        exit_code = run_validation_cli()
+
+        captured = capsys.readouterr()
+        # Quiet mode should suppress most output
+        assert len(captured.out) < 100 or exit_code == 0
+
+    def test_cli_quiet_mode_with_error(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test CLI quiet mode with errors."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        nonexistent = tmp_path / "nonexistent"
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(nonexistent), "--quiet"],
+        )
+
+        exit_code = run_validation_cli()
+
+        # Should still return error code
+        assert exit_code == 1
+
+    def test_cli_verbose_mode(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: CaptureFixture[str],
+    ) -> None:
+        """Test CLI verbose mode."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Test\n")
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(tmp_path), "--verbose"],
+        )
+
+        exit_code = run_validation_cli()
+
+        captured = capsys.readouterr()
+        assert "Files checked" in captured.out
+
+    def test_cli_with_all_flags(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test CLI with multiple flags."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Test\n")
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "cli",
+                "architecture",
+                str(tmp_path),
+                "--strict",
+                "--max-violations",
+                "10",
+                "--verbose",
+            ],
+        )
+
+        exit_code = run_validation_cli()
+
+        assert exit_code in [0, 1]
+
+    def test_cli_union_usage_with_max_unions(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test CLI union-usage validation with max-unions."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        test_file = tmp_path / "test.py"
+        test_file.write_text(
+            """
+from typing import Union
+
+def func(x: Union[str, int]) -> None:
+    pass
+"""
+        )
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "union-usage", str(tmp_path), "--max-unions", "50"],
+        )
+
+        exit_code = run_validation_cli()
+
+        assert exit_code in [0, 1]
+
+    def test_cli_exit_zero_with_failure(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test CLI exit-zero flag overrides failure."""
+        import sys
+
+        from omnibase_core.validation.cli import run_validation_cli
+
+        # Create invalid scenario
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Test\n")
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["cli", "architecture", str(tmp_path), "--exit-zero"],
+        )
+
+        exit_code = run_validation_cli()
+
+        # Should always return 0 with exit-zero flag
+        assert exit_code == 0

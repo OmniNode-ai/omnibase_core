@@ -8,7 +8,7 @@ Ensures tools crash early with clear error messages rather than continuing in in
 import sys
 import traceback
 from collections.abc import Callable as CallableABC
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, Callable, TypeVar
 
@@ -114,6 +114,7 @@ class MixinFailFast:
         if value is None:
             msg = f"Required field '{field_name}' is missing"
             raise ModelOnexError(
+                message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return value
@@ -139,6 +140,7 @@ class MixinFailFast:
         if not value:
             msg = f"Field '{field_name}' cannot be empty"
             raise ModelOnexError(
+                message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return value
@@ -188,12 +190,14 @@ class MixinFailFast:
                 ):  # More than 50% missing
                     msg = f"Field '{field_name}' must be compatible with type {expected_type.__name__}, got {actual_type.__name__}"
                     raise ModelOnexError(
+                        message=msg,
                         error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                     )
             # For basic types, check essential characteristics
             elif expected_type == str and not hasattr(value, "split"):
                 msg = f"Field '{field_name}' must be string-like, got {actual_type.__name__}"
                 raise ModelOnexError(
+                    message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == int and not hasattr(value, "__add__"):
@@ -201,16 +205,19 @@ class MixinFailFast:
                     f"Field '{field_name}' must be numeric, got {actual_type.__name__}"
                 )
                 raise ModelOnexError(
+                    message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == list[Any] and not hasattr(value, "append"):
                 msg = f"Field '{field_name}' must be list[Any]-like, got {actual_type.__name__}"
                 raise ModelOnexError(
+                    message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
             elif expected_type == dict[str, Any] and not hasattr(value, "keys"):
                 msg = f"Field '{field_name}' must be dict[str, Any]-like, got {actual_type.__name__}"
                 raise ModelOnexError(
+                    message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
 
@@ -236,6 +243,7 @@ class MixinFailFast:
         if value not in allowed_values:
             msg = f"Field '{field_name}' must be one of {allowed_values}, got '{value}'"
             raise ModelOnexError(
+                message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return value
@@ -259,11 +267,13 @@ class MixinFailFast:
             if not check_func():
                 msg = f"Required dependency '{dependency_name}' is not available"
                 raise ModelOnexError(
+                    message=msg,
                     error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
                 )
         except Exception as e:
             msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise ModelOnexError(
+                message=msg,
                 error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
             )
 
@@ -310,7 +320,7 @@ class MixinFailFast:
             error_code="FAIL_FAST",
             message=message,
             details=details,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             node_name=getattr(self, "node_name", self.__class__.__name__),
             severity="CRITICAL",
         )

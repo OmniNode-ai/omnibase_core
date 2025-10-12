@@ -52,3 +52,9 @@ __all__ = [
     "ok",
     "try_result",
 ]
+
+# NOTE: Circular import workaround removed
+# Previously, infrastructure layer imported ModelMetadataValue from metadata layer,
+# creating circular dependency. Now using ModelFlexibleValue from common layer instead.
+# This follows ONEX layered architecture: both infrastructure and metadata depend on common,
+# not on each other.

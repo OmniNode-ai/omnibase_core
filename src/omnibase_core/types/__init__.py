@@ -171,7 +171,6 @@ from .util_datetime_parser import parse_datetime
 __all__ = [
     # Core types (no dependencies)
     "TypedDictBasicErrorContext",
-    "ProtocolErrorContext",
     "ProtocolSchemaValue",
     "TypedDictCoreSummary",
     # Type constraints and protocols

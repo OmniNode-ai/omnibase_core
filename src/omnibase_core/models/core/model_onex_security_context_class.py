@@ -5,7 +5,7 @@ Pydantic model for Onex security context with SP0 security profile implementatio
 Provides authentication, authorization, and audit capabilities.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -129,7 +129,7 @@ class ModelOnexSecurityContext(BaseModel):
         info: ValidationInfo,
     ) -> datetime | None:
         """Validate token expiry is in the future."""
-        if v is not None and v <= datetime.utcnow():
+        if v is not None and v <= datetime.now(UTC):
             msg = "Token expiry must be in the future"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -141,7 +141,7 @@ class ModelOnexSecurityContext(BaseModel):
     @classmethod
     def validate_auth_timestamp(cls, v: datetime | None) -> datetime | None:
         """Validate authentication timestamp is not in the future."""
-        if v is not None and v > datetime.utcnow():
+        if v is not None and v > datetime.now(UTC):
             msg = "Authentication timestamp cannot be in the future"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -171,7 +171,7 @@ class ModelOnexSecurityContext(BaseModel):
         return (
             self.authentication_method != EnumAuthenticationMethod.NONE
             and self.user_id is not None
-            and (self.token_expiry is None or self.token_expiry > datetime.utcnow())
+            and (self.token_expiry is None or self.token_expiry > datetime.now(UTC))
         )
 
     def has_role(self, role: str) -> bool:
@@ -191,7 +191,7 @@ class ModelOnexSecurityContext(BaseModel):
 
     def is_token_expired(self) -> bool:
         """Check if authentication token is expired."""
-        return self.token_expiry is not None and self.token_expiry <= datetime.utcnow()
+        return self.token_expiry is not None and self.token_expiry <= datetime.now(UTC)
 
     def get_security_level(self) -> int:
         """Get numeric security level for comparison."""

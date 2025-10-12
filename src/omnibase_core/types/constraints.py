@@ -1,8 +1,3 @@
-from typing import TYPE_CHECKING, Any, TypeVar
-
-if TYPE_CHECKING:
-    from omnibase_core.errors.model_onex_error import ModelOnexError
-
 """
 Type constraints and protocols for better generic programming.
 
@@ -41,13 +36,6 @@ Critical Rules:
 
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
-from pydantic import BaseModel
-
-# Type-only import - NEVER make this a runtime import!
-# Protected by TYPE_CHECKING to prevent circular dependency with errors.error_codes
-if TYPE_CHECKING:
-    from omnibase_core.errors.model_onex_error import ModelOnexError
-
 # Import protocols from omnibase_spi (following ONEX SPI separation)
 from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
 from omnibase_spi.protocols.types import ProtocolExecutable as Executable
@@ -56,8 +44,7 @@ from omnibase_spi.protocols.types import ProtocolMetadataProvider
 from omnibase_spi.protocols.types import ProtocolNameable as Nameable
 from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
 from omnibase_spi.protocols.types import ProtocolValidatable
-
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from pydantic import BaseModel
 
 # Bounded type variables with proper constraints
 
@@ -246,23 +233,12 @@ def validate_primitive_value(obj: object) -> bool:
     """
     Validate and ensure object is a primitive value.
 
-    Uses lazy import of error_codes to avoid circular dependency.
-    This import happens inside the function, so it's only loaded when validation fails.
-
-    CRITICAL: Keep the import inside the function - moving it to module level
-    will create a circular import with errors.error_codes!
+    Raises TypeError for invalid values.
     """
     if not is_primitive_value(obj):
-        # LAZY IMPORT: Only load error_codes when validation fails
-        # This prevents circular dependency at module import time
-        # Import chain: errors.error_codes → types.core_types (no models/constraints)
-
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
-            message=msg,
-        )
+        raise TypeError(msg)  # error-ok: Standard Python type validation pattern
     return True
 
 
@@ -270,23 +246,12 @@ def validate_context_value(obj: object) -> bool:
     """
     Validate and ensure object is a valid context value.
 
-    Uses lazy import of error_codes to avoid circular dependency.
-    This import happens inside the function, so it's only loaded when validation fails.
-
-    CRITICAL: Keep the import inside the function - moving it to module level
-    will create a circular import with errors.error_codes!
+    Raises TypeError for invalid values.
     """
     if not is_context_value(obj):
-        # LAZY IMPORT: Only load error_codes when validation fails
-        # This prevents circular dependency at module import time
-        # Import chain: errors.error_codes → types.core_types (no models/constraints)
-
         obj_type = type(obj).__name__
         msg = f"Expected context value (primitive, list[Any], or dict[str, Any]), got {obj_type}"
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
-            message=msg,
-        )
+        raise TypeError(msg)  # error-ok: Standard Python type validation pattern
     return True
 
 

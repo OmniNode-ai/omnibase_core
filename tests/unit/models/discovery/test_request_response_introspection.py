@@ -196,7 +196,7 @@ class TestIntrospectionResponseEvent:
         )
 
         assert error_response.current_status == EnumNodeCurrentStatus.ERROR
-        assert error_response.additional_info["error_message"] == "Test error"
+        assert error_response.additional_info.error_message == "Test error"
         assert error_response.capabilities.metadata["error"] == "Test error"
 
     def test_detailed_response_models(self):
@@ -256,6 +256,9 @@ class TestMixinRequestResponseIntrospection:
                 self.version = ModelSemVer.parse("1.0.0")
                 self.tags = ["test", "mcp"]
                 self._event_bus = Mock()
+                self._event_bus.is_connected.return_value = (
+                    True  # Return bool, not Mock
+                )
                 self._logger = Mock()
                 super().__init__()
 
@@ -348,7 +351,10 @@ class TestMixinRequestResponseIntrospection:
 
         # Verify response was published
         node._event_bus.publish.assert_called_once()
-        published_event = node._event_bus.publish.call_args[0][0]
+        published_envelope = node._event_bus.publish.call_args[0][0]
+
+        # Extract event from envelope
+        published_event = published_envelope.payload
 
         assert isinstance(published_event, ModelIntrospectionResponseEvent)
         assert published_event.correlation_id == correlation_id
@@ -402,12 +408,15 @@ class TestMixinRequestResponseIntrospection:
 
         # Verify error response was published
         node._event_bus.publish.assert_called_once()
-        published_event = node._event_bus.publish.call_args[0][0]
+        published_envelope = node._event_bus.publish.call_args[0][0]
+
+        # Extract event from envelope
+        published_event = published_envelope.payload
 
         assert isinstance(published_event, ModelIntrospectionResponseEvent)
         assert published_event.correlation_id == correlation_id
         assert published_event.current_status == EnumNodeCurrentStatus.ERROR
-        assert "Test error" in published_event.additional_info["error_message"]
+        assert "Test error" in published_event.additional_info.error_message
 
 
 if __name__ == "__main__":

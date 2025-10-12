@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums import EnumUriType
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelOnexUri(BaseModel):
@@ -15,7 +14,7 @@ class ModelOnexUri(BaseModel):
         description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
     )
     namespace: str = Field(default=..., description="Namespace component of the URI")
-    version_spec: ModelSemVer = Field(
+    version_spec: str = Field(
         default=..., description="Version specifier (semver or constraint)"
     )
     original: str = Field(default=..., description="Original URI string as provided")

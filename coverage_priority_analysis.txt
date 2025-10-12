@@ -1,0 +1,70 @@
+Overall Coverage: 38.41%
+Gap to 60%: 21.59%
+
+====================================================================================================
+PRIORITY 1: LOW COVERAGE (<40%) - 865 modules
+====================================================================================================
+  0.0% |  488 lines | infrastructure/node_reducer
+  0.0% |  437 lines | infrastructure/node_orchestrator
+  0.0% |  394 lines | infrastructure/node_effect
+  0.0% |  327 lines | models/configuration/model_database_secure_config
+  0.0% |  261 lines | infrastructure/node_compute
+  0.0% |  260 lines | models/security/model_permission
+  0.0% |  227 lines | models/core/model_missing_tool
+  0.0% |  224 lines | models/security/model_secret_config
+  0.0% |  220 lines | models/service/model_service_health
+  0.0% |  211 lines | models/security/model_secure_credentials
+  0.0% |  189 lines | models/security/model_signature_chain
+  0.0% |  189 lines | models/service/model_event_bus_output_state
+  0.0% |  184 lines | models/configuration/model_rest_api_connection_config
+  0.0% |  176 lines | models/configuration/model_database_connection_config
+  0.0% |  170 lines | models/security/model_secure_event_envelope_class
+  0.0% |  162 lines | infrastructure/node_base
+  0.0% |  155 lines | models/core/model_cli_output_data
+  0.0% |  153 lines | models/core/model_retry_config
+  0.0% |  150 lines | infrastructure/node_architecture_validation
+  0.0% |  150 lines | models/configuration/model_priority_metadata
+  0.0% |  149 lines | models/core/model_schema_dict
+  0.0% |  149 lines | models/service/model_event_bus_input_state
+  0.0% |  147 lines | models/common/model_typed_mapping
+  0.0% |  147 lines | models/core/model_duration
+  0.0% |  146 lines | models/security/model_securityeventcollection
+  0.0% |  145 lines | models/security/model_security_utils
+  0.0% |  143 lines | models/core/model_environment
+  0.0% |  139 lines | models/security/model_secret_manager
+  0.0% |  136 lines | models/configuration/model_circuit_breaker
+  0.0% |  136 lines | utils/util_contract_loader
+
+====================================================================================================
+PRIORITY 2: MEDIUM COVERAGE (40-60%) - 121 modules
+====================================================================================================
+ 40.4% |   86 lines | models/nodes/model_node_feature_flags
+ 40.4% |  116 lines | models/contracts/subcontracts/model_configuration_subcontract
+ 40.4% |   37 lines | models/operations/model_effect_parameters
+ 40.4% |   37 lines | models/operations/model_event_payload
+ 40.5% |   29 lines | models/configuration/model_retry_policy
+ 40.6% |  142 lines | models/metadata/model_metadatanodeanalytics
+ 40.7% |   71 lines | enums/enum_memory_usage
+ 40.7% |   71 lines | models/nodes/model_node_resource_limits
+ 40.7% |   61 lines | models/core/model_project_metadata_block
+ 40.8% |   82 lines | models/metadata/analytics/model_analytics_core
+ 40.9% |  127 lines | models/cli/model_output_format_options
+ 41.2% |   64 lines | models/metadata/analytics/model_analytics_error_summary
+ 41.7% |   80 lines | models/config/model_examples_collection
+ 41.7% |   62 lines | models/metadata/model_typed_metrics
+ 41.7% |   48 lines | models/utils/model_validation_rules_input_value
+ 41.7% |   20 lines | models/nodes/model_node_status_maintenance
+ 41.8% |  267 lines | models/metadata/model_node_info_summary
+ 41.9% |   33 lines | models/core/model_action_payload_types
+ 41.9% |   64 lines | models/config/model_property_collection
+ 41.9% |   58 lines | models/infrastructure/model_retry_conditions
+
+====================================================================================================
+GOOD COVERAGE (>60%) - 756 modules
+====================================================================================================
+
+Summary Statistics:
+  Low coverage (<40%):    865 modules
+  Medium coverage (40-60%): 121 modules
+  Good coverage (>60%):   756 modules
+  Total modules analyzed: 1742

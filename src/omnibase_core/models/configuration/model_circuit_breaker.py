@@ -7,7 +7,7 @@ Circuit breaker model for implementing fault tolerance and preventing
 cascade failures in load balancing systems.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -141,7 +141,7 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return True
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(UTC)
 
         # Clean up old data outside window
         self._cleanup_old_data(current_time)
@@ -165,7 +165,7 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(UTC)
         self.total_requests += 1
 
         if self.state == "half_open":
@@ -180,7 +180,7 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(UTC)
         self.failure_count += 1
         self.total_requests += 1
         self.last_failure_time = current_time
@@ -209,7 +209,7 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return "disabled"
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(UTC)
 
         if self.state == "open" and self._should_transition_to_half_open(current_time):
             self._transition_to_half_open()
@@ -238,7 +238,7 @@ class ModelCircuitBreaker(BaseModel):
         self.total_requests = 0
         self.half_open_requests = 0
         self.last_failure_time = None
-        self.last_state_change = datetime.utcnow()
+        self.last_state_change = datetime.now(UTC)
 
     def _should_open_circuit(self) -> bool:
         """Check if circuit should be opened based on failures"""
@@ -265,21 +265,21 @@ class ModelCircuitBreaker(BaseModel):
     def _transition_to_open(self) -> None:
         """Transition circuit breaker to open state"""
         self.state = "open"
-        self.last_state_change = datetime.utcnow()
+        self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
 
     def _transition_to_half_open(self) -> None:
         """Transition circuit breaker to half-open state"""
         self.state = "half_open"
-        self.last_state_change = datetime.utcnow()
+        self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
 
     def _transition_to_closed(self) -> None:
         """Transition circuit breaker to closed state"""
         self.state = "closed"
-        self.last_state_change = datetime.utcnow()
+        self.last_state_change = datetime.now(UTC)
         self.failure_count = 0
         self.success_count = 0
         self.total_requests = 0

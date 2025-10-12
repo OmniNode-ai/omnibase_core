@@ -196,7 +196,7 @@ class ModelTimeout(BaseModel):
         elif custom_metadata_raw != {}:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="custom_metadata must be a dict[str, Any]ionary",
+                message="custom_metadata must be a dictionary",
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("typeerror"),

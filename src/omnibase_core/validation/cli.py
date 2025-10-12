@@ -153,7 +153,7 @@ Examples:
             "contracts",
             "patterns",
             "all",
-            "list[Any]",
+            "list",
         ],
         help="Type of validation to run",
     )
@@ -243,7 +243,7 @@ def run_validation_cli() -> int:
     suite = ModelValidationSuite()
 
     # Handle special commands
-    if args.validation_type == "list[Any]":
+    if args.validation_type == "list":
         suite.list_validators()
         return 0
 

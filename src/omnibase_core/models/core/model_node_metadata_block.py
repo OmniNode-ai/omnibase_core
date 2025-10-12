@@ -30,7 +30,6 @@ from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 from omnibase_core.models.metadata.model_metadata_constants import get_namespace_prefix
 from omnibase_core.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
 from .model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue

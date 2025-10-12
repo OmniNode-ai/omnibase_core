@@ -88,8 +88,8 @@ class EnumParameterType(str, Enum):
             cls.INTEGER: "int",
             cls.FLOAT: "float",
             cls.BOOLEAN: "bool",
-            cls.OBJECT: "dict[str, Any]",
-            cls.ARRAY: "list[Any]",
+            cls.OBJECT: "dict",
+            cls.ARRAY: "list",
             cls.UUID: "str",  # UUID as string representation
             cls.ENUM: "str",  # Enum as string value
         }

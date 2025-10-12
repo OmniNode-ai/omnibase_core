@@ -14,11 +14,17 @@ type-safe generic containers that preserve exact type information.
 
 from typing import Any, TypeVar
 
+# Import protocols from omnibase_spi (centralized location)
+from omnibase_spi.protocols.types import (
+    ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
+)
+from omnibase_spi.protocols.types import (
+    ProtocolModelValidatable as ModelProtocolValidatable,
+)
+
 # Import extracted classes
 from .model_typed_mapping import ModelTypedMapping
 from .model_value_container import ModelValueContainer
-from .protocol_model_json_serializable import ModelProtocolJsonSerializable
-from .protocol_model_validatable import ModelProtocolValidatable
 
 ValidatableValue = TypeVar("ValidatableValue", bound=ModelProtocolValidatable)
 

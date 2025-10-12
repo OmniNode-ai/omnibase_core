@@ -223,6 +223,7 @@ class TestModelOrchestratorInfoExecutionContext:
     def test_execution_context_fields(self):
         """Test execution ID, parent, and root execution IDs."""
         orchestrator_id = uuid4()
+        execution_id = uuid4()
         parent_id = uuid4()
         root_id = uuid4()
         version = ModelSemVer(major=1, minor=0, patch=0)
@@ -231,12 +232,12 @@ class TestModelOrchestratorInfoExecutionContext:
             orchestrator_id=orchestrator_id,
             orchestrator_type="kubernetes",
             orchestrator_version=version,
-            execution_id="exec-123",
+            execution_id=execution_id,
             parent_execution_id=parent_id,
             root_execution_id=root_id,
         )
 
-        assert info.execution_id == "exec-123"
+        assert info.execution_id == execution_id
         assert info.parent_execution_id == parent_id
         assert info.root_execution_id == root_id
 

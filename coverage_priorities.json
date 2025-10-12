@@ -1,0 +1,212 @@
+{
+  "metadata": {
+    "generated": "2025-10-10",
+    "current_coverage": 62.72,
+    "target_coverage": 60.0,
+    "next_goal": 70.0,
+    "status": "TARGET_ACHIEVED"
+  },
+  "phase1_critical_modules": [
+    {
+      "module": "src/omnibase_core/decorators/error_handling.py",
+      "priority": "CRITICAL",
+      "priority_emoji": "🔴",
+      "coverage_current": 18.5,
+      "lines_missing": 42,
+      "coverage_gain": 1.28,
+      "effort_hours": "2-3",
+      "test_file": "tests/unit/decorators/test_error_handling_extended.py",
+      "test_cases": [
+        "test_error_handling_propagates_exceptions",
+        "test_error_handling_preserves_context",
+        "test_error_handling_fallback_on_failure",
+        "test_error_handling_decorator_stacking",
+        "test_error_handling_async_functions",
+        "test_error_handling_sync_functions",
+        "test_error_handling_nested_exceptions",
+        "test_error_handling_with_none_return"
+      ],
+      "why_critical": "Error handling decorators affect exception propagation across the entire codebase. Untested error paths can lead to production crashes."
+    },
+    {
+      "module": "src/omnibase_core/decorators/pattern_exclusions.py",
+      "priority": "HIGH",
+      "priority_emoji": "🟡",
+      "coverage_current": 49.2,
+      "lines_missing": 22,
+      "coverage_gain": 0.67,
+      "effort_hours": "1-2",
+      "test_file": "tests/unit/decorators/test_pattern_exclusions.py",
+      "test_cases": [
+        "test_pattern_exclusions_exact_match",
+        "test_pattern_exclusions_wildcard_match",
+        "test_pattern_exclusions_regex_match",
+        "test_pattern_exclusions_multiple_patterns",
+        "test_pattern_exclusions_priority_order",
+        "test_pattern_exclusions_empty_patterns",
+        "test_pattern_exclusions_invalid_regex",
+        "test_pattern_exclusions_case_sensitivity",
+        "test_pattern_exclusions_large_pattern_list"
+      ],
+      "why_critical": "Pattern exclusions control which code paths are analyzed/validated. Incorrect patterns can cause silent failures."
+    },
+    {
+      "module": "src/omnibase_core/models/core/model_configuration_base.py",
+      "priority": "MEDIUM",
+      "priority_emoji": "🟢",
+      "coverage_current": 62.0,
+      "lines_missing": 30,
+      "coverage_gain": 0.91,
+      "effort_hours": "2",
+      "test_file": "tests/unit/models/core/test_model_configuration_base.py",
+      "test_cases": [
+        "test_configuration_base_creation",
+        "test_configuration_base_update_timestamp",
+        "test_configuration_base_enable_disable",
+        "test_configuration_base_serialize_exception",
+        "test_configuration_base_serialize_complex_object",
+        "test_configuration_base_deserialize",
+        "test_configuration_base_validate_instance",
+        "test_configuration_base_validate_empty_name",
+        "test_configuration_base_serializable_protocol",
+        "test_configuration_base_configurable_protocol",
+        "test_configuration_base_nameable_protocol"
+      ],
+      "why_critical": "Base configuration class used across many models. Missing coverage in lifecycle methods and edge cases."
+    },
+    {
+      "module": "src/omnibase_core/__init__.py",
+      "priority": "MEDIUM",
+      "priority_emoji": "🟢",
+      "coverage_current": 9.5,
+      "lines_missing": 13,
+      "coverage_gain": 0.40,
+      "effort_hours": "1",
+      "test_file": "tests/unit/test_init_exports.py",
+      "test_cases": [
+        "test_init_exports_all_defined",
+        "test_init_exports_no_internal_leaks",
+        "test_init_import_time_acceptable",
+        "test_init_no_circular_imports",
+        "test_init_version_available"
+      ],
+      "why_critical": "Ensures public API surface is correctly exposed. Missing tests for import validation."
+    },
+    {
+      "module": "src/omnibase_core/decorators/decorator_allow_any_type.py",
+      "priority": "HIGH",
+      "priority_emoji": "🟡",
+      "coverage_current": 0.0,
+      "lines_missing": 10,
+      "coverage_gain": 0.30,
+      "effort_hours": "0.5",
+      "test_file": "tests/unit/decorators/test_decorator_allow_any_type.py",
+      "test_cases": [
+        "test_allow_any_type_bypasses_validation",
+        "test_allow_any_type_with_custom_classes",
+        "test_allow_any_type_with_exceptions",
+        "test_allow_any_type_with_pydantic_models",
+        "test_allow_any_type_preserves_serialization"
+      ],
+      "why_critical": "Type validation bypass - needs comprehensive testing to ensure safety."
+    },
+    {
+      "module": "src/omnibase_core/constants/event_types.py",
+      "priority": "MEDIUM",
+      "priority_emoji": "🟢",
+      "coverage_current": 44.4,
+      "lines_missing": 10,
+      "coverage_gain": 0.30,
+      "effort_hours": "0.5",
+      "test_file": "tests/unit/constants/test_event_types.py",
+      "test_cases": [
+        "test_event_types_all_defined",
+        "test_event_types_unique_values",
+        "test_event_types_in_event_models",
+        "test_event_types_serialization"
+      ],
+      "why_critical": "Event type constants used throughout event handling. Missing coverage in edge cases."
+    }
+  ],
+  "phase1_summary": {
+    "total_modules": 6,
+    "total_lines_missing": 127,
+    "total_coverage_gain": 3.86,
+    "total_effort_hours": "7-9",
+    "expected_coverage_after": 66.58
+  },
+  "phase2_validation_infrastructure": [
+    {
+      "category": "Validation Modules",
+      "priority": "HIGH",
+      "modules": [
+        "validation/cli.py",
+        "validation/contracts.py",
+        "validation/types.py"
+      ],
+      "estimated_coverage_gain": "2-3%",
+      "effort_hours": "4-5"
+    },
+    {
+      "category": "Infrastructure Models",
+      "priority": "MEDIUM",
+      "modules": [
+        "models/infrastructure/model_result.py",
+        "models/infrastructure/model_event.py",
+        "models/infrastructure/model_error.py"
+      ],
+      "estimated_coverage_gain": "1-2%",
+      "effort_hours": "4-5"
+    },
+    {
+      "category": "Primitives",
+      "priority": "MEDIUM",
+      "modules": [
+        "primitives/model_semver.py",
+        "primitives/validators.py"
+      ],
+      "estimated_coverage_gain": "1-2%",
+      "effort_hours": "3-4"
+    }
+  ],
+  "phase2_summary": {
+    "total_coverage_gain": "4-7%",
+    "total_effort_hours": "11-14",
+    "expected_coverage_after": "70-73%"
+  },
+  "phase3_enums": {
+    "category": "Enum Coverage",
+    "priority": "LOW",
+    "approach": "Integration tests rather than unit tests",
+    "estimated_coverage_gain": "~10%",
+    "note": "Enums are mostly data declarations with low risk. Test via integration tests."
+  },
+  "quick_wins": [
+    {
+      "module": "decorators/decorator_allow_any_type.py",
+      "lines": 10,
+      "current_coverage": 0.0,
+      "effort_hours": "0.5",
+      "gain": 0.30
+    },
+    {
+      "module": "constants/event_types.py",
+      "lines": 26,
+      "current_coverage": 44.4,
+      "effort_hours": "0.5",
+      "gain": 0.30
+    }
+  ],
+  "testing_commands": {
+    "run_tests": "poetry run pytest tests/unit/",
+    "run_with_coverage": "poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing",
+    "run_specific_test": "poetry run pytest tests/unit/decorators/test_error_handling.py -v",
+    "run_test_class": "poetry run pytest tests/unit/decorators/test_error_handling.py::TestErrorHandling -xvs",
+    "view_html_report": "open htmlcov/index.html"
+  },
+  "success_criteria": {
+    "phase1_complete": "66%+ coverage, all critical modules at 90%+",
+    "phase2_complete": "70%+ coverage, validation & infrastructure at 85%+",
+    "phase3_complete": "75%+ coverage, primitives at 80%+"
+  }
+}

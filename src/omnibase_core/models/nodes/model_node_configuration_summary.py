@@ -137,4 +137,7 @@ class ModelNodeConfigurationSummary(BaseModel):
             return False
 
 
+# NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically
+# ModelMetadataValue is imported at runtime, Pydantic will resolve references lazily
+
 __all__ = ["ModelNodeConfigurationSummary"]

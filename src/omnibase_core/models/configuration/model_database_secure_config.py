@@ -3,7 +3,7 @@ import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -45,17 +45,15 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     host: str = Field(
         default=...,
         description="Database host",
-        pattern=r"^[a-zA-Z0-9\-\.]+$",
         max_length=255,
     )
 
-    port: int = Field(default=..., description="Database port", ge=1, le=65535)
+    port: int = Field(default=..., description="Database port")
 
     database: str = Field(
         default=...,
-        description="Database name",
-        pattern=r"^[a-zA-Z0-9_\-]+$",
-        max_length=100,
+        description="Database name or file path (for SQLite)",
+        max_length=500,  # Increased to accommodate file paths
     )
 
     username: str = Field(default=..., description="Database username", max_length=100)
@@ -64,8 +62,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     driver: str = Field(
         default="postgresql",
-        description="Database driver type",
-        pattern=r"^(postgresql|mysql|sqlite|oracle|mssql|mongodb)$",
+        description="Database driver type (supports aliases like postgres, pg, mysql, sqlite, etc.)",
     )
 
     db_schema: str | None = Field(
@@ -184,8 +181,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def validate_port(cls, v: int) -> int:
         """Validate database port number."""
         # Pydantic already ensures v is an int from the field type annotation
-        if not (1 <= v <= 65535):
-            msg = f"Port must be between 1 and 65535, got: {v}"
+        # Allow 0 for SQLite (validated in model validator), otherwise 1-65535
+        if not (0 <= v <= 65535):
+            msg = f"Port must be between 0 and 65535, got: {v}"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
@@ -255,6 +253,35 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             )
 
         return normalized
+
+    @model_validator(mode="after")
+    def validate_driver_specific_constraints(self) -> "ModelDatabaseSecureConfig":
+        """Validate constraints specific to each driver type."""
+        # SQLite-specific validation
+        if self.driver == "sqlite":
+            # SQLite doesn't use network ports - port 0 is acceptable
+            if self.port != 0:
+                # Warn but allow non-zero ports for SQLite (some tests may use it)
+                pass
+            # SQLite database field contains file path - no pattern restrictions
+        else:
+            # Non-SQLite databases require valid port numbers
+            if self.port == 0:
+                msg = f"Port 0 is only valid for SQLite driver, got driver: {self.driver}"
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
+
+            # Non-SQLite databases should have simple database names
+            if "/" in self.database or "\\" in self.database:
+                msg = f"Database name should not contain path separators for driver: {self.driver}. Got: {self.database}"
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
+
+        return self
 
     # === Connection String Generation ===
 

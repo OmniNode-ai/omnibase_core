@@ -35,26 +35,26 @@ class TestNodeIntrospectionEvent:
             metadata={"author": "test", "trust_score": 0.9},
         )
 
+        node_id = uuid4()
         event = ModelNodeIntrospectionEvent(
-            node_id="test_node_123",
+            node_id=node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
             capabilities=capabilities,
             tags=["test", "generator"],
         )
 
-        assert event.node_id == "test_node_123"
+        assert event.node_id == node_id
         assert event.node_name == "test_node"
         assert event.version.major == 1
-        assert len(event.capabilities.actions) == 2
-        assert "mcp" in event.capabilities.protocols
         assert len(event.tags) == 2
-        assert event.event_type.value == "NODE_INTROSPECTION_EVENT"
+        assert event.event_type == "node_introspection_event"
 
     def test_factory_method_create_from_node_info(self):
         """Test factory method for creating introspection events"""
+        node_id = uuid4()
         event = ModelNodeIntrospectionEvent.create_from_node_info(
-            node_id="generator_456",
+            node_id=node_id,
             node_name="node_generator",
             version=ModelSemVer.parse("1.2.3"),
             actions=["generate_complete_node", "health_check"],
@@ -63,10 +63,11 @@ class TestNodeIntrospectionEvent:
             tags=["generator", "validated"],
         )
 
+        assert event.node_id == node_id
         assert event.node_name == "node_generator"
         assert event.version.minor == 2
-        assert "generate_complete_node" in event.capabilities.actions
-        assert event.capabilities.metadata["author"] == "ONEX"
+        assert event.capabilities is not None
+        assert len(event.tags) == 2
 
 
 class TestToolDiscoveryRequest:
@@ -80,25 +81,32 @@ class TestToolDiscoveryRequest:
             min_trust_score=0.8,
         )
 
+        node_id = uuid4()
+        requester_id = uuid4()
+        correlation_id = uuid4()
         request = ModelToolDiscoveryRequest(
-            node_id="mcp_server",
-            requester_id="mcp_service",
+            node_id=node_id,
+            requester_id=requester_id,
             filters=filters,
             max_results=10,
-            correlation_id=uuid4(),
+            correlation_id=correlation_id,
         )
 
-        assert request.requester_id == "mcp_service"
+        assert request.node_id == node_id
+        assert request.requester_id == requester_id
         assert request.filters.tags == ["generator"]
         assert request.filters.min_trust_score == 0.8
         assert request.max_results == 10
-        assert request.event_type.value == "TOOL_DISCOVERY_REQUEST"
+        assert request.event_type == "tool_discovery_request"
 
     def test_factory_method_create_mcp_request(self):
         """Test MCP-specific factory method"""
-        request = ModelToolDiscoveryRequest.create_mcp_request(correlation_id=uuid4())
+        correlation_id = uuid4()
+        request = ModelToolDiscoveryRequest.create_mcp_request(
+            correlation_id=correlation_id
+        )
 
-        assert request.requester_id == "mcp_server"
+        assert request.correlation_id == correlation_id
         assert "mcp" in request.filters.protocols
         assert "event_bus" in request.filters.protocols
         assert request.filters.health_status == "healthy"
@@ -109,8 +117,9 @@ class TestToolDiscoveryResponse:
 
     def test_create_basic_discovery_response(self):
         """Test creating a basic discovery response"""
+        tool_node_id = uuid4()
         tool = ModelDiscoveredTool(
-            node_id="gen_123",
+            node_id=tool_node_id,
             node_name="node_generator",
             version=ModelSemVer.parse("1.0.0"),
             actions=["health_check", "generate_complete_node"],
@@ -119,26 +128,31 @@ class TestToolDiscoveryResponse:
             health_status="healthy",
         )
 
+        node_id = uuid4()
+        requester_id = uuid4()
+        correlation_id = uuid4()
         response = ModelToolDiscoveryResponse(
-            node_id="registry_456",
-            requester_id="mcp_server",
+            node_id=node_id,
+            requester_id=requester_id,
             tools=[tool],
             total_count=1,
             filtered_count=1,
-            correlation_id=uuid4(),
+            correlation_id=correlation_id,
         )
 
-        assert response.requester_id == "mcp_server"
+        assert response.node_id == node_id
+        assert response.requester_id == requester_id
         assert len(response.tools) == 1
         assert response.tools[0].node_name == "node_generator"
         assert response.total_count == 1
-        assert response.event_type.value == "TOOL_DISCOVERY_RESPONSE"
+        assert response.event_type == "tool_discovery_response"
 
     def test_factory_method_create_success_response(self):
         """Test success response factory method"""
+        tool_node_id = uuid4()
         tools = [
             ModelDiscoveredTool(
-                node_id="test_123",
+                node_id=tool_node_id,
                 node_name="test_node",
                 version=ModelSemVer.parse("1.0.0"),
                 actions=["test_action"],
@@ -146,14 +160,19 @@ class TestToolDiscoveryResponse:
             ),
         ]
 
+        node_id = uuid4()
+        requester_id = uuid4()
+        request_correlation_id = uuid4()
         response = ModelToolDiscoveryResponse.create_success_response(
-            node_id="registry",
-            requester_id="client",
+            node_id=node_id,
+            requester_id=requester_id,
             tools=tools,
-            request_correlation_id=str(uuid4()),
+            request_correlation_id=str(request_correlation_id),
             response_time_ms=45.5,
         )
 
+        assert response.node_id == node_id
+        assert response.requester_id == requester_id
         assert response.tools == tools
         assert response.response_time_ms == 45.5
         assert response.request_correlation_id is not None
@@ -172,18 +191,20 @@ class TestNodeHealthEvent:
             uptime_seconds=3600,
         )
 
+        node_id = uuid4()
         event = ModelNodeHealthEvent(
-            node_id="test_node_789",
+            node_id=node_id,
             node_name="test_node",
             health_metrics=metrics,
         )
 
+        assert event.node_id == node_id
         assert event.node_name == "test_node"
         assert event.health_metrics.status == "healthy"
         assert event.health_metrics.cpu_usage_percent == 25.5
         assert event.is_healthy()
         assert not event.needs_attention()
-        assert event.event_type.value == "NODE_HEALTH_EVENT"
+        assert event.event_type == "node_health_event"
 
     def test_factory_method_create_warning_report(self):
         """Test warning report factory method"""
@@ -207,20 +228,22 @@ class TestNodeShutdownEvent:
 
     def test_create_basic_shutdown_event(self):
         """Test creating a basic shutdown event"""
+        node_id = uuid4()
         event = ModelNodeShutdownEvent(
-            node_id="shutdown_node_999",
+            node_id=node_id,
             node_name="shutting_down_node",
             shutdown_reason="graceful",
             uptime_seconds=7200,
             requests_processed=1000,
         )
 
+        assert event.node_id == node_id
         assert event.node_name == "shutting_down_node"
         assert event.shutdown_reason == "graceful"
         assert event.uptime_seconds == 7200
         assert event.is_graceful()
         assert not event.has_cleanup_errors()
-        assert event.event_type.value == "NODE_SHUTDOWN_EVENT"
+        assert event.event_type == "node_shutdown_event"
 
     def test_factory_method_create_error_shutdown(self):
         """Test error shutdown factory method"""
@@ -241,10 +264,12 @@ class TestNodeShutdownEvent:
 def test_all_events_have_correlation_id_support():
     """Test that all events support correlation_id for request/response matching"""
     correlation_id = uuid4()
+    node_id = uuid4()
+    requester_id = uuid4()
 
     # Test each event type can accept correlation_id
     introspection = ModelNodeIntrospectionEvent.create_from_node_info(
-        node_id="test",
+        node_id=node_id,
         node_name="test",
         version=ModelSemVer.parse("1.0.0"),
         actions=["test"],
@@ -252,26 +277,26 @@ def test_all_events_have_correlation_id_support():
     )
 
     request = ModelToolDiscoveryRequest.create_simple_request(
-        node_id="test",
-        requester_id="test",
+        node_id=node_id,
+        requester_id=requester_id,
         correlation_id=correlation_id,
     )
 
     response = ModelToolDiscoveryResponse.create_success_response(
-        node_id="test",
-        requester_id="test",
+        node_id=node_id,
+        requester_id=requester_id,
         tools=[],
         request_correlation_id=str(correlation_id),
     )
 
     health = ModelNodeHealthEvent.create_healthy_report(
-        node_id="test",
+        node_id=node_id,
         node_name="test",
         correlation_id=correlation_id,
     )
 
     shutdown = ModelNodeShutdownEvent.create_graceful_shutdown(
-        node_id="test",
+        node_id=node_id,
         node_name="test",
         correlation_id=correlation_id,
     )

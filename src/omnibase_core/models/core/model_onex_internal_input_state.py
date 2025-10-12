@@ -13,7 +13,7 @@ and are not Optional. This eliminates the need for null checking and fallback
 logic throughout the internal processing pipeline.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
@@ -78,7 +78,7 @@ class ModelOnexInternalInputState(BaseModel):
             version=boundary_state.version,
             event_id=UUIDService.ensure_uuid(boundary_state.event_id),
             correlation_id=UUIDService.ensure_uuid(boundary_state.correlation_id),
-            timestamp=boundary_state.timestamp or datetime.utcnow(),
+            timestamp=boundary_state.timestamp or datetime.now(UTC),
             node_name=boundary_state.node_name or "unknown",
             node_version=boundary_state.node_version
             or parse_semver_from_string("1.0.0"),

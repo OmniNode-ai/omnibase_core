@@ -6,7 +6,7 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 "\nIntrospection Response Event Model\n\nEvent sent by nodes in response to REQUEST_REAL_TIME_INTROSPECTION events.\nProvides real-time node status and capabilities for discovery coordination.\n"
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.constants.event_types import REAL_TIME_INTROSPECTION_RESPONSE
 from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
@@ -14,6 +14,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_current_tool_availability import ModelCurrentToolAvailability
 from .model_introspection_additional_info import ModelIntrospectionAdditionalInfo
@@ -72,11 +73,19 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         default=None, description="Additional node-specific information"
     )
 
+    @field_validator("node_id", mode="before")
+    @classmethod
+    def convert_node_id_to_uuid(cls, v: Any) -> UUID:
+        """Convert string node_id to UUID if needed."""
+        if isinstance(v, str):
+            return uuid_from_string(v, namespace="node")
+        return v
+
     @classmethod
     def create_response(
         cls,
         correlation_id: UUID,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         version: ModelSemVer,
         current_status: EnumNodeCurrentStatus,
@@ -106,9 +115,16 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         Returns:
             ModelIntrospectionResponseEvent instance
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         return cls(
             correlation_id=correlation_id,
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             version=version,
             current_status=current_status,
@@ -124,7 +140,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
     def create_ready_response(
         cls,
         correlation_id: UUID,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         version: ModelSemVer,
         capabilities: ModelNodeCapabilities,
@@ -146,9 +162,16 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         Returns:
             ModelIntrospectionResponseEvent with ready status
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         return cls(
             correlation_id=correlation_id,
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             version=version,
             current_status=EnumNodeCurrentStatus.READY,
@@ -161,7 +184,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
     def create_error_response(
         cls,
         correlation_id: UUID,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         version: ModelSemVer,
         error_message: str,
@@ -183,12 +206,19 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         Returns:
             ModelIntrospectionResponseEvent with error status
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         capabilities = ModelNodeCapabilities(
             actions=[], protocols=[], metadata={"error": error_message}
         )
         return cls(
             correlation_id=correlation_id,
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             version=version,
             current_status=EnumNodeCurrentStatus.ERROR,

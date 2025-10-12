@@ -1,4 +1,6 @@
-from typing import Generic
+from __future__ import annotations
+
+from typing import ClassVar, Generic
 
 from pydantic import Field
 
@@ -9,7 +11,7 @@ This model serves as a fallback for unknown service types,
 providing a flexible but still typed structure.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.configuration.model_generic_connection_config_config import (
     ModelConfig,
@@ -18,6 +20,8 @@ from omnibase_core.models.configuration.model_generic_connection_config_config i
 
 class ModelGenericConnectionConfig(BaseModel):
     """Generic connection configuration for unknown service types."""
+
+    model_config = ConfigDict(extra="forbid")
 
     host: str | None = Field(default=None, description="Service host")
     port: int | None = Field(default=None, description="Service port")
@@ -35,5 +39,3 @@ class ModelGenericConnectionConfig(BaseModel):
         default=30,
         description="Connection timeout in seconds",
     )
-
-    Config = ModelConfig  # Use the imported Config class

@@ -20,7 +20,7 @@ class EnumFilterType(str, Enum):
     STRING = "string"
     NUMERIC = "numeric"
     DATETIME = "datetime"
-    LIST = "list[Any]"
+    LIST = "list"
     METADATA = "metadata"
     STATUS = "status"
     COMPLEX = "complex"

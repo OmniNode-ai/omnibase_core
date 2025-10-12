@@ -16,10 +16,15 @@ import pytest
 from omnibase_core.validation.exceptions import (
     InputValidationError,
 )
+from omnibase_core.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.validation.validation_utils import (
     ProtocolSignatureExtractor,
+    determine_repository_name,
     extract_protocol_signature,
     extract_protocols_from_directory,
+    find_protocol_files,
+    is_protocol_file,
+    suggest_spi_location,
     validate_directory_path,
     validate_file_path,
 )
@@ -401,3 +406,481 @@ class TestLoggingIntegration:
 
         finally:
             temp_path.unlink()
+
+
+class TestDetermineRepositoryName:
+    """Test repository name detection from file paths."""
+
+    def test_omni_prefix_detection(self):
+        """Test detection of omni* prefixed directories."""
+        test_cases = [
+            (Path("/home/user/omnibase_core/src/module.py"), "omnibase_core"),
+            (Path("/projects/omnibase_spi/protocols/test.py"), "omnibase_spi"),
+            (Path("/code/omnifoundation/lib/util.py"), "omnifoundation"),
+        ]
+
+        for path, expected in test_cases:
+            result = determine_repository_name(path)
+            assert result == expected, f"Failed for path {path}"
+
+    def test_src_directory_structure(self):
+        """Test detection from src/ directory structure."""
+        path = Path("/projects/myproject/src/module/file.py")
+        result = determine_repository_name(path)
+        assert result == "myproject"
+
+    def test_unknown_fallback(self):
+        """Test fallback to 'unknown' for unrecognizable paths."""
+        path = Path("/random/path/file.py")
+        result = determine_repository_name(path)
+        assert result == "unknown"
+
+    def test_omni_priority_over_src(self):
+        """Test that omni* prefix takes priority over src/ structure."""
+        path = Path("/projects/myproject/src/omnibase_core/module.py")
+        result = determine_repository_name(path)
+        assert result == "omnibase_core"
+
+
+class TestSuggestSpiLocation:
+    """Test SPI location suggestions based on protocol names."""
+
+    def test_agent_category(self):
+        """Test agent-related protocol categorization."""
+        test_names = [
+            "AgentProtocol",
+            "LifecycleManager",
+            "CoordinatorProtocol",
+            "PoolManager",
+            "AgentManagerProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "agent", f"Failed for {name}"
+
+    def test_workflow_category(self):
+        """Test workflow-related protocol categorization."""
+        test_names = [
+            "WorkflowProtocol",
+            "ExecutionProtocol",
+            "WorkQueue",
+            "TaskExecutor",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "workflow", f"Failed for {name}"
+
+    def test_task_management_with_manager_suffix(self):
+        """Test that TaskManager goes to agent category (manager keyword priority)."""
+        protocol = ModelProtocolInfo(
+            name="TaskManager",
+            file_path="/test/path.py",
+            repository="test",
+            methods=["test_method() -> None"],
+            signature_hash="abc123",
+            line_count=10,
+            imports=[],
+        )
+        result = suggest_spi_location(protocol)
+        # "manager" keyword appears in agent category, so it takes priority
+        assert result == "agent"
+
+    def test_file_handling_category(self):
+        """Test file handling protocol categorization."""
+        test_names = [
+            "FileProtocol",
+            "ReaderProtocol",
+            "WriterProtocol",
+            "StorageProtocol",
+            "StampProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "file_handling", f"Failed for {name}"
+
+    def test_event_bus_category(self):
+        """Test event and messaging protocol categorization."""
+        test_names = [
+            "EventProtocol",
+            "BusProtocol",
+            "MessageProtocol",
+            "PubSubProtocol",
+            "CommunicationProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "event_bus", f"Failed for {name}"
+
+    def test_monitoring_category(self):
+        """Test monitoring and observability protocol categorization."""
+        test_names = [
+            "MonitorProtocol",
+            "MetricProtocol",
+            "ObservabilityProtocol",
+            "TraceProtocol",
+            "HealthCheckProtocol",
+            "LoggerProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "monitoring", f"Failed for {name}"
+
+    def test_integration_category(self):
+        """Test service integration protocol categorization."""
+        test_names = [
+            "ServiceProtocol",
+            "ClientProtocol",
+            "IntegrationProtocol",
+            "BridgeProtocol",
+            "RegistryProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "integration", f"Failed for {name}"
+
+    def test_core_category(self):
+        """Test core ONEX architecture protocol categorization."""
+        test_names = [
+            "ReducerProtocol",
+            "OrchestratorProtocol",
+            "ComputeProtocol",
+            "EffectProtocol",
+            "OnexProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "core", f"Failed for {name}"
+
+    def test_testing_category(self):
+        """Test testing and validation protocol categorization."""
+        test_names = [
+            "TestProtocol",
+            "ValidationProtocol",
+            "CheckProtocol",
+            "VerifyProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "testing", f"Failed for {name}"
+
+    def test_data_category(self):
+        """Test data processing protocol categorization."""
+        test_names = [
+            "DataProtocol",
+            "ProcessorProtocol",
+            "TransformProtocol",
+            "SerializerProtocol",
+        ]
+
+        for name in test_names:
+            protocol = ModelProtocolInfo(
+                name=name,
+                file_path="/test/path.py",
+                repository="test",
+                methods=["test_method() -> None"],
+                signature_hash="abc123",
+                line_count=10,
+                imports=[],
+            )
+            result = suggest_spi_location(protocol)
+            assert result == "data", f"Failed for {name}"
+
+    def test_default_fallback(self):
+        """Test default fallback to 'core' for unrecognized protocols."""
+        protocol = ModelProtocolInfo(
+            name="RandomProtocol",
+            file_path="/test/path.py",
+            repository="test",
+            methods=["test_method() -> None"],
+            signature_hash="abc123",
+            line_count=10,
+            imports=[],
+        )
+        result = suggest_spi_location(protocol)
+        assert result == "core"
+
+    def test_case_insensitive_matching(self):
+        """Test that categorization is case-insensitive."""
+        protocol = ModelProtocolInfo(
+            name="AGENTPROTOCOL",
+            file_path="/test/path.py",
+            repository="test",
+            methods=["test_method() -> None"],
+            signature_hash="abc123",
+            line_count=10,
+            imports=[],
+        )
+        result = suggest_spi_location(protocol)
+        assert result == "agent"
+
+
+class TestIsProtocolFile:
+    """Test protocol file detection."""
+
+    def test_protocol_filename_detection(self):
+        """Test detection by filename containing 'protocol'."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix="_protocol.py", delete=False
+        ) as f:
+            f.write("# Empty file")
+            temp_path = Path(f.name)
+
+        try:
+            result = is_protocol_file(temp_path)
+            assert result is True
+        finally:
+            temp_path.unlink()
+
+    def test_protocol_prefix_detection(self):
+        """Test detection by filename starting with 'protocol_'."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", prefix="protocol_", suffix=".py", delete=False
+        ) as f:
+            f.write("# Empty file")
+            temp_path = Path(f.name)
+
+        try:
+            result = is_protocol_file(temp_path)
+            assert result is True
+        finally:
+            temp_path.unlink()
+
+    def test_protocol_content_detection(self):
+        """Test detection by file content containing 'class Protocol'."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            # Write content that includes "class Protocol" within first 1000 chars
+            f.write("# Regular Python file\nfrom typing import Protocol\n\nclass Protocol:\n    pass")
+            temp_path = Path(f.name)
+
+        try:
+            result = is_protocol_file(temp_path)
+            assert result is True
+        finally:
+            temp_path.unlink()
+
+    def test_non_protocol_file(self):
+        """Test that regular files are not detected as protocols."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write("def regular_function():\n    pass")
+            temp_path = Path(f.name)
+
+        try:
+            result = is_protocol_file(temp_path)
+            assert result is False
+        finally:
+            temp_path.unlink()
+
+    def test_oserror_handling(self, caplog):
+        """Test handling of OSError during file reading."""
+        nonexistent_path = Path("/nonexistent/file.py")
+
+        with caplog.at_level(logging.DEBUG):
+            result = is_protocol_file(nonexistent_path)
+
+            assert result is False
+            assert len(caplog.records) == 1
+            assert caplog.records[0].levelname == "DEBUG"
+            assert "could not read file" in caplog.records[0].message.lower()
+
+    def test_generic_exception_handling(self, caplog, monkeypatch):
+        """Test handling of unexpected exceptions."""
+
+        def mock_read_text(*args, **kwargs):
+            raise RuntimeError("Unexpected error")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write("test")
+            temp_path = Path(f.name)
+
+        try:
+            # Monkeypatch the read_text method
+            monkeypatch.setattr(Path, "read_text", mock_read_text)
+
+            with caplog.at_level(logging.DEBUG):
+                result = is_protocol_file(temp_path)
+
+                assert result is False
+                assert len(caplog.records) == 1
+                assert caplog.records[0].levelname == "DEBUG"
+                assert "unexpected error" in caplog.records[0].message.lower()
+        finally:
+            temp_path.unlink()
+
+
+class TestFindProtocolFiles:
+    """Test protocol file discovery."""
+
+    def test_find_protocol_files_in_directory(self):
+        """Test finding protocol files in a directory."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create protocol files
+            protocol_file1 = temp_path / "protocol_one.py"
+            protocol_file1.write_text("class Protocol: pass")
+
+            protocol_file2 = temp_path / "test_protocol.py"
+            protocol_file2.write_text("class Protocol: pass")
+
+            # Create non-protocol file
+            regular_file = temp_path / "regular.py"
+            regular_file.write_text("def function(): pass")
+
+            result = find_protocol_files(temp_path)
+
+            assert len(result) == 2
+            assert protocol_file1 in result
+            assert protocol_file2 in result
+            assert regular_file not in result
+
+    def test_find_protocol_files_recursive(self):
+        """Test recursive protocol file discovery."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create nested directory structure
+            subdir = temp_path / "subdir"
+            subdir.mkdir()
+
+            protocol_file1 = temp_path / "protocol_root.py"
+            protocol_file1.write_text("class Protocol: pass")
+
+            protocol_file2 = subdir / "protocol_sub.py"
+            protocol_file2.write_text("class Protocol: pass")
+
+            result = find_protocol_files(temp_path)
+
+            assert len(result) == 2
+            assert protocol_file1 in result
+            assert protocol_file2 in result
+
+    def test_find_protocol_files_empty_directory(self):
+        """Test finding protocol files in empty directory."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            result = find_protocol_files(temp_path)
+
+            assert len(result) == 0
+            assert result == []
+
+    def test_find_protocol_files_nonexistent_directory(self):
+        """Test finding protocol files in non-existent directory."""
+        nonexistent_path = Path("/nonexistent/directory")
+
+        result = find_protocol_files(nonexistent_path)
+
+        assert len(result) == 0
+        assert result == []
+
+
+class TestInvalidPathHandling:
+    """Test invalid path handling in validation functions."""
+
+    def test_validate_directory_with_invalid_path(self, monkeypatch):
+        """Test validation with path that cannot be resolved."""
+
+        def mock_resolve(self):
+            raise OSError("Cannot resolve path")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            # Monkeypatch the resolve method to raise OSError
+            monkeypatch.setattr(Path, "resolve", mock_resolve)
+
+            with pytest.raises(InputValidationError, match="Invalid"):
+                validate_directory_path(temp_path, "test")
+
+    def test_validate_file_with_invalid_path(self, monkeypatch):
+        """Test file validation with path that cannot be resolved."""
+
+        def mock_resolve(self):
+            raise ValueError("Cannot resolve path")
+
+        with tempfile.NamedTemporaryFile() as temp_file:
+            temp_path = Path(temp_file.name)
+            # Monkeypatch the resolve method to raise ValueError
+            monkeypatch.setattr(Path, "resolve", mock_resolve)
+
+            with pytest.raises(InputValidationError, match="Invalid"):
+                validate_file_path(temp_path, "test")

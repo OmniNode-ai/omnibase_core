@@ -10,7 +10,7 @@ Permission constraints model for defining additional limitations and requirement
 including usage limits, approval requirements, delegation rules, and audit requirements.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from pydantic import BaseModel, Field
 
@@ -295,7 +295,7 @@ class ModelPermissionConstraints(BaseModel):
             return True
 
         cooldown_end = self.calculate_cooldown_end(last_use)
-        return cooldown_end is not None and datetime.utcnow() >= cooldown_end
+        return cooldown_end is not None and datetime.now(UTC) >= cooldown_end
 
     def get_approval_requirements(self) -> ModelApprovalRequirements:
         """Get approval requirements for this permission"""
@@ -376,7 +376,7 @@ class ModelPermissionConstraints(BaseModel):
         # Check session duration
         if self.max_session_duration_minutes:
             session_duration = (
-                datetime.utcnow() - session_info.start_time
+                datetime.now(UTC) - session_info.start_time
             ).total_seconds() / 60
             if session_duration > self.max_session_duration_minutes:
                 return False
@@ -384,7 +384,7 @@ class ModelPermissionConstraints(BaseModel):
         # Check idle timeout
         if self.session_idle_timeout_minutes:
             idle_time = (
-                datetime.utcnow() - session_info.last_activity
+                datetime.now(UTC) - session_info.last_activity
             ).total_seconds() / 60
             if idle_time > self.session_idle_timeout_minutes:
                 return False

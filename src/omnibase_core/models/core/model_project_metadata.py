@@ -52,7 +52,6 @@ from omnibase_core.models.metadata.model_metadata_constants import (
     PROTOCOL_VERSION_KEY,
     SCHEMA_VERSION_KEY,
 )
-from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 from .model_project_metadata_block import ModelProjectMetadataBlock
 
@@ -92,6 +91,9 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
     Returns an ModelOnexVersionInfo model.
     Raises FileNotFoundError or KeyError if missing.
     """
+    # Import here to avoid circular dependency
+    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+
     # Load and validate YAML using Pydantic model
     yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)
     data = yaml_model.model_dump()
@@ -108,6 +110,9 @@ def get_canonical_namespace_prefix() -> str:
     Returns a string, e.g., 'omnibase'.
     Raises FileNotFoundError or KeyError if missing.
     """
+    # Import here to avoid circular dependency
+    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+
     # Load and validate YAML using Pydantic model
     yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)
     data = yaml_model.model_dump()

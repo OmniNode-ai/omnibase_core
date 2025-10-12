@@ -196,6 +196,42 @@ class ModelOnexError(Exception):
         )
 
     @classmethod
+    def with_new_correlation_id(
+        cls,
+        message: str,
+        error_code: EnumOnexErrorCode | str | None = None,
+        status: EnumOnexStatus = EnumOnexStatus.ERROR,
+        timestamp: datetime | None = None,
+        **context: Any,
+    ) -> tuple["ModelOnexError", UUID]:
+        """
+        Create an ONEX error with a new correlation ID and return both.
+
+        Factory method for creating errors where you need both the error
+        instance and the generated correlation ID for tracking.
+
+        Args:
+            message: Human-readable error message
+            error_code: Canonical error code (optional)
+            status: EnumOnexStatus for this error (default: ERROR)
+            timestamp: Optional timestamp (defaults to current time)
+            **context: Additional context information
+
+        Returns:
+            Tuple of (ModelOnexError instance, generated correlation ID)
+        """
+        correlation_id = uuid4()
+        error = cls(
+            message=message,
+            error_code=error_code,
+            status=status,
+            correlation_id=correlation_id,
+            timestamp=timestamp,
+            **context,
+        )
+        return error, correlation_id
+
+    @classmethod
     def from_exception(
         cls,
         exception: Exception,
@@ -234,6 +270,11 @@ class ModelOnexError(Exception):
     def error_code(self) -> EnumOnexErrorCode | str | None:
         """Get the error code."""
         return self.model.error_code
+
+    @property
+    def code(self) -> EnumOnexErrorCode | str | None:
+        """Alias for error_code for backward compatibility."""
+        return self.error_code
 
     @property
     def status(self) -> EnumOnexStatus:

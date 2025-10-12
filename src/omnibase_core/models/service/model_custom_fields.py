@@ -13,7 +13,7 @@ This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
@@ -149,13 +149,13 @@ class ModelCustomFields(BaseModel):
                 )
 
         self.field_values[name] = value
-        self.last_modified = datetime.utcnow()
+        self.last_modified = datetime.now(UTC)
 
     def remove_field(self, name: str) -> None:
         """Remove a custom field."""
         if name in self.field_values:
             del self.field_values[name]
-            self.last_modified = datetime.utcnow()
+            self.last_modified = datetime.now(UTC)
 
     def define_field(self, name: str, field_type: str, **kwargs: Any) -> None:
         """Define a new custom field."""

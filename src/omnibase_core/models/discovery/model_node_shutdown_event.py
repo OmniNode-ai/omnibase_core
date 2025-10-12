@@ -5,10 +5,11 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.constants.event_types import NODE_SHUTDOWN_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelNodeShutdownEvent(ModelOnexEvent):
@@ -63,10 +64,18 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         default_factory=dict, description="Final performance metrics before shutdown"
     )
 
+    @field_validator("node_id", mode="before")
+    @classmethod
+    def convert_node_id_to_uuid(cls, v: Any) -> UUID:
+        """Convert string node_id to UUID if needed."""
+        if isinstance(v, str):
+            return uuid_from_string(v, namespace="node")
+        return v
+
     @classmethod
     def create_graceful_shutdown(
         cls,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         uptime_seconds: int | None = None,
         requests_processed: int | None = None,
@@ -85,8 +94,15 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         Returns:
             ModelNodeShutdownEvent for graceful shutdown
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             shutdown_reason="graceful",
             final_status="stopping",
@@ -103,7 +119,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     @classmethod
     def create_error_shutdown(
         cls,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         error_message: str,
         uptime_seconds: int | None = None,
@@ -122,8 +138,15 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         Returns:
             ModelNodeShutdownEvent for error shutdown
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             shutdown_reason="error",
             final_status="error",
@@ -136,7 +159,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     @classmethod
     def create_maintenance_shutdown(
         cls,
-        node_id: UUID,
+        node_id: UUID | str,
         node_name: str,
         maintenance_reason: str,
         restart_delay_seconds: int | None = None,
@@ -157,8 +180,15 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         Returns:
             ModelNodeShutdownEvent for maintenance shutdown
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             shutdown_reason="maintenance",
             final_status="stopping",
@@ -172,7 +202,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
 
     @classmethod
     def create_forced_shutdown(
-        cls, node_id: UUID, node_name: str, force_reason: str, **kwargs: Any
+        cls, node_id: UUID | str, node_name: str, force_reason: str, **kwargs: Any
     ) -> "ModelNodeShutdownEvent":
         """
         Factory method to create a forced shutdown event.
@@ -186,8 +216,15 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         Returns:
             ModelNodeShutdownEvent for forced shutdown
         """
+        # Convert node_id to UUID if it's a string
+        node_uuid = (
+            uuid_from_string(node_id, namespace="node")
+            if isinstance(node_id, str)
+            else node_id
+        )
+
         return cls(
-            node_id=node_id,
+            node_id=node_uuid,
             node_name=node_name,
             shutdown_reason="forced",
             final_status="stopped",

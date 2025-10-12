@@ -477,8 +477,5 @@ class ModelEnvironment(BaseModel):
         return env
 
 
-# Fix forward references for Pydantic models
-try:
-    ModelEnvironment.model_rebuild()
-except Exception:
-    pass  # Ignore rebuild errors during import
+# NOTE: model_rebuild() moved to __init__.py after all imports are available
+# Forward references will be resolved when __init__.py imports ModelEnvironment

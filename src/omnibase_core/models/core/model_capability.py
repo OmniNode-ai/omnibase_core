@@ -12,7 +12,7 @@ Extensible capability definition that replaces hardcoded capability enums
 with flexible, third-party extensible capabilities.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -130,7 +130,7 @@ class ModelCapability(BaseModel):
         """Check if capability has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
     @classmethod
     def create_standard(cls, name: str, description: str) -> "ModelCapability":

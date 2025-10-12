@@ -8,7 +8,6 @@ from typing import Any, Generic, List
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class MixinNodeIdFromContract:
@@ -92,6 +91,9 @@ class MixinNodeIdFromContract:
         return node_file.parent
 
     def _load_node_id(self, contract_path: Path | None = None) -> str:
+        # Lazy import to avoid circular dependency
+        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+
         # Use explicit contract_path if provided
         contract_path = contract_path or getattr(self, "_explicit_contract_path", None)
         node_dir = self._get_node_dir()

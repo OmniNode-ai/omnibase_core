@@ -5,7 +5,7 @@ Onex standard reply implementation with comprehensive response wrapping,
 status tracking, error information, and performance metrics for ONEX tool communication.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -428,7 +428,7 @@ class ModelOnexReply(BaseModel):
 
     def get_age_seconds(self) -> float:
         """Get age of reply in seconds."""
-        return (datetime.utcnow() - self.timestamp).total_seconds()
+        return (datetime.now(UTC) - self.timestamp).total_seconds()
 
     def get_summary(self) -> str:
         """Get a human-readable summary of the reply."""

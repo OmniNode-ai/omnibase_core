@@ -23,26 +23,22 @@ def test_import_core_types():
     """Test that core types can be imported without issues."""
     # Should import cleanly
     from omnibase_core.types.core_types import (
-        ProtocolErrorContext,
         ProtocolSchemaValue,
         TypedDictBasicErrorContext,
     )
 
     # Verify types are available
     assert TypedDictBasicErrorContext is not None
-    assert ProtocolErrorContext is not None
     assert ProtocolSchemaValue is not None
 
 
 def test_import_error_codes():
     """Test that error_codes module can be imported."""
-    from omnibase_core.errors.error_codes import (
-        EnumCoreErrorCode,
-        OnexError,
-    )
+    from omnibase_core.errors.error_codes import EnumCoreErrorCode
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
     assert EnumCoreErrorCode is not None
-    assert OnexError is not None
+    assert ModelOnexError is not None
 
 
 def test_import_model_error_context():
@@ -128,34 +124,32 @@ def test_simple_error_context_functionality():
     """Test that TypedDictBasicErrorContext works as expected."""
     from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
-    # Create a simple context
-    context = TypedDictBasicErrorContext(
-        file_path="/test/file.py",
-        line_number=42,
-        function_name="test_function",
-        additional_context={"key": "value"},
-    )
+    # TypedDict creates plain dict instances, so we create it as a dict
+    context: TypedDictBasicErrorContext = {
+        "file_path": "/test/file.py",
+        "line_number": 42,
+        "function_name": "test_function",
+        "additional_context": {"key": "value"},
+    }
 
-    # Test to_dict
-    context_dict = context.to_dict()
-    assert context_dict["file_path"] == "/test/file.py"
-    assert context_dict["line_number"] == 42
-    assert context_dict["function_name"] == "test_function"
-    assert context_dict["key"] == "value"
+    # TypedDict is just a dict, so we can access fields directly
+    assert context["file_path"] == "/test/file.py"
+    assert context["line_number"] == 42
+    assert context["function_name"] == "test_function"
+    assert context["additional_context"]["key"] == "value"
 
-    # Test from_dict
-    restored = TypedDictBasicErrorContext.from_dict(context_dict)
-    assert restored.file_path == context.file_path
-    assert restored.line_number == context.line_number
-    assert restored.function_name == context.function_name
-    assert restored.additional_context == context.additional_context
+    # TypedDict instances are dicts, so we can copy them
+    restored = context.copy()
+    assert restored["file_path"] == context["file_path"]
+    assert restored["line_number"] == context["line_number"]
+    assert restored["function_name"] == context["function_name"]
+    assert restored["additional_context"] == context["additional_context"]
 
 
 def test_model_error_context_conversion():
     """Test conversion between ModelErrorContext and TypedDictBasicErrorContext."""
     from omnibase_core.models.common.model_error_context import ModelErrorContext
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-    from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
     # Create a ModelErrorContext
     model_context = ModelErrorContext(
@@ -166,12 +160,13 @@ def test_model_error_context_conversion():
         },
     )
 
-    # Convert to TypedDictBasicErrorContext
+    # Convert to TypedDictBasicErrorContext (returns a dict)
     simple_context = model_context.to_simple_context()
-    assert isinstance(simple_context, TypedDictBasicErrorContext)
-    assert simple_context.file_path == "/test/file.py"
-    assert simple_context.line_number == 42
-    assert simple_context.additional_context["key"] == "value"
+    # TypedDict is just a type annotation for dict, so we check it's a dict with the right keys
+    assert isinstance(simple_context, dict)
+    assert simple_context["file_path"] == "/test/file.py"
+    assert simple_context["line_number"] == 42
+    assert simple_context["additional_context"]["key"] == "value"
 
     # Convert back to ModelErrorContext
     restored_model = ModelErrorContext.from_simple_context(simple_context)
@@ -239,28 +234,27 @@ def test_type_checking_imports_not_runtime() -> None:
     This checks that modules imported under TYPE_CHECKING guards are not
     available at runtime in the module's direct namespace.
     """
-    # Import types.constraints (has TYPE_CHECKING import of error_codes)
+    # Import types.constraints (has TYPE_CHECKING import of ModelOnexError)
     import omnibase_core.types.constraints as constraints_module
 
-    # Check that the TYPE_CHECKING imports are not in the module's namespace
-    # (they should only be available during type checking)
-    type_checking_imports = ["EnumCoreErrorCode", "OnexError"]
+    # Check that ModelOnexError is not directly accessible at runtime
+    # (it's imported under TYPE_CHECKING for type hints only)
+    # Note: EnumCoreErrorCode IS imported at runtime on line 60 of constraints.py
+    type_checking_imports = ["ModelOnexError"]
 
     for import_name in type_checking_imports:
         # These should NOT be directly accessible at runtime
-        # They are only available under TYPE_CHECKING
-        if not hasattr(constraints_module, "__annotations__"):
-            continue
-
-        # Verify the import is not in the runtime namespace
-        # Note: The import IS available during type checking for mypy/pyright
-        # but should not be in the module dict at runtime
+        # They are only available under TYPE_CHECKING for type hints
         if import_name in dir(constraints_module):
-            # Check if it's actually from TYPE_CHECKING or a real import
-            attr = getattr(constraints_module, import_name, None)
-            if attr is not None and not isinstance(attr, type(Any)):
-                msg = f"{import_name} should only be available during TYPE_CHECKING, not at runtime"
-                raise AssertionError(msg)
+            # If it's in dir(), check if it's actually accessible
+            try:
+                attr = getattr(constraints_module, import_name, None)
+                if attr is not None:
+                    msg = f"{import_name} should only be available during TYPE_CHECKING, not at runtime"
+                    raise AssertionError(msg)
+            except AttributeError:
+                # This is expected - TYPE_CHECKING imports shouldn't be accessible
+                pass
 
 
 def test_lazy_imports_work() -> None:
@@ -297,7 +291,8 @@ def test_validation_functions_lazy_import() -> None:
     Test that validation functions use lazy imports correctly.
 
     The validate_primitive_value and validate_context_value functions
-    should import error_codes only when they need to raise an error.
+    use standard Python TypeError (not ModelOnexError) to avoid importing
+    error_codes, thus maintaining the lazy import pattern.
     """
     # Clear module cache
     modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
@@ -314,17 +309,19 @@ def test_validation_functions_lazy_import() -> None:
     assert validate_primitive_value("test")
     assert validate_context_value("test")
 
-    # Test failed validation (should trigger lazy import)
+    # Test failed validation (should raise TypeError, not ModelOnexError)
     try:
         validate_primitive_value(object())  # Invalid type
-    except Exception:
-        # Expected - validation should fail
-        pass
+    except TypeError as e:
+        # Expected - validation should fail with TypeError
+        assert "Expected primitive value" in str(e)
+    else:
+        pytest.fail("validate_primitive_value should have raised TypeError")
 
-    # After the failed validation, error_codes should now be imported
+    # Verify error_codes is NOT imported (lazy import maintained)
     assert (
-        "omnibase_core.errors.error_codes" in sys.modules
-    ), "error_codes should be imported after validation failure"
+        "omnibase_core.errors.error_codes" not in sys.modules
+    ), "error_codes should NOT be imported (lazy import pattern maintained)"
 
 
 def test_import_order_documentation() -> None:
@@ -386,9 +383,9 @@ def test_error_codes_safe_imports() -> None:
             msg = f"error_codes has runtime import of {forbidden} - this will cause circular import!"
             raise AssertionError(msg)
 
-    # error_codes SHOULD import these safe modules
+    # error_codes SHOULD import enums (but NOT types.core_types - that import was removed to break circular dependencies)
+    # See line 82 of error_codes.py: "# Removed unused import that caused circular dependency:"
     required_imports = [
-        "omnibase_core.types.core_types",
         "omnibase_core.enums.enum_onex_status",
     ]
 

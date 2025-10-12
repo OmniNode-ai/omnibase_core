@@ -97,7 +97,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         sensitive_patterns = [
             r"^[A-Za-z0-9+/]{40,}={0,2}$",  # Base64 encoded (likely secret)
             r"^[a-f0-9]{32,}$",  # Hex strings (likely hash/token)
-            r"^[A-Z0-9]{20,}_[A-Z0-9]{20,}$",  # API key pattern
+            r"^[A-Z0-9]{8,}_[A-Z0-9]{8,}$",  # API key pattern
             r"Bearer\s+[A-Za-z0-9\-._~+/]+=*",  # Bearer token
             r"-----BEGIN[^-]+-----.*-----END[^-]+-----",  # Certificate/key
         ]
@@ -120,7 +120,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         issues: list[str] = []
         recommendations: list[str] = []
 
-        for field_name, _field_info in self.model_fields.items():
+        for field_name, _field_info in self.__class__.model_fields.items():
             field_value = getattr(self, field_name)
 
             if isinstance(field_value, SecretStr):
@@ -176,7 +176,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         """Get security classification for each field."""
         classification = {}
 
-        for field_name, _field_info in self.model_fields.items():
+        for field_name, _field_info in self.__class__.model_fields.items():
             field_value = getattr(self, field_name)
 
             if isinstance(field_value, SecretStr):
@@ -202,7 +202,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         """Validate that required environment variables are available."""
         issues = []
 
-        for field_name, field_info in self.model_fields.items():
+        for field_name, field_info in self.__class__.model_fields.items():
             if field_info.is_required():
                 env_var_name = f"{env_prefix}{field_name.upper()}"
                 if not os.getenv(env_var_name):
@@ -216,7 +216,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         """Get mapping of model fields to environment variable names."""
         mapping = {}
 
-        for field_name in self.model_fields:
+        for field_name in self.__class__.model_fields:
             env_var_name = f"{env_prefix}{field_name.upper()}"
             mapping[field_name] = env_var_name
 
@@ -236,7 +236,7 @@ class ModelSecureCredentials(BaseModel, ABC):
                 try:
                     # Attempt to set the field value
                     if hasattr(self, field_name):
-                        self.model_fields[field_name]
+                        self.__class__.model_fields[field_name]
                         if isinstance(getattr(self, field_name), SecretStr):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
@@ -355,7 +355,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         classification = self.get_security_classification()
 
         for field_name, env_var in env_mapping.items():
-            field_info = self.model_fields.get(field_name)
+            field_info = self.__class__.model_fields.get(field_name)
             description = field_info.description if field_info else ""
             security_level = classification.get(field_name, "public")
 
@@ -380,7 +380,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         classification = self.get_security_classification()
 
         # Check for empty required secrets
-        for field_name, field_info in self.model_fields.items():
+        for field_name, field_info in self.__class__.model_fields.items():
             if field_info.is_required():
                 field_value = getattr(self, field_name)
                 if (
@@ -430,39 +430,42 @@ class ModelSecureCredentials(BaseModel, ABC):
         """Create instance from environment with fallback prefixes."""
         fallback_prefixes = fallback_prefixes or []
 
+        # Helper to check if any env vars with prefix exist
+        def has_env_vars(prefix: str) -> bool:
+            """Check if any environment variables with the given prefix exist."""
+            return any(key.startswith(prefix) for key in os.environ.keys())
+
         # Try primary prefix first
-        try:
-            return cls.load_from_env(env_prefix)
-        except Exception as e:
-            logger.debug(
-                f"Failed to load credentials with primary prefix {env_prefix}: {e!s}",
-                extra={"env_prefix": env_prefix, "error": str(e)},
-            )
+        if has_env_vars(env_prefix):
+            try:
+                return cls.load_from_env(env_prefix)
+            except Exception as e:
+                logger.debug(
+                    f"Failed to load credentials with primary prefix {env_prefix}: {e!s}",
+                    extra={"env_prefix": env_prefix, "error": str(e)},
+                )
 
         # Try fallback prefixes
-        last_error = None
         for fallback_prefix in fallback_prefixes:
-            try:
-                return cls.load_from_env(fallback_prefix)
-            except Exception as e:
-                last_error = e
-                logger.debug(
-                    f"Failed to load credentials with fallback prefix {fallback_prefix}: {e!s}",
-                    extra={"fallback_prefix": fallback_prefix, "error": str(e)},
-                )
-                continue
+            if has_env_vars(fallback_prefix):
+                try:
+                    return cls.load_from_env(fallback_prefix)
+                except Exception as e:
+                    logger.debug(
+                        f"Failed to load credentials with fallback prefix {fallback_prefix}: {e!s}",
+                        extra={"fallback_prefix": fallback_prefix, "error": str(e)},
+                    )
+                    continue
 
-        # If all fail, log final attempt and create with defaults
-        if last_error:
-            logger.warning(
-                f"All credential loading attempts failed. Last error: {last_error!s}. "
-                f"Creating instance with defaults and loading from {env_prefix}",
-                extra={
-                    "env_prefix": env_prefix,
-                    "fallback_prefixes": fallback_prefixes,
-                    "last_error": str(last_error),
-                },
-            )
+        # If all fail, create with defaults
+        logger.warning(
+            f"No environment variables found for prefix {env_prefix} or fallbacks {fallback_prefixes}. "
+            f"Creating instance with defaults.",
+            extra={
+                "env_prefix": env_prefix,
+                "fallback_prefixes": fallback_prefixes,
+            },
+        )
 
         # Create with defaults and load what we can
         instance = cls()

@@ -29,6 +29,8 @@ class TestModelGenericMetadataGeneric:
 
     def test_generic_type_with_standard_fields(self):
         """Test that standard fields work correctly."""
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
         metadata = ModelGenericMetadata(
             name="test_metadata",
             description="Test description",
@@ -38,7 +40,11 @@ class TestModelGenericMetadataGeneric:
 
         assert metadata.name == "test_metadata"
         assert metadata.description == "Test description"
-        assert metadata.version == "1.0.0"
+        # version is converted from string to ModelSemVer by validator
+        assert isinstance(metadata.version, ModelSemVer)
+        assert metadata.version.major == 1
+        assert metadata.version.minor == 0
+        assert metadata.version.patch == 0
         assert metadata.tags == ["test", "generic"]
 
     def test_generic_custom_fields_operations(self):
@@ -111,6 +117,8 @@ class TestModelGenericMetadataGeneric:
 
     def test_generic_from_dict_factory(self):
         """Test from_dict factory method."""
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
         data = {
             "name": "test_metadata",
             "description": "Test description",
@@ -132,18 +140,32 @@ class TestModelGenericMetadataGeneric:
         if custom_data:
             if metadata.custom_fields is None:
                 metadata.custom_fields = {}
-            metadata.custom_fields.update(custom_data)
+            for key, value in custom_data.items():
+                metadata.set_field(key, value)
 
         # Verify standard fields
         assert metadata.name == "test_metadata"
         assert metadata.description == "Test description"
-        assert metadata.version == "2.0.0"
+        # version is converted from string to ModelSemVer by validator
+        assert isinstance(metadata.version, ModelSemVer)
+        assert metadata.version.major == 2
+        assert metadata.version.minor == 0
+        assert metadata.version.patch == 0
         assert metadata.tags == ["factory", "test"]
 
         # Verify custom fields
         assert metadata.get_field("custom_field") == "custom_value"
         assert metadata.get_field("priority") == 10
-        assert metadata.get_field("config") == {"setting": "value"}
+        # Note: Nested dicts don't round-trip perfectly through ModelCliValue
+        # This is expected behavior - nested values become ModelSchemaValue objects
+        config = metadata.get_field("config")
+        assert isinstance(config, dict)
+        assert "setting" in config
+        # The nested value is a ModelSchemaValue, verify it contains the right data
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        assert isinstance(config["setting"], ModelSchemaValue)
+        assert config["setting"].string_value == "value"
 
     def test_generic_pydantic_validation(self):
         """Test Pydantic validation."""
@@ -160,6 +182,8 @@ class TestModelGenericMetadataGeneric:
 
     def test_generic_json_serialization(self):
         """Test JSON serialization."""
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
         metadata = ModelGenericMetadata(
             name="json_test",
             description="JSON serialization test",
@@ -179,7 +203,11 @@ class TestModelGenericMetadataGeneric:
 
         assert restored.name == "json_test"
         assert restored.description == "JSON serialization test"
-        assert restored.version == "1.0.0"
+        # version is ModelSemVer object after deserialization
+        assert isinstance(restored.version, ModelSemVer)
+        assert restored.version.major == 1
+        assert restored.version.minor == 0
+        assert restored.version.patch == 0
         # Note: Custom fields may not round-trip perfectly through JSON due to complex nesting
         # This is expected behavior for complex ModelCliValue structures
 

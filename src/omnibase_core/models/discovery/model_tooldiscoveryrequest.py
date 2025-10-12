@@ -8,6 +8,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_tool_discovery_request import (
     ModelDiscoveryFilters,
 )
+from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelToolDiscoveryRequest(ModelOnexEvent):
@@ -113,9 +114,15 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         )
 
         return cls(
-            node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+            node_id=(
+                uuid_from_string(node_id, namespace="node")
+                if isinstance(node_id, str)
+                else node_id
+            ),
             requester_id=(
-                UUID(requester_id) if isinstance(requester_id, str) else requester_id
+                uuid_from_string(requester_id, namespace="requester")
+                if isinstance(requester_id, str)
+                else requester_id
             ),
             filters=filters,
             correlation_id=correlation_id,

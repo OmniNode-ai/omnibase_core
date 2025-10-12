@@ -6,7 +6,7 @@ from pydantic import Field
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 "\nCLI Execution Model\n\nComplete CLI command execution model that tracks all aspects\nof command execution from start to finish.\n"
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -99,13 +99,13 @@ class ModelCliExecution(BaseModel):
 
     def get_elapsed_ms(self) -> int:
         """Get elapsed time in milliseconds (ongoing or completed)."""
-        end_time = self.end_time or datetime.utcnow()
+        end_time = self.end_time or datetime.now(UTC)
         return int((end_time - self.start_time).total_seconds() * 1000)
 
     def mark_completed(self) -> None:
         """Mark execution as completed."""
         if self.end_time is None:
-            self.end_time = datetime.utcnow()
+            self.end_time = datetime.now(UTC)
 
     def add_metadata(self, key: str, value: ModelSchemaValue) -> None:
         """Add execution metadata."""

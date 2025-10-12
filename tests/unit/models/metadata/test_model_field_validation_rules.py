@@ -381,3 +381,77 @@ class TestModelFieldValidationRulesSerialization:
         assert "min_length" in data
         assert "validation_pattern" not in data
         assert "max_length" not in data
+
+
+class TestModelFieldValidationRulesErrorBranches:
+    """Tests for error handling branches in ModelFieldValidationRules."""
+
+    def test_get_metadata_with_none_values(self):
+        """Test get_metadata when field values are None (line 149 branch)."""
+        # Create rules with all None optional fields
+        rules = ModelFieldValidationRules()
+        metadata = rules.get_metadata()
+        # Should not include None values in metadata
+        assert isinstance(metadata, dict)
+        # None fields should not be in metadata
+        for key in ["validation_pattern", "min_length", "max_length"]:
+            if key in metadata:
+                assert metadata[key] is not None
+
+    def test_get_metadata_without_common_fields(self):
+        """Test get_metadata when model doesn't have common metadata fields."""
+        rules = ModelFieldValidationRules(min_length=5)
+        metadata = rules.get_metadata()
+        # Should handle missing common fields gracefully
+        assert isinstance(metadata, dict)
+        # Common fields like 'name', 'version', 'tags' don't exist on this model
+
+    def test_set_metadata_with_invalid_keys(self):
+        """Test set_metadata with keys that don't exist (line 159->158 branch)."""
+        rules = ModelFieldValidationRules()
+        # Try to set fields including non-existent ones
+        result = rules.set_metadata({
+            "allow_empty": False,
+            "non_existent_field": "invalid",  # Should be ignored
+            "another_invalid": 123,  # Should be ignored
+        })
+        assert result is True
+        assert rules.allow_empty is False
+        # Non-existent fields should not cause errors
+
+    def test_set_metadata_with_validation_error(self):
+        """Test set_metadata exception handling (lines 162-163 branch)."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
+        rules = ModelFieldValidationRules()
+        # Try to set min_length to invalid type
+        with pytest.raises(ModelOnexError) as exc_info:
+            rules.set_metadata({"min_length": "not-an-integer"})
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Operation failed" in str(exc_info.value.message)
+
+    def test_set_metadata_with_type_conversion_error(self):
+        """Test set_metadata with value that causes type error."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        rules = ModelFieldValidationRules()
+        # Try to set max_length to a value that fails validation
+        with pytest.raises(ModelOnexError) as exc_info:
+            rules.set_metadata({"max_length": []})  # List instead of int
+
+        assert exc_info.value.error_code
+        assert "Operation failed" in str(exc_info.value.message)
+
+    def test_set_metadata_with_invalid_numeric_value(self):
+        """Test set_metadata with invalid ModelNumericValue."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        rules = ModelFieldValidationRules()
+        # Try to set min_value to wrong type
+        with pytest.raises(ModelOnexError) as exc_info:
+            rules.set_metadata({"min_value": "not-a-numeric-value"})
+
+        assert exc_info.value.error_code
+        assert "Operation failed" in str(exc_info.value.message)

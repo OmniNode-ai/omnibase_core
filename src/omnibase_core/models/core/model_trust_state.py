@@ -9,7 +9,7 @@ Extensible trust state model that replaces string literals with
 rich metadata for trust verification and management.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -52,7 +52,7 @@ class ModelTrustState(BaseModel):
         """Check if trust has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
 
 # Compatibility alias

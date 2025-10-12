@@ -7,7 +7,7 @@ Health metric model for tracking specific measurable health indicators
 with thresholds, trends, and temporal tracking.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -48,7 +48,7 @@ class ModelHealthMetric(BaseModel):
     )
 
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last metric update timestamp",
     )
 
@@ -95,7 +95,7 @@ class ModelHealthMetric(BaseModel):
         """Update metric with new value and recalculate stats"""
         old_value = self.current_value
         self.current_value = new_value
-        self.last_updated = datetime.utcnow()
+        self.last_updated = datetime.now(UTC)
 
         # Update min/max
         if self.min_value is None or new_value < self.min_value:

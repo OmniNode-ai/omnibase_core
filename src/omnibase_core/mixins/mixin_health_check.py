@@ -105,7 +105,7 @@ class MixinHealthCheck:
         base_health = ModelHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
             message=f"{self.__class__.__name__} is operational",
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             uptime_seconds=0,
             memory_usage_mb=0,
             cpu_usage_percent=0.0,
@@ -163,7 +163,7 @@ class MixinHealthCheck:
                     result = ModelHealthStatus(
                         status=EnumNodeHealthStatus.UNHEALTHY,
                         message=f"Invalid return type from {check_func.__name__}: {type(result)}",
-                        timestamp=datetime.utcnow().isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         uptime_seconds=0,
                         memory_usage_mb=0,
                         cpu_usage_percent=0.0,
@@ -204,7 +204,7 @@ class MixinHealthCheck:
                 error_result = ModelHealthStatus(
                     status=EnumNodeHealthStatus.UNHEALTHY,
                     message=f"Check failed with error: {e!s}",
-                    timestamp=datetime.utcnow().isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                     uptime_seconds=0,
                     memory_usage_mb=0,
                     cpu_usage_percent=0.0,
@@ -219,7 +219,7 @@ class MixinHealthCheck:
         final_health = ModelHealthStatus(
             status=overall_status,
             message=final_message,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             uptime_seconds=0,
             memory_usage_mb=0,
             cpu_usage_percent=0.0,
@@ -254,7 +254,7 @@ class MixinHealthCheck:
         base_health = ModelHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
             message=f"{self.__class__.__name__} is operational",
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             uptime_seconds=0,
             memory_usage_mb=0,
             cpu_usage_percent=0.0,
@@ -290,7 +290,7 @@ class MixinHealthCheck:
                         sync_result = ModelHealthStatus(
                             status=EnumNodeHealthStatus.UNHEALTHY,
                             message=f"Invalid return type from {check_func.__name__}: {type(result)}",
-                            timestamp=datetime.utcnow().isoformat(),
+                            timestamp=datetime.now(UTC).isoformat(),
                             uptime_seconds=0,
                             memory_usage_mb=0,
                             cpu_usage_percent=0.0,
@@ -351,7 +351,7 @@ class MixinHealthCheck:
         return ModelHealthStatus(
             status=overall_status,
             message=final_message,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             uptime_seconds=0,
             memory_usage_mb=0,
             cpu_usage_percent=0.0,
@@ -382,7 +382,7 @@ class MixinHealthCheck:
                     else EnumNodeHealthStatus.UNHEALTHY
                 ),
                 message=f"{dependency_name} is {'available' if is_healthy else 'unavailable'}",
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 uptime_seconds=0,
                 memory_usage_mb=0,
                 cpu_usage_percent=0.0,
@@ -394,7 +394,7 @@ class MixinHealthCheck:
             return ModelHealthStatus(
                 status=EnumNodeHealthStatus.UNHEALTHY,
                 message=f"{dependency_name} check failed: {e!s}",
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 uptime_seconds=0,
                 memory_usage_mb=0,
                 cpu_usage_percent=0.0,

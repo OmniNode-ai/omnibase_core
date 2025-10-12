@@ -13,7 +13,7 @@ Provides detailed metadata tracking for node actions with UUID correlation and t
 Enhanced for tool-as-a-service architecture with strong typing throughout.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -69,7 +69,7 @@ class ModelActionMetadata(BaseModel):
 
     # Timing and execution
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When the action was created",
     )
     started_at: datetime | None = Field(
@@ -136,7 +136,7 @@ class ModelActionMetadata(BaseModel):
 
     def mark_started(self) -> None:
         """Mark the action as started."""
-        self.started_at = datetime.utcnow()
+        self.started_at = datetime.now(UTC)
         self.status = "running"
 
     def mark_completed(
@@ -144,14 +144,14 @@ class ModelActionMetadata(BaseModel):
         result_data: dict[str, Any] | None = None,
     ) -> None:
         """Mark the action as completed with optional result data."""
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(UTC)
         self.status = "completed"
         if result_data:
             self.result_data = result_data
 
     def mark_failed(self, error_details: dict[str, Any]) -> None:
         """Mark the action as failed with error details."""
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(UTC)
         self.status = "failed"
         self.error_details = error_details
 
@@ -205,7 +205,7 @@ class ModelActionMetadata(BaseModel):
         if not self.timeout_seconds or not self.created_at:
             return False
 
-        elapsed = (datetime.utcnow() - self.created_at).total_seconds()
+        elapsed = (datetime.now(UTC) - self.created_at).total_seconds()
         return elapsed > self.timeout_seconds
 
     def can_execute(self, minimum_trust_score: float = 0.0) -> bool:

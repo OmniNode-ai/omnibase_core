@@ -140,9 +140,9 @@ class TestModelOnexErrorContext:
             constraint="min_length",
         )
 
-        assert error.context["field"] == "username"
-        assert error.context["value"] == "test_user"
-        assert error.context["constraint"] == "min_length"
+        assert error.context["additional_context"]["field"] == "username"
+        assert error.context["additional_context"]["value"] == "test_user"
+        assert error.context["additional_context"]["constraint"] == "min_length"
 
         # Check that context is included in the string representation
         error_str = str(error)
@@ -169,7 +169,7 @@ class TestModelOnexErrorContext:
         assert error.context["function_name"] == "process_data"
         assert error.context["module_name"] == "data_processor"
         assert error.context["stack_trace"] == "Traceback (most recent call last)..."
-        assert error.context["error_type"] == "validation"
+        assert error.context["additional_context"]["error_type"] == "validation"
 
     def test_onex_error_with_complex_context_values(self):
         """Test ModelOnexError with complex nested context values."""
@@ -182,11 +182,11 @@ class TestModelOnexErrorContext:
         )
 
         # Verify complex values are preserved
-        assert error.context["config"]["timeout"] == 30
-        assert error.context["config"]["retries"] == 3
-        assert error.context["config"]["enabled"] is True
-        assert error.context["items"] == [1, 2, 3, 4, 5]
-        assert error.context["state"] is None
+        assert error.context["additional_context"]["config"]["timeout"] == 30
+        assert error.context["additional_context"]["config"]["retries"] == 3
+        assert error.context["additional_context"]["config"]["enabled"] is True
+        assert error.context["additional_context"]["items"] == [1, 2, 3, 4, 5]
+        assert error.context["additional_context"]["state"] is None
 
     def test_onex_error_default_context_creation(self):
         """Test that ModelOnexError creates default context when no context provided."""
@@ -298,7 +298,7 @@ class TestModelOnexErrorMessageFormatting:
         assert "[ONEX_CORE_028_NOT_FOUND] Resource not found" == error_str
 
         # Verify context is accessible
-        assert error.context["resource_id"] == "12345"
+        assert error.context["additional_context"]["resource_id"] == "12345"
 
     def test_message_format_with_multiple_context_items(self):
         """Test message formatting with multiple context items."""
@@ -315,9 +315,9 @@ class TestModelOnexErrorMessageFormatting:
         assert "[ONEX_CORE_044_CONFIGURATION_ERROR] Invalid configuration" == error_str
 
         # Verify context values are accessible
-        assert error.context["param1"] == "value1"
-        assert error.context["param2"] == 42
-        assert error.context["param3"] is True
+        assert error.context["additional_context"]["param1"] == "value1"
+        assert error.context["additional_context"]["param2"] == 42
+        assert error.context["additional_context"]["param3"] is True
 
     def test_message_format_with_special_characters(self):
         """Test message formatting with special characters in message."""
@@ -461,7 +461,7 @@ class TestModelOnexErrorIntegration:
         assert isinstance(serialized, dict)
         assert serialized["file_path"] == "/test/file.py"
         assert serialized["line_number"] == 42
-        assert serialized["key"] == "value"
+        assert serialized["additional_context"]["key"] == "value"
 
     def test_multiple_errors_with_same_code(self):
         """Test creating multiple errors with the same error code."""
@@ -487,6 +487,6 @@ class TestModelOnexErrorIntegration:
         )
 
         # Context should be accessible and valid
-        assert error._simple_context.file_path == "/test/file.py"
-        assert error._simple_context.line_number == 42
-        assert isinstance(error._simple_context, TypedDictBasicErrorContext)
+        assert error._simple_context["file_path"] == "/test/file.py"
+        assert error._simple_context["line_number"] == 42
+        assert isinstance(error._simple_context, dict)

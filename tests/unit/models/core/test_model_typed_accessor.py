@@ -218,14 +218,14 @@ class TestModelTypedAccessor:
         assert result is True
 
     def test_configure_with_exception(self):
-        """Test configure handles exceptions gracefully."""
+        """Test configure raises ModelOnexError for invalid input."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
         accessor = TestTypedModel()
 
-        # Try to configure with invalid type
-        result = accessor.configure(data="invalid_type")
-
-        # Should return False on exception
-        assert result is False
+        # Try to configure with invalid type - data expects dict but given string
+        with pytest.raises(ModelOnexError, match="Operation failed"):
+            accessor.configure(data="invalid_type")
 
     def test_serialize_protocol_method(self):
         """Test serialize method (Serializable protocol)."""

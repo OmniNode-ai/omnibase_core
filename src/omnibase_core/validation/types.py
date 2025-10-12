@@ -34,10 +34,8 @@ def validate_union_usage_file(
 ) -> tuple[int, list[str], list[ModelUnionPattern]]:
     """Validate Union usage in a Python file.
 
-    Raises:
-        FileNotFoundError: If the file cannot be found
-        SyntaxError: If the file has invalid Python syntax
-        Exception: If parsing or validation fails
+    Returns a tuple of (union_count, issues, patterns).
+    Errors are returned as issues in the list, not raised.
     """
     try:
         with open(file_path, encoding="utf-8") as f:
@@ -49,16 +47,17 @@ def validate_union_usage_file(
 
         return checker.union_count, checker.issues, checker.union_patterns
 
-    except (FileNotFoundError, SyntaxError):
-        # Re-raise file and syntax errors as-is
-        raise
-    except Exception as e:
-        # Re-raise with context for other errors
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.OPERATION_FAILED,
-            message=f"Failed to validate union usage in {file_path}: {e}",
-            cause=e,
-        ) from e
+    except FileNotFoundError as e:
+        # Return file not found error as an issue
+        return 0, [f"Error: File not found: {e}"], []
+    except SyntaxError as e:
+        # Return syntax error as an issue
+        return 0, [f"Error parsing {file_path}: {e}"], []
+    except (
+        Exception
+    ) as e:  # fallback-ok: Validation errors are returned as issues, not raised
+        # Return other errors as issues
+        return 0, [f"Failed to validate union usage in {file_path}: {e}"], []
 
 
 def validate_union_usage_directory(

@@ -146,7 +146,7 @@ class ModelServiceHealth(BaseModel):
         description="List of service dependencies",
     )
 
-    @field_validator("service_name")
+    @field_validator("service_name", mode="before")
     @classmethod
     def validate_service_name(cls, v: str) -> str:
         """Validate service name format."""
@@ -169,7 +169,7 @@ class ModelServiceHealth(BaseModel):
 
         return v
 
-    @field_validator("connection_string")
+    @field_validator("connection_string", mode="before")
     @classmethod
     def validate_connection_string(cls, v: str) -> str:
         """Validate and sanitize connection string."""
@@ -182,14 +182,22 @@ class ModelServiceHealth(BaseModel):
 
         v = v.strip()
 
-        # Ensure credentials are masked
+        # Ensure credentials are masked - handle user:pass@host pattern specially
+        if re.search(r"//([^:]+):([^@]+)@", v):
+            # For user:pass@host, mask both username and password
+            v = re.sub(
+                r"//([^:]+):([^@]+)@",
+                r"//***:***@",
+                v,
+            )
+
+        # Mask other credential patterns
         sensitive_patterns = [
             r"password=([^&\s]+)",
             r"pwd=([^&\s]+)",
             r"secret=([^&\s]+)",
             r"token=([^&\s]+)",
             r"key=([^&\s]+)",
-            r"//([^:]+):([^@]+)@",  # user:pass@host pattern
         ]
 
         for pattern in sensitive_patterns:
@@ -232,17 +240,25 @@ class ModelServiceHealth(BaseModel):
 
         return v
 
-    @field_validator("last_check_time")
+    @field_validator("last_check_time", mode="before")
     @classmethod
     def validate_last_check_time(cls, v: str | None) -> str | None:
-        """Validate ISO timestamp format."""
+        """Validate ISO timestamp format (requires 'T' separator)."""
         if v is None:
             return v
+
+        # Require strict ISO 8601 format with 'T' separator
+        if not isinstance(v, str) or ("T" not in v and "t" not in v):
+            msg = "last_check_time must be a valid ISO timestamp with 'T' separator"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
         try:
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
-        except ValueError:
+        except (ValueError, AttributeError):
             msg = "last_check_time must be a valid ISO timestamp"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -336,13 +352,10 @@ class ModelServiceHealth(BaseModel):
                 "Consider upgrading to stronger authentication methods",
             )
 
-        # Check for sensitive data in connection string
-        if any(
-            pattern in self.connection_string.lower()
-            for pattern in ["password=", "secret=", "token="]
-        ):
+        # Check for masked credentials (indicates credentials were present)
+        if "***" in self.connection_string:
             recommendations.append(
-                "Credentials detected in connection string - ensure they are properly masked",
+                "Credentials detected and masked in connection string - consider using environment variables or secret management",
             )
 
         return recommendations
@@ -401,9 +414,9 @@ class ModelServiceHealth(BaseModel):
         """Calculate reliability score (0.0 to 1.0) based on health metrics."""
         base_score = 1.0 if self.is_healthy() else 0.0
 
-        # Deduct for consecutive failures
+        # Deduct for consecutive failures (cap at 1.0 = 100% reduction for extreme failures)
         if self.consecutive_failures:
-            failure_penalty = min(self.consecutive_failures * 0.1, 0.6)
+            failure_penalty = min(self.consecutive_failures * 0.1, 1.0)
             base_score *= 1.0 - failure_penalty
 
         # Deduct for poor performance
@@ -563,4 +576,11 @@ class ModelServiceHealth(BaseModel):
         )
 
 
-# Fix forward references for Pydantic models if needed
+# Fix forward references for Pydantic models
+# Import the forward-referenced models to resolve string annotations
+from omnibase_core.models.core.model_generic_properties import ModelGenericProperties
+from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
+from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
+
+# Now rebuild the model to resolve the forward references
+ModelServiceHealth.model_rebuild()

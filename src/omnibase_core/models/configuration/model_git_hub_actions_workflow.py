@@ -48,7 +48,7 @@ class ModelGitHubActionsWorkflow(BaseModel):
 
         return {
             k: serialize_value(getattr(self, k))
-            for k in self.model_fields
+            for k in self.__class__.model_fields
             if getattr(self, k) is not None
         }
 

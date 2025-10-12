@@ -11,7 +11,7 @@ Permission scope model for defining the context and boundaries of permissions
 including resource hierarchies, temporal constraints, and geographic limitations.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -177,7 +177,7 @@ class ModelPermissionScope(BaseModel):
             return True
 
         if current_time is None:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(UTC)
 
         # Check date range
         if self.valid_from and current_time < self.valid_from:

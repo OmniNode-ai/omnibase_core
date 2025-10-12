@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelProgressMetrics(BaseModel):
@@ -56,16 +56,16 @@ class ModelProgressMetrics(BaseModel):
         description="Last metrics update timestamp",
     )
 
-    def add_custom_metric(self, key: str, value: ModelMetadataValue) -> None:
+    def add_custom_metric(self, key: str, value: ModelFlexibleValue) -> None:
         """Add custom progress metric with proper typing."""
         self.custom_metrics.add_metric(key, value)
         self.metrics_last_updated = datetime.now(UTC)
 
-    def get_custom_metric(self, key: str) -> ModelMetadataValue | None:
+    def get_custom_metric(self, key: str) -> ModelFlexibleValue | None:
         """Get custom metric value."""
         raw_value = self.custom_metrics.get_metric_by_key(key)
         if raw_value is not None:
-            return ModelMetadataValue.from_any(raw_value, source="progress_metrics")
+            return ModelFlexibleValue.from_any(raw_value, source="progress_metrics")
         return None
 
     def remove_custom_metric(self, key: str) -> bool:
@@ -129,7 +129,7 @@ class ModelProgressMetrics(BaseModel):
         """Check if any custom metrics exist."""
         return self.get_metrics_count() > 0
 
-    def get_metrics_summary(self) -> dict[str, ModelMetadataValue]:
+    def get_metrics_summary(self) -> dict[str, ModelFlexibleValue]:
         """Get summary of all custom metrics."""
         summary = {}
         for key in self.custom_metrics.get_all_keys():
@@ -149,23 +149,23 @@ class ModelProgressMetrics(BaseModel):
         """Update standard progress metrics."""
         self.add_custom_metric(
             "percentage",
-            ModelMetadataValue.from_float(percentage),
+            ModelFlexibleValue.from_float(percentage),
         )
         self.add_custom_metric(
             "current_step",
-            ModelMetadataValue.from_int(current_step),
+            ModelFlexibleValue.from_integer(current_step),
         )
         self.add_custom_metric(
             "total_steps",
-            ModelMetadataValue.from_int(total_steps),
+            ModelFlexibleValue.from_integer(total_steps),
         )
         self.add_custom_metric(
             "is_completed",
-            ModelMetadataValue.from_bool(is_completed),
+            ModelFlexibleValue.from_boolean(is_completed),
         )
         self.add_custom_metric(
             "elapsed_seconds",
-            ModelMetadataValue.from_float(elapsed_seconds),
+            ModelFlexibleValue.from_float(elapsed_seconds),
         )
 
     def reset(self) -> None:
@@ -192,7 +192,7 @@ class ModelProgressMetrics(BaseModel):
     @classmethod
     def create_with_metrics(
         cls,
-        initial_metrics: dict[str, ModelMetadataValue],
+        initial_metrics: dict[str, ModelFlexibleValue],
     ) -> ModelProgressMetrics:
         """Create metrics instance with initial custom metrics."""
         instance = cls()
@@ -239,6 +239,11 @@ class ModelProgressMetrics(BaseModel):
         """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
+
+# NOTE: model_rebuild() removed - Pydantic v2 handles forward references automatically
+# Even though ModelMetadataValue is imported directly (not under TYPE_CHECKING),
+# explicit rebuilds at module level can cause import order issues
+# Pydantic will rebuild the model lazily when first accessed
 
 # Export for use
 __all__ = ["ModelProgressMetrics"]

@@ -1,0 +1,36 @@
+TYPE ERROR ANALYSIS - 26 ERRORS ACROSS 7 FILES
+===============================================
+
+CATEGORY 1: ModelOnexError call-arg errors (10 errors)
+File: src/omnibase_core/mixins/mixin_fail_fast.py
+Lines: 116, 141, 190, 196, 203, 208, 213, 238, 261, 266
+Issue: Missing positional argument "message" in call to "ModelOnexError"
+
+CATEGORY 2: EnumAuthType attr-defined errors (4 errors)
+File: src/omnibase_core/models/connections/model_connection_auth.py
+Lines: 78, 94, 102, 184
+Issue: "type[EnumAuthType]" has no attribute "API_KEY_HEADER"
+
+CATEGORY 3: UUID arg-type errors (9 errors)
+Files:
+  - model_nodehealthevent.py (lines 119, 164, 200)
+  - model_node_shutdown_event.py (lines 98, 135, 170, 199)
+  - model_introspection_response_event.py (lines 120, 160, 200)
+Issue: Argument "node_id" has incompatible type "UUID | str"; expected "UUID"
+
+CATEGORY 4: NodeVisitor attr-defined error (1 error)
+File: src/omnibase_core/validation/patterns.py
+Line: 49
+Issue: "NodeVisitor" has no attribute "issues"
+
+CATEGORY 5: Unreachable code error (1 error)
+File: src/omnibase_core/logging/emit.py
+Line: 61
+Issue: Statement is unreachable
+
+Priority order:
+1. mixin_fail_fast.py (10 errors)
+2. model_connection_auth.py (4 errors)
+3. Discovery model files (9 errors total)
+4. patterns.py (1 error)
+5. emit.py (1 error)

@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.security.model_permission_custom_fields import (
     ModelPermissionCustomFields,
 )
@@ -62,10 +63,10 @@ class ModelPermission(BaseModel):
 
     action: str = Field(
         default=...,
-        description="Action on resource",
+        description="Action on resource (or '*' for all actions)",
         min_length=1,
         max_length=50,
-        pattern="^[a-z][a-z0-9_]*$",
+        pattern="^([a-z][a-z0-9_]*|\\*)$",
     )
 
     effect: str = Field(
@@ -84,13 +85,11 @@ class ModelPermission(BaseModel):
     resource_hierarchy: list[str] = Field(
         default_factory=list,
         description="Resource hierarchy path (e.g., ['org', 'project', 'resource'])",
-        max_length=10,
     )
 
     resource_patterns: list[str] = Field(
         default_factory=list,
         description="Resource patterns (glob or regex)",
-        max_length=20,
     )
 
     include_subresources: bool = Field(
@@ -102,7 +101,6 @@ class ModelPermission(BaseModel):
     conditions: list[str] = Field(
         default_factory=list,
         description="Conditional expressions that must be true",
-        max_length=50,
     )
 
     priority: int = Field(
@@ -123,7 +121,6 @@ class ModelPermission(BaseModel):
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Permission definition version",
-        pattern="^\\d+\\.\\d+\\.\\d+$",
     )
 
     # Usage limits
@@ -159,7 +156,6 @@ class ModelPermission(BaseModel):
     approval_types: list[str] = Field(
         default_factory=list,
         description="Types of approval required",
-        max_length=10,
     )
 
     min_approvals_required: int = Field(
@@ -224,13 +220,11 @@ class ModelPermission(BaseModel):
     allowed_countries: list[str] = Field(
         default_factory=list,
         description="Allowed ISO country codes",
-        max_length=50,
     )
 
     allowed_ip_ranges: list[str] = Field(
         default_factory=list,
         description="Allowed IP ranges (CIDR notation)",
-        max_length=20,
     )
 
     # Security and audit
@@ -271,13 +265,11 @@ class ModelPermission(BaseModel):
     tags: list[str] = Field(
         default_factory=list,
         description="Permission tags for organization",
-        max_length=20,
     )
 
     compliance_tags: list[str] = Field(
         default_factory=list,
         description="Compliance framework tags",
-        max_length=20,
     )
 
     custom_fields: ModelPermissionCustomFields = Field(
@@ -327,9 +319,9 @@ class ModelPermission(BaseModel):
     def validate_resource_hierarchy(cls, v: list[str]) -> list[str]:
         """Validate resource hierarchy."""
         if len(v) > 10:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Resource hierarchy cannot exceed 10 levels",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -338,9 +330,9 @@ class ModelPermission(BaseModel):
     def validate_resource_patterns(cls, v: list[str]) -> list[str]:
         """Validate resource patterns."""
         if len(v) > 20:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Maximum 20 resource patterns allowed",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -349,9 +341,9 @@ class ModelPermission(BaseModel):
     def validate_conditions(cls, v: list[str]) -> list[str]:
         """Validate conditions."""
         if len(v) > 50:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Maximum 50 conditions allowed",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -360,15 +352,15 @@ class ModelPermission(BaseModel):
     def validate_tags(cls, v: list[str]) -> list[str]:
         """Validate tags."""
         if len(v) > 20:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Maximum 20 tags allowed",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         for tag in v:
             if len(tag) > 50:
-                raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+                raise ModelOnexError(
                     message=f"Tag '{tag}' exceeds maximum length of 50",
-                    error_code="ONEX_PERMISSION_ERROR",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         return v
 
@@ -377,9 +369,9 @@ class ModelPermission(BaseModel):
     def validate_approval_types(cls, v: list[str]) -> list[str]:
         """Validate approval types."""
         if len(v) > 10:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Maximum 10 approval types allowed",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -388,9 +380,9 @@ class ModelPermission(BaseModel):
     def validate_allowed_countries(cls, v: list[str]) -> list[str]:
         """Validate allowed countries."""
         if len(v) > 50:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Maximum 50 countries allowed",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -399,9 +391,9 @@ class ModelPermission(BaseModel):
     def validate_allowed_ip_ranges(cls, v: list[str]) -> list[str]:
         """Validate allowed IP ranges."""
         if len(v) > 20:
-            raise ModelOnexError(  # type: ignore[misc]  # ModelOnexError is properly typed but MyPy can't resolve from import
+            raise ModelOnexError(
                 message="Maximum 20 IP ranges allowed",
-                error_code="ONEX_PERMISSION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -651,7 +643,8 @@ class ModelPermission(BaseModel):
     def _ip_in_cidr(self, ip_address: str, cidr: str) -> bool:
         """Check if IP is in CIDR block (simplified)."""
         if "/" not in cidr:
-            return ip_address == cidr
+            # Treat as prefix match (e.g., "10.0.0" matches "10.0.0.x")
+            return ip_address.startswith(cidr + ".")
 
         network, prefix_len = cidr.split("/")
         return ip_address.startswith(network.rsplit(".", 1)[0])

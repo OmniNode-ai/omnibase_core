@@ -17,14 +17,22 @@ import argparse
 import ast
 import sys
 from pathlib import Path
+from typing import Protocol
 
 from .checker_generic_pattern import GenericPatternChecker
 from .checker_naming_convention import NamingConventionChecker
 from .checker_pydantic_pattern import PydanticPatternChecker
 from .validation_utils import ValidationResult
 
-# Type alias for pattern checkers (all inherit from ast.NodeVisitor)
-PatternChecker = ast.NodeVisitor
+
+class PatternChecker(Protocol):
+    """Protocol for pattern checkers with issues tracking."""
+
+    issues: list[str]
+
+    def visit(self, node: ast.AST) -> None:
+        """Visit an AST node."""
+        ...
 
 
 def validate_patterns_file(file_path: Path) -> list[str]:

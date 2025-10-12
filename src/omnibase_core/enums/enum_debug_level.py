@@ -10,10 +10,72 @@ from enum import Enum
 class EnumDebugLevel(str, Enum):
     """Debug verbosity levels for ONEX execution."""
 
-    NONE = "none"
-    ERROR = "error"
-    WARN = "warn"
-    INFO = "info"
     DEBUG = "debug"
-    TRACE = "trace"
-    VERBOSE = "verbose"
+    INFO = "info"
+    WARN = "warn"
+    ERROR = "error"
+
+    def __str__(self) -> str:
+        """Return the string value of the debug level."""
+        return self.value
+
+    @classmethod
+    def get_verbosity_order(cls) -> list["EnumDebugLevel"]:
+        """
+        Get debug levels ordered from least to most verbose.
+
+        Returns:
+            List of debug levels from least verbose (ERROR) to most verbose (DEBUG)
+        """
+        return [cls.ERROR, cls.WARN, cls.INFO, cls.DEBUG]
+
+    @classmethod
+    def get_severity_order(cls) -> list["EnumDebugLevel"]:
+        """
+        Get debug levels ordered from most to least severe.
+
+        Returns:
+            List of debug levels from most severe (ERROR) to least severe (DEBUG)
+        """
+        return [cls.ERROR, cls.WARN, cls.INFO, cls.DEBUG]
+
+    def is_more_verbose_than(self, other: "EnumDebugLevel") -> bool:
+        """
+        Check if this debug level is more verbose than another.
+
+        Args:
+            other: The debug level to compare against
+
+        Returns:
+            True if this level is more verbose, False otherwise
+        """
+        verbosity_order = self.get_verbosity_order()
+        try:
+            self_index = verbosity_order.index(self)
+            other_index = verbosity_order.index(other)
+            return self_index > other_index
+        except ValueError:
+            return False
+
+    def includes_level(self, other: "EnumDebugLevel") -> bool:
+        """
+        Check if this debug level includes another level.
+
+        A level includes another if it is more verbose or equal.
+        For example, DEBUG includes all levels, ERROR only includes ERROR.
+
+        Args:
+            other: The debug level to check
+
+        Returns:
+            True if this level includes the other, False otherwise
+        """
+        verbosity_order = self.get_verbosity_order()
+        try:
+            self_index = verbosity_order.index(self)
+            other_index = verbosity_order.index(other)
+            # A level includes another if it's at the same position or further right
+            # (more verbose) in the verbosity order
+            return self_index >= other_index
+        except ValueError:
+            return False

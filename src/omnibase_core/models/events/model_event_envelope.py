@@ -385,7 +385,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         return cls(
             payload=payload,
-            source_tool=source_node_id,
+            source_tool=str(source_node_id),
             correlation_id=correlation_id,
             priority=priority,
         )
@@ -414,8 +414,8 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         return cls(
             payload=payload,
-            source_tool=source_node_id,
-            target_tool=target_node_id,
+            source_tool=str(source_node_id),
+            target_tool=str(target_node_id),
             correlation_id=correlation_id,
             priority=priority,
         )

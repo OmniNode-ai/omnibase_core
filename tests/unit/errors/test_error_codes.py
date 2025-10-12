@@ -255,11 +255,10 @@ class TestModelOnexError:
         error = ModelOnexError(
             message="Test error",
             error_code=CoreErrorCode.FILE_NOT_FOUND,
-            context={
-                "file_path": ModelSchemaValue.from_value("/test/path.txt"),
-            },
+            file_path=ModelSchemaValue.from_value("/test/path.txt"),
         )
 
+        # Context kwargs are stored directly in error.context
         assert "file_path" in error.context
         assert error.context["file_path"].to_value() == "/test/path.txt"
 
@@ -408,11 +407,13 @@ class TestCLIAdapter:
         """Test CLIAdapter.exit_with_status() with SUCCESS status."""
         # Note: This would actually exit, so we can't test the full behavior
         # We can only test that the method exists and is callable
+        CLIAdapter = get_cli_adapter()
         assert hasattr(CLIAdapter, "exit_with_status")
         assert callable(CLIAdapter.exit_with_status)
 
     def test_cli_adapter_exit_with_error(self):
         """Test CLIAdapter.exit_with_error() method exists."""
+        CLIAdapter = get_cli_adapter()
         assert hasattr(CLIAdapter, "exit_with_error")
         assert callable(CLIAdapter.exit_with_error)
 

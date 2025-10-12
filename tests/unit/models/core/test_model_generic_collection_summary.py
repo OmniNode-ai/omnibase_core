@@ -152,7 +152,9 @@ class TestModelGenericCollectionSummary:
         assert summary.collection_display_name == "Valid"
 
     def test_configure_with_exception(self):
-        """Test configure handles exceptions gracefully."""
+        """Test configure raises ModelOnexError for invalid input."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
         now = datetime.now()
 
         summary = ModelGenericCollectionSummary(
@@ -164,10 +166,9 @@ class TestModelGenericCollectionSummary:
             has_items=True,
         )
 
-        # Try to set invalid type
-        result = summary.configure(total_items="not_an_int")
-
-        assert result is False
+        # Try to set invalid type - should raise ModelOnexError
+        with pytest.raises(ModelOnexError, match="Operation failed"):
+            summary.configure(total_items="not_an_int")
 
     def test_serialize_protocol_method(self):
         """Test serialize method (Serializable protocol)."""

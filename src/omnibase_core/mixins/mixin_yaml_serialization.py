@@ -27,8 +27,6 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
-from omnibase_core.utils.safe_yaml_loader import serialize_pydantic_model_to_yaml
-
 if TYPE_CHECKING:
     from .protocol_has_model_dump import HasModelDump
 
@@ -52,6 +50,9 @@ class MixinYAMLSerialization:
         Returns:
             YAML string with each line prefixed by comment_prefix.
         """
+        # Lazy import to avoid circular dependency
+        from omnibase_core.utils.safe_yaml_loader import serialize_pydantic_model_to_yaml
+
         # Delegate to centralized serialization function
         return serialize_pydantic_model_to_yaml(
             self,  # type: ignore[arg-type] # Protocol matches Pydantic BaseModel

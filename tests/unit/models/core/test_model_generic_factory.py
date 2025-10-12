@@ -116,13 +116,15 @@ class TestModelGenericFactory:
 
     def test_create_instance_unknown_factory(self):
         """Test error handling for unknown factory."""
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
         factory = ModelGenericFactory(SampleResult)
 
         with pytest.raises(OnexError) as exc_info:
             factory.create("unknown_factory")
 
         error = exc_info.value
-        assert error.error_code.value == "not_found"
+        assert error.error_code == EnumCoreErrorCode.NOT_FOUND
         assert "Unknown factory: unknown_factory" in str(error)
         assert "SampleResult" in str(error)
 
@@ -151,13 +153,15 @@ class TestModelGenericFactory:
 
     def test_build_instance_unknown_builder(self):
         """Test error handling for unknown builder."""
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
         factory = ModelGenericFactory(SampleConfig)
 
         with pytest.raises(OnexError) as exc_info:
             factory.build("unknown_builder", name="test", value="test")
 
         error = exc_info.value
-        assert error.error_code.value == "not_found"
+        assert error.error_code == EnumCoreErrorCode.NOT_FOUND
         assert "Unknown builder: unknown_builder" in str(error)
         assert "SampleConfig" in str(error)
 

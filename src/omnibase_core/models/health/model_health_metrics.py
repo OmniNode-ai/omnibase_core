@@ -93,9 +93,9 @@ class ModelHealthMetrics(BaseModel):
         ge=0.0,
     )
 
-    custom_metrics: dict[str, float] = Field(
+    custom_metrics: dict[str, Any] = Field(
         default_factory=dict,
-        description="Custom health metrics",
+        description="Custom health metrics (can include strings, floats, etc.)",
     )
 
     def is_healthy(
@@ -115,6 +115,14 @@ class ModelHealthMetrics(BaseModel):
         Returns:
             True if all metrics are within healthy thresholds
         """
+        # Check explicit status if set
+        status = self.custom_metrics.get("status")
+        if isinstance(status, str) and status in ["warning", "critical", "error"]:
+            return False
+        if isinstance(status, (int, float)) and status < 1.0:
+            return False
+
+        # Check metrics
         return (
             self.cpu_usage_percent <= cpu_threshold
             and self.memory_usage_percent <= memory_threshold
@@ -161,3 +169,35 @@ class ModelHealthMetrics(BaseModel):
     def get_custom_metric(self, name: str, default: float = 0.0) -> float:
         """Get a custom metric value."""
         return self.custom_metrics.get(name, default)
+
+    @property
+    def status(self) -> str:
+        """
+        Get health status from custom_metrics.
+
+        Maps numeric status values to string status:
+        - 1.0 or higher: "healthy"
+        - 0.5-0.99: "warning"
+        - Below 0.5: "critical"
+        - Missing: inferred from metrics
+        """
+        status_value = self.custom_metrics.get("status")
+
+        if isinstance(status_value, str):
+            return status_value
+
+        if isinstance(status_value, (int, float)):
+            if status_value >= 1.0:
+                return "healthy"
+            elif status_value >= 0.5:
+                return "warning"
+            else:
+                return "critical"
+
+        # Infer from metrics if not explicitly set
+        if self.is_healthy():
+            return "healthy"
+        elif self.error_rate >= 10.0 or self.consecutive_errors >= 5:
+            return "critical"
+        else:
+            return "warning"

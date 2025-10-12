@@ -8,7 +8,7 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 Custom settings model.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -109,4 +109,4 @@ class ModelCustomSettings(BaseModel):
         else:
             self.general_settings[key] = value
 
-        self.last_modified = datetime.utcnow()
+        self.last_modified = datetime.now(UTC)

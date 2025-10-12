@@ -23,13 +23,13 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
-    from omnibase_spi.protocols.core.protocol_workflow_reducer import (
+    from omnibase_spi.protocols.workflow_orchestration.protocol_workflow_reducer import (
         ProtocolWorkflowReducer as WorkflowReducerInterface,
     )
 else:
-    from omnibase_spi.protocols.core import protocol_workflow_reducer
-
-    WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
+    from omnibase_spi.protocols.workflow_orchestration.protocol_workflow_reducer import (
+        ProtocolWorkflowReducer as WorkflowReducerInterface,
+    )
 
 # Import or define Pydantic BaseModel
 from pydantic import BaseModel

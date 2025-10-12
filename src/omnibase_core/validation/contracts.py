@@ -44,8 +44,14 @@ def timeout_handler(signum: int, frame: object) -> None:
     )
 
 
-def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
-    """Load and validate YAML content with Pydantic model - recognized utility function."""
+def load_and_validate_yaml_model(content: str) -> "ModelYamlContract":
+    """Load and validate YAML content with Pydantic model - recognized utility function.
+
+    Uses lazy import to avoid circular dependency with models module.
+    """
+    # LAZY IMPORT: Import ModelYamlContract only when function is called
+    # This breaks circular import: contracts -> models -> mixins -> contracts
+    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
     # Parse YAML and validate with Pydantic model directly
     # Note: yaml.safe_load is required here for parsing before Pydantic validation
@@ -101,24 +107,15 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             # Validation successful if we reach here
 
         except Exception as e:
-            # Re-raise validation errors with context
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract validation failed for {file_path}: {e}",
-            ) from e
+            # Collect validation errors instead of raising
+            errors.append(f"Contract validation failed: {e}")
 
         # All validation is now handled by Pydantic model
         # Legacy manual validation removed for ONEX compliance
 
-    except ModelOnexError:
-        # Re-raise ModelOnexError as-is
-        raise
     except Exception as e:
-        # Re-raise file reading errors with context
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.FILE_ACCESS_ERROR,
-            message=f"Error reading file {file_path}: {e}",
-        ) from e
+        # Collect file reading errors
+        errors.append(f"Error reading file: {e}")
 
     return errors
 

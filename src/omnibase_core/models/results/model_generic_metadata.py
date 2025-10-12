@@ -36,15 +36,15 @@ class ModelGenericMetadata(BaseModel):
     version: ModelSemVer | None = Field(default=None, description="Version information")
 
     # Flexible fields for various use cases
-    tags: list[str] | None = Field(
+    tags: list[str] = Field(
         default_factory=list,
         description="Associated tags",
     )
-    labels: dict[str, str] | None = Field(
+    labels: Dict[str, str] = Field(
         default_factory=dict,
         description="Key-value labels",
     )
-    annotations: dict[str, str] | None = Field(
+    annotations: Dict[str, str] = Field(
         default_factory=dict,
         description="Key-value annotations",
     )
@@ -52,7 +52,7 @@ class ModelGenericMetadata(BaseModel):
     # Additional flexible storage (non-recursive for Pydantic compatibility)
     # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible metadata storage
     # Supporting various JSON-serializable types validated at runtime
-    custom_fields: dict[str, Any] = Field(
+    custom_fields: Dict[str, Any] = Field(
         default_factory=dict,
         description="Custom fields with JSON-serializable types",
     )
@@ -72,3 +72,10 @@ class ModelGenericMetadata(BaseModel):
         if value and isinstance(value, datetime):
             return value.isoformat()
         return None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ModelGenericMetadata":
+        """Create instance from dictionary."""
+        if not isinstance(data, dict):
+            data = {}
+        return cls.model_validate(data)

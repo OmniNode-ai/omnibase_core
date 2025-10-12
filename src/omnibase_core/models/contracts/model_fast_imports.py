@@ -19,9 +19,6 @@ from typing import TypedDict, TypeVar, cast
 # Type variables for proper typing
 ContractType = TypeVar("ContractType", bound="ModelContractBase")
 
-from omnibase_core.models.contracts.model_performance_metrics import (
-    ModelPerformanceMetrics,
-)
 from omnibase_core.models.contracts.model_performance_monitor import (
     ModelPerformanceMonitor,
 )

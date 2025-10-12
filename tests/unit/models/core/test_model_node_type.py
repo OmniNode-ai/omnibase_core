@@ -36,7 +36,10 @@ class TestModelNodeType:
         assert node_type.description == "Test node description"
         assert node_type.category == EnumConfigCategory.TESTING
         assert node_type.dependencies == []
-        assert node_type.version_compatibility == ">=1.0.0"
+        # version_compatibility is now ModelSemVer, not string
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
+        assert node_type.version_compatibility == ModelSemVer(major=1, minor=0, patch=0)
         assert node_type.execution_priority == 50
         assert node_type.is_generator is False
         assert node_type.is_validator is False
@@ -45,12 +48,14 @@ class TestModelNodeType:
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
         node_type = ModelNodeType(
             type_name=EnumTypeName.VALIDATION_ENGINE,
             description="Custom node with all fields",
             category=EnumConfigCategory.VALIDATION,
             dependencies=["NODE_A", "NODE_B"],
-            version_compatibility=">=2.0.0",
+            version_compatibility=ModelSemVer(major=2, minor=0, patch=0),
             execution_priority=75,
             is_generator=True,
             is_validator=True,
@@ -62,7 +67,7 @@ class TestModelNodeType:
         assert node_type.description == "Custom node with all fields"
         assert node_type.category == EnumConfigCategory.VALIDATION
         assert node_type.dependencies == ["NODE_A", "NODE_B"]
-        assert node_type.version_compatibility == ">=2.0.0"
+        assert node_type.version_compatibility == ModelSemVer(major=2, minor=0, patch=0)
         assert node_type.execution_priority == 75
         assert node_type.is_generator is True
         assert node_type.is_validator is True
@@ -435,12 +440,14 @@ class TestModelNodeType:
 
     def test_model_serialization(self):
         """Test model serialization to dict."""
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
         node_type = ModelNodeType(
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test node for serialization",
             category=EnumConfigCategory.TESTING,
             dependencies=["DEP_A", "DEP_B"],
-            version_compatibility=">=1.5.0",
+            version_compatibility=ModelSemVer(major=1, minor=5, patch=0),
             execution_priority=75,
             is_generator=True,
             is_validator=False,
@@ -456,7 +463,7 @@ class TestModelNodeType:
             "description": "Test node for serialization",
             "category": "testing",
             "dependencies": ["DEP_A", "DEP_B"],
-            "version_compatibility": ">=1.5.0",
+            "version_compatibility": {"major": 1, "minor": 5, "patch": 0},
             "execution_priority": 75,
             "is_generator": True,
             "is_validator": False,
@@ -468,12 +475,14 @@ class TestModelNodeType:
 
     def test_model_deserialization(self):
         """Test model deserialization from dict."""
+        from omnibase_core.primitives.model_semver import ModelSemVer
+
         data = {
             "type_name": "VALIDATION_ENGINE",  # Valid EnumTypeName value
             "description": "Node created from dict",
             "category": "validation",  # Valid EnumConfigCategory value
             "dependencies": ["NODE_X", "NODE_Y"],
-            "version_compatibility": ">=2.0.0",
+            "version_compatibility": {"major": 2, "minor": 0, "patch": 0},
             "execution_priority": 85,
             "is_generator": False,
             "is_validator": True,
@@ -488,7 +497,7 @@ class TestModelNodeType:
         assert node_type.description == "Node created from dict"
         assert node_type.category == EnumConfigCategory.VALIDATION
         assert node_type.dependencies == ["NODE_X", "NODE_Y"]
-        assert node_type.version_compatibility == ">=2.0.0"
+        assert node_type.version_compatibility == ModelSemVer(major=2, minor=0, patch=0)
         assert node_type.execution_priority == 85
         assert node_type.is_generator is False
         assert node_type.is_validator is True
@@ -765,17 +774,24 @@ class TestModelNodeTypeEdgeCases:
 
     def test_version_compatibility_edge_cases(self):
         """Test edge cases for version compatibility."""
-        # Complex version constraints
-        version_constraints = [">=1.0.0", "~1.2.3", "^2.0.0", "1.0.0 - 2.0.0", "*"]
+        from omnibase_core.primitives.model_semver import ModelSemVer
 
-        for constraint in version_constraints:
+        # Various version scenarios
+        version_scenarios = [
+            ModelSemVer(major=1, minor=0, patch=0),
+            ModelSemVer(major=1, minor=2, patch=3),
+            ModelSemVer(major=2, minor=0, patch=0),
+            ModelSemVer(major=3, minor=5, patch=7),
+        ]
+
+        for version in version_scenarios:
             node_type = ModelNodeType(
                 type_name=EnumTypeName.CONTRACT_TO_MODEL,
                 description="Test description",
                 category=EnumConfigCategory.TESTING,
-                version_compatibility=constraint,
+                version_compatibility=version,
             )
-            assert node_type.version_compatibility == constraint
+            assert node_type.version_compatibility == version
 
 
 if __name__ == "__main__":

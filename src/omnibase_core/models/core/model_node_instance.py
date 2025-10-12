@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nNode Instance Model\n\nNode instance with health and load information for advanced\ninstance management and service discovery.\n"
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -64,7 +64,7 @@ class ModelNodeInstance(BaseModel):
         Returns:
             True if instance is healthy and responsive
         """
-        heartbeat_age = (datetime.utcnow() - self.last_heartbeat).total_seconds()
+        heartbeat_age = (datetime.now(UTC) - self.last_heartbeat).total_seconds()
         if heartbeat_age > 30:
             return False
         return self.health_metrics.is_healthy()
@@ -115,7 +115,7 @@ class ModelNodeInstance(BaseModel):
 
     def update_heartbeat(self) -> None:
         """Update last heartbeat timestamp."""
-        self.last_heartbeat = datetime.utcnow()
+        self.last_heartbeat = datetime.now(UTC)
 
     def update_metrics(
         self,

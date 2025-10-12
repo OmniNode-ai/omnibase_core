@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 from .model_trustpolicy import ModelTrustPolicy
 
 "\nModelTrustPolicy: Flexible trust policy engine for signature requirements.\n\nThis model defines trust policies that control signature requirements,\ncertificate validation, and compliance rules for secure envelope routing.\n"
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -61,7 +61,7 @@ class ModelPolicyRule(BaseModel):
         if not self.enabled:
             return False
         if check_time is None:
-            check_time = datetime.utcnow()
+            check_time = datetime.now(UTC)
         if self.valid_from and check_time < self.valid_from:
             return False
         return not (self.valid_until and check_time > self.valid_until)

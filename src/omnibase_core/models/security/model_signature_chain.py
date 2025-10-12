@@ -12,7 +12,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 import hashlib
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 
 from pydantic import BaseModel, Field, validator
@@ -118,7 +118,7 @@ class ModelSignatureChain(BaseModel):
                     previous_signature.get_signature_hash()
                 )
             self.signatures.append(signature)
-            self.last_modified = datetime.utcnow()
+            self.last_modified = datetime.now(UTC)
             self._update_chain_hash()
             if validate_chain:
                 self.validate_chain_integrity()
@@ -326,7 +326,7 @@ class ModelSignatureChain(BaseModel):
         """Get statistics about signature ages."""
         if not self.signatures:
             return {}
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         ages = [(now - sig.timestamp).total_seconds() for sig in self.signatures]
         return {
             "oldest_signature_seconds": max(ages),

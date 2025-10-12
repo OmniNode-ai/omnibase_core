@@ -94,8 +94,8 @@ class ModelValidationBase(BaseModel):
             internal_error_code = enum_module.EnumCoreErrorCode.INTERNAL_ERROR.value
         except (ImportError, AttributeError):
             # Fallback if enum module not available or attributes missing
-            validation_error_code = "validation_error"
-            internal_error_code = "internal_error"
+            validation_error_code = "VALIDATION_ERROR"
+            internal_error_code = "INTERNAL_ERROR"
 
         try:
             # Validate the validation container exists and is properly configured
@@ -106,7 +106,8 @@ class ModelValidationBase(BaseModel):
 
             # Validate model fields are accessible and properly typed
             try:
-                model_fields = self.model_fields
+                # Use class-level model_fields to avoid deprecation warning
+                model_fields = self.__class__.model_fields
                 if not model_fields:
                     self.add_validation_warning(
                         "Model has no defined fields - this may indicate a configuration issue",
@@ -120,9 +121,11 @@ class ModelValidationBase(BaseModel):
                         field_value = getattr(self, field_name, None)
 
                         # Check if required field is None/empty
+                        # Note: is_required() is a method in Pydantic v2
                         if (
                             hasattr(field_info, "is_required")
-                            and getattr(field_info, "is_required", False)
+                            and callable(field_info.is_required)
+                            and field_info.is_required()
                             and field_value is None
                         ):
                             self.add_validation_error(
@@ -186,7 +189,7 @@ class ModelValidationBase(BaseModel):
                 error_code=(
                     validation_error_code
                     if "validation_error_code" in locals()
-                    else "validation_error"
+                    else "VALIDATION_ERROR"
                 ),
                 critical=True,
             )

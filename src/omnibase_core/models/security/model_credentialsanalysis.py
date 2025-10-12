@@ -1,4 +1,20 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
+
+
+class ModelManagerAssessment(BaseModel):
+    """Manager-specific assessment details."""
+
+    backend_security_level: str = Field(
+        default=..., description="Backend security level"
+    )
+    audit_compliance: str = Field(default=..., description="Audit compliance status")
+    fallback_resilience: str = Field(
+        default=..., description="Fallback resilience level"
+    )
 
 
 class ModelCredentialsAnalysis(BaseModel):
@@ -47,8 +63,3 @@ class ModelCredentialsAnalysis(BaseModel):
                 "fallback_resilience": self.manager_assessment.fallback_resilience,
             },
         }
-
-
-from omnibase_core.models.security.model_manager_assessment import (
-    ModelManagerAssessment,
-)

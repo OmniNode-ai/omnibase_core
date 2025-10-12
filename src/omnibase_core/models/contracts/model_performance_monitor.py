@@ -1,7 +1,7 @@
 from typing import Any
 
-from omnibase_core.models.contracts.model_performance_metrics import (
-    ModelPerformanceMetrics,
+from omnibase_core.types.typed_dict_performance_metrics import (
+    TypedDictPerformanceMetrics,
 )
 
 
@@ -9,7 +9,7 @@ class ModelPerformanceMonitor:
     """Monitor fast import performance."""
 
     @staticmethod
-    def measure_import_time() -> ModelPerformanceMetrics:
+    def measure_import_time() -> TypedDictPerformanceMetrics:
         """Measure import times for this module vs alternatives."""
         import time
 

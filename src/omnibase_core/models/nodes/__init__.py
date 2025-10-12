@@ -62,3 +62,7 @@ __all__ = [
     "ModelNodeCoreInfoSummary",
     "ModelNodeType",
 ]
+
+# NOTE: model_rebuild() calls removed - Pydantic v2 handles forward references automatically
+# The explicit rebuilds at module level caused import failures for forward references
+# Pydantic will rebuild models lazily when first accessed

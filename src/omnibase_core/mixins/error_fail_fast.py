@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -14,4 +14,4 @@ class FailFastError(Exception):
         super().__init__(message)
         self.error_code = error_code
         self.details = details or {}
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)

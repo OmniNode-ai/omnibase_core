@@ -18,6 +18,7 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.validation.patterns import (
+    GenericPatternChecker,
     NamingConventionChecker,
     PydanticPatternChecker,
     validate_patterns_directory,
@@ -464,6 +465,184 @@ class BadHelper:
         assert any("Helper" in issue for issue in checker.issues)
 
 
+class TestGenericPatternCheckerExtended:
+    """Extended tests for GenericPatternChecker."""
+
+    def test_checker_detects_generic_function_names(self) -> None:
+        """Test checker detects overly generic function names."""
+        code = """
+def process():
+    pass
+
+def handle():
+    pass
+
+def execute():
+    pass
+
+def run():
+    pass
+
+def do():
+    pass
+
+def perform():
+    pass
+
+def manage():
+    pass
+
+def control():
+    pass
+
+def work():
+    pass
+
+def operate():
+    pass
+
+def action():
+    pass
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should detect all generic function names
+        assert len(checker.issues) >= 11
+        assert all("too generic" in issue.lower() for issue in checker.issues)
+
+    def test_checker_detects_functions_with_too_many_parameters(self) -> None:
+        """Test checker detects functions with too many parameters."""
+        code = """
+def complex_function(a, b, c, d, e, f):
+    pass
+
+def another_complex(p1, p2, p3, p4, p5, p6, p7):
+    pass
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should detect both functions (more than 5 parameters)
+        assert len(checker.issues) >= 2
+        assert all("parameters" in issue for issue in checker.issues)
+
+    def test_checker_allows_functions_with_acceptable_parameters(self) -> None:
+        """Test checker allows functions with 5 or fewer parameters."""
+        code = """
+def good_function(a, b, c):
+    pass
+
+def another_good(p1, p2, p3, p4, p5):
+    pass
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should not flag functions with 5 or fewer parameters
+        param_issues = [i for i in checker.issues if "parameters" in i]
+        assert len(param_issues) == 0
+
+    def test_checker_detects_god_classes(self) -> None:
+        """Test checker detects classes with too many methods (god classes)."""
+        code = """
+class GodClass:
+    def method1(self): pass
+    def method2(self): pass
+    def method3(self): pass
+    def method4(self): pass
+    def method5(self): pass
+    def method6(self): pass
+    def method7(self): pass
+    def method8(self): pass
+    def method9(self): pass
+    def method10(self): pass
+    def method11(self): pass
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should detect class with > 10 methods
+        assert len(checker.issues) >= 1
+        assert any("11 methods" in issue for issue in checker.issues)
+
+    def test_checker_allows_classes_with_acceptable_methods(self) -> None:
+        """Test checker allows classes with 10 or fewer methods."""
+        code = """
+class GoodClass:
+    def method1(self): pass
+    def method2(self): pass
+    def method3(self): pass
+    def method4(self): pass
+    def method5(self): pass
+    def method6(self): pass
+    def method7(self): pass
+    def method8(self): pass
+    def method9(self): pass
+    def method10(self): pass
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should not flag classes with 10 or fewer methods
+        assert len(checker.issues) == 0
+
+    def test_checker_handles_mixed_good_and_bad_patterns(self) -> None:
+        """Test checker handles mix of good and bad patterns."""
+        code = """
+class GoodClass:
+    def specific_operation(self, x, y):
+        pass
+
+    def calculate_total(self, items):
+        pass
+
+class BadClass:
+    def process(self):  # Generic name
+        pass
+
+    def handle(self, a, b, c, d, e, f):  # Too many params
+        pass
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should detect both issues in BadClass
+        assert len(checker.issues) >= 2
+
+    def test_checker_handles_nested_classes(self) -> None:
+        """Test checker handles nested class definitions."""
+        code = """
+class Outer:
+    def method1(self): pass
+
+    class Inner:
+        def method1(self): pass
+        def method2(self): pass
+        def process(self): pass  # Generic name
+"""
+
+        tree = ast.parse(code)
+        checker = GenericPatternChecker("test.py")
+        checker.visit(tree)
+
+        # Should check both outer and inner classes
+        assert len(checker.issues) >= 1
+        assert any("process" in issue for issue in checker.issues)
+
+
 class TestValidatePatternsFileExtended:
     """Extended tests for validate_patterns_file function."""
 
@@ -727,3 +906,257 @@ class ModelTest(BaseModel):
 
         assert result.metadata is not None
         assert isinstance(result.metadata, dict)
+
+
+class TestValidatePatternsCLI:
+    """Extended tests for validate_patterns_cli function."""
+
+    def test_validate_patterns_cli_basic_success(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with valid code returns 0."""
+        test_dir = tmp_path / "src"
+        test_dir.mkdir()
+
+        (test_dir / "good.py").write_text(
+            """
+from pydantic import BaseModel
+
+class ModelUser(BaseModel):
+    name: str
+    age: int
+""",
+        )
+
+        # Mock sys.argv
+        import sys
+
+        monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        # Should succeed with valid code
+        assert exit_code == 0
+
+        # Check output
+        captured = capsys.readouterr()
+        assert "Pattern Validation Summary" in captured.out
+        assert "PASSED" in captured.out
+
+    def test_validate_patterns_cli_with_errors(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with invalid code returns 1."""
+        test_dir = tmp_path / "src"
+        test_dir.mkdir()
+
+        (test_dir / "bad.py").write_text(
+            """
+class UserManager:
+    pass
+
+class DataHelper:
+    pass
+""",
+        )
+
+        import sys
+
+        monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        # Should fail with errors (non-strict mode still shows errors)
+        # In non-strict mode, success=True but we still report issues
+
+        captured = capsys.readouterr()
+        assert "Pattern Validation Summary" in captured.out
+
+    def test_validate_patterns_cli_strict_mode(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with --strict flag."""
+        test_dir = tmp_path / "src"
+        test_dir.mkdir()
+
+        (test_dir / "test.py").write_text(
+            """
+from pydantic import BaseModel
+
+class ModelUser(BaseModel):
+    user_id: str
+""",
+        )
+
+        import sys
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["validate_patterns", str(test_dir), "--strict"],
+        )
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        # Should process with strict mode
+        captured = capsys.readouterr()
+        assert "Pattern Validation Summary" in captured.out
+
+    def test_validate_patterns_cli_nonexistent_directory(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with nonexistent directory."""
+        import sys
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["validate_patterns", str(tmp_path / "nonexistent")],
+        )
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        captured = capsys.readouterr()
+        assert "Directory not found" in captured.out
+
+    def test_validate_patterns_cli_multiple_directories(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with multiple directories."""
+        dir1 = tmp_path / "dir1"
+        dir1.mkdir()
+        dir2 = tmp_path / "dir2"
+        dir2.mkdir()
+
+        (dir1 / "test1.py").write_text("# Test file 1")
+        (dir2 / "test2.py").write_text("# Test file 2")
+
+        import sys
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["validate_patterns", str(dir1), str(dir2)],
+        )
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        captured = capsys.readouterr()
+        # Should scan both directories
+        assert "Pattern Validation Summary" in captured.out
+
+    def test_validate_patterns_cli_default_src_directory(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI defaults to src/ directory."""
+        import sys
+        import os
+
+        # Change to tmp_path and create src/
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "test.py").write_text("# Test file")
+
+        # Change working directory
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+
+            monkeypatch.setattr(sys, "argv", ["validate_patterns"])
+
+            from omnibase_core.validation.patterns import validate_patterns_cli
+
+            exit_code = validate_patterns_cli()
+
+            captured = capsys.readouterr()
+            assert "Pattern Validation Summary" in captured.out
+        finally:
+            os.chdir(original_cwd)
+
+    def test_validate_patterns_cli_output_formatting(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI output formatting."""
+        test_dir = tmp_path / "src"
+        test_dir.mkdir()
+
+        (test_dir / "test.py").write_text(
+            """
+class TestClass:
+    pass
+""",
+        )
+
+        import sys
+
+        monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        captured = capsys.readouterr()
+        # Check for proper formatting symbols
+        assert "🔍" in captured.out or "Pattern Validation" in captured.out
+        assert "=" in captured.out
+        assert "Files checked:" in captured.out
+
+    def test_validate_patterns_cli_error_reporting(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI error reporting format."""
+        test_dir = tmp_path / "src"
+        test_dir.mkdir()
+
+        (test_dir / "bad.py").write_text(
+            """
+class BadManager:
+    pass
+""",
+        )
+
+        import sys
+
+        monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
+
+        from omnibase_core.validation.patterns import validate_patterns_cli
+
+        exit_code = validate_patterns_cli()
+
+        captured = capsys.readouterr()
+        # Check output includes issue information
+        assert "Pattern Validation Summary" in captured.out

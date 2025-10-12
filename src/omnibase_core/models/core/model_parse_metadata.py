@@ -11,7 +11,7 @@ Metadata tracking for argument parsing operations including performance
 metrics, source information, and parsing context.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -117,7 +117,7 @@ class ModelParseMetadata(BaseModel):
 
     def mark_complete(self) -> None:
         """Mark parsing as complete and calculate duration."""
-        self.parse_end_time = datetime.utcnow()
+        self.parse_end_time = datetime.now(UTC)
         if self.parse_start_time:
             duration = self.parse_end_time - self.parse_start_time
             self.parse_duration_ms = int(duration.total_seconds() * 1000)

@@ -1,15 +1,15 @@
 """Artifact type enumeration for ONEX core."""
 
-import enum
+from enum import Enum
 
 
-class EnumArtifactType(enum.StrEnum):
+class EnumArtifactType(str, Enum):
     """Artifact types for ONEX ecosystem."""
 
     TOOL = "tool"
-    NODE = "node"
+    VALIDATOR = "validator"
+    AGENT = "agent"
     MODEL = "model"
+    PLUGIN = "plugin"
     SCHEMA = "schema"
-    CONTRACT = "contract"
-    MANIFEST = "manifest"
-    TEMPLATE = "template"
+    CONFIG = "config"

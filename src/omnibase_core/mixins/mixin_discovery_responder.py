@@ -6,7 +6,7 @@
 import asyncio
 import json
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
@@ -410,7 +410,7 @@ class MixinDiscoveryResponder:
             "node_type": self.__class__.__name__,
             "capabilities": self.get_discovery_capabilities(),
             "health_status": self.get_health_status(),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     def get_discovery_capabilities(self) -> list[str]:

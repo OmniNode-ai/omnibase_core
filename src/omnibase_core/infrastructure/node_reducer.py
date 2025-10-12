@@ -884,7 +884,7 @@ class NodeReducer(NodeCoreBase):
                         **{
                             k: v
                             for k, v in input_data.__dict__.items()
-                            if k not in ["data", "accumulator_init"]
+                            if k not in ["data", "accumulator_init", "reduction_type"]
                         },
                     )
 
@@ -906,7 +906,7 @@ class NodeReducer(NodeCoreBase):
                 **{
                     k: v
                     for k, v in input_data.__dict__.items()
-                    if k not in ["data", "accumulator_init"]
+                    if k not in ["data", "accumulator_init", "reduction_type"]
                 },
             )
 
@@ -945,7 +945,7 @@ class NodeReducer(NodeCoreBase):
                         **{
                             k: v
                             for k, v in input_data.__dict__.items()
-                            if k not in ["data"]
+                            if k not in ["data", "reduction_type"]
                         },
                     )
 
@@ -966,7 +966,7 @@ class NodeReducer(NodeCoreBase):
             final_input = ModelReducerInput(
                 data=final_items,
                 reduction_type=input_data.reduction_type,
-                **{k: v for k, v in input_data.__dict__.items() if k not in ["data"]},
+                **{k: v for k, v in input_data.__dict__.items() if k not in ["data", "reduction_type"]},
             )
 
             final_result, final_count = await self._process_batch(
@@ -1154,8 +1154,11 @@ class NodeReducer(NodeCoreBase):
                 return []
 
             metadata = input_data.metadata or {}
-            score_field = metadata.get("score_field", "score")
-            method = metadata.get("normalization_method", "min_max")
+            # Unwrap ModelSchemaValue objects to get raw values
+            score_field_val = metadata.get("score_field", "score")
+            score_field = score_field_val.to_value() if isinstance(score_field_val, ModelSchemaValue) else score_field_val
+            method_val = metadata.get("normalization_method", "min_max")
+            method = method_val.to_value() if isinstance(method_val, ModelSchemaValue) else method_val
 
             # Extract scores
             scores = []

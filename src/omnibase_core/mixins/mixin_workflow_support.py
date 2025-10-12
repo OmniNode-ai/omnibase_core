@@ -227,9 +227,9 @@ class MixinDagSupport:
 
     def _get_current_timestamp(self) -> str:
         """Get current timestamp in ISO format."""
-        from datetime import datetime
+        from datetime import UTC, datetime
 
-        return datetime.utcnow().isoformat() + "Z"
+        return datetime.now(UTC).isoformat() + "Z"
 
     def _safe_log_error(self, message: str) -> None:
         """Safely log error without failing tool execution."""

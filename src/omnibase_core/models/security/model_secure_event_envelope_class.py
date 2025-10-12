@@ -5,7 +5,7 @@ Cryptographically signed event envelope with enterprise security features.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -304,7 +304,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
                     compliance_frameworks=[],
                 ),
                 policy_validation=None,
-                verified_at=datetime.utcnow().isoformat(),
+                verified_at=datetime.now(UTC).isoformat(),
             )
 
         # Validate content integrity first
@@ -351,7 +351,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
                     ),
                 ),
                 policy_validation=None,
-                verified_at=datetime.utcnow().isoformat(),
+                verified_at=datetime.now(UTC).isoformat(),
             )
 
         # Validate signature chain
@@ -416,7 +416,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
                 ),
             ),
             policy_validation=policy_validation,
-            verified_at=datetime.utcnow().isoformat(),
+            verified_at=datetime.now(UTC).isoformat(),
         )
 
         # Log verification event
@@ -562,7 +562,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         event = ModelSecurityEvent(
             event_id=uuid4(),
             event_type=event_type,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             envelope_id=self.envelope_id,
             status=EnumSecurityEventStatus.SUCCESS,  # Required field
             **kwargs,

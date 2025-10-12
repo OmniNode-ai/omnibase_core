@@ -1,0 +1,241 @@
+{
+  "meta": {
+    "generated_by": "agent-6-coverage-analysis",
+    "timestamp": "2025-10-10",
+    "current_coverage": 38.41,
+    "target_coverage": 60.0,
+    "gap": 21.59
+  },
+  "summary": {
+    "total_modules": 1742,
+    "low_coverage": 865,
+    "medium_coverage": 121,
+    "good_coverage": 756
+  },
+  "agent7": {
+    "phase": "Quick Wins",
+    "target_coverage": "46-50%",
+    "modules": [
+      {
+        "module": "models/core/model_uri",
+        "coverage": 0.0,
+        "lines": 8,
+        "missing": 8,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL"
+      },
+      {
+        "module": "models/contracts/model_performance_monitor",
+        "coverage": 0.0,
+        "lines": 9,
+        "missing": 9,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL"
+      },
+      {
+        "module": "models/core/model_environment",
+        "coverage": 0.0,
+        "lines": 143,
+        "missing": 143,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL"
+      },
+      {
+        "module": "models/contracts/model_fast_imports",
+        "coverage": 7.9,
+        "lines": 72,
+        "missing": 66,
+        "action": "EXPAND_EXISTING",
+        "priority": "HIGH"
+      },
+      {
+        "module": "mixins/mixin_fail_fast",
+        "coverage": 20.5,
+        "lines": 93,
+        "missing": 67,
+        "action": "EXPAND_EXISTING",
+        "priority": "HIGH"
+      },
+      {
+        "module": "models/nodes/model_node_configuration_summary",
+        "coverage": 39.7,
+        "lines": 52,
+        "missing": 25,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "models/nodes/model_node_metadata_info",
+        "coverage": 42.4,
+        "lines": 200,
+        "missing": 100,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "models/nodes/model_function_node_metadata_class",
+        "coverage": 43.8,
+        "lines": 175,
+        "missing": 87,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "models/events/model_event_envelope",
+        "coverage": 49.1,
+        "lines": 98,
+        "missing": 43,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "models/health/model_health_metrics",
+        "coverage": 49.3,
+        "lines": 57,
+        "missing": 24,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "primitives/model_semver",
+        "coverage": 54.0,
+        "lines": 73,
+        "missing": 29,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "models/infrastructure/model_metrics_data",
+        "coverage": 54.1,
+        "lines": 69,
+        "missing": 26,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "validation/types",
+        "coverage": 55.4,
+        "lines": 77,
+        "missing": 31,
+        "action": "EXPAND_EXISTING",
+        "priority": "MEDIUM"
+      },
+      {
+        "module": "models/config/model_uri",
+        "coverage": 56.5,
+        "lines": 19,
+        "missing": 6,
+        "action": "EXPAND_EXISTING",
+        "priority": "LOW"
+      }
+    ],
+    "total_lines": 1145,
+    "total_missing": 664,
+    "estimated_test_files": 14,
+    "estimated_coverage_gain": "8-12%"
+  },
+  "agent8": {
+    "phase": "Infrastructure Coverage",
+    "target_coverage": "60-65%",
+    "modules": [
+      {
+        "module": "infrastructure/node_base",
+        "coverage": 0.0,
+        "lines": 162,
+        "missing": 162,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL",
+        "category": "FOUNDATION"
+      },
+      {
+        "module": "infrastructure/node_effect",
+        "coverage": 0.0,
+        "lines": 394,
+        "missing": 394,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL",
+        "category": "NODE_TYPE"
+      },
+      {
+        "module": "infrastructure/node_compute",
+        "coverage": 0.0,
+        "lines": 261,
+        "missing": 261,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL",
+        "category": "NODE_TYPE"
+      },
+      {
+        "module": "infrastructure/node_reducer",
+        "coverage": 0.0,
+        "lines": 488,
+        "missing": 488,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL",
+        "category": "NODE_TYPE"
+      },
+      {
+        "module": "infrastructure/node_orchestrator",
+        "coverage": 0.0,
+        "lines": 437,
+        "missing": 437,
+        "action": "NEW_TESTS",
+        "priority": "CRITICAL",
+        "category": "NODE_TYPE"
+      },
+      {
+        "module": "models/service/model_service_health",
+        "coverage": 0.0,
+        "lines": 220,
+        "missing": 220,
+        "action": "NEW_TESTS",
+        "priority": "HIGH",
+        "category": "SERVICE"
+      },
+      {
+        "module": "models/configuration/model_database_secure_config",
+        "coverage": 0.0,
+        "lines": 327,
+        "missing": 327,
+        "action": "NEW_TESTS",
+        "priority": "HIGH",
+        "category": "SECURITY"
+      },
+      {
+        "module": "models/security/model_permission",
+        "coverage": 0.0,
+        "lines": 260,
+        "missing": 260,
+        "action": "NEW_TESTS",
+        "priority": "HIGH",
+        "category": "SECURITY"
+      },
+      {
+        "module": "models/core/model_retry_config",
+        "coverage": 0.0,
+        "lines": 153,
+        "missing": 153,
+        "action": "NEW_TESTS",
+        "priority": "MEDIUM",
+        "category": "RESILIENCE"
+      },
+      {
+        "module": "models/configuration/model_rest_api_connection_config",
+        "coverage": 0.0,
+        "lines": 184,
+        "missing": 184,
+        "action": "NEW_TESTS",
+        "priority": "MEDIUM",
+        "category": "CONNECTIVITY"
+      }
+    ],
+    "total_lines": 2886,
+    "total_missing": 2886,
+    "estimated_test_files": 10,
+    "estimated_coverage_gain": "10-15%"
+  },
+  "test_patterns": {
+    "agent7": "Follow existing patterns from high-coverage modules, focus on edge cases",
+    "agent8": "Comprehensive infrastructure tests with async/await, mocking, error scenarios"
+  }
+}

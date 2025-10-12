@@ -388,3 +388,7 @@ class ModelFunctionNodeMetadata(BaseModel):
             Exception
         ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
+
+
+# NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically
+# ModelMetadataValue is imported at runtime, Pydantic will resolve references lazily

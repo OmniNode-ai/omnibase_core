@@ -1,12 +1,3 @@
-import uuid
-from typing import List, Literal
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
 """
 Compensation Plan Model - ONEX Standards Compliant.
 
@@ -16,7 +7,7 @@ with proper Pydantic validation and type safety for saga pattern workflows.
 ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -25,6 +16,8 @@ from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrat
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelCompensationPlan(BaseModel):
@@ -178,13 +171,6 @@ class ModelCompensationPlan(BaseModel):
         if isinstance(v, str):
             v_str = v.strip()
             if not v_str:
-                from omnibase_core.models.common.model_error_context import (
-                    ModelErrorContext,
-                )
-                from omnibase_core.models.common.model_schema_value import (
-                    ModelSchemaValue,
-                )
-
                 raise ModelOnexError(
                     message="Plan ID cannot be empty",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
