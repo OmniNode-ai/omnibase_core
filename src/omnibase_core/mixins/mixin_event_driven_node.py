@@ -38,9 +38,6 @@ Usage:
 from typing import Any, Protocol
 from uuid import UUID
 
-from omnibase_spi.protocols.event_bus import ProtocolEventBus
-from omnibase_spi.protocols.schema import ProtocolSchemaLoader
-
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # EnumToolNames removed - using direct string references
@@ -52,6 +49,8 @@ from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
 from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
+from omnibase_spi.protocols.event_bus import ProtocolEventBus
+from omnibase_spi.protocols.schema import ProtocolSchemaLoader
 
 
 class MixinEventDrivenNode(

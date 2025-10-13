@@ -1,7 +1,5 @@
 from typing import Any, TypeVar
 
-# Import the protocol from omnibase_spi
-from omnibase_spi.protocols.advanced import ProtocolOutputFieldTool as OutputFieldTool
 from pydantic import BaseModel, Field
 
 from omnibase_core.constants import (
@@ -14,6 +12,9 @@ from omnibase_core.constants import (
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_output_field import ModelOnexField
+
+# Import the protocol from omnibase_spi
+from omnibase_spi.protocols.advanced import ProtocolOutputFieldTool as OutputFieldTool
 
 T = TypeVar("T", bound=BaseModel)
 

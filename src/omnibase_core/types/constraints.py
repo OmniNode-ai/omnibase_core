@@ -36,6 +36,10 @@ Critical Rules:
 
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
+from pydantic import BaseModel
+
+from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
 # Import protocols from omnibase_spi (following ONEX SPI separation)
 from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
 from omnibase_spi.protocols.types import ProtocolExecutable as Executable
@@ -44,9 +48,6 @@ from omnibase_spi.protocols.types import ProtocolMetadataProvider
 from omnibase_spi.protocols.types import ProtocolNameable as Nameable
 from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
 from omnibase_spi.protocols.types import ProtocolValidatable
-from pydantic import BaseModel
-
-from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
 # Bounded type variables with proper constraints
 
