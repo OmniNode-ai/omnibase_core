@@ -324,6 +324,7 @@ class ModelCliResultMetadata(BaseModel):
                 obj["label_ids"] = label_ids
                 obj["label_names"] = label_names
 
+        # Note: 'extra' parameter omitted from super() call as it's handled by model_config
         return super().model_validate(
             obj,
             strict=strict,
