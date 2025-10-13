@@ -8,9 +8,7 @@ that standardizes validation across all domains.
 from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
 )
-from omnibase_core.models.validation.model_validation_error import (
-    ModelValidationError,
-)
+from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
 class TestModelValidationContainer:

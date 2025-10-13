@@ -229,9 +229,7 @@ class TestModuleLevelFunctions:
 
     def test_get_contract_base_function_returns_base_class(self):
         """Test that get_contract_base() returns ModelContractBase."""
-        from omnibase_core.models.contracts.model_lazy_imports import (
-            get_contract_base,
-        )
+        from omnibase_core.models.contracts.model_lazy_imports import get_contract_base
 
         base_class = get_contract_base()
 
@@ -298,9 +296,7 @@ class TestModuleLevelFunctions:
 
     def test_get_loader_stats_function_returns_statistics(self):
         """Test that get_loader_stats() returns loader statistics."""
-        from omnibase_core.models.contracts.model_lazy_imports import (
-            get_loader_stats,
-        )
+        from omnibase_core.models.contracts.model_lazy_imports import get_loader_stats
 
         stats = get_loader_stats()
 
@@ -416,9 +412,7 @@ class TestLazyLoadingBehavior:
 
     def test_type_checking_imports_dont_affect_runtime(self):
         """Test that TYPE_CHECKING imports don't affect runtime behavior."""
-        from omnibase_core.models.contracts.model_lazy_imports import (
-            get_contract_base,
-        )
+        from omnibase_core.models.contracts.model_lazy_imports import get_contract_base
 
         # Should work at runtime despite TYPE_CHECKING imports
         base_class = get_contract_base()
@@ -461,9 +455,7 @@ class TestPerformanceOptimization:
 
         # Import lazy imports module - should be fast
         start = time.perf_counter()
-        from omnibase_core.models.contracts.model_lazy_imports import (
-            get_contract_base,
-        )
+        from omnibase_core.models.contracts.model_lazy_imports import get_contract_base
 
         import_time = (time.perf_counter() - start) * 1000
 
@@ -521,9 +513,7 @@ class TestIntegrationWithContracts:
 
     def test_loaded_base_contract_is_class(self):
         """Test that loaded ModelContractBase is a valid class type."""
-        from omnibase_core.models.contracts.model_lazy_imports import (
-            get_contract_base,
-        )
+        from omnibase_core.models.contracts.model_lazy_imports import get_contract_base
 
         BaseContract = get_contract_base()
 

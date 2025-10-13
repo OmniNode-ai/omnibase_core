@@ -253,11 +253,7 @@ class TestInitLazyLoadingBehavior:
             del sys.modules[mod]
 
         # Access validation functions through lazy loading
-        from omnibase_core import (
-            ValidationResult,
-            validate_all,
-            validate_architecture,
-        )
+        from omnibase_core import ValidationResult, validate_all, validate_architecture
 
         assert ValidationResult is not None
         assert validate_all is not None

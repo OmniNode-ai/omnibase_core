@@ -119,9 +119,7 @@ from .typed_dict_migration_name_conflict_dict import TypedDictMigrationNameConfl
 from .typed_dict_migration_step_dict import TypedDictMigrationStepDict
 from .typed_dict_node_capabilities_summary import TypedDictNodeCapabilitiesSummary
 from .typed_dict_node_configuration_summary import TypedDictNodeConfigurationSummary
-from .typed_dict_node_connection_summary_type import (
-    TypedDictNodeConnectionSummaryType,
-)
+from .typed_dict_node_connection_summary_type import TypedDictNodeConnectionSummaryType
 from .typed_dict_node_core import TypedDictNodeCore
 from .typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
 from .typed_dict_node_execution_summary import TypedDictNodeExecutionSummary

@@ -24,10 +24,7 @@ from omnibase_core.models.nodes.model_node_capabilities_info import (
 from omnibase_core.models.nodes.model_node_configuration import ModelNodeConfiguration
 from omnibase_core.models.nodes.model_node_core_info import ModelNodeCoreInfo
 from omnibase_core.models.nodes.model_node_information import ModelNodeInformation
-from omnibase_core.primitives.model_semver import (
-    ModelSemVer,
-    parse_semver_from_string,
-)
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class TestModelNodeInformation:

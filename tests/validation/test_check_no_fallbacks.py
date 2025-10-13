@@ -14,10 +14,7 @@ import pytest
 # Add scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "validation"))
 
-from check_no_fallbacks import (
-    FallbackDetector,
-    check_file_for_fallbacks,
-)
+from check_no_fallbacks import FallbackDetector, check_file_for_fallbacks
 
 
 class TestFallbackDetector:

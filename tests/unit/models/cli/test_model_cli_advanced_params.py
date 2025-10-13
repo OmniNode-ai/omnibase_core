@@ -9,9 +9,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
-from omnibase_core.models.cli.model_cli_advanced_params import (
-    ModelCliAdvancedParams,
-)
+from omnibase_core.models.cli.model_cli_advanced_params import ModelCliAdvancedParams
 from omnibase_core.models.cli.model_output_format_options import (
     ModelOutputFormatOptions,
 )

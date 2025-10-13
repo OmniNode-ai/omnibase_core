@@ -20,9 +20,7 @@ eliminating field duplication and providing consistent configuration interfaces.
 from datetime import UTC
 from typing import Any
 
-from pydantic import (
-    field_serializer,
-)
+from pydantic import field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult

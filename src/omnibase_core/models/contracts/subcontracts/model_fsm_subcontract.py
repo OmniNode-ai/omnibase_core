@@ -24,11 +24,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext

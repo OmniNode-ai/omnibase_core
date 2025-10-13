@@ -33,9 +33,7 @@ from omnibase_core.models.infrastructure.model_circuit_breaker import (
 )
 from omnibase_core.models.infrastructure.model_transaction import ModelTransaction
 from omnibase_core.models.operations.model_effect_input import ModelEffectInput
-from omnibase_core.models.operations.model_effect_result import (
-    ModelEffectResultList,
-)
+from omnibase_core.models.operations.model_effect_result import ModelEffectResultList
 
 node_effect_path = (
     Path(__file__).parent.parent.parent.parent

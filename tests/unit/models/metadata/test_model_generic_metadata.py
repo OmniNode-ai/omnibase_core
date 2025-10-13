@@ -11,9 +11,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
-from omnibase_core.models.metadata.model_generic_metadata import (
-    ModelGenericMetadata,
-)
+from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 

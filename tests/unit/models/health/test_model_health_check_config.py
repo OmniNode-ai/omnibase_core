@@ -2,9 +2,7 @@
 
 import pytest
 
-from omnibase_core.models.health.model_health_check_config import (
-    ModelHealthCheckConfig,
-)
+from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 
 
 class TestModelHealthCheckConfigBasics:
