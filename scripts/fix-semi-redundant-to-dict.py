@@ -47,7 +47,7 @@ SEMI_REDUNDANT_FILES = [
 
 def extract_class_name_from_file(file_path: Path) -> str:
     """Extract the primary class name from a model file."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         content = f.read()
 
     # Look for class definitions, prefer ones that match file naming convention
@@ -68,7 +68,7 @@ def extract_class_name_from_file(file_path: Path) -> str:
     return class_matches[0]
 
 
-def find_to_dict_method(content: str) -> Tuple[int, int, str]:
+def find_to_dict_method(content: str) -> tuple[int, int, str]:
     """
     Find the to_dict method in content and return its start line, end line, and parameters.
     Returns (start_line, end_line, params) or (0, 0, "") if not found.
@@ -153,7 +153,7 @@ def determine_model_dump_replacement(analysis: dict) -> str:
 def remove_to_dict_method(file_path: Path) -> bool:
     """Remove the to_dict method from a file if it's semi-redundant."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Find the to_dict method
@@ -187,10 +187,10 @@ def remove_to_dict_method(file_path: Path) -> bool:
         return False
 
 
-def find_callers_in_file(file_path: Path, class_name: str) -> List[Tuple[int, str]]:
+def find_callers_in_file(file_path: Path, class_name: str) -> list[tuple[int, str]]:
     """Find places in a file where ClassName.to_dict() or instance.to_dict() might be called."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         lines = content.split("\n")
@@ -210,7 +210,7 @@ def find_callers_in_file(file_path: Path, class_name: str) -> List[Tuple[int, st
 def update_callers_in_file(file_path: Path, model_dump_replacement: str) -> int:
     """Update .to_dict() calls to use model_dump() in a file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Count replacements made
@@ -248,12 +248,12 @@ def main():
         print(f"\n📁 Processing {file_path}")
 
         # First, analyze what model_dump parameters we need
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         start_line, end_line, params = find_to_dict_method(content)
         if start_line == 0:
-            print(f"  ⚠️  No to_dict method found")
+            print("  ⚠️  No to_dict method found")
             continue
 
         analysis = analyze_to_dict_method(content, start_line, end_line)
@@ -272,7 +272,7 @@ def main():
             updated_callers += callers_updated
 
     # Now find and update external callers
-    print(f"\n🔍 Searching for external callers...")
+    print("\n🔍 Searching for external callers...")
 
     # Search all Python files for .to_dict() calls
     for root, dirs, files in os.walk("src"):
@@ -291,12 +291,12 @@ def main():
                         print(f"  Line {line_num}: {line_content}")
 
                     # For now, just report them - we'll need manual review
-                    print(f"  ⚠️  Manual review required for these callers")
+                    print("  ⚠️  Manual review required for these callers")
 
-    print(f"\n✅ Summary:")
+    print("\n✅ Summary:")
     print(f"  - Removed {removed_methods} semi-redundant to_dict() methods")
     print(f"  - Updated {updated_callers} direct callers")
-    print(f"  - External callers require manual review")
+    print("  - External callers require manual review")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 """
 Time period enumeration for trend data models.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

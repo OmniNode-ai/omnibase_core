@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Workflow Type Enum.
 
@@ -5,7 +7,6 @@ Strongly typed enumeration for workflow execution patterns.
 Replaces string literals for workflow type discrimination.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

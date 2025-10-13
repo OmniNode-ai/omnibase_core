@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import List
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Progress Milestones Model.
 
@@ -5,14 +13,13 @@ Milestone management and tracking for progress monitoring.
 Follows ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelProgressMilestones(BaseModel):
@@ -43,7 +50,9 @@ class ModelProgressMilestones(BaseModel):
         for name, percentage in v.items():
             if not 0.0 <= percentage <= 100.0:
                 msg = f"Milestone '{name}' percentage must be between 0.0 and 100.0"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                )
         return v
 
     def check_milestones(self, current_percentage: float) -> list[str]:
@@ -62,7 +71,9 @@ class ModelProgressMilestones(BaseModel):
         """Add a progress milestone."""
         if not 0.0 <= percentage <= 100.0:
             msg = "Milestone percentage must be between 0.0 and 100.0"
-            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
         self.milestones[name] = percentage
 
     def remove_milestone(self, name: str) -> bool:
@@ -193,8 +204,8 @@ class ModelProgressMilestones(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -206,13 +217,13 @@ class ModelProgressMilestones(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

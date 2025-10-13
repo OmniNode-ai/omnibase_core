@@ -1,16 +1,24 @@
+from __future__ import annotations
+
+import hashlib
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Validation error model for tracking validation failures.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_validation_value import ModelValidationValue
 
@@ -23,7 +31,7 @@ class ModelValidationError(BaseModel):
     """
 
     message: str = Field(
-        ...,
+        default=...,
         description="Error message",
         min_length=1,
         max_length=1000,
@@ -124,8 +132,6 @@ class ModelValidationError(BaseModel):
         """Create a critical error."""
         field_id = None
         if field_name:
-            import hashlib
-
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
                 f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",
@@ -149,8 +155,6 @@ class ModelValidationError(BaseModel):
         """Create a warning."""
         field_id = None
         if field_name:
-            import hashlib
-
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
                 f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",
@@ -179,13 +183,13 @@ class ModelValidationError(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

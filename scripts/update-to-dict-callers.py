@@ -50,10 +50,10 @@ COMPLEX_TO_DICT_METHODS = [
 ]
 
 
-def find_to_dict_callers(file_path: Path) -> List[Tuple[int, str, str]]:
+def find_to_dict_callers(file_path: Path) -> list[tuple[int, str, str]]:
     """Find .to_dict() calls in a file and return (line_num, full_line, variable_context)."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         lines = content.split("\n")
@@ -96,7 +96,7 @@ def update_caller_line(line: str) -> str:
 def update_file_callers(file_path: Path) -> int:
     """Update .to_dict() callers in a file."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         callers = find_to_dict_callers(file_path)
@@ -165,8 +165,8 @@ def main():
             total_updates += updates
             print(f"  ✅ Updated {updates} caller(s)")
 
-    print(f"\n" + "=" * 60)
-    print(f"🎯 Summary:")
+    print("\n" + "=" * 60)
+    print("🎯 Summary:")
     print(
         f"  📊 Total files processed: {len([f for f in all_files if find_to_dict_callers(f)])}"
     )

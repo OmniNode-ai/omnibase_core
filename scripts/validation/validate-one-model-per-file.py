@@ -41,10 +41,10 @@ class ModelCounter(ast.NodeVisitor):
                 if base_name == "BaseModel":
                     self.models.append(class_name)
                     break
-                elif base_name == "Enum":
+                if base_name == "Enum":
                     self.enums.append(class_name)
                     break
-                elif base_name == "Protocol":
+                if base_name == "Protocol":
                     self.protocols.append(class_name)
                     break
             elif isinstance(base, ast.Attribute):
@@ -79,12 +79,12 @@ class ModelCounter(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def validate_file(file_path: Path) -> List[str]:
+def validate_file(file_path: Path) -> list[str]:
     """Validate a single Python file for one-model-per-file compliance."""
     errors = []
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content)
@@ -136,7 +136,7 @@ def validate_file(file_path: Path) -> List[str]:
     return errors
 
 
-def find_python_files(directory: Path) -> List[Path]:
+def find_python_files(directory: Path) -> list[Path]:
     """Find all Python files in directory, excluding special cases."""
     python_files = []
 
@@ -204,7 +204,7 @@ def main():
                 for error in errors:
                     print(f"   {error}")
 
-    print(f"\n📊 One-Model-Per-File Validation Summary:")
+    print("\n📊 One-Model-Per-File Validation Summary:")
     print(f"   • Files checked: {total_files}")
     print(f"   • Files with violations: {len(files_with_violations)}")
     print(f"   • Total violations: {total_violations}")

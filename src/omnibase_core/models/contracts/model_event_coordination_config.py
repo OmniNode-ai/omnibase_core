@@ -1,3 +1,7 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Event Coordination Configuration Model - ONEX Standards Compliant.
 
@@ -7,7 +11,7 @@ and coordination patterns for event-driven execution.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelEventCoordinationConfig(BaseModel):

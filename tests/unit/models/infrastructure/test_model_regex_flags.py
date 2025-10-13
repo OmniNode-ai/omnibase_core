@@ -5,7 +5,7 @@ import re
 import pytest
 
 from omnibase_core.enums.enum_regex_flag_type import EnumRegexFlagType
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.infrastructure.model_regex_flags import ModelRegexFlags
 
 

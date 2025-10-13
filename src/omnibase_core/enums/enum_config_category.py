@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Configuration category enumeration for categorizing system configurations.
 
@@ -5,7 +7,6 @@ Provides strongly typed categories for various configuration types
 across the ONEX architecture.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -164,7 +164,7 @@ class GenericPatternValidator(ast.NodeVisitor):
 def validate_file(file_path: Path) -> list[GenericViolation]:
     """Validate a single Python file for generic pattern violations."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content)
@@ -261,7 +261,7 @@ def main():
     print(format_violations(violations))
 
     if not passed:
-        print(f"❌ Generic pattern validation FAILED")
+        print("❌ Generic pattern validation FAILED")
         print(
             f"❌ Violation count ({len(violations)}) exceeds maximum allowed ({args.max_violations})"
         )

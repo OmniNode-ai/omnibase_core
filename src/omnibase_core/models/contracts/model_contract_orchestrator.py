@@ -1,3 +1,11 @@
+import uuid
+from typing import Any, Dict
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Orchestrator Contract Model - ONEX Standards Compliant.
 
@@ -13,10 +21,10 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_branching_config import ModelBranchingConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_event_coordination_config import (
@@ -123,7 +131,7 @@ class ModelContractOrchestrator(ModelContractBase):
         integration, and branching logic for orchestrator compliance.
 
         Raises:
-            OnexError: If orchestrator-specific validation fails
+            ModelOnexError: If orchestrator-specific validation fails
         """
         # Validate thunk emission configuration
         if (
@@ -131,9 +139,9 @@ class ModelContractOrchestrator(ModelContractBase):
             and self.thunk_emission.batch_size < 1
         ):
             msg = "Batch emission strategy requires positive batch_size"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate workflow coordination
@@ -142,9 +150,9 @@ class ModelContractOrchestrator(ModelContractBase):
             and self.workflow_coordination.max_parallel_branches < 1
         ):
             msg = "Parallel execution requires positive max_parallel_branches"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate checkpoint configuration
@@ -153,17 +161,17 @@ class ModelContractOrchestrator(ModelContractBase):
             and self.workflow_coordination.checkpoint_interval_ms < 100
         ):
             msg = "Checkpoint interval must be at least 100ms"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate branching configuration
         if self.conditional_branching.max_branch_depth < 1:
             msg = "Max branch depth must be at least 1"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate event registry configuration
@@ -178,26 +186,26 @@ class ModelContractOrchestrator(ModelContractBase):
         published_names = [event.event_name for event in self.published_events]
         if len(published_names) != len(set(published_names)):
             msg = "Published events must have unique names"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Validate event subscriptions reference valid handlers
         for subscription in self.consumed_events:
             if not subscription.handler_function:
                 msg = "Event subscriptions must specify handler_function"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         # Validate performance requirements for orchestrator nodes
         if not self.performance.single_operation_max_ms:
             msg = "Orchestrator nodes must specify single_operation_max_ms performance requirement"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
     @field_validator("published_events")
@@ -211,9 +219,9 @@ class ModelContractOrchestrator(ModelContractBase):
         event_names = [event.event_name for event in v]
         if len(event_names) != len(set(event_names)):
             msg = "Published events must have unique event names"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -229,9 +237,9 @@ class ModelContractOrchestrator(ModelContractBase):
         for subscription in v:
             if subscription.batch_processing and subscription.batch_size < 1:
                 msg = "Batch processing requires positive batch_size"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -245,16 +253,16 @@ class ModelContractOrchestrator(ModelContractBase):
         """Validate event coordination configuration consistency."""
         if v.coordination_strategy == "buffered" and v.buffer_size < 1:
             msg = "Buffered coordination requires positive buffer_size"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         if v.correlation_enabled and v.correlation_timeout_ms < 1000:
             msg = "Event correlation requires timeout of at least 1000ms"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v

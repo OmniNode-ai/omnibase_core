@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI Execution Core Model.
 
@@ -5,21 +13,20 @@ Core execution information for CLI commands.
 Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
 )
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_cli_command_option import ModelCliCommandOption
 
@@ -43,9 +50,9 @@ class ModelCliExecutionCore(BaseModel):
     )
 
     # Command information
-    command_name_id: UUID = Field(..., description="UUID for command name")
+    command_name_id: UUID = Field(default=..., description="UUID for command name")
     command_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable command name",
     )
     command_args: list[str] = Field(
@@ -204,7 +211,7 @@ class ModelCliExecutionCore(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -229,15 +236,15 @@ class ModelCliExecutionCore(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

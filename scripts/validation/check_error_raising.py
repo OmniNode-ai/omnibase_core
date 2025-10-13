@@ -117,8 +117,8 @@ class ErrorRaisingDetector(ast.NodeVisitor):
                             "code": line,
                             "exception": exception_name,
                             "message": (
-                                f"Uses NotImplementedError without # stub-ok comment. "
-                                f"Use OnexError instead or add # stub-ok: reason"
+                                "Uses NotImplementedError without # stub-ok comment. "
+                                "Use OnexError instead or add # stub-ok: reason"
                             ),
                             "severity": "error",
                         }
@@ -222,7 +222,7 @@ def check_file(file_path: Path) -> list[dict[str, Any]]:
         return []
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source = f.read()
             source_lines = source.splitlines()
 

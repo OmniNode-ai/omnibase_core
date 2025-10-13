@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import Field
+
 """
 Example model for examples collection.
 
@@ -5,13 +12,12 @@ This module provides the ModelExample class for strongly typed
 example data with comprehensive fields and validation.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
@@ -35,7 +41,7 @@ class ModelExample(BaseModel):
     )
 
     name: str = Field(
-        ...,
+        default=...,
         description="Name/title of the example",
         min_length=1,
     )
@@ -47,17 +53,17 @@ class ModelExample(BaseModel):
 
     # Data fields
     input_data: ModelExampleInputData | None = Field(
-        None,
+        default=None,
         description="Input data for the example with type safety",
     )
 
     output_data: ModelExampleOutputData | None = Field(
-        None,
+        default=None,
         description="Expected output data for the example",
     )
 
     context: ModelExampleContextData | None = Field(
-        None,
+        default=None,
         description="Additional context information for the example",
     )
 
@@ -110,7 +116,7 @@ class ModelExample(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

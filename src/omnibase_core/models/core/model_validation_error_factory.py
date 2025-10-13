@@ -1,17 +1,22 @@
+from __future__ import annotations
+
+from typing import Dict, Generic, TypedDict, TypeVar
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Validation Error Factory Pattern for Model Creation.
 
 Specialized factory for validation error models with severity patterns.
 """
 
-from __future__ import annotations
 
-from typing import Any, TypeVar, Unpack
+from typing import Any, Unpack
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.types import TypedDictFactoryKwargs
 
 from .model_generic_factory import ModelGenericFactory
@@ -115,18 +120,18 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Factory instances don't have model_dump - serialize factory state instead
         return {
             "model_class": self.model_class.__name__,
-            "factories": list(self._factories.keys()),
-            "builders": list(self._builders.keys()),
+            "factories": list[Any](self._factories.keys()),
+            "builders": list[Any](self._builders.keys()),
         }
 
     def validate_instance(self) -> bool:
@@ -136,8 +141,8 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

@@ -27,13 +27,13 @@ class OptimizationValidator:
 
     def clear_import_cache(self, pattern: str = "omnibase_core"):
         """Clear module import cache to simulate cold start."""
-        modules_to_clear = [k for k in sys.modules.keys() if pattern in k]
+        modules_to_clear = [k for k in sys.modules if pattern in k]
         for module in modules_to_clear:
             if module in sys.modules:
                 del sys.modules[module]
         gc.collect()
 
-    def measure_import_performance(self, test_name: str, import_func) -> Dict:
+    def measure_import_performance(self, test_name: str, import_func) -> dict:
         """Measure import performance with detailed metrics."""
         print(f"🔍 Testing: {test_name}")
 
@@ -94,7 +94,7 @@ class OptimizationValidator:
         finally:
             tracemalloc.stop()
 
-    def test_original_imports(self) -> Dict:
+    def test_original_imports(self) -> dict:
         """Test original import performance (baseline)."""
         print("\n🚨 BASELINE TESTING: Original Import Performance")
         print("=" * 60)
@@ -117,7 +117,7 @@ class OptimizationValidator:
 
         return results
 
-    def test_lazy_imports(self) -> Dict:
+    def test_lazy_imports(self) -> dict:
         """Test lazy import performance."""
         print("\n🚀 OPTIMIZATION TESTING: Lazy Import Performance")
         print("=" * 60)
@@ -161,7 +161,7 @@ class OptimizationValidator:
 
         return [get_contract_base(), get_contract_compute(), get_contract_effect()]
 
-    def test_instantiation_performance(self) -> Dict:
+    def test_instantiation_performance(self) -> dict:
         """Test model instantiation performance with lazy loading."""
         print("\n⚡ INSTANTIATION TESTING: Model Creation Performance")
         print("=" * 60)
@@ -203,7 +203,7 @@ class OptimizationValidator:
         )
         return {"lazy_model_instantiation": result}
 
-    def calculate_improvement_metrics(self, baseline: Dict, optimized: Dict) -> Dict:
+    def calculate_improvement_metrics(self, baseline: dict, optimized: dict) -> dict:
         """Calculate improvement metrics between baseline and optimized."""
         improvements = {}
 
@@ -239,7 +239,7 @@ class OptimizationValidator:
 
         return improvements
 
-    def generate_validation_report(self) -> Dict:
+    def generate_validation_report(self) -> dict:
         """Generate comprehensive validation report."""
         print("\n" + "=" * 80)
         print("🎯 PERFORMANCE OPTIMIZATION VALIDATION REPORT")
@@ -263,7 +263,7 @@ class OptimizationValidator:
         )
 
         # Generate summary
-        print(f"\n📊 VALIDATION SUMMARY:")
+        print("\n📊 VALIDATION SUMMARY:")
         print(
             f"   Tests Run: {len(baseline_results) + len(lazy_results) + len(instantiation_results)}"
         )
@@ -280,7 +280,7 @@ class OptimizationValidator:
             )
             print(f"   Best Speedup: {best_improvement['speedup_ratio']:.1f}x faster")
 
-        print(f"\n📈 DETAILED IMPROVEMENTS:")
+        print("\n📈 DETAILED IMPROVEMENTS:")
         for test_name, metrics in improvements.items():
             print(f"   {test_name}:")
             print(

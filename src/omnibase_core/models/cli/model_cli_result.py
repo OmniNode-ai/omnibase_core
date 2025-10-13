@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
 """
 CLI Result Model.
 
@@ -5,14 +11,13 @@ Universal CLI execution result model that captures the complete
 outcome of CLI command execution with proper typing.
 """
 
-from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -44,14 +49,14 @@ class ModelCliResult(BaseModel):
     """
 
     execution: ModelCliExecution = Field(
-        ...,
+        default=...,
         description="Execution details and context",
     )
 
-    success: bool = Field(..., description="Whether execution was successful")
+    success: bool = Field(default=..., description="Whether execution was successful")
 
     exit_code: int = Field(
-        ...,
+        default=...,
         description="Process exit code (0 = success, >0 = error)",
         ge=0,
         le=255,
@@ -83,7 +88,9 @@ class ModelCliResult(BaseModel):
 
     warnings: list[str] = Field(default_factory=list, description="Warning messages")
 
-    execution_time: ModelDuration = Field(..., description="Total execution time")
+    execution_time: ModelDuration = Field(
+        default=..., description="Total execution time"
+    )
 
     end_time: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
@@ -494,7 +501,7 @@ class ModelCliResult(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

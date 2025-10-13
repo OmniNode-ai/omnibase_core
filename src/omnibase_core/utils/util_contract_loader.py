@@ -1,3 +1,8 @@
+from typing import Any, Dict, Generic
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 ContractLoader for ONEX Tool Generation Pattern Standardization.
 
@@ -17,7 +22,7 @@ import yaml
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_contract_cache import ModelContractCache
 from omnibase_core.models.core.model_contract_content import ModelContractContent
@@ -28,7 +33,6 @@ from omnibase_core.models.core.model_contract_loader import ModelContractLoader
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
@@ -68,14 +72,14 @@ class ProtocolContractLoader:
             ModelContractContent: Fully resolved contract with all subcontracts
 
         Raises:
-            OnexError: If contract loading or resolution fails
+            ModelOnexError: If contract loading or resolution fails
         """
         try:
             contract_path = contract_path.resolve()
 
             if not contract_path.exists():
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Contract file not found: {contract_path}",
                     context={"contract_path": str(contract_path)},
                 )
@@ -105,11 +109,11 @@ class ProtocolContractLoader:
 
             return resolved_contract
 
-        except OnexError:
+        except ModelOnexError:
             raise
         except Exception as e:
-            raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to load contract: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
@@ -131,7 +135,7 @@ class ProtocolContractLoader:
             cached = self.state.contract_cache[file_path_str]
             current_mtime = file_path.stat().st_mtime
 
-            if current_mtime <= cached.last_modified:
+            if current_mtime <= cached.file_modified_at.timestamp():
                 return self._convert_contract_content_to_dict(cached.content)
 
         # Load from file with security validation
@@ -158,19 +162,25 @@ class ProtocolContractLoader:
                     file_modified_at=datetime.fromtimestamp(stat.st_mtime),
                     file_size=stat.st_size,
                     content_hash=hashlib.sha256(content_str.encode()).hexdigest(),
+                    is_valid=True,
+                    validation_errors=[],
+                    access_count=0,
+                    last_accessed_at=None,
+                    ttl_seconds=None,
+                    max_age_seconds=None,
                 )
 
             return content
 
         except yaml.YAMLError as e:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid YAML in contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
         except Exception as e:
-            raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to read contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
@@ -208,9 +218,6 @@ class ProtocolContractLoader:
             tool_specification = ModelToolSpecification(
                 main_tool_class=str(
                     tool_spec_data.get("main_tool_class", "DefaultToolNode"),
-                ),
-                business_logic_pattern=str(
-                    tool_spec_data.get("business_logic_pattern", "stateful"),
                 ),
             )
 
@@ -259,11 +266,52 @@ class ProtocolContractLoader:
                 output_state=output_state,
                 definitions=definitions,
                 dependencies=dependencies,
+                contract_name=None,
+                description=None,
+                name=None,
+                version=None,
+                node_version=None,
+                input_model=None,
+                output_model=None,
+                main_tool_class=None,
+                actions=None,
+                primary_actions=None,
+                validation_rules=None,
+                infrastructure=None,
+                infrastructure_services=None,
+                service_configuration=None,
+                service_resolution=None,
+                performance=None,
+                aggregation=None,
+                state_management=None,
+                reduction_operations=None,
+                streaming=None,
+                conflict_resolution=None,
+                memory_management=None,
+                state_transitions=None,
+                routing=None,
+                workflow_registry=None,
+                io_operations=None,
+                interface=None,
+                metadata=None,
+                capabilities=None,
+                configuration=None,
+                algorithm=None,
+                caching=None,
+                error_handling=None,
+                observability=None,
+                event_type=None,
+                contract_driven=None,
+                protocol_based=None,
+                strong_typing=None,
+                zero_any_types=None,
+                subcontracts=None,
+                original_dependencies=None,
             )
 
         except Exception as e:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to parse contract content: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
@@ -272,7 +320,7 @@ class ProtocolContractLoader:
         self,
         content: ModelContractContent,
     ) -> dict[str, object]:
-        """Convert ModelContractContent back to dict for current standards."""
+        """Convert ModelContractContent back to dict[str, Any]for current standards."""
         return {
             "contract_version": {
                 "major": content.contract_version.major,
@@ -282,7 +330,6 @@ class ProtocolContractLoader:
             "node_name": content.node_name,
             "tool_specification": {
                 "main_tool_class": content.tool_specification.main_tool_class,
-                "business_logic_pattern": content.tool_specification.business_logic_pattern,
             },
         }
 
@@ -299,18 +346,18 @@ class ProtocolContractLoader:
             contract_path: Path to contract for error context
 
         Raises:
-            OnexError: If contract structure is invalid
+            ModelOnexError: If contract structure is invalid
         """
         if not contract.node_name:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Contract missing required node_name field",
                 context={"contract_path": str(contract_path)},
             )
 
         if not contract.tool_specification.main_tool_class:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Contract missing required tool_specification.main_tool_class field",
                 context={"contract_path": str(contract_path)},
             )
@@ -362,8 +409,8 @@ class ProtocolContractLoader:
         try:
             self.load_contract(contract_path)
             return True
-        except OnexError:
-            # fallback-ok: Validation method should return bool status, not raise OnexError
+        except ModelOnexError:
+            # fallback-ok: Validation method should return bool status, not raise ModelOnexError
             return False
         except Exception:
             # fallback-ok: Validation method should return bool status for any contract resolution error
@@ -378,15 +425,15 @@ class ProtocolContractLoader:
             file_path: Path to the file being loaded (for error reporting)
 
         Raises:
-            OnexError: If security validation fails
+            ModelOnexError: If security validation fails
         """
         # Check for excessively large content (DoS protection)
         max_size = 10 * 1024 * 1024  # 10MB limit
         if len(content) > max_size:
             msg = f"YAML file too large ({len(content)} bytes, max {max_size}): {file_path}"
-            raise OnexError(
+            raise ModelOnexError(
                 msg,
-                CoreErrorCode.VALIDATION_FAILED,
+                EnumCoreErrorCode.VALIDATION_FAILED,
             )
 
         # Check for suspicious YAML constructs
@@ -425,9 +472,9 @@ class ProtocolContractLoader:
                     msg = (
                         f"YAML nesting too deep (>{max_nesting} levels) in {file_path}"
                     )
-                    raise OnexError(
+                    raise ModelOnexError(
                         msg,
-                        CoreErrorCode.VALIDATION_FAILED,
+                        EnumCoreErrorCode.VALIDATION_FAILED,
                     )
             elif char in ["}", "]"]:
                 nesting_depth = max(0, nesting_depth - 1)

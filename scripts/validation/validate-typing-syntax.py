@@ -26,7 +26,7 @@ class TypingSyntaxDetector(ast.NodeVisitor):
 
     def __init__(self, filepath: str):
         self.filepath = filepath
-        self.violations: List[Tuple[int, str]] = []
+        self.violations: list[tuple[int, str]] = []
         self.typing_imports: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -133,10 +133,10 @@ class TypingSyntaxDetector(ast.NodeVisitor):
             return "Unknown"
 
 
-def check_file_for_typing_syntax(filepath: Path) -> List[Tuple[int, str]]:
+def check_file_for_typing_syntax(filepath: Path) -> list[tuple[int, str]]:
     """Check a single Python file for old-style typing syntax."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         # Skip files that don't contain typing-related imports or usage
@@ -156,10 +156,10 @@ def check_file_for_typing_syntax(filepath: Path) -> List[Tuple[int, str]]:
     except SyntaxError as e:
         return [(e.lineno or 0, f"Syntax error: {e.msg}")]
     except Exception as e:
-        return [(0, f"Error parsing file: {str(e)}")]
+        return [(0, f"Error parsing file: {e!s}")]
 
 
-def validate_typing_syntax(src_dirs: List[str], max_violations: int = 0) -> bool:
+def validate_typing_syntax(src_dirs: list[str], max_violations: int = 0) -> bool:
     """
     Validate typing syntax across source directories.
 
@@ -205,28 +205,28 @@ def validate_typing_syntax(src_dirs: List[str], max_violations: int = 0) -> bool
                 for line_num, message in violations:
                     print(f"   Line {line_num}: {message}")
 
-    print(f"\n📊 Typing Syntax Validation Summary:")
+    print("\n📊 Typing Syntax Validation Summary:")
     print(f"   • Files checked: {all_python_files}")
     print(f"   • Files with violations: {files_with_violations}")
     print(f"   • Total violations: {total_violations}")
     print(f"   • Max allowed: {max_violations}")
 
     if total_violations <= max_violations:
-        print(f"✅ Typing syntax validation PASSED")
+        print("✅ Typing syntax validation PASSED")
         return True
     else:
-        print(f"❌ Typing syntax validation FAILED")
-        print(f"\n🔧 How to fix:")
-        print(f"   1. Replace Optional[Type] with Type | None")
-        print(f"   2. Replace Union[Type1, Type2] with Type1 | Type2")
-        print(f"   3. Replace Union[Type1, Type2, Type3] with Type1 | Type2 | Type3")
-        print(f"\n   Example fixes:")
-        print(f"   ❌ value: Optional[str]")
-        print(f"   ✅ value: str | None")
-        print(f"   ❌ data: Union[str, int]")
-        print(f"   ✅ data: str | int")
-        print(f"   ❌ result: Union[str, int, bool]")
-        print(f"   ✅ result: str | int | bool")
+        print("❌ Typing syntax validation FAILED")
+        print("\n🔧 How to fix:")
+        print("   1. Replace Optional[Type] with Type | None")
+        print("   2. Replace Union[Type1, Type2] with Type1 | Type2")
+        print("   3. Replace Union[Type1, Type2, Type3] with Type1 | Type2 | Type3")
+        print("\n   Example fixes:")
+        print("   ❌ value: Optional[str]")
+        print("   ✅ value: str | None")
+        print("   ❌ data: Union[str, int]")
+        print("   ✅ data: str | int")
+        print("   ❌ result: Union[str, int, bool]")
+        print("   ✅ result: str | int | bool")
         return False
 
 

@@ -44,7 +44,7 @@ SIMPLE_WRAPPER_FILES = [
 ]
 
 
-def analyze_to_dict_method(content: str) -> Dict[str, Any]:
+def analyze_to_dict_method(content: str) -> dict[str, Any]:
     """Analyze to_dict method(s) in file content."""
     # Find all to_dict methods
     pattern = r'def to_dict\(self\) -> dict\[str, Any\]:\s*\n\s*"""[^"]*"""\s*\n\s*return self\.model_dump\([^)]*\)'
@@ -68,7 +68,7 @@ def analyze_to_dict_method(content: str) -> Dict[str, Any]:
 def remove_simple_to_dict_methods(file_path: Path) -> bool:
     """Remove simple to_dict wrapper methods from a file."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             original_content = f.read()
 
         # Analyze the file first
@@ -111,7 +111,7 @@ def remove_simple_to_dict_methods(file_path: Path) -> bool:
             print(f"  ✅ Successfully removed {removed_count} to_dict method(s)")
             return True
         else:
-            print(f"  ⚠️  No simple patterns matched, manual review needed")
+            print("  ⚠️  No simple patterns matched, manual review needed")
             return False
 
     except Exception as e:
@@ -139,13 +139,13 @@ def main():
         if remove_simple_to_dict_methods(file_path):
             removed_files += 1
 
-    print(f"\n" + "=" * 60)
-    print(f"🎯 Summary:")
+    print("\n" + "=" * 60)
+    print("🎯 Summary:")
     print(f"  ✅ Successfully processed: {removed_files}/{total_files} files")
     print(f"  ⚠️  Need manual review: {total_files - removed_files} files")
 
     if removed_files < total_files:
-        print(f"\n🔍 Files needing manual review:")
+        print("\n🔍 Files needing manual review:")
         for file_path_str in SIMPLE_WRAPPER_FILES:
             # You could add logic here to identify which ones still need work
             pass

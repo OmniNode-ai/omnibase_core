@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Test result model.
 
@@ -5,14 +11,13 @@ Individual test result model.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -25,9 +30,11 @@ class ModelTestResult(BaseModel):
     """
 
     # Entity reference with UUID
-    test_id: UUID = Field(..., description="Unique identifier of the test")
-    test_display_name: str = Field(..., description="Human-readable name of the test")
-    passed: bool = Field(..., description="Whether the test passed")
+    test_id: UUID = Field(default=..., description="Unique identifier of the test")
+    test_display_name: str = Field(
+        default=..., description="Human-readable name of the test"
+    )
+    passed: bool = Field(default=..., description="Whether the test passed")
     duration_ms: int = Field(
         default=0,
         description="Test execution duration in milliseconds",
@@ -94,8 +101,8 @@ class ModelTestResult(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -107,13 +114,13 @@ class ModelTestResult(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

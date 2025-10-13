@@ -22,11 +22,11 @@ class ImportAnalyzer(ast.NodeVisitor):
 
     def __init__(self, filepath: str):
         self.filepath = filepath
-        self.imports: List[Dict] = []
-        self.import_usage: Dict[str, List[int]] = defaultdict(
+        self.imports: list[dict] = []
+        self.import_usage: dict[str, list[int]] = defaultdict(
             list
         )  # name -> line numbers
-        self.function_imports: Dict[str, List[Dict]] = defaultdict(
+        self.function_imports: dict[str, list[dict]] = defaultdict(
             list
         )  # function -> imports
 
@@ -91,15 +91,15 @@ class ImportOptimizer:
 
     def __init__(self, src_path: Path):
         self.src_path = src_path
-        self.files_analyzed: Dict[str, ImportAnalyzer] = {}
-        self.import_graph: Dict[str, Set[str]] = defaultdict(set)
-        self.circular_imports: List[List[str]] = []
-        self.optimization_suggestions: List[Dict] = []
+        self.files_analyzed: dict[str, ImportAnalyzer] = {}
+        self.import_graph: dict[str, set[str]] = defaultdict(set)
+        self.circular_imports: list[list[str]] = []
+        self.optimization_suggestions: list[dict] = []
 
     def analyze_file(self, file_path: Path) -> ImportAnalyzer:
         """Analyze imports in a single file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 source = f.read()
 
             tree = ast.parse(source, str(file_path))
@@ -132,10 +132,9 @@ class ImportOptimizer:
             module_name = file_path.replace("/", ".").replace(".py", "")
 
             for imp in analyzer.imports:
-                if imp["type"] == "from_import" and imp["module"]:
-                    if imp["module"].startswith("omnibase_core"):
-                        self.import_graph[module_name].add(imp["module"])
-                elif imp["type"] == "import":
+                if (imp["type"] == "from_import" and imp["module"]) or imp[
+                    "type"
+                ] == "import":
                     if imp["module"].startswith("omnibase_core"):
                         self.import_graph[module_name].add(imp["module"])
 
@@ -147,7 +146,7 @@ class ImportOptimizer:
         rec_stack = set()
         cycles = []
 
-        def dfs(node: str, path: List[str]):
+        def dfs(node: str, path: list[str]):
             if node in rec_stack:
                 # Found a cycle
                 cycle_start = path.index(node)
@@ -429,7 +428,7 @@ def main():
 
     if not src_path.exists():
         print(f"❌ Source path does not exist: {src_path}")
-        return
+        return None
 
     optimizer = ImportOptimizer(src_path)
 

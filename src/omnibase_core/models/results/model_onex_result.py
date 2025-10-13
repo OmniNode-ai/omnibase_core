@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
+import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Generic
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,7 +25,7 @@ class ModelOnexResult(BaseModel):
 
     status: EnumOnexStatus
     target: str | None = Field(
-        None,
+        default=None,
         description="Target file or resource validated.",
     )
     messages: list[ModelOnexMessage] = Field(default_factory=list)

@@ -1,3 +1,8 @@
+import uuid
+from typing import Any
+
+from pydantic import Field
+
 """
 Simple Tool Execution Result Model - ONEX Standards Compliant.
 
@@ -9,7 +14,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.types.constraints import PrimitiveValueType
 
@@ -32,9 +37,11 @@ class ModelToolExecutionResult(BaseModel):
         description="Unique execution identifier",
     )
 
-    tool_name: str = Field(..., description="Name of the executed tool")
+    tool_name: str = Field(default=..., description="Name of the executed tool")
 
-    success: bool = Field(..., description="Whether the tool execution succeeded")
+    success: bool = Field(
+        default=..., description="Whether the tool execution succeeded"
+    )
 
     output: StructuredData = Field(
         default_factory=dict,

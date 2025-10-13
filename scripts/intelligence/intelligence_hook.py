@@ -130,7 +130,7 @@ class IntelligenceHook:
         self.repo_root = Path.cwd()
         self.repo_name = self.repo_root.name
 
-    def _load_config(self, config_path: Optional[str]) -> Dict[str, Any]:
+    def _load_config(self, config_path: Optional[str]) -> dict[str, Any]:
         """Load configuration from file or use defaults."""
         default_config = {
             "intelligence_api": {
@@ -158,7 +158,7 @@ class IntelligenceHook:
 
         if config_path and Path(config_path).exists():
             try:
-                with open(config_path, "r") as f:
+                with open(config_path) as f:
                     file_config = json.load(f)
                 # Merge with defaults
                 self._deep_merge(default_config, file_config)
@@ -167,7 +167,7 @@ class IntelligenceHook:
 
         return default_config
 
-    def _deep_merge(self, base: Dict, update: Dict) -> None:
+    def _deep_merge(self, base: dict, update: dict) -> None:
         """Deep merge configuration dictionaries."""
         for key, value in update.items():
             if key in base and isinstance(base[key], dict) and isinstance(value, dict):
@@ -195,7 +195,7 @@ class IntelligenceHook:
 
         return logger
 
-    def run_git_command(self, cmd: List[str], cwd: Optional[Path] = None) -> str:
+    def run_git_command(self, cmd: list[str], cwd: Optional[Path] = None) -> str:
         """Run a git command and return the output."""
         self.logger.debug(
             f"Executing git command: {' '.join(cmd)} in {cwd or self.repo_root}"
@@ -217,7 +217,7 @@ class IntelligenceHook:
             self.logger.exception(f"Git command failed: {' '.join(cmd)}")
             return ""
 
-    def get_commit_info(self, commit_hash: str) -> Dict[str, Any]:
+    def get_commit_info(self, commit_hash: str) -> dict[str, Any]:
         """Get detailed information about a commit."""
         self.logger.debug(f"Getting commit info for: {commit_hash}")
         try:
@@ -297,8 +297,8 @@ class IntelligenceHook:
             return {}
 
     def analyze_file_changes(
-        self, file_changes: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, file_changes: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Analyze file changes to extract patterns and technologies."""
         self.logger.debug(f"Analyzing {len(file_changes)} file changes")
         if not self.file_analysis_enabled:
@@ -353,8 +353,8 @@ class IntelligenceHook:
         return result
 
     def find_cross_repo_correlations(
-        self, commit_info: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, commit_info: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Find correlations with other repositories."""
         self.logger.debug(
             f"Finding cross-repo correlations for commit: {commit_info.get('commit_hash', 'unknown')}"
@@ -481,7 +481,6 @@ class IntelligenceHook:
                     and sibling != self.repo_root
                     and (sibling / ".git").exists()
                 ):
-
                     # Search for similar commits in sibling repos
                     matching_commits = self._find_matching_commits_in_repo(
                         sibling, keywords
@@ -514,8 +513,8 @@ class IntelligenceHook:
         return correlations
 
     def _find_matching_commits_in_repo(
-        self, repo_path: Path, keywords: List[str]
-    ) -> List[Dict[str, Any]]:
+        self, repo_path: Path, keywords: list[str]
+    ) -> list[dict[str, Any]]:
         """Find matching commits in a specific repository."""
         matching_commits = []
 
@@ -553,7 +552,7 @@ class IntelligenceHook:
 
         return matching_commits
 
-    def build_intelligence_document(self, commits_to_push: List[str]) -> Dict[str, Any]:
+    def build_intelligence_document(self, commits_to_push: list[str]) -> dict[str, Any]:
         """Build the complete intelligence document."""
         self.logger.info(
             f"Building intelligence document for {len(commits_to_push)} commits"
@@ -648,8 +647,8 @@ class IntelligenceHook:
         return intelligence_doc
 
     def _detect_architecture_patterns(
-        self, file_changes: List[Dict[str, Any]]
-    ) -> List[str]:
+        self, file_changes: list[dict[str, Any]]
+    ) -> list[str]:
         """Detect architectural patterns from file changes."""
         patterns = []
         filenames = [change.get("filename", "") for change in file_changes]
@@ -686,7 +685,7 @@ class IntelligenceHook:
 
         return patterns
 
-    def _generate_commit_summary(self, commits_data: List[Dict[str, Any]]) -> str:
+    def _generate_commit_summary(self, commits_data: list[dict[str, Any]]) -> str:
         """Generate a summary of the commits."""
         if not commits_data:
             return "No commits to analyze"
@@ -717,8 +716,8 @@ class IntelligenceHook:
             return f"Mixed development including {', '.join(unique_actions)}"
 
     def _generate_cross_repo_insights(
-        self, correlations: List[Dict[str, Any]]
-    ) -> List[str]:
+        self, correlations: list[dict[str, Any]]
+    ) -> list[str]:
         """Generate insights from cross-repository correlations."""
         insights = []
 
@@ -752,7 +751,7 @@ class IntelligenceHook:
 
         return insights
 
-    def _create_intelligence_document_content(self, doc: Dict[str, Any]):
+    def _create_intelligence_document_content(self, doc: dict[str, Any]):
         """Transform dictionary document into validated Pydantic IntelligenceDocumentContent."""
         if not PYDANTIC_AVAILABLE:
             raise ImportError(
@@ -891,7 +890,7 @@ class IntelligenceHook:
             raw_diff=None,  # Could be added if needed
         )
 
-    def submit_intelligence_document(self, doc: Dict[str, Any]) -> bool:
+    def submit_intelligence_document(self, doc: dict[str, Any]) -> bool:
         """Submit the intelligence document to the Archon system."""
         if not doc:
             self.logger.warning("No document to submit")
@@ -1125,7 +1124,7 @@ class IntelligenceHook:
                     if "timeout" in str(type(e)).lower():
                         self.logger.warning(f"Request timeout (attempt {attempt + 1})")
                     else:
-                        self.logger.error(
+                        self.logger.exception(
                             f"Request failed (attempt {attempt + 1}): {e}"
                         )
                 else:

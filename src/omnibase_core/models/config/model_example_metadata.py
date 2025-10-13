@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Example metadata model for examples collection.
 
@@ -5,15 +11,14 @@ This module provides the ModelExampleMetadata class for metadata
 about example collections with enhanced structure.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_difficulty_level import EnumDifficultyLevel
 from omnibase_core.enums.enum_example_category import EnumExampleCategory
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelExampleMetadata(BaseModel):
@@ -31,7 +36,7 @@ class ModelExampleMetadata(BaseModel):
     )
 
     description: str | None = Field(
-        None,
+        default=None,
         description="Description of the examples collection",
     )
 
@@ -46,7 +51,7 @@ class ModelExampleMetadata(BaseModel):
     )
 
     category: EnumExampleCategory | None = Field(
-        None,
+        default=None,
         description="Category this collection belongs to",
     )
 
@@ -66,13 +71,13 @@ class ModelExampleMetadata(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -82,7 +87,7 @@ class ModelExampleMetadata(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

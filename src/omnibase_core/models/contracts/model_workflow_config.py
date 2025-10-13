@@ -1,3 +1,7 @@
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Configuration Model - ONEX Standards Compliant.
 
@@ -7,7 +11,9 @@ and coordination strategies for complex workflows.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class ModelWorkflowConfig(BaseModel):

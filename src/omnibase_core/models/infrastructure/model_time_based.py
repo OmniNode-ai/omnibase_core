@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Generic, TypeVar
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Time-Based Model.
 
@@ -5,16 +14,15 @@ Universal time-based model replacing ModelDuration, ModelTimeout, and timing
 aspects of ModelProgress with a single generic type-safe implementation.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from typing import Any, Generic, TypeVar
+from datetime import UTC, timedelta
+from typing import Any
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 T = TypeVar("T", int, float)
 
@@ -31,7 +39,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
     - Serializable: Data serialization/deserialization
     """
 
-    value: T = Field(..., description="The time-based value")
+    value: T = Field(default=..., description="The time-based value")
     unit: EnumTimeUnit = Field(default=EnumTimeUnit.SECONDS, description="Time unit")
     metadata: dict[str, str] = Field(
         default_factory=dict,
@@ -60,16 +68,16 @@ class ModelTimeBased(BaseModel, Generic[T]):
         description="Runtime category for this time value",
     )
 
-    @field_validator("warning_threshold_value")
-    @classmethod
-    def validate_warning_threshold(cls, v: T | None, info: ValidationInfo) -> T | None:
+    @model_validator(mode="after")
+    def validate_warning_threshold(self) -> ModelTimeBased[T]:
         """Validate warning threshold is less than main value."""
-        if v is not None and "value" in info.data:
-            main_value = info.data["value"]
-            if v >= main_value:
+        if self.warning_threshold_value is not None:
+            if self.warning_threshold_value >= self.value:
                 msg = "Warning threshold must be less than main value"
-                raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
-        return v
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                )
+        return self
 
     @field_validator("extension_limit_value")
     @classmethod
@@ -77,7 +85,9 @@ class ModelTimeBased(BaseModel, Generic[T]):
         """Validate extension limit when extension is allowed."""
         if v is not None and info.data.get("allow_extension", False) is False:
             msg = "Extension limit requires allow_extension=True"
-            raise OnexError(code=CoreErrorCode.VALIDATION_ERROR, message=msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
         return v
 
     def model_post_init(self, __context: object) -> None:
@@ -381,8 +391,8 @@ class ModelTimeBased(BaseModel, Generic[T]):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -394,13 +404,13 @@ class ModelTimeBased(BaseModel, Generic[T]):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Memory Management Configuration Model - ONEX Standards Compliant.
 
@@ -8,7 +10,7 @@ efficient batch processing operations.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelMemoryManagementConfig(BaseModel):

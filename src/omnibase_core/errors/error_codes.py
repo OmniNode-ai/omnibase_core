@@ -1,25 +1,3 @@
-# === OmniNode:Metadata ===
-# metadata_version: 0.1.0
-# protocol_version: 1.1.0
-# owner: OmniNode Team
-# copyright: OmniNode Team
-# schema_version: 1.1.0
-# name: error_codes.py
-# version: 1.0.0
-# uuid: 4dbf1549-9218-47b6-9188-3589104a38f5
-# author: OmniNode Team
-# created_at: 2025-05-25T16:50:14.043960
-# last_modified_at: 2025-05-25T22:11:50.165848
-# description: Stamped by ToolPython
-# state_contract: state_contract://default
-# lifecycle: active
-# hash: 2169ab95a8612c7ab87a2015a94c9d110046d8d9d45d76142fe96ae4a00c114a
-# entrypoint: python@error_codes.py
-# runtime_language_hint: python>=3.11
-# namespace: onex.stamped.error_codes
-# meta_type: tool
-# === /OmniNode:Metadata ===
-
 """
 Shared error codes and exit code mapping for all ONEX nodes.
 
@@ -64,14 +42,16 @@ Breaking this chain (e.g., adding runtime import from models.*) will cause circu
 import re
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
 # Safe runtime imports - no circular dependency risk
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.types.core_types import BasicErrorContext
+
+# Removed unused import that caused circular dependency:
+# from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports
 if TYPE_CHECKING:
@@ -79,7 +59,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
-class CLIExitCode(int, Enum):
+class EnumCLIExitCode(int, Enum):
     """Standard CLI exit codes for ONEX operations."""
 
     SUCCESS = 0
@@ -92,15 +72,15 @@ class CLIExitCode(int, Enum):
 
 
 # Global mapping from EnumOnexStatus to CLI exit codes
-STATUS_TO_EXIT_CODE: dict[EnumOnexStatus, CLIExitCode] = {
-    EnumOnexStatus.SUCCESS: CLIExitCode.SUCCESS,
-    EnumOnexStatus.ERROR: CLIExitCode.ERROR,
-    EnumOnexStatus.WARNING: CLIExitCode.WARNING,
-    EnumOnexStatus.PARTIAL: CLIExitCode.PARTIAL,
-    EnumOnexStatus.SKIPPED: CLIExitCode.SKIPPED,
-    EnumOnexStatus.FIXED: CLIExitCode.FIXED,
-    EnumOnexStatus.INFO: CLIExitCode.INFO,
-    EnumOnexStatus.UNKNOWN: CLIExitCode.ERROR,  # Treat unknown as error
+STATUS_TO_EXIT_CODE: dict[EnumOnexStatus, EnumCLIExitCode] = {
+    EnumOnexStatus.SUCCESS: EnumCLIExitCode.SUCCESS,
+    EnumOnexStatus.ERROR: EnumCLIExitCode.ERROR,
+    EnumOnexStatus.WARNING: EnumCLIExitCode.WARNING,
+    EnumOnexStatus.PARTIAL: EnumCLIExitCode.PARTIAL,
+    EnumOnexStatus.SKIPPED: EnumCLIExitCode.SKIPPED,
+    EnumOnexStatus.FIXED: EnumCLIExitCode.FIXED,
+    EnumOnexStatus.INFO: EnumCLIExitCode.INFO,
+    EnumOnexStatus.UNKNOWN: EnumCLIExitCode.ERROR,  # Treat unknown as error
 }
 
 
@@ -125,10 +105,10 @@ def get_exit_code_for_status(status: EnumOnexStatus) -> int:
         >>> get_exit_code_for_status(EnumOnexStatus.WARNING)
         2
     """
-    return STATUS_TO_EXIT_CODE.get(status, CLIExitCode.ERROR).value
+    return STATUS_TO_EXIT_CODE.get(status, EnumCLIExitCode.ERROR).value
 
 
-class OnexErrorCode(str, Enum):
+class EnumOnexErrorCode(str, Enum):
     """
     Base class for ONEX error codes.
 
@@ -161,10 +141,10 @@ class OnexErrorCode(str, Enum):
         Default implementation returns ERROR (1). Subclasses can override
         for more specific mapping.
         """
-        return CLIExitCode.ERROR.value
+        return EnumCLIExitCode.ERROR.value
 
 
-class CoreErrorCode(OnexErrorCode):
+class EnumCoreErrorCode(EnumOnexErrorCode):
     """
     Core error codes that can be reused across all ONEX components.
 
@@ -252,6 +232,38 @@ class CoreErrorCode(OnexErrorCode):
     QUOTA_EXCEEDED = "ONEX_CORE_164_QUOTA_EXCEEDED"
     PROCESSING_ERROR = "ONEX_CORE_165_PROCESSING_ERROR"
 
+    # Type validation errors (181-190)
+    TYPE_MISMATCH = "ONEX_CORE_181_TYPE_MISMATCH"
+
+    # Intelligence and pattern recognition errors (191-200)
+    INTELLIGENCE_PROCESSING_FAILED = "ONEX_CORE_191_INTELLIGENCE_PROCESSING_FAILED"
+    PATTERN_RECOGNITION_FAILED = "ONEX_CORE_192_PATTERN_RECOGNITION_FAILED"
+    CONTEXT_ANALYSIS_FAILED = "ONEX_CORE_193_CONTEXT_ANALYSIS_FAILED"
+    LEARNING_ENGINE_FAILED = "ONEX_CORE_194_LEARNING_ENGINE_FAILED"
+    INTELLIGENCE_COORDINATION_FAILED = "ONEX_CORE_195_INTELLIGENCE_COORDINATION_FAILED"
+
+    # Service and system health errors (201-220)
+    SYSTEM_HEALTH_DEGRADED = "ONEX_CORE_201_SYSTEM_HEALTH_DEGRADED"
+    SERVICE_START_FAILED = "ONEX_CORE_202_SERVICE_START_FAILED"
+    SERVICE_STOP_FAILED = "ONEX_CORE_203_SERVICE_STOP_FAILED"
+    SERVICE_UNHEALTHY = "ONEX_CORE_204_SERVICE_UNHEALTHY"
+    SERVICE_UNAVAILABLE = "ONEX_CORE_205_SERVICE_UNAVAILABLE"
+
+    # Security errors (221-230)
+    SECURITY_REPORT_FAILED = "ONEX_CORE_221_SECURITY_REPORT_FAILED"
+    SECURITY_VIOLATION = "ONEX_CORE_222_SECURITY_VIOLATION"
+
+    # Event and processing errors (231-240)
+    EVENT_PROCESSING_FAILED = "ONEX_CORE_231_EVENT_PROCESSING_FAILED"
+
+    # Contract and compliance errors (241-250)
+    DEPENDENCY_FAILED = "ONEX_CORE_241_DEPENDENCY_FAILED"
+    CONTRACT_VIOLATION = "ONEX_CORE_242_CONTRACT_VIOLATION"
+
+    # Discovery and metadata errors (251-260)
+    DISCOVERY_SETUP_FAILED = "ONEX_CORE_251_DISCOVERY_SETUP_FAILED"
+    METADATA_LOAD_FAILED = "ONEX_CORE_252_METADATA_LOAD_FAILED"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -272,589 +284,194 @@ class CoreErrorCode(OnexErrorCode):
 
 
 # Mapping from core error codes to exit codes
-CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
+CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     # Validation errors -> ERROR
-    CoreErrorCode.INVALID_PARAMETER: CLIExitCode.ERROR,
-    CoreErrorCode.MISSING_REQUIRED_PARAMETER: CLIExitCode.ERROR,
-    CoreErrorCode.PARAMETER_TYPE_MISMATCH: CLIExitCode.ERROR,
-    CoreErrorCode.PARAMETER_OUT_OF_RANGE: CLIExitCode.ERROR,
-    CoreErrorCode.VALIDATION_FAILED: CLIExitCode.ERROR,
-    CoreErrorCode.VALIDATION_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.INVALID_INPUT: CLIExitCode.ERROR,
-    CoreErrorCode.INVALID_OPERATION: CLIExitCode.ERROR,
-    CoreErrorCode.CONVERSION_ERROR: CLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_PARAMETER: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.VALIDATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.VALIDATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_INPUT: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_OPERATION: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONVERSION_ERROR: EnumCLIExitCode.ERROR,
     # File system errors -> ERROR
-    CoreErrorCode.FILE_NOT_FOUND: CLIExitCode.ERROR,
-    CoreErrorCode.FILE_READ_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.FILE_WRITE_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.DIRECTORY_NOT_FOUND: CLIExitCode.ERROR,
-    CoreErrorCode.PERMISSION_DENIED: CLIExitCode.ERROR,
-    CoreErrorCode.FILE_OPERATION_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.FILE_ACCESS_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.NOT_FOUND: CLIExitCode.ERROR,
-    CoreErrorCode.PERMISSION_ERROR: CLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_READ_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_WRITE_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DIRECTORY_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PERMISSION_DENIED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.FILE_ACCESS_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PERMISSION_ERROR: EnumCLIExitCode.ERROR,
     # Configuration errors -> ERROR
-    CoreErrorCode.INVALID_CONFIGURATION: CLIExitCode.ERROR,
-    CoreErrorCode.CONFIGURATION_NOT_FOUND: CLIExitCode.ERROR,
-    CoreErrorCode.CONFIGURATION_PARSE_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.CONFIGURATION_ERROR: CLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_CONFIGURATION: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONFIGURATION_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONFIGURATION_ERROR: EnumCLIExitCode.ERROR,
     # Registry errors -> ERROR
-    CoreErrorCode.REGISTRY_NOT_FOUND: CLIExitCode.ERROR,
-    CoreErrorCode.REGISTRY_INITIALIZATION_FAILED: CLIExitCode.ERROR,
-    CoreErrorCode.ITEM_NOT_REGISTERED: CLIExitCode.ERROR,
-    CoreErrorCode.DUPLICATE_REGISTRATION: CLIExitCode.WARNING,
+    EnumCoreErrorCode.REGISTRY_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ITEM_NOT_REGISTERED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DUPLICATE_REGISTRATION: EnumCLIExitCode.WARNING,
     # Runtime errors -> ERROR
-    CoreErrorCode.OPERATION_FAILED: CLIExitCode.ERROR,
-    CoreErrorCode.TIMEOUT_EXCEEDED: CLIExitCode.ERROR,
-    CoreErrorCode.RESOURCE_UNAVAILABLE: CLIExitCode.ERROR,
-    CoreErrorCode.UNSUPPORTED_OPERATION: CLIExitCode.ERROR,
-    CoreErrorCode.RESOURCE_NOT_FOUND: CLIExitCode.ERROR,
-    CoreErrorCode.INVALID_STATE: CLIExitCode.ERROR,
-    CoreErrorCode.INITIALIZATION_FAILED: CLIExitCode.ERROR,
-    CoreErrorCode.TIMEOUT: CLIExitCode.ERROR,
-    CoreErrorCode.INTERNAL_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.NETWORK_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.MIGRATION_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.TIMEOUT_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.RESOURCE_ERROR: CLIExitCode.ERROR,
+    EnumCoreErrorCode.OPERATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TIMEOUT_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RESOURCE_UNAVAILABLE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.UNSUPPORTED_OPERATION: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RESOURCE_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INVALID_STATE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TIMEOUT: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INTERNAL_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.NETWORK_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.MIGRATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TIMEOUT_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RESOURCE_ERROR: EnumCLIExitCode.ERROR,
     # Database errors -> ERROR
-    CoreErrorCode.DATABASE_CONNECTION_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.DATABASE_OPERATION_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.DATABASE_QUERY_ERROR: CLIExitCode.ERROR,
+    EnumCoreErrorCode.DATABASE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DATABASE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DATABASE_QUERY_ERROR: EnumCLIExitCode.ERROR,
     # LLM provider errors -> ERROR
-    CoreErrorCode.NO_SUITABLE_PROVIDER: CLIExitCode.ERROR,
-    CoreErrorCode.RATE_LIMIT_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.AUTHENTICATION_ERROR: CLIExitCode.ERROR,
-    CoreErrorCode.QUOTA_EXCEEDED: CLIExitCode.ERROR,
-    CoreErrorCode.PROCESSING_ERROR: CLIExitCode.ERROR,
+    EnumCoreErrorCode.NO_SUITABLE_PROVIDER: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RATE_LIMIT_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.AUTHENTICATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.QUOTA_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PROCESSING_ERROR: EnumCLIExitCode.ERROR,
+    # Type validation errors -> ERROR
+    EnumCoreErrorCode.TYPE_MISMATCH: EnumCLIExitCode.ERROR,
+    # Intelligence errors -> ERROR
+    EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONTEXT_ANALYSIS_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.LEARNING_ENGINE_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.INTELLIGENCE_COORDINATION_FAILED: EnumCLIExitCode.ERROR,
+    # Service/system health errors -> ERROR
+    EnumCoreErrorCode.SYSTEM_HEALTH_DEGRADED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.SERVICE_START_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.SERVICE_STOP_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.SERVICE_UNHEALTHY: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.SERVICE_UNAVAILABLE: EnumCLIExitCode.ERROR,
+    # Security errors -> ERROR
+    EnumCoreErrorCode.SECURITY_REPORT_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.SECURITY_VIOLATION: EnumCLIExitCode.ERROR,
+    # Event processing errors -> ERROR
+    EnumCoreErrorCode.EVENT_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
+    # Contract/compliance errors -> ERROR
+    EnumCoreErrorCode.DEPENDENCY_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONTRACT_VIOLATION: EnumCLIExitCode.ERROR,
+    # Discovery/metadata errors -> ERROR
+    EnumCoreErrorCode.DISCOVERY_SETUP_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.METADATA_LOAD_FAILED: EnumCLIExitCode.ERROR,
 }
 
 
-def get_exit_code_for_core_error(error_code: CoreErrorCode) -> int:
+def get_exit_code_for_core_error(error_code: EnumCoreErrorCode) -> int:
     """
     Get the appropriate CLI exit code for a core error code.
 
     Args:
-        error_code: The CoreErrorCode to map
+        error_code: The EnumCoreErrorCode to map
 
     Returns:
         The corresponding CLI exit code (integer)
     """
-    return CORE_ERROR_CODE_TO_EXIT_CODE.get(error_code, CLIExitCode.ERROR).value
+    return CORE_ERROR_CODE_TO_EXIT_CODE.get(error_code, EnumCLIExitCode.ERROR).value
 
 
-def get_core_error_description(error_code: CoreErrorCode) -> str:
+def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
     """
     Get a human-readable description for a core error code.
 
     Args:
-        error_code: The CoreErrorCode to describe
+        error_code: The EnumCoreErrorCode to describe
 
     Returns:
         A human-readable description of the error
     """
     descriptions = {
-        CoreErrorCode.INVALID_PARAMETER: "Invalid parameter value",
-        CoreErrorCode.MISSING_REQUIRED_PARAMETER: "Required parameter missing",
-        CoreErrorCode.PARAMETER_TYPE_MISMATCH: "Parameter type mismatch",
-        CoreErrorCode.PARAMETER_OUT_OF_RANGE: "Parameter value out of range",
-        CoreErrorCode.VALIDATION_FAILED: "Validation failed",
-        CoreErrorCode.VALIDATION_ERROR: "Validation error occurred",
-        CoreErrorCode.INVALID_INPUT: "Invalid input provided",
-        CoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
-        CoreErrorCode.CONVERSION_ERROR: "Data conversion error",
-        CoreErrorCode.FILE_NOT_FOUND: "File not found",
-        CoreErrorCode.FILE_READ_ERROR: "Cannot read file",
-        CoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",
-        CoreErrorCode.DIRECTORY_NOT_FOUND: "Directory not found",
-        CoreErrorCode.PERMISSION_DENIED: "Permission denied",
-        CoreErrorCode.FILE_OPERATION_ERROR: "File operation failed",
-        CoreErrorCode.FILE_ACCESS_ERROR: "File access error",
-        CoreErrorCode.NOT_FOUND: "Resource not found",
-        CoreErrorCode.PERMISSION_ERROR: "Permission error",
-        CoreErrorCode.INVALID_CONFIGURATION: "Invalid configuration",
-        CoreErrorCode.CONFIGURATION_NOT_FOUND: "Configuration not found",
-        CoreErrorCode.CONFIGURATION_PARSE_ERROR: "Configuration parse error",
-        CoreErrorCode.CONFIGURATION_ERROR: "Configuration error",
-        CoreErrorCode.REGISTRY_NOT_FOUND: "Registry not found",
-        CoreErrorCode.REGISTRY_INITIALIZATION_FAILED: "Registry initialization failed",
-        CoreErrorCode.ITEM_NOT_REGISTERED: "Item not registered",
-        CoreErrorCode.DUPLICATE_REGISTRATION: "Duplicate registration",
-        CoreErrorCode.OPERATION_FAILED: "Operation failed",
-        CoreErrorCode.TIMEOUT_EXCEEDED: "Timeout exceeded",
-        CoreErrorCode.RESOURCE_UNAVAILABLE: "Resource unavailable",
-        CoreErrorCode.UNSUPPORTED_OPERATION: "Unsupported operation",
-        CoreErrorCode.RESOURCE_NOT_FOUND: "Resource not found",
-        CoreErrorCode.INVALID_STATE: "Invalid state",
-        CoreErrorCode.INITIALIZATION_FAILED: "Initialization failed",
-        CoreErrorCode.TIMEOUT: "Operation timed out",
-        CoreErrorCode.INTERNAL_ERROR: "Internal error occurred",
-        CoreErrorCode.NETWORK_ERROR: "Network error occurred",
-        CoreErrorCode.MIGRATION_ERROR: "Migration error occurred",
-        CoreErrorCode.TIMEOUT_ERROR: "Timeout error occurred",
-        CoreErrorCode.RESOURCE_ERROR: "Resource error occurred",
-        CoreErrorCode.DATABASE_CONNECTION_ERROR: "Database connection failed",
-        CoreErrorCode.DATABASE_OPERATION_ERROR: "Database operation failed",
-        CoreErrorCode.DATABASE_QUERY_ERROR: "Database query failed",
-        CoreErrorCode.MODULE_NOT_FOUND: "Module not found",
-        CoreErrorCode.DEPENDENCY_UNAVAILABLE: "Dependency unavailable",
-        CoreErrorCode.VERSION_INCOMPATIBLE: "Version incompatible",
-        CoreErrorCode.IMPORT_ERROR: "Import error occurred",
-        CoreErrorCode.DEPENDENCY_ERROR: "Dependency error occurred",
-        CoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
-        CoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
-        CoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",
-        CoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
-        CoreErrorCode.PROCESSING_ERROR: "Processing error",
+        EnumCoreErrorCode.INVALID_PARAMETER: "Invalid parameter value",
+        EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER: "Required parameter missing",
+        EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH: "Parameter type mismatch",
+        EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE: "Parameter value out of range",
+        EnumCoreErrorCode.VALIDATION_FAILED: "Validation failed",
+        EnumCoreErrorCode.VALIDATION_ERROR: "Validation error occurred",
+        EnumCoreErrorCode.INVALID_INPUT: "Invalid input provided",
+        EnumCoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
+        EnumCoreErrorCode.CONVERSION_ERROR: "Data conversion error",
+        EnumCoreErrorCode.FILE_NOT_FOUND: "File not found",
+        EnumCoreErrorCode.FILE_READ_ERROR: "Cannot read file",
+        EnumCoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",
+        EnumCoreErrorCode.DIRECTORY_NOT_FOUND: "Directory not found",
+        EnumCoreErrorCode.PERMISSION_DENIED: "Permission denied",
+        EnumCoreErrorCode.FILE_OPERATION_ERROR: "File operation failed",
+        EnumCoreErrorCode.FILE_ACCESS_ERROR: "File access error",
+        EnumCoreErrorCode.NOT_FOUND: "Resource not found",
+        EnumCoreErrorCode.PERMISSION_ERROR: "Permission error",
+        EnumCoreErrorCode.INVALID_CONFIGURATION: "Invalid configuration",
+        EnumCoreErrorCode.CONFIGURATION_NOT_FOUND: "Configuration not found",
+        EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR: "Configuration parse error",
+        EnumCoreErrorCode.CONFIGURATION_ERROR: "Configuration error",
+        EnumCoreErrorCode.REGISTRY_NOT_FOUND: "Registry not found",
+        EnumCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: "Registry initialization failed",
+        EnumCoreErrorCode.ITEM_NOT_REGISTERED: "Item not registered",
+        EnumCoreErrorCode.DUPLICATE_REGISTRATION: "Duplicate registration",
+        EnumCoreErrorCode.OPERATION_FAILED: "Operation failed",
+        EnumCoreErrorCode.TIMEOUT_EXCEEDED: "Timeout exceeded",
+        EnumCoreErrorCode.RESOURCE_UNAVAILABLE: "Resource unavailable",
+        EnumCoreErrorCode.UNSUPPORTED_OPERATION: "Unsupported operation",
+        EnumCoreErrorCode.RESOURCE_NOT_FOUND: "Resource not found",
+        EnumCoreErrorCode.INVALID_STATE: "Invalid state",
+        EnumCoreErrorCode.INITIALIZATION_FAILED: "Initialization failed",
+        EnumCoreErrorCode.TIMEOUT: "Operation timed out",
+        EnumCoreErrorCode.INTERNAL_ERROR: "Internal error occurred",
+        EnumCoreErrorCode.NETWORK_ERROR: "Network error occurred",
+        EnumCoreErrorCode.MIGRATION_ERROR: "Migration error occurred",
+        EnumCoreErrorCode.TIMEOUT_ERROR: "Timeout error occurred",
+        EnumCoreErrorCode.RESOURCE_ERROR: "Resource error occurred",
+        EnumCoreErrorCode.DATABASE_CONNECTION_ERROR: "Database connection failed",
+        EnumCoreErrorCode.DATABASE_OPERATION_ERROR: "Database operation failed",
+        EnumCoreErrorCode.DATABASE_QUERY_ERROR: "Database query failed",
+        EnumCoreErrorCode.MODULE_NOT_FOUND: "Module not found",
+        EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE: "Dependency unavailable",
+        EnumCoreErrorCode.VERSION_INCOMPATIBLE: "Version incompatible",
+        EnumCoreErrorCode.IMPORT_ERROR: "Import error occurred",
+        EnumCoreErrorCode.DEPENDENCY_ERROR: "Dependency error occurred",
+        EnumCoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
+        EnumCoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
+        EnumCoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",
+        EnumCoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
+        EnumCoreErrorCode.PROCESSING_ERROR: "Processing error",
+        EnumCoreErrorCode.TYPE_MISMATCH: "Type mismatch in value conversion",
+        EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: "Intelligence processing failed",
+        EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: "Pattern recognition failed",
+        EnumCoreErrorCode.CONTEXT_ANALYSIS_FAILED: "Context analysis failed",
+        EnumCoreErrorCode.LEARNING_ENGINE_FAILED: "Learning engine operation failed",
+        EnumCoreErrorCode.INTELLIGENCE_COORDINATION_FAILED: "Intelligence coordination failed",
+        EnumCoreErrorCode.SYSTEM_HEALTH_DEGRADED: "System health has degraded",
+        EnumCoreErrorCode.SERVICE_START_FAILED: "Service failed to start",
+        EnumCoreErrorCode.SERVICE_STOP_FAILED: "Service failed to stop",
+        EnumCoreErrorCode.SERVICE_UNHEALTHY: "Service is unhealthy",
+        EnumCoreErrorCode.SERVICE_UNAVAILABLE: "Service is unavailable",
+        EnumCoreErrorCode.SECURITY_REPORT_FAILED: "Security report generation failed",
+        EnumCoreErrorCode.SECURITY_VIOLATION: "Security violation detected",
+        EnumCoreErrorCode.EVENT_PROCESSING_FAILED: "Event processing failed",
+        EnumCoreErrorCode.DEPENDENCY_FAILED: "Dependency check or operation failed",
+        EnumCoreErrorCode.CONTRACT_VIOLATION: "Contract violation detected",
+        EnumCoreErrorCode.DISCOVERY_SETUP_FAILED: "Discovery setup failed",
+        EnumCoreErrorCode.METADATA_LOAD_FAILED: "Metadata loading failed",
     }
     return descriptions.get(error_code, "Unknown error")
 
 
-class ModelOnexError(BaseModel):
-    """
-    Pydantic model for ONEX error serialization and validation.
-
-    This model provides structured error information with validation,
-    serialization, and schema generation capabilities.
-    """
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "message": "File not found: config.yaml",
-                "error_code": "ONEX_CORE_021_FILE_NOT_FOUND",
-                "status": "error",
-                "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
-                "timestamp": "2025-05-25T22:30:00Z",
-                "context": {"file_path": "/path/to/config.yaml"},
-            },
-        },
-    )
-
-    message: str = Field(
-        ...,
-        description="Human-readable error message",
-        json_schema_extra={"example": "File not found: config.yaml"},
-    )
-    error_code: str | OnexErrorCode | None = Field(
-        default=None,
-        description="Canonical error code for this error",
-        json_schema_extra={"example": "ONEX_CORE_021_FILE_NOT_FOUND"},
-    )
-    status: EnumOnexStatus = Field(
-        default=EnumOnexStatus.ERROR,
-        description="EnumOnexStatus for this error",
-        json_schema_extra={"example": "error"},
-    )
-    correlation_id: UUID | None = Field(
-        default=None,
-        description="Optional correlation ID for request tracking",
-        json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
-    )
-    timestamp: datetime | None = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Timestamp when the error occurred",
-        json_schema_extra={"example": "2025-05-25T22:30:00Z"},
-    )
-    context: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional context information for the error",
-        json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
-    )
-
-
-class ModelOnexWarning(BaseModel):
-    """
-    Pydantic model for ONEX warning serialization and validation.
-
-    This model provides structured warning information with validation,
-    serialization, and schema generation capabilities.
-    """
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "message": "File already exists and will be overwritten: config.yaml",
-                "warning_code": "ONEX_CORE_W001_FILE_OVERWRITE",
-                "status": "warning",
-                "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
-                "timestamp": "2025-05-25T22:30:00Z",
-                "context": {"file_path": "/path/to/config.yaml"},
-            },
-        },
-    )
-
-    message: str = Field(
-        ...,
-        description="Human-readable warning message",
-        json_schema_extra={
-            "example": "File already exists and will be overwritten: config.yaml",
-        },
-    )
-    warning_code: str | None = Field(
-        default=None,
-        description="Canonical warning code for this warning",
-        json_schema_extra={"example": "ONEX_CORE_W001_FILE_OVERWRITE"},
-    )
-    status: EnumOnexStatus = Field(
-        default=EnumOnexStatus.WARNING,
-        description="EnumOnexStatus for this warning",
-        json_schema_extra={"example": "warning"},
-    )
-    correlation_id: UUID | None = Field(
-        default=None,
-        description="Optional correlation ID for request tracking",
-        json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
-    )
-    timestamp: datetime | None = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Timestamp when the warning occurred",
-        json_schema_extra={"example": "2025-05-25T22:30:00Z"},
-    )
-    context: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional context information for the warning",
-        json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
-    )
-
-
-class OnexError(Exception):
-    """
-    Exception class for ONEX errors with Pydantic model integration.
-
-    This class combines standard Python exception behavior with Pydantic
-    model features through composition, providing validation, serialization,
-    and schema generation while maintaining exception compatibility.
-
-    All ONEX nodes should use this or subclasses for error handling
-    to ensure consistent error reporting and CLI exit code mapping.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        error_code: OnexErrorCode | str | None = None,
-        status: EnumOnexStatus = EnumOnexStatus.ERROR,
-        correlation_id: UUID | None = None,
-        timestamp: datetime | None = None,
-        **context: Any,
-    ) -> None:
-        """
-        Initialize an ONEX error with error code and status.
-
-        Entry point pattern: If correlation_id is not provided, generates a new one.
-
-        Args:
-            message: Human-readable error message
-            error_code: Canonical error code (optional)
-            status: EnumOnexStatus for this error (default: ERROR)
-            correlation_id: Correlation ID for tracking (auto-generated if not provided)
-            timestamp: Optional timestamp (defaults to current time)
-            **context: Additional context information
-        """
-        # Initialize the Exception
-        super().__init__(message)
-
-        # Handle correlation ID using UUID architecture pattern
-        # ONEX principle: Use canonical UUID type throughout, not strings
-        final_correlation_id: UUID = (
-            correlation_id if correlation_id is not None else uuid4()
-        )
-
-        # Store simple context (no circular dependencies)
-        self._simple_context = BasicErrorContext(
-            file_path=context.get("file_path") if isinstance(context, dict) else None,
-            line_number=(
-                context.get("line_number") if isinstance(context, dict) else None
-            ),
-            column_number=(
-                context.get("column_number") if isinstance(context, dict) else None
-            ),
-            function_name=(
-                context.get("function_name") if isinstance(context, dict) else None
-            ),
-            module_name=(
-                context.get("module_name") if isinstance(context, dict) else None
-            ),
-            stack_trace=(
-                context.get("stack_trace") if isinstance(context, dict) else None
-            ),
-            additional_context=(
-                {
-                    k: v
-                    for k, v in context.items()
-                    if k
-                    not in {
-                        "file_path",
-                        "line_number",
-                        "column_number",
-                        "function_name",
-                        "module_name",
-                        "stack_trace",
-                    }
-                }
-                if isinstance(context, dict)
-                else {}
-            ),
-        )
-
-        # Create the Pydantic model for structured data (using dict context, no circular deps)
-        self.model = ModelOnexError(
-            message=message,
-            error_code=error_code,
-            status=status,
-            correlation_id=final_correlation_id,
-            timestamp=timestamp or datetime.now(UTC),
-            context=context if isinstance(context, dict) else {},
-        )
-
-    @classmethod
-    def with_correlation_id(
-        cls,
-        message: str,
-        correlation_id: UUID,
-        error_code: OnexErrorCode | str | None = None,
-        status: EnumOnexStatus = EnumOnexStatus.ERROR,
-        timestamp: datetime | None = None,
-        **context: Any,
-    ) -> "OnexError":
-        """
-        Create an OnexError with a guaranteed UUID correlation ID.
-
-        This method follows the UUID architecture pattern for internal processing
-        where correlation IDs are already available and guaranteed to be UUIDs.
-
-        Args:
-            message: Human-readable error message
-            correlation_id: Correlation ID as UUID (required)
-            error_code: Canonical error code (optional)
-            status: EnumOnexStatus for this error (default: ERROR)
-            timestamp: Optional timestamp (defaults to current time)
-            **context: Additional context information
-
-        Returns:
-            OnexError: New error instance with guaranteed UUID correlation ID
-        """
-        return cls(
-            message=message,
-            error_code=error_code,
-            status=status,
-            correlation_id=correlation_id,
-            timestamp=timestamp,
-            **context,
-        )
-
-    @classmethod
-    def with_new_correlation_id(
-        cls,
-        message: str,
-        error_code: OnexErrorCode | str | None = None,
-        status: EnumOnexStatus = EnumOnexStatus.ERROR,
-        timestamp: datetime | None = None,
-        **context: Any,
-    ) -> tuple["OnexError", UUID]:
-        """
-        Create an OnexError with a new generated correlation ID.
-
-        Convenience method that generates a new correlation ID and returns
-        both the error and the generated UUID for use in subsequent operations.
-
-        Args:
-            message: Human-readable error message
-            error_code: Canonical error code (optional)
-            status: EnumOnexStatus for this error (default: ERROR)
-            timestamp: Optional timestamp (defaults to current time)
-            **context: Additional context information
-
-        Returns:
-            tuple[OnexError, UUID]: Error instance and generated correlation ID
-        """
-        correlation_id = uuid4()
-        error = cls(
-            message=message,
-            error_code=error_code,
-            status=status,
-            correlation_id=correlation_id,
-            timestamp=timestamp,
-            **context,
-        )
-        return error, correlation_id
-
-    @property
-    def message(self) -> str:
-        """Get the error message."""
-        return self.model.message
-
-    @property
-    def error_code(self) -> str | OnexErrorCode | None:
-        """Get the error code."""
-        return self.model.error_code
-
-    @property
-    def status(self) -> EnumOnexStatus:
-        """Get the error status."""
-        return self.model.status
-
-    @property
-    def correlation_id(self) -> UUID | None:
-        """Get the correlation ID."""
-        return self.model.correlation_id
-
-    @property
-    def timestamp(self) -> datetime | None:
-        """Get the timestamp."""
-        return self.model.timestamp
-
-    @property
-    def context(self) -> dict[str, Any]:
-        """Get the context information."""
-        # Return context as dict from BasicErrorContext (no circular dependencies)
-        return self._simple_context.to_dict()
-
-    def get_exit_code(self) -> int:
-        """Get the appropriate CLI exit code for this error."""
-        if isinstance(self.error_code, OnexErrorCode):
-            return self.error_code.get_exit_code()
-        return get_exit_code_for_status(self.status)
-
-    def __str__(self) -> str:
-        """String representation including error code if available."""
-        if self.error_code:
-            # Use .value to get the string value for OnexErrorCode enums
-            error_code_str = (
-                self.error_code.value
-                if hasattr(self.error_code, "value")
-                else str(self.error_code)
-            )
-            return f"[{error_code_str}] {self.message}"
-        return self.message
-
-    def model_dump(self) -> dict[str, Any]:
-        """Convert error to dictionary for serialization."""
-        return self.model.model_dump()
-
-    def model_dump_json(self) -> str:
-        """Convert error to JSON string for logging/telemetry."""
-        return self.model.model_dump_json()
-
-    def to_json(self) -> str:
-        """Convert error to JSON string for logging/telemetry (alias for model_dump_json)."""
-        return self.model_dump_json()
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "OnexError":
-        """Create OnexError from dictionary."""
-        model = ModelOnexError.model_validate(data)
-        return cls(
-            message=model.message,
-            error_code=model.error_code,
-            status=model.status,
-            correlation_id=model.correlation_id,
-            timestamp=model.timestamp,
-            **model.context,
-        )
-
-    @classmethod
-    def from_json(cls, json_str: str) -> "OnexError":
-        """Create OnexError from JSON string."""
-        model = ModelOnexError.model_validate_json(json_str)
-        return cls(
-            message=model.message,
-            error_code=model.error_code,
-            status=model.status,
-            correlation_id=model.correlation_id,
-            timestamp=model.timestamp,
-            **model.context,
-        )
-
-    @classmethod
-    def model_json_schema(cls) -> dict[str, Any]:
-        """Get the JSON schema for OnexError."""
-        return ModelOnexError.model_json_schema()
-
-
-class CLIAdapter:
-    """
-    Base CLI adapter class that provides consistent exit code handling.
-
-    All CLI adapters should inherit from this class or implement similar
-    exit code mapping functionality.
-    """
-
-    @staticmethod
-    def exit_with_status(status: EnumOnexStatus, message: str = "") -> None:
-        """
-        Exit the CLI with the appropriate exit code for the given status.
-
-        Args:
-            status: The EnumOnexStatus to map to an exit code
-            message: Optional message to print before exiting
-        """
-        import sys
-
-        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-        from omnibase_core.utils.util_bootstrap import emit_log_event_sync
-
-        exit_code = get_exit_code_for_status(status)
-
-        if message:
-            if status in (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN):
-                emit_log_event_sync(
-                    level=LogLevel.ERROR,
-                    message=message,
-                    event_type="cli_exit_error",
-                    data={"status": status.value, "exit_code": exit_code},
-                )
-            elif status == EnumOnexStatus.WARNING:
-                emit_log_event_sync(
-                    level=LogLevel.WARNING,
-                    message=message,
-                    event_type="cli_exit_warning",
-                    data={"status": status.value, "exit_code": exit_code},
-                )
-            else:
-                emit_log_event_sync(
-                    level=LogLevel.INFO,
-                    message=message,
-                    event_type="cli_exit_info",
-                    data={"status": status.value, "exit_code": exit_code},
-                )
-
-        sys.exit(exit_code)
-
-    @staticmethod
-    def exit_with_error(error: OnexError) -> None:
-        """
-        Exit the CLI with the appropriate exit code for the given error.
-
-        Args:
-            error: The OnexError to handle
-        """
-        import sys
-
-        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-        from omnibase_core.utils.util_bootstrap import emit_log_event_sync
-
-        exit_code = error.get_exit_code()
-        emit_log_event_sync(
-            level=LogLevel.ERROR,
-            message=str(error),
-            event_type="cli_exit_with_error",
-            correlation_id=error.correlation_id,
-            data={
-                "error_code": str(error.error_code) if error.error_code else None,
-                "exit_code": exit_code,
-                "context": error.context,
-            },
-        )
-        sys.exit(exit_code)
-
-
 # Registry for component-specific error code mappings
-_ERROR_CODE_REGISTRIES: dict[str, type[OnexErrorCode]] = {}
+_ERROR_CODE_REGISTRIES: dict[str, type[EnumOnexErrorCode]] = {}
 
 
-def register_error_codes(component: str, error_code_enum: type[OnexErrorCode]) -> None:
+def register_error_codes(
+    component: str, error_code_enum: type[EnumOnexErrorCode]
+) -> None:
     """
     Register error codes for a specific component.
 
@@ -865,7 +482,7 @@ def register_error_codes(component: str, error_code_enum: type[OnexErrorCode]) -
     _ERROR_CODE_REGISTRIES[component] = error_code_enum
 
 
-def get_error_codes_for_component(component: str) -> type[OnexErrorCode]:
+def get_error_codes_for_component(component: str) -> type[EnumOnexErrorCode]:
     """
     Get the error code enum for a specific component.
 
@@ -876,13 +493,12 @@ def get_error_codes_for_component(component: str) -> type[OnexErrorCode]:
         The error code enum class for the component
 
     Raises:
-        OnexError: If component is not registered
+        KeyError: If component is not registered
     """
     if component not in _ERROR_CODE_REGISTRIES:
-        msg = f"No error codes registered for component: {component}"
-        raise OnexError(
-            msg,
-            CoreErrorCode.ITEM_NOT_REGISTERED,
+        # Use standard Python exception - error_codes.py should not depend on models
+        raise KeyError(  # error-ok: avoid circular import with ModelOnexError
+            f"No error codes registered for component: {component}"
         )
     return _ERROR_CODE_REGISTRIES[component]
 
@@ -897,7 +513,7 @@ def list_registered_components() -> list[str]:
     return list(_ERROR_CODE_REGISTRIES.keys())
 
 
-class RegistryErrorCode(OnexErrorCode):
+class EnumRegistryErrorCode(EnumOnexErrorCode):
     """
     Canonical error codes for ONEX tool/handler registries.
     Use these for all registry-driven error handling (tool not found, duplicate, etc.).
@@ -925,16 +541,8 @@ class RegistryErrorCode(OnexErrorCode):
         return descriptions.get(self, "Unknown registry error.")
 
     def get_exit_code(self) -> int:
-        return CLIExitCode.ERROR.value
+        return EnumCLIExitCode.ERROR.value
 
 
-class ModelRegistryError(ModelOnexError):
-    """
-    Canonical error model for registry errors (tool/handler registries).
-    Use this for all structured registry error reporting.
-    """
-
-    error_code: RegistryErrorCode = Field(
-        ...,
-        description="Canonical registry error code.",
-    )
+# Module-level attribute access removed - was causing circular import with ModelOnexError
+# The default AttributeError is sufficient for missing attributes

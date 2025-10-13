@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Connection Pool Model.
 
@@ -5,13 +11,12 @@ Connection pooling and timeout configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelConnectionPool(BaseModel):
@@ -28,20 +33,22 @@ class ModelConnectionPool(BaseModel):
 
     # Connection parameters
     timeout_seconds: int = Field(
-        30,
+        default=30,
         description="Connection timeout in seconds",
         ge=1,
         le=3600,
     )
-    retry_count: int = Field(3, description="Number of retry attempts", ge=0, le=10)
+    retry_count: int = Field(
+        default=3, description="Number of retry attempts", ge=0, le=10
+    )
     retry_delay_seconds: int = Field(
-        1,
+        default=1,
         description="Delay between retries in seconds",
         ge=0,
         le=60,
     )
     keepalive_interval: int | None = Field(
-        None,
+        default=None,
         description="Keepalive interval in seconds",
         ge=1,
         le=300,
@@ -49,19 +56,19 @@ class ModelConnectionPool(BaseModel):
 
     # Connection pooling
     pool_size: int | None = Field(
-        None,
+        default=None,
         description="Connection pool size",
         ge=1,
         le=1000,
     )
     pool_timeout: int | None = Field(
-        None,
+        default=None,
         description="Pool timeout in seconds",
         ge=1,
         le=3600,
     )
     max_overflow: int | None = Field(
-        None,
+        default=None,
         description="Maximum pool overflow",
         ge=0,
         le=100,
@@ -72,9 +79,9 @@ class ModelConnectionPool(BaseModel):
         """Validate pool configuration consistency."""
         if self.pool_size and self.max_overflow:
             if self.max_overflow > self.pool_size:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message="max_overflow cannot exceed pool_size",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         return self
 
@@ -224,7 +231,7 @@ class ModelConnectionPool(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

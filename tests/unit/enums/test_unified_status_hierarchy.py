@@ -18,11 +18,11 @@ from omnibase_core.enums.enum_function_lifecycle_status import (
     EnumMetadataNodeStatus,
 )
 from omnibase_core.enums.enum_general_status import EnumGeneralStatus, EnumStatus
-from omnibase_core.enums.enum_status_migration import (
-    EnumStatusMigrationValidator,
-    EnumStatusMigrator,
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
+from omnibase_core.models.validation.model_status_migration_validator import (
+    ModelEnumStatusMigrationValidator,
 )
-from omnibase_core.errors.error_codes import OnexError
 
 
 class TestBaseStatus:
@@ -273,7 +273,7 @@ class TestStatusMigration:
 
     def test_migration_validation(self):
         """Test status migration validation."""
-        migrator = EnumStatusMigrator()
+        migrator = ModelEnumStatusMigrator()
 
         # Test valid migrations
         assert migrator.migrate_general_status("active") == EnumGeneralStatus.ACTIVE
@@ -292,7 +292,7 @@ class TestStatusMigration:
 
     def test_migration_validator(self):
         """Test migration validation functionality."""
-        validator = EnumStatusMigrationValidator()
+        validator = ModelEnumStatusMigrationValidator()
 
         # Test valid value validation
         result = validator.validate_value_migration(
@@ -313,7 +313,7 @@ class TestStatusMigration:
 
     def test_migration_report(self):
         """Test migration report generation."""
-        validator = EnumStatusMigrationValidator()
+        validator = ModelEnumStatusMigrationValidator()
         report = validator.generate_migration_report()
 
         assert "summary" in report

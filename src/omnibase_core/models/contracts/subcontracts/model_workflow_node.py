@@ -1,3 +1,10 @@
+import uuid
+from typing import Any, List
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Node Model - ONEX Standards Compliant.
 
@@ -6,7 +13,7 @@ Model for node definitions in workflow graphs for the ONEX workflow coordination
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -25,7 +32,7 @@ class ModelWorkflowNode(BaseModel):
         description="Unique identifier for the node",
     )
 
-    node_type: EnumNodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(default=..., description="Type of the node")
 
     node_requirements: StructuredData = Field(
         default_factory=dict,

@@ -271,8 +271,9 @@ session-*.json
 *_ANALYSIS.md
 *_SUMMARY.md
 *_GUIDE.md
-*_IMPLEMENTATION*.md
+TEMP_*IMPLEMENTATION*.md
 REFACTORING_EXAMPLE.py
 examples_*.py
 factory_pattern_analysis.md
 migration_guide_*.md
+coverage.json

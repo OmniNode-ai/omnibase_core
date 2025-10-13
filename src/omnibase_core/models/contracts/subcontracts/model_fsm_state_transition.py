@@ -1,3 +1,7 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 FSM State Transition Model - ONEX Standards Compliant.
 
@@ -7,7 +11,7 @@ Part of the FSM Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_fsm_transition_action import ModelFSMTransitionAction
 from .model_fsm_transition_condition import ModelFSMTransitionCondition
@@ -22,17 +26,17 @@ class ModelFSMStateTransition(BaseModel):
     """
 
     transition_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the transition",
         min_length=1,
     )
 
-    from_state: str = Field(..., description="Source state name", min_length=1)
+    from_state: str = Field(default=..., description="Source state name", min_length=1)
 
-    to_state: str = Field(..., description="Target state name", min_length=1)
+    to_state: str = Field(default=..., description="Target state name", min_length=1)
 
     trigger: str = Field(
-        ...,
+        default=...,
         description="Event or condition that triggers transition",
         min_length=1,
     )

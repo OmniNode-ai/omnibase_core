@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Literal, Union
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Node configuration value model.
 
@@ -5,14 +13,15 @@ Type-safe configuration value container using Pydantic discriminated unions
 for proper type safety and validation of node configurations.
 """
 
-from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any
 
-from pydantic import BaseModel, Discriminator, Field
+from pydantic import BaseModel, Discriminator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+
+from .model_nodeconfigurationnumericvalue import ModelNodeConfigurationNumericValue
 
 
 class ModelNodeConfigurationStringValue(BaseModel):
@@ -22,7 +31,7 @@ class ModelNodeConfigurationStringValue(BaseModel):
         default="string",
         description="Type discriminator for string values",
     )
-    value: str = Field(..., description="String configuration value")
+    value: str = Field(default=..., description="String configuration value")
 
     def to_python_value(self) -> str:
         """Get the underlying Python value."""
@@ -37,38 +46,12 @@ class ModelNodeConfigurationStringValue(BaseModel):
         try:
             return int(self.value)
         except ValueError as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Cannot convert string '{self.value}' to int",
                 details={"value": self.value, "target_type": "int"},
                 cause=e,
             ) from e
-
-
-class ModelNodeConfigurationNumericValue(BaseModel):
-    """Numeric configuration value with discriminated union support."""
-
-    value_type: Literal["numeric"] = Field(
-        default="numeric",
-        description="Type discriminator for numeric values",
-    )
-    value: ModelNumericValue = Field(..., description="Numeric configuration value")
-
-    def to_python_value(self) -> int | float:
-        """Get the underlying Python value."""
-        return self.value.to_python_value()
-
-    def as_string(self) -> str:
-        """Get configuration value as string."""
-        return str(self.value.to_python_value())
-
-    def as_int(self) -> int:
-        """Get configuration value as integer."""
-        return self.value.as_int()
-
-    def as_numeric(self) -> int | float:
-        """Get value as numeric type."""
-        return self.value.to_python_value()
 
 
 def get_discriminator_value(v: Any) -> str:

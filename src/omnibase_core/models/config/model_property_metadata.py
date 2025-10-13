@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Property metadata model for environment properties.
 
@@ -5,14 +11,13 @@ This module provides the ModelPropertyMetadata class for storing metadata
 about individual properties in the environment property system.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelPropertyMetadata(BaseModel):
@@ -31,8 +36,12 @@ class ModelPropertyMetadata(BaseModel):
         default="",
         description="Regex pattern for validation",
     )
-    min_value: float | None = Field(None, description="Minimum value for numeric types")
-    max_value: float | None = Field(None, description="Maximum value for numeric types")
+    min_value: float | None = Field(
+        default=None, description="Minimum value for numeric types"
+    )
+    max_value: float | None = Field(
+        default=None, description="Maximum value for numeric types"
+    )
     allowed_values: list[str] = Field(
         default_factory=list,
         description="Allowed values for enum-like properties",
@@ -54,13 +63,13 @@ class ModelPropertyMetadata(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -70,7 +79,7 @@ class ModelPropertyMetadata(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

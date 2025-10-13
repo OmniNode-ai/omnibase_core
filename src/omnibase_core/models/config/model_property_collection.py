@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Property collection model for environment properties.
 
@@ -5,18 +14,17 @@ This module provides the ModelPropertyCollection class for managing
 collections of typed properties with validation and helper methods.
 """
 
-from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, TypeVar
+from collections.abc import Callable as CallableABC
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -84,49 +92,52 @@ class ModelPropertyCollection(BaseModel):
         source: str | None = None,
     ) -> ModelPropertyValue:
         """Create ModelPropertyValue using type-specific factory methods."""
-        # Define type handlers as a list of (checker_function, factory_method) tuples
+        # Define type handlers as a list[Any]of (checker_function, factory_method) tuples
         # Order matches original elif chain to preserve existing behavior
         # Use object instead of Any for type dispatch pattern
         TypeChecker = Callable[[object], bool]
-        FactoryMethod = Callable[[object, str | None], ModelPropertyValue]
+
+        # Use Any for factory method since this is a dynamic dispatch pattern
+        FactoryMethod = Callable[..., ModelPropertyValue]
 
         type_handlers: list[tuple[TypeChecker, FactoryMethod]] = [
-            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),  # type: ignore[list-item]
-            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),  # type: ignore[list-item]
-            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),  # type: ignore[list-item]
-            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),  # type: ignore[list-item]
+            (lambda v: isinstance(v, str), ModelPropertyValue.from_string),
+            (lambda v: isinstance(v, int), ModelPropertyValue.from_int),
+            (lambda v: isinstance(v, float), ModelPropertyValue.from_float),
+            (lambda v: isinstance(v, bool), ModelPropertyValue.from_bool),
             (
                 lambda v: isinstance(v, list)
                 and all(isinstance(item, str) for item in v),
-                ModelPropertyValue.from_string_list,  # type: ignore[list-item]
+                ModelPropertyValue.from_string_list,
             ),
             (
                 lambda v: isinstance(v, list)
                 and all(isinstance(item, int) for item in v),
-                ModelPropertyValue.from_int_list,  # type: ignore[list-item]
+                ModelPropertyValue.from_int_list,
             ),
             (
                 lambda v: isinstance(v, list)
                 and all(isinstance(item, float) for item in v),
-                ModelPropertyValue.from_float_list,  # type: ignore[list-item]
+                ModelPropertyValue.from_float_list,
             ),
         ]
 
         # Find the appropriate handler
         for type_checker, factory_method in type_handlers:
             if type_checker(value):
-                return factory_method(value, source)
+                # Dynamic dispatch - type checking guarantees type safety
+                return factory_method(value, source)  # type: ignore[arg-type]
 
         # If no handler matches, raise error
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported property type: {type(value)}",
             details=ModelErrorContext.with_context(
                 {
                     "value_type": ModelSchemaValue.from_value(str(type(value))),
                     "source": ModelSchemaValue.from_value(str(source)),
                     "supported_types": ModelSchemaValue.from_value(
-                        "str, int, bool, float, dict",
+                        "str, int, bool, float, dict[str, Any]",
                     ),
                 },
             ),
@@ -145,7 +156,7 @@ class ModelPropertyCollection(BaseModel):
         return prop.get_typed_value(expected_type, default)
 
     def get_required_properties(self) -> list[str]:
-        """Get list of required property keys."""
+        """Get list[Any]of required property keys."""
         return [key for key, prop in self.properties.items() if prop.metadata.required]
 
     def validate_required_properties(self) -> list[str]:
@@ -177,13 +188,13 @@ class ModelPropertyCollection(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -193,7 +204,7 @@ class ModelPropertyCollection(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

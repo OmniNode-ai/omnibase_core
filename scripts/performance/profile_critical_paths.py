@@ -122,7 +122,7 @@ class PerformanceProfiler:
     """Profile critical performance paths in omnibase_core."""
 
     def __init__(self):
-        self.results: Dict[str, Dict[str, Any]] = {}
+        self.results: dict[str, dict[str, Any]] = {}
 
     def profile_function(self, func_name: str, func, *args, **kwargs) -> Any:
         """Profile a function and store results."""
@@ -271,11 +271,11 @@ class PerformanceProfiler:
             print(f"   Function Calls: {results['function_calls']}")
 
             if results["execution_time"] > 0.1:  # Flag slow operations
-                print(f"   ⚠️  SLOW OPERATION - Consider optimization!")
+                print("   ⚠️  SLOW OPERATION - Consider optimization!")
             elif results["execution_time"] > 0.01:
-                print(f"   ⚡ Moderate speed - Monitor for growth")
+                print("   ⚡ Moderate speed - Monitor for growth")
             else:
-                print(f"   ✅ Fast operation")
+                print("   ✅ Fast operation")
 
     def generate_optimization_recommendations(self):
         """Generate specific optimization recommendations based on profiling."""

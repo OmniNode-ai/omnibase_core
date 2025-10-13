@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 YAML Option Type Enum.
 
 Strongly typed enumeration for YAML dumper option value types.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -9,7 +9,8 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.contracts.model_effect_retry_config import (
     ModelEffectRetryConfig,
 )
@@ -247,7 +248,7 @@ class TestModelEffectRetryConfigMaxDelayValidator:
 
         error = exc_info.value
         assert "max_delay_ms must be greater than base_delay_ms" in str(error)
-        assert error.error_code.value == "validation_error"
+        assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_max_delay_less_than_base_delay_invalid(self):
         """Test max_delay_ms less than base_delay_ms raises OnexError."""
@@ -256,7 +257,7 @@ class TestModelEffectRetryConfigMaxDelayValidator:
 
         error = exc_info.value
         assert "max_delay_ms must be greater than base_delay_ms" in str(error)
-        assert error.error_code.value == "validation_error"
+        assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_validator_error_context(self):
         """Test that validator error includes proper context."""
@@ -264,9 +265,9 @@ class TestModelEffectRetryConfigMaxDelayValidator:
             ModelEffectRetryConfig(base_delay_ms=2000, max_delay_ms=1000)
 
         error = exc_info.value
-        assert error.details is not None
-        assert "error_type" in str(error.details)
-        assert "validation_context" in str(error.details)
+        assert error.model.context is not None
+        assert "error_type" in error.model.context
+        assert "validation_context" in error.model.context
 
     def test_edge_case_max_delay_one_more_than_base(self):
         """Test max_delay_ms exactly one more than base_delay_ms is valid."""

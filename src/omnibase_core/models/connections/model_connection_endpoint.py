@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Connection Endpoint Model.
 
@@ -5,15 +12,13 @@ Endpoint and addressing information for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelConnectionEndpoint(BaseModel):
@@ -30,22 +35,24 @@ class ModelConnectionEndpoint(BaseModel):
 
     # Connection type and protocol
     connection_type: EnumConnectionType = Field(
-        ...,
+        default=...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
-    protocol_version: ModelSemVer | None = Field(None, description="Protocol version")
+    protocol_version: ModelSemVer | None = Field(
+        default=None, description="Protocol version"
+    )
 
     # Endpoint information
     host: str = Field(
-        ...,
+        default=...,
         description="Host address (IP or hostname)",
         min_length=1,
         max_length=255,
         pattern=r"^[a-zA-Z0-9.-]+$",
     )
-    port: int = Field(..., description="Port number", ge=1, le=65535)
+    port: int = Field(default=..., description="Port number", ge=1, le=65535)
     path: str | None = Field(
-        None,
+        default=None,
         description="Connection path/endpoint",
         max_length=2048,
         pattern=r"^/.*$",
@@ -170,9 +177,9 @@ class ModelConnectionEndpoint(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -182,13 +189,13 @@ class ModelConnectionEndpoint(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

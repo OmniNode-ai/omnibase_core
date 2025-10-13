@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 """
 Result Factory TypedDict for Model Creation.
 
 Specialized TypedDict for result-type models with success/error patterns.
 """
 
-from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, Dict, TypedDict
 
 
 class TypedDictResultFactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for result factory parameters."""
+    """Typed dict[str, Any]ionary for result factory parameters."""
 
     success: bool
     exit_code: int

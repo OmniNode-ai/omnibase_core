@@ -1,10 +1,16 @@
+from typing import Any
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Execution Graph Model - ONEX Standards Compliant.
 
 Model for execution graphs in workflows for the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_workflow_node import ModelWorkflowNode
 

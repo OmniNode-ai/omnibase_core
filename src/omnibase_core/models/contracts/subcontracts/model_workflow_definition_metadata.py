@@ -1,25 +1,28 @@
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Workflow Metadata Model - ONEX Standards Compliant.
 
 Model for workflow metadata in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from pydantic import BaseModel
 
 
 class ModelWorkflowDefinitionMetadata(BaseModel):
     """Metadata for a workflow definition."""
 
-    name: str = Field(..., description="Name of the workflow")
+    name: str = Field(default=..., description="Name of the workflow")
 
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the workflow",
     )
 
-    description: str = Field(..., description="Description of the workflow")
+    description: str = Field(default=..., description="Description of the workflow")
 
     timeout_ms: int = Field(
         default=600000,

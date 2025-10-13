@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Memory Usage Enumeration.
 
 Defines categories for memory usage levels.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,11 +1,14 @@
+from __future__ import annotations
+
+from pydantic import Field
+
 """
-Base field accessor pattern for replacing dict-like interfaces.
+Base field accessor pattern for replacing dict[str, Any]-like interfaces.
 
 Provides unified field access across CLI, Config, and Data domains with
 dot notation support and type safety.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -108,7 +111,7 @@ class ModelFieldAccessor(BaseModel):
                     return True
                 except (AttributeError, TypeError):
                     pass
-            # Fall back to dict-like access
+            # Fall back to dict[str, Any]-like access
             if hasattr(obj, "__setitem__"):
                 obj[final_key] = raw_value
                 return True
@@ -193,7 +196,7 @@ class ModelFieldAccessor(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

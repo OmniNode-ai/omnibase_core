@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Circuit Breaker Model - ONEX Standards Compliant.
 
@@ -7,7 +9,9 @@ Part of the Routing Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class ModelCircuitBreaker(BaseModel):

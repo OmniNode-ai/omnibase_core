@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Fallback Strategy Model for ONEX Configuration-Driven Registry System.
 
@@ -8,14 +14,13 @@ for modular architecture compliance.
 Author: OmniNode Team
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_fallback_metadata import ModelFallbackMetadata
 
@@ -29,7 +34,7 @@ class ModelFallbackStrategy(BaseModel):
     """
 
     strategy_type: EnumFallbackStrategyType = Field(
-        ...,
+        default=...,
         description="The type of fallback strategy to use",
     )
 
@@ -48,7 +53,7 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     fallback_endpoint: str | None = Field(
-        None,
+        default=None,
         description="Alternative endpoint to use during fallback",
     )
 
@@ -93,13 +98,13 @@ class ModelFallbackStrategy(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -109,7 +114,7 @@ class ModelFallbackStrategy(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

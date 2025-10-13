@@ -1,5 +1,12 @@
+import uuid
+from typing import Any, Dict
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
-Routing Subcontract Model - ONEX Microservices Architecture Compliant.
+Routing Subcontract Model - ONEX Microservices ModelArchitecture Compliant.
 
 Advanced subcontract model for ONEX microservices routing functionality providing:
 - Route definitions with conditions and service targets
@@ -19,11 +26,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_load_balancing import ModelLoadBalancing
@@ -235,21 +240,13 @@ class ModelRoutingSubcontract(BaseModel):
             for route in routes:
                 if route.priority in priorities_seen:
                     msg = f"Duplicate priority {route.priority} found in pattern '{pattern}' (route: {route.route_name})"
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
                         message=msg,
-                        details=ModelErrorContext.with_context(
-                            {
-                                "pattern": ModelSchemaValue.from_value(pattern),
-                                "priority": ModelSchemaValue.from_value(route.priority),
-                                "route_name": ModelSchemaValue.from_value(
-                                    route.route_name,
-                                ),
-                                "validation_type": ModelSchemaValue.from_value(
-                                    "route_priority_uniqueness",
-                                ),
-                            },
-                        ),
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        pattern=pattern,
+                        priority=route.priority,
+                        route_name=route.route_name,
+                        validation_type="route_priority_uniqueness",
                     )
                 priorities_seen.add(route.priority)
 
@@ -261,18 +258,12 @@ class ModelRoutingSubcontract(BaseModel):
         """Validate sampling rate is reasonable."""
         if v > 0.5:
             msg = "Trace sampling rate above 50% may impact performance"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
-                details=ModelErrorContext.with_context(
-                    {
-                        "sampling_rate": ModelSchemaValue.from_value(v),
-                        "max_recommended": ModelSchemaValue.from_value(0.5),
-                        "validation_type": ModelSchemaValue.from_value(
-                            "sampling_rate_threshold",
-                        ),
-                    },
-                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                sampling_rate=v,
+                max_recommended=0.5,
+                validation_type="sampling_rate_threshold",
             )
         return v
 

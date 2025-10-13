@@ -1,3 +1,9 @@
+from typing import Any, Dict
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Event Type Subcontract Model - ONEX Standards Compliant.
 
@@ -14,9 +20,9 @@ providing clean separation between node logic and event handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -40,13 +46,13 @@ class ModelEventTypeSubcontract(BaseModel):
 
     # Primary event configuration
     primary_events: list[str] = Field(
-        ...,
+        default=...,
         description="Primary events that this node produces/handles",
         min_length=1,
     )
 
     event_categories: list[str] = Field(
-        ...,
+        default=...,
         description="Event categories for classification and routing",
         min_length=1,
     )
@@ -63,7 +69,7 @@ class ModelEventTypeSubcontract(BaseModel):
     )
 
     event_routing: str = Field(
-        ...,
+        default=...,
         description="Event routing strategy or target routing group",
     )
 
@@ -159,12 +165,12 @@ class ModelEventTypeSubcontract(BaseModel):
     @field_validator("primary_events")
     @classmethod
     def validate_primary_events_not_empty(cls, v: list[str]) -> list[str]:
-        """Validate that primary events list is not empty."""
+        """Validate that primary events list[Any]is not empty."""
         if not v:
             msg = "primary_events must contain at least one event type"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -179,12 +185,12 @@ class ModelEventTypeSubcontract(BaseModel):
     @field_validator("event_categories")
     @classmethod
     def validate_event_categories_not_empty(cls, v: list[str]) -> list[str]:
-        """Validate that event categories list is not empty."""
+        """Validate that event categories list[Any]is not empty."""
         if not v:
             msg = "event_categories must contain at least one category"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -203,9 +209,9 @@ class ModelEventTypeSubcontract(BaseModel):
         if info.data and info.data.get("batch_processing", False):
             if v < 1:
                 msg = "batch_size must be positive when batch processing is enabled"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -224,9 +230,9 @@ class ModelEventTypeSubcontract(BaseModel):
         if info.data and info.data.get("deduplication_enabled", False):
             if v < 1000:
                 msg = "deduplication_window_ms must be at least 1000ms when enabled"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

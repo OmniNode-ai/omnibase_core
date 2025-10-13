@@ -1,5 +1,11 @@
+import uuid
+from collections.abc import Callable
+from typing import Dict, List, Optional, TypeVar
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
-NodeEffect - Side Effect Management Node for 4-Node Architecture.
+NodeEffect - Side Effect Management Node for 4-Node ModelArchitecture.
 
 Specialized node type for managing side effects and external interactions with
 transaction support, retry policies, and circuit breaker patterns.
@@ -19,20 +25,18 @@ Author: ONEX Framework Team
 
 import asyncio
 import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
+from collections.abc import Callable as CallableABC
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Literal, TypeVar
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, Tag
-
-from omnibase_core.enums import EnumCoreErrorCode
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
+from omnibase_core.enums.enum_effect_type import EnumEffectType
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.enums.enum_transaction_state import EnumTransactionState
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -40,16 +44,29 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 
 # Import contract model for effect nodes
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
-from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
-# Import utilities for contract loading
+# Import extracted models
+from omnibase_core.models.infrastructure.model_circuit_breaker import (
+    ModelCircuitBreaker,
+)
+from omnibase_core.models.infrastructure.model_transaction import ModelTransaction
+from omnibase_core.models.operations.model_effect_input import ModelEffectInput
+from omnibase_core.models.operations.model_effect_output import ModelEffectOutput
+from omnibase_core.models.operations.model_effect_result import (
+    ModelEffectResult,
+    ModelEffectResultBool,
+    ModelEffectResultDict,
+    ModelEffectResultList,
+    ModelEffectResultStr,
+)
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 T = TypeVar("T")
 
 
 def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelSchemaValue]:
     """
-    Convert a dictionary of primitive values to ModelScalarValue objects.
+    Convert a dict[str, Any]ionary of primitive values to ModelScalarValue objects.
 
     This utility function ensures type safety by converting primitive Python values
     to strongly-typed ModelScalarValue objects as required by the ONEX architecture.
@@ -65,13 +82,12 @@ def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelSchemaValue]
     """
     converted = {}
     for key, value in data.items():
-        if isinstance(value, str):
-            converted[key] = ModelSchemaValue.from_value(value)
-        elif isinstance(value, int):
-            converted[key] = ModelSchemaValue.from_value(value)
-        elif isinstance(value, float):
-            converted[key] = ModelSchemaValue.from_value(value)
-        elif isinstance(value, bool):
+        if (
+            isinstance(value, str)
+            or isinstance(value, int)
+            or isinstance(value, float)
+            or isinstance(value, bool)
+        ):
             converted[key] = ModelSchemaValue.from_value(value)
         elif value is None:
             # Handle None by creating a string representation
@@ -82,245 +98,15 @@ def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelSchemaValue]
     return converted
 
 
-class EnumEffectType(Enum):
-    """Types of side effects that can be managed."""
-
-    FILE_OPERATION = "file_operation"
-    DATABASE_OPERATION = "database_operation"
-    API_CALL = "api_call"
-    EVENT_EMISSION = "event_emission"
-    DIRECTORY_OPERATION = "directory_operation"
-    TICKET_STORAGE = "ticket_storage"
-    METRICS_COLLECTION = "metrics_collection"
-
-
-class TransactionState(Enum):
-    """Transaction state tracking."""
-
-    PENDING = "pending"
-    ACTIVE = "active"
-    COMMITTED = "committed"
-    ROLLED_BACK = "rolled_back"
-    FAILED = "failed"
-
-
-class CircuitBreakerState(Enum):
-    """Circuit breaker states for failure handling."""
-
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Failing, rejecting requests
-    HALF_OPEN = "half_open"  # Testing if service recovered
-
-
-class ModelEffectInput(BaseModel):
-    """
-    Input model for NodeEffect operations.
-
-    Strongly typed input wrapper for side effect operations
-    with transaction and retry configuration.
-    """
-
-    effect_type: EnumEffectType
-    operation_data: dict[str, ModelSchemaValue]
-    operation_id: UUID | None = Field(default_factory=uuid4)
-    transaction_enabled: bool = True
-    retry_enabled: bool = True
-    max_retries: int = 3
-    retry_delay_ms: int = 1000
-    circuit_breaker_enabled: bool = False
-    timeout_ms: int = 30000
-    metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-
-class ModelEffectResultDict(BaseModel):
-    """Dictionary result for effect operations (e.g., file operations)."""
-
-    result_type: Literal["dict"] = "dict"
-    value: dict[str, Any]
-
-
-class ModelEffectResultBool(BaseModel):
-    """Boolean result for effect operations (e.g., event emissions)."""
-
-    result_type: Literal["bool"] = "bool"
-    value: bool
-
-
-class ModelEffectResultStr(BaseModel):
-    """String result for effect operations."""
-
-    result_type: Literal["str"] = "str"
-    value: str
-
-
-class ModelEffectResultList(BaseModel):
-    """List result for effect operations."""
-
-    result_type: Literal["list"] = "list"
-    value: list[Any]
-
-
-# Discriminated union for effect results
-ModelEffectResult = Annotated[
-    ModelEffectResultDict
-    | ModelEffectResultBool
-    | ModelEffectResultStr
-    | ModelEffectResultList,
-    Field(discriminator="result_type"),
-]
-
-
-class ModelEffectOutput(BaseModel):
-    """
-    Output model for NodeEffect operations.
-
-    Strongly typed output wrapper with transaction status
-    and side effect execution metadata using discriminated union for results.
-    """
-
-    result: ModelEffectResult
-    operation_id: UUID
-    effect_type: EnumEffectType
-    transaction_state: TransactionState
-    processing_time_ms: float
-    retry_count: int = 0
-    side_effects_applied: list[str] | None = Field(default_factory=list)
-    rollback_operations: list[str] | None = Field(default_factory=list)
-    metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-
-class Transaction:
-    """
-    Transaction management for side effect operations.
-
-    Provides rollback capabilities and operation tracking
-    for complex side effect sequences.
-    """
-
-    def __init__(self, transaction_id: UUID):
-        self.transaction_id = transaction_id
-        self.state = TransactionState.PENDING
-        self.operations: list[dict[str, Any]] = []
-        self.rollback_operations: list[Callable[..., Any]] = []
-        self.started_at = datetime.now()
-        self.committed_at: datetime | None = None
-
-    def add_operation(
-        self,
-        operation_name: str,
-        operation_data: dict[str, Any],
-        rollback_func: Callable[..., Any] | None = None,
-    ) -> None:
-        """Add operation to transaction with optional rollback function."""
-        self.operations.append(
-            {
-                "name": operation_name,
-                "data": operation_data,
-                "timestamp": datetime.now(),
-            },
-        )
-
-        if rollback_func:
-            self.rollback_operations.append(rollback_func)
-
-    async def commit(self) -> None:
-        """Commit transaction - marks as successful."""
-        self.state = TransactionState.COMMITTED
-        self.committed_at = datetime.now()
-
-    async def rollback(self) -> None:
-        """Rollback transaction - execute all rollback operations."""
-        self.state = TransactionState.ROLLED_BACK
-
-        # Execute rollback operations in reverse order
-        for rollback_func in reversed(self.rollback_operations):
-            try:
-                if asyncio.iscoroutinefunction(rollback_func):
-                    await rollback_func()
-                else:
-                    rollback_func()
-            except Exception as e:
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Rollback operation failed: {e!s}",
-                    {"transaction_id": str(self.transaction_id), "error": str(e)},
-                )
-
-
-class CircuitBreaker:
-    """
-    Circuit breaker pattern for handling external service failures.
-
-    Prevents cascading failures by temporarily disabling calls to failing services.
-    """
-
-    def __init__(
-        self,
-        failure_threshold: int = 5,
-        recovery_timeout_seconds: int = 60,
-        half_open_max_attempts: int = 3,
-    ):
-        self.failure_threshold = failure_threshold
-        self.recovery_timeout_seconds = recovery_timeout_seconds
-        self.half_open_max_attempts = half_open_max_attempts
-
-        self.state = CircuitBreakerState.CLOSED
-        self.failure_count = 0
-        self.last_failure_time: datetime | None = None
-        self.half_open_attempts = 0
-
-    def can_execute(self) -> bool:
-        """Check if operation can be executed based on circuit breaker state."""
-        now = datetime.now()
-
-        if self.state == CircuitBreakerState.CLOSED:
-            return True
-        if self.state == CircuitBreakerState.OPEN:
-            # Check if recovery timeout has passed
-            if self.last_failure_time and now - self.last_failure_time > timedelta(
-                seconds=self.recovery_timeout_seconds,
-            ):
-                self.state = CircuitBreakerState.HALF_OPEN
-                self.half_open_attempts = 0
-                return True
-            return False
-        # CircuitBreakerState.HALF_OPEN
-        return self.half_open_attempts < self.half_open_max_attempts
-
-    def record_success(self) -> None:
-        """Record successful operation."""
-        if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.CLOSED
-            self.failure_count = 0
-            self.half_open_attempts = 0
-        elif self.state == CircuitBreakerState.CLOSED:
-            self.failure_count = max(0, self.failure_count - 1)
-
-    def record_failure(self) -> None:
-        """Record failed operation."""
-        self.failure_count += 1
-        self.last_failure_time = datetime.now()
-
-        if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.OPEN
-            self.half_open_attempts = 0
-        elif (
-            self.state == CircuitBreakerState.CLOSED
-            and self.failure_count >= self.failure_threshold
-        ):
-            self.state = CircuitBreakerState.OPEN
+# Note: Enums and models have been extracted to separate modules
+# - EnumEffectType → omnibase_core.enums.enum_effect_type
+# - EnumTransactionState → omnibase_core.enums.enum_transaction_state
+# - EnumCircuitBreakerState → omnibase_core.enums.enum_circuit_breaker_state
+# - ModelEffectInput → omnibase_core.models.operations.model_effect_input
+# - ModelEffectOutput → omnibase_core.models.operations.model_effect_output
+# - ModelEffectResult* → omnibase_core.models.operations.model_effect_result
+# - Transaction → omnibase_core.models.infrastructure.model_transaction
+# - CircuitBreaker → omnibase_core.models.infrastructure.model_circuit_breaker
 
 
 class NodeEffect(NodeCoreBase):
@@ -354,7 +140,7 @@ class NodeEffect(NodeCoreBase):
             container: ONEX container for dependency injection
 
         Raises:
-            OnexError: If container is invalid or initialization fails
+            ModelOnexError: If container is invalid or initialization fails
         """
         super().__init__(container)
 
@@ -367,10 +153,10 @@ class NodeEffect(NodeCoreBase):
         self.max_concurrent_effects = 10
 
         # Transaction management
-        self.active_transactions: dict[str, Transaction] = {}
+        self.active_transactions: dict[str, ModelTransaction] = {}
 
         # Circuit breakers for external services
-        self.circuit_breakers: dict[str, CircuitBreaker] = {}
+        self.circuit_breakers: dict[str, ModelCircuitBreaker] = {}
 
         # Effect handlers registry
         self.effect_handlers: dict[EnumEffectType, Callable[..., Any]] = {}
@@ -395,7 +181,7 @@ class NodeEffect(NodeCoreBase):
             ModelContractEffect: Validated contract model for this node type
 
         Raises:
-            OnexError: If contract loading or validation fails
+            ModelOnexError: If contract loading or validation fails
         """
         try:
             # Load actual contract from file with subcontract resolution
@@ -449,8 +235,8 @@ class NodeEffect(NodeCoreBase):
 
         except Exception as e:
             # CANONICAL PATTERN: Wrap contract loading errors
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract model loading failed for NodeEffect: {e!s}",
                 details={
                     "contract_model_type": "ModelContractEffect",
@@ -469,10 +255,9 @@ class NodeEffect(NodeCoreBase):
             Path: Path to the contract.yaml file
 
         Raises:
-            OnexError: If contract file cannot be found
+            ModelOnexError: If contract file cannot be found
         """
         import inspect
-        from pathlib import Path
 
         from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 
@@ -485,22 +270,22 @@ class NodeEffect(NodeCoreBase):
                     caller_self = frame.f_locals["self"]
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
-                        if module and hasattr(module, "__file__"):
+                        if module and hasattr(module, "__file__") and module.__file__:
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
                                 return contract_path
 
             # Fallback: this shouldn't happen but provide error
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Could not find contract.yaml file for effect node",
                 details={"contract_filename": CONTRACT_FILENAME},
             )
 
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
@@ -517,7 +302,7 @@ class NodeEffect(NodeCoreBase):
         Enhanced to properly handle FSM subcontracts with Pydantic model validation.
 
         Args:
-            data: Contract data structure (dict, list, or primitive)
+            data: Contract data structure (dict[str, Any], list[Any], or primitive)
             base_path: Base directory path for resolving relative references
             reference_resolver: Reference resolver utility
 
@@ -525,7 +310,7 @@ class NodeEffect(NodeCoreBase):
             Any: Resolved contract data with all references loaded
 
         Raises:
-            OnexError: If reference resolution fails
+            ModelOnexError: If reference resolution fails
         """
         try:
             if isinstance(data, dict):
@@ -537,13 +322,13 @@ class NodeEffect(NodeCoreBase):
                         ref_path = (base_path / ref_file).resolve()
                     else:
                         # Absolute or root-relative reference
-                        ref_path = Path(ref_file)
+                        ref_path = Path(ref_file or ".")
 
                     return reference_resolver.resolve_reference(
                         str(ref_path),
                         base_path,
                     )
-                # Recursively resolve nested dictionaries
+                # Recursively resolve nested dict[str, Any]ionaries
                 return {
                     key: self._resolve_contract_references(
                         value,
@@ -553,7 +338,7 @@ class NodeEffect(NodeCoreBase):
                     for key, value in data.items()
                 }
             if isinstance(data, list):
-                # Recursively resolve lists
+                # Recursively resolve list[Any]s
                 return [
                     self._resolve_contract_references(
                         item,
@@ -586,10 +371,10 @@ class NodeEffect(NodeCoreBase):
             Strongly typed effect output with transaction status
 
         Raises:
-            OnexError: If side effect execution fails
+            ModelOnexError: If side effect execution fails
         """
         start_time = time.time()
-        transaction: Transaction | None = None
+        transaction: ModelTransaction | None = None
         retry_count = 0
 
         try:
@@ -602,8 +387,8 @@ class NodeEffect(NodeCoreBase):
                     input_data.effect_type.value,
                 )
                 if not circuit_breaker.can_execute():
-                    raise OnexError(
-                        code=CoreErrorCode.OPERATION_FAILED,
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         message=f"Circuit breaker open for {input_data.effect_type.value}",
                         context={
                             "node_id": str(self.node_id),
@@ -615,8 +400,13 @@ class NodeEffect(NodeCoreBase):
 
             # Create transaction if enabled
             if input_data.transaction_enabled:
-                transaction = Transaction(input_data.operation_id)
-                transaction.state = TransactionState.ACTIVE
+                # Ensure operation_id is not None for transaction
+                if input_data.operation_id is None:
+                    from uuid import uuid4
+
+                    input_data.operation_id = uuid4()
+                transaction = ModelTransaction(input_data.operation_id)
+                transaction.state = EnumTransactionState.ACTIVE
                 self.active_transactions[str(input_data.operation_id)] = transaction
 
             # Execute with semaphore limit
@@ -647,6 +437,7 @@ class NodeEffect(NodeCoreBase):
             await self._update_processing_metrics(processing_time, True)
 
             # Wrap result in discriminated union based on type
+            wrapped_result: ModelEffectResult
             if isinstance(result, dict):
                 wrapped_result = ModelEffectResultDict(value=result)
             elif isinstance(result, bool):
@@ -662,10 +453,10 @@ class NodeEffect(NodeCoreBase):
             # Create output
             output = ModelEffectOutput(
                 result=wrapped_result,
-                operation_id=input_data.operation_id,
+                operation_id=input_data.operation_id or uuid4(),
                 effect_type=input_data.effect_type,
                 transaction_state=(
-                    transaction.state if transaction else TransactionState.COMMITTED
+                    transaction.state if transaction else EnumTransactionState.COMMITTED
                 ),
                 processing_time_ms=processing_time,
                 retry_count=retry_count,
@@ -673,9 +464,13 @@ class NodeEffect(NodeCoreBase):
                     [str(op) for op in transaction.operations] if transaction else []
                 ),
                 metadata={
-                    "timeout_ms": input_data.timeout_ms,
-                    "transaction_enabled": input_data.transaction_enabled,
-                    "circuit_breaker_enabled": input_data.circuit_breaker_enabled,
+                    "timeout_ms": ModelSchemaValue.from_value(input_data.timeout_ms),
+                    "transaction_enabled": ModelSchemaValue.from_value(
+                        input_data.transaction_enabled
+                    ),
+                    "circuit_breaker_enabled": ModelSchemaValue.from_value(
+                        input_data.circuit_breaker_enabled
+                    ),
                 },
             )
 
@@ -732,8 +527,8 @@ class NodeEffect(NodeCoreBase):
             )
             await self._update_processing_metrics(processing_time, False)
 
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Effect execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -751,7 +546,7 @@ class NodeEffect(NodeCoreBase):
     async def transaction_context(
         self,
         operation_id: UUID | None = None,
-    ) -> AsyncIterator[Transaction]:
+    ) -> AsyncIterator[ModelTransaction]:
         """
         Async context manager for transaction handling.
 
@@ -762,8 +557,8 @@ class NodeEffect(NodeCoreBase):
             Transaction: Active transaction instance
         """
         transaction_id = operation_id or uuid4()
-        transaction = Transaction(transaction_id)
-        transaction.state = TransactionState.ACTIVE
+        transaction = ModelTransaction(transaction_id)
+        transaction.state = EnumTransactionState.ACTIVE
 
         try:
             self.active_transactions[str(transaction_id)] = transaction
@@ -796,7 +591,7 @@ class NodeEffect(NodeCoreBase):
             Operation result with file metadata
 
         Raises:
-            OnexError: If file operation fails
+            ModelOnexError: If file operation fails
         """
         effect_input = ModelEffectInput(
             effect_type=EnumEffectType.FILE_OPERATION,
@@ -814,12 +609,12 @@ class NodeEffect(NodeCoreBase):
         )
 
         result = await self.process(effect_input)
-        # Extract value from discriminated union (file operations return dict)
+        # Extract value from discriminated union (file operations return dict[str, Any])
         if isinstance(result.result, ModelEffectResultDict):
             return result.result.value
-        raise OnexError(
-            code=CoreErrorCode.OPERATION_FAILED,
-            message="File operation did not return expected dict result",
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message="File operation did not return expected dict[str, Any]result",
             context={"result_type": result.result.result_type},
         )
 
@@ -841,7 +636,7 @@ class NodeEffect(NodeCoreBase):
             True if event was emitted successfully
 
         Raises:
-            OnexError: If event emission fails
+            ModelOnexError: If event emission fails
         """
         effect_input = ModelEffectInput(
             effect_type=EnumEffectType.EVENT_EMISSION,
@@ -861,8 +656,8 @@ class NodeEffect(NodeCoreBase):
         # Extract value from discriminated union (event emissions return bool)
         if isinstance(result.result, ModelEffectResultBool):
             return result.result.value
-        raise OnexError(
-            code=CoreErrorCode.OPERATION_FAILED,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message="Event emission did not return expected bool result",
             context={"result_type": result.result.result_type},
         )
@@ -878,9 +673,9 @@ class NodeEffect(NodeCoreBase):
         circuit_breaker_metrics = {}
         for service_name, cb in self.circuit_breakers.items():
             circuit_breaker_metrics[f"circuit_breaker_{service_name}"] = {
-                "state": float(1 if cb.state == CircuitBreakerState.CLOSED else 0),
+                "state": float(1 if cb.state == EnumCircuitBreakerState.CLOSED else 0),
                 "failure_count": float(cb.failure_count),
-                "is_open": float(1 if cb.state == CircuitBreakerState.OPEN else 0),
+                "is_open": float(1 if cb.state == EnumCircuitBreakerState.OPEN else 0),
             }
 
         return {
@@ -908,7 +703,7 @@ class NodeEffect(NodeCoreBase):
     async def _cleanup_node_resources(self) -> None:
         """Cleanup effect-specific resources."""
         # Rollback any active transactions
-        for transaction_id, transaction in list(self.active_transactions.items()):
+        for transaction_id, transaction in list[Any](self.active_transactions.items()):
             try:
                 await transaction.rollback()
                 emit_log_event(
@@ -939,13 +734,13 @@ class NodeEffect(NodeCoreBase):
             input_data: Input data to validate
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         super()._validate_input_data(input_data)
 
         if not isinstance(input_data.effect_type, EnumEffectType):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Effect type must be valid EnumEffectType enum",
                 context={
                     "node_id": str(self.node_id),
@@ -954,30 +749,30 @@ class NodeEffect(NodeCoreBase):
             )
 
         if not isinstance(input_data.operation_data, dict):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Operation data must be a dictionary",
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Operation data must be a dict[str, Any]ionary",
                 context={
                     "node_id": str(self.node_id),
                     "operation_data_type": type(input_data.operation_data).__name__,
                 },
             )
 
-    def _get_circuit_breaker(self, service_name: str) -> CircuitBreaker:
+    def _get_circuit_breaker(self, service_name: str) -> ModelCircuitBreaker:
         """Get or create circuit breaker for service."""
         if service_name not in self.circuit_breakers:
-            self.circuit_breakers[service_name] = CircuitBreaker()
+            self.circuit_breakers[service_name] = ModelCircuitBreaker()
         return self.circuit_breakers[service_name]
 
     async def _execute_with_retry(
         self,
         input_data: ModelEffectInput,
-        transaction: Transaction | None,
+        transaction: ModelTransaction | None,
     ) -> Any:
         """Execute effect with retry logic."""
         retry_count = 0
-        last_exception: Exception = OnexError(
-            code=CoreErrorCode.OPERATION_FAILED,
+        last_exception: Exception = ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message="No retries executed",
         )
 
@@ -1015,7 +810,7 @@ class NodeEffect(NodeCoreBase):
     async def _execute_effect(
         self,
         input_data: ModelEffectInput,
-        transaction: Transaction | None,
+        transaction: ModelTransaction | None,
     ) -> Any:
         """Execute the actual effect operation."""
         effect_type = input_data.effect_type
@@ -1023,8 +818,8 @@ class NodeEffect(NodeCoreBase):
         if effect_type in self.effect_handlers:
             handler = self.effect_handlers[effect_type]
             return await handler(input_data.operation_data, transaction)
-        raise OnexError(
-            code=CoreErrorCode.OPERATION_FAILED,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"No handler registered for effect type: {effect_type.value}",
             context={
                 "node_id": str(self.node_id),
@@ -1080,20 +875,40 @@ class NodeEffect(NodeCoreBase):
 
         async def file_operation_handler(
             operation_data: dict[str, Any],
-            transaction: Transaction | None,
+            transaction: ModelTransaction | None,
         ) -> dict[str, Any]:
             """Handle file operations with atomic guarantees."""
-            operation_type = operation_data["operation_type"]
-            file_path = Path(operation_data["file_path"])
-            data = operation_data.get("data")
-            atomic = operation_data.get("atomic", True)
+            # Unwrap ModelSchemaValue objects to get raw values
+            operation_type = (
+                operation_data["operation_type"].to_value()
+                if isinstance(operation_data["operation_type"], ModelSchemaValue)
+                else operation_data["operation_type"]
+            )
+            file_path_value = (
+                operation_data["file_path"].to_value()
+                if isinstance(operation_data["file_path"], ModelSchemaValue)
+                else operation_data["file_path"]
+            )
+            file_path = Path(str(file_path_value))
+            data_val = operation_data.get("data")
+            data = (
+                data_val.to_value()
+                if isinstance(data_val, ModelSchemaValue)
+                else data_val
+            )
+            atomic_val = operation_data.get("atomic", True)
+            atomic = (
+                atomic_val.to_value()
+                if isinstance(atomic_val, ModelSchemaValue)
+                else atomic_val
+            )
 
             result = {"operation_type": operation_type, "file_path": str(file_path)}
 
             if operation_type == "read":
                 if not file_path.exists():
-                    raise OnexError(
-                        code=CoreErrorCode.RESOURCE_UNAVAILABLE,
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.RESOURCE_UNAVAILABLE,
                         message=f"File not found: {file_path}",
                         context={"file_path": str(file_path)},
                     )
@@ -1162,8 +977,8 @@ class NodeEffect(NodeCoreBase):
                     result["deleted"] = False
 
             else:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Unknown file operation: {operation_type}",
                     context={"operation_type": operation_type},
                 )
@@ -1172,16 +987,32 @@ class NodeEffect(NodeCoreBase):
 
         async def event_emission_handler(
             operation_data: dict[str, Any],
-            transaction: Transaction | None,
+            transaction: ModelTransaction | None,
         ) -> bool:
             """Handle event emission to event bus."""
-            event_type = operation_data["event_type"]
-            payload = operation_data["payload"]
-            correlation_id = operation_data.get("correlation_id")
+            # Unwrap ModelSchemaValue objects to get raw values
+            event_type = (
+                operation_data["event_type"].to_value()
+                if isinstance(operation_data["event_type"], ModelSchemaValue)
+                else operation_data["event_type"]
+            )
+            payload_val = operation_data["payload"]
+            payload = (
+                payload_val.to_value()
+                if isinstance(payload_val, ModelSchemaValue)
+                else payload_val
+            )
+            correlation_id_val = operation_data.get("correlation_id")
+            correlation_id_raw = (
+                correlation_id_val.to_value()
+                if isinstance(correlation_id_val, ModelSchemaValue)
+                else correlation_id_val
+            )
 
             try:
-                # Get event bus from container
-                event_bus = self.container.get_service("event_bus")
+                # Get event bus from container - access via attribute instead of get_service
+                # since get_service requires a protocol type, not a string
+                event_bus: Any = getattr(self.container, "event_bus", None)
                 if not event_bus:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -1195,7 +1026,11 @@ class NodeEffect(NodeCoreBase):
                     await event_bus.emit_event(
                         event_type=event_type,
                         payload=payload,
-                        correlation_id=UUID(correlation_id) if correlation_id else None,
+                        correlation_id=(
+                            UUID(str(correlation_id_raw))
+                            if correlation_id_raw
+                            else None
+                        ),
                     )
                     return True
                 emit_log_event(
@@ -1219,7 +1054,7 @@ class NodeEffect(NodeCoreBase):
         self.effect_handlers[EnumEffectType.FILE_OPERATION] = file_operation_handler
         self.effect_handlers[EnumEffectType.EVENT_EMISSION] = event_emission_handler
 
-    def get_introspection_data(self) -> dict:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get comprehensive introspection data for NodeEffect.
 
@@ -1227,7 +1062,7 @@ class NodeEffect(NodeCoreBase):
         circuit breaker status, retry policies, and I/O operation capabilities.
 
         Returns:
-            dict: Comprehensive introspection data with effect-specific information
+            dict[str, Any]: Comprehensive introspection data with effect-specific information
         """
         try:
             # Get base introspection data from NodeCoreBase
@@ -1276,7 +1111,7 @@ class NodeEffect(NodeCoreBase):
 
             # 4. Effect Management Information
             effect_management_info = {
-                "registered_effect_handlers": list(self.effect_handlers.keys()),
+                "registered_effect_handlers": list[Any](self.effect_handlers.keys()),
                 "effect_handler_count": len(self.effect_handlers),
                 "transaction_management_enabled": True,
                 "retry_policies_enabled": True,
@@ -1339,7 +1174,7 @@ class NodeEffect(NodeCoreBase):
                 },
             }
 
-    def _extract_effect_operations(self) -> list:
+    def _extract_effect_operations(self) -> list[Any]:
         """Extract available effect operations."""
         operations = [
             "process",
@@ -1367,7 +1202,7 @@ class NodeEffect(NodeCoreBase):
 
         return operations
 
-    def _extract_effect_io_specifications(self) -> dict:
+    def _extract_effect_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for effect operations."""
         return {
             "input_model": "omnibase.core.node_effect.ModelEffectInput",
@@ -1385,7 +1220,7 @@ class NodeEffect(NodeCoreBase):
             ],
         }
 
-    def _extract_effect_performance_characteristics(self) -> dict:
+    def _extract_effect_performance_characteristics(self) -> dict[str, Any]:
         """Extract performance characteristics specific to effect operations."""
         return {
             "expected_response_time_ms": f"< {self.default_timeout_ms}",
@@ -1401,7 +1236,7 @@ class NodeEffect(NodeCoreBase):
             "rollback_capabilities": True,
         }
 
-    def _extract_io_operations_configuration(self) -> dict:
+    def _extract_io_operations_configuration(self) -> dict[str, Any]:
         """Extract I/O operations configuration from contract."""
         try:
             io_ops = []
@@ -1433,7 +1268,7 @@ class NodeEffect(NodeCoreBase):
                 "io_operations": []
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _extract_effect_constraints(self) -> dict:
+    def _extract_effect_constraints(self) -> dict[str, Any]:
         """Extract effect constraints and requirements."""
         return {
             "requires_container": True,
@@ -1464,16 +1299,20 @@ class NodeEffect(NodeCoreBase):
         except Exception:
             return "unhealthy"  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_effect_metrics_sync(self) -> dict:
+    def _get_effect_metrics_sync(self) -> dict[str, Any]:
         """Get effect metrics synchronously for introspection."""
         try:
             # Get circuit breaker states
             circuit_breaker_metrics = {}
             for service_name, cb in self.circuit_breakers.items():
                 circuit_breaker_metrics[f"circuit_breaker_{service_name}"] = {
-                    "state": float(1 if cb.state == CircuitBreakerState.CLOSED else 0),
+                    "state": float(
+                        1 if cb.state == EnumCircuitBreakerState.CLOSED else 0
+                    ),
                     "failure_count": float(cb.failure_count),
-                    "is_open": float(1 if cb.state == CircuitBreakerState.OPEN else 0),
+                    "is_open": float(
+                        1 if cb.state == EnumCircuitBreakerState.OPEN else 0
+                    ),
                 }
 
             return {
@@ -1498,7 +1337,7 @@ class NodeEffect(NodeCoreBase):
                 "error": str(e),
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_effect_resource_usage(self) -> dict:
+    def _get_effect_resource_usage(self) -> dict[str, Any]:
         """Get resource usage specific to effect operations."""
         try:
             return {
@@ -1520,7 +1359,7 @@ class NodeEffect(NodeCoreBase):
                 "status": "unknown"
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_transaction_status(self) -> dict:
+    def _get_transaction_status(self) -> dict[str, Any]:
         """Get transaction management status."""
         try:
             transaction_states = {}
@@ -1551,7 +1390,7 @@ class NodeEffect(NodeCoreBase):
                 "error": str(e),
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_circuit_breaker_status(self) -> dict:
+    def _get_circuit_breaker_status(self) -> dict[str, Any]:
         """Get circuit breaker status."""
         try:
             circuit_breaker_states = {}

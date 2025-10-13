@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+from pydantic import Field
+
 """
 Result field accessor for CLI results and output data.
 
 Specialized accessor for handling CLI execution results and metadata.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
@@ -80,7 +83,7 @@ class ModelResultAccessor(ModelFieldAccessor):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Accessor classes don't have specific model fields - serialize accessible data
         result: dict[str, Any] = {
             "accessor_type": self.__class__.__name__,

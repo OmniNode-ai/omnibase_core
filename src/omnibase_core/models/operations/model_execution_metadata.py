@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Strongly-typed execution metadata structure.
 
@@ -5,20 +15,15 @@ Replaces dict[str, Any] usage in execution metadata with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import (
-    ModelSemVer,
-)
 
 
 class ModelExecutionMetadata(BaseModel):
@@ -38,8 +43,10 @@ class ModelExecutionMetadata(BaseModel):
         default_factory=uuid4,
         description="Unique execution identifier (UUID format)",
     )
-    start_time: datetime = Field(..., description="Execution start timestamp")
-    end_time: datetime | None = Field(None, description="Execution end timestamp")
+    start_time: datetime = Field(default=..., description="Execution start timestamp")
+    end_time: datetime | None = Field(
+        default=None, description="Execution end timestamp"
+    )
     duration_ms: int = Field(
         default=0,
         description="Execution duration in milliseconds",
@@ -88,8 +95,8 @@ class ModelExecutionMetadata(BaseModel):
         """Validate execution status is proper enum type."""
         if isinstance(v, EnumExecutionStatusV2):
             return v
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Status must be EnumExecutionStatusV2, got {type(v)}",
         )
 
@@ -99,8 +106,8 @@ class ModelExecutionMetadata(BaseModel):
         """Validate environment is proper enum type."""
         if isinstance(v, EnumEnvironment):
             return v
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Environment must be EnumEnvironment, got {type(v)}",
         )
 
@@ -119,8 +126,8 @@ class ModelExecutionMetadata(BaseModel):
                 if isinstance(status_value, EnumExecutionStatusV2):
                     self.status = status_value
                 else:
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
                     )
             if "end_time" in kwargs:
@@ -136,13 +143,13 @@ class ModelExecutionMetadata(BaseModel):
                 self.cpu_usage_percent = kwargs["cpu_usage_percent"]
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize execution metadata to dictionary (Serializable protocol)."""
+        """Serialize execution metadata to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -154,35 +161,35 @@ class ModelExecutionMetadata(BaseModel):
         """
         # Validate required fields
         if not self.execution_id:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="execution_id is required",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if not self.start_time:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="start_time is required",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         # Validate logical consistency
         if self.end_time and self.end_time < self.start_time:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="end_time cannot be before start_time",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if self.duration_ms < 0:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="duration_ms cannot be negative",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if self.memory_usage_mb < 0 or self.cpu_usage_percent < 0:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="Resource usage values cannot be negative",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if self.error_count < 0 or self.warning_count < 0:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="Error and warning counts cannot be negative",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return True
 

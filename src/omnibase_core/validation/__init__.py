@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Any, Union
+
 """
 Comprehensive validation framework for omni* ecosystem.
 
@@ -17,7 +20,7 @@ Usage Examples:
 
     result = validate_architecture("src/")
     if not result.success:
-        print("Architecture violations found!")
+        print("ModelArchitecture violations found!")
 
     # CLI usage
     python -m omnibase_core.validation architecture src/
@@ -41,6 +44,8 @@ from .exceptions import (
     InputValidationError,
     ValidationFrameworkError,
 )
+from .model_audit_result import ModelAuditResult
+from .model_duplication_report import ModelDuplicationReport
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo, ValidationResult
@@ -63,14 +68,12 @@ def validate_union_usage(
     strict: bool = False,
 ) -> ValidationResult:
     """Validate Union type usage patterns."""
-    from pathlib import Path
 
     return validate_union_usage_directory(Path(directory_path), max_unions, strict)
 
 
 def validate_contracts(directory_path: str = ".") -> ValidationResult:
     """Validate YAML contract files."""
-    from pathlib import Path
 
     return validate_contracts_directory(Path(directory_path))
 
@@ -80,7 +83,6 @@ def validate_patterns(
     strict: bool = False,
 ) -> ValidationResult:
     """Validate code patterns and conventions."""
-    from pathlib import Path
 
     return validate_patterns_directory(Path(directory_path), strict)
 
@@ -90,7 +92,6 @@ def validate_all(
     **kwargs: object,
 ) -> dict[str, ValidationResult]:
     """Run all validations and return results."""
-    from pathlib import Path
 
     suite = ModelValidationSuite()
     return suite.run_all_validations(Path(directory_path), **kwargs)
@@ -105,6 +106,8 @@ __all__ = [
     "ValidationFrameworkError",
     "ValidationResult",
     "ModelValidationSuite",
+    "ModelAuditResult",
+    "ModelDuplicationReport",
     "validate_all",
     # Main validation functions (recommended)
     "validate_architecture",

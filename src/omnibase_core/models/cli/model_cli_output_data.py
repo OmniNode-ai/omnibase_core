@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import List
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI output data model.
 
@@ -5,16 +13,15 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI execution output.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.enums.enum_output_type import EnumOutputType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 
@@ -89,12 +96,12 @@ class ModelCliOutputData(BaseModel):
         self.metadata[key] = ModelCliValue.from_string(value)
 
     def add_file_created(self, file_path: str) -> None:
-        """Add a created file to the list."""
+        """Add a created file to the list[Any]."""
         if file_path not in self.files_created:
             self.files_created.append(file_path)
 
     def add_file_modified(self, file_path: str) -> None:
-        """Add a modified file to the list."""
+        """Add a modified file to the list[Any]."""
         if file_path not in self.files_modified:
             self.files_modified.append(file_path)
 
@@ -148,7 +155,7 @@ class ModelCliOutputData(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -176,8 +183,8 @@ class ModelCliOutputData(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

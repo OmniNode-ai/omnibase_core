@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Progress Metrics Model.
 
@@ -5,17 +13,16 @@ Custom metrics and tagging for progress tracking.
 Follows ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelProgressMetrics(BaseModel):
@@ -48,16 +55,16 @@ class ModelProgressMetrics(BaseModel):
         description="Last metrics update timestamp",
     )
 
-    def add_custom_metric(self, key: str, value: ModelMetadataValue) -> None:
-        """Add custom progress metric with proper typing."""
+    def add_custom_metric(self, key: str, value: object) -> None:
+        """Add custom progress metric with flexible typing (accepts ModelFlexibleValue or plain values)."""
         self.custom_metrics.add_metric(key, value)
         self.metrics_last_updated = datetime.now(UTC)
 
-    def get_custom_metric(self, key: str) -> ModelMetadataValue | None:
+    def get_custom_metric(self, key: str) -> ModelFlexibleValue | None:
         """Get custom metric value."""
         raw_value = self.custom_metrics.get_metric_by_key(key)
         if raw_value is not None:
-            return ModelMetadataValue.from_any(raw_value, source="progress_metrics")
+            return ModelFlexibleValue.from_any(raw_value, source="progress_metrics")
         return None
 
     def remove_custom_metric(self, key: str) -> bool:
@@ -96,7 +103,7 @@ class ModelProgressMetrics(BaseModel):
             self.add_tag(tag)
 
     def remove_tags(self, tags: list[str]) -> list[str]:
-        """Remove multiple tags. Returns list of tags that were actually removed."""
+        """Remove multiple tags. Returns list[Any]of tags that were actually removed."""
         removed = []
         for tag in tags:
             if self.remove_tag(tag):
@@ -121,7 +128,7 @@ class ModelProgressMetrics(BaseModel):
         """Check if any custom metrics exist."""
         return self.get_metrics_count() > 0
 
-    def get_metrics_summary(self) -> dict[str, ModelMetadataValue]:
+    def get_metrics_summary(self) -> dict[str, ModelFlexibleValue]:
         """Get summary of all custom metrics."""
         summary = {}
         for key in self.custom_metrics.get_all_keys():
@@ -138,27 +145,12 @@ class ModelProgressMetrics(BaseModel):
         is_completed: bool,
         elapsed_seconds: float,
     ) -> None:
-        """Update standard progress metrics."""
-        self.add_custom_metric(
-            "percentage",
-            ModelMetadataValue.from_float(percentage),
-        )
-        self.add_custom_metric(
-            "current_step",
-            ModelMetadataValue.from_int(current_step),
-        )
-        self.add_custom_metric(
-            "total_steps",
-            ModelMetadataValue.from_int(total_steps),
-        )
-        self.add_custom_metric(
-            "is_completed",
-            ModelMetadataValue.from_bool(is_completed),
-        )
-        self.add_custom_metric(
-            "elapsed_seconds",
-            ModelMetadataValue.from_float(elapsed_seconds),
-        )
+        """Update standard progress metrics with plain values (automatically converted to appropriate types)."""
+        self.add_custom_metric("percentage", percentage)
+        self.add_custom_metric("current_step", current_step)
+        self.add_custom_metric("total_steps", total_steps)
+        self.add_custom_metric("is_completed", is_completed)
+        self.add_custom_metric("elapsed_seconds", elapsed_seconds)
 
     def reset(self) -> None:
         """Reset all metrics and tags."""
@@ -184,9 +176,9 @@ class ModelProgressMetrics(BaseModel):
     @classmethod
     def create_with_metrics(
         cls,
-        initial_metrics: dict[str, ModelMetadataValue],
+        initial_metrics: dict[str, object],
     ) -> ModelProgressMetrics:
-        """Create metrics instance with initial custom metrics."""
+        """Create metrics instance with initial custom metrics (accepts ModelFlexibleValue or plain values)."""
         instance = cls()
         for key, value in initial_metrics.items():
             instance.add_custom_metric(key, value)
@@ -209,8 +201,8 @@ class ModelProgressMetrics(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -222,15 +214,20 @@ class ModelProgressMetrics(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
+
+# NOTE: model_rebuild() removed - Pydantic v2 handles forward references automatically
+# Even though ModelMetadataValue is imported directly (not under TYPE_CHECKING),
+# explicit rebuilds at module level can cause import order issues
+# Pydantic will rebuild the model lazily when first accessed
 
 # Export for use
 __all__ = ["ModelProgressMetrics"]

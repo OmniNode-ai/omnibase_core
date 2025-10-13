@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
 """
 CLI result data model.
 
@@ -5,12 +11,11 @@ CLI result data model with typed fields for command execution results.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
@@ -29,7 +34,7 @@ class ModelCliResultData(BaseModel):
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
     output_data: ModelCliValue | None = Field(
-        None,
+        default=None,
         description="Output data if successful",
     )
     error_message: ModelSchemaValue = Field(
@@ -84,7 +89,7 @@ class ModelCliResultData(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

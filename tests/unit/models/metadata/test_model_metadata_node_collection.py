@@ -38,12 +38,16 @@ class TestModelMetadataNodeCollectionInstantiation:
 
     def test_create_with_invalid_root_type(self):
         """Test creating collection with invalid root type."""
-        with pytest.raises(TypeError):
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError, match="root must be dict or None"):
             ModelMetadataNodeCollection(root="invalid")
 
     def test_create_with_invalid_root_list(self):
         """Test creating collection with list instead of dict."""
-        with pytest.raises(TypeError):
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError, match="root must be dict or None"):
             ModelMetadataNodeCollection(root=["invalid"])
 
 

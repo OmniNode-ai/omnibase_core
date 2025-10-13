@@ -37,10 +37,10 @@ class ProtocolSyntaxValidator:
 
     def __init__(self, models_dir: str):
         self.models_dir = Path(models_dir)
-        self.validation_results: List[Dict[str, Any]] = []
-        self.errors: List[str] = []
+        self.validation_results: list[dict[str, Any]] = []
+        self.errors: list[str] = []
 
-    def find_model_files(self) -> List[Path]:
+    def find_model_files(self) -> list[Path]:
         """Find all actual model files (not re-export files)."""
         all_files = list(self.models_dir.rglob("model_*.py"))
         model_files = []
@@ -48,7 +48,7 @@ class ProtocolSyntaxValidator:
         for file_path in all_files:
             # Read file to check if it contains actual model classes
             try:
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     content = f.read()
 
                 # Skip re-export files
@@ -68,9 +68,9 @@ class ProtocolSyntaxValidator:
 
         return model_files
 
-    def parse_file_ast(self, file_path: Path) -> Tuple[ast.Module, str]:
+    def parse_file_ast(self, file_path: Path) -> tuple[ast.Module, str]:
         """Parse file into AST and return content."""
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         try:
@@ -79,7 +79,7 @@ class ProtocolSyntaxValidator:
         except SyntaxError as e:
             raise SyntaxError(f"Syntax error in {file_path}: {e}")
 
-    def find_protocol_imports(self, tree: ast.Module) -> Set[str]:
+    def find_protocol_imports(self, tree: ast.Module) -> set[str]:
         """Find protocol imports in the AST."""
         protocols = set()
 
@@ -92,7 +92,7 @@ class ProtocolSyntaxValidator:
 
         return protocols
 
-    def find_model_classes(self, tree: ast.Module) -> List[Tuple[str, ast.ClassDef]]:
+    def find_model_classes(self, tree: ast.Module) -> list[tuple[str, ast.ClassDef]]:
         """Find model classes that inherit from BaseModel."""
         model_classes = []
 
@@ -115,7 +115,7 @@ class ProtocolSyntaxValidator:
 
         return model_classes
 
-    def find_class_methods(self, class_node: ast.ClassDef) -> Set[str]:
+    def find_class_methods(self, class_node: ast.ClassDef) -> set[str]:
         """Find method names in a class."""
         methods = set()
 
@@ -125,7 +125,7 @@ class ProtocolSyntaxValidator:
 
         return methods
 
-    def get_class_protocols(self, class_node: ast.ClassDef) -> Set[str]:
+    def get_class_protocols(self, class_node: ast.ClassDef) -> set[str]:
         """Get protocols implemented by a class."""
         protocols = set()
 
@@ -136,8 +136,8 @@ class ProtocolSyntaxValidator:
         return protocols
 
     def validate_protocol_methods(
-        self, class_name: str, class_protocols: Set[str], class_methods: Set[str]
-    ) -> Dict[str, bool]:
+        self, class_name: str, class_protocols: set[str], class_methods: set[str]
+    ) -> dict[str, bool]:
         """Validate that required protocol methods are implemented."""
         results = {}
 
@@ -151,12 +151,12 @@ class ProtocolSyntaxValidator:
         return results
 
     def validate_docstring_protocols(
-        self, content: str, class_protocols: Set[str]
+        self, content: str, class_protocols: set[str]
     ) -> bool:
         """Check if docstring documents implemented protocols."""
         return "Implements omnibase_spi protocols:" in content
 
-    def validate_file(self, file_path: Path) -> Dict[str, Any]:
+    def validate_file(self, file_path: Path) -> dict[str, Any]:
         """Validate protocol implementations in a single file."""
         try:
             tree, content = self.parse_file_ast(file_path)
@@ -219,7 +219,7 @@ class ProtocolSyntaxValidator:
                 "classes": [],
             }
 
-    def validate_all_files(self) -> Dict[str, Any]:
+    def validate_all_files(self) -> dict[str, Any]:
         """Validate all model files."""
         model_files = self.find_model_files()
         print(f"🔍 Found {len(model_files)} actual model files to validate")
@@ -230,7 +230,7 @@ class ProtocolSyntaxValidator:
 
         return self.generate_summary()
 
-    def generate_summary(self) -> Dict[str, Any]:
+    def generate_summary(self) -> dict[str, Any]:
         """Generate validation summary."""
         total_files = len(self.validation_results)
         successful_files = len(
@@ -306,7 +306,7 @@ def main():
 
     # Print summary
     summary = results["summary"]
-    print(f"\n📊 Validation Results:")
+    print("\n📊 Validation Results:")
     print(f"   Files Validated: {summary['total_files']}")
     print(f"   Successful Files: {summary['successful_files']}")
     print(f"   File Success Rate: {summary['success_rate']:.1f}%")
@@ -315,12 +315,12 @@ def main():
     print(f"   Protocol Adoption Rate: {summary['protocol_adoption_rate']:.1f}%")
 
     # Print protocol implementations
-    print(f"\n🔧 Protocol Implementations:")
+    print("\n🔧 Protocol Implementations:")
     for protocol, count in results["protocol_implementations"].items():
         print(f"   {protocol}: {count} classes")
 
     # Print method validation results
-    print(f"\n✅ Method Validation Results:")
+    print("\n✅ Method Validation Results:")
     for method, stats in results["method_validation"].items():
         total = stats["passed"] + stats["failed"]
         success_rate = (stats["passed"] / total * 100) if total > 0 else 0
@@ -328,7 +328,7 @@ def main():
 
     # Print any errors
     if results["errors"]:
-        print(f"\n⚠️  Validation Errors:")
+        print("\n⚠️  Validation Errors:")
         for error in results["errors"][:5]:  # Show first 5 errors
             print(f"   - {error}")
 

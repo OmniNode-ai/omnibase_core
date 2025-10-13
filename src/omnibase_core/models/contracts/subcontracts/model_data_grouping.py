@@ -1,3 +1,7 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Data Grouping Model - ONEX Standards Compliant.
 
@@ -7,7 +11,7 @@ Part of the Aggregation Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDataGrouping(BaseModel):

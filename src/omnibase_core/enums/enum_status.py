@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Status enumeration for general status tracking.
 
 Provides standardized status values for state management across the system.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -28,7 +29,7 @@ class EnumStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-    # Lifecycle states
+    # EnumLifecycle states
     CREATED = "created"
     UPDATED = "updated"
     DELETED = "deleted"

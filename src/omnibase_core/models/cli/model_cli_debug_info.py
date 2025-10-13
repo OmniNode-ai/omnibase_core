@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Generic
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI debug information model.
 
@@ -5,15 +14,14 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI debug info.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
@@ -94,9 +102,9 @@ class ModelCliDebugInfo(BaseModel):
     ) -> dict[str, ModelCliValue]:
         """Convert raw values to ModelCliValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="custom_debug_fields must be a dictionary",
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="custom_debug_fields must be a dict[str, Any]ionary",
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -173,7 +181,7 @@ class ModelCliDebugInfo(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -201,8 +209,8 @@ class ModelCliDebugInfo(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

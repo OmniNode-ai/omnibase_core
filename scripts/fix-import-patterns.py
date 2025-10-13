@@ -14,7 +14,7 @@ from pathlib import Path
 def fix_import_patterns(file_path: Path) -> int:
     """Fix import patterns in a single file and return number of changes."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         original_content = content
@@ -126,6 +126,7 @@ def main():
                 ],
                 capture_output=True,
                 text=True,
+                check=False,
             )
 
             if result.returncode == 0:

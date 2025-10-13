@@ -1,10 +1,14 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Coordination Rules Model - ONEX Standards Compliant.
 
 Model for workflow coordination rules in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 

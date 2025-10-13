@@ -699,3 +699,184 @@ class TestEdgeCases:
         assert len(result.files_deleted) == 2
         assert len(result.imports_updated) == 1
         assert result.rollback_available is True
+
+
+class TestValidationErrors:
+    """Test validation error handling."""
+
+    def test_create_plan_protocol_without_file_path(self, tmp_path: Path) -> None:
+        """Test creating plan with protocol missing file_path raises error."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        migrator = ProtocolMigrator()
+
+        # Protocol without file_path
+        invalid_protocols = [
+            ModelProtocolInfo(
+                name="TestProtocol",
+                file_path="",  # Empty file path
+                repository="test_repo",
+                methods=["method"],
+                signature_hash="hash",
+                line_count=50,
+                imports=[],
+            ),
+        ]
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            migrator.create_migration_plan(protocols=invalid_protocols)
+
+        assert "file_path" in str(exc_info.value.message).lower()
+
+    def test_create_plan_protocol_without_name(self, tmp_path: Path) -> None:
+        """Test creating plan with protocol missing name raises error."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        migrator = ProtocolMigrator()
+
+        # Protocol without name
+        invalid_protocols = [
+            ModelProtocolInfo(
+                name="",  # Empty name
+                file_path="/test/protocol.py",
+                repository="test_repo",
+                methods=["method"],
+                signature_hash="hash",
+                line_count=50,
+                imports=[],
+            ),
+        ]
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            migrator.create_migration_plan(protocols=invalid_protocols)
+
+        assert "name" in str(exc_info.value.message).lower()
+
+    def test_create_plan_with_conflicts_includes_recommendation(
+        self, tmp_path: Path
+    ) -> None:
+        """Test plan with conflicts includes conflict resolution recommendation."""
+        source_path = tmp_path / "source"
+        source_path.mkdir()
+        (source_path / "src").mkdir()
+
+        spi_path = tmp_path / "spi"
+        spi_path.mkdir()
+        (spi_path / "src" / "omnibase_spi" / "protocols").mkdir(parents=True)
+
+        # Create a test protocol file in SPI
+        spi_protocol = (
+            spi_path / "src" / "omnibase_spi" / "protocols" / "protocol_test.py"
+        )
+        spi_protocol.write_text(
+            """
+from typing import Protocol
+
+class TestProtocol(Protocol):
+    def different_method(self) -> None:
+        pass
+"""
+        )
+
+        migrator = ProtocolMigrator(
+            source_path=str(source_path),
+            spi_path=str(spi_path),
+        )
+
+        # Create protocol with same name but different signature
+        protocols = [
+            ModelProtocolInfo(
+                name="TestProtocol",
+                file_path=str(source_path / "test_protocol.py"),
+                repository="test_repo",
+                methods=["method"],
+                signature_hash="different_hash",
+                line_count=50,
+                imports=[],
+            ),
+        ]
+
+        # This will detect conflict and add recommendation
+        plan = migrator.create_migration_plan(protocols=protocols)
+
+        # Should have recommendation to resolve conflicts
+        assert any(
+            "conflict" in rec.lower() for rec in plan.recommendations
+        ), f"Expected conflict recommendation but got: {plan.recommendations}"
+
+    def test_find_import_references_with_unreadable_file(self, tmp_path: Path) -> None:
+        """Test finding references handles unreadable files gracefully."""
+        source_path = tmp_path / "source"
+        source_path.mkdir()
+        src_dir = source_path / "src"
+        src_dir.mkdir()
+
+        protocol_file = src_dir / "test_protocol.py"
+        protocol_file.write_text("class TestProtocol: pass")
+
+        # Create a subdirectory with a file that will be unreadable
+        subdir = src_dir / "subdir"
+        subdir.mkdir()
+        unreadable_file = subdir / "unreadable.py"
+        unreadable_file.write_text("# This file will have read issues")
+
+        # Make file unreadable by changing permissions (Unix-like systems)
+        import os
+        import platform
+
+        if platform.system() != "Windows":
+            os.chmod(unreadable_file, 0o000)
+
+        migrator = ProtocolMigrator(source_path=str(source_path))
+
+        protocol_info = ModelProtocolInfo(
+            name="TestProtocol",
+            file_path=str(protocol_file),
+            repository="test_repo",
+            methods=[],
+            signature_hash="hash",
+            line_count=1,
+            imports=[],
+        )
+
+        try:
+            # Should not raise exception even with unreadable file
+            references = migrator._find_import_references(protocol_info)
+            # Just verify it completes without error
+            assert isinstance(references, list)
+        finally:
+            # Restore permissions for cleanup
+            if platform.system() != "Windows":
+                os.chmod(unreadable_file, 0o644)
+
+    def test_rollback_migration_with_error(self, tmp_path: Path) -> None:
+        """Test rollback handling when file deletion fails."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        migrator = ProtocolMigrator()
+
+        # Create a directory (not a file) to trigger deletion error
+        created_dir = tmp_path / "created_dir"
+        created_dir.mkdir()
+
+        # Also create a file inside to make it non-empty
+        (created_dir / "file.txt").write_text("test")
+
+        result = ModelMigrationResult(
+            success=True,
+            source_repository="source",
+            target_repository="spi",
+            protocols_migrated=1,
+            files_created=[str(created_dir)],  # Directory path, not file
+            files_deleted=[],
+            imports_updated=[],
+            conflicts_resolved=[],
+            execution_time_minutes=5,
+            rollback_available=True,
+        )
+
+        # Attempting to delete a directory as if it were a file should raise error
+        with pytest.raises(ModelOnexError) as exc_info:
+            migrator.rollback_migration(result)
+
+        assert "rollback failed" in str(exc_info.value.message).lower()

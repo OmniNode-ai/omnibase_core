@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+from typing import Any
+
 """
 Execution Phase Enumeration.
 
 Defines the various phases of execution for CLI commands and operations.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

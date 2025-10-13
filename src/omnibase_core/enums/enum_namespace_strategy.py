@@ -1,46 +1,23 @@
 """
-Namespace strategy enumeration.
+Namespace strategy enumeration for ONEX framework.
 
-Defines strategies for namespace handling in ONEX configuration system.
+Defines the available strategies for namespace handling in ONEX components.
 """
 
-from __future__ import annotations
-
-from enum import Enum, unique
+from enum import Enum
 
 
-@unique
 class EnumNamespaceStrategy(str, Enum):
-    """
-    Enumeration of namespace handling strategies.
+    """Enumeration of namespace strategies."""
 
-    Used for configuring how namespaces are resolved and managed.
-    """
-
-    # Standard strategies
     ONEX_DEFAULT = "onex_default"
-    EXPLICIT = "explicit"
-    AUTO = "auto"
+    """Use ONEX default namespace strategy."""
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
+    HIERARCHICAL = "hierarchical"
+    """Use hierarchical namespace organization."""
 
-    @classmethod
-    def is_automatic(cls, strategy: EnumNamespaceStrategy) -> bool:
-        """Check if strategy uses automatic namespace resolution."""
-        return strategy in {cls.ONEX_DEFAULT, cls.AUTO}
+    FLAT = "flat"
+    """Use flat namespace organization."""
 
-    @classmethod
-    def requires_explicit_definition(cls, strategy: EnumNamespaceStrategy) -> bool:
-        """Check if strategy requires explicit namespace definitions."""
-        return strategy == cls.EXPLICIT
-
-    @classmethod
-    def get_default_strategy(cls) -> EnumNamespaceStrategy:
-        """Get the default namespace strategy."""
-        return cls.ONEX_DEFAULT
-
-
-# Export the enum
-__all__ = ["EnumNamespaceStrategy"]
+    CUSTOM = "custom"
+    """Use custom namespace strategy."""

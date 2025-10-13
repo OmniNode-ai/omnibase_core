@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Severity level enumeration for messages and notifications.
 
@@ -5,7 +7,6 @@ Provides strongly typed severity levels for error messages, warnings, and loggin
 Follows ONEX one-enum-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

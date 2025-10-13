@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Conceptual complexity enumeration for skill level and understanding requirements.
 
@@ -5,7 +7,6 @@ Focused on cognitive difficulty, learning curve, and expertise requirements.
 Part of the unified complexity enum consolidation strategy.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, Dict, List, Union
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI value object model.
 
@@ -5,12 +13,10 @@ Strongly-typed value object for CLI output data, replacing broad union types
 with discriminated union patterns following ONEX strong typing standards.
 """
 
-from __future__ import annotations
-
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Note: Previously had type alias (CliDictValueType)
@@ -25,7 +31,7 @@ class ModelCliValue(BaseModel):
     """
     CLI value object with discriminated union pattern.
 
-    Replaces Union[str, int, float, bool, dict, list, None] with
+    Replaces Union[str, int, float, bool, dict[str, Any], list[Any], None] with
     a strongly-typed discriminated union following ONEX patterns.
     Implements omnibase_spi protocols:
     - Executable: Execution management capabilities
@@ -47,38 +53,38 @@ class ModelCliValue(BaseModel):
         value_type = info.data["value_type"]
 
         if value_type == EnumCliValueType.STRING and not isinstance(v, str):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String value type must contain str data",
             )
         if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Integer value type must contain int data",
             )
         if value_type == EnumCliValueType.FLOAT and not isinstance(v, float):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Float value type must contain float data",
             )
         if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean value type must contain bool data",
             )
         if value_type == EnumCliValueType.DICT and not isinstance(v, dict):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Dict value type must contain dict data",
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Dict value type must contain dict[str, Any]data",
             )
         if value_type == EnumCliValueType.LIST and not isinstance(v, list):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="List value type must contain list data",
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="List value type must contain list[Any]data",
             )
         if value_type == EnumCliValueType.NULL and v is not None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Null value type must contain None",
             )
 
@@ -106,12 +112,12 @@ class ModelCliValue(BaseModel):
 
     @classmethod
     def from_list(cls, value: list[object]) -> ModelCliValue:
-        """Create CLI value from list."""
+        """Create CLI value from list[Any]."""
         return cls(value_type=EnumCliValueType.LIST, raw_value=value)
 
     @classmethod
     def from_dict_value(cls, value: dict[str, ModelSchemaValue]) -> ModelCliValue:
-        """Create CLI value wrapping a dictionary value with proper ONEX typing."""
+        """Create CLI value wrapping a dict[str, Any]ionary value with proper ONEX typing."""
         return cls(value_type=EnumCliValueType.DICT, raw_value=value)
 
     @classmethod
@@ -183,8 +189,8 @@ class ModelCliValue(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -197,13 +203,13 @@ class ModelCliValue(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -213,8 +219,8 @@ class ModelCliValue(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

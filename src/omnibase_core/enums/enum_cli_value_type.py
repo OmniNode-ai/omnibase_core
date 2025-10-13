@@ -1,3 +1,5 @@
+from typing import Any
+
 """
 CLI value type enumeration.
 
@@ -15,8 +17,8 @@ class EnumCliValueType(str, Enum):
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
-    DICT = "dict"
-    LIST = "list"
+    DICT = "dict[str, Any]"
+    LIST = "list[Any]"
     NULL = "null"
 
 

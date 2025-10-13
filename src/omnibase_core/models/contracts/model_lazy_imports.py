@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 """
 Lazy Import Optimization Module
 
@@ -50,9 +52,10 @@ class ModelLazyContractLoader:
             ModelContractBase class (cached after first load)
         """
         if "ModelContractBase" not in self._cache:
-            from .model_contract_base import ModelContractBase
+            from importlib import import_module
 
-            self._cache["ModelContractBase"] = ModelContractBase
+            module = import_module("omnibase_core.models.contracts.model_contract_base")
+            self._cache["ModelContractBase"] = module.ModelContractBase
         return cast(type["ModelContractBase"], self._cache["ModelContractBase"])
 
     @functools.cache
@@ -64,9 +67,12 @@ class ModelLazyContractLoader:
             ModelContractCompute class (cached after first load)
         """
         if "ModelContractCompute" not in self._cache:
-            from .model_contract_compute import ModelContractCompute
+            from importlib import import_module
 
-            self._cache["ModelContractCompute"] = ModelContractCompute
+            module = import_module(
+                "omnibase_core.models.contracts.model_contract_compute"
+            )
+            self._cache["ModelContractCompute"] = module.ModelContractCompute
         return cast(type["ModelContractCompute"], self._cache["ModelContractCompute"])
 
     @functools.cache
@@ -78,9 +84,12 @@ class ModelLazyContractLoader:
             ModelContractEffect class (cached after first load)
         """
         if "ModelContractEffect" not in self._cache:
-            from .model_contract_effect import ModelContractEffect
+            from importlib import import_module
 
-            self._cache["ModelContractEffect"] = ModelContractEffect
+            module = import_module(
+                "omnibase_core.models.contracts.model_contract_effect"
+            )
+            self._cache["ModelContractEffect"] = module.ModelContractEffect
         return cast(type["ModelContractEffect"], self._cache["ModelContractEffect"])
 
     @functools.cache
@@ -92,9 +101,12 @@ class ModelLazyContractLoader:
             ModelContractReducer class (cached after first load)
         """
         if "ModelContractReducer" not in self._cache:
-            from .model_contract_reducer import ModelContractReducer
+            from importlib import import_module
 
-            self._cache["ModelContractReducer"] = ModelContractReducer
+            module = import_module(
+                "omnibase_core.models.contracts.model_contract_reducer"
+            )
+            self._cache["ModelContractReducer"] = module.ModelContractReducer
         return cast(type["ModelContractReducer"], self._cache["ModelContractReducer"])
 
     @functools.cache
@@ -106,9 +118,12 @@ class ModelLazyContractLoader:
             ModelContractOrchestrator class (cached after first load)
         """
         if "ModelContractOrchestrator" not in self._cache:
-            from .model_contract_orchestrator import ModelContractOrchestrator
+            from importlib import import_module
 
-            self._cache["ModelContractOrchestrator"] = ModelContractOrchestrator
+            module = import_module(
+                "omnibase_core.models.contracts.model_contract_orchestrator"
+            )
+            self._cache["ModelContractOrchestrator"] = module.ModelContractOrchestrator
         return cast(
             type["ModelContractOrchestrator"],
             self._cache["ModelContractOrchestrator"],
@@ -135,7 +150,7 @@ class ModelLazyContractLoader:
             Dict containing cache hit information and loaded modules
         """
         return {
-            "cached_models": list(self._cache.keys()),
+            "cached_models": list[Any](self._cache.keys()),
             "cache_size": len(self._cache),
             "available_models": [
                 "ModelContractBase",

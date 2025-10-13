@@ -1,3 +1,7 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Algorithm Factor Configuration Model - ONEX Standards Compliant.
 
@@ -7,7 +11,7 @@ calculation method, and parameters for each factor in a multi-factor algorithm.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelAlgorithmFactorConfig(BaseModel):
@@ -19,14 +23,14 @@ class ModelAlgorithmFactorConfig(BaseModel):
     """
 
     weight: float = Field(
-        ...,
+        default=...,
         description="Factor weight in algorithm (0.0-1.0)",
         ge=0.0,
         le=1.0,
     )
 
     calculation_method: str = Field(
-        ...,
+        default=...,
         description="Calculation method identifier",
         min_length=1,
     )

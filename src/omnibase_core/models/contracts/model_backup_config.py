@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Backup Configuration Model.
 
@@ -5,7 +7,7 @@ Defines backup creation, storage, and rollback procedures
 for safe side-effect operations with recovery capabilities.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelBackupConfig(BaseModel):

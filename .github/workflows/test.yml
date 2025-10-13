@@ -125,8 +125,11 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Run Ruff linting
-        run: poetry run ruff check src/ tests/
+      - name: Check Black formatting
+        run: poetry run black --check src/ tests/
+
+      - name: Check isort import sorting
+        run: poetry run isort --check-only src/ tests/
 
       - name: Run mypy type checking
         run: poetry run mypy src/omnibase_core

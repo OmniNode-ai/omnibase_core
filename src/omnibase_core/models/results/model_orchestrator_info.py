@@ -1,3 +1,10 @@
+import uuid
+from typing import Dict
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.
 """
@@ -6,9 +13,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
-
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from .model_orchestrator_metrics import ModelOrchestratorMetrics
 
@@ -20,51 +25,65 @@ class ModelOrchestratorInfo(BaseModel):
     """
 
     # Orchestrator identification
-    orchestrator_id: UUID = Field(..., description="Unique orchestrator identifier")
+    orchestrator_id: UUID = Field(
+        default=..., description="Unique orchestrator identifier"
+    )
     orchestrator_type: str = Field(
-        ...,
+        default=...,
         description="Orchestrator type (kubernetes/swarm/nomad/custom)",
     )
-    orchestrator_version: ModelSemVer = Field(..., description="Orchestrator version")
+    orchestrator_version: ModelSemVer = Field(
+        default=..., description="Orchestrator version"
+    )
 
     # Cluster information
-    cluster_name: str | None = Field(None, description="Cluster name")
-    cluster_region: str | None = Field(None, description="Cluster region")
-    cluster_zone: str | None = Field(None, description="Cluster availability zone")
+    cluster_name: str | None = Field(default=None, description="Cluster name")
+    cluster_region: str | None = Field(default=None, description="Cluster region")
+    cluster_zone: str | None = Field(
+        default=None, description="Cluster availability zone"
+    )
 
     # Node information
-    node_id: UUID | None = Field(None, description="Node identifier")
-    node_name: str | None = Field(None, description="Node name")
-    node_role: str | None = Field(None, description="Node role (master/worker/edge)")
+    node_id: UUID | None = Field(default=None, description="Node identifier")
+    node_name: str | None = Field(default=None, description="Node name")
+    node_role: str | None = Field(
+        default=None, description="Node role (master/worker/edge)"
+    )
 
     # Workflow information
-    workflow_id: UUID | None = Field(None, description="Current workflow ID")
-    workflow_name: str | None = Field(None, description="Workflow name")
-    workflow_step: str | None = Field(None, description="Current workflow step")
-    workflow_status: str | None = Field(None, description="Workflow status")
+    workflow_id: UUID | None = Field(default=None, description="Current workflow ID")
+    workflow_name: str | None = Field(default=None, description="Workflow name")
+    workflow_step: str | None = Field(default=None, description="Current workflow step")
+    workflow_status: str | None = Field(default=None, description="Workflow status")
 
     # Execution context
-    execution_id: UUID | None = Field(None, description="Execution identifier")
-    parent_execution_id: UUID | None = Field(None, description="Parent execution ID")
-    root_execution_id: UUID | None = Field(None, description="Root execution ID")
+    execution_id: UUID | None = Field(default=None, description="Execution identifier")
+    parent_execution_id: UUID | None = Field(
+        default=None, description="Parent execution ID"
+    )
+    root_execution_id: UUID | None = Field(
+        default=None, description="Root execution ID"
+    )
 
     # Timing information
     scheduled_at: datetime | None = Field(
-        None,
+        default=None,
         description="Scheduled execution time",
     )
-    started_at: datetime | None = Field(None, description="Actual start time")
-    completed_at: datetime | None = Field(None, description="Completion time")
+    started_at: datetime | None = Field(default=None, description="Actual start time")
+    completed_at: datetime | None = Field(default=None, description="Completion time")
 
     # Resource allocation
-    cpu_request: str | None = Field(None, description="CPU request (e.g., '100m')")
-    cpu_limit: str | None = Field(None, description="CPU limit (e.g., '1000m')")
+    cpu_request: str | None = Field(
+        default=None, description="CPU request (e.g., '100m')"
+    )
+    cpu_limit: str | None = Field(default=None, description="CPU limit (e.g., '1000m')")
     memory_request: str | None = Field(
-        None,
+        default=None,
         description="Memory request (e.g., '128Mi')",
     )
     memory_limit: str | None = Field(
-        None,
+        default=None,
         description="Memory limit (e.g., '512Mi')",
     )
 
@@ -80,16 +99,18 @@ class ModelOrchestratorInfo(BaseModel):
 
     # Metrics
     metrics: ModelOrchestratorMetrics | None = Field(
-        None,
+        default=None,
         description="Orchestrator metrics",
     )
 
     # Service mesh information
     service_mesh: str | None = Field(
-        None,
+        default=None,
         description="Service mesh type (istio/linkerd/consul)",
     )
-    sidecar_injected: bool = Field(False, description="Whether sidecar is injected")
+    sidecar_injected: bool = Field(
+        default=False, description="Whether sidecar is injected"
+    )
 
     # Custom orchestrator data (non-recursive for Pydantic compatibility)
     # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible orchestrator data storage

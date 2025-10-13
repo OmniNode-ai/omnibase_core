@@ -1,3 +1,8 @@
+import uuid
+from typing import Any, List
+
+from pydantic import Field
+
 """
 Coordination Result Model - ONEX Standards Compliant.
 
@@ -6,7 +11,7 @@ Model for node coordination operation results in the ONEX workflow coordination 
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_node_assignment import ModelNodeAssignment
 from .model_synchronization_point import ModelSynchronizationPoint
@@ -31,7 +36,7 @@ class ModelCoordinationResult(BaseModel):
     )
 
     coordination_overhead_ms: int = Field(
-        ...,
+        default=...,
         description="Time spent on coordination overhead in milliseconds",
         ge=0,
     )

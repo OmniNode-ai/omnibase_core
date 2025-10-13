@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Generic
+
 """
 Pattern validation tools for ONEX compliance.
 
@@ -8,211 +12,27 @@ This module provides validation functions for various code patterns:
 - Naming convention validation
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
-import re
 import sys
 from pathlib import Path
 from typing import Protocol
 
+from .checker_generic_pattern import GenericPatternChecker
+from .checker_naming_convention import NamingConventionChecker
+from .checker_pydantic_pattern import PydanticPatternChecker
 from .validation_utils import ValidationResult
 
 
 class PatternChecker(Protocol):
-    """Protocol for pattern checker classes."""
+    """Protocol for pattern checkers with issues tracking."""
 
     issues: list[str]
 
-    def visit(self, node: ast.AST) -> None: ...
-
-
-class PydanticPatternChecker(ast.NodeVisitor):
-    """Check for proper Pydantic patterns and anti-patterns."""
-
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-        self.issues: list[str] = []
-        self.classes_checked = 0
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Visit class definitions to check Pydantic patterns."""
-        # Check if this is a Pydantic model
-        is_pydantic = False
-        for base in node.bases:
-            if isinstance(base, ast.Name) and base.id == "BaseModel":
-                is_pydantic = True
-                break
-            if isinstance(base, ast.Attribute):
-                if (
-                    isinstance(base.value, ast.Name)
-                    and base.value.id == "pydantic"
-                    and base.attr == "BaseModel"
-                ):
-                    is_pydantic = True
-                    break
-
-        if is_pydantic:
-            self.classes_checked += 1
-            self._check_pydantic_class(node)
-
-        self.generic_visit(node)
-
-    def _check_pydantic_class(self, node: ast.ClassDef) -> None:
-        """Check a Pydantic class for pattern violations."""
-        class_name = node.name
-
-        # Check naming convention
-        if not class_name.startswith("Model"):
-            self.issues.append(
-                f"Line {node.lineno}: Pydantic model '{class_name}' should start with 'Model'",
-            )
-
-        # Check field patterns
-        for item in node.body:
-            if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
-                field_name = item.target.id
-                annotation = item.annotation
-
-                # Check for string ID fields that should be UUID
-                if field_name.endswith("_id") and self._is_str_annotation(annotation):
-                    self.issues.append(
-                        f"Line {item.lineno}: Field '{field_name}' should use UUID type instead of str",
-                    )
-
-                # Check for category/type/status fields that should be enums
-                if field_name in [
-                    "category",
-                    "type",
-                    "status",
-                ] and self._is_str_annotation(annotation):
-                    self.issues.append(
-                        f"Line {item.lineno}: Field '{field_name}' should use Enum instead of str",
-                    )
-
-                # Check for name fields that reference entities
-                if field_name.endswith("_name") and self._is_str_annotation(annotation):
-                    self.issues.append(
-                        f"Line {item.lineno}: Field '{field_name}' might reference an entity - consider using ID + display_name pattern",
-                    )
-
-    def _is_str_annotation(self, annotation: ast.AST) -> bool:
-        """Check if annotation is str type."""
-        if isinstance(annotation, ast.Name):
-            return bool(annotation.id == "str")
-        if isinstance(annotation, ast.Constant):
-            return bool(annotation.value == "str")
-        return False
-
-
-class NamingConventionChecker(ast.NodeVisitor):
-    """Check naming conventions."""
-
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-        self.issues: list[str] = []
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Check class naming conventions."""
-        class_name = node.name
-
-        # Check for anti-pattern names
-        anti_patterns = [
-            "Manager",
-            "Handler",
-            "Helper",
-            "Utility",
-            "Util",
-            "Service",
-            "Controller",
-            "Processor",
-            "Worker",
-        ]
-
-        for pattern in anti_patterns:
-            if pattern.lower() in class_name.lower():
-                self.issues.append(
-                    f"Line {node.lineno}: Class name '{class_name}' contains anti-pattern '{pattern}' - use specific domain terminology",
-                )
-
-        # Check naming style
-        if not re.match(r"^[A-Z][a-zA-Z0-9]*$", class_name):
-            self.issues.append(
-                f"Line {node.lineno}: Class name '{class_name}' should use PascalCase",
-            )
-
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Check function naming conventions."""
-        func_name = node.name
-
-        # Skip special methods
-        if func_name.startswith("__") and func_name.endswith("__"):
-            return
-
-        # Check naming style
-        if not re.match(r"^[a-z_][a-z0-9_]*$", func_name):
-            self.issues.append(
-                f"Line {node.lineno}: Function name '{func_name}' should use snake_case",
-            )
-
-        self.generic_visit(node)
-
-
-class GenericPatternChecker(ast.NodeVisitor):
-    """Check for generic anti-patterns."""
-
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-        self.issues: list[str] = []
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Check function patterns."""
-        func_name = node.name
-
-        # Check for overly generic function names
-        generic_names = [
-            "process",
-            "handle",
-            "execute",
-            "run",
-            "do",
-            "perform",
-            "manage",
-            "control",
-            "work",
-            "operate",
-            "action",
-        ]
-
-        if func_name.lower() in generic_names:
-            self.issues.append(
-                f"Line {node.lineno}: Function name '{func_name}' is too generic - use specific domain terminology",
-            )
-
-        # Check for functions with too many parameters
-        if len(node.args.args) > 5:
-            self.issues.append(
-                f"Line {node.lineno}: Function '{func_name}' has {len(node.args.args)} parameters - consider using a model or breaking into smaller functions",
-            )
-
-        self.generic_visit(node)
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Check class patterns."""
-        class_name = node.name
-
-        # Count methods to detect god classes
-        method_count = sum(1 for item in node.body if isinstance(item, ast.FunctionDef))
-
-        if method_count > 10:
-            self.issues.append(
-                f"Line {node.lineno}: Class '{class_name}' has {method_count} methods - consider breaking into smaller classes",
-            )
-
-        self.generic_visit(node)
+    def visit(self, node: ast.AST) -> None:
+        """Visit an AST node."""
+        ...
 
 
 def validate_patterns_file(file_path: Path) -> list[str]:

@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Time Unit Enumeration.
 
 Time unit enumeration for flexible time representation.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -66,20 +70,16 @@ class EnumTimeUnit(str, Enum):
         multiplier_keys = set(cls._get_millisecond_multipliers().keys())
 
         if display_keys != all_members:
-            from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-
             missing = all_members - display_keys
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Missing display names for: {missing}",
             )
 
         if multiplier_keys != all_members:
-            from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-
             missing = all_members - multiplier_keys
-            raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Missing multipliers for: {missing}",
             )
 

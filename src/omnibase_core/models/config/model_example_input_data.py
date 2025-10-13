@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Example input data model.
 
@@ -6,16 +12,14 @@ strongly-typed replacement for dict[str, Any] in example input data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIOType
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelExampleInputData(BaseModel):
@@ -50,7 +54,7 @@ class ModelExampleInputData(BaseModel):
 
     # Validation info
     schema_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Schema version for validation",
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")
@@ -78,7 +82,7 @@ class ModelExampleInputData(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

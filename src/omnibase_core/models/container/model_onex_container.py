@@ -1,3 +1,11 @@
+import uuid
+from collections.abc import Callable
+from typing import Any, Dict, Optional, TypeVar
+
+from pydantic import BaseModel
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Model ONEX Dependency Injection Container.
 
@@ -12,21 +20,21 @@ import asyncio
 import os
 import tempfile
 import time
-from collections.abc import Callable
+from collections.abc import Callable as CallableABC
 from datetime import datetime
 from pathlib import Path
 
 # Import needed for type annotations
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from dependency_injector import containers, providers
-from omnibase_spi import ProtocolLogger
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_spi import ProtocolLogger
 
 # Optional performance enhancements
 try:
@@ -44,47 +52,21 @@ except ImportError:
     PerformanceMonitor = None  # type: ignore[misc, assignment]
 
 # TODO: These imports require omnibase-spi protocols that may not be available yet
-# from omnibase_core.protocol.protocol_database_connection import ProtocolDatabaseConnection
-# from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+# from omnibase_core.protocols.protocol_database_connection import ProtocolDatabaseConnection
+# from omnibase_core.protocols.protocol_service_discovery import ProtocolServiceDiscovery
 # from omnibase_core.services.protocol_service_resolver import get_service_resolver
 
 # Type aliases for unavailable protocols (until omnibase-spi is fully integrated)
 ProtocolDatabaseConnection = Any
 ProtocolServiceDiscovery = Any
 
-if TYPE_CHECKING:
-    from omnibase_core.infrastructure.node_base import NodeBase
 
 T = TypeVar("T")
 
 
 # === CORE CONTAINER DEFINITION ===
 
-
-class _BaseModelONEXContainer(containers.DeclarativeContainer):
-    """Base dependency injection container."""
-
-    # === CONFIGURATION ===
-    config = providers.Configuration()
-
-    # === ENHANCED CORE SERVICES ===
-
-    # Enhanced logger with monadic patterns
-    enhanced_logger = providers.Factory(
-        lambda level: _create_enhanced_logger(level),
-        level=LogLevel.INFO,
-    )
-
-    # === WORKFLOW ORCHESTRATION ===
-
-    # LlamaIndex workflow factory
-    workflow_factory = providers.Factory(lambda: _create_workflow_factory())
-
-    # Workflow execution coordinator
-    workflow_coordinator = providers.Singleton(
-        lambda factory: _create_workflow_coordinator(factory),
-        factory=workflow_factory,
-    )
+from .model_base_model_onex_container import _BaseModelONEXContainer
 
 
 class ModelONEXContainer:
@@ -194,7 +176,7 @@ class ModelONEXContainer:
             T: Resolved service instance
 
         Raises:
-            OnexError: If service resolution fails
+            ModelOnexError: If service resolution fails
         """
         protocol_name = protocol_type.__name__
         cache_key = f"{protocol_name}:{service_name or 'default'}"
@@ -225,41 +207,40 @@ class ModelONEXContainer:
             ]:
                 # service_resolver = get_service_resolver()
                 # service_instance = await service_resolver.resolve_service(protocol_type)
-                raise OnexError(
-                    error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message=f"Protocol service resolution not yet implemented: {protocol_name}",
                     protocol_type=protocol_name,
                     service_name=service_name or "",
                     note="Requires omnibase-spi protocol integration",
                     correlation_id=final_correlation_id,
                 )
-            else:
-                # Map common protocol names to container providers
-                provider_map = {
-                    "ProtocolLogger": "enhanced_logger",
-                    "Logger": "enhanced_logger",
-                }
+            # Map common protocol names to container providers
+            provider_map = {
+                "ProtocolLogger": "enhanced_logger",
+                "Logger": "enhanced_logger",
+            }
 
-                if protocol_name in provider_map:
-                    provider_name = provider_map[protocol_name]
-                    provider = getattr(self._base_container, provider_name, None)
-                    if provider:
-                        service_instance = provider()
-                    else:
-                        raise OnexError(
-                            error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                            message=f"Provider not found: {provider_name}",
-                            protocol_type=protocol_name,
-                            correlation_id=final_correlation_id,
-                        )
+            if protocol_name in provider_map:
+                provider_name = provider_map[protocol_name]
+                provider = getattr(self._base_container, provider_name, None)
+                if provider:
+                    service_instance = provider()
                 else:
-                    raise OnexError(
-                        error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                        message=f"Unable to resolve service for protocol {protocol_name}",
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                        message=f"Provider not found: {provider_name}",
                         protocol_type=protocol_name,
-                        service_name=service_name or "",
                         correlation_id=final_correlation_id,
                     )
+            else:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                    message=f"Unable to resolve service for protocol {protocol_name}",
+                    protocol_type=protocol_name,
+                    service_name=service_name or "",
+                    correlation_id=final_correlation_id,
+                )
 
             end_time = datetime.now()
             resolution_time_ms = int((end_time - start_time).total_seconds() * 1000)
@@ -291,8 +272,8 @@ class ModelONEXContainer:
                     "correlation_id": str(final_correlation_id),
                 },
             )
-            raise OnexError(
-                error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                 message=f"Service resolution failed for {protocol_name}: {e!s}",
                 protocol_type=protocol_name,
                 service_name=service_name or "",
@@ -389,35 +370,6 @@ class ModelONEXContainer:
     ) -> T:
         """Modern standards method."""
         return self.get_service_sync(protocol_type, service_name)
-
-    async def create_enhanced_nodebase(
-        self,
-        contract_path: Path,
-        node_id: UUID | None = None,
-        workflow_id: UUID | None = None,
-        session_id: UUID | None = None,
-    ) -> "NodeBase[Any, Any]":
-        """
-        Factory method for creating Enhanced NodeBase instances.
-
-        Args:
-            contract_path: Path to contract file
-            node_id: Optional node identifier
-            workflow_id: Optional workflow identifier
-            session_id: Optional session identifier
-
-        Returns:
-            NodeBase: Configured node instance
-        """
-        from omnibase_core.infrastructure.node_base import NodeBase
-
-        return NodeBase(
-            contract_path=contract_path,
-            node_id=node_id,
-            container=self,
-            workflow_id=workflow_id,
-            session_id=session_id,
-        )
 
     def get_workflow_orchestrator(self) -> Any:
         """Get workflow orchestration coordinator."""
@@ -557,210 +509,7 @@ class ModelONEXContainer:
 
 
 # === HELPER FUNCTIONS ===
-
-
-def _create_enhanced_logger(level: LogLevel) -> ProtocolLogger:
-    """Create enhanced logger with monadic patterns."""
-
-    class ModelEnhancedLogger:
-        def __init__(self, level: LogLevel):
-            self.level = level
-
-        def emit_log_event_sync(
-            self,
-            level: LogLevel,
-            message: str,
-            event_type: str = "generic",
-            **kwargs: Any,
-        ) -> None:
-            """Emit log event synchronously."""
-            if level.value >= self.level.value:
-                datetime.now().isoformat()
-
-        async def emit_log_event_async(
-            self,
-            level: LogLevel,
-            message: str,
-            event_type: str = "generic",
-            **kwargs: Any,
-        ) -> None:
-            """Emit log event asynchronously."""
-            self.emit_log_event_sync(level, message, event_type, **kwargs)
-
-        def emit_log_event(
-            self,
-            level: LogLevel,
-            message: str,
-            event_type: str = "generic",
-            **kwargs: Any,
-        ) -> None:
-            """Emit log event (defaults to sync)."""
-            self.emit_log_event_sync(level, message, event_type, **kwargs)
-
-        def info(self, message: str) -> None:
-            self.emit_log_event_sync(LogLevel.INFO, message, "info")
-
-        def warning(self, message: str) -> None:
-            self.emit_log_event_sync(LogLevel.WARNING, message, "warning")
-
-        def error(self, message: str) -> None:
-            self.emit_log_event_sync(LogLevel.ERROR, message, "error")
-
-    return ModelEnhancedLogger(level)
-
-
-def _create_workflow_factory() -> Any:
-    """Create workflow factory for LlamaIndex integration."""
-
-    class ModelWorkflowFactory:
-        def create_workflow(
-            self,
-            workflow_type: str,
-            config: dict[str, ModelSchemaValue] | None = None,
-        ) -> Any:
-            """Create workflow instance by type."""
-            config = config or {}
-
-            # This would be expanded with actual workflow types
-            # from LlamaIndex integration
-
-        def list_available_workflows(self) -> list[str]:
-            """List available workflow types."""
-            return [
-                "simple_sequential",
-                "parallel_execution",
-                "conditional_branching",
-                "retry_with_backoff",
-                "data_pipeline",
-            ]
-
-    return ModelWorkflowFactory()
-
-
-def _create_workflow_coordinator(factory: Any) -> Any:
-    """Create workflow execution coordinator."""
-
-    class ModelWorkflowCoordinator:
-        def __init__(self, factory: Any) -> None:
-            self.factory = factory
-            self.active_workflows: dict[str, ModelSchemaValue] = {}
-
-        async def execute_workflow(
-            self,
-            workflow_id: UUID,
-            workflow_type: str,
-            input_data: ModelSchemaValue,
-            config: dict[str, ModelSchemaValue] | None = None,
-        ) -> ModelSchemaValue:
-            """
-            Execute workflow with logging and error handling.
-
-            Args:
-                workflow_id: Workflow identifier for tracking
-                workflow_type: Type of workflow to execute
-                input_data: Input data for workflow
-                config: Optional workflow configuration
-
-            Returns:
-                ModelSchemaValue: Workflow execution result
-
-            Raises:
-                OnexError: If workflow execution fails
-            """
-            try:
-                self.factory.create_workflow(
-                    workflow_type,
-                    config,
-                )
-
-                # Log workflow start
-                emit_log_event(
-                    LogLevel.INFO,
-                    f"Workflow execution started: {workflow_type}",
-                    {
-                        "workflow_id": workflow_id,
-                        "workflow_type": workflow_type,
-                    },
-                )
-
-                # Execute workflow using the configured type and input data
-                workflow_result = await self._execute_workflow_type(
-                    workflow_type,
-                    input_data,
-                    config,
-                )
-
-                # Log workflow success
-                emit_log_event(
-                    LogLevel.INFO,
-                    f"Workflow execution completed: {workflow_type}",
-                    {
-                        "workflow_id": workflow_id,
-                        "workflow_type": workflow_type,
-                    },
-                )
-
-                return workflow_result
-
-            except Exception as e:
-                # Log workflow failure
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Workflow execution failed: {workflow_type}",
-                    {
-                        "workflow_id": workflow_id,
-                        "workflow_type": workflow_type,
-                        "error": str(e),
-                    },
-                )
-                raise OnexError(
-                    error_code=CoreErrorCode.OPERATION_FAILED,
-                    message=f"Workflow execution failed: {e!s}",
-                    workflow_id=str(workflow_id),
-                    workflow_type=workflow_type,
-                    correlation_id=workflow_id,
-                ) from e
-
-        async def _execute_workflow_type(
-            self,
-            workflow_type: str,
-            input_data: Any,
-            config: dict[str, Any] | None,
-        ) -> Any:
-            """Execute a specific workflow type with input data."""
-            try:
-                # Create and run workflow based on type
-                workflow = self.factory.create_workflow(workflow_type, config)
-
-                # Execute workflow with input data
-                # This is a simplified implementation - real implementation
-                # would depend on the specific workflow framework being used
-                if hasattr(workflow, "run"):
-                    result = await workflow.run(input_data)
-                elif callable(workflow):
-                    result = await workflow(input_data)
-                else:
-                    # Fallback: return input data as placeholder
-                    result = input_data
-
-                return result
-
-            except Exception as e:
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Workflow execution failed for type {workflow_type}: {e}",
-                    {
-                        "workflow_type": workflow_type,
-                        "error": str(e),
-                    },
-                )
-                raise
-
-        def get_active_workflows(self) -> list[str]:
-            """Get list of active workflow IDs."""
-            return list(self.active_workflows.keys())
-
-    return ModelWorkflowCoordinator(factory)
+# Helper functions moved to base_model_onex_container.py
 
 
 # === CONTAINER FACTORY ===
@@ -800,6 +549,19 @@ async def create_model_onex_container(
             "workflows": {
                 "default_timeout": int(os.getenv("WORKFLOW_TIMEOUT", "300")),
                 "max_concurrent_workflows": int(os.getenv("MAX_WORKFLOWS", "10")),
+            },
+            "database": {
+                "circuit_breaker": {
+                    "failure_threshold": int(
+                        os.getenv("DB_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5")
+                    ),
+                    "recovery_timeout": int(
+                        os.getenv("DB_CIRCUIT_BREAKER_RECOVERY_TIMEOUT", "60")
+                    ),
+                    "half_open_max_calls": int(
+                        os.getenv("DB_CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS", "3")
+                    ),
+                },
             },
         },
     )

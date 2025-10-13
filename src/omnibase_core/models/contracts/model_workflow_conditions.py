@@ -1,17 +1,25 @@
+import uuid
+from typing import Any, List
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Conditions Model - ONEX Standards Compliant.
 
 Strongly-typed workflow conditions model that replaces dict[str, str | bool | int] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict patterns allowed.
+ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelWorkflowConditions(BaseModel):
@@ -21,7 +29,7 @@ class ModelWorkflowConditions(BaseModel):
     Replaces dict[str, str | bool | int] patterns with proper Pydantic model
     providing runtime validation and type safety for conditional workflow execution.
 
-    ZERO TOLERANCE: No Any types or dict patterns allowed.
+    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking
@@ -176,9 +184,9 @@ class ModelWorkflowConditions(BaseModel):
             # Basic validation - should have 5 or 6 parts (seconds optional)
             parts = v.split()
             if len(parts) not in [5, 6]:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid schedule expression '{v}'. Must have 5 or 6 parts (minute hour day month weekday [second]).",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -196,9 +204,9 @@ class ModelWorkflowConditions(BaseModel):
                 continue
 
             if env not in valid_environments:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid environment '{env}'. Must be one of: {', '.join(valid_environments)}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated.append(env)

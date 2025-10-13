@@ -1,5 +1,10 @@
+import uuid
+from typing import Dict
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
-NodeCoreBase - Foundation for 4-Node Architecture.
+NodeCoreBase - Foundation for 4-Node ModelArchitecture.
 
 Abstract foundation providing minimal essential functionality for the 4-node
 architecture: NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator.
@@ -9,7 +14,7 @@ This base class implements only the core functionality needed by all node types:
 - Basic lifecycle management (initialize → process → complete → cleanup)
 - Dependency injection through ModelONEXContainer
 - Protocol compliance with duck typing
-- Error handling with OnexError exception chaining
+- Error handling with ModelOnexError exception chaining
 - Event emission for lifecycle transitions
 - Metadata tracking and introspection support
 
@@ -22,10 +27,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from omnibase_core.enums import EnumCoreErrorCode
+# Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -40,7 +44,7 @@ class NodeCoreBase(ABC):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
 
-    Lifecycle: initialize → process → complete → cleanup
+    EnumLifecycle: initialize → process → complete → cleanup
 
     Core Capabilities:
     - Container-based dependency injection
@@ -60,11 +64,11 @@ class NodeCoreBase(ABC):
             container: ONEX container for modern dependency injection
 
         Raises:
-            OnexError: If container is invalid or initialization fails
+            ModelOnexError: If container is invalid or initialization fails
         """
         if container is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Container cannot be None for NodeCoreBase initialization",
                 context={"node_type": self.__class__.__name__},
             )
@@ -111,14 +115,14 @@ class NodeCoreBase(ABC):
             Node-specific output (strongly typed by each implementation)
 
         Raises:
-            OnexError: If processing fails or validation errors occur
+            ModelOnexError: If processing fails or validation errors occur
         """
         msg = "Subclasses must implement process method"
         raise NotImplementedError(msg)  # stub-ok: abstract method
 
     async def initialize(self) -> None:
         """
-        Lifecycle initialization with dependency resolution.
+        EnumLifecycle initialization with dependency resolution.
 
         Performs startup tasks common to all node types:
         - Validates container dependencies
@@ -127,15 +131,15 @@ class NodeCoreBase(ABC):
         - Initializes event emission capabilities
 
         Raises:
-            OnexError: If initialization fails or dependencies unavailable
+            ModelOnexError: If initialization fails or dependencies unavailable
         """
         try:
             start_time = time.time()
 
             # Validate container
             if not hasattr(self.container, "get_service"):
-                raise OnexError(
-                    code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message="Container does not implement get_service method",
                     context={
                         "node_id": self.node_id,
@@ -182,8 +186,8 @@ class NodeCoreBase(ABC):
             self.state["status"] = "failed"
             self.metrics["error_count"] += 1
 
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Node initialization failed: {e!s}",
                 context={
                     "node_id": self.node_id,
@@ -263,7 +267,7 @@ class NodeCoreBase(ABC):
         Get node performance and quality metrics.
 
         Returns:
-            Performance metrics dictionary with timing and success metrics
+            Performance metrics dict[str, Any]ionary with timing and success metrics
         """
         # Calculate derived metrics
         total_ops = self.metrics["total_operations"]
@@ -357,7 +361,7 @@ class NodeCoreBase(ABC):
                         {
                             "node_id": self.node_id,
                             "contract_keys": (
-                                list(contract_data_raw.keys())
+                                list[Any](contract_data_raw.keys())
                                 if isinstance(contract_data_raw, dict)
                                 else []
                             ),
@@ -488,11 +492,11 @@ class NodeCoreBase(ABC):
             input_data: Input data to validate
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         if input_data is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Input data cannot be None",
                 context={"node_id": self.node_id, "node_type": self.__class__.__name__},
             )

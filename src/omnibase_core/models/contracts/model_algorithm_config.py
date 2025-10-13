@@ -1,3 +1,7 @@
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Algorithm Configuration Model - ONEX Standards Compliant.
 
@@ -7,9 +11,11 @@ with factors, weights, and execution parameters for contract-driven behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from typing import Any
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from pydantic import BaseModel
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -25,13 +31,13 @@ class ModelAlgorithmConfig(BaseModel):
     """
 
     algorithm_type: str = Field(
-        ...,
+        default=...,
         description="Algorithm type identifier",
         min_length=1,
     )
 
     factors: dict[str, ModelAlgorithmFactorConfig] = Field(
-        ...,
+        default=...,
         description="Algorithm factors with configuration",
     )
 
@@ -57,9 +63,9 @@ class ModelAlgorithmConfig(BaseModel):
         total_weight = sum(factor.weight for factor in v.values())
         if not (0.99 <= total_weight <= 1.01):
             msg = f"Factor weights must sum to 1.0, got {total_weight}"
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),

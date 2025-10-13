@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from pydantic import Field
+
 """
 Retry Conditions Model.
 
@@ -5,11 +9,10 @@ Retry trigger conditions and decision logic.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRetryConditions(BaseModel):
@@ -48,22 +51,22 @@ class ModelRetryConditions(BaseModel):
         return status_code in self.retry_on_status_codes
 
     def add_exception_type(self, exception_type: str) -> None:
-        """Add exception type to retry list."""
+        """Add exception type to retry list[Any]."""
         if exception_type not in self.retry_on_exceptions:
             self.retry_on_exceptions.append(exception_type)
 
     def remove_exception_type(self, exception_type: str) -> None:
-        """Remove exception type from retry list."""
+        """Remove exception type from retry list[Any]."""
         if exception_type in self.retry_on_exceptions:
             self.retry_on_exceptions.remove(exception_type)
 
     def add_status_code(self, status_code: int) -> None:
-        """Add status code to retry list."""
+        """Add status code to retry list[Any]."""
         if status_code not in self.retry_on_status_codes:
             self.retry_on_status_codes.append(status_code)
 
     def remove_status_code(self, status_code: int) -> None:
-        """Remove status code from retry list."""
+        """Remove status code from retry list[Any]."""
         if status_code in self.retry_on_status_codes:
             self.retry_on_status_codes.remove(status_code)
 
@@ -159,7 +162,7 @@ class ModelRetryConditions(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

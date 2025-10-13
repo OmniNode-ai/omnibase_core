@@ -1,29 +1,38 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Node Metadata Info Model.
 
 Simple model for node metadata information used in CLI output.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
 
 # Import SPI protocol directly - no fallback pattern per ONEX standards
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
+from omnibase_core.types.typed_dict_node_metadata_summary import (
+    TypedDictNodeMetadataSummary,
+)
 
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
-from .model_types_node_metadata_summary import ModelNodeMetadataSummaryType
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -106,8 +115,11 @@ class ModelNodeMetadataInfo(BaseModel):
         """Set node health from string."""
         try:
             self.core.health = EnumNodeHealthStatus(value)
-        except ValueError:
-            self.core.health = EnumNodeHealthStatus.UNKNOWN
+        except ValueError as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid health status '{value}': {e}",
+            ) from e
 
     @property
     def version(self) -> ModelSemVer | None:
@@ -270,7 +282,7 @@ class ModelNodeMetadataInfo(BaseModel):
             memory_usage_mb,
         )
 
-    def get_summary(self) -> ModelNodeMetadataSummaryType:
+    def get_summary(self) -> TypedDictNodeMetadataSummary:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
         core_summary = self.core.get_status_summary()
@@ -332,8 +344,11 @@ class ModelNodeMetadataInfo(BaseModel):
         health_str = getattr(node_info, "health", "healthy")
         try:
             core.health = EnumNodeHealthStatus(health_str)
-        except ValueError:
-            core.health = EnumNodeHealthStatus.UNKNOWN
+        except ValueError as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid health status '{health_str}': {e}",
+            ) from e
 
         organization = ModelNodeOrganizationMetadata(
             description=getattr(node_info, "description", None),
@@ -369,15 +384,15 @@ class ModelNodeMetadataInfo(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
         )
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -390,7 +405,7 @@ class ModelNodeMetadataInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -402,7 +417,7 @@ class ModelNodeMetadataInfo(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -416,6 +431,9 @@ class ModelNodeMetadataInfo(BaseModel):
         ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
+
+# NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically
+# ModelMetadataValue is imported at runtime, Pydantic will resolve references lazily
 
 # Export for use
 __all__ = ["ModelNodeMetadataInfo"]

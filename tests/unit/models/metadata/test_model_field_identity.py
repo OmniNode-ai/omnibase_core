@@ -363,3 +363,85 @@ class TestModelFieldIdentityEdgeCases:
         same_id = uuid4()
         identity = ModelFieldIdentity(identity_id=same_id, field_id=same_id)
         assert identity.identity_id == identity.field_id
+
+
+class TestModelFieldIdentityErrorBranches:
+    """Tests for error handling branches in ModelFieldIdentity."""
+
+    def test_get_metadata_with_none_values(self):
+        """Test get_metadata when field values are None (line 91->88 branch)."""
+        identity_id = uuid4()
+        field_id = uuid4()
+        # Create a model with optional fields as None
+        identity = ModelFieldIdentity(
+            identity_id=identity_id,
+            field_id=field_id,
+            identity_display_name=None,  # None value
+            field_display_name=None,  # None value
+        )
+        metadata = identity.get_metadata()
+        # Should not include None values in metadata
+        assert (
+            "identity_display_name" not in metadata
+            or metadata.get("identity_display_name") is not None
+        )
+        assert isinstance(metadata, dict)
+
+    def test_get_metadata_without_common_fields(self):
+        """Test get_metadata when model doesn't have common fields."""
+        identity_id = uuid4()
+        field_id = uuid4()
+        identity = ModelFieldIdentity(identity_id=identity_id, field_id=field_id)
+        metadata = identity.get_metadata()
+        # Should handle missing common fields gracefully
+        assert isinstance(metadata, dict)
+        # Only present fields should be included
+        if "description" in metadata:
+            assert metadata["description"] == ""
+
+    def test_set_metadata_with_invalid_keys(self):
+        """Test set_metadata with keys that don't exist (line 101->100 branch)."""
+        identity_id = uuid4()
+        field_id = uuid4()
+        identity = ModelFieldIdentity(identity_id=identity_id, field_id=field_id)
+        # Try to set a field that doesn't exist
+        result = identity.set_metadata(
+            {
+                "description": "Valid field",
+                "non_existent_field": "Invalid field",  # Should be ignored
+            }
+        )
+        assert result is True
+        assert identity.description == "Valid field"
+        # Non-existent field should not cause error, just be ignored
+
+    def test_set_metadata_with_validation_error(self):
+        """Test set_metadata exception handling (lines 104-105 branch)."""
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        identity_id = uuid4()
+        field_id = uuid4()
+        identity = ModelFieldIdentity(identity_id=identity_id, field_id=field_id)
+
+        # Try to set identity_display_name with invalid pattern (should fail validation)
+        with pytest.raises(ModelOnexError) as exc_info:
+            identity.set_metadata({"identity_display_name": "invalid_lowercase"})
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Operation failed" in str(exc_info.value.message)
+
+    def test_set_metadata_with_type_error(self):
+        """Test set_metadata with wrong type causing exception."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        identity_id = uuid4()
+        field_id = uuid4()
+        identity = ModelFieldIdentity(identity_id=identity_id, field_id=field_id)
+
+        # Try to set field_id to an invalid type
+        with pytest.raises(ModelOnexError) as exc_info:
+            identity.set_metadata({"field_id": "not-a-uuid"})
+
+        assert exc_info.value.error_code
+        assert "Operation failed" in str(exc_info.value.message)

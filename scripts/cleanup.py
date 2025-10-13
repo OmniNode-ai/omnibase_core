@@ -15,7 +15,8 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import List, Pattern
+from re import Pattern
+from typing import List
 
 # Patterns for files and directories to clean up
 CLEANUP_PATTERNS = [
@@ -65,12 +66,12 @@ CLEANUP_DIRECTORIES = [
 ]
 
 
-def compile_patterns(patterns: List[str]) -> List[Pattern]:
+def compile_patterns(patterns: list[str]) -> list[Pattern]:
     """Compile regex patterns for file matching."""
     return [re.compile(pattern) for pattern in patterns]
 
 
-def find_cleanup_files(root_dir: Path, patterns: List[Pattern]) -> List[Path]:
+def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
     """Find files matching cleanup patterns."""
     cleanup_files = []
 

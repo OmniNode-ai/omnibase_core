@@ -1,3 +1,10 @@
+import uuid
+from typing import Any
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Simple Workflow Execution Result Model - ONEX Standards Compliant.
 
@@ -9,7 +16,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.contracts.subcontracts.model_workflow_metrics import (
@@ -33,10 +40,12 @@ class ModelWorkflowExecutionResult(BaseModel):
 
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 
-    status: EnumWorkflowStatus = Field(..., description="Final status of the workflow")
+    status: EnumWorkflowStatus = Field(
+        default=..., description="Final status of the workflow"
+    )
 
     execution_time_ms: int = Field(
-        ...,
+        default=...,
         description="Total execution time in milliseconds",
         ge=0,
     )
@@ -52,7 +61,7 @@ class ModelWorkflowExecutionResult(BaseModel):
     )
 
     coordination_metrics: ModelWorkflowMetrics = Field(
-        ...,
+        default=...,
         description="Performance metrics for the execution",
     )
 

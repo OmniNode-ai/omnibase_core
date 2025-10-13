@@ -1,10 +1,14 @@
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Definition Model - ONEX Standards Compliant.
 
 Model for complete workflow definitions in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_coordination_rules import ModelCoordinationRules
 from .model_execution_graph import ModelExecutionGraph
@@ -15,12 +19,12 @@ class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
 
     workflow_metadata: ModelWorkflowDefinitionMetadata = Field(
-        ...,
+        default=...,
         description="Workflow metadata",
     )
 
     execution_graph: ModelExecutionGraph = Field(
-        ...,
+        default=...,
         description="Execution graph for the workflow",
     )
 

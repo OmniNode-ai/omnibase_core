@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+from typing import TypedDict, Union
+
 """
 Migration plan model for protocol migration operations.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
+from typing import Dict
 
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,

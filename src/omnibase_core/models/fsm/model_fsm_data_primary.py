@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, List
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Strongly-typed FSM data structure model.
 
@@ -5,11 +13,10 @@ Replaces dict[str, Any] usage in FSM operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_fsm_state import ModelFsmState
 from .model_fsm_transition import ModelFsmTransition
@@ -26,25 +33,23 @@ class ModelFsmData(BaseModel):
     - Validatable: Validation and verification
     """
 
-    state_machine_name: str = Field(..., description="Name of the state machine")
+    state_machine_name: str = Field(
+        default=..., description="Name of the state machine"
+    )
     description: str = Field(default="", description="State machine description")
-    initial_state: str = Field(..., description="Initial state name")
-    states: list[ModelFsmState] = Field(..., description="List of states")
+    initial_state: str = Field(default=..., description="Initial state name")
+    states: list[ModelFsmState] = Field(default=..., description="List of states")
     transitions: list[ModelFsmTransition] = Field(
-        ...,
-        description="List of transitions",
+        default=..., description="List of transitions"
     )
     variables: dict[str, str] = Field(
-        default_factory=dict,
-        description="State machine variables",
+        default_factory=dict, description="State machine variables"
     )
     global_actions: list[str] = Field(
-        default_factory=list,
-        description="Global actions available",
+        default_factory=list, description="Global actions available"
     )
     metadata: dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional metadata",
+        default_factory=dict, description="Additional metadata"
     )
 
     def get_state_by_name(self, name: str) -> ModelFsmState | None:
@@ -63,7 +68,7 @@ class ModelFsmData(BaseModel):
         return [t for t in self.transitions if t.to_state == state_name]
 
     def validate_fsm_structure(self) -> list[str]:
-        """Validate FSM structure and return list of validation errors."""
+        """Validate FSM structure and return list[Any]of validation errors."""
         errors = []
 
         if not self.initial_state:
@@ -105,13 +110,13 @@ class ModelFsmData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -121,8 +126,8 @@ class ModelFsmData(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

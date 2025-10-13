@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 External Service Configuration Model.
 
@@ -5,7 +7,7 @@ Defines configuration for external API calls, service
 discovery, authentication, and integration patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 
@@ -19,7 +21,7 @@ class ModelExternalServiceConfig(BaseModel):
     """
 
     service_type: str = Field(
-        ...,
+        default=...,
         description="External service type (rest_api, graphql, grpc, message_queue, etc.)",
         min_length=1,
     )

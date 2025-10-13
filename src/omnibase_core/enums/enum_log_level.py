@@ -1,3 +1,5 @@
+from typing import Literal
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -32,7 +34,7 @@ from enum import Enum
 
 
 class EnumLogLevel(str, Enum):
-    """Log levels enum for SPI LogLevel Literal type and validation."""
+    """Log levels enum based on SPI LogLevel Literal type and severity levels for validation."""
 
     TRACE = "trace"
     DEBUG = "debug"

@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+from typing import Dict, Generic, TypedDict
+
 """
 Result Factory Pattern for Model Creation.
 
 Specialized factory for result-type models with success/error patterns.
 """
 
-from __future__ import annotations
 
 from typing import TypeVar, Unpack
 
@@ -43,7 +46,9 @@ class ModelResultFactory(ModelGenericFactory[T]):
         """Build a success result with standard fields."""
         # Remove conflicting fields and set standard success values
         filtered_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ["success", "error_message"]
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["success", "error_message", "exit_code"]
         }
         return self.model_class(
             success=True,

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Metric Type Enum.
 
 Strongly typed metric type values for infrastructure metrics.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

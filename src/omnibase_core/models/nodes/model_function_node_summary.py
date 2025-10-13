@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Function node summary model.
 
@@ -5,20 +12,18 @@ Simplified, focused summary for function nodes.
 Reduced from excessive fields to essential summary information.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_return_type import EnumReturnType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
@@ -26,7 +31,7 @@ class ModelFunctionNodeSummary(BaseModel):
     """
     Simplified function node summary.
 
-    Focused on essential information for listings and overviews.
+    Focused on essential information for list[Any]ings and overviews.
     Eliminates redundant fields from the original 19-field summary.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
@@ -41,10 +46,10 @@ class ModelFunctionNodeSummary(BaseModel):
         description="Unique identifier for the function entity",
     )
     function_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable function name",
     )
-    description: str | None = Field(None, description="Function description")
+    description: str | None = Field(default=None, description="Function description")
     status: EnumFunctionStatus = Field(
         default=EnumFunctionStatus.ACTIVE,
         description="Function status",
@@ -61,7 +66,7 @@ class ModelFunctionNodeSummary(BaseModel):
     # Function signature summary
     parameter_count: int = Field(default=0, description="Number of parameters")
     return_type: EnumReturnType | None = Field(
-        None,
+        default=None,
         description="Return type annotation",
     )
 
@@ -85,11 +90,13 @@ class ModelFunctionNodeSummary(BaseModel):
     execution_count: int = Field(default=0, description="Number of executions")
 
     # Timestamps (essential only)
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     # Organization (condensed)
     primary_category: EnumActionCategory | None = Field(
-        None,
+        default=None,
         description="Primary function category",
     )
     tag_count: int = Field(default=0, description="Number of tags")
@@ -227,15 +234,15 @@ class ModelFunctionNodeSummary(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
         )
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -248,7 +255,7 @@ class ModelFunctionNodeSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -260,7 +267,7 @@ class ModelFunctionNodeSummary(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

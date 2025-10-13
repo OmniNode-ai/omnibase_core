@@ -1,3 +1,5 @@
+import uuid
+
 """
 UUID Helper Utilities.
 

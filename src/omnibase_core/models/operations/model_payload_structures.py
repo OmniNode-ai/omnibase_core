@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Strongly-typed payload structures.
 
@@ -5,7 +11,6 @@ Replaces dict[str, Any] usage in payloads and message data with structured typin
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from .model_event_payload import ModelEventPayload
 

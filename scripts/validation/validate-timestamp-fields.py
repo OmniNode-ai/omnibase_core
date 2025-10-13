@@ -49,7 +49,7 @@ class TimestampFieldValidator:
             for pattern in self.timestamp_field_patterns
         ]
 
-        self.violations: List[TimestampViolation] = []
+        self.violations: list[TimestampViolation] = []
 
     def is_timestamp_field_name(self, field_name: str) -> bool:
         """Check if field name suggests it should be a timestamp."""
@@ -58,7 +58,7 @@ class TimestampFieldValidator:
     def validate_file(self, file_path: Path) -> None:
         """Validate timestamp fields in a single file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -67,7 +67,7 @@ class TimestampFieldValidator:
         except (SyntaxError, UnicodeDecodeError) as e:
             print(f"⚠️  Skipping {file_path}: {e}")
 
-    def _validate_ast(self, tree: ast.AST, file_path: Path, lines: List[str]) -> None:
+    def _validate_ast(self, tree: ast.AST, file_path: Path, lines: list[str]) -> None:
         """Validate AST for timestamp field violations."""
 
         class TimestampVisitor(ast.NodeVisitor):
@@ -107,18 +107,16 @@ class TimestampFieldValidator:
                             isinstance(node.value.func, ast.Name)
                             and node.value.func.id == "Field"
                         ):
-
                             # Check Field arguments for default_factory with .isoformat()
                             for keyword in node.value.keywords:
                                 if (
                                     keyword.arg == "default_factory"
                                     and self._contains_isoformat(keyword.value)
                                 ):
-
                                     type_annotation = ast.unparse(node.annotation)
                                     if "str" in type_annotation:
                                         violation_type = "isoformat_with_string_type"
-                                        suggested_fix = f"Remove .isoformat() and change type to 'datetime'"
+                                        suggested_fix = "Remove .isoformat() and change type to 'datetime'"
 
                                         self.validator.violations.append(
                                             TimestampViolation(

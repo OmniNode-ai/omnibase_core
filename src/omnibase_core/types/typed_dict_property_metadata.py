@@ -1,7 +1,9 @@
+from typing import Any, Dict
+
 """
 TypedDict for property metadata structures.
 
-This TypedDict provides type safety for property metadata dictionaries
+This TypedDict provides type safety for property metadata dict[str, Any]ionaries
 used in environment properties collection systems.
 """
 

@@ -1,19 +1,20 @@
 """
 Model for representing error context with proper type safety.
 
-This model replaces dictionary usage in error contexts by providing
+This model replaces dict[str, Any]ionary usage in error contexts by providing
 a structured representation of error context data.
 """
 
-from typing import TYPE_CHECKING, Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 if TYPE_CHECKING:
-    from omnibase_core.types.core_types import BasicErrorContext
+    from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
 
 class ModelErrorContext(BaseModel):
@@ -27,21 +28,27 @@ class ModelErrorContext(BaseModel):
     """
 
     # Common error context fields
-    file_path: str | None = Field(None, description="File path related to the error")
+    file_path: str | None = Field(
+        default=None, description="File path related to the error"
+    )
     line_number: int | None = Field(
-        None,
+        default=None,
         description="Line number where error occurred",
     )
     column_number: int | None = Field(
-        None,
+        default=None,
         description="Column number where error occurred",
     )
     function_name: str | None = Field(
-        None,
+        default=None,
         description="Function where error occurred",
     )
-    module_name: str | None = Field(None, description="Module where error occurred")
-    stack_trace: str | None = Field(None, description="Stack trace if available")
+    module_name: str | None = Field(
+        default=None, description="Module where error occurred"
+    )
+    stack_trace: str | None = Field(
+        default=None, description="Stack trace if available"
+    )
 
     # Additional context as schema values
     additional_context: dict[str, ModelSchemaValue] = Field(
@@ -53,7 +60,7 @@ class ModelErrorContext(BaseModel):
     def with_context(
         cls,
         additional_context: dict[str, ModelSchemaValue],
-    ) -> "ModelErrorContext":
+    ) -> ModelErrorContext:
         """
         Create ModelErrorContext with only additional context.
 
@@ -85,7 +92,7 @@ class ModelErrorContext(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -99,39 +106,44 @@ class ModelErrorContext(BaseModel):
         # This is pure data validation without exception throwing
         return True
 
-    def to_simple_context(self) -> "BasicErrorContext":
-        """Convert to BasicErrorContext (no circular dependencies)."""
-        from omnibase_core.types.core_types import BasicErrorContext
-
-        return BasicErrorContext(
-            file_path=self.file_path,
-            line_number=self.line_number,
-            column_number=self.column_number,
-            function_name=self.function_name,
-            module_name=self.module_name,
-            stack_trace=self.stack_trace,
-            additional_context={
+    def to_simple_context(self) -> TypedDictBasicErrorContext:
+        """Convert to TypedDictBasicErrorContext (no circular dependencies)."""
+        simple_context: TypedDictBasicErrorContext = {}
+        if self.file_path is not None:
+            simple_context["file_path"] = self.file_path
+        if self.line_number is not None:
+            simple_context["line_number"] = self.line_number
+        if self.column_number is not None:
+            simple_context["column_number"] = self.column_number
+        if self.function_name is not None:
+            simple_context["function_name"] = self.function_name
+        if self.module_name is not None:
+            simple_context["module_name"] = self.module_name
+        if self.stack_trace is not None:
+            simple_context["stack_trace"] = self.stack_trace
+        if self.additional_context:
+            simple_context["additional_context"] = {
                 k: v.to_value() for k, v in self.additional_context.items()
-            },
-        )
+            }
+        return simple_context
 
     @classmethod
     def from_simple_context(
-        cls, simple_context: "BasicErrorContext"
-    ) -> "ModelErrorContext":
-        """Create from BasicErrorContext."""
+        cls, simple_context: TypedDictBasicErrorContext
+    ) -> ModelErrorContext:
+        """Create from TypedDictBasicErrorContext."""
         # Convert additional context to schema values
         additional_context_models = {
             k: ModelSchemaValue.from_value(v)
-            for k, v in simple_context.additional_context.items()
+            for k, v in simple_context.get("additional_context", {}).items()
         }
 
         return cls(
-            file_path=simple_context.file_path,
-            line_number=simple_context.line_number,
-            column_number=simple_context.column_number,
-            function_name=simple_context.function_name,
-            module_name=simple_context.module_name,
-            stack_trace=simple_context.stack_trace,
+            file_path=simple_context.get("file_path"),
+            line_number=simple_context.get("line_number"),
+            column_number=simple_context.get("column_number"),
+            function_name=simple_context.get("function_name"),
+            module_name=simple_context.get("module_name"),
+            stack_trace=simple_context.get("stack_trace"),
             additional_context=additional_context_models,
         )

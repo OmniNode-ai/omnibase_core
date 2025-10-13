@@ -1,3 +1,5 @@
+from typing import Any
+
 """
 Operation parameter type enumeration.
 
@@ -13,7 +15,7 @@ class EnumOperationParameterType(str, Enum):
     STRING = "string"
     NUMERIC = "numeric"
     BOOLEAN = "boolean"
-    LIST = "list"
+    LIST = "list[Any]"
     NESTED = "nested"
 
 

@@ -1,23 +1,32 @@
+import json
+import uuid
+from typing import Any, Dict, Optional
+
+from pydantic import Field, field_validator, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Model Workflow Dependency - ONEX Standards Compliant Workflow Dependency Specification.
 
 Strongly-typed dependency model for workflow orchestration patterns that eliminates
 legacy string-based dependency support and enforces architectural consistency.
 
-ZERO TOLERANCE: No Any types, string fallbacks, or dict configs allowed.
+ZERO TOLERANCE: No Any types, string fallbacks, or dict[str, Any]configs allowed.
 """
 
 # NO Any imports - ZERO TOLERANCE for Any types
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_workflow_condition import (
     ModelWorkflowCondition,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelWorkflowDependency(BaseModel):
@@ -32,17 +41,17 @@ class ModelWorkflowDependency(BaseModel):
     """
 
     workflow_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique identifier of the workflow this dependency references",
     )
 
     dependent_workflow_id: UUID = Field(
-        ...,
+        default=...,
         description="Unique identifier of the workflow that depends on the referenced workflow",
     )
 
     dependency_type: EnumWorkflowDependencyType = Field(
-        ...,
+        default=...,
         description="Type of dependency relationship between workflows",
     )
 
@@ -84,9 +93,9 @@ class ModelWorkflowDependency(BaseModel):
         if isinstance(v, UUID):
             return v
         # ZERO TOLERANCE: Reject all non-UUID types including strings
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     @field_validator("condition", mode="before")
@@ -99,7 +108,7 @@ class ModelWorkflowDependency(BaseModel):
         Validate condition is ModelWorkflowCondition instance only.
 
         STRONG TYPES ONLY: Accept ModelWorkflowCondition instances ONLY.
-        NO FALLBACKS: Reject dicts, strings, Any types, or other patterns.
+        NO FALLBACKS: Reject dict[str, Any]s, strings, Any types, or other patterns.
         NO YAML CONVERSION: Use proper serialization/deserialization patterns instead.
         ZERO TOLERANCE: Parameter type matches implementation - no Any types allowed.
         """
@@ -109,10 +118,10 @@ class ModelWorkflowDependency(BaseModel):
         if isinstance(v, ModelWorkflowCondition):
             # STRONG TYPE: Already validated ModelWorkflowCondition instance
             return v
-        # STRONG TYPES ONLY: Reject all other types (dicts, strings, Any, etc.)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        # STRONG TYPES ONLY: Reject all other types (dict[str, Any]s, strings, Any, etc.)
+        raise ModelOnexError(
             message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     @model_validator(mode="after")
@@ -124,9 +133,9 @@ class ModelWorkflowDependency(BaseModel):
         to prevent infinite loops in workflow execution.
         """
         if self.workflow_id == self.dependent_workflow_id:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"CIRCULAR DEPENDENCY DETECTED: Workflow {self.workflow_id} cannot depend on itself.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return self
 

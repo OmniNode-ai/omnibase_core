@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import Field
+
 """
 Strongly-typed FSM transition model.
 
@@ -5,9 +11,8 @@ Replaces dict[str, Any] usage in FSM transition operations with structured typin
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelFsmTransition(BaseModel):
@@ -19,16 +24,14 @@ class ModelFsmTransition(BaseModel):
     - Validatable: Validation and verification
     """
 
-    from_state: str = Field(..., description="Source state of transition")
-    to_state: str = Field(..., description="Target state of transition")
-    trigger: str = Field(..., description="Event that triggers the transition")
+    from_state: str = Field(default=..., description="Source state of transition")
+    to_state: str = Field(default=..., description="Target state of transition")
+    trigger: str = Field(default=..., description="Event that triggers the transition")
     conditions: list[str] = Field(
-        default_factory=list,
-        description="Conditions for transition",
+        default_factory=list, description="Conditions for transition"
     )
     actions: list[str] = Field(
-        default_factory=list,
-        description="Actions to execute on transition",
+        default_factory=list, description="Actions to execute on transition"
     )
 
     model_config = {
@@ -53,7 +56,7 @@ class ModelFsmTransition(BaseModel):
         return True
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

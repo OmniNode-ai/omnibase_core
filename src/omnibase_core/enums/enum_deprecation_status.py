@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Deprecation Status Enumeration.
 
@@ -5,7 +7,6 @@ Defines standardized deprecation lifecycle states for functions and other compon
 Part of the ONEX strong typing foundation.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

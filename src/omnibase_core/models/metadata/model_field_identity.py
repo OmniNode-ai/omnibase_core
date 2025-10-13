@@ -1,17 +1,24 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Field identity sub-model.
 
 Part of the metadata field info restructuring to reduce string field violations.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelFieldIdentity(BaseModel):
@@ -24,21 +31,21 @@ class ModelFieldIdentity(BaseModel):
 
     # Core identifiers (UUID pattern)
     identity_id: UUID = Field(
-        ...,
+        default=...,
         description="UUID for field identity identifier",
     )
     identity_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable field name identifier (e.g., METADATA_VERSION)",
         pattern="^[A-Z][A-Z0-9_]*$",
     )
 
     field_id: UUID = Field(
-        ...,
+        default=...,
         description="UUID for actual field name",
     )
     field_display_name: str | None = Field(
-        None,
+        default=None,
         description="Actual field name in models (e.g., metadata_version)",
     )
 
@@ -74,7 +81,7 @@ class ModelFieldIdentity(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -87,20 +94,20 @@ class ModelFieldIdentity(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -110,8 +117,8 @@ class ModelFieldIdentity(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

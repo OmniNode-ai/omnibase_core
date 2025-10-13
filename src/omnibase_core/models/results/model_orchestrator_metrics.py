@@ -1,26 +1,32 @@
+from pydantic import Field
+
 """
 Orchestrator metrics model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelOrchestratorMetrics(BaseModel):
     """Orchestrator performance metrics."""
 
-    active_workflows: int = Field(0, ge=0, description="Number of active workflows")
+    active_workflows: int = Field(
+        default=0, ge=0, description="Number of active workflows"
+    )
     completed_workflows: int = Field(
-        0,
+        default=0,
         ge=0,
         description="Number of completed workflows",
     )
-    failed_workflows: int = Field(0, ge=0, description="Number of failed workflows")
+    failed_workflows: int = Field(
+        default=0, ge=0, description="Number of failed workflows"
+    )
     avg_execution_time_seconds: float | None = Field(
-        None,
+        default=None,
         description="Average execution time",
     )
     resource_utilization_percent: float | None = Field(
-        None,
+        default=None,
         description="Resource utilization",
     )
 

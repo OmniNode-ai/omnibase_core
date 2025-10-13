@@ -1,3 +1,9 @@
+from typing import Dict, List
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 YAML-serializable data structures model with discriminated union.
 
@@ -6,10 +12,10 @@ Author: ONEX Framework Team
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -26,12 +32,16 @@ class ModelYamlValue(BaseModel):
     value_type: EnumYamlValueType = Field(
         description="Type discriminator for the YAML value",
     )
-    schema_value: ModelSchemaValue | None = Field(None, description="Schema value data")
+    schema_value: ModelSchemaValue | None = Field(
+        default=None, description="Schema value data"
+    )
     dict_value: dict[str, "ModelYamlValue"] | None = Field(
-        None,
+        default=None,
         description="Dictionary data",
     )
-    list_value: list["ModelYamlValue"] | None = Field(None, description="List data")
+    list_value: list["ModelYamlValue"] | None = Field(
+        default=None, description="List data"
+    )
 
     @classmethod
     def from_schema_value(cls, value: ModelSchemaValue) -> "ModelYamlValue":
@@ -45,7 +55,7 @@ class ModelYamlValue(BaseModel):
 
     @classmethod
     def from_dict_data(cls, value: dict[str, ModelSchemaValue]) -> "ModelYamlValue":
-        """Create from dictionary of ModelSchemaValue."""
+        """Create from dict[str, Any]ionary of ModelSchemaValue."""
         dict_value = {k: cls.from_schema_value(v) for k, v in value.items()}
         return cls(
             value_type=EnumYamlValueType.DICT,
@@ -56,7 +66,7 @@ class ModelYamlValue(BaseModel):
 
     @classmethod
     def from_list(cls, value: list[ModelSchemaValue]) -> "ModelYamlValue":
-        """Create from list of ModelSchemaValue."""
+        """Create from list[Any]of ModelSchemaValue."""
         list_value = [cls.from_schema_value(v) for v in value]
         return cls(
             value_type=EnumYamlValueType.LIST,
@@ -73,8 +83,8 @@ class ModelYamlValue(BaseModel):
             return {k: v.to_serializable() for k, v in (self.dict_value or {}).items()}
         if self.value_type == EnumYamlValueType.LIST:
             return [v.to_serializable() for v in (self.list_value or [])]
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid value_type: {self.value_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -98,22 +108,22 @@ class ModelYamlValue(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

@@ -3,6 +3,7 @@
 Cross-platform timeout compatibility test.
 Verifies timeout functionality works on both Windows and Unix systems.
 """
+
 import os
 import sys
 import threading
@@ -238,7 +239,7 @@ def test_ruff_try003_compliance():
             time.sleep(0.2)
     except TimeoutError as e:
         expected = TIMEOUT_ERROR_MESSAGES["validation"]
-        assert str(e) == expected, f"Expected '{expected}', got '{str(e)}'"
+        assert str(e) == expected, f"Expected '{expected}', got '{e!s}'"
         print("  ✅ timeout_context uses constants for error messages")
 
     # Test that CrossPlatformTimeout can use custom messages

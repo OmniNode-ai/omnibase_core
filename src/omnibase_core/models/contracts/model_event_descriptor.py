@@ -1,3 +1,9 @@
+from typing import Any
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Event Descriptor Model - ONEX Standards Compliant.
 
@@ -7,9 +13,7 @@ for published events in the Event Registry system.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from pydantic import BaseModel
 
 
 class ModelEventDescriptor(BaseModel):
@@ -21,21 +25,23 @@ class ModelEventDescriptor(BaseModel):
     """
 
     event_name: str = Field(
-        ...,
+        default=...,
         description="Unique event name identifier",
         min_length=1,
     )
 
-    event_type: str = Field(..., description="Event type classification", min_length=1)
+    event_type: str = Field(
+        default=..., description="Event type classification", min_length=1
+    )
 
     schema_reference: str = Field(
-        ...,
+        default=...,
         description="Reference to event schema definition",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable event description",
         min_length=1,
     )

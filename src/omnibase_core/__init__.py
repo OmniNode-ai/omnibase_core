@@ -1,5 +1,5 @@
 """
-Omnibase Core - ONEX Four-Node Architecture Implementation
+Omnibase Core - ONEX Four-Node ModelArchitecture Implementation
 
 Main module for the omnibase_core package following ONEX standards.
 
@@ -31,14 +31,20 @@ Validation Tools:
         python -m omnibase_core.validation all
 """
 
-from omnibase_core.errors import CoreErrorCode, OnexError
+# Lazy import to avoid circular dependencies
+# Import error classes and validation functions only when accessed
 
-# No typing imports needed for lazy loading
 
-
-# Lazy import validation functions to avoid import penalty
-# Import validation functions only when accessed to improve startup performance
 def __getattr__(name: str) -> object:
+    # Import error classes lazily to break circular dependency
+    if name == "EnumCoreErrorCode":
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
+        return EnumCoreErrorCode
+    if name == "ModelOnexError":
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        return ModelOnexError
     if name in {
         "ValidationResult",
         "ModelValidationSuite",
@@ -60,15 +66,23 @@ def __getattr__(name: str) -> object:
 
         # Return the requested attribute from validation module
         return locals()[name]
+
+    # Import here to avoid circular dependency
+    from omnibase_core.errors.error_codes import EnumCoreErrorCode
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+
     msg = f"module '{__name__}' has no attribute '{name}'"
-    raise OnexError(
-        code=CoreErrorCode.IMPORT_ERROR,
+    raise ModelOnexError(
+        error_code=EnumCoreErrorCode.IMPORT_ERROR,
         message=msg,
         details={"module": __name__, "attribute": name},
     )
 
 
 __all__ = [
+    # Error classes (commonly used)
+    "EnumCoreErrorCode",
+    "ModelOnexError",
     # Validation tools (main exports for other repositories)
     "ModelValidationSuite",
     "ValidationResult",

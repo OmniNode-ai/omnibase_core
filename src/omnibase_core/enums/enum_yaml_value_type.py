@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+from typing import Any
+
 """
 YAML Value Type Enum.
 
 Strongly typed enumeration for YAML value type discriminators.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -20,8 +23,8 @@ class EnumYamlValueType(str, Enum):
     """
 
     SCHEMA_VALUE = "schema_value"
-    DICT = "dict"
-    LIST = "list"
+    DICT = "dict[str, Any]"
+    LIST = "list[Any]"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

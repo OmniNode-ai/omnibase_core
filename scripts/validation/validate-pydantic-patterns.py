@@ -149,15 +149,13 @@ class PydanticPatternValidator:
         findings = []
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 for line_num, line in enumerate(f, 1):
                     # Skip comments and docstrings
                     stripped = line.strip()
                     if (
-                        stripped.startswith("#")
-                        or stripped.startswith('"""')
-                        or stripped.startswith("'''")
-                        or '"""' in stripped  # Skip inline docstrings
+                        stripped.startswith(("#", '"""', "'''"))
+                        or '"""' in stripped
                         or "'''" in stripped
                     ):
                         continue
@@ -207,7 +205,7 @@ class PydanticPatternValidator:
 
         # Read a few lines around this line for context
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 lines = f.readlines()
 
             # Look at surrounding lines for context (±5 lines)
@@ -275,7 +273,7 @@ class PydanticPatternValidator:
 
         # Report findings
         if files_with_issues:
-            print(f"\n🚨 FILES WITH LEGACY PYDANTIC PATTERNS:")
+            print("\n🚨 FILES WITH LEGACY PYDANTIC PATTERNS:")
             for file_path, findings in files_with_issues.items():
                 print(f"\n   📄 {file_path} ({len(findings)} issues):")
 
@@ -320,10 +318,10 @@ class PydanticPatternValidator:
 
         # Success message
         if total_errors == 0 and total_warnings == 0:
-            print(f"\n✅ EXCELLENT: No legacy Pydantic patterns found!")
+            print("\n✅ EXCELLENT: No legacy Pydantic patterns found!")
             print("   🎉 Full Pydantic v2 compliance maintained!")
 
-        print(f"\n📊 PYDANTIC VALIDATION SUMMARY")
+        print("\n📊 PYDANTIC VALIDATION SUMMARY")
         print("=" * 55)
         print(f"Total errors: {total_errors}")
         print(f"Total warnings: {total_warnings}")
@@ -379,11 +377,11 @@ Examples:
     success = validator.validate_project(args.src_dir, allowed_errors=args.allow_errors)
 
     if not success:
-        print(f"\n🚫 Pydantic pattern validation failed!")
-        print(f"💡 Run this script with --help for usage information")
+        print("\n🚫 Pydantic pattern validation failed!")
+        print("💡 Run this script with --help for usage information")
         sys.exit(1)
     else:
-        print(f"\n✅ Pydantic pattern validation passed!")
+        print("\n✅ Pydantic pattern validation passed!")
 
 
 if __name__ == "__main__":

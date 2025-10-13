@@ -4,6 +4,10 @@ Node Management Models
 Models for node definitions, capabilities, configurations, and information.
 """
 
+from omnibase_core.types.typed_dict_deprecation_summary import (
+    TypedDictDeprecationSummary,
+)
+
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_node import ModelFunctionNode
@@ -47,6 +51,7 @@ __all__ = [
     "ModelNodeFeatureFlags",
     "ModelNodeConnectionSettings",
     "ModelFunctionDocumentation",
+    "TypedDictDeprecationSummary",
     "ModelFunctionDeprecationInfo",
     "ModelFunctionRelationships",
     "ModelNodeCoreInfo",
@@ -57,3 +62,7 @@ __all__ = [
     "ModelNodeCoreInfoSummary",
     "ModelNodeType",
 ]
+
+# NOTE: model_rebuild() calls removed - Pydantic v2 handles forward references automatically
+# The explicit rebuilds at module level caused import failures for forward references
+# Pydantic will rebuild models lazily when first accessed

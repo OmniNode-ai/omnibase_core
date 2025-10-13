@@ -1,3 +1,8 @@
+import uuid
+from collections.abc import Callable
+from datetime import datetime
+from typing import Dict, TypeVar
+
 """
 Core emit_log_event utility for ONEX structured logging.
 
@@ -10,13 +15,13 @@ Python's logging module to maintain architectural purity and centralized process
 
 import inspect
 import os
-from collections.abc import Callable
-from datetime import UTC, datetime
-from typing import Any, TypeVar
+from collections.abc import Callable as CallableABC
+from datetime import UTC
+from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.models.core.model_log_context import LogModelContext
+from omnibase_core.models.core.model_log_context import ModelLogContext
 
 # Type aliases for logging infrastructure (BOUNDARY_LAYER_EXCEPTION)
 # These types support logging resilience by allowing flexible identifiers
@@ -26,6 +31,35 @@ LogNodeIdentifier = UUID | str
 # needs to accept various types while sanitization ensures JSON compatibility
 LogDataValue = Any
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _validate_node_id(node_id: LogNodeIdentifier | None) -> UUID | None:
+    """
+    Convert LogNodeIdentifier to UUID, validating string conversions.
+
+    Args:
+        node_id: UUID, str, or None
+
+    Returns:
+        UUID if valid, None otherwise
+
+    Note:
+        BOUNDARY_LAYER_EXCEPTION - This function handles the boundary between
+        flexible LogNodeIdentifier (UUID | str) and strict UUID types.
+        String fallbacks from _detect_node_id_from_context() are converted
+        to None to maintain type safety in downstream consumers.
+    """
+    if node_id is None:
+        return None
+    if isinstance(node_id, UUID):
+        return node_id
+    if isinstance(node_id, str):
+        try:
+            return UUID(node_id)
+        except ValueError:
+            # String is not a valid UUID (e.g., module name, "unknown")
+            return None
+    return None  # type: ignore[unreachable]
 
 
 def emit_log_event(
@@ -75,7 +109,7 @@ def emit_log_event(
         level=level,
         event_type=event_type,
         message=sanitized_message,
-        node_id=node_id,
+        node_id=_validate_node_id(node_id),
         correlation_id=correlation_id,
         context=context,
         data=sanitized_data,
@@ -114,7 +148,7 @@ def emit_log_event_with_new_correlation(
         event_type=event_type,
         message=message,
         correlation_id=correlation_id,
-        node_id=node_id,
+        node_id=_validate_node_id(node_id),
         data=data,
         event_bus=event_bus,
     )
@@ -147,7 +181,7 @@ def emit_log_event_sync(
         event_type=event_type,
         message=message,
         correlation_id=correlation_id,
-        node_id=node_id,
+        node_id=_validate_node_id(node_id),
         data=data,
         event_bus=event_bus,
     )
@@ -183,7 +217,7 @@ async def emit_log_event_async(
         event_type=event_type,
         message=message,
         correlation_id=correlation_id,
-        node_id=node_id,
+        node_id=_validate_node_id(node_id),
         data=data,
         event_bus=event_bus,
     )
@@ -439,7 +473,31 @@ _SENSITIVE_PATTERNS = [
         ),
         "access_token=[REDACTED]",
     ),  # Access tokens
+    (
+        re.compile(r'\btoken["\']?\s*[:=]\s*["\']?[^,}\s]+["}]?', re.IGNORECASE),
+        "token=[REDACTED]",
+    ),  # Generic tokens
 ]
+
+# Sensitive key names that should trigger value redaction
+_SENSITIVE_KEY_NAMES = {
+    "password",
+    "passwd",
+    "pwd",
+    "api_key",
+    "apikey",
+    "api-key",
+    "secret",
+    "token",
+    "access_token",
+    "refresh_token",
+    "auth_token",
+    "authorization",
+    "credentials",
+    "private_key",
+    "privatekey",
+    "private-key",
+}
 
 
 def _sanitize_sensitive_data(text: str) -> str:
@@ -466,13 +524,13 @@ def _sanitize_data_dict(
     data: dict[str, LogDataValue | None],
 ) -> dict[str, LogDataValue | None]:
     """
-    Sanitize sensitive data in a data dictionary and ensure JSON compatibility.
+    Sanitize sensitive data in a data dict[str, Any]ionary and ensure JSON compatibility.
 
     Args:
         data: Dictionary to sanitize
 
     Returns:
-        Sanitized dictionary with JSON-compatible values
+        Sanitized dict[str, Any]ionary with JSON-compatible values
     """
     if not isinstance(data, dict):
         return data  # type: ignore[unreachable, return-value]
@@ -482,17 +540,23 @@ def _sanitize_data_dict(
         # Sanitize key names that might contain sensitive info
         sanitized_key = _sanitize_sensitive_data(str(key))
 
+        # Check if the key name itself is sensitive (case-insensitive)
+        key_lower = str(key).lower().replace("-", "_")
+        is_sensitive_key = key_lower in _SENSITIVE_KEY_NAMES
+
         # Validate and sanitize values to ensure JSON compatibility
         sanitized_value: Any | None
-        if isinstance(value, str):
+        if is_sensitive_key:
+            # Automatically redact values for sensitive keys
+            sanitized_value = "[REDACTED]"
+        elif isinstance(value, str):
             sanitized_value = _sanitize_sensitive_data(value)
-        elif isinstance(value, bool):  # Check bool first (bool is subclass of int)
-            sanitized_value = value
-        elif isinstance(value, int):
-            sanitized_value = value
-        elif isinstance(value, float):
-            sanitized_value = value
-        elif value is None:
+        elif (
+            isinstance(value, bool)
+            or isinstance(value, int)
+            or isinstance(value, float)
+            or value is None
+        ):  # Check bool first (bool is subclass of int)
             sanitized_value = value
         else:
             # Convert non-JSON-compatible types to string representation
@@ -510,7 +574,7 @@ def _get_or_generate_correlation_id() -> str:
     if correlation_id:
         return correlation_id
 
-    # UUID Architecture: Use centralized UUID service for consistent generation
+    # UUID ModelArchitecture: Use centralized UUID service for consistent generation
     return str(uuid4())[:8]
 
 
@@ -562,26 +626,41 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
         del original_frame
 
 
-def _create_log_context_from_frame() -> LogModelContext:
+def _create_log_context_from_frame() -> ModelLogContext:
     """Create log context from the calling frame."""
     frame = inspect.currentframe()
 
     # Walk up the stack to get the actual caller
     if frame and frame.f_back and frame.f_back.f_back:
         frame = frame.f_back.f_back
-        return LogModelContext(
+        node_id_raw = _detect_node_id_from_context()
+
+        # Convert node_id_raw to UUID if valid, otherwise None
+        # _detect_node_id_from_context() returns UUID | str (fallback strings like module names)
+        # ModelLogContext expects UUID | None, so we must validate string conversion
+        node_id_value: UUID | None
+        if isinstance(node_id_raw, str):
+            try:
+                node_id_value = UUID(node_id_raw)
+            except ValueError:
+                # String is not a valid UUID (e.g., module name, "unknown")
+                node_id_value = None
+        else:
+            node_id_value = node_id_raw
+
+        return ModelLogContext(
             calling_function=frame.f_code.co_name,
             calling_module=frame.f_globals.get("__name__", "unknown"),
             calling_line=frame.f_lineno,
             timestamp=datetime.now(UTC).isoformat(),
-            node_id=_detect_node_id_from_context(),
+            node_id=node_id_value,
         )
-    return LogModelContext(
+    return ModelLogContext(
         calling_function="unknown",
         calling_module="unknown",
         calling_line=0,
         timestamp=datetime.now(UTC).isoformat(),
-        node_id="unknown",
+        node_id=UUID("00000000-0000-0000-0000-000000000000"),
     )
 
 
@@ -612,9 +691,9 @@ def _route_to_logger_node(
     level: LogLevel,
     event_type: str,
     message: str,
-    node_id: LogNodeIdentifier,
+    node_id: UUID | None,
     correlation_id: UUID,
-    context: LogModelContext,
+    context: ModelLogContext,
     data: dict[str, LogDataValue | None],
     event_bus: Any | None,
 ) -> None:
@@ -625,8 +704,7 @@ def _route_to_logger_node(
     with smart formatting and output handling via protocol abstractions.
 
     Args:
-        node_id: BOUNDARY_LAYER_EXCEPTION - accepts UUID | str for logging
-            infrastructure resilience (see emit_log_event for rationale).
+        node_id: Validated UUID or None (validated via _validate_node_id).
     """
     global _cached_formatter, _cached_output_handler, _cache_timestamp, _cache_ttl, _cache_lock
 
@@ -646,7 +724,11 @@ def _route_to_logger_node(
                 cache_expired = (current_time - _cache_timestamp) > _cache_ttl
 
                 # Re-check after lock acquisition (may have changed)
-                if _cached_formatter is None or _cached_output_handler is None or cache_expired:  # type: ignore[unreachable]
+                if (
+                    _cached_formatter is None  # type: ignore[unreachable]
+                    or _cached_output_handler is None
+                    or cache_expired
+                ):
                     from omnibase_core.models.container.model_onex_container import (
                         ModelONEXContainer,
                     )

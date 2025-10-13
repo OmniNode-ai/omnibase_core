@@ -19,10 +19,11 @@ from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_dependency import ModelDependency
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 # Concrete implementation for testing abstract base class
@@ -171,27 +172,28 @@ class TestModelContractBase:
         assert contract.node_type == EnumNodeType.COMPUTE
 
     def test_node_type_invalid_string_raises_onex_error(self):
-        """Test node_type validation with invalid string raises OnexError."""
+        """Test node_type validation with invalid string raises ModelOnexError."""
         data = {**self.minimal_valid_data, "node_type": "invalid_node_type"}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "invalid_node_type" in error.message
         assert "valid EnumNodeType value" in error.message
-        assert error.details is not None
+        assert error.model.context is not None
+        assert "invalid_value" in error.model.context
 
     def test_node_type_invalid_type_raises_onex_error(self):
-        """Test node_type validation with invalid type raises OnexError."""
+        """Test node_type validation with invalid type raises ModelOnexError."""
         data = {**self.minimal_valid_data, "node_type": 123}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "EnumNodeType enum or valid string" in error.message
 
     # =================== DEPENDENCY VALIDATION TESTS ===================
@@ -242,14 +244,14 @@ class TestModelContractBase:
         assert contract.dependencies[0].dependency_type == EnumDependencyType.PROTOCOL
 
     def test_dependencies_validation_invalid_type_raises_onex_error(self):
-        """Test dependencies validation with invalid type raises OnexError."""
+        """Test dependencies validation with invalid type raises ModelOnexError."""
         data = {**self.minimal_valid_data, "dependencies": "invalid_string"}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "must be a list" in error.message
 
     def test_dependencies_validation_string_dependency_security_rejection(self):
@@ -258,13 +260,13 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": string_deps}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Batch validation failed" in error.message
-        assert "string_dependency" in str(error.details)
+        assert "string_dependency" in str(error.model.context)
 
     def test_dependencies_memory_safety_limit_enforcement(self):
         """Test dependencies validation enforces memory safety limits."""
@@ -275,11 +277,11 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": large_deps}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Too many dependencies" in error.message
         assert "101" in error.message
         assert "100" in error.message
@@ -295,11 +297,11 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": mixed_deps}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Batch validation failed" in error.message
 
     # =================== POST-INIT VALIDATION TESTS ===================
@@ -314,11 +316,11 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": [self_dep]}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Direct circular dependency" in error.message
         assert "test_contract" in error.message
 
@@ -331,11 +333,11 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": dup_deps}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Duplicate dependency detected" in error.message
 
     def test_circular_dependency_detection_module_reference(self):
@@ -348,11 +350,11 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": [module_dep]}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Potential circular dependency" in error.message
 
     def test_dependency_complexity_limit_enforcement(self):
@@ -364,11 +366,11 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "dependencies": many_deps}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "too many dependencies" in error.message
         assert "51" in error.message
 
@@ -388,26 +390,10 @@ class TestModelContractBase:
             "protocol_interfaces": ["omnibase_core.invalid.interface"],
         }
         with pytest.raises(
-            ValueError,
+            ModelOnexError,
             match="Protocol interface must contain 'protocol'",
         ):
             TestableContractModel(**invalid_data)
-
-    # =================== ERROR CONTEXT CREATION TESTS ===================
-
-    def test_create_error_context_helper(self):
-        """Test _create_error_context helper method functionality."""
-        context_dict = {
-            "test_key": "test_value",
-            "numeric_key": 42,
-            "boolean_key": True,
-        }
-
-        error_context = TestableContractModel._create_error_context(context_dict)
-
-        assert error_context is not None
-        # Verify the context contains the expected schema values
-        assert len(error_context.additional_context) == 3
 
     # =================== MEMORY SAFETY AND PERFORMANCE TESTS ===================
 
@@ -518,10 +504,10 @@ class TestModelContractBase:
     # =================== INTEGRATION WITH ONEX ERROR SYSTEM ===================
 
     def test_onex_error_exception_chaining_preservation(self):
-        """Test that OnexError properly chains underlying exceptions."""
+        """Test that ModelOnexError properly chains underlying exceptions."""
         data = {**self.minimal_valid_data, "node_type": "invalid_enum_value"}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
@@ -529,16 +515,16 @@ class TestModelContractBase:
         assert error.__cause__ is not None or error.__context__ is not None
 
     def test_onex_error_context_details_completeness(self):
-        """Test that OnexError includes complete context details."""
+        """Test that ModelOnexError includes complete context details."""
         data = {**self.minimal_valid_data, "dependencies": "invalid_type"}
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             TestableContractModel(**data)
 
         error = exc_info.value
-        assert error.details is not None
+        assert error.model.context is not None
         # Verify context contains helpful information
-        details_str = str(error.details)
-        assert "input_type" in details_str
-        assert "expected_type" in details_str
-        assert "example" in details_str
+        context = error.model.context
+        assert "input_type" in context
+        assert "expected_type" in context
+        assert "example" in context

@@ -1,0 +1,180 @@
+---
+description: Creating PR descriptions
+globs:
+alwaysApply: false
+---
+# PULL REQUEST (PR) DESCRIPTION RULE
+
+## Template
+All PR descriptions **must** use the canonical template at:
+`src/omnibase/templates/dev_logs/template_pr_description.md`
+
+## Stamping
+All PR description files **must** be stamped with an ONEX metadata block at the top, using the same handler/mixin logic as debug and velocity logs. Stamping must be idempotent and policy-driven.
+
+**IMPORTANT**: Only use the stamped metadata block (HTML comments format: `<!-- === OmniNode:Metadata === ... <!-- === /OmniNode:Metadata === -->`). Do NOT add manual metadata blocks with hash comments (`# === OmniNode:Metadata ===`). The stamper will handle all metadata automatically.
+
+## Location & Naming
+- All PR descriptions must be saved in `docs_private/dev_logs/jonah/pr/` (NOT `work_tickets/pr/`).
+- Filename must be: `pr_description_<YYYY_MM_DD>_<descriptive_name>.md` (e.g., `pr_description_2025_07_12_service_026_consul_watcher_system.md`).
+- For numbered PRs, use: `pr_description_<YYYY_MM_DD>_pr<PRNUMBER>.md` format.
+- **Auto-Date Generation**: Always use current date from `date +"%Y_%m_%d"` command.
+
+## Required Sections & Fields
+Each PR description MUST include the following sections and fields:
+
+- **PR Title**: Short, descriptive summary
+- **Branch**: Source → target (e.g., feature/foo → main)
+- **PR ID or Link**: (Optional) Unique identifier or URL for the PR
+- **Summary of Changes**: 1–2 sentence overview
+- **Key Achievements**: Bulleted, grouped by area (e.g., Registry, Test Coverage, Documentation)
+- **Prompts & Actions (Chronological)**: Timestamped, agent-attributed log of actions, with unique IDs if available
+- **Major Milestones**: Bulleted summary of most important outcomes
+- **Blockers / Next Steps**: Explicit list of unresolved issues and future actions
+- **Metrics**:
+  - `Lines Changed`: "+X / -Y" (insertions/deletions)
+  - `Files Modified`: Integer
+  - `Time Spent`: Duration (if tracked)
+- **Related Issues/Tickets**: (Optional) List of issue IDs or links closed/resolved by this PR
+- **Breaking Changes**: (Optional) Any changes that require migration or special attention
+- **Migration/Upgrade Notes**: (Optional) Steps required for users after merge
+- **Documentation Impact**: (Optional) What docs were updated or need updating
+- **Test Coverage**: (Optional) Summary of new/updated tests, coverage delta
+- **Security/Compliance Notes**: (Optional) Any relevant security, privacy, or compliance considerations
+- **Reviewer(s)**: (Optional) Who is expected to review/approve
+- **Release Notes Snippet**: (Optional) Suggested changelog entry
+
+## Field Definitions
+- All fields are REQUIRED unless otherwise noted.
+- Timestamps: ISO 8601 with timezone (e.g., 2025-05-05T09:15:00-04:00)
+- Agent: Name or handle of the person or bot responsible for the action
+- For multi-feature PRs, group achievements and actions by feature or area if possible.
+
+## Output Format
+All PR descriptions MUST be written in Markdown, using the canonical template (see above).
+
+---
+
+## Rationale
+This ensures all PR descriptions are:
+- Traceable and auditable
+- Consistently formatted and metadata-stamped
+- Easy to locate and review
+- Compatible with ONEX provenance and observability standards
+
+## Automation Triggers
+When the user requests any of the following, automatically create a PR description AND create a FULL PULL REQUEST:
+- "create a PR description"
+- "write the PR description"
+- "generate PR description"
+- "do the PR description process"
+- "go through our pr description process"
+- "create a PR"
+- "create a pr"
+- "make a pull request"
+- "submit for review"
+- "create pull request"
+- "submit PR"
+
+## Automated Process
+Execute this **COMPLETE WORKFLOW** when triggered to create both description and pull request:
+
+### **Phase 1: PR Description Creation**
+1. **Gather Git Statistics**: Run `git diff --stat main..HEAD` or `git diff --stat HEAD~1..HEAD`
+2. **Analyze Changes**: Review changed/added files for impact assessment
+3. **Check Work Tickets**: Look for related service tickets or work items
+4. **Generate Content**: Use template with comprehensive technical analysis
+5. **Save to Correct Location**: `docs/dev_logs/pr/` with proper naming
+
+### **Phase 2: Pull Request Creation (AUTOMATIC)**
+6. **Create FULL PR**: Use `gh pr create` with the generated description as body
+7. **Set Title**: Extract meaningful title from branch name or main feature
+8. **Target Branch**: **ALWAYS default to `development`** unless user explicitly specifies another target branch
+9. **Return URL**: Provide the created PR URL to user for immediate access
+10. **Confirm Success**: Verify PR was created and provide next steps
+
+### **Phase 3: Automated Code Review (MANDATORY)**
+11. **Change Mode**: Automatically switch to `[MODE: CODE REVIEW - STANDARDS]`
+12. **File Analysis**: Get all Python files in the PR: `git diff --name-only development..HEAD | grep -E "\.(py)$"`
+13. **Standards Checks**:
+    - `Any` imports and `Dict[str, Any]` usage violations
+    - Naming convention violations (tool_, model_, enum_ prefixes)
+    - Anti-pattern detection (direct tool instantiation, telescoping constructors)
+    - Type safety enforcement (strongest typing possible)
+14. **Fix Violations**: Address all found deficiencies immediately
+15. **Commit Fixes**: Use proper commit messages for standards compliance
+16. **Report Results**: Summarize all fixes applied to the user
+
+### **PR Creation Command Format**
+```bash
+# Get current date automatically
+CURRENT_DATE=$(date +"%Y_%m_%d")
+
+# Default command (targets development branch)
+gh pr create --title "<Extracted Title>" --body "$(cat docs_private/dev_logs/jonah/pr/pr_description_${CURRENT_DATE}_<name>.md)" --base development
+
+# Override command (when user specifies different target)
+gh pr create --title "<Extracted Title>" --body "$(cat docs_private/dev_logs/jonah/pr/pr_description_${CURRENT_DATE}_<name>.md)" --base <user-specified-branch>
+```
+
+### **Title Generation Rules**
+- Extract feature name from branch (e.g., `feature/service_026_consul_watcher` → "Service 026: Consul Watcher System")
+- Use main accomplishment if branch name unclear
+- Keep under 72 characters for GitHub display
+- Follow format: "Service XXX: <Description>" or "<Feature>: <Description>"
+
+### **Branch Detection & Targeting**
+- **Current Branch**: Use `git branch --show-current` to get source branch
+- **Target Branch**: **ALWAYS default to `development`** unless user explicitly states:
+  - "target main"
+  - "to main branch"
+  - "merge to main"
+  - "base branch main"
+  - Or similar explicit override
+- **Validation**: Ensure target branch exists with `git branch -r --list origin/<target>`
+- **Confirmation**: Always show target branch before creating PR
+
+### **User Override Examples**
+- "create PR to main" → targets main branch
+- "submit PR targeting production" → targets production branch
+- "create PR" (no target specified) → **defaults to development branch**
+- "create a pr" (no target specified) → **defaults to development branch**
+- "generate PR description and submit to main" → targets main branch
+
+### **Error Handling**
+- If `gh` CLI not installed: Provide clear installation instructions
+- If not authenticated: Guide user through `gh auth login`
+- If target branch doesn't exist: Ask user to specify valid target
+- If PR creation fails: Show error and suggest manual creation steps
+- If no changes to commit: Inform user and skip PR creation
+
+### **Success Response Format**
+Upon successful PR creation, always provide:
+```
+✅ Pull Request Created Successfully!
+
+📋 PR Description: docs/dev_logs/pr/pr_description_YYYY_MM_DD_<name>.md
+🔗 PR URL: https://github.com/owner/repo/pull/###
+🎯 Target Branch: development (or user-specified branch)
+📊 Changes: +X lines / -Y lines across Z files
+
+Next Steps:
+- Review the PR description for accuracy
+- Wait for reviewer assignment and feedback
+- Address any review comments
+```
+
+## Enforcement
+- Directory and naming compliance is enforced. PR descriptions not following this rule will be rejected in review.
+- Automated checks may be used to enforce this rule.
+- Any deviation must be justified in the PR and reviewed by maintainers.
+- **AUTOMATIC PR CREATION**: This rule will automatically create the full pull request unless explicitly disabled by the user.
+
+## Special Notes
+- Each PR description is considered authoritative upon creation.
+- All descriptions must be reviewable, versionable, and extendable.
+- Do not omit any required section or field.
+- Optional fields should be included when relevant; otherwise, state 'None'.
+- The PR description should be scoped only to the changes in the branch being merged.
+- **DEFAULT BEHAVIOR**: The rule creates a COMPLETE pull request to the development branch by default.
+- **OVERRIDE CAPABILITY**: Users can specify a different target branch if needed.

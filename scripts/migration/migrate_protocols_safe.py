@@ -54,7 +54,7 @@ class SafeProtocolMigrator:
         self.migration_log.append(log_entry)
         print(f"{'🔍' if self.dry_run else '✅'} {log_entry}")
 
-    def find_source_protocols(self) -> List[ProtocolInfo]:
+    def find_source_protocols(self) -> list[ProtocolInfo]:
         """Find all protocols in source repository."""
         protocols = []
         src_path = self.source_repo / "src"
@@ -75,7 +75,7 @@ class SafeProtocolMigrator:
 
         return protocols
 
-    def find_spi_protocols(self) -> List[ProtocolInfo]:
+    def find_spi_protocols(self) -> list[ProtocolInfo]:
         """Find all existing protocols in omnibase_spi."""
         protocols = []
         spi_src = self.spi_repo / "src" / "omnibase_spi" / "protocols"
@@ -96,7 +96,7 @@ class SafeProtocolMigrator:
         return protocols
 
     def check_for_duplicates(
-        self, source_protocol: ProtocolInfo, spi_protocols: List[ProtocolInfo]
+        self, source_protocol: ProtocolInfo, spi_protocols: list[ProtocolInfo]
     ) -> Optional[ProtocolInfo]:
         """Check if protocol already exists in SPI."""
 
@@ -264,10 +264,8 @@ class SafeProtocolMigrator:
                 continue
 
             # Replace local protocol imports
-            if (
-                f"import {protocol_name}" in line
-                or f"from " in line
-                and protocol_name in line
+            if f"import {protocol_name}" in line or (
+                "from " in line and protocol_name in line
             ):
                 # Convert to SPI import
                 new_import = (
@@ -289,7 +287,7 @@ class SafeProtocolMigrator:
 
         self.log_action("REMOVE", f"Deleted source file: {source_file}")
 
-    def migrate_protocols(self, specific_protocol: Optional[str] = None) -> Dict:
+    def migrate_protocols(self, specific_protocol: Optional[str] = None) -> dict:
         """Execute complete protocol migration with safety checks."""
         results = {"migrated": [], "skipped": [], "conflicts": [], "errors": []}
 
@@ -353,7 +351,7 @@ class SafeProtocolMigrator:
 
         return results
 
-    def generate_summary_report(self, results: Dict):
+    def generate_summary_report(self, results: dict):
         """Generate migration summary report."""
         print("\n" + "=" * 80)
         print("📋 PROTOCOL MIGRATION SUMMARY")
@@ -431,10 +429,10 @@ def main():
     success = migrator.generate_summary_report(results)
 
     if success:
-        print(f"\n✅ Migration completed successfully!")
+        print("\n✅ Migration completed successfully!")
         sys.exit(0)
     else:
-        print(f"\n❌ Migration completed with issues - check conflicts and errors")
+        print("\n❌ Migration completed with issues - check conflicts and errors")
         sys.exit(1)
 
 

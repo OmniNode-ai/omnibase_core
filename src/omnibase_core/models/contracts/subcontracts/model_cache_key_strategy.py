@@ -1,10 +1,12 @@
+from pydantic import Field
+
 """
 Cache Key Strategy Model - ONEX Standards Compliant.
 
 Model for cache key generation strategies in the ONEX caching system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCacheKeyStrategy(BaseModel):
@@ -16,7 +18,7 @@ class ModelCacheKeyStrategy(BaseModel):
     """
 
     key_generation_method: str = Field(
-        ...,
+        default=...,
         description="Method for generating cache keys",
         min_length=1,
     )

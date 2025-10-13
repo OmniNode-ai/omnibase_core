@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Execution Status Enumeration v2 - Unified Hierarchy Version.
 
@@ -5,7 +7,6 @@ Enhanced execution status using the unified status hierarchy. Extends base statu
 values with execution-specific states while eliminating conflicts with other domains.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

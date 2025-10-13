@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+from pydantic import BaseModel
+
 """
-ONEX Architecture validation tools.
+ONEX ModelArchitecture validation tools.
 
 This module provides validation functions for ONEX architectural principles:
 - One model per file validation
@@ -7,12 +11,11 @@ This module provides validation functions for ONEX architectural principles:
 - Structure validation
 """
 
-from __future__ import annotations
-
 import argparse
 import ast
 import sys
 from pathlib import Path
+from typing import Dict, TypedDict
 
 from .validation_utils import ValidationResult
 
@@ -88,19 +91,19 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
         # Check for multiple models
         if len(counter.models) > 1:
             errors.append(
-                f"❌ {len(counter.models)} models in one file: {', '.join(counter.models)}",
+                f"❌ {len(counter.models)} models in one file: {', '.join(counter.models)}"
             )
 
         # Check for multiple enums
         if len(counter.enums) > 1:
             errors.append(
-                f"❌ {len(counter.enums)} enums in one file: {', '.join(counter.enums)}",
+                f"❌ {len(counter.enums)} enums in one file: {', '.join(counter.enums)}"
             )
 
         # Check for multiple protocols
         if len(counter.protocols) > 1:
             errors.append(
-                f"❌ {len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}",
+                f"❌ {len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}"
             )
 
         # Check for mixed types (models + enums + protocols)
@@ -129,8 +132,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
 
 
 def validate_architecture_directory(
-    directory: Path,
-    max_violations: int = 0,
+    directory: Path, max_violations: int = 0
 ) -> ValidationResult:
     """Validate ONEX architecture for a directory."""
     python_files = []
@@ -182,13 +184,10 @@ def validate_architecture_directory(
 def validate_architecture_cli() -> int:
     """CLI interface for architecture validation."""
     parser = argparse.ArgumentParser(
-        description="Validate ONEX one-model-per-file architecture",
+        description="Validate ONEX one-model-per-file architecture"
     )
     parser.add_argument(
-        "directories",
-        nargs="*",
-        default=["src/"],
-        help="Directories to validate",
+        "directories", nargs="*", default=["src/"], help="Directories to validate"
     )
     parser.add_argument(
         "--max-violations",
@@ -246,7 +245,7 @@ def validate_architecture_cli() -> int:
     print("• Keep related TypedDict with their model")
 
     print(
-        f"\n❌ FAILURE: {len(overall_result.errors)} violations exceed limit of {args.max_violations}",
+        f"\n❌ FAILURE: {len(overall_result.errors)} violations exceed limit of {args.max_violations}"
     )
     return 1
 
