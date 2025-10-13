@@ -241,4 +241,4 @@ def bind_get_service_method(container: ModelONEXContainer) -> None:
     import types
 
     get_service = create_get_service_method(container)
-    container.get_service = types.MethodType(get_service, container)
+    container.get_service = types.MethodType(get_service, container)  # type: ignore[method-assign]

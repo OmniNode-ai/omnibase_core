@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
@@ -25,9 +25,6 @@ from omnibase_core.models.security.model_policy_context import ModelPolicyContex
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
 from omnibase_core.models.security.model_security_summary import ModelSecuritySummary
-from omnibase_core.models.security.model_signature_verification_result import (
-    field_serializer,
-)
 
 from .model_chain_metrics import ModelChainMetrics
 from .model_compliance_metadata import ModelComplianceMetadata

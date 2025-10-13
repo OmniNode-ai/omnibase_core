@@ -1102,7 +1102,7 @@ class NodeReducer(NodeCoreBase):
             if input_data.group_key:
                 if isinstance(input_data.group_key, str):
 
-                    def group_key_func(x):
+                    def group_key_func(x: Any) -> Any:
                         return (
                             x.get(input_data.group_key, "default")
                             if hasattr(x, "get")
@@ -1111,7 +1111,7 @@ class NodeReducer(NodeCoreBase):
 
                 else:
                     # Handle list of group keys
-                    def group_key_func(x):
+                    def group_key_func(x: Any) -> Any:
                         return tuple(
                             x.get(field, "default") if hasattr(x, "get") else "default"
                             for field in input_data.group_key or []
@@ -1119,7 +1119,7 @@ class NodeReducer(NodeCoreBase):
 
             else:
 
-                def group_key_func(x):
+                def group_key_func(x: Any) -> Any:
                     return "default"
 
             for item in data:

@@ -112,6 +112,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 
         if isinstance(metadata_block, dict):
+            # Preserve original dict for exception handler
+            original_dict = metadata_block.copy()
+
             # Convert dict[str, Any]to NodeMetadataBlock, handling type conversions
             if "entrypoint" in metadata_block and isinstance(
                 metadata_block["entrypoint"], str
@@ -131,7 +134,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 from omnibase_core.primitives.model_semver import ModelSemVer
 
                 # Handle version conversion if it's a string
-                version_value = metadata_block.get("version")
+                version_value = original_dict.get("version")
                 if isinstance(version_value, str):
                     # Parse version string like "1.0.0" into ModelSemVer
                     parts = version_value.split(".")
@@ -147,7 +150,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     version_value = ModelSemVer(major=0, minor=1, patch=0)
 
                 # Validate hash field format - must be 64 hex characters
-                hash_value = metadata_block.get("hash", "0" * 64)
+                hash_value = original_dict.get("hash", "0" * 64)
                 if hash_value and (
                     len(hash_value) != 64
                     or not all(c in "0123456789abcdefABCDEF" for c in hash_value)
@@ -156,36 +159,36 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     hash_value = "0" * 64
 
                 # Use deterministic UUID based on name for consistency (or random if no name)
-                name = metadata_block.get("name", "unknown")
+                name = original_dict.get("name", "unknown")
                 default_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, name))
 
                 defaults = {
                     "name": name,
-                    "uuid": metadata_block.get("uuid", default_uuid),
-                    "author": metadata_block.get("author", "OmniNode Team"),
-                    "created_at": metadata_block.get(
+                    "uuid": original_dict.get("uuid", default_uuid),
+                    "author": original_dict.get("author", "OmniNode Team"),
+                    "created_at": original_dict.get(
                         "created_at", "1970-01-01T00:00:00Z"
                     ),
-                    "last_modified_at": metadata_block.get(
+                    "last_modified_at": original_dict.get(
                         "last_modified_at", "1970-01-01T00:00:00Z"
                     ),
                     "hash": hash_value,
-                    "entrypoint": metadata_block.get("entrypoint", "python://unknown"),
-                    "namespace": metadata_block.get(
+                    "entrypoint": original_dict.get("entrypoint", "python://unknown"),
+                    "namespace": original_dict.get(
                         "namespace", "python://omnibase.unknown"
                     ),
                     "version": version_value,
-                    "description": metadata_block.get("description")
+                    "description": original_dict.get("description")
                     or "Stamped by ONEX",
                 }
                 # Merge defaults with provided fields (provided fields override defaults)
-                # Filter out None values from metadata_block to prevent overriding defaults
+                # Filter out None values from original_dict to prevent overriding defaults
                 filtered_metadata = {
-                    k: v for k, v in metadata_block.items() if v is not None
+                    k: v for k, v in original_dict.items() if v is not None
                 }
                 complete_metadata = {**defaults, **filtered_metadata}
                 # Update version in complete_metadata if it was converted
-                if isinstance(metadata_block.get("version"), str):
+                if isinstance(original_dict.get("version"), str):
                     complete_metadata["version"] = version_value
                 # Ensure hash is valid (replace invalid with placeholder)
                 complete_metadata["hash"] = hash_value

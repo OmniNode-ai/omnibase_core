@@ -67,8 +67,10 @@ class ModelSecretManager(BaseModel):
 
     def _initialize_environment(self) -> None:
         """Initialize environment based on configuration."""
+        from omnibase_core.enums.enum_backend_type import EnumBackendType
+
         try:
-            if self.config.backend.backend_type == "dotenv":
+            if self.config.backend.backend_type == EnumBackendType.DOTENV:
                 self._load_dotenv_environment()
         except Exception as e:
             logging.exception(f"Failed to initialize secret manager: {e}")
@@ -229,11 +231,9 @@ class ModelSecretManager(BaseModel):
         base_analysis = credentials.get_credential_strength_assessment()
 
         # Create manager-specific assessment
+        security_profile = self.config.backend.get_security_profile()
         manager_assessment = ModelManagerAssessment(
-            backend_security_level=self.config.backend.get_security_profile().get(
-                "security_level",
-                "unknown",
-            ),
+            backend_security_level=security_profile.security_level.value,
             audit_compliance="compliant" if self.audit_enabled else "non_compliant",
             fallback_resilience=(
                 "high"
@@ -274,16 +274,18 @@ class ModelSecretManager(BaseModel):
             # Create component for backend
             backend_component = HealthCheckComponent(
                 name="secret_backend",
-                status=(
-                    "healthy" if backend_health.get("healthy", False) else "unhealthy"
+                status="healthy" if backend_health.healthy else "unhealthy",
+                message=(
+                    "Backend health check completed"
+                    if backend_health.healthy
+                    else f"Backend unhealthy: {', '.join(backend_health.issues)}"
                 ),
-                message=backend_health.get("message", "Backend health check completed"),
             )
             components.append(backend_component)
 
-            if not backend_health.get("healthy", False):
+            if not backend_health.healthy:
                 status = "unhealthy"
-                warnings.extend(backend_health.get("issues", []))
+                warnings.extend(backend_health.issues)
 
         except Exception as e:
             status = "unhealthy"
@@ -309,14 +311,22 @@ class ModelSecretManager(BaseModel):
 
     def get_configuration_summary(self) -> ModelConfigurationSummary:
         """Get summary of current configuration."""
+        # Get models
+        backend_capabilities = self.config.backend.get_backend_capabilities()
+        security_profile = self.config.backend.get_security_profile()
+        performance_profile = self.config.backend.get_performance_profile()
+
+        # Convert to dicts/strings as expected by ModelConfigurationSummary
         return ModelConfigurationSummary(
-            backend_type=self.config.backend.backend_type,
-            backend_capabilities=self.config.backend.get_backend_capabilities(),
-            security_profile=self.config.backend.get_security_profile(),
-            performance_profile=self.config.backend.get_performance_profile(),
+            backend_type=self.config.backend.backend_type.value,
+            backend_capabilities=backend_capabilities.model_dump(),
+            security_profile=security_profile.model_dump(),
+            performance_profile=performance_profile.model_dump(),
             audit_enabled=self.audit_enabled,
             fallback_enabled=self.fallback_enabled,
-            fallback_backends=[fb.backend_type for fb in self.config.fallback_backends],
+            fallback_backends=[
+                fb.backend_type.value for fb in self.config.fallback_backends
+            ],
             environment_type=self.config.backend.detect_environment_type(),
             production_ready=self.config.backend.is_production_ready(),
         )
@@ -336,7 +346,15 @@ class ModelSecretManager(BaseModel):
     @classmethod
     def create_for_production(cls, backend_type: str = "vault") -> "ModelSecretManager":
         """Create secret manager optimized for production environment."""
-        config = ModelSecretConfig.create_for_production(backend_type)
+        from omnibase_core.enums.enum_backend_type import EnumBackendType
+
+        # Convert string to enum
+        backend_enum = (
+            EnumBackendType.from_string(backend_type)
+            if isinstance(backend_type, str)
+            else backend_type
+        )
+        config = ModelSecretConfig.create_for_production(backend_enum)
 
         return cls(config=config, audit_enabled=True, fallback_enabled=True)
 

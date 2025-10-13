@@ -725,10 +725,10 @@ def _route_to_logger_node(
 
                 # Re-check after lock acquisition (may have changed)
                 if (
-                    _cached_formatter is None
+                    _cached_formatter is None  # type: ignore[unreachable]
                     or _cached_output_handler is None
                     or cache_expired
-                ):  # type: ignore[unreachable]
+                ):
                     from omnibase_core.models.container.model_onex_container import (
                         ModelONEXContainer,
                     )

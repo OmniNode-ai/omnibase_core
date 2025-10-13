@@ -419,7 +419,14 @@ class ModelMissingTool(BaseModel):
             EnumToolCriticality.LOW: 0.3,
             EnumToolCriticality.OPTIONAL: 0.1,
         }
-        score += criticality_scores.get(self.criticality, 0.5)
+        score += criticality_scores.get(
+            (
+                self.criticality
+                if self.criticality is not None
+                else EnumToolCriticality.MEDIUM
+            ),
+            0.5,
+        )
 
         # Adjust for tool category
         category_multipliers = {

@@ -72,7 +72,7 @@ class ModelGenericMetadata(BaseModel):
         return None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> ModelGenericMetadata:
+    def from_dict(cls, data: dict[str, Any] | Any) -> ModelGenericMetadata:
         """Create instance from dictionary."""
         if not isinstance(data, dict):
             data = {}

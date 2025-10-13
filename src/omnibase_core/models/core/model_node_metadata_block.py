@@ -41,19 +41,19 @@ from .model_state_contract_block import ModelStateContractBlock
 from .model_test_matrix_entry import ModelTestMatrixEntry
 from .model_testing_block import ModelTestingBlock
 
-# Type aliases for current standards
-type DependencyBlock = ModelDependencyBlock
-type IOBlock = ModelIOBlock
-type SignatureBlock = ModelSignatureBlock
-type Namespace = ModelNamespace
-type SignatureContract = ModelSignatureContract
-type StateContractBlock = ModelStateContractBlock
-type LoggingConfig = ModelLoggingConfig
-type SourceRepository = ModelSourceRepository
-type TestingBlock = ModelTestingBlock
-type DataHandlingDeclaration = ModelDataHandlingDeclaration
-type ExtensionValueModel = ModelExtensionValue
-type TestMatrixEntry = ModelTestMatrixEntry
+# Type aliases for current standards - using TypeAlias for runtime compatibility
+DependencyBlock: TypeAlias = ModelDependencyBlock
+IOBlock: TypeAlias = ModelIOBlock
+SignatureBlock: TypeAlias = ModelSignatureBlock
+Namespace: TypeAlias = ModelNamespace
+SignatureContract: TypeAlias = ModelSignatureContract
+StateContractBlock: TypeAlias = ModelStateContractBlock
+LoggingConfig: TypeAlias = ModelLoggingConfig
+SourceRepository: TypeAlias = ModelSourceRepository
+TestingBlock: TypeAlias = ModelTestingBlock
+DataHandlingDeclaration: TypeAlias = ModelDataHandlingDeclaration
+ExtensionValueModel: TypeAlias = ModelExtensionValue
+TestMatrixEntry: TypeAlias = ModelTestMatrixEntry
 
 
 class ModelNodeMetadataBlock(BaseModel):

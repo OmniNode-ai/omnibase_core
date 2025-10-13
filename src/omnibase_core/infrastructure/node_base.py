@@ -19,7 +19,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
@@ -40,7 +40,15 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_action import ModelAction
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
+from omnibase_core.models.infrastructure.model_node_workflow_result import (
+    ModelNodeWorkflowResult,
+)
 from omnibase_core.models.infrastructure.model_state import ModelState
+from omnibase_spi.protocols.types.protocol_core_types import (
+    ProtocolAction,
+    ProtocolNodeResult,
+    ProtocolState,
+)
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -114,7 +122,7 @@ class NodeBase(
         self._contract_path = contract_path
         self._container: ModelONEXContainer | None = None
         self._main_tool: object | None = None
-        self._reducer_state: ModelState | None = None
+        self._reducer_state: ProtocolState | None = None
         self._workflow_instance: Any | None = None
 
         try:
@@ -129,8 +137,8 @@ class NodeBase(
             # Initialize reducer state
             self._reducer_state = self.initial_state()
 
-            # Create workflow instance if needed
-            self._workflow_instance = self.create_workflow()
+            # Create workflow instance if needed (run async creation in sync context)
+            self._workflow_instance = asyncio.run(self.create_workflow())
 
             # Emit initialization event
             self._emit_initialization_event()
@@ -585,16 +593,16 @@ class NodeBase(
 
     # ===== REDUCER IMPLEMENTATION =====
 
-    def initial_state(self) -> ModelState:
+    def initial_state(self) -> ProtocolState:
         """
         Returns the initial state for the reducer.
 
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
-        return ModelState()
+        return cast(ProtocolState, ModelState())
 
-    def dispatch(self, state: ModelState, action: ModelAction) -> ModelState:
+    def dispatch(self, state: ProtocolState, action: ProtocolAction) -> ProtocolState:
         """
         Synchronous state transition for simple operations.
 
@@ -605,9 +613,9 @@ class NodeBase(
 
     async def dispatch_async(
         self,
-        state: ModelState,
-        action: ModelAction,
-    ) -> ModelState:
+        state: ProtocolState,
+        action: ProtocolAction,
+    ) -> ProtocolNodeResult:
         """
         Asynchronous workflow-based state transition.
 
@@ -619,11 +627,13 @@ class NodeBase(
             action: Action to dispatch
 
         Returns:
-            ModelState: New state after transition
+            ProtocolNodeResult: Result with new state and metadata
 
         Raises:
             ModelOnexError: If dispatch fails
         """
+        from omnibase_spi.protocols.types.protocol_core_types import ContextValue
+
         try:
             new_state = self.dispatch(state, action)
 
@@ -639,7 +649,18 @@ class NodeBase(
                 },
             )
 
-            return new_state
+            # Wrap the new state in a result object
+            return ModelNodeWorkflowResult(
+                value=new_state,  # type: ignore
+                is_success=True,
+                is_failure=False,
+                error=None,
+                trust_score=1.0,
+                provenance=[f"NodeBase.dispatch_async:{self.node_id}"],
+                metadata={},
+                events=[],
+                state_delta={},
+            )
 
         except Exception as e:
             # Log and convert to ONEX error
@@ -662,7 +683,7 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
 
-    def create_workflow(self) -> Any | None:
+    async def create_workflow(self) -> Any | None:
         """
         Factory method for creating LlamaIndex workflow instances.
 
@@ -722,7 +743,7 @@ class NodeBase(
         return self._main_tool
 
     @property
-    def current_state(self) -> ModelState:
+    def current_state(self) -> ProtocolState:
         """Get the current reducer state."""
         if self._reducer_state is None:
             raise ModelOnexError(

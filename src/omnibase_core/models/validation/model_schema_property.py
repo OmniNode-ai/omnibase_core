@@ -33,7 +33,7 @@ class ModelSchemaProperty(BaseModel):
 
 
 # Rebuild the model to resolve forward references
-def _rebuild_model():
+def _rebuild_model() -> None:
     """Rebuild the model to resolve forward references."""
     try:
         from .model_required_fields_model import ModelRequiredFieldsModel

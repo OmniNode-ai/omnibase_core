@@ -7,8 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails

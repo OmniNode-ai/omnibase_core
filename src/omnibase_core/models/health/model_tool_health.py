@@ -495,7 +495,7 @@ class ModelToolHealth(BaseModel):
             context["error_code"] = self.error_code
 
         if self.version:
-            context["version"] = self.version
+            context["version"] = str(self.version)
 
         return context
 

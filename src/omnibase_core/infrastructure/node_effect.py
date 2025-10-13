@@ -884,11 +884,12 @@ class NodeEffect(NodeCoreBase):
                 if isinstance(operation_data["operation_type"], ModelSchemaValue)
                 else operation_data["operation_type"]
             )
-            file_path = Path(
+            file_path_value = (
                 operation_data["file_path"].to_value()
                 if isinstance(operation_data["file_path"], ModelSchemaValue)
                 else operation_data["file_path"]
             )
+            file_path = Path(str(file_path_value))
             data_val = operation_data.get("data")
             data = (
                 data_val.to_value()
@@ -1002,7 +1003,7 @@ class NodeEffect(NodeCoreBase):
                 else payload_val
             )
             correlation_id_val = operation_data.get("correlation_id")
-            correlation_id = (
+            correlation_id_raw = (
                 correlation_id_val.to_value()
                 if isinstance(correlation_id_val, ModelSchemaValue)
                 else correlation_id_val
@@ -1025,7 +1026,11 @@ class NodeEffect(NodeCoreBase):
                     await event_bus.emit_event(
                         event_type=event_type,
                         payload=payload,
-                        correlation_id=UUID(correlation_id) if correlation_id else None,
+                        correlation_id=(
+                            UUID(str(correlation_id_raw))
+                            if correlation_id_raw
+                            else None
+                        ),
                     )
                     return True
                 emit_log_event(
