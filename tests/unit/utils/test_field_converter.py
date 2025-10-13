@@ -199,7 +199,8 @@ class TestFieldConverter:
         error = exc_info.value
         assert error.error_code is not None
         assert "test_field" in str(error.message)
-        assert error.details is not None
+        # ModelOnexError exposes structured context via .context
+        assert isinstance(error.context, dict)
 
     def test_field_converter_validator_error_context(self):
         """Test that validator error includes proper context."""
@@ -217,4 +218,5 @@ class TestFieldConverter:
         error = exc_info.value
         assert error.error_code is not None
         assert "Validation failed for field test_field" in str(error.message)
-        assert error.details is not None
+        # ModelOnexError exposes structured context via .context
+        assert isinstance(error.context, dict)

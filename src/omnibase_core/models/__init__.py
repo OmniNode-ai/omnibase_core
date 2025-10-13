@@ -1,41 +1,21 @@
-# Avoid circular import - ModelOnexError should be imported from errors module directly
-# from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+# Package init kept intentionally light to avoid circular imports during
+# submodule imports (e.g., utils → models.common → package init → cli → utils).
+# Importing heavy subpackages or re-exporting symbols here can trigger cycles.
 
 """
 OmniBase Core Models
 
 Organized by domain for better maintainability and discoverability.
+This package __init__ avoids importing subpackages at import time to
+prevent circular import chains.
 """
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
-# Import all domain modules for easy access
-from . import (
-    cli,
-    common,
-    config,
-    connections,
-    contracts,
-    core,
-    events,
-    infrastructure,
-    metadata,
-    nodes,
-    results,
-    validation,
-)
-
-# Re-export key models for convenience
-from .common import ModelErrorContext, ModelNumericValue, ModelSchemaValue
-from .infrastructure import err, ok
-from .model_yaml_dump_options import ModelYamlDumpOptions
-from .results import ModelOnexResult
-from .validation import ModelValidationError
+# Expose names for discoverability without importing subpackages at runtime.
+# Callers should import concrete symbols from their modules directly, e.g.:
+#   from omnibase_core.models.common.model_error_context import ModelErrorContext
 
 __all__ = [
-    # Domain modules
+    # Domain modules (names only; no runtime import here)
     "cli",
     "common",
     "config",
@@ -48,14 +28,4 @@ __all__ = [
     "nodes",
     "results",
     "validation",
-    # Commonly used models
-    "ModelErrorContext",
-    "ModelNumericValue",
-    "ModelOnexError",
-    "ModelOnexResult",
-    "ModelSchemaValue",
-    "ModelYamlDumpOptions",
-    "ok",
-    "err",
-    "ModelValidationError",
 ]
