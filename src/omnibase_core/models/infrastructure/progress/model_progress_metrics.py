@@ -56,8 +56,8 @@ class ModelProgressMetrics(BaseModel):
         description="Last metrics update timestamp",
     )
 
-    def add_custom_metric(self, key: str, value: ModelFlexibleValue) -> None:
-        """Add custom progress metric with proper typing."""
+    def add_custom_metric(self, key: str, value: object) -> None:
+        """Add custom progress metric with flexible typing (accepts ModelFlexibleValue or plain values)."""
         self.custom_metrics.add_metric(key, value)
         self.metrics_last_updated = datetime.now(UTC)
 
@@ -146,27 +146,12 @@ class ModelProgressMetrics(BaseModel):
         is_completed: bool,
         elapsed_seconds: float,
     ) -> None:
-        """Update standard progress metrics."""
-        self.add_custom_metric(
-            "percentage",
-            ModelFlexibleValue.from_float(percentage),
-        )
-        self.add_custom_metric(
-            "current_step",
-            ModelFlexibleValue.from_integer(current_step),
-        )
-        self.add_custom_metric(
-            "total_steps",
-            ModelFlexibleValue.from_integer(total_steps),
-        )
-        self.add_custom_metric(
-            "is_completed",
-            ModelFlexibleValue.from_boolean(is_completed),
-        )
-        self.add_custom_metric(
-            "elapsed_seconds",
-            ModelFlexibleValue.from_float(elapsed_seconds),
-        )
+        """Update standard progress metrics with plain values (automatically converted to appropriate types)."""
+        self.add_custom_metric("percentage", percentage)
+        self.add_custom_metric("current_step", current_step)
+        self.add_custom_metric("total_steps", total_steps)
+        self.add_custom_metric("is_completed", is_completed)
+        self.add_custom_metric("elapsed_seconds", elapsed_seconds)
 
     def reset(self) -> None:
         """Reset all metrics and tags."""
@@ -192,9 +177,9 @@ class ModelProgressMetrics(BaseModel):
     @classmethod
     def create_with_metrics(
         cls,
-        initial_metrics: dict[str, ModelFlexibleValue],
+        initial_metrics: dict[str, object],
     ) -> ModelProgressMetrics:
-        """Create metrics instance with initial custom metrics."""
+        """Create metrics instance with initial custom metrics (accepts ModelFlexibleValue or plain values)."""
         instance = cls()
         for key, value in initial_metrics.items():
             instance.add_custom_metric(key, value)

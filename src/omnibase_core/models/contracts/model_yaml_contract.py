@@ -38,7 +38,7 @@ class ModelYamlContract(BaseModel):
     """
 
     model_config = {
-        "extra": "ignore",
+        "extra": "allow",  # Allow and preserve extra fields like event_subscriptions
         "use_enum_values": False,
         "validate_assignment": True,
     }

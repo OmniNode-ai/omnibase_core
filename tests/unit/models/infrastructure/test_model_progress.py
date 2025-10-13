@@ -193,13 +193,10 @@ class TestModelProgressMilestones:
 class TestModelProgressMetricsMethods:
     """Tests for ModelProgress metrics methods."""
 
-    @pytest.mark.xfail(
-        reason="Bug in add_custom_metric - type signature doesn't match implementation"
-    )
     def test_add_custom_metric(self):
         """Test add_custom_metric method."""
         progress = ModelProgress()
-        # add_custom_metric accepts plain values despite type hint
+        # add_custom_metric accepts plain values
         progress.add_custom_metric("test_key", "test")
         assert progress.metrics.get_metrics_count() > 0
 
@@ -244,9 +241,6 @@ class TestModelProgressReset:
 class TestModelProgressSummary:
     """Tests for ModelProgress summary methods."""
 
-    @pytest.mark.xfail(
-        reason="Bug in get_summary - depends on broken update_standard_metrics"
-    )
     def test_get_summary(self):
         """Test get_summary method."""
         progress = ModelProgress()

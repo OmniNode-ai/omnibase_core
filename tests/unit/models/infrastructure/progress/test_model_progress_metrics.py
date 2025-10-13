@@ -30,13 +30,10 @@ class TestModelProgressMetricsInstantiation:
 class TestModelProgressMetricsCustomMetrics:
     """Tests for ModelProgressMetrics custom metrics management."""
 
-    @pytest.mark.xfail(
-        reason="Bug in add_custom_metric - type signature doesn't match implementation"
-    )
     def test_add_custom_metric(self):
         """Test add_custom_metric method."""
         metrics = ModelProgressMetrics()
-        # add_custom_metric accepts plain values despite type hint
+        # add_custom_metric accepts plain values
         metrics.add_custom_metric("test_key", "test_value")
         retrieved = metrics.get_custom_metric("test_key")
         assert retrieved is not None
@@ -45,7 +42,7 @@ class TestModelProgressMetricsCustomMetrics:
         """Test that add_custom_metric updates timestamp."""
         metrics = ModelProgressMetrics()
         old_timestamp = metrics.metrics_last_updated
-        # add_custom_metric accepts plain values despite type hint
+        # add_custom_metric accepts plain values
         metrics.add_custom_metric("key", "test")
         assert metrics.metrics_last_updated >= old_timestamp
 
@@ -58,7 +55,7 @@ class TestModelProgressMetricsCustomMetrics:
     def test_remove_custom_metric(self):
         """Test remove_custom_metric method."""
         metrics = ModelProgressMetrics()
-        # add_custom_metric accepts plain values despite type hint
+        # add_custom_metric accepts plain values
         metrics.add_custom_metric("key", "test")
         result = metrics.remove_custom_metric("key")
         assert result is True
@@ -181,9 +178,6 @@ class TestModelProgressMetricsSummary:
 class TestModelProgressMetricsStandardMetrics:
     """Tests for ModelProgressMetrics standard metrics update."""
 
-    @pytest.mark.xfail(
-        reason="Bug in update_standard_metrics - uses ModelMetadataValue incorrectly"
-    )
     def test_update_standard_metrics(self):
         """Test update_standard_metrics method."""
         metrics = ModelProgressMetrics()
@@ -231,12 +225,9 @@ class TestModelProgressMetricsFactoryMethods:
         assert metrics.get_tags_count() == 3
         assert "tag1" in metrics.tags
 
-    @pytest.mark.xfail(
-        reason="Bug in create_with_metrics - type signature doesn't match implementation"
-    )
     def test_create_with_metrics_factory(self):
         """Test create_with_metrics factory method."""
-        # create_with_metrics accepts plain values despite type hint
+        # create_with_metrics accepts plain values
         initial_metrics = {
             "key1": "value1",
             "key2": 42,

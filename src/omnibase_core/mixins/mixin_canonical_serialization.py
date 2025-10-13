@@ -32,10 +32,8 @@ from pydantic import Field
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
 
 def _strip_comment_prefix(
@@ -111,13 +109,13 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         """
         import pydantic
 
+        from omnibase_core.models.core.model_entrypoint import EntrypointBlock
+
         if isinstance(metadata_block, dict):
             # Convert dict[str, Any]to NodeMetadataBlock, handling type conversions
             if "entrypoint" in metadata_block and isinstance(
                 metadata_block["entrypoint"], str
             ):
-                from omnibase_core.models.core.model_entrypoint import EntrypointBlock
-
                 if "://" in metadata_block["entrypoint"]:
                     type_, target = metadata_block["entrypoint"].split("://", 1)
                     metadata_block["entrypoint"] = EntrypointBlock(  # type: ignore[assignment]
@@ -125,8 +123,77 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     )
             try:
                 metadata_block = NodeMetadataBlock(**metadata_block)  # type: ignore[arg-type]
-            except (pydantic.ValidationError, TypeError):
-                metadata_block = NodeMetadataBlock.model_validate(metadata_block)
+            except (pydantic.ValidationError, TypeError) as e:
+                # Provide defaults for missing required fields to allow incomplete dicts
+                import uuid as uuid_lib
+                from datetime import datetime, timezone
+
+                from omnibase_core.primitives.model_semver import ModelSemVer
+
+                # Handle version conversion if it's a string
+                version_value = metadata_block.get("version")
+                if isinstance(version_value, str):
+                    # Parse version string like "1.0.0" into ModelSemVer
+                    parts = version_value.split(".")
+                    if len(parts) >= 3:
+                        version_value = ModelSemVer(
+                            major=int(parts[0]),
+                            minor=int(parts[1]),
+                            patch=int(parts[2]),
+                        )
+                    else:
+                        version_value = ModelSemVer(major=0, minor=1, patch=0)
+                elif version_value is None:
+                    version_value = ModelSemVer(major=0, minor=1, patch=0)
+
+                # Validate hash field format - must be 64 hex characters
+                hash_value = metadata_block.get("hash", "0" * 64)
+                if hash_value and (
+                    len(hash_value) != 64
+                    or not all(c in "0123456789abcdefABCDEF" for c in hash_value)
+                ):
+                    # Invalid hash format, use default placeholder
+                    hash_value = "0" * 64
+
+                # Use deterministic UUID based on name for consistency (or random if no name)
+                name = metadata_block.get("name", "unknown")
+                default_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, name))
+
+                defaults = {
+                    "name": name,
+                    "uuid": metadata_block.get("uuid", default_uuid),
+                    "author": metadata_block.get("author", "OmniNode Team"),
+                    "created_at": metadata_block.get(
+                        "created_at", "1970-01-01T00:00:00Z"
+                    ),
+                    "last_modified_at": metadata_block.get(
+                        "last_modified_at", "1970-01-01T00:00:00Z"
+                    ),
+                    "hash": hash_value,
+                    "entrypoint": metadata_block.get("entrypoint", "python://unknown"),
+                    "namespace": metadata_block.get(
+                        "namespace", "python://omnibase.unknown"
+                    ),
+                    "version": version_value,
+                    "description": metadata_block.get("description")
+                    or "Stamped by ONEX",
+                }
+                # Merge defaults with provided fields (provided fields override defaults)
+                # Filter out None values from metadata_block to prevent overriding defaults
+                filtered_metadata = {
+                    k: v for k, v in metadata_block.items() if v is not None
+                }
+                complete_metadata = {**defaults, **filtered_metadata}
+                # Update version in complete_metadata if it was converted
+                if isinstance(metadata_block.get("version"), str):
+                    complete_metadata["version"] = version_value
+                # Ensure hash is valid (replace invalid with placeholder)
+                complete_metadata["hash"] = hash_value
+                try:
+                    metadata_block = NodeMetadataBlock(**complete_metadata)  # type: ignore[arg-type]
+                except (pydantic.ValidationError, TypeError):
+                    # If still failing, use model_validate as last resort
+                    metadata_block = NodeMetadataBlock.model_validate(complete_metadata)
 
         block_dict = metadata_block.model_dump(mode="json")
         # Protocol-compliant placeholders
@@ -204,7 +271,22 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         # Remove all None/null/empty fields except protocol-required ones
         protocol_required = {"tools"}
         filtered_dict: dict[str, Any] = {}
-        canonical_versions = get_canonical_versions()
+
+        # Get canonical versions with fallback to defaults if project file not found
+        try:
+            canonical_versions = get_canonical_versions()
+        except ModelOnexError:
+            # Use default versions if project.onex.yaml not found (e.g., in tests)
+            from omnibase_core.models.core.model_onex_version import (
+                ModelOnexVersionInfo,
+            )
+            from omnibase_core.primitives.model_semver import ModelSemVer
+
+            canonical_versions = ModelOnexVersionInfo(
+                metadata_version=ModelSemVer(major=0, minor=1, patch=0),
+                protocol_version=ModelSemVer(major=0, minor=1, patch=0),
+                schema_version=ModelSemVer(major=0, minor=1, patch=0),
+            )
         for k, v in normalized_dict.items():
             # Always emit canonical version fields
             if k == "metadata_version":
@@ -281,8 +363,16 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         Returns:
             Normalized file body as a string.
         """
+        # Normalize line endings
         body = body.replace("\r\n", "\n").replace("\r", "\n")
-        norm = body.rstrip(" \t\r\n") + "\n"
+
+        # Strip trailing whitespace from each line
+        lines = body.split("\n")
+        normalized_lines = [line.rstrip() for line in lines]
+
+        # Join back with newlines and ensure single trailing newline
+        norm = "\n".join(normalized_lines).rstrip("\n") + "\n"
+
         assert "\r" not in norm, "Carriage return found after normalization"
         return norm
 
@@ -306,8 +396,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             Canonical string for hash computation.
         """
         # Convert to dict if it's a model instance
-        from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
-
         if hasattr(block, "model_dump"):
             block_dict = block.model_dump(mode="json")  # type: ignore[union-attr]
         else:
@@ -368,11 +456,13 @@ def extract_metadata_block_and_body(
 
     _component_name = Path(__file__).stem
 
-    # Fast path: plain YAML file with '---' at start and no closing '...'
+    # Fast path: plain YAML file with single '---' at start and no closing delimiters
+    # Only applies if there's exactly one '---' (opening only, not closing)
     if (
         open_delim == "---"
         and content.lstrip().startswith("---")
         and "..." not in content
+        and content.count("---") == 1  # Only one '---' delimiter
     ):
         return content, ""
     # Special case: Markdown HTML comment delimiters

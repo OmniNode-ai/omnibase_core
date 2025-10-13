@@ -311,9 +311,6 @@ class TestNodeReducerNormalizeOperation:
     """Tests for NORMALIZE reduction operation."""
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: normalize_reducer doesn't extract values from ModelSchemaValue before using as dict keys"
-    )
     async def test_normalize_min_max_scaling(self, node_reducer):
         """Test NORMALIZE with min-max scaling."""
         # Note: The normalize_reducer expects ModelSchemaValue objects in metadata
@@ -339,9 +336,6 @@ class TestNodeReducerNormalizeOperation:
         assert result.result[2]["score_normalized"] == 1.0
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: normalize_reducer doesn't extract values from ModelSchemaValue before using as dict keys"
-    )
     async def test_normalize_rank_method(self, node_reducer):
         """Test NORMALIZE with rank method."""
         input_data = ModelReducerInput(
@@ -384,9 +378,6 @@ class TestNodeReducerNormalizeOperation:
         assert result.result == []
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: normalize_reducer doesn't extract values from ModelSchemaValue before using as dict keys"
-    )
     async def test_normalize_constant_scores(self, node_reducer):
         """Test NORMALIZE handles constant scores correctly."""
         input_data = ModelReducerInput(
@@ -491,9 +482,6 @@ class TestNodeReducerStreamingModes:
         assert result.streaming_mode == EnumStreamingMode.BATCH
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: _process_incremental passes reduction_type both as arg and in kwargs"
-    )
     async def test_incremental_mode_processes_in_batches(self, node_reducer):
         """Test INCREMENTAL mode processes data in batches."""
         input_data = ModelReducerInput(
@@ -512,9 +500,6 @@ class TestNodeReducerStreamingModes:
         assert result.streaming_mode == EnumStreamingMode.INCREMENTAL
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: _process_windowed passes reduction_type both as arg and in kwargs"
-    )
     async def test_windowed_mode_processes_by_window(self, node_reducer):
         """Test WINDOWED mode processes data in time windows."""
         input_data = ModelReducerInput(
@@ -555,9 +540,6 @@ class TestNodeReducerRSDOperations:
         assert result["closed"]["count"] == 1
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: normalize_reducer doesn't extract values from ModelSchemaValue before using as dict keys"
-    )
     async def test_normalize_priority_scores(self, node_reducer):
         """Test normalizing priority scores."""
         tickets = [
@@ -854,9 +836,6 @@ class TestNodeReducerEdgeCases:
         assert result.result == 6
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="BUG: normalize_reducer doesn't extract values from ModelSchemaValue before using as dict keys"
-    )
     async def test_normalize_with_missing_score_field(self, node_reducer):
         """Test NORMALIZE handles missing score field."""
         input_data = ModelReducerInput(
