@@ -9,7 +9,7 @@ Defines the argument models for workflow execution and management operations
 within the ONEX architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_workflow_parameters import ModelWorkflowParameters
 from .model_workflow_stop_args import ModelWorkflowStopArgs

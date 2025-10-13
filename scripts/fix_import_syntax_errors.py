@@ -13,6 +13,7 @@ def find_files_with_syntax_errors():
         capture_output=True,
         text=True,
         cwd="/Volumes/PRO-G40/Code/omnibase_core",
+        check=False,
     )
     output = result.stdout + result.stderr
 

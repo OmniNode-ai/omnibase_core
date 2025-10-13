@@ -38,12 +38,12 @@ class ModelCheckpointData(BaseModel):
         default=EnumCheckpointStatus.ACTIVE,
     )
 
-    data_payload: Dict[str, Any] = Field(
+    data_payload: dict[str, Any] = Field(
         description="Serialized checkpoint data payload",
         default_factory=dict,
     )
 
-    metadata: Dict[str, str] = Field(
+    metadata: dict[str, str] = Field(
         description="Checkpoint metadata",
         default_factory=dict,
     )

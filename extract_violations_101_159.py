@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 
-def analyze_file(filepath: Path) -> Tuple[int, int, List[str]]:
+def analyze_file(filepath: Path) -> tuple[int, int, list[str]]:
     """Analyze a Python file for classes and enums."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content)

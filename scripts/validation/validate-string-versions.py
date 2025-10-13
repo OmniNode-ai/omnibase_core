@@ -15,6 +15,7 @@ ID fields should use UUID type instead of str for proper type safety.
 Uses AST parsing for reliable detection of semantic version and ID patterns.
 This prevents runtime issues and ensures proper type compliance.
 """
+
 from __future__ import annotations
 
 import ast
@@ -67,7 +68,7 @@ class PythonASTValidator(ast.NodeVisitor):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.violations: List[ValidationViolation] = []
+        self.violations: list[ValidationViolation] = []
         self.imports = set()
 
         # Patterns for version fields that should use ModelSemVer
@@ -216,7 +217,7 @@ class PythonASTValidator(ast.NodeVisitor):
                     )
                 )
 
-    def _matches_patterns(self, field_name: str, patterns: List[str]) -> bool:
+    def _matches_patterns(self, field_name: str, patterns: list[str]) -> bool:
         """Check if field name matches any of the given regex patterns."""
         return any(re.match(pattern, field_name) for pattern in patterns)
 
@@ -276,7 +277,7 @@ class StringVersionValidator:
 
     def __init__(self):
         self.errors: list[str] = []
-        self.ast_violations: List[ValidationViolation] = []
+        self.ast_violations: list[ValidationViolation] = []
         self.checked_files = 0
 
     def validate_python_file(self, python_path: Path) -> bool:
@@ -320,7 +321,7 @@ class StringVersionValidator:
         except OSError as e:
             self.errors.append(f"{python_path}: OS error reading file - {e}")
             return False
-        except IOError as e:
+        except OSError as e:
             self.errors.append(f"{python_path}: IO error reading file - {e}")
             return False
 
@@ -433,7 +434,7 @@ class StringVersionValidator:
         except OSError as e:
             self.errors.append(f"{yaml_path}: OS error reading file - {e}")
             return False
-        except IOError as e:
+        except OSError as e:
             self.errors.append(f"{yaml_path}: IO error reading file - {e}")
             return False
 
@@ -743,7 +744,7 @@ from timeout_utils import timeout_context
 
 def setup_timeout_handler():
     """Legacy compatibility function - use timeout_context instead."""
-    pass  # No-op for compatibility
+    # No-op for compatibility
 
 
 def main() -> int:

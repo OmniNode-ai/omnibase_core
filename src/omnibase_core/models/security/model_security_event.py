@@ -8,7 +8,7 @@ from .model_securityeventcollection import ModelSecurityEventCollection
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType

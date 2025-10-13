@@ -14,9 +14,6 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.enums.enum_coordination_mode import EnumCoordinationMode
 from omnibase_core.enums.enum_hub_capability import EnumHubCapability
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelHubConfiguration(BaseModel):
     """Unified hub configuration supporting both contract formats."""

@@ -12,7 +12,7 @@ and parsing metadata for complete argument handling.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_argument_map import ModelArgumentMap
 from omnibase_core.models.core.model_cli_command_definition import (

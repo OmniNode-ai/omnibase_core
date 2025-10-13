@@ -10,7 +10,7 @@ Event Routing Model - ONEX Standards Compliant.
 Model for event routing configuration in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRetryPolicy(BaseModel):

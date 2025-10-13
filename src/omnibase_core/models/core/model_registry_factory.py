@@ -11,7 +11,7 @@ factory state management and configuration.
 Author: ONEX Framework Team
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 from omnibase_core.models.core.model_registry_cache_entry import ModelRegistryCacheEntry

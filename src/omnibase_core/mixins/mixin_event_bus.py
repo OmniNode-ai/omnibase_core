@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, List, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, TypeVar
 
 from pydantic import Field
 
@@ -22,19 +23,17 @@ import threading
 from collections.abc import Callable as CallableABC
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictStr
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Local imports from extracted classes
 from .mixin_completion_data import MixinCompletionData
 from .mixin_log_data import MixinLogData
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Generic type variables for input and output states
 InputStateT = TypeVar("InputStateT")
@@ -234,12 +233,11 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                     await bus.publish_async(envelope)  # type: ignore[func-returns-value]  # Protocol method returns None but awaiting is valid for async
                 else:
                     await bus.publish(event)  # type: ignore[func-returns-value]  # Protocol method returns None but awaiting is valid for async
+            # Synchronous publishing for standard event bus
+            elif hasattr(bus, "publish_async"):
+                bus.publish_async(envelope)
             else:
-                # Synchronous publishing for standard event bus
-                if hasattr(bus, "publish_async"):
-                    bus.publish_async(envelope)
-                else:
-                    bus.publish(event)
+                bus.publish(event)
 
             self._log_info(f"Published completion event: {event_type}", event_type)
 

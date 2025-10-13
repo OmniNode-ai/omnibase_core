@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 
-def get_untyped_functions() -> List[Tuple[str, int, str]]:
+def get_untyped_functions() -> list[tuple[str, int, str]]:
     """Get list of untyped functions from mypy output."""
     result = subprocess.run(
         [
@@ -24,6 +24,7 @@ def get_untyped_functions() -> List[Tuple[str, int, str]]:
         ],
         capture_output=True,
         text=True,
+        check=False,
     )
 
     untyped = []
@@ -173,7 +174,7 @@ def add_any_import(content: str) -> str:
     return content
 
 
-def fix_file(filepath: str, errors: List[Tuple[int, str]]) -> None:
+def fix_file(filepath: str, errors: list[tuple[int, str]]) -> None:
     """Fix all type annotation errors in a file."""
     path = Path(filepath)
     if not path.exists():
@@ -233,14 +234,13 @@ def fix_file(filepath: str, errors: List[Tuple[int, str]]) -> None:
             needs_any = True
         elif "@classmethod" in "\n".join(lines[max(0, lineno - 3) : lineno]):
             content = fix_classmethod(content, lineno)
-        else:
-            # Generic function - add -> None if no return type
-            if "-> " not in line and "def " in line:
-                # Check if function has parameters
-                if "(**" in line or "(self, " in line or "(cls, " in line:
-                    needs_any = True
-                # Add -> None as default
-                content = content.replace(line, line.replace("):", ") -> None:"))
+        # Generic function - add -> None if no return type
+        elif "-> " not in line and "def " in line:
+            # Check if function has parameters
+            if "(**" in line or "(self, " in line or "(cls, " in line:
+                needs_any = True
+            # Add -> None as default
+            content = content.replace(line, line.replace("):", ") -> None:"))
 
     # Add Any import if needed
     if needs_any and content != original_content:
@@ -264,7 +264,7 @@ def main():
     print(f"Found {len(untyped_functions)} untyped functions")
 
     # Group by file
-    by_file: Dict[str, List[Tuple[int, str]]] = {}
+    by_file: dict[str, list[tuple[int, str]]] = {}
     for filepath, lineno, error_msg in untyped_functions:
         if filepath not in by_file:
             by_file[filepath] = []
@@ -284,7 +284,8 @@ def main():
             "mypy",
             "src/omnibase_core/models/common/",
             "src/omnibase_core/models/core/",
-        ]
+        ],
+        check=False,
     )
 
 

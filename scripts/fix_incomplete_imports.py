@@ -12,6 +12,7 @@ def find_incomplete_imports():
         ["poetry", "run", "mypy", "src/omnibase_core/"],
         capture_output=True,
         text=True,
+        check=False,
     )
 
     errors = []

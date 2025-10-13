@@ -8,7 +8,7 @@ Risk Assessment Model
 Type-safe risk assessment information.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRiskAssessment(BaseModel):

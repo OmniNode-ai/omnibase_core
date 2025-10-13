@@ -40,14 +40,14 @@ def add_import(file_path):
     # If still not found, insert after pydantic imports
     if insert_line is None:
         for i, line in enumerate(lines):
-            if line.startswith("from pydantic") or line.startswith("import pydantic"):
+            if line.startswith(("from pydantic", "import pydantic")):
                 insert_line = i + 1
                 break
 
     # If still not found, insert after typing imports
     if insert_line is None:
         for i, line in enumerate(lines):
-            if line.startswith("from typing") or line.startswith("import typing"):
+            if line.startswith(("from typing", "import typing")):
                 insert_line = i + 1
                 break
 

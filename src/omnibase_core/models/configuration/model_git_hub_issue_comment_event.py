@@ -6,9 +6,9 @@ from pydantic import Field
 GitHubIssueCommentEvent model.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_git_hub_issue import ModelGitHubIssue
 from .model_git_hub_issue_comment import ModelGitHubIssueComment

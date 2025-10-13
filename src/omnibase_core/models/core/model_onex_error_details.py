@@ -11,9 +11,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.model_onex_error_details_config import ModelConfig
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelOnexErrorDetails(BaseModel):
     """Detailed error information for Onex replies."""

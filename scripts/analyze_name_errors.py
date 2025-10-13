@@ -2,6 +2,7 @@
 """
 Analyze MyPy name-defined and attr-defined errors to categorize and prioritize fixes.
 """
+
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -11,7 +12,7 @@ def parse_error_file(filepath: str) -> list[dict]:
     """Parse the MyPy error file and extract structured error information."""
     errors = []
 
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         for line in f:
             # Parse: file.py:line: error: Message  [error-type]
             match = re.match(

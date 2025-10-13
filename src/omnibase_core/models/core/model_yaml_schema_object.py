@@ -11,7 +11,7 @@ strongly typed YAML schema object definitions.
 Author: ONEX Framework Team
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_yaml_schema_property import ModelYamlSchemaProperty
 

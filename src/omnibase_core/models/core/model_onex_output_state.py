@@ -15,10 +15,10 @@ OnexOutputState model.
 
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_output_field import ModelOnexField
@@ -99,8 +99,8 @@ class ModelOnexOutputState(BaseModel):
     @classmethod
     def from_internal_state(
         cls,
-        internal_state: "ModelOnexInternalOutputState",
-    ) -> "ModelOnexOutputState":
+        internal_state: ModelOnexInternalOutputState,
+    ) -> ModelOnexOutputState:
         """
         Create boundary output state from internal state.
 

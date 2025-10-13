@@ -19,7 +19,7 @@ class ToDigtMethodAnalyzer(ast.NodeVisitor):
     """AST visitor to analyze to_dict() method implementations."""
 
     def __init__(self):
-        self.methods: List[Dict[str, Any]] = []
+        self.methods: list[dict[str, Any]] = []
         self.current_class = None
 
     def visit_ClassDef(self, node):
@@ -36,7 +36,7 @@ class ToDigtMethodAnalyzer(ast.NodeVisitor):
             if method_info:
                 self.methods.append(method_info)
 
-    def _analyze_to_dict_method(self, node) -> Dict[str, Any]:
+    def _analyze_to_dict_method(self, node) -> dict[str, Any]:
         """Analyze a to_dict() method and categorize it."""
         # Get method source lines
         lines = []
@@ -58,7 +58,7 @@ class ToDigtMethodAnalyzer(ast.NodeVisitor):
             "docstring": ast.get_docstring(node),
         }
 
-    def _get_return_analysis(self, stmt) -> List[str]:
+    def _get_return_analysis(self, stmt) -> list[str]:
         """Analyze return statement."""
         if isinstance(stmt.value, ast.Call):
             if (
@@ -75,7 +75,7 @@ class ToDigtMethodAnalyzer(ast.NodeVisitor):
             return ["literal_dict"]
         return ["other_return"]
 
-    def _get_assignment_analysis(self, stmt) -> List[str]:
+    def _get_assignment_analysis(self, stmt) -> list[str]:
         """Analyze assignment statements."""
         if (
             isinstance(stmt.value, ast.Call)
@@ -87,7 +87,7 @@ class ToDigtMethodAnalyzer(ast.NodeVisitor):
             return ["dict_construction"]
         return ["other_assignment"]
 
-    def _categorize_method(self, lines: List[str], node) -> str:
+    def _categorize_method(self, lines: list[str], node) -> str:
         """Categorize the method based on its implementation."""
         # Simple wrapper - just returns model_dump()
         if len(node.body) == 1 and len(lines) == 1 and lines[0] == "model_dump_call":
@@ -111,10 +111,10 @@ class ToDigtMethodAnalyzer(ast.NodeVisitor):
         return "unknown"
 
 
-def analyze_file(file_path: Path) -> List[Dict[str, Any]]:
+def analyze_file(file_path: Path) -> list[dict[str, Any]]:
     """Analyze a single Python file for to_dict() methods."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source)
@@ -132,7 +132,7 @@ def analyze_file(file_path: Path) -> List[Dict[str, Any]]:
         return []
 
 
-def find_to_dict_files() -> List[Path]:
+def find_to_dict_files() -> list[Path]:
     """Find all Python files containing to_dict() methods."""
     files = []
     for root, dirs, filenames in os.walk("src"):
@@ -140,7 +140,7 @@ def find_to_dict_files() -> List[Path]:
             if filename.endswith(".py"):
                 file_path = Path(root) / filename
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
+                    with open(file_path, encoding="utf-8") as f:
                         content = f.read()
                         if "def to_dict(" in content:
                             files.append(file_path)
@@ -182,7 +182,7 @@ def main():
             print(f"  - {file_rel}:{method['line_number']} ({method['class_name']})")
 
     # Generate cleanup recommendations
-    print(f"\n🛠️  Cleanup Recommendations:")
+    print("\n🛠️  Cleanup Recommendations:")
     print("=" * 50)
 
     simple_wrappers = categories.get("simple_wrapper", [])

@@ -17,7 +17,7 @@ Author: OmniNode Team
 
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.models.core import ModelGenericMetadata
 

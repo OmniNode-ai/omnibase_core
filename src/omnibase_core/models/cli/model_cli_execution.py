@@ -14,9 +14,9 @@ and state tracking for comprehensive command execution management.
 """
 
 
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 # Use object type for CLI command option values.
@@ -29,7 +29,7 @@ CommandOptionValue = object
 # Runtime type validation should be done where values are consumed.
 ExecutionContextValue = object
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (

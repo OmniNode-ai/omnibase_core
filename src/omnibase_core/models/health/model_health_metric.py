@@ -9,7 +9,7 @@ with thresholds, trends, and temporal tracking.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelHealthMetric(BaseModel):

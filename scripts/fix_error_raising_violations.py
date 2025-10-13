@@ -185,7 +185,7 @@ def main():
 
     # Find all Python files with standard exceptions
     files_to_fix = []
-    for exc_type in EXCEPTION_MAPPINGS.keys():
+    for exc_type in EXCEPTION_MAPPINGS:
         for py_file in src_dir.rglob("*.py"):
             # Skip test files and validation scripts
             if "test" in str(py_file) or "validation" in str(py_file):
@@ -201,7 +201,7 @@ def main():
     print()
 
     fixed_count = 0
-    exception_counts = {exc: 0 for exc in EXCEPTION_MAPPINGS.keys()}
+    exception_counts = {exc: 0 for exc in EXCEPTION_MAPPINGS}
 
     for filepath in files_to_fix:
         modified, exceptions = fix_file(filepath)

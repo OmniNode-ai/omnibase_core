@@ -70,7 +70,9 @@ class ComprehensiveStringVersionFixer:
         # Report changes
         lines_changed = sum(
             1
-            for old, new in zip(original_content.split("\n"), self.content.split("\n"))
+            for old, new in zip(
+                original_content.split("\n"), self.content.split("\n"), strict=False
+            )
             if old != new
         )
         print(f"  ✅ Fixed {lines_changed} lines in {self.file_path.name}")
@@ -79,7 +81,7 @@ class ComprehensiveStringVersionFixer:
 
     def _replace_pattern(
         self, pattern: str, replacement: str, is_id: bool
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         """Replace a pattern in the content."""
         changed = False
         result = self.content
@@ -161,7 +163,7 @@ def fix_violations_in_file(file_path: Path) -> bool:
         return False
 
 
-def get_files_with_violations() -> List[str]:
+def get_files_with_violations() -> list[str]:
     """Get list of files with violations from git status or scan."""
     # All Python files in src/omnibase_core
     return [
@@ -203,7 +205,7 @@ def main():
         if fix_violations_in_file(file_path):
             fixed_count += 1
         else:
-            print(f"ℹ️  No changes needed")
+            print("ℹ️  No changes needed")
             skipped_count += 1
 
     print(f"\n{'='*60}")

@@ -12,9 +12,9 @@ Structured model for node actions that provides better metadata than simple enum
 Enhanced for tool-as-a-service architecture with MCP/GraphQL compatibility.
 """
 
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType

@@ -64,7 +64,7 @@ def check_file(filepath: Path) -> dict[str, any]:
         - 'message': str - violation message if any
     """
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source, filename=str(filepath))

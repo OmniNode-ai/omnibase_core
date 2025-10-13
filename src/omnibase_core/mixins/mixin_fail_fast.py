@@ -7,10 +7,11 @@ Ensures tools crash early with clear error messages rather than continuing in in
 
 import sys
 import traceback
+from collections.abc import Callable
 from collections.abc import Callable as CallableABC
 from datetime import UTC, datetime
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode

@@ -4,7 +4,7 @@ from pydantic import Field
 Health check configuration model for service monitoring.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelHealthCheckConfig(BaseModel):

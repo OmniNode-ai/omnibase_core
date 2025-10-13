@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 def read_file_content(filepath: Path) -> str:
     """Read file content."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             return f.read()
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
@@ -30,7 +30,7 @@ def write_file_content(filepath: Path, content: str) -> bool:
         return False
 
 
-def extract_classes_from_file(filepath: Path, classes: List[str]) -> Dict[str, str]:
+def extract_classes_from_file(filepath: Path, classes: list[str]) -> dict[str, str]:
     """Extract classes from a file."""
     content = read_file_content(filepath)
     if not content:
@@ -149,7 +149,7 @@ def main():
     # Process violation 102
     result2 = process_violation_102()
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"Violation 101: {'✓' if result1 else '✗'}")
     print(f"Violation 102: {'✓' if result2 else '✗'}")
 

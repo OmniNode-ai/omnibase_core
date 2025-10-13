@@ -14,9 +14,9 @@ with a properly validated Pydantic model that enforces type safety.
 ARCHITECTURAL PRINCIPLE: No dict[str, Any] - always use structured models
 """
 
-from typing import Annotated, Any, Dict
+from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 class ModelExtensionData(BaseModel):

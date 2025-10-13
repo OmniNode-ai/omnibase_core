@@ -4,9 +4,8 @@ from pydantic import Field
 
 "\nHealth check result model to replace Dict[str, Any] usage for health checks.\n"
 from datetime import datetime
-from typing import Any, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.models.core.model_health_check_component import (
     ModelHealthCheckComponent,

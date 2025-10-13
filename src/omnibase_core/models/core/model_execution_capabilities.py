@@ -9,9 +9,9 @@ Type-safe execution capabilities and constraints for nodes,
 replacing Dict[str, Any] with structured configuration.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_delivery_mode import EnumDeliveryMode
 from omnibase_core.models.configuration.model_performance_constraints import (

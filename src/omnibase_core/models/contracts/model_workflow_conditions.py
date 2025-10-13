@@ -17,10 +17,9 @@ ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelWorkflowConditions(BaseModel):

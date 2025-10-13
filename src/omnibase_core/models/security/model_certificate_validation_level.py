@@ -8,7 +8,7 @@ ModelCertificateValidationLevel: Certificate validation configuration.
 This model defines certificate validation requirements and settings.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 class ModelCertificateValidationLevel(BaseModel):

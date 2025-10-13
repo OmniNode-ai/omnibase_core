@@ -13,11 +13,11 @@ example data with comprehensive fields and validation.
 """
 
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData

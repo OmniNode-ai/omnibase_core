@@ -6,7 +6,7 @@ from pydantic import Field
 Testing block model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelTestingBlock(BaseModel):

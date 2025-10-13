@@ -14,10 +14,10 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from typing import Any, Generic
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.types.constraints import SimpleValueType
 

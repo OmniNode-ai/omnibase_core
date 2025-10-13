@@ -1,4 +1,5 @@
-from typing import Callable, List, Optional
+from collections.abc import Callable
+from typing import List, Optional
 from uuid import UUID
 
 """
@@ -13,11 +14,8 @@ import logging
 import time
 import traceback
 from collections.abc import Callable as CallableABC
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -25,6 +23,8 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 logger = logging.getLogger(__name__)
 
+
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 
 from .model_service_registry_entry import MixinServiceRegistryEntry
 

@@ -27,7 +27,7 @@ class OnexErrorComplianceChecker:
     """Checks that all raised exceptions use OnexError instead of standard Python exceptions."""
 
     def __init__(self):
-        self.errors: List[str] = []
+        self.errors: list[str] = []
         self.checked_files = 0
 
         # Standard exceptions that should be converted to OnexError
@@ -75,7 +75,7 @@ class OnexErrorComplianceChecker:
             return True
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -115,7 +115,7 @@ class OnexErrorComplianceChecker:
                     return True
         return False
 
-    def check_files(self, file_paths: List[Path]) -> bool:
+    def check_files(self, file_paths: list[Path]) -> bool:
         """Check multiple files for OnexError compliance."""
         success = True
         for file_path in file_paths:
@@ -168,7 +168,7 @@ class RaiseStatementChecker(ast.NodeVisitor):
     def __init__(self, file_path: Path, has_onex_error_import: bool):
         self.file_path = file_path
         self.has_onex_error_import = has_onex_error_import
-        self.violations: List[str] = []
+        self.violations: list[str] = []
 
         # Standard exceptions that should be converted
         self.forbidden_exceptions = {
@@ -191,7 +191,7 @@ class RaiseStatementChecker(ast.NodeVisitor):
         }
 
         # Read file content to check for error-ok comments
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             self.file_content = f.read()
             self.file_lines = self.file_content.split("\n")
 
@@ -215,8 +215,7 @@ class RaiseStatementChecker(ast.NodeVisitor):
             ]:
                 # Check if it's a known exception that should be converted
                 if (
-                    exception_name.endswith("Error")
-                    or exception_name.endswith("Exception")
+                    exception_name.endswith(("Error", "Exception"))
                 ) and exception_name not in ["OnexError", "ModelOnexError"]:
                     self.violations.append(
                         f"{self.file_path}:{node.lineno}: "

@@ -8,7 +8,7 @@ from .model_trustpolicy import ModelTrustPolicy
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict
 
 from .model_certificate_validation_level import ModelCertificateValidationLevel
 from .model_encryption_requirement import ModelEncryptionRequirement

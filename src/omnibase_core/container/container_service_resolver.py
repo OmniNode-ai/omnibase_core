@@ -1,5 +1,6 @@
 import uuid
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 from uuid import UUID
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -14,8 +15,8 @@ dependency-injector DynamicContainer transformation.
 """
 
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable, TypeVar
-from uuid import NAMESPACE_DNS, UUID, uuid5
+from typing import Any
+from uuid import NAMESPACE_DNS, uuid5
 
 # DELETED: not needed import create_hybrid_event_bus
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -158,37 +159,71 @@ def _build_registry_map(
     # Note: These attributes are dynamically added by dependency-injector
     return {
         # Generation tool registries
-        "contract_validator_registry": getattr(container, "contract_validator_registry", None),  # type: ignore[dict-item]
-        "model_regenerator_registry": getattr(container, "model_regenerator_registry", None),  # type: ignore[dict-item]
-        "contract_driven_generator_registry": getattr(container, "contract_driven_generator_registry", None),  # type: ignore[dict-item]
-        "workflow_generator_registry": getattr(container, "workflow_generator_registry", None),  # type: ignore[dict-item]
+        "contract_validator_registry": getattr(
+            container, "contract_validator_registry", None
+        ),  # type: ignore[dict-item]
+        "model_regenerator_registry": getattr(
+            container, "model_regenerator_registry", None
+        ),  # type: ignore[dict-item]
+        "contract_driven_generator_registry": getattr(
+            container, "contract_driven_generator_registry", None
+        ),  # type: ignore[dict-item]
+        "workflow_generator_registry": getattr(
+            container, "workflow_generator_registry", None
+        ),  # type: ignore[dict-item]
         "ast_generator_registry": getattr(container, "ast_generator_registry", None),  # type: ignore[dict-item]
         "file_writer_registry": getattr(container, "file_writer_registry", None),  # type: ignore[dict-item]
-        "introspection_generator_registry": getattr(container, "introspection_generator_registry", None),  # type: ignore[dict-item]
-        "protocol_generator_registry": getattr(container, "protocol_generator_registry", None),  # type: ignore[dict-item]
-        "node_stub_generator_registry": getattr(container, "node_stub_generator_registry", None),  # type: ignore[dict-item]
+        "introspection_generator_registry": getattr(
+            container, "introspection_generator_registry", None
+        ),  # type: ignore[dict-item]
+        "protocol_generator_registry": getattr(
+            container, "protocol_generator_registry", None
+        ),  # type: ignore[dict-item]
+        "node_stub_generator_registry": getattr(
+            container, "node_stub_generator_registry", None
+        ),  # type: ignore[dict-item]
         "ast_renderer_registry": getattr(container, "ast_renderer_registry", None),  # type: ignore[dict-item]
-        "reference_resolver_registry": getattr(container, "reference_resolver_registry", None),  # type: ignore[dict-item]
-        "type_import_registry_registry": getattr(container, "type_import_registry_registry", None),  # type: ignore[dict-item]
-        "python_class_builder_registry": getattr(container, "python_class_builder_registry", None),  # type: ignore[dict-item]
-        "subcontract_loader_registry": getattr(container, "subcontract_loader_registry", None),  # type: ignore[dict-item]
+        "reference_resolver_registry": getattr(
+            container, "reference_resolver_registry", None
+        ),  # type: ignore[dict-item]
+        "type_import_registry_registry": getattr(
+            container, "type_import_registry_registry", None
+        ),  # type: ignore[dict-item]
+        "python_class_builder_registry": getattr(
+            container, "python_class_builder_registry", None
+        ),  # type: ignore[dict-item]
+        "subcontract_loader_registry": getattr(
+            container, "subcontract_loader_registry", None
+        ),  # type: ignore[dict-item]
         "import_builder_registry": getattr(container, "import_builder_registry", None),  # type: ignore[dict-item]
         # Logging tool registries
-        "smart_log_formatter_registry": getattr(container, "smart_log_formatter_registry", None),  # type: ignore[dict-item]
+        "smart_log_formatter_registry": getattr(
+            container, "smart_log_formatter_registry", None
+        ),  # type: ignore[dict-item]
         "logger_engine_registry": getattr(container, "logger_engine_registry", None),  # type: ignore[dict-item]
         # File processing registries
-        "onextree_processor_registry": getattr(container, "onextree_processor_registry", None),  # type: ignore[dict-item]
-        "onexignore_processor_registry": getattr(container, "onexignore_processor_registry", None),  # type: ignore[dict-item]
-        "unified_file_processor_tool_registry": getattr(container, "unified_file_processor_tool_registry", None),  # type: ignore[dict-item]
+        "onextree_processor_registry": getattr(
+            container, "onextree_processor_registry", None
+        ),  # type: ignore[dict-item]
+        "onexignore_processor_registry": getattr(
+            container, "onexignore_processor_registry", None
+        ),  # type: ignore[dict-item]
+        "unified_file_processor_tool_registry": getattr(
+            container, "unified_file_processor_tool_registry", None
+        ),  # type: ignore[dict-item]
         # File processing services
         "rsd_cache_manager": getattr(container, "rsd_cache_manager", None),  # type: ignore[dict-item]
         "rsd_rate_limiter": getattr(container, "rsd_rate_limiter", None),  # type: ignore[dict-item]
         "rsd_metrics_collector": getattr(container, "rsd_metrics_collector", None),  # type: ignore[dict-item]
         "tree_sitter_analyzer": getattr(container, "tree_sitter_analyzer", None),  # type: ignore[dict-item]
         "unified_file_processor": getattr(container, "unified_file_processor", None),  # type: ignore[dict-item]
-        "onextree_regeneration_service": getattr(container, "onextree_regeneration_service", None),  # type: ignore[dict-item]
+        "onextree_regeneration_service": getattr(
+            container, "onextree_regeneration_service", None
+        ),  # type: ignore[dict-item]
         # AI Orchestrator services
-        "ai_orchestrator_cli_adapter": getattr(container, "ai_orchestrator_cli_adapter", None),  # type: ignore[dict-item]
+        "ai_orchestrator_cli_adapter": getattr(
+            container, "ai_orchestrator_cli_adapter", None
+        ),  # type: ignore[dict-item]
         "ai_orchestrator_node": getattr(container, "ai_orchestrator_node", None),  # type: ignore[dict-item]
         "ai_orchestrator_tool": getattr(container, "ai_orchestrator_tool", None),  # type: ignore[dict-item]
         # Infrastructure CLI tool
@@ -206,4 +241,4 @@ def bind_get_service_method(container: ModelONEXContainer) -> None:
     import types
 
     get_service = create_get_service_method(container)
-    setattr(container, "get_service", types.MethodType(get_service, container))
+    container.get_service = types.MethodType(get_service, container)

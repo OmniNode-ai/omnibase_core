@@ -10,9 +10,8 @@ Connection properties model to replace Dict[str, Any] usage in connection proper
 """
 
 from datetime import datetime
-from typing import Any, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
+from pydantic import BaseModel, ConfigDict, SecretStr, field_serializer
 
 
 class ModelConnectionProperties(BaseModel):

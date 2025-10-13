@@ -8,7 +8,7 @@ Configuration Merge Result Model for ONEX Configuration System.
 Strongly typed model to replace dict[str, Any]ionary usage in configuration merging.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.service.model_service_registry_config import (
     ModelServiceRegistryConfig,

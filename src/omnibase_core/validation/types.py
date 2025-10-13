@@ -19,10 +19,9 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_union_pattern import ModelUnionPattern
 from .union_usage_checker import UnionUsageChecker

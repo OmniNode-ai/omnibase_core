@@ -10,7 +10,7 @@ Abstract base class for typed factories following ONEX one-model-per-file archit
 
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic
 
 from pydantic import BaseModel
 

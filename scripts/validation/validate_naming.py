@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Naming convention validation for omni* ecosystem."""
+
 from __future__ import annotations
 
 import argparse
@@ -147,7 +148,7 @@ class NamingConventionValidator:
     ):
         """Validate naming conventions in a specific file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Check if file name follows convention
@@ -183,7 +184,7 @@ class NamingConventionValidator:
     ):
         """Validate TypedDict classes in any file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -202,7 +203,7 @@ class NamingConventionValidator:
     ):
         """Validate classes in any file that should match the category pattern."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -386,8 +387,8 @@ class NamingConventionValidator:
         errors = [v for v in self.violations if v.severity == "error"]
         warnings = [v for v in self.violations if v.severity == "warning"]
 
-        report = f"🚨 Naming Convention Validation Report\n"
-        report += f"=" * 40 + "\n\n"
+        report = "🚨 Naming Convention Validation Report\n"
+        report += "=" * 40 + "\n\n"
 
         report += f"Summary: {len(errors)} errors, {len(warnings)} warnings\n\n"
 
@@ -416,7 +417,7 @@ class NamingConventionValidator:
             if rules["file_prefix"]:
                 report += f"  File Pattern: {rules['file_prefix']}*.py\n"
             else:
-                report += f"  File Pattern: Any .py file\n"
+                report += "  File Pattern: Any .py file\n"
             report += f"  Class Pattern: {rules['pattern']}\n\n"
 
         return report
@@ -440,7 +441,7 @@ def main():
     print(validator.generate_report())
 
     if is_valid:
-        print(f"\n✅ SUCCESS: All naming conventions are compliant!")
+        print("\n✅ SUCCESS: All naming conventions are compliant!")
         sys.exit(0)
     else:
         errors = len([v for v in validator.violations if v.severity == "error"])

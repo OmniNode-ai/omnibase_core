@@ -127,8 +127,7 @@ class PydanticModelAnalyzer:
         # Determine if optional (has None in union or has default)
         is_optional = (
             "None" in type_annotation
-            or "|" in type_annotation
-            and "None" in type_annotation
+            or ("|" in type_annotation and "None" in type_annotation)
             or "Optional" in type_annotation
         )
 
@@ -466,7 +465,7 @@ def main():
     successful = sum(1 for r in all_results if r.success)
     failed = sum(1 for r in all_results if not r.success)
 
-    print(f"SUMMARY:")
+    print("SUMMARY:")
     print(f"  Total fixes attempted: {len(all_results)}")
     print(f"  Successful: {successful}")
     print(f"  Failed: {failed}")

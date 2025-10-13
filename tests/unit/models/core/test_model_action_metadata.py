@@ -174,7 +174,6 @@ class TestModelActionMetadata:
         # This will fail if ModelPerformanceMetrics doesn't have these fields
         # But based on ONEX patterns, it should have duration_ms
         # For now, let's test the error case which we know works
-        pass
 
     def test_add_performance_metric_invalid(self):
         """Test adding invalid performance metric raises error."""

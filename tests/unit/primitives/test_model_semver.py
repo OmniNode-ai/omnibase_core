@@ -474,7 +474,7 @@ class TestModelSemVerEdgeCases:
         version = ModelSemVer(major=1, minor=2, patch=3)
         # Equality should work and return False
         assert version != "1.2.3"
-        assert not (version == "1.2.3")
+        assert version != "1.2.3"
 
     def test_model_validation_through_pydantic(self):
         """Test that Pydantic validation works correctly."""

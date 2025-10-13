@@ -8,7 +8,7 @@ from omnibase_core.models.core.model_workflow import ModelWorkflow
 WorkflowStopArgs model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelWorkflowStopArgs(BaseModel):

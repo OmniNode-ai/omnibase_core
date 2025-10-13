@@ -6,7 +6,7 @@ ModelBackendPerformanceProfile: Performance characteristics of secret backends.
 This model represents the performance profile of different secret backends.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_latency_level import EnumLatencyLevel
 from omnibase_core.enums.enum_overhead_type import EnumOverheadType

@@ -9,7 +9,7 @@ Audit Requirements Model
 Type-safe audit requirements configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelAuditRequirements(BaseModel):

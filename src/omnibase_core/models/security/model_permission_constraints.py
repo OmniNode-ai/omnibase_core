@@ -12,7 +12,7 @@ including usage limits, approval requirements, delegation rules, and audit requi
 
 from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_approval_requirements import ModelApprovalRequirements
 from .model_audit_requirements import ModelAuditRequirements

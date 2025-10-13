@@ -8,7 +8,7 @@ Cache Invalidation Model - ONEX Standards Compliant.
 Model for cache invalidation policies in the ONEX caching system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCacheInvalidation(BaseModel):

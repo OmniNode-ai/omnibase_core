@@ -12,7 +12,7 @@ Security Context Model.
 Structured security context for action execution.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 class ModelSecurityContext(BaseModel):

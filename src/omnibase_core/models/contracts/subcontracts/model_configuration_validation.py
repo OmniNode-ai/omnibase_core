@@ -8,7 +8,7 @@ Configuration Validation Model - ONEX Standards Compliant.
 Model for configuration validation rules and constraints in the ONEX configuration management system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 

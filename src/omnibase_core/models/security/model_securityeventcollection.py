@@ -222,8 +222,8 @@ class ModelSecurityEventCollection(BaseModel):
             "total_events": len(self.events),
             "event_types": event_types,
             "severity_distribution": severity_distribution,
-            "users_involved": sorted(list(users_involved)),
-            "nodes_involved": sorted(list(nodes_involved)),
+            "users_involved": sorted(users_involved),
+            "nodes_involved": sorted(nodes_involved),
             "time_range": time_range,
         }
 

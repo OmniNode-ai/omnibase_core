@@ -6,7 +6,7 @@ PerformanceBenchmark model.
 
 from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelPerformanceBenchmark(BaseModel):

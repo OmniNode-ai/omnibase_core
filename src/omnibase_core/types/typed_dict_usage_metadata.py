@@ -17,6 +17,6 @@ class TypedDictUsageMetadata(TypedDict, total=False):
 
     name: NotRequired[str]
     description: NotRequired[str]
-    version: NotRequired["ModelSemVer"]
+    version: NotRequired[ModelSemVer]
     tags: NotRequired[list[str]]
     metadata: NotRequired[dict[str, str]]

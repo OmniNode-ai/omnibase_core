@@ -8,7 +8,7 @@ Tools by Type Collection Model for ONEX Configuration System.
 Strongly typed model for tools filtered by type.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelToolsByType(BaseModel):

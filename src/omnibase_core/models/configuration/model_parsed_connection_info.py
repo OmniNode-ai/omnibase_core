@@ -6,9 +6,9 @@ from pydantic import Field
 Parsed connection information model to replace Dict[str, Any] usage in connection parsing.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelParsedConnectionInfo(BaseModel):

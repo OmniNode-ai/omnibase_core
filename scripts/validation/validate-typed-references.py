@@ -57,7 +57,7 @@ class TypedReferenceValidator:
             for pattern in self.entity_reference_patterns
         ]
 
-        self.violations: List[TypedReferenceViolation] = []
+        self.violations: list[TypedReferenceViolation] = []
 
     def is_entity_reference_name(self, field_name: str) -> bool:
         """Check if field name suggests it should be a typed entity reference."""
@@ -66,7 +66,7 @@ class TypedReferenceValidator:
     def validate_file(self, file_path: Path) -> None:
         """Validate typed references in a single file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -75,7 +75,7 @@ class TypedReferenceValidator:
         except (SyntaxError, UnicodeDecodeError) as e:
             print(f"⚠️  Skipping {file_path}: {e}")
 
-    def _validate_ast(self, tree: ast.AST, file_path: Path, lines: List[str]) -> None:
+    def _validate_ast(self, tree: ast.AST, file_path: Path, lines: list[str]) -> None:
         """Validate AST for typed reference violations."""
 
         class TypedReferenceVisitor(ast.NodeVisitor):
@@ -95,9 +95,7 @@ class TypedReferenceValidator:
                         # Check for problematic patterns
                         if self._is_string_list(type_annotation):
                             violation_type = "list_str_should_be_typed"
-                            if field_name.endswith("_ids") or field_name.endswith(
-                                "_uuids"
-                            ):
+                            if field_name.endswith(("_ids", "_uuids")):
                                 suggested_fix = f"Change 'list[str]' to 'list[UUID]' for {field_name}"
                             else:
                                 suggested_fix = f"Change 'list[str]' to 'list[UUID]' or create proper typed reference for {field_name}"

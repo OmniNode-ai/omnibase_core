@@ -150,6 +150,6 @@ class ModelNodeConfiguration(BaseModel):
         except KeyError:
             return False
 
-    def get_all_config(self) -> Dict[str, Any]:
+    def get_all_config(self) -> dict[str, Any]:
         """Get all configuration as dictionary."""
         return self.model_dump()

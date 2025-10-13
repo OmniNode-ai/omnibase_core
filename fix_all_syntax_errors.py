@@ -10,7 +10,7 @@ from pathlib import Path
 def fix_syntax_errors_in_file(filepath: Path) -> bool:
     """Fix syntax errors in a single file."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         original_content = content

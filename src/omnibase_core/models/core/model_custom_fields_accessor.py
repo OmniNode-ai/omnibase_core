@@ -15,9 +15,9 @@ typed custom fields with automatic initialization and type safety.
 
 
 import copy
-from typing import Any, Generic, TypeVar
+from typing import Any
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.constraints import PrimitiveValueType

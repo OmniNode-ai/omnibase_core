@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import Field
 
 "\nModel for tool health metadata.\n\nSimple metadata model for tool health status with proper typing\nwhile avoiding heavy dependencies from full ModelToolMetadata.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

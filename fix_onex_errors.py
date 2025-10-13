@@ -35,7 +35,7 @@ EXCEPTION_TO_ERROR_CODE = {
 class ErrorFixer(ast.NodeTransformer):
     """AST transformer to fix error raising violations."""
 
-    def __init__(self, filename: str, source_lines: List[str]):
+    def __init__(self, filename: str, source_lines: list[str]):
         self.filename = filename
         self.source_lines = source_lines
         self.changes_made = 0
@@ -144,7 +144,7 @@ class ErrorFixer(ast.NodeTransformer):
         return None
 
 
-def fix_file(file_path: Path) -> Tuple[bool, int]:
+def fix_file(file_path: Path) -> tuple[bool, int]:
     """Fix error raising violations in a single file."""
     # Skip test files and validation scripts
     if any(
@@ -156,7 +156,7 @@ def fix_file(file_path: Path) -> Tuple[bool, int]:
         return True, 0
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source = f.read()
             source_lines = source.splitlines()
 

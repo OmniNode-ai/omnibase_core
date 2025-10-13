@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 "\nModelPermissionMetadata: Additional metadata for permissions.\n\nThis model provides structured metadata for permissions without using Any types.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPermissionMetadata(BaseModel):

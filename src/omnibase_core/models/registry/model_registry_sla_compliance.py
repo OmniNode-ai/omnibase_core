@@ -6,7 +6,7 @@ Registry SLA Compliance Model
 Type-safe SLA compliance tracking for registry health reporting.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRegistrySlaCompliance(BaseModel):

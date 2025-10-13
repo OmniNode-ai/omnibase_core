@@ -178,7 +178,7 @@ class PydanticFieldSyntaxFixer:
             pattern = rf"(Field\s*\(\s*)({default_val})(\s*,)"
             match = re.search(pattern, line)
             if match:
-                fixed_line = re.sub(pattern, rf"\1default=\2\3", line)
+                fixed_line = re.sub(pattern, r"\1default=\2\3", line)
                 field_name = self._extract_field_name(line)
                 return fixed_line, FieldFixResult(
                     file_path=file_path,
@@ -277,7 +277,7 @@ def main():
 
     # Summary
     print("\n" + "=" * 80)
-    print(f"SUMMARY:")
+    print("SUMMARY:")
     print(f"  Files processed: {len(files_to_process)}")
     print(f"  Total fixes: {total_fixes}")
 

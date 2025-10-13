@@ -9,7 +9,7 @@ This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from .model_matrix_strategy import ModelMatrixStrategy
 from .model_service_container import ModelServiceContainer

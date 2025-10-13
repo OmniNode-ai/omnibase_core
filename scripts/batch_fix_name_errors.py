@@ -3,6 +3,7 @@
 Efficient batch fix for MyPy name-defined errors.
 Parses errors once and applies all fixes in a single pass.
 """
+
 import re
 import subprocess
 from collections import defaultdict
@@ -49,11 +50,12 @@ def run_mypy_once() -> str:
         capture_output=True,
         text=True,
         cwd=ROOT_DIR,
+        check=False,
     )
     return result.stdout + result.stderr
 
 
-def parse_errors(mypy_output: str) -> Dict[str, List[Dict]]:
+def parse_errors(mypy_output: str) -> dict[str, list[dict]]:
     """Parse MyPy output and group errors by file."""
     errors_by_file = defaultdict(list)
 
@@ -77,7 +79,7 @@ def parse_errors(mypy_output: str) -> Dict[str, List[Dict]]:
     return dict(errors_by_file)
 
 
-def extract_missing_names(errors: List[Dict]) -> Set[str]:
+def extract_missing_names(errors: list[dict]) -> set[str]:
     """Extract missing names from error messages."""
     names = set()
     for error in errors:
@@ -105,7 +107,7 @@ def has_import(content: str, import_stmt: str) -> bool:
     return False
 
 
-def find_import_insert_position(lines: List[str]) -> int:
+def find_import_insert_position(lines: list[str]) -> int:
     """Find where to insert new imports."""
     last_import = 0
     in_docstring = False
@@ -114,13 +116,12 @@ def find_import_insert_position(lines: List[str]) -> int:
         stripped = line.strip()
 
         # Track docstrings
-        if stripped.startswith('"""') or stripped.startswith("'''"):
+        if stripped.startswith(('"""', "'''")):
             if not in_docstring:
                 in_docstring = True
-                if not (stripped.endswith('"""') or stripped.endswith("'''")):
+                if not (stripped.endswith(('"""', "'''"))):
                     continue
-                else:
-                    in_docstring = False
+                in_docstring = False
             elif in_docstring:
                 in_docstring = False
             continue
@@ -129,13 +130,13 @@ def find_import_insert_position(lines: List[str]) -> int:
             continue
 
         # Track imports
-        if stripped.startswith("from ") or stripped.startswith("import "):
+        if stripped.startswith(("from ", "import ")):
             last_import = i
 
     return last_import + 1 if last_import > 0 else 0
 
 
-def fix_file(filepath: str, errors: List[Dict]) -> int:
+def fix_file(filepath: str, errors: list[dict]) -> int:
     """Fix all errors in a single file."""
     path = Path(filepath)
     if not path.exists():
@@ -217,7 +218,7 @@ def main():
     total_fixes = 0
 
     for priority in priority_paths:
-        matching_files = [fp for fp in errors_by_file.keys() if priority in fp]
+        matching_files = [fp for fp in errors_by_file if priority in fp]
 
         for filepath in sorted(matching_files):
             print(f"\n{Path(filepath).name}:")
@@ -226,7 +227,7 @@ def main():
 
     # Fix remaining files
     all_priority_files = {
-        fp for fp in errors_by_file.keys() if any(p in fp for p in priority_paths)
+        fp for fp in errors_by_file if any(p in fp for p in priority_paths)
     }
     remaining = set(errors_by_file.keys()) - all_priority_files
 

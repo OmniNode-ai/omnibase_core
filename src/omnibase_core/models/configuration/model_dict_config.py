@@ -8,7 +8,7 @@ Dictionary Configuration Model for ONEX Configuration System.
 Strongly typed model for dict[str, Any]ionary return types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDictConfig(BaseModel):

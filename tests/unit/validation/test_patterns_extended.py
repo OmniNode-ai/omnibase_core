@@ -14,8 +14,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
-
-import pytest
+from typing import TYPE_CHECKING
 
 from omnibase_core.validation.patterns import (
     GenericPatternChecker,
@@ -24,6 +23,9 @@ from omnibase_core.validation.patterns import (
     validate_patterns_directory,
     validate_patterns_file,
 )
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class TestPydanticPatternCheckerExtended:

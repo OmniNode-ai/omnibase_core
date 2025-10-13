@@ -14,10 +14,10 @@ excessive string fields in a single large model.
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, field_serializer
 
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth

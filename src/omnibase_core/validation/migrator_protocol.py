@@ -11,10 +11,9 @@ Protocol migrator for safe migration of protocols to omnibase_spi.
 
 import shutil
 from pathlib import Path
-from typing import Dict, TypedDict, cast
+from typing import cast
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )

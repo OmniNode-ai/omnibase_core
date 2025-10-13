@@ -9,7 +9,7 @@ This model defines the policy requirements for cryptographic signatures
 in the envelope routing chain with strongly typed configurations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSigningPolicy(BaseModel):

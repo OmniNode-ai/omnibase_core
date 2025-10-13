@@ -91,12 +91,14 @@ class TestModelSignatureChainBasic:
         # Test required fields
         with pytest.raises(ValueError):
             ModelSignatureChain(
-                chain_id=None, envelope_id=envelope_id  # Invalid chain_id
+                chain_id=None,
+                envelope_id=envelope_id,  # Invalid chain_id
             )
 
         with pytest.raises(ValueError):
             ModelSignatureChain(
-                chain_id=chain_id, envelope_id=None  # Invalid envelope_id
+                chain_id=chain_id,
+                envelope_id=None,  # Invalid envelope_id
             )
 
     def test_signature_chain_serialization(self):
@@ -223,9 +225,7 @@ class TestModelSignatureChainSignatures:
         for i in range(5):
             signature = ModelNodeSignature(
                 node_id=uuid4(),
-                signature=f"c2lnbmF0dXJlX3swfQ==".format(
-                    i
-                ),  # base64 encoded "signature_{i}"
+                signature="c2lnbmF0dXJlX3swfQ==".format(),  # base64 encoded "signature_{i}"
                 timestamp=datetime.now(UTC),
                 operation=EnumNodeOperation.TRANSFORM,
                 key_id=uuid4(),
@@ -237,7 +237,7 @@ class TestModelSignatureChainSignatures:
 
         assert len(chain.signatures) == 5
         for i, signature in enumerate(chain.signatures):
-            assert signature.signature == f"c2lnbmF0dXJlX3swfQ==".format(i)
+            assert signature.signature == "c2lnbmF0dXJlX3swfQ==".format()
 
     def test_signature_order(self):
         """Test that signatures maintain order."""
@@ -250,9 +250,7 @@ class TestModelSignatureChainSignatures:
         for i in range(3):
             signature = ModelNodeSignature(
                 node_id=uuid4(),
-                signature=f"c2lnbmF0dXJlX3swfQ==".format(
-                    i
-                ),  # base64 encoded "signature_{i}"
+                signature="c2lnbmF0dXJlX3swfQ==".format(),  # base64 encoded "signature_{i}"
                 timestamp=datetime.now(UTC),
                 operation=EnumNodeOperation.TRANSFORM,
                 key_id=uuid4(),
@@ -264,7 +262,7 @@ class TestModelSignatureChainSignatures:
 
         # Verify order is maintained
         for i, signature in enumerate(chain.signatures):
-            assert signature.signature == f"c2lnbmF0dXJlX3swfQ==".format(i)
+            assert signature.signature == "c2lnbmF0dXJlX3swfQ==".format()
 
     def test_empty_signatures(self):
         """Test chain with no signatures."""
@@ -383,7 +381,7 @@ class TestModelSignatureChainPolicies:
         assert chain.signing_policy == custom_policy
         assert chain.signing_policy.minimum_signatures == 3
         assert chain.signing_policy.max_hop_count == 10
-        assert chain.signing_policy.require_sequential_timestamps == True
+        assert chain.signing_policy.require_sequential_timestamps is True
 
 
 class TestModelSignatureChainEdgeCases:

@@ -27,9 +27,10 @@ from types.core_types (not from models or types.constraints).
 """
 
 import asyncio
+from collections.abc import Callable
 from collections.abc import Callable as CallableABC
 from datetime import UTC, datetime
-from typing import Any, Callable, Union
+from typing import Any, Union
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus

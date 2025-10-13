@@ -6,7 +6,7 @@ from pydantic import Field
 Node introspection response model for ONEX nodes.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
 from omnibase_core.errors.error_codes import EnumCoreErrorCode

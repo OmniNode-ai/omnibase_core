@@ -6,7 +6,7 @@ Event Persistence Model - ONEX Standards Compliant.
 Model for event persistence configuration in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelEventPersistence(BaseModel):

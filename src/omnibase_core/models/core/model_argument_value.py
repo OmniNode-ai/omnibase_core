@@ -9,9 +9,9 @@ Type-safe argument value wrapper replacing Any usage
 with structured argument value handling.
 """
 
-from typing import Any, Union
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Define allowed argument value types
 ArgumentValueType = Union[str, int, bool, float, list[str], list[int], list[float]]

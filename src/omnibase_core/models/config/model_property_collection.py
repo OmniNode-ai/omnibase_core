@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 from pydantic import Field
 
@@ -15,16 +16,15 @@ collections of typed properties with validation and helper methods.
 
 
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable, TypeVar
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

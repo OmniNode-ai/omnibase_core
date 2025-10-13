@@ -13,13 +13,14 @@ from typing import Dict, List
 ROOT_DIR = Path("/Volumes/PRO-G40/Code/omnibase_core")
 
 
-def run_mypy_for_file(file_path: str) -> List[int]:
+def run_mypy_for_file(file_path: str) -> list[int]:
     """Run MyPy on a specific file and return line numbers with 'self' errors."""
     result = subprocess.run(
         ["poetry", "run", "mypy", file_path, "--no-error-summary"],
         capture_output=True,
         text=True,
         cwd=ROOT_DIR,
+        check=False,
     )
 
     output = result.stdout + result.stderr
@@ -35,7 +36,7 @@ def run_mypy_for_file(file_path: str) -> List[int]:
     return error_lines
 
 
-def find_method_start(lines: List[str], error_line_idx: int) -> int | None:
+def find_method_start(lines: list[str], error_line_idx: int) -> int | None:
     """Find the start of the method definition for an error line."""
     # Search backwards for 'def '
     for i in range(error_line_idx, max(0, error_line_idx - 200), -1):
@@ -44,7 +45,7 @@ def find_method_start(lines: List[str], error_line_idx: int) -> int | None:
     return None
 
 
-def find_method_end_of_signature(lines: List[str], start_idx: int) -> int | None:
+def find_method_end_of_signature(lines: list[str], start_idx: int) -> int | None:
     """Find the end of a method signature (the line with closing paren and colon)."""
     # Method signature might span multiple lines
     # Look for the line with '):' or ') ->'
@@ -55,7 +56,7 @@ def find_method_end_of_signature(lines: List[str], start_idx: int) -> int | None
     return None
 
 
-def get_full_signature(lines: List[str], start_idx: int, end_idx: int) -> str:
+def get_full_signature(lines: list[str], start_idx: int, end_idx: int) -> str:
     """Get the full method signature across multiple lines."""
     return "\n".join(lines[start_idx : end_idx + 1])
 
@@ -71,7 +72,7 @@ def has_self_or_cls(signature: str) -> bool:
 
 
 def has_decorator(
-    lines: List[str], method_start_idx: int, decorator_names: List[str]
+    lines: list[str], method_start_idx: int, decorator_names: list[str]
 ) -> bool:
     """Check if method has any of the specified decorators."""
     # Look at a few lines before the method
@@ -83,7 +84,7 @@ def has_decorator(
     return False
 
 
-def add_self_to_signature(lines: List[str], start_idx: int, end_idx: int) -> bool:
+def add_self_to_signature(lines: list[str], start_idx: int, end_idx: int) -> bool:
     """
     Add 'self' to a multi-line method signature.
 
@@ -213,7 +214,7 @@ def main():
         if fixed > 0:
             print(f"  ✓ Fixed {fixed} methods")
         else:
-            print(f"  - No issues found")
+            print("  - No issues found")
 
     print("\n" + "=" * 80)
     print(f"TOTAL: {total_fixed} methods fixed")

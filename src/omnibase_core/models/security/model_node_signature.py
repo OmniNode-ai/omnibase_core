@@ -8,9 +8,9 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm

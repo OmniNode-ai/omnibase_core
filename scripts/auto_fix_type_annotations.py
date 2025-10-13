@@ -23,10 +23,10 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 
-def run_mypy(paths: List[str]) -> List[Tuple[str, int, str]]:
+def run_mypy(paths: list[str]) -> list[tuple[str, int, str]]:
     """Run mypy and extract no-untyped-def errors."""
     cmd = ["poetry", "run", "mypy"] + paths
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
     errors = []
     # Check both stdout and stderr
@@ -41,12 +41,12 @@ def run_mypy(paths: List[str]) -> List[Tuple[str, int, str]]:
     return errors
 
 
-def read_file_lines(filepath: str) -> List[str]:
+def read_file_lines(filepath: str) -> list[str]:
     """Read file into lines."""
     return Path(filepath).read_text().split("\n")
 
 
-def write_file_lines(filepath: str, lines: List[str]) -> None:
+def write_file_lines(filepath: str, lines: list[str]) -> None:
     """Write lines back to file."""
     Path(filepath).write_text("\n".join(lines))
 
@@ -58,7 +58,7 @@ def backup_file(filepath: str) -> None:
     backup_path.write_text(path.read_text())
 
 
-def ensure_imports(lines: List[str], imports_needed: Set[str]) -> List[str]:
+def ensure_imports(lines: list[str], imports_needed: set[str]) -> list[str]:
     """Ensure necessary imports are present."""
     # Find imports section
     import_idx = None
@@ -113,7 +113,7 @@ def ensure_imports(lines: List[str], imports_needed: Set[str]) -> List[str]:
     return lines
 
 
-def get_decorator_context(lines: List[str], idx: int, lookback: int = 5) -> str:
+def get_decorator_context(lines: list[str], idx: int, lookback: int = 5) -> str:
     """Get decorator context for a function."""
     start = max(0, idx - lookback)
     context = "\n".join(lines[start:idx])
@@ -121,10 +121,10 @@ def get_decorator_context(lines: List[str], idx: int, lookback: int = 5) -> str:
 
 
 def fix_function_at_line(
-    lines: List[str], lineno: int, error_msg: str
-) -> Tuple[List[str], Set[str]]:
+    lines: list[str], lineno: int, error_msg: str
+) -> tuple[list[str], set[str]]:
     """Fix function at specific line number."""
-    imports_needed: Set[str] = set()
+    imports_needed: set[str] = set()
     idx = lineno - 1
 
     if idx >= len(lines):
@@ -162,7 +162,7 @@ def fix_function_at_line(
     # Pattern 3: field_validator with info parameter
     if "@field_validator" in decorator_context:
         # Fix validator: def validate_xxx(cls, v, info) -> type:
-        if "(cls, v, info)" in line or "(cls, v," in line and "info" in line:
+        if "(cls, v, info)" in line or ("(cls, v," in line and "info" in line):
             if "-> " not in line:
                 # Determine return type from field name
                 return_type = "Any"  # Default to Any for validators
@@ -170,7 +170,7 @@ def fix_function_at_line(
                 # Fix the signature
                 if "(cls, v, info)" in line:
                     lines[idx] = line.replace(
-                        "(cls, v, info)", f"(cls, v: Any, info: ValidationInfo) -> Any"
+                        "(cls, v, info)", "(cls, v: Any, info: ValidationInfo) -> Any"
                     )
                 imports_needed.add("Any")
                 imports_needed.add("ValidationInfo")
@@ -282,13 +282,13 @@ def fix_function_at_line(
     return lines, imports_needed
 
 
-def fix_file(filepath: str, errors: List[Tuple[int, str]], backup: bool = False) -> int:
+def fix_file(filepath: str, errors: list[tuple[int, str]], backup: bool = False) -> int:
     """Fix all errors in a file."""
     if backup:
         backup_file(filepath)
 
     lines = read_file_lines(filepath)
-    all_imports_needed: Set[str] = set()
+    all_imports_needed: set[str] = set()
 
     # Sort errors by line number (descending) to avoid index shifts
     errors_sorted = sorted(errors, key=lambda x: x[0], reverse=True)
@@ -344,7 +344,7 @@ def main():
     print(f"📝 Found {len(errors)} untyped functions")
 
     # Group by file
-    by_file: Dict[str, List[Tuple[int, str]]] = {}
+    by_file: dict[str, list[tuple[int, str]]] = {}
     for filepath, lineno, error_msg in errors:
         if filepath not in by_file:
             by_file[filepath] = []

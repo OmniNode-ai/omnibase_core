@@ -15,10 +15,9 @@ Model for workflow execution instances in the ONEX workflow coordination system.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType

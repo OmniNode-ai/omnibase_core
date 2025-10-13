@@ -295,7 +295,7 @@ class TestModelOnexErrorMessageFormatting:
 
         # Verify error string includes error code and message
         error_str = str(error)
-        assert "[ONEX_CORE_028_NOT_FOUND] Resource not found" == error_str
+        assert error_str == "[ONEX_CORE_028_NOT_FOUND] Resource not found"
 
         # Verify context is accessible
         assert error.context["additional_context"]["resource_id"] == "12345"
@@ -312,7 +312,7 @@ class TestModelOnexErrorMessageFormatting:
 
         # Verify error string includes error code and message
         error_str = str(error)
-        assert "[ONEX_CORE_044_CONFIGURATION_ERROR] Invalid configuration" == error_str
+        assert error_str == "[ONEX_CORE_044_CONFIGURATION_ERROR] Invalid configuration"
 
         # Verify context values are accessible
         assert error.context["additional_context"]["param1"] == "value1"

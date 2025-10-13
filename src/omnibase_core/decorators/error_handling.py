@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -12,7 +13,6 @@ for agent-generated tools.
 
 import functools
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 

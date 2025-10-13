@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Dict
+from collections.abc import Callable
+from typing import Dict
 
 from pydantic import Field
 
@@ -25,10 +26,9 @@ Safe Runtime Imports (OK to import at module level):
 
 from collections.abc import Callable as CallableABC
 from enum import Enum
-from typing import Any, Callable, Dict
+from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.utils.field_converter import FieldConverter

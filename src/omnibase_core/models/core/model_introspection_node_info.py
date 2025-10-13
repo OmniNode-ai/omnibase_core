@@ -9,12 +9,12 @@ Model for node information in introspection metadata.
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_introspection_node_info_config import (
     ModelIntrospectionNodeInfoConfig,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.primitives.model_semver import parse_semver_from_string
 
 
 class ModelIntrospectionNodeInfo(BaseModel):

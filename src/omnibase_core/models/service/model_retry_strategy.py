@@ -6,7 +6,7 @@ Retry Strategy Model
 Type-safe retry strategy configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRetryStrategy(BaseModel):

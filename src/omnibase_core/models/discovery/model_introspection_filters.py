@@ -6,7 +6,7 @@ Introspection Filters Model
 Filters for targeting specific nodes in request-response introspection.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelIntrospectionFilters(BaseModel):

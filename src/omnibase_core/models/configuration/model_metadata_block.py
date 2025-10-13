@@ -10,18 +10,16 @@ MetadataBlock model.
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
 from omnibase_core.enums.enum_metadata import EnumLifecycle
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
+from omnibase_core.models.core.model_node_metadata import Namespace
 from omnibase_core.models.core.model_tool_collection import ToolCollection
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_node_metadata import Namespace
 
 
 class ModelMetadataBlock(BaseModel):
@@ -108,7 +106,6 @@ class ModelMetadataBlock(BaseModel):
     @field_validator("namespace", mode="before")
     @classmethod
     def check_namespace(cls, v: Any) -> Any:
-
         if isinstance(v, Namespace):
             return v
         if isinstance(v, str):

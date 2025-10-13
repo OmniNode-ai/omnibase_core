@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 """Dynamic field model for flexible data without using Any type."""
 
-from typing import Dict, List
+from typing import List
 
 from pydantic import BaseModel, Field
 

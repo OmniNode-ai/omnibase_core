@@ -17,13 +17,12 @@ for CLI node execution operations.
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
 from omnibase_core.enums.enum_cli_action import EnumCliAction
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_cli_advanced_params import ModelCliAdvancedParams
 

@@ -28,7 +28,7 @@ class ElifChainChecker(ast.NodeVisitor):
     def __init__(self, filename: str, max_elif_count: int = 5):
         self.filename = filename
         self.max_elif_count = max_elif_count
-        self.issues: List[Tuple[int, str, int]] = []
+        self.issues: list[tuple[int, str, int]] = []
         self.current_function = None
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -75,7 +75,7 @@ class ONEXElifLimitValidator:
 
     def __init__(self, max_elif_count: int = 5):
         self.max_elif_count = max_elif_count
-        self.errors: List[str] = []
+        self.errors: list[str] = []
         self.checked_files = 0
 
         # Files/patterns where long elif chains might be acceptable
@@ -120,7 +120,7 @@ class ONEXElifLimitValidator:
             return True
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -153,7 +153,7 @@ class ONEXElifLimitValidator:
             self.errors.append(f"{file_path}: Failed to parse file - {e}")
             return False
 
-    def check_files(self, file_paths: List[Path]) -> bool:
+    def check_files(self, file_paths: list[Path]) -> bool:
         """Check multiple files for excessive elif chains."""
         success = True
         for file_path in file_paths:

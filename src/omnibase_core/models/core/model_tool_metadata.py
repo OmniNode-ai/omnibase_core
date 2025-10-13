@@ -12,7 +12,7 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_schema import ModelSchema
 

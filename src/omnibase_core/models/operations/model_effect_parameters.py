@@ -17,10 +17,9 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_effect_parameter_value import (
     ModelEffectParameterValue,
 )

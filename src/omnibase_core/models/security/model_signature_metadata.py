@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nModelSignatureMetadata: Metadata for cryptographic signatures.\n\nThis model provides structured metadata for digital signatures\nwith properly typed fields.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSignatureMetadata(BaseModel):

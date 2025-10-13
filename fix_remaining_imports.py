@@ -98,7 +98,7 @@ def write_file(file_path: Path, content: str) -> bool:
 
 def analyze_imports(
     content: str, file_path: Path
-) -> Tuple[Set[str], Set[str], Set[str]]:
+) -> tuple[set[str], set[str], set[str]]:
     """Analyze what imports are needed based on content."""
     needed_typing = set()
     needed_pydantic = set()
@@ -112,7 +112,7 @@ def analyze_imports(
     for line in lines:
         # Skip comments and docstrings
         line = line.strip()
-        if line.startswith("#") or line.startswith('"""') or line.startswith("'''"):
+        if line.startswith(("#", '"""', "'''")):
             continue
 
         # Check for typing usage
@@ -191,11 +191,14 @@ def add_missing_imports(content: str, file_path: Path) -> str:
         if stripped.startswith("from __future__ import"):
             future_import_found = True
             insert_position = i + 1
-        elif stripped.startswith("from typing import") or stripped.startswith("import"):
-            insert_position = i + 1
-        elif stripped.startswith("from pydantic import"):
-            insert_position = i + 1
-        elif stripped.startswith("from omnibase_core"):
+        elif stripped.startswith(
+            (
+                "from typing import",
+                "import",
+                "from pydantic import",
+                "from omnibase_core",
+            )
+        ):
             insert_position = i + 1
         elif (
             stripped
@@ -308,7 +311,7 @@ def process_file(file_path: Path) -> bool:
     return write_file(file_path, content)
 
 
-def process_python_files(directory: Path) -> List[Path]:
+def process_python_files(directory: Path) -> list[Path]:
     """Process all Python files in a directory."""
     processed_files = []
 

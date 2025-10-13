@@ -8,7 +8,7 @@ ModelBackendConfigValidation: Configuration validation for secret backends.
 This model represents configuration requirements and validation for backends.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelBackendConfigValidation(BaseModel):

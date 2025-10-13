@@ -11,7 +11,7 @@ Defines the categories of node actions as a proper Pydantic model.
 
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 class ModelActionCategory(BaseModel):

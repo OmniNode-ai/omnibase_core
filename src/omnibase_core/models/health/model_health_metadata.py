@@ -9,7 +9,7 @@ environment context, and custom attributes.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 

@@ -12,9 +12,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_version_manifest import EnumContractCompliance
 from omnibase_core.primitives.model_semver import SemVerField
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelVersionContract(BaseModel):
     """Contract file information and validation status."""

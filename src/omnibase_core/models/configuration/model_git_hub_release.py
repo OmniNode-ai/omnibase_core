@@ -6,7 +6,7 @@ GitHubRelease model.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_git_hub_user import ModelGitHubUser
 

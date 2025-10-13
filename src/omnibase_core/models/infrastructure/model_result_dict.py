@@ -13,12 +13,11 @@ Clean Pydantic model for Result serialization following ONEX one-model-per-file 
 """
 
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_cli_value import ModelCliValue
 from .model_error_value import ModelErrorValue

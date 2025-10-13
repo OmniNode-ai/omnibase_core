@@ -9,7 +9,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPermissionEvaluationContext(BaseModel):

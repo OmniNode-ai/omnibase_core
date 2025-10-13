@@ -15,14 +15,13 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from datetime import UTC, datetime
-from typing import Any, Literal
+from datetime import UTC
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelFilterConditions(BaseModel):

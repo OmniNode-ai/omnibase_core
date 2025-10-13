@@ -111,7 +111,7 @@ class SimpleYamlContract(BaseModel):
         )
 
     @classmethod
-    def validate_yaml_content(cls, yaml_data: Dict[str, Any]) -> "SimpleYamlContract":
+    def validate_yaml_content(cls, yaml_data: dict[str, Any]) -> "SimpleYamlContract":
         """
         Validate YAML content using Pydantic model validation.
 

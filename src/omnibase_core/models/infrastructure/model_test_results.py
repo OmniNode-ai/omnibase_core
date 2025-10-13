@@ -13,13 +13,12 @@ Strongly typed model for test execution results.
 """
 
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_test_result import ModelTestResult
 

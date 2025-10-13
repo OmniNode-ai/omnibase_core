@@ -13,14 +13,13 @@ Examples collection model.
 """
 
 
-from datetime import UTC, datetime
-from typing import Any, Dict
+from datetime import UTC
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_format import EnumDataFormat
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_example import ModelExample
 from .model_example_context_data import ModelExampleContextData

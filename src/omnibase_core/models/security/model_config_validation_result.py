@@ -8,7 +8,7 @@ ModelConfigValidationResult: Configuration validation result model.
 This model represents the result of configuration validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelConfigValidationResult(BaseModel):

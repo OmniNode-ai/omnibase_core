@@ -28,7 +28,7 @@ class AntiPatternNameDetector(ast.NodeVisitor):
 
     def __init__(self, filepath: str):
         self.filepath = filepath
-        self.violations: List[Tuple[int, str, str]] = []
+        self.violations: list[tuple[int, str, str]] = []
         self.banned_words = [
             "simple",
             "mock",
@@ -73,7 +73,6 @@ class AntiPatternNameDetector(ast.NodeVisitor):
 
     def _contains_word_boundary(self, name_lower: str, banned_word: str) -> bool:
         """Check if banned word appears with proper word boundaries."""
-        import re
 
         # Create regex pattern that matches the banned word with appropriate boundaries
         # This handles underscores and camelCase properly while preventing false positives
@@ -290,7 +289,7 @@ class AntiPatternNameDetector(ast.NodeVisitor):
         return False
 
 
-def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, str]]:
+def check_file_for_anti_pattern_names(filepath: Path) -> list[tuple[int, str, str]]:
     """Check a single Python file for anti-pattern names."""
     violations = []
 
@@ -319,7 +318,7 @@ def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, st
             )
 
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         # Parse AST
@@ -333,10 +332,10 @@ def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, st
     except SyntaxError as e:
         return [(e.lineno or 0, f"Syntax error: {e.msg}", "")]
     except Exception as e:
-        return [(0, f"Error parsing file: {str(e)}", "")]
+        return [(0, f"Error parsing file: {e!s}", "")]
 
 
-def validate_anti_pattern_names(src_dirs: List[str], max_violations: int = 0) -> bool:
+def validate_anti_pattern_names(src_dirs: list[str], max_violations: int = 0) -> bool:
     """
     Validate anti-pattern names across source directories.
 
@@ -379,7 +378,7 @@ def validate_anti_pattern_names(src_dirs: List[str], max_violations: int = 0) ->
                 for line_num, message, name in violations:
                     print(f"   Line {line_num}: {message}")
 
-    print(f"\n📊 Anti-Pattern Name Validation Summary:")
+    print("\n📊 Anti-Pattern Name Validation Summary:")
     print(
         f"   • Files checked: {len(list(Path(src_dirs[0]).rglob('*.py'))) if src_dirs else 0}"
     )
@@ -388,20 +387,20 @@ def validate_anti_pattern_names(src_dirs: List[str], max_violations: int = 0) ->
     print(f"   • Max allowed: {max_violations}")
 
     if total_violations <= max_violations:
-        print(f"✅ Anti-Pattern Name validation PASSED")
+        print("✅ Anti-Pattern Name validation PASSED")
         return True
     else:
-        print(f"❌ Anti-Pattern Name validation FAILED")
-        print(f"\n🔧 How to fix:")
-        print(f"   1. Replace 'simple' with specific, descriptive names")
-        print(f"   2. Replace 'mock' with proper test fixtures")
-        print(f"   3. Replace 'basic' with domain-specific names")
-        print(f"   4. Replace 'helper'/'wrapper' with proper abstractions")
-        print(f"   5. Remove 'temp'/'tmp' and implement proper solutions")
-        print(f"\n   Example fixes:")
-        print(f"   ❌ SimpleConfig → ✅ ModelConfiguration")
-        print(f"   ❌ MockData → ✅ TestFixture")
-        print(f"   ❌ BasicHandler → ✅ EventHandler")
+        print("❌ Anti-Pattern Name validation FAILED")
+        print("\n🔧 How to fix:")
+        print("   1. Replace 'simple' with specific, descriptive names")
+        print("   2. Replace 'mock' with proper test fixtures")
+        print("   3. Replace 'basic' with domain-specific names")
+        print("   4. Replace 'helper'/'wrapper' with proper abstractions")
+        print("   5. Remove 'temp'/'tmp' and implement proper solutions")
+        print("\n   Example fixes:")
+        print("   ❌ SimpleConfig → ✅ ModelConfiguration")
+        print("   ❌ MockData → ✅ TestFixture")
+        print("   ❌ BasicHandler → ✅ EventHandler")
         return False
 
 

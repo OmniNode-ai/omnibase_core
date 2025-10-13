@@ -10,9 +10,9 @@ Type-safe GitHub milestone that replaces Dict[str, Any] usage.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_git_hub_user import ModelGitHubUser
 

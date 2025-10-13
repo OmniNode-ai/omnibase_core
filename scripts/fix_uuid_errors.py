@@ -32,7 +32,7 @@ def fix_uuid_imports(content: str) -> str:
             if "UUID" not in line:
                 lines[i] = line.replace("from uuid import", "from uuid import UUID,")
             return "\n".join(lines)
-        elif line.startswith("from ") or line.startswith("import "):
+        elif line.startswith(("from ", "import ")):
             # Insert UUID import before first import
             lines.insert(i, "from uuid import UUID")
             return "\n".join(lines)

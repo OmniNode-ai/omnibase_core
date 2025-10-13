@@ -9,7 +9,7 @@ Type-safe custom fields container replacing Dict[str, Any]
 with structured extension field management.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Define allowed custom field value types
 CustomFieldValue = Union[str, int, bool, float, list[str], list[int]]

@@ -15,10 +15,10 @@ while keeping the original event payload unchanged.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

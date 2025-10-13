@@ -29,10 +29,10 @@ class ProtocolTester:
     """Test protocol implementations across all models."""
 
     def __init__(self):
-        self.test_results: List[Dict[str, Any]] = []
-        self.errors: List[str] = []
+        self.test_results: list[dict[str, Any]] = []
+        self.errors: list[str] = []
 
-    def test_protocol_methods(self, instance: Any, class_name: str) -> Dict[str, bool]:
+    def test_protocol_methods(self, instance: Any, class_name: str) -> dict[str, bool]:
         """Test protocol methods on an instance."""
         results = {}
 
@@ -111,7 +111,7 @@ class ProtocolTester:
 
         return results
 
-    def test_model_file(self, module_path: str) -> Dict[str, Any]:
+    def test_model_file(self, module_path: str) -> dict[str, Any]:
         """Test protocol implementations in a model file."""
         try:
             # Import the module
@@ -147,7 +147,7 @@ class ProtocolTester:
                     # Try different instantiation approaches
                     for approach in [
                         lambda: model_class(),  # Default constructor
-                        lambda: model_class(**{}),  # Empty kwargs
+                        lambda: model_class(),  # Empty kwargs
                     ]:
                         try:
                             instance = approach()
@@ -239,7 +239,7 @@ class ProtocolTester:
                 "protocol_tests": {},
             }
 
-    def test_all_models(self) -> Dict[str, Any]:
+    def test_all_models(self) -> dict[str, Any]:
         """Test all model implementations."""
         # Core models to test (sample from each category)
         test_modules = [
@@ -284,7 +284,7 @@ class ProtocolTester:
 
         return self.generate_test_summary()
 
-    def generate_test_summary(self) -> Dict[str, Any]:
+    def generate_test_summary(self) -> dict[str, Any]:
         """Generate test summary."""
         total_modules = len(self.test_results)
         successful_modules = len(
@@ -341,7 +341,7 @@ def main():
 
     # Print summary
     summary = results["summary"]
-    print(f"\n📊 Test Results Summary:")
+    print("\n📊 Test Results Summary:")
     print(f"   Modules Tested: {summary['total_modules_tested']}")
     print(f"   Successful Modules: {summary['successful_modules']}")
     print(f"   Success Rate: {summary['success_rate']:.1f}%")
@@ -349,12 +349,12 @@ def main():
     print(f"   Total Errors: {summary['total_errors']}")
 
     # Print protocol implementations
-    print(f"\n🔧 Protocol Implementations:")
+    print("\n🔧 Protocol Implementations:")
     for protocol, count in results["protocol_implementations"].items():
         print(f"   {protocol}: {count} classes")
 
     # Print method test results
-    print(f"\n✅ Method Test Results:")
+    print("\n✅ Method Test Results:")
     for method, stats in results["method_test_results"].items():
         total = stats["passed"] + stats["failed"]
         success_rate = (stats["passed"] / total * 100) if total > 0 else 0
@@ -362,7 +362,7 @@ def main():
 
     # Print any errors
     if results["errors"]:
-        print(f"\n⚠️  Sample Errors:")
+        print("\n⚠️  Sample Errors:")
         for error in results["errors"]:
             print(f"   - {error}")
 

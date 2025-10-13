@@ -1,5 +1,6 @@
 import uuid
-from typing import Callable, Dict, Generic, TypeVar
+from collections.abc import Callable
+from typing import Dict, Generic, TypeVar
 
 from pydantic import Field
 
@@ -30,10 +31,10 @@ from collections.abc import Callable as CallableABC
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, Generic, TypeVar
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel

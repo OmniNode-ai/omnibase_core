@@ -8,9 +8,9 @@ from omnibase_core.models.core.model_workflow import ModelWorkflow
 Workflow strategy model.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_matrix_strategy import ModelMatrixStrategy
 

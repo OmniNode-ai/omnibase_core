@@ -52,7 +52,7 @@ def fix_typing_imports(content: str) -> str:
                 if line.startswith("from __future__ import"):
                     lines.insert(i + 1, "from typing import TypedDict")
                     break
-                elif (
+                if (
                     line.strip()
                     and not line.startswith("#")
                     and not line.startswith("from")

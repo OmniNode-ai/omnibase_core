@@ -12,9 +12,6 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_performance_metrics_config import ModelConfig
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelOnexPerformanceMetrics(BaseModel):
     """Performance metrics for Onex replies."""

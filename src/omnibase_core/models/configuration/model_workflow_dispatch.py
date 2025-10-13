@@ -8,7 +8,7 @@ from omnibase_core.models.core.model_workflow import ModelWorkflow
 Workflow dispatch model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_workflow_input import ModelWorkflowInput
 

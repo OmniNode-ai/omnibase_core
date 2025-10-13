@@ -1,5 +1,6 @@
 import uuid
-from typing import Callable, Dict, Generic, List, TypeVar
+from collections.abc import Callable
+from typing import Dict, Generic, List, TypeVar
 
 from pydantic import Field
 
@@ -30,7 +31,7 @@ from collections.abc import Callable as CallableABC
 from collections.abc import Iterable as IterableABC
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, TypeVar
+from typing import Any
 from uuid import UUID
 
 from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
@@ -1100,19 +1101,26 @@ class NodeReducer(NodeCoreBase):
             # Handle group key - if it's a string, use it as a field name
             if input_data.group_key:
                 if isinstance(input_data.group_key, str):
-                    group_key_func = lambda x: (
-                        x.get(input_data.group_key, "default")
-                        if hasattr(x, "get")
-                        else "default"
-                    )
+
+                    def group_key_func(x):
+                        return (
+                            x.get(input_data.group_key, "default")
+                            if hasattr(x, "get")
+                            else "default"
+                        )
+
                 else:
                     # Handle list of group keys
-                    group_key_func = lambda x: tuple(
-                        x.get(field, "default") if hasattr(x, "get") else "default"
-                        for field in input_data.group_key or []
-                    )
+                    def group_key_func(x):
+                        return tuple(
+                            x.get(field, "default") if hasattr(x, "get") else "default"
+                            for field in input_data.group_key or []
+                        )
+
             else:
-                group_key_func = lambda x: "default"
+
+                def group_key_func(x):
+                    return "default"
 
             for item in data:
                 key = group_key_func(item)

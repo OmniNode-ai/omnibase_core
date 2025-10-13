@@ -9,7 +9,6 @@ This enum defines the supported secret backend types in the system.
 from enum import Enum
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class EnumBackendType(Enum):

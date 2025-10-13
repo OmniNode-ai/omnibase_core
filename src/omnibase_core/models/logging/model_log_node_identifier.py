@@ -12,7 +12,7 @@ by allowing flexible identifiers when strict UUID context is unavailable.
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_lognodeidentifierstring import ModelLogNodeIdentifierString
 

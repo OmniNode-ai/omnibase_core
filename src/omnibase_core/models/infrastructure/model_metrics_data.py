@@ -17,12 +17,11 @@ Follows ONEX one-model-per-file naming conventions.
 # Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Import from common layer instead of metadata layer to avoid circular dependency
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue

@@ -12,7 +12,10 @@ from pathlib import Path
 def get_mypy_errors(file_path: str) -> list[tuple[int, str]]:
     """Get line numbers and error types for missing type annotations."""
     result = subprocess.run(
-        ["poetry", "run", "mypy", file_path], capture_output=True, text=True
+        ["poetry", "run", "mypy", file_path],
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
     errors = []
@@ -84,7 +87,7 @@ def process_file(file_path: Path):
     print(f"  Found {len(errors)} errors")
 
     # Read file
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         lines = f.readlines()
 
     # Add imports if needed

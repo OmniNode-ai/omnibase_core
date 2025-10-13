@@ -4,7 +4,7 @@ from pydantic import Field
 Trend analysis metrics model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelTrendMetrics(BaseModel):

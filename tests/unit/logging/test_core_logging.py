@@ -64,7 +64,7 @@ class TestEmitLogEventCore:
     def test_emit_log_event_auto_creates_correlation_id(self):
         """Test that emit_log_event auto-creates correlation ID."""
         # Clear any existing correlation ID
-        import omnibase_core.logging.core_logging as core_logging
+        from omnibase_core.logging import core_logging
 
         if hasattr(core_logging._context, "correlation_id"):
             del core_logging._context.correlation_id
@@ -100,7 +100,7 @@ class TestCorrelationIdManagement:
 
     def test_get_correlation_id_returns_none_when_not_set(self):
         """Test getting correlation ID when not set."""
-        import omnibase_core.logging.core_logging as core_logging
+        from omnibase_core.logging import core_logging
 
         # Clear correlation ID
         if hasattr(core_logging._context, "correlation_id"):
@@ -149,7 +149,7 @@ class TestInternalCorrelationIdGetter:
 
     def test_get_correlation_id_creates_new_if_missing(self):
         """Test that _get_correlation_id creates UUID if missing."""
-        import omnibase_core.logging.core_logging as core_logging
+        from omnibase_core.logging import core_logging
 
         # Clear correlation ID
         if hasattr(core_logging._context, "correlation_id"):
@@ -169,7 +169,7 @@ class TestInternalCorrelationIdGetter:
 
     def test_get_correlation_id_creates_only_once(self):
         """Test that _get_correlation_id creates UUID only once."""
-        import omnibase_core.logging.core_logging as core_logging
+        from omnibase_core.logging import core_logging
 
         # Clear correlation ID
         if hasattr(core_logging._context, "correlation_id"):

@@ -9,7 +9,7 @@ FileFilter model.
 
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums import EnumIgnorePatternSource, EnumTraversalMode
 

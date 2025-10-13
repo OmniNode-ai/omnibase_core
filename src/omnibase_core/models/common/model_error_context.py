@@ -60,7 +60,7 @@ class ModelErrorContext(BaseModel):
     def with_context(
         cls,
         additional_context: dict[str, ModelSchemaValue],
-    ) -> "ModelErrorContext":
+    ) -> ModelErrorContext:
         """
         Create ModelErrorContext with only additional context.
 
@@ -106,9 +106,9 @@ class ModelErrorContext(BaseModel):
         # This is pure data validation without exception throwing
         return True
 
-    def to_simple_context(self) -> "TypedDictBasicErrorContext":
+    def to_simple_context(self) -> TypedDictBasicErrorContext:
         """Convert to TypedDictBasicErrorContext (no circular dependencies)."""
-        simple_context: "TypedDictBasicErrorContext" = {}
+        simple_context: TypedDictBasicErrorContext = {}
         if self.file_path is not None:
             simple_context["file_path"] = self.file_path
         if self.line_number is not None:
@@ -129,8 +129,8 @@ class ModelErrorContext(BaseModel):
 
     @classmethod
     def from_simple_context(
-        cls, simple_context: "TypedDictBasicErrorContext"
-    ) -> "ModelErrorContext":
+        cls, simple_context: TypedDictBasicErrorContext
+    ) -> ModelErrorContext:
         """Create from TypedDictBasicErrorContext."""
         # Convert additional context to schema values
         additional_context_models = {

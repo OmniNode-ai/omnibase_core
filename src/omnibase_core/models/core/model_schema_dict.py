@@ -11,9 +11,9 @@ This model replaces dict[str, Any]ionary usage in schema definitions by providin
 a structured representation of schema dict[str, Any]ionaries.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSchemaDict(BaseModel):

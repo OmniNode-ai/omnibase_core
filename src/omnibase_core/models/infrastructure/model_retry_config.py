@@ -14,11 +14,10 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from typing import Any, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelRetryConfig(BaseModel):

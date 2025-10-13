@@ -31,7 +31,7 @@ class MemoryUsageAnalyzer:
         self.project_root = Path(__file__).parent.parent.parent
         self.process = psutil.Process() if PSUTIL_AVAILABLE else None
 
-    def get_memory_info(self) -> Dict[str, float]:
+    def get_memory_info(self) -> dict[str, float]:
         """Get current process memory information."""
         if PSUTIL_AVAILABLE:
             memory_info = self.process.memory_info()
@@ -55,7 +55,7 @@ class MemoryUsageAnalyzer:
                 "available_mb": 0.0,
             }
 
-    def analyze_validation_script_memory(self, script_path: str) -> Dict[str, float]:
+    def analyze_validation_script_memory(self, script_path: str) -> dict[str, float]:
         """Analyze memory usage of a validation script."""
         print(f"🧠 Analyzing memory usage: {Path(script_path).name}")
 
@@ -75,7 +75,12 @@ class MemoryUsageAnalyzer:
         try:
             # Run script and monitor memory usage
             result = subprocess.run(
-                cmd, cwd=self.project_root, capture_output=True, text=True, timeout=30
+                cmd,
+                cwd=self.project_root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
             )
 
             # For subprocess, we can't monitor memory in real-time easily
@@ -143,11 +148,11 @@ class MemoryUsageAnalyzer:
 
             # Check for memory leaks
             if total_growth > 50:  # More than 50MB total growth
-                print(f"   ⚠️  Potential memory leak detected")
+                print("   ⚠️  Potential memory leak detected")
             elif avg_delta > 5:  # More than 5MB average per run
-                print(f"   ⚠️  High memory usage per execution")
+                print("   ⚠️  High memory usage per execution")
             else:
-                print(f"   ✅ Memory usage appears normal")
+                print("   ✅ Memory usage appears normal")
 
             return {
                 "avg_delta_mb": avg_delta,
@@ -159,7 +164,7 @@ class MemoryUsageAnalyzer:
                 "high_usage_risk": avg_delta > 5,
             }
         else:
-            print(f"   ❌ No successful script executions for analysis")
+            print("   ❌ No successful script executions for analysis")
             return {"error": "No successful executions"}
 
     def analyze_all_validation_scripts(self):
@@ -193,7 +198,7 @@ class MemoryUsageAnalyzer:
 
         overall_memory_end = self.get_memory_info()
 
-        print(f"\n📊 Overall Memory Analysis Summary:")
+        print("\n📊 Overall Memory Analysis Summary:")
         print(f"   Initial memory: {overall_memory_start['rss_mb']:.1f}MB")
         print(f"   Final memory: {overall_memory_end['rss_mb']:.1f}MB")
         print(
@@ -204,7 +209,7 @@ class MemoryUsageAnalyzer:
 
     def analyze_optimization_memory_impact(self):
         """Analyze memory impact of performance optimizations."""
-        print(f"\n🚀 Analyzing Optimization Memory Impact")
+        print("\n🚀 Analyzing Optimization Memory Impact")
         print("=" * 50)
 
         # Test memory usage patterns for optimized vs unoptimized operations
@@ -275,9 +280,9 @@ class MemoryUsageAnalyzer:
 
         print(f"\n✅ Completed {optimizations_tested} optimization memory tests")
 
-    def generate_memory_recommendations(self, analysis_results: Dict):
+    def generate_memory_recommendations(self, analysis_results: dict):
         """Generate memory usage recommendations."""
-        print(f"\n💡 Memory Usage Recommendations:")
+        print("\n💡 Memory Usage Recommendations:")
         print("=" * 50)
 
         recommendations = []
@@ -330,7 +335,7 @@ class MemoryUsageAnalyzer:
             print("✅ Current memory usage patterns appear acceptable")
 
         # General recommendations
-        print(f"\nGeneral Memory Best Practices:")
+        print("\nGeneral Memory Best Practices:")
         print("1. Use generators instead of lists for large datasets")
         print("2. Implement proper cleanup in validation scripts")
         print("3. Consider memory profiling for scripts processing many files")
@@ -364,7 +369,7 @@ class MemoryUsageAnalyzer:
                 f.write(f"  Basic analysis: {results.get('basic_analysis', {})}\n")
                 f.write(f"  Memory growth: {results.get('memory_growth', {})}\n")
 
-            f.write(f"\nRECOMMENDATIONS:\n")
+            f.write("\nRECOMMENDATIONS:\n")
             for i, rec in enumerate(recommendations, 1):
                 f.write(f"{i}. [{rec['priority']}] {rec['issue']}\n")
                 f.write(f"   Solution: {rec['solution']}\n")
@@ -386,11 +391,11 @@ def main():
     results = analyzer.run_comprehensive_memory_analysis()
 
     # Final assessment
-    print(f"\n🎯 Memory Usage Assessment:")
+    print("\n🎯 Memory Usage Assessment:")
     if results["memory_issues_count"] > 0:
         print(f"   ⚠️  {results['memory_issues_count']} critical memory issues detected")
     else:
-        print(f"   ✅ No critical memory issues detected")
+        print("   ✅ No critical memory issues detected")
 
     return results
 

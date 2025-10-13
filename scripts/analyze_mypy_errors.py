@@ -15,6 +15,7 @@ def run_mypy():
         capture_output=True,
         text=True,
         cwd="/Volumes/PRO-G40/Code/omnibase_core",
+        check=False,
     )
     return result.stdout + result.stderr
 

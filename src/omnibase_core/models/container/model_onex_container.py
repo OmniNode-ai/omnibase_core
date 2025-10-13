@@ -1,5 +1,6 @@
 import uuid
-from typing import Any, Callable, Dict, Optional, TypeVar
+from collections.abc import Callable
+from typing import Any, Dict, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -24,7 +25,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Import needed for type annotations
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from dependency_injector import containers, providers
@@ -32,7 +33,6 @@ from omnibase_spi import ProtocolLogger
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -60,13 +60,13 @@ except ImportError:
 ProtocolDatabaseConnection = Any
 ProtocolServiceDiscovery = Any
 
-if TYPE_CHECKING:
-    from omnibase_core.infrastructure.node_base import NodeBase
 
 T = TypeVar("T")
 
 
 # === CORE CONTAINER DEFINITION ===
+
+from omnibase_core.infrastructure.node_base import NodeBase
 
 from .model_base_model_onex_container import _BaseModelONEXContainer
 
@@ -217,33 +217,32 @@ class ModelONEXContainer:
                     note="Requires omnibase-spi protocol integration",
                     correlation_id=final_correlation_id,
                 )
-            else:
-                # Map common protocol names to container providers
-                provider_map = {
-                    "ProtocolLogger": "enhanced_logger",
-                    "Logger": "enhanced_logger",
-                }
+            # Map common protocol names to container providers
+            provider_map = {
+                "ProtocolLogger": "enhanced_logger",
+                "Logger": "enhanced_logger",
+            }
 
-                if protocol_name in provider_map:
-                    provider_name = provider_map[protocol_name]
-                    provider = getattr(self._base_container, provider_name, None)
-                    if provider:
-                        service_instance = provider()
-                    else:
-                        raise ModelOnexError(
-                            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                            message=f"Provider not found: {provider_name}",
-                            protocol_type=protocol_name,
-                            correlation_id=final_correlation_id,
-                        )
+            if protocol_name in provider_map:
+                provider_name = provider_map[protocol_name]
+                provider = getattr(self._base_container, provider_name, None)
+                if provider:
+                    service_instance = provider()
                 else:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                        message=f"Unable to resolve service for protocol {protocol_name}",
+                        message=f"Provider not found: {provider_name}",
                         protocol_type=protocol_name,
-                        service_name=service_name or "",
                         correlation_id=final_correlation_id,
                     )
+            else:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                    message=f"Unable to resolve service for protocol {protocol_name}",
+                    protocol_type=protocol_name,
+                    service_name=service_name or "",
+                    correlation_id=final_correlation_id,
+                )
 
             end_time = datetime.now()
             resolution_time_ms = int((end_time - start_time).total_seconds() * 1000)

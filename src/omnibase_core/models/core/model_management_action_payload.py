@@ -11,7 +11,7 @@ Payload for management actions (configure, deploy, migrate, etc.).
 
 from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType

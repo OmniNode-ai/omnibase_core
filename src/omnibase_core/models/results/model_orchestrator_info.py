@@ -10,12 +10,10 @@ Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fi
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
-
-from omnibase_core.primitives.model_semver import ModelSemVer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from .model_orchestrator_metrics import ModelOrchestratorMetrics
 

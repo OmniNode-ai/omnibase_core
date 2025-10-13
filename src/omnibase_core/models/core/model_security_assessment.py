@@ -7,9 +7,9 @@ Security assessment model to replace Dict[str, Any] usage for security data.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.enums.enum_security_risk_level import SecurityRiskLevel
 from omnibase_core.models.core.model_security_vulnerability import (

@@ -39,10 +39,10 @@ follow this structure for consistency and validation.
 Schema Version: 1.0.0
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelExample

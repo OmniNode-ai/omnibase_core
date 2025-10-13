@@ -271,7 +271,6 @@ class TestModelWorkflowInput:
         workflow_input = ModelWorkflowInput(description="Test input")
         # Test that model fields cannot be modified after creation
         # (depends on model configuration)
-        pass
 
     def test_model_field_descriptions(self):
         """Test model field descriptions."""

@@ -15,15 +15,14 @@ aspects of ModelProgress with a single generic type-safe implementation.
 """
 
 
-from datetime import UTC, datetime, timedelta
-from typing import Any, Generic, TypeVar
+from datetime import UTC, timedelta
+from typing import Any
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 T = TypeVar("T", int, float)
 
@@ -70,7 +69,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
     )
 
     @model_validator(mode="after")
-    def validate_warning_threshold(self) -> "ModelTimeBased[T]":
+    def validate_warning_threshold(self) -> ModelTimeBased[T]:
         """Validate warning threshold is less than main value."""
         if self.warning_threshold_value is not None:
             if self.warning_threshold_value >= self.value:

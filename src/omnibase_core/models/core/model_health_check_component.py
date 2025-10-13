@@ -8,7 +8,7 @@ Health check component model for individual component status.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, field_serializer
 
 
 class ModelHealthCheckComponent(BaseModel):

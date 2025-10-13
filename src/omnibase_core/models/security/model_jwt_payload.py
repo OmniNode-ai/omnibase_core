@@ -9,7 +9,7 @@ ONEX Model: JWT Payload Model
 Strongly typed model for JWT payload with proper type safety.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelJWTPayload(BaseModel):

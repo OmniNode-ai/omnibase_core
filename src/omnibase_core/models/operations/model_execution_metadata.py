@@ -20,12 +20,10 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelExecutionMetadata(BaseModel):

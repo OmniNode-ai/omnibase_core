@@ -9,7 +9,7 @@ ModelTrustLevel: Trust level configuration for signature chains.
 This model represents trust level configuration and validation.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 class ModelTrustLevel(BaseModel):

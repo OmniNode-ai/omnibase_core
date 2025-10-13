@@ -35,7 +35,7 @@ from omnibase_spi.protocols.types import (
 from omnibase_spi.protocols.types import (
     ProtocolModelValidatable as ModelProtocolValidatable,
 )
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 # Import standard type alias from ONEX common types
 from omnibase_core.models.types.model_onex_common_types import JsonSerializable
@@ -157,7 +157,7 @@ class ModelValueContainer(BaseModel):
             errors.extend(metadata_errors)
 
         except Exception as e:
-            errors.append(f"Validation error: {str(e)}")
+            errors.append(f"Validation error: {e!s}")
 
         return errors
 
@@ -196,7 +196,7 @@ class ModelValueContainer(BaseModel):
             if len(self.value) > 1000:  # Prevent DoS
                 return False
             # All keys must be strings for JSON compatibility
-            if not all(isinstance(key, str) for key in self.value.keys()):
+            if not all(isinstance(key, str) for key in self.value):
                 return False
 
         return True
@@ -241,7 +241,6 @@ class ModelValueContainer(BaseModel):
         # Numeric validation errors
         elif isinstance(self.value, (int, float)):
             if isinstance(self.value, float):
-
                 if math.isnan(self.value):
                     errors.append("Float value cannot be NaN")
                 elif math.isinf(self.value):
@@ -260,9 +259,7 @@ class ModelValueContainer(BaseModel):
         elif isinstance(self.value, dict):
             if len(self.value) > 1000:
                 errors.append("Dict exceeds maximum size of 1000 entries")
-            non_string_keys = [
-                repr(k) for k in self.value.keys() if not isinstance(k, str)
-            ]
+            non_string_keys = [repr(k) for k in self.value if not isinstance(k, str)]
             if non_string_keys:
                 errors.append(
                     f"Dict contains non-string keys: {', '.join(non_string_keys)}"
@@ -292,6 +289,6 @@ class ModelValueContainer(BaseModel):
                     )
 
         except Exception as e:
-            errors.append(f"Metadata validation error: {str(e)}")
+            errors.append(f"Metadata validation error: {e!s}")
 
         return errors

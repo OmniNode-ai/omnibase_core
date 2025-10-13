@@ -1,14 +1,13 @@
-from typing import Any
+from typing import Any, Self
 from uuid import UUID
 
 from pydantic import Field, model_validator
-from typing_extensions import Self
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 "\nModelNodeWeights - Node weight configuration for load balancing\n\nNode weights model for configuring relative traffic distribution weights\nacross multiple nodes in a load balancing system.\n"
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 
 class ModelNodeWeights(BaseModel):

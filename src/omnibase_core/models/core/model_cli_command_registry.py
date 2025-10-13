@@ -11,7 +11,7 @@ This replaces hardcoded command enums with flexible, contract-driven command dis
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,

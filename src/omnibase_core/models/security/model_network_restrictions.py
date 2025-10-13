@@ -9,7 +9,7 @@ Typed model for network access restrictions,
 replacing Dict[str, Any] with structured fields.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNetworkRestrictions(BaseModel):

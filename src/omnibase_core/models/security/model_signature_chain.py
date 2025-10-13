@@ -15,7 +15,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.errors.error_codes import EnumCoreErrorCode

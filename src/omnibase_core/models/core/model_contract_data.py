@@ -10,7 +10,7 @@ Node contract information structure.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelContractData(BaseModel):

@@ -1,11 +1,11 @@
-from typing import Callable
+from collections.abc import Callable
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """Conflict resolver model for handling data conflicts during reduction."""
 
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable
+from typing import Any
 
 from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
 from omnibase_core.errors.error_codes import EnumCoreErrorCode

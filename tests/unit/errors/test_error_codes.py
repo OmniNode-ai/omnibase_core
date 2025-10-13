@@ -206,7 +206,7 @@ class TestCoreErrorDescriptions:
     """Test core error descriptions."""
 
     @pytest.mark.parametrize(
-        "error_code,expected_keywords",
+        ("error_code", "expected_keywords"),
         [
             (CoreErrorCode.INVALID_PARAMETER, ["invalid", "parameter"]),
             (CoreErrorCode.FILE_NOT_FOUND, ["file", "not found"]),

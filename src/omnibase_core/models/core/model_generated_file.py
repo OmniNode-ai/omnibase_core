@@ -9,7 +9,7 @@ multi-document model generator.
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelGeneratedFile(BaseModel):

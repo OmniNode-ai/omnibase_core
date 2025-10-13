@@ -72,6 +72,7 @@ class GenericStabilityValidator:
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
+                check=False,
             )
 
             if result.returncode == 0:
@@ -97,6 +98,7 @@ class GenericStabilityValidator:
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
+                check=False,
             )
 
             if result.returncode == 0:
@@ -128,6 +130,7 @@ class GenericStabilityValidator:
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
+                check=False,
             )
 
             # MyPy returns 0 for success, non-zero for issues
@@ -159,6 +162,7 @@ class GenericStabilityValidator:
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
+                check=False,
             )
 
             if result.returncode == 0:
@@ -205,6 +209,7 @@ class GenericStabilityValidator:
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
+                check=False,
             )
 
             if result.returncode == 0:

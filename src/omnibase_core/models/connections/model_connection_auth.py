@@ -18,11 +18,10 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, SecretStr, field_serializer
+from pydantic import BaseModel, SecretStr, field_serializer
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelConnectionAuth(BaseModel):

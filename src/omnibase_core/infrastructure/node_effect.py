@@ -1,5 +1,6 @@
 import uuid
-from typing import Callable, Dict, List, Optional, TypeVar
+from collections.abc import Callable
+from typing import Dict, List, Optional, TypeVar
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -28,7 +29,7 @@ from collections.abc import AsyncIterator
 from collections.abc import Callable as CallableABC
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
@@ -81,13 +82,12 @@ def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelSchemaValue]
     """
     converted = {}
     for key, value in data.items():
-        if isinstance(value, str):
-            converted[key] = ModelSchemaValue.from_value(value)
-        elif isinstance(value, int):
-            converted[key] = ModelSchemaValue.from_value(value)
-        elif isinstance(value, float):
-            converted[key] = ModelSchemaValue.from_value(value)
-        elif isinstance(value, bool):
+        if (
+            isinstance(value, str)
+            or isinstance(value, int)
+            or isinstance(value, float)
+            or isinstance(value, bool)
+        ):
             converted[key] = ModelSchemaValue.from_value(value)
         elif value is None:
             # Handle None by creating a string representation

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 
-def fix_file(file_path: Path) -> Tuple[bool, str]:
+def fix_file(file_path: Path) -> tuple[bool, str]:
     """
     Fix misplaced imports in a Python file.
 
@@ -95,7 +95,7 @@ def main():
     models_dir = base_dir / "src" / "omnibase_core" / "models"
     mixins_dir = base_dir / "src" / "omnibase_core" / "mixins"
 
-    all_files: List[Path] = []
+    all_files: list[Path] = []
     all_files.extend(models_dir.rglob("*.py"))
     all_files.extend(mixins_dir.rglob("*.py"))
 

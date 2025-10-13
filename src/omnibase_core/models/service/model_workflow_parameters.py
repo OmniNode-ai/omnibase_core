@@ -11,9 +11,9 @@ Type-safe workflow parameters that replace Dict[str, Any] usage
 for workflow execution configuration.
 """
 
-from typing import Any, Dict, Union
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 ParameterValue = Union[
     str,

@@ -11,9 +11,9 @@ Type-safe workflow outputs that replace Dict[str, Any] usage
 for workflow execution results.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 

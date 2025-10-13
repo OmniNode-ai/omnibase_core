@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 
-def check_typeddict_naming(file_path: Path) -> List[Tuple[int, str, str]]:
+def check_typeddict_naming(file_path: Path) -> list[tuple[int, str, str]]:
     """
     Check if TypedDict classes follow naming conventions.
 
@@ -34,7 +34,7 @@ def check_typeddict_naming(file_path: Path) -> List[Tuple[int, str, str]]:
     violations = []
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content, filename=str(file_path))

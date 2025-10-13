@@ -3,10 +3,10 @@ from typing import Dict, List
 from pydantic import Field
 
 "\nOrchestrator Step Model\n\nType-safe orchestrator step that replaces Dict[str, Any] usage\nin orchestrator plans.\n"
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 

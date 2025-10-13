@@ -7,9 +7,9 @@ from pydantic import Field
 Health check configuration model.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelHealthCheckConfig(BaseModel):

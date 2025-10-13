@@ -12,7 +12,7 @@ This module defines the Hub self-registration event for Consul service registry.
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelHubRegistrationEvent(BaseModel):

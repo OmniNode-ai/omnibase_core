@@ -7,8 +7,6 @@ Typed structure for quality data updates.
 """
 
 
-from typing import TypedDict
-
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 
 

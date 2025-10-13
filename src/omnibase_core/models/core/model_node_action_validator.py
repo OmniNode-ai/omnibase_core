@@ -7,7 +7,7 @@ Comprehensive validator for node actions with security and trust scoring.
 """
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_action_payload_types import SpecificActionPayload

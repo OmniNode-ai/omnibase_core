@@ -9,7 +9,7 @@ for CLI tool execution operations.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.utils.decorators import allow_any_type, allow_dict_str_any
 

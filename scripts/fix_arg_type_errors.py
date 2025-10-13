@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 ROOT_DIR = Path(__file__).parent.parent / "src" / "omnibase_core"
 
 # Fixes to apply: (file_path, line_number, pattern, replacement, description)
-FIXES: List[Tuple[str, int, str, str, str]] = [
+FIXES: list[tuple[str, int, str, str, str]] = [
     # UUID conversion fixes - mixin_workflow_support.py
     (
         "mixins/mixin_workflow_support.py",
@@ -61,13 +61,13 @@ FIXES: List[Tuple[str, int, str, str, str]] = [
 ]
 
 
-def read_file_lines(filepath: Path) -> List[str]:
+def read_file_lines(filepath: Path) -> list[str]:
     """Read file and return lines."""
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         return f.readlines()
 
 
-def write_file_lines(filepath: Path, lines: List[str]) -> None:
+def write_file_lines(filepath: Path, lines: list[str]) -> None:
     """Write lines to file."""
     with open(filepath, "w", encoding="utf-8") as f:
         f.writelines(lines)

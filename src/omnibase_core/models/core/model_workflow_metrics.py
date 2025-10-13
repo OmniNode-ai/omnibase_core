@@ -11,7 +11,7 @@ Structured model for workflow execution metrics used by
 hybrid execution mixins and monitoring systems.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.core.model_resource_usage_details import (

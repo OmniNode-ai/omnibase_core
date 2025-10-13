@@ -184,7 +184,7 @@ def add_missing_imports(source: str, needs_uuid: bool, needs_modelsemver: bool) 
         stripped = line.strip()
 
         # Track docstrings
-        if stripped.startswith('"""') or stripped.startswith("'''"):
+        if stripped.startswith(('"""', "'''")):
             if in_docstring:
                 in_docstring = False
                 docstring_found = True
@@ -269,9 +269,9 @@ def main():
             violations_found.append(py_file)
             print(f"✅ Fixed: {py_file}")
 
-    print(f"\n📊 Summary:")
+    print("\n📊 Summary:")
     print(f"   Files fixed: {len(violations_found)}")
-    print(f"\n✨ Done! Run 'pre-commit run --all-files' to verify.")
+    print("\n✨ Done! Run 'pre-commit run --all-files' to verify.")
 
 
 if __name__ == "__main__":

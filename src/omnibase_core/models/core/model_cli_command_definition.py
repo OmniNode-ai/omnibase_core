@@ -9,7 +9,7 @@ Defines the structure for CLI commands discovered dynamically from node contract
 This replaces hardcoded command enums with flexible, contract-driven command definitions.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_argument_description import (
     ModelArgumentDescription,

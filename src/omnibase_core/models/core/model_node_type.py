@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import Field
 
 "\nNode Type Model.\n\nExtensible node type definition that replaces restrictive enums\nwith flexible, plugin-extensible node type configuration.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.configuration.model_performance_constraints import (
     ModelPerformanceConstraints,
@@ -64,7 +64,7 @@ class ModelNodeType(BaseModel):
 
     def provides_capability(self, capability: ModelCapability) -> bool:
         """Check if type provides a capability."""
-        return any((cap.matches(capability) for cap in self.capabilities_provided))
+        return any(cap.matches(capability) for cap in self.capabilities_provided)
 
     @classmethod
     def create_core_type(

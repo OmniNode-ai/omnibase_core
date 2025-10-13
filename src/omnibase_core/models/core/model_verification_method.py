@@ -6,9 +6,9 @@ from pydantic import Field
 VerificationMethod model.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelVerificationMethod(BaseModel):

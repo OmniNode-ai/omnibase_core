@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 "\nModelRateLimitPolicy - Comprehensive rate limiting policy configuration\n\nRate limiting policy model that combines window configuration, user limits,\nthrottling behavior, and burst handling for complete rate limiting management.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_burst_config import ModelBurstConfig
 from .model_per_user_limits import ModelPerUserLimits

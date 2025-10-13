@@ -19,16 +19,14 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 import re
 from functools import lru_cache
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelDependency(BaseModel):

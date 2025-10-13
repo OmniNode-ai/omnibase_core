@@ -10,7 +10,7 @@ configuration base with ModelCustomProperties for extensible custom fields.
 """
 
 
-from typing import Any, TypeVar
+from typing import Any
 
 from .model_configuration_base import ModelConfigurationBase
 from .model_custom_properties import ModelCustomProperties

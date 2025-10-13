@@ -13,7 +13,7 @@ where all traceability information is guaranteed to be present.
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.core.core_uuid_service import UUIDService
 

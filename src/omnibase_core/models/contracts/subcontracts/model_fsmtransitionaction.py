@@ -30,7 +30,7 @@ class ModelFSMTransitionAction(BaseModel):
         min_length=1,
     )
 
-    action_config: dict[str, "ModelActionConfigValue"] = Field(
+    action_config: dict[str, ModelActionConfigValue] = Field(
         default_factory=dict,
         description="Strongly-typed configuration parameters for the action",
     )

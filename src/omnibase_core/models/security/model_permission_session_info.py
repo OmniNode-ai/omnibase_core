@@ -6,7 +6,7 @@ from pydantic import Field
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPermissionSessionInfo(BaseModel):

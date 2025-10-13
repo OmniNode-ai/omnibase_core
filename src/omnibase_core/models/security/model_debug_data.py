@@ -8,7 +8,7 @@ ModelDebugData: Debug data representation.
 This model provides structured debug data without using Any types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDebugData(BaseModel):

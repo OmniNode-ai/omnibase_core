@@ -24,7 +24,7 @@ class ModelStorageListResult(BaseModel):
 
     success: bool = Field(description="Whether the list operation succeeded")
 
-    checkpoints: List[ModelCheckpointData] = Field(
+    checkpoints: list[ModelCheckpointData] = Field(
         description="List of checkpoints", default_factory=list
     )
 

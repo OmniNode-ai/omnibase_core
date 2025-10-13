@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict
 from .model_onex_ignore_section import ModelOnexIgnoreSection
 
 # Compatibility alias
-OnexIgnoreSection: TypeAlias = ModelOnexIgnoreSection
+type OnexIgnoreSection = ModelOnexIgnoreSection
 
 
 class ModelOnexIgnore(BaseModel):

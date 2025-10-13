@@ -9,7 +9,7 @@ Strongly typed enumeration for migration conflict type discriminators.
 """
 
 from enum import Enum, unique
-from typing import Dict, TypedDict
+from typing import Dict
 
 
 @unique

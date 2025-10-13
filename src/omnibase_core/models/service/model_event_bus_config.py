@@ -10,7 +10,7 @@ Event bus configuration model for service communication.
 import os
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, ValidationError
 
 
 class ModelEventBusConfig(BaseModel):

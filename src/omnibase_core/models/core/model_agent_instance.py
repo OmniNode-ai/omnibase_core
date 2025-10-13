@@ -10,7 +10,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.agent.model_llm_agent_config import ModelLLMAgentConfig
 from omnibase_core.models.core.model_agent_status import (

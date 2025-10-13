@@ -8,7 +8,7 @@ Serializable Dictionary Model for ONEX Configuration System.
 Strongly typed model for serializable dict[str, Any]ionary data.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSerializableDict(BaseModel):

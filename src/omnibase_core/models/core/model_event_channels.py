@@ -7,7 +7,7 @@ from pydantic import Field
 Event channels model for node introspection.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelEventChannels(BaseModel):

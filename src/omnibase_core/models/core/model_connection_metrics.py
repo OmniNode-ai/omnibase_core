@@ -4,7 +4,7 @@ from pydantic import Field
 Connection metrics model for network performance tracking.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelConnectionMetrics(BaseModel):

@@ -7,9 +7,8 @@ PerformanceSummary model.
 """
 
 from datetime import datetime
-from typing import Any, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class ModelPerformanceSummary(BaseModel):

@@ -6,7 +6,7 @@ State field model for state model specification.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelStateField(BaseModel):

@@ -15,11 +15,10 @@ Discriminated union for function node types following ONEX one-model-per-file ar
 
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
 
 from .model_function_node_data import ModelFunctionNodeData

@@ -16,9 +16,6 @@ from omnibase_core.types.typed_dict_node_rule_structure import (
     TypedDictNodeRuleStructure,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelSubcontractConstraintValidator:
     """

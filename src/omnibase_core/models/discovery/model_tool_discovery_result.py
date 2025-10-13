@@ -6,7 +6,7 @@ from pydantic import Field
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.discovery.model_discovery_config import ModelDiscoveryConfig
 from omnibase_core.models.discovery.model_tool_discovery_error import (

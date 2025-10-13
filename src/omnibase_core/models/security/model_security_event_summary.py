@@ -30,9 +30,9 @@ class ModelSecurityEventSummary(BaseModel):
     def get_event_severity(self) -> str:
         """Get event severity based on event type."""
         event_type_lower = self.event_type.lower()
-        if any((word in event_type_lower for word in ["error", "fail", "breach"])):
+        if any(word in event_type_lower for word in ["error", "fail", "breach"]):
             return "high"
-        elif any((word in event_type_lower for word in ["warning", "alert"])):
+        elif any(word in event_type_lower for word in ["warning", "alert"]):
             return "medium"
         else:
             return "low"

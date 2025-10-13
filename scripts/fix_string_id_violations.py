@@ -46,9 +46,9 @@ def fix_version_field_simple(
 def ensure_uuid_import(content: str) -> str:
     """Ensure UUID and uuid4 are imported"""
     lines = content.split("\n")
-    has_uuid_import = any(("from uuid import" in line for line in lines))
-    has_uuid = any(("UUID" in line and "import" in line for line in lines))
-    has_uuid4 = any(("uuid4" in line and "import" in line for line in lines))
+    has_uuid_import = any("from uuid import" in line for line in lines)
+    has_uuid = any("UUID" in line and "import" in line for line in lines)
+    has_uuid4 = any("uuid4" in line and "import" in line for line in lines)
     if has_uuid_import:
         for i, line in enumerate(lines):
             if "from uuid import" in line and "UUID" not in line:
@@ -61,9 +61,7 @@ def ensure_uuid_import(content: str) -> str:
                 )
     else:
         for i, line in enumerate(lines):
-            if line.startswith("from pydantic import") or line.startswith(
-                "from omnibase_core"
-            ):
+            if line.startswith(("from pydantic import", "from omnibase_core")):
                 lines.insert(i, "from uuid import UUID, uuid4\n")
                 break
     return "\n".join(lines)
@@ -75,9 +73,7 @@ def ensure_semver_import(content: str) -> str:
         return content
     lines = content.split("\n")
     for i, line in enumerate(lines):
-        if line.startswith("from omnibase_core.models") or line.startswith(
-            "from pydantic"
-        ):
+        if line.startswith(("from omnibase_core.models", "from pydantic")):
             lines.insert(
                 i + 1,
                 "from omnibase_core.models.core.model_semver import ModelSemVer\n",

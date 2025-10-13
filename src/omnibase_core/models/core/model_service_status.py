@@ -8,7 +8,7 @@ Service Status Model.
 Status of a system service.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelServiceStatus(BaseModel):

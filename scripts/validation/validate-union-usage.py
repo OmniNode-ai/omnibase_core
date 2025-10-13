@@ -5,6 +5,7 @@ Validates that Union types are used properly according to ONEX standards.
 Uses AST-based legitimacy validation instead of arbitrary counting.
 Ensures unions follow proper typing patterns for strong type safety.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,7 +41,7 @@ class UnionLegitimacyValidator:
         }
 
     def validate_union_legitimacy(
-        self, union_pattern: "UnionPattern", file_content: str | None = None
+        self, union_pattern: UnionPattern, file_content: str | None = None
     ) -> dict[str, Any]:
         """
         Validate if a union pattern is legitimate according to ONEX standards.
@@ -84,13 +85,13 @@ class UnionLegitimacyValidator:
         return result
 
     def _is_optional_pattern(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this is a legitimate Optional[T] pattern (T | None)."""
         return len(pattern.types) == 2 and "None" in pattern.types
 
     def _is_result_pattern(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this is a Result[T, E] monadic error handling pattern."""
         # Look for Result[T, E] patterns or Result-like discriminated unions
@@ -111,7 +112,7 @@ class UnionLegitimacyValidator:
         return has_success_variant and has_error_variant and len(types) == 2
 
     def _is_discriminated_union(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this is a properly discriminated union with Literal discriminators."""
         # Look for Literal types in the union
@@ -142,7 +143,7 @@ class UnionLegitimacyValidator:
         ) and len(pattern.types) <= 5
 
     def _is_model_schema_value_pattern(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this uses proper ModelSchemaValue patterns instead of Any."""
         # Look for ModelSchemaValue or strongly typed schema patterns
@@ -155,7 +156,7 @@ class UnionLegitimacyValidator:
         return (has_model_schema or has_schema_pattern) and not has_any
 
     def _is_error_handling_pattern(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this is a legitimate error handling pattern."""
         types = pattern.types
@@ -167,7 +168,7 @@ class UnionLegitimacyValidator:
         return has_exception and has_success_type and len(types) <= 3
 
     def _is_type_narrowing_pattern(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this is a legitimate type narrowing pattern."""
         types = pattern.types
@@ -188,7 +189,7 @@ class UnionLegitimacyValidator:
         return False
 
     def _is_type_alias_definition(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """
         Check if this is a legitimate type alias definition.
@@ -219,7 +220,7 @@ class UnionLegitimacyValidator:
         return False
 
     def _is_primitive_soup(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this is a lazy 'primitive soup' union."""
         primitive_types = {"str", "int", "bool", "float", "bytes"}
@@ -230,13 +231,13 @@ class UnionLegitimacyValidator:
         return primitive_count >= 3 and len(pattern.types) >= 3
 
     def _is_any_contaminated(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this union contains Any types (anti-pattern)."""
         return "Any" in pattern.types or any("Any" in t for t in pattern.types)
 
     def _is_overly_broad(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if this union is overly broad without semantic meaning."""
         # 5+ different types usually indicates lack of proper modeling
@@ -253,7 +254,7 @@ class UnionLegitimacyValidator:
         return has_primitives and has_complex and len(pattern.types) >= 4
 
     def _is_semantic_mismatch(
-        self, pattern: "UnionPattern", file_content: str | None = None
+        self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
         """Check if union types have semantic mismatch."""
         # Common anti-patterns
@@ -274,7 +275,7 @@ class UnionLegitimacyValidator:
         types_set = set(pattern.types)
         return any(combo.issubset(types_set) for combo in problematic_combinations)
 
-    def _evaluate_semantic_legitimacy(self, pattern: "UnionPattern") -> dict[str, Any]:
+    def _evaluate_semantic_legitimacy(self, pattern: UnionPattern) -> dict[str, Any]:
         """Evaluate legitimacy based on semantic coherence when no specific pattern matches."""
         # Default to legitimate for small, coherent unions
         if len(pattern.types) <= 2:
@@ -296,7 +297,7 @@ class UnionLegitimacyValidator:
         }
 
     def _get_suggestions_for_pattern(
-        self, pattern_type: str, pattern: "UnionPattern"
+        self, pattern_type: str, pattern: UnionPattern
     ) -> list[str]:
         """Get specific suggestions for improving invalid patterns."""
         suggestions = {
@@ -476,10 +477,10 @@ class UnionUsageChecker(ast.NodeVisitor):
         if validation_result["pattern_type"] == "optional" and "Union[" in str(
             union_pattern.types
         ):
-            non_none_type = [t for t in union_pattern.types if t != "None"][0]
+            non_none_type = next(t for t in union_pattern.types if t != "None")
             # Only suggest conversion if this was written in old Union[] syntax
             # This is a style suggestion, not a legitimacy issue
-            pass  # We'll handle this in a separate style checker if needed
+            # We'll handle this in a separate style checker if needed
 
     def visit_Subscript(self, node):
         """Visit subscript nodes (e.g., Union[str, int])."""
@@ -522,7 +523,7 @@ class UnionUsageChecker(ast.NodeVisitor):
             """Check if node is a variable reference (like set1)."""
             if isinstance(n, ast.Name):
                 # Simple heuristic: lowercase names are likely variables, not types
-                return n.id.islower() and not n.id in {
+                return n.id.islower() and n.id not in {
                     "str",
                     "int",
                     "float",
@@ -585,7 +586,7 @@ class UnionUsageChecker(ast.NodeVisitor):
 def validate_python_file(file_path: Path) -> dict[str, Any]:
     """Validate Union usage in a Python file with legitimacy analysis."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content, filename=str(file_path))
@@ -913,13 +914,13 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
         print(f"\n📄 Detailed legitimacy report exported to: {args.export_report}")
 
     # Report validation results
-    print(f"\n📈 Union Validation Results:")
+    print("\n📈 Union Validation Results:")
     print(f"   Total unions found: {total_unions}")
     print(f"   Legitimate unions: {total_legitimate}")
     print(f"   Invalid unions: {total_invalid}")
 
     if total_issues:
-        print(f"\n❌ Union legitimacy issues found:")
+        print("\n❌ Union legitimacy issues found:")
         for issue in total_issues[:10]:  # Show first 10
             print(f"   {issue}")
         if len(total_issues) > 10:
@@ -1048,7 +1049,7 @@ def export_legitimacy_report(
             # Generate markdown report
             f.write("# Union Type Legitimacy Validation Report\n\n")
             f.write(f"Generated: {report['metadata']['generated_at']}\n")
-            f.write(f"Validation Approach: AST-based Legitimacy Analysis\n\n")
+            f.write("Validation Approach: AST-based Legitimacy Analysis\n\n")
 
             f.write("## Executive Summary\n\n")
             f.write(
@@ -1117,7 +1118,7 @@ def export_legitimacy_report(
             if suggestions:
                 f.write("## Model Suggestions\n\n")
                 for suggestion in suggestions:
-                    f.write(f"### Suggestion\n\n")
+                    f.write("### Suggestion\n\n")
                     f.write(f"```\n{suggestion}\n```\n\n")
 
             f.write("## Legitimacy Criteria\n\n")
@@ -1164,11 +1165,11 @@ def export_detailed_report(
                 ]
             ),
             "repeated_patterns": len(
-                set(
+                {
                     tuple(sorted(p.types))
                     for p in all_patterns
                     if all_patterns.count(p) >= 2
-                )
+                }
             ),
         },
         "issues": total_issues,

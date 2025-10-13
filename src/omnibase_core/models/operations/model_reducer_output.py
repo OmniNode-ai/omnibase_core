@@ -6,10 +6,10 @@ from pydantic import Field
 """Reducer output model for data aggregation results."""
 
 from datetime import datetime
-from typing import Any, Generic, TypeVar
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_reduction_type import EnumReductionType
 from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode

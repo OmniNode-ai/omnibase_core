@@ -11,7 +11,7 @@ Model for node coordination operation results in the ONEX workflow coordination 
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_node_assignment import ModelNodeAssignment
 from .model_synchronization_point import ModelSynchronizationPoint

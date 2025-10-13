@@ -15,11 +15,10 @@ Reduces reliance on free-form description strings with standardized templates.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 

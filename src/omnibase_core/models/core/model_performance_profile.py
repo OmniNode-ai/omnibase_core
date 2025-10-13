@@ -7,9 +7,8 @@ Performance profile model to replace Dict[str, Any] usage for performance data.
 """
 
 from datetime import datetime
-from typing import Any, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from .model_performance_benchmark import ModelPerformanceBenchmark
 

@@ -265,9 +265,9 @@ def main():
         print(f"📝 Processing: {file_rel}")
         if fix_file(file_path):
             fixed_count += 1
-            print(f"  ✅ Fixed!\n")
+            print("  ✅ Fixed!\n")
         else:
-            print(f"  ℹ️  No changes needed\n")
+            print("  ℹ️  No changes needed\n")
 
     print(f"📊 Summary: {fixed_count} files fixed")
 

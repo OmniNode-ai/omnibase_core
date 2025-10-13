@@ -6,7 +6,7 @@ from pydantic import Field
 CLI interface model for node CLI specification.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_cli_command import ModelCLICommand

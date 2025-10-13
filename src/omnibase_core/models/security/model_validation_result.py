@@ -8,7 +8,7 @@ ModelValidationResult: Validation result with structured information.
 This model represents the result of validation operations with proper typing.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelValidationResult(BaseModel):

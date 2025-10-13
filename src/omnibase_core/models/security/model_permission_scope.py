@@ -13,7 +13,7 @@ including resource hierarchies, temporal constraints, and geographic limitations
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.security.model_context_variables import ModelContextVariables
 from omnibase_core.models.security.model_permission_evaluation_context import (

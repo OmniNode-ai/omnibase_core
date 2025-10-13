@@ -324,7 +324,7 @@ class TestServiceResolutionEdgeCases:
         ]
 
         assert all(isinstance(svc, ModelService) for svc in services)
-        assert len(set(svc.service_name for svc in services)) == 3
+        assert len({svc.service_name for svc in services}) == 3
 
 
 class TestProtocolTypeHandling:

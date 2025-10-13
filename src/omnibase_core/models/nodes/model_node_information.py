@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
@@ -25,8 +25,6 @@ from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_node_capabilities_info import ModelNodeCapabilitiesInfo
 from .model_node_configuration import ModelNodeConfiguration

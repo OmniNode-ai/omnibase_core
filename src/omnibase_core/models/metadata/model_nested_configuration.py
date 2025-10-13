@@ -15,7 +15,7 @@ Follows ONEX one-model-per-file naming conventions.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue

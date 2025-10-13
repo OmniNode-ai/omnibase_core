@@ -54,7 +54,7 @@ class ModelMetric(BaseModel):
         key: str,
         value: str,
         description: str | None = None,
-    ) -> "ModelMetric":
+    ) -> ModelMetric:
         """Create a string metric with strong typing."""
         return cls(
             key=key,
@@ -70,7 +70,7 @@ class ModelMetric(BaseModel):
         value: ModelNumericValue,
         unit: str | None = None,
         description: str | None = None,
-    ) -> "ModelMetric":
+    ) -> ModelMetric:
         """Create a numeric metric with ModelNumericValue."""
         # Convert ModelNumericValue to basic numeric type for ModelFlexibleValue
         if value.value_type == "integer":
@@ -96,7 +96,7 @@ class ModelMetric(BaseModel):
         key: str,
         value: bool,
         description: str | None = None,
-    ) -> "ModelMetric":
+    ) -> ModelMetric:
         """Create a boolean metric with strong typing."""
         return cls(
             key=key,

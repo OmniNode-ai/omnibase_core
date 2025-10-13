@@ -10,9 +10,9 @@ Load balancing policy model that combines algorithm selection, node weights,
 health checks, session affinity, and circuit breaker configurations.
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from omnibase_core.models.service.model_node_weights import ModelNodeWeights

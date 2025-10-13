@@ -385,7 +385,7 @@ class TestDeviceEnumsEdgeCases:
 
         for enum_class in enums_to_test:
             # Get first enum value
-            first_value = list(enum_class)[0]
+            first_value = next(iter(enum_class))
             # Should be comparable to string
             assert first_value == first_value.value
 

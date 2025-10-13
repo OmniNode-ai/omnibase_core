@@ -12,13 +12,11 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from pydantic import BaseModel
 
-from pydantic import BaseModel, Field
-
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 

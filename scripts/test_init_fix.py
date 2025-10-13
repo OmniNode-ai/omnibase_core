@@ -21,7 +21,7 @@ sys.path.insert(0, str(src_path))
 
 def clear_cache():
     """Clear import cache."""
-    modules = [k for k in sys.modules.keys() if "omnibase_core" in k]
+    modules = [k for k in sys.modules if "omnibase_core" in k]
     for m in modules:
         if m in sys.modules:
             del sys.modules[m]
@@ -90,7 +90,7 @@ def main():
         improvement = ((original_time - optimized_time) / original_time) * 100
         speedup = original_time / optimized_time if optimized_time > 0 else float("inf")
 
-        print(f"\n📊 RESULTS:")
+        print("\n📊 RESULTS:")
         print(f"   Original: {original_time:.2f}ms")
         print(f"   Optimized: {optimized_time:.2f}ms")
         print(f"   Improvement: {improvement:.1f}%")
@@ -99,12 +99,12 @@ def main():
 
         # Final assessment
         if optimized_time < 50:
-            print(f"\n✅ OPTIMIZATION SUCCESSFUL!")
-            print(f"🎯 Zero tolerance requirements met")
+            print("\n✅ OPTIMIZATION SUCCESSFUL!")
+            print("🎯 Zero tolerance requirements met")
             return 0
         else:
-            print(f"\n⚠️  PARTIAL SUCCESS")
-            print(f"🔧 Further optimization may be needed")
+            print("\n⚠️  PARTIAL SUCCESS")
+            print("🔧 Further optimization may be needed")
             return 0
 
     except Exception as e:

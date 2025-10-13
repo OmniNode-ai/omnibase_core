@@ -16,13 +16,14 @@ IMPORT_MAP = {
 }
 
 
-def find_files_with_missing_name(name: str) -> Set[str]:
+def find_files_with_missing_name(name: str) -> set[str]:
     """Find all files with missing name using mypy output."""
     result = subprocess.run(
         ["poetry", "run", "mypy", "src/omnibase_core/", "--no-error-summary"],
         capture_output=True,
         text=True,
         cwd="/Volumes/PRO-G40/Code/omnibase_core",
+        check=False,
     )
     output = result.stdout + result.stderr
 
@@ -89,9 +90,9 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
 
         # Track docstrings
         if not in_docstring:
-            if stripped.startswith('"""') or stripped.startswith("'''"):
+            if stripped.startswith(('"""', "'''")):
                 docstring_char = stripped[:3]
-                if not (stripped.endswith('"""') or stripped.endswith("'''")):
+                if not (stripped.endswith(('"""', "'''"))):
                     in_docstring = True
                 continue
         else:
@@ -104,7 +105,7 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
             continue
 
         # Found first non-comment, non-docstring line
-        if stripped.startswith("from ") or stripped.startswith("import "):
+        if stripped.startswith(("from ", "import ")):
             # Determine which group this import belongs to
             if import_statement.startswith("from typing"):
                 # Insert after other typing imports
@@ -113,18 +114,16 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
                     continue
             elif import_statement.startswith("from uuid"):
                 # Insert after typing imports but before pydantic
-                if "from uuid" in stripped:
-                    insert_line = i + 1
-                    continue
-                elif "from typing" in stripped:
+                if "from uuid" in stripped or "from typing" in stripped:
                     insert_line = i + 1
                     continue
             elif import_statement.startswith("from omnibase_core"):
                 # Insert with other omnibase_core imports
-                if "from omnibase_core" in stripped:
-                    insert_line = i + 1
-                    continue
-                elif "from pydantic" in stripped or "import pydantic" in stripped:
+                if (
+                    "from omnibase_core" in stripped
+                    or "from pydantic" in stripped
+                    or "import pydantic" in stripped
+                ):
                     insert_line = i + 1
                     continue
 

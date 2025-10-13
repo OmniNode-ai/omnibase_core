@@ -192,7 +192,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         Returns:
             Complete Docker Compose YAML content
         """
-        compose_config: Dict[str, Any] = {"version": "3.8", "services": {}}
+        compose_config: dict[str, Any] = {"version": "3.8", "services": {}}
 
         # Add the main service
         compose_config["services"].update(self.generate_docker_compose_service())

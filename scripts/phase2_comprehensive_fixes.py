@@ -12,13 +12,13 @@ ROOT_DIR = Path(__file__).parent.parent / "src" / "omnibase_core"
 
 
 def apply_regex_replacement(
-    filepath: Path, patterns: List[Tuple[str, str]], desc: str
+    filepath: Path, patterns: list[tuple[str, str]], desc: str
 ) -> int:
     """Apply multiple regex replacements to a file."""
     if not filepath.exists():
         return 0
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     original = content
@@ -51,7 +51,7 @@ def main():
         if not filepath.exists():
             continue
 
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         original = content
@@ -73,7 +73,7 @@ def main():
     # Fix 2: emit_log_event_sync MixinLogData → str conversions
     print("\n📝 Fixing emit_log_event_sync signature issues...")
     filepath = ROOT_DIR / "mixins" / "mixin_event_bus.py"
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     original = content
@@ -106,7 +106,7 @@ def main():
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
         # Need to add uuid4 import
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
         if "from uuid import uuid4" not in content:
             content = content.replace(
@@ -115,7 +115,7 @@ def main():
             )
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
-        print(f"  ✅ Fixed emit_log_event_sync calls in mixin_event_bus.py")
+        print("  ✅ Fixed emit_log_event_sync calls in mixin_event_bus.py")
         fixes_applied += 3
 
     # Fix 3: ModelLogContext node_id conversions (Any | str → UUID | None)
@@ -130,7 +130,7 @@ def main():
         if not filepath.exists():
             continue
 
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         original = content
@@ -174,7 +174,7 @@ def main():
         if not filepath.exists():
             continue
 
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             lines = f.readlines()
 
         modified = False
@@ -205,7 +205,7 @@ def main():
     # Fix 5: getattr default value str → UUID
     print("\n📝 Fixing getattr default values...")
     filepath = ROOT_DIR / "mixins" / "mixin_node_executor.py"
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     original = content
@@ -226,7 +226,7 @@ def main():
     if content != original:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"  ✅ Fixed getattr defaults in mixin_node_executor.py")
+        print("  ✅ Fixed getattr defaults in mixin_node_executor.py")
         fixes_applied += 1
 
     # Fix 6: UUID | None → UUID with fallback
@@ -245,7 +245,7 @@ def main():
         if not filepath.exists():
             continue
 
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             lines = f.readlines()
 
         modified = False

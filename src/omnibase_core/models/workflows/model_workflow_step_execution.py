@@ -1,5 +1,6 @@
 import uuid
-from typing import Callable, List
+from collections.abc import Callable
+from typing import List
 
 from pydantic import Field
 
@@ -16,10 +17,10 @@ Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 
 from collections.abc import Callable as CallableABC
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,

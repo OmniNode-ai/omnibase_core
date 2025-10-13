@@ -26,7 +26,7 @@ class TypedDictNodeMetadataSummary(TypedDict):
     node_type: str
     status: str
     health: str
-    version: "ModelSemVer | None"
+    version: ModelSemVer | None
     usage_count: int
     error_rate: float
     success_rate: float

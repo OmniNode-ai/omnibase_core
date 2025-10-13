@@ -4,9 +4,9 @@ from uuid import UUID
 from pydantic import Field
 
 "Container Adapter Input model for ONEX Discovery & Integration Event Registry.\n\nThis module defines the input model used by the Container Adapter tool\nfor ONEX Discovery & Integration Event Registry operations.\n"
-from typing import Dict, Optional
+from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.discovery.model_event_discovery_request import (

@@ -20,15 +20,13 @@ ZERO TOLERANCE: No Any types, string fallbacks, or dict[str, Any]configs allowed
 # NO Any imports - ZERO TOLERANCE for Any types
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_workflow_condition import (
     ModelWorkflowCondition,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelWorkflowDependency(BaseModel):

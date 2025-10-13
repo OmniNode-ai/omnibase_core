@@ -10,8 +10,6 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
 
-from typing import TypedDict
-
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
 

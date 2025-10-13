@@ -30,12 +30,12 @@ class AnyTypeViolation:
 class AnyTypeDetector(ast.NodeVisitor):
     """AST visitor to detect Any type usage patterns."""
 
-    def __init__(self, file_path: str, source_lines: List[str]):
+    def __init__(self, file_path: str, source_lines: list[str]):
         self.file_path = file_path
         self.source_lines = source_lines
-        self.violations: List[AnyTypeViolation] = []
-        self.imports: Set[str] = set()
-        self.typing_imports: Set[str] = set()
+        self.violations: list[AnyTypeViolation] = []
+        self.imports: set[str] = set()
+        self.typing_imports: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track import statements."""
@@ -45,12 +45,7 @@ class AnyTypeDetector(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track from imports, especially typing module."""
-        if node.module == "typing":
-            for alias in node.names:
-                self.typing_imports.add(
-                    alias.name if alias.asname is None else alias.asname
-                )
-        elif node.module and "typing" in node.module:
+        if node.module == "typing" or (node.module and "typing" in node.module):
             for alias in node.names:
                 self.typing_imports.add(
                     alias.name if alias.asname is None else alias.asname
@@ -76,7 +71,7 @@ class AnyTypeDetector(ast.NodeVisitor):
             self._record_violation(
                 node,
                 violation_type="Generic Any Usage",
-                context=f"Generic type containing Any",
+                context="Generic type containing Any",
                 severity="CRITICAL",
             )
         self.generic_visit(node)
@@ -125,11 +120,11 @@ class AnyTypeDetector(ast.NodeVisitor):
             return True
         elif isinstance(node, ast.Subscript):
             return self._contains_any(node.value) or self._contains_any(node.slice)
-        elif isinstance(node, ast.Tuple):
-            return any(self._contains_any(elt) for elt in node.elts)
-        elif isinstance(node, ast.List):
-            return any(self._contains_any(elt) for elt in node.elts)
-        elif hasattr(node, "elts"):
+        elif (
+            isinstance(node, ast.Tuple)
+            or isinstance(node, ast.List)
+            or hasattr(node, "elts")
+        ):
             return any(self._contains_any(elt) for elt in node.elts)
         return False
 
@@ -173,11 +168,11 @@ class TypeSystemValidator:
             "src/omnibase_core/models/core",
             "src/omnibase_core/types",
         ]
-        self.all_violations: List[AnyTypeViolation] = []
+        self.all_violations: list[AnyTypeViolation] = []
         self.files_scanned: int = 0
         self.files_with_violations: int = 0
 
-    def scan_all_files(self) -> Dict[str, List[AnyTypeViolation]]:
+    def scan_all_files(self) -> dict[str, list[AnyTypeViolation]]:
         """Scan all Python files in target directories for Any type violations."""
         violation_summary = {}
 
@@ -200,10 +195,10 @@ class TypeSystemValidator:
 
         return violation_summary
 
-    def _scan_file(self, file_path: Path) -> List[AnyTypeViolation]:
+    def _scan_file(self, file_path: Path) -> list[AnyTypeViolation]:
         """Scan a single Python file for Any type violations."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 source_lines = content.splitlines()
 
@@ -230,7 +225,7 @@ class TypeSystemValidator:
                 "# ONEX Type System Validation Report",
                 "## Zero Tolerance Any Type Detection Results",
                 "",
-                f"**Scan Summary**",
+                "**Scan Summary**",
                 f"- Files Scanned: {self.files_scanned}",
                 f"- Files with Violations: {self.files_with_violations}",
                 f"- Total Violations: {len(self.all_violations)}",

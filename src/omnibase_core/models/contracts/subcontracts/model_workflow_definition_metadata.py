@@ -9,9 +9,7 @@ Workflow Metadata Model - ONEX Standards Compliant.
 Model for workflow metadata in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.primitives.model_semver import ModelSemVer
+from pydantic import BaseModel
 
 
 class ModelWorkflowDefinitionMetadata(BaseModel):

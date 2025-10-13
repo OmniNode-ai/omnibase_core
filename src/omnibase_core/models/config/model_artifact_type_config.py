@@ -8,11 +8,10 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_artifact_type import EnumArtifactType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 

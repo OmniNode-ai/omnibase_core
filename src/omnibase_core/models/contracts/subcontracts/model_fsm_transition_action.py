@@ -13,12 +13,11 @@ Part of the FSM Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal
+from typing import Any
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_fsmtransitionaction import ModelFSMTransitionAction
 

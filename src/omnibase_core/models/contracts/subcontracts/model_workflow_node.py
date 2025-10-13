@@ -13,7 +13,7 @@ Model for node definitions in workflow graphs for the ONEX workflow coordination
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 

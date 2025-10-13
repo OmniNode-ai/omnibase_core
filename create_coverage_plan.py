@@ -24,6 +24,7 @@ def get_coverage_data():
             capture_output=True,
             text=True,
             timeout=300,
+            check=False,
         )
 
         if result.returncode != 0:
@@ -83,9 +84,9 @@ def create_coverage_plan():
     )
 
     print("=== SYSTEMATIC COVERAGE PLAN ===")
-    print(f"Current coverage: 31.34%")
-    print(f"Target coverage: 60.00%")
-    print(f"Gap to close: 28.66%")
+    print("Current coverage: 31.34%")
+    print("Target coverage: 60.00%")
+    print("Gap to close: 28.66%")
     print()
 
     # Group files by impact potential
@@ -111,13 +112,13 @@ def create_coverage_plan():
             f"{i:2d}. {item['file']:<60} {item['uncovered_lines']:3d} uncovered ({item['coverage_percent']:5.1f}%)"
         )
 
-    print(f"\n=== MEDIUM IMPACT FILES (50-100 uncovered lines, <70% coverage) ===")
+    print("\n=== MEDIUM IMPACT FILES (50-100 uncovered lines, <70% coverage) ===")
     for i, item in enumerate(medium_impact[:30], 1):
         print(
             f"{i:2d}. {item['file']:<60} {item['uncovered_lines']:3d} uncovered ({item['coverage_percent']:5.1f}%)"
         )
 
-    print(f"\n=== LOW IMPACT FILES (<50 uncovered lines, <80% coverage) ===")
+    print("\n=== LOW IMPACT FILES (<50 uncovered lines, <80% coverage) ===")
     for i, item in enumerate(low_impact[:50], 1):
         print(
             f"{i:2d}. {item['file']:<60} {item['uncovered_lines']:3d} uncovered ({item['coverage_percent']:5.1f}%)"
@@ -127,7 +128,7 @@ def create_coverage_plan():
     total_uncovered = sum(item["uncovered_lines"] for item in coverage_data)
     total_lines = sum(item["total_lines"] for item in coverage_data)
 
-    print(f"\n=== COVERAGE IMPACT ANALYSIS ===")
+    print("\n=== COVERAGE IMPACT ANALYSIS ===")
     print(f"Total uncovered lines: {total_uncovered}")
     print(f"Total lines: {total_lines}")
 
@@ -139,14 +140,14 @@ def create_coverage_plan():
     ]
     high_impact_files.sort(key=lambda x: x["uncovered_lines"], reverse=True)
 
-    print(f"\n=== TOP 200 FILES FOR MAXIMUM COVERAGE GAIN ===")
+    print("\n=== TOP 200 FILES FOR MAXIMUM COVERAGE GAIN ===")
     for i, item in enumerate(high_impact_files[:200], 1):
         print(
             f"{i:3d}. {item['file']:<60} {item['uncovered_lines']:3d} uncovered ({item['coverage_percent']:5.1f}%)"
         )
 
     # Create prioritized list for testing
-    print(f"\n=== PRIORITIZED TESTING LIST (Top 200 files) ===")
+    print("\n=== PRIORITIZED TESTING LIST (Top 200 files) ===")
     prioritized = sorted(
         coverage_data,
         key=lambda x: (x["uncovered_lines"], -x["coverage_percent"]),

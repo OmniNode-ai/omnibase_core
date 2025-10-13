@@ -8,7 +8,7 @@ ModelSignatureRequirements: Signature requirements for policy evaluation.
 This model defines the signature requirements evaluated by trust policies.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_certificate_validation_level import ModelCertificateValidationLevel
 from .model_trust_level import ModelTrustLevel

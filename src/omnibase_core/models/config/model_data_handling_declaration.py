@@ -11,11 +11,10 @@ Data handling declaration model.
 
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelDataHandlingDeclaration(BaseModel):

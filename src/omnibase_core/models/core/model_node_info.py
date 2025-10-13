@@ -10,7 +10,7 @@ Pydantic model for node information.
 Information about a discovered ONEX node, used in node discovery results.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNodeInfo(BaseModel):

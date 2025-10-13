@@ -20,7 +20,7 @@ class TypedDictGenericMetadataDict(TypedDict, total=False):
     metadata_id: UUID | None
     metadata_display_name: str | None
     description: str | None
-    version: "ModelSemVer | None"
+    version: ModelSemVer | None
     tags: list[str]
     custom_fields: dict[str, object]
 

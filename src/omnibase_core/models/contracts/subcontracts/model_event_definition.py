@@ -10,9 +10,7 @@ Event Definition Model - ONEX Standards Compliant.
 Model for event definitions in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.primitives.model_semver import ModelSemVer
+from pydantic import BaseModel
 
 
 class ModelEventDefinition(BaseModel):

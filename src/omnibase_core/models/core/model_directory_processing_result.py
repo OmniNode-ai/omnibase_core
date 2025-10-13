@@ -30,9 +30,9 @@ Model for directory processing results.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from .model_skipped_file_reason import ModelSkippedFileReason
 

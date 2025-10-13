@@ -8,7 +8,7 @@ Permission Constraint Metadata Model
 Type-safe metadata for permission constraints.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 

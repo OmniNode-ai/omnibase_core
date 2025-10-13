@@ -30,7 +30,6 @@ class ServiceMinimalLogging:
         **kwargs: Any,
     ) -> None:
         """Minimal log event implementation."""
-        pass
 
     @staticmethod
     def emit_log_event_sync(  # stub-ok: Minimal logging service provides pass-through implementation
@@ -40,7 +39,6 @@ class ServiceMinimalLogging:
         **kwargs: Any,
     ) -> None:
         """Minimal synchronous log event implementation."""
-        pass
 
     @staticmethod
     async def emit_log_event_async(  # stub-ok: Minimal logging service provides pass-through implementation
@@ -50,7 +48,6 @@ class ServiceMinimalLogging:
         **kwargs: Any,
     ) -> None:
         """Minimal asynchronous log event implementation."""
-        pass
 
     @staticmethod
     def trace_function_lifecycle(func: Any) -> Any:

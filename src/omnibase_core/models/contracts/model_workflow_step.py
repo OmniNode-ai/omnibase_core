@@ -14,10 +14,10 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelWorkflowStep(BaseModel):

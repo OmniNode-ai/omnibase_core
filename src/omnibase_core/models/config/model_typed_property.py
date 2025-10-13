@@ -12,9 +12,9 @@ typed property with validation in the environment property system.
 """
 
 
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 
@@ -49,7 +49,7 @@ class ModelTypedProperty(BaseModel):
     metadata: ModelPropertyMetadata = Field(description="Property metadata")
 
     @model_validator(mode="after")
-    def validate_value_consistency(self) -> "ModelTypedProperty":
+    def validate_value_consistency(self) -> ModelTypedProperty:
         """Validate that value type matches metadata type."""
         if self.metadata.property_type != self.value.value_type:
             # Create a new ModelPropertyValue with correct type from metadata

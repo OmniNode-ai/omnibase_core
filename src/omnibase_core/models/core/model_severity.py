@@ -13,9 +13,9 @@ Phase 3I remediation: Eliminated all factory methods and conversion anti-pattern
 """
 
 from pathlib import Path
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 
 
 class ModelSeverity(BaseModel):
@@ -82,7 +82,7 @@ class ModelSeverity(BaseModel):
 
     # ONEX validation constraints
     @validator("name")
-    def validate_name_consistency(cls, v: Any, values: dict[str, Any]) -> Any:
+    def validate_name_consistency(self, v: Any, values: dict[str, Any]) -> Any:
         """Ensure name and value are consistent."""
         if "value" in values and v.lower() != values["value"]:
             raise ModelOnexError(
@@ -92,7 +92,7 @@ class ModelSeverity(BaseModel):
         return v
 
     @validator("numeric_value")
-    def validate_severity_ranges(cls, v: Any, values: dict[str, Any]) -> Any:
+    def validate_severity_ranges(self, v: Any, values: dict[str, Any]) -> Any:
         """Validate numeric values align with severity expectations."""
         name = values.get("name", "")
         expected_ranges = {
@@ -114,7 +114,7 @@ class ModelSeverity(BaseModel):
         return v
 
     @validator("is_critical")
-    def validate_critical_consistency(cls, v: Any, values: dict[str, Any]) -> Any:
+    def validate_critical_consistency(self, v: Any, values: dict[str, Any]) -> Any:
         """Ensure critical flag aligns with severity level."""
         name = values.get("name", "")
         numeric = values.get("numeric_value", 0)

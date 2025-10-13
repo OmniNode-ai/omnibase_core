@@ -10,7 +10,7 @@ from typing import Dict, List, Set, Tuple
 def read_file_content(filepath: Path) -> str:
     """Read file content."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             return f.read()
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
@@ -30,8 +30,8 @@ def write_file_content(filepath: Path, content: str) -> bool:
 
 
 def extract_classes_from_content(
-    content: str, target_classes: List[str]
-) -> Dict[str, str]:
+    content: str, target_classes: list[str]
+) -> dict[str, str]:
     """Extract specific classes from file content."""
     try:
         tree = ast.parse(content)
@@ -84,7 +84,7 @@ def remove_class_from_content(content: str, class_name: str) -> str:
         return content
 
 
-def process_violation(violation_info: Dict) -> bool:
+def process_violation(violation_info: dict) -> bool:
     """Process a single violation."""
     filepath = Path(violation_info["file"])
     classes = violation_info["classes"]
@@ -98,7 +98,7 @@ def process_violation(violation_info: Dict) -> bool:
     # Extract classes
     class_contents = extract_classes_from_content(content, classes)
     if not class_contents:
-        print(f"  No classes found to extract")
+        print("  No classes found to extract")
         return False
 
     # Determine which classes to extract (keep main class in original file)
@@ -166,9 +166,9 @@ def process_violation(violation_info: Dict) -> bool:
                 lines = updated_content.split("\n")
                 insert_pos = 0
                 for i, line in enumerate(lines):
-                    if line.startswith("from ") or line.startswith("import "):
-                        insert_pos = i + 1
-                    elif line.strip() == "" and insert_pos > 0:
+                    if line.startswith(("from ", "import ")) or (
+                        line.strip() == "" and insert_pos > 0
+                    ):
                         insert_pos = i + 1
                     elif (
                         line.strip()
@@ -308,9 +308,9 @@ def main():
         print(f"\n{i+1}. Processing: {violation['file']}")
         result = process_violation(violation)
         if result:
-            print(f"   ✓ Success")
+            print("   ✓ Success")
         else:
-            print(f"   ✗ Failed")
+            print("   ✗ Failed")
 
     print("\nBatch processing complete!")
 

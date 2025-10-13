@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 "\nModelPolicyContext: Context for policy evaluation.\n\nThis model represents the context used for evaluating trust policies\nagainst secure envelopes.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPolicyContext(BaseModel):

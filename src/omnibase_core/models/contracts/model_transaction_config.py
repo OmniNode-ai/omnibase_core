@@ -7,7 +7,7 @@ Defines transaction isolation, rollback policies,
 and consistency guarantees for side-effect operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelTransactionConfig(BaseModel):

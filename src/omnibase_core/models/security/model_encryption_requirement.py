@@ -11,7 +11,7 @@ ModelEncryptionRequirement: Encryption requirement configuration.
 This model defines encryption requirements and settings for payloads.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from .model_encryption_algorithm import ModelEncryptionAlgorithm
 

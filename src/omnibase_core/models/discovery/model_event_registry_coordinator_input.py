@@ -5,7 +5,7 @@ from pydantic import Field
 "Event Registry Coordinator Input model for ONEX Discovery & Integration Event Registry.\n\nThis module defines the input model for Event Registry Coordinator operations.\n"
 from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.discovery.model_event_descriptor import (
     EnumDiscoveryPhase,

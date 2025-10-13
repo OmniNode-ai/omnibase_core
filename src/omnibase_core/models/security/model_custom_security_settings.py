@@ -8,7 +8,7 @@ ModelCustomSecuritySettings: Custom security settings model.
 This model provides structured custom security settings without using Any types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCustomSecuritySettings(BaseModel):
@@ -72,8 +72,8 @@ class ModelCustomSecuritySettings(BaseModel):
         """Convert to dict[str, Any]ionary for current standards."""
         # Custom flattening logic for security settings
         result: dict[str, object] = {}
-        result.update({k: v for k, v in self.string_settings.items()})
-        result.update({k: v for k, v in self.integer_settings.items()})
-        result.update({k: v for k, v in self.boolean_settings.items()})
-        result.update({k: v for k, v in self.list_settings.items()})
+        result.update(dict(self.string_settings.items()))
+        result.update(dict(self.integer_settings.items()))
+        result.update(dict(self.boolean_settings.items()))
+        result.update(dict(self.list_settings.items()))
         return result

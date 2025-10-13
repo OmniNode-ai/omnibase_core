@@ -2,9 +2,10 @@
 
 import asyncio
 import uuid
+from collections.abc import Callable
 from collections.abc import Callable as CallableABC
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel

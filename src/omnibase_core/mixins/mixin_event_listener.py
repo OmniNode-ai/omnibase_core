@@ -13,9 +13,10 @@ import re
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from collections.abc import Callable as CallableABC
 from pathlib import Path
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from pydantic import ValidationError

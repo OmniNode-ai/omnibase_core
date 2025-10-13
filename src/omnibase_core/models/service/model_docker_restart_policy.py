@@ -4,7 +4,7 @@ from pydantic import Field
 Model for Docker restart policy configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDockerRestartPolicy(BaseModel):

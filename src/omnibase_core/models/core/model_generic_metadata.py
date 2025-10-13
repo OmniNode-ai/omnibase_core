@@ -9,9 +9,8 @@ Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class ModelGenericMetadata(BaseModel):

@@ -814,7 +814,7 @@ tool_specification:
         results2 = [contract_loader.load_contract(cp) for cp in multiple_contracts]
 
         # Results should be equivalent
-        for r1, r2 in zip(results1, results2):
+        for r1, r2 in zip(results1, results2, strict=False):
             assert r1.node_name == r2.node_name
             assert r1.node_type == r2.node_type
 
@@ -870,7 +870,7 @@ tool_specification:
             results.append(result)
 
         # Verify all versions were loaded correctly
-        for result, (major, minor, patch) in zip(results, versions):
+        for result, (major, minor, patch) in zip(results, versions, strict=False):
             assert result.contract_version.major == major
             assert result.contract_version.minor == minor
             assert result.contract_version.patch == patch

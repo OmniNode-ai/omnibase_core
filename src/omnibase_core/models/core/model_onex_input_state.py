@@ -9,9 +9,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_onex_input_state_config import ModelConfig
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelOnexInputState(BaseModel):
     """

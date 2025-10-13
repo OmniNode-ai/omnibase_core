@@ -9,7 +9,7 @@ Base operation data with discriminator.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

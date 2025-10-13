@@ -8,7 +8,7 @@ This model represents the configuration parameters for different secret backends
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, SecretStr
 
 
 class ModelBackendConfig(BaseModel):

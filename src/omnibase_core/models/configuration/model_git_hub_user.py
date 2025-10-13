@@ -4,7 +4,7 @@ from pydantic import Field
 GitHubUser model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelGitHubUser(BaseModel):

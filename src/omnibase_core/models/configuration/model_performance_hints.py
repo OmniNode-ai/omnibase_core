@@ -7,7 +7,7 @@ Type-safe performance optimization hints for node operations
 and load balancing decisions.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPerformanceHints(BaseModel):

@@ -6,7 +6,7 @@ Performance Metrics Model.
 Structured performance metrics for action execution.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPerformanceMetrics(BaseModel):

@@ -12,7 +12,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelFsmTransition(BaseModel):

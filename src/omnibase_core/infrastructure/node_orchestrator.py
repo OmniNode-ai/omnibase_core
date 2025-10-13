@@ -1,5 +1,6 @@
 import uuid
-from typing import Callable, Dict, Generic, List
+from collections.abc import Callable
+from typing import Dict, Generic, List
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
@@ -28,7 +29,7 @@ import time
 from collections.abc import Callable as CallableABC
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any
 from uuid import UUID, uuid4
 
 # Removed: EnumCoreErrorCode doesn't exist, use EnumCoreErrorCode

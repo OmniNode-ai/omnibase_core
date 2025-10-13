@@ -94,14 +94,14 @@ LEGACY_METADATA_NODE_STATUS_VALUES = {
 }
 
 
-def _get_core_error_code() -> type["EnumCoreErrorCode"]:
+def _get_core_error_code() -> type[EnumCoreErrorCode]:
     """Get EnumCoreErrorCode class at runtime to avoid circular import."""
     from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
     return EnumCoreErrorCode
 
 
-def _get_onex_error() -> type["ModelOnexError"]:
+def _get_onex_error() -> type[ModelOnexError]:
     """Get ModelOnexError class at runtime to avoid circular import."""
     from omnibase_core.errors.model_onex_error import ModelOnexError
 

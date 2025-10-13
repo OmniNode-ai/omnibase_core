@@ -181,7 +181,6 @@ class TestModelValueContainer:
         """Test is_valid with dict containing non-string keys."""
         # Note: Pydantic validation prevents creation of containers with non-string keys
         # This test is skipped as the model enforces string keys at the type level
-        pass
 
     def test_is_valid_metadata_too_large(self):
         """Test is_valid with metadata too large."""
@@ -238,7 +237,6 @@ class TestModelValueContainer:
         """Test get_errors with dict containing non-string keys."""
         # Note: Pydantic validation prevents creation of containers with non-string keys
         # This test is skipped as the model enforces string keys at the type level
-        pass
 
     def test_get_errors_metadata_too_large(self):
         """Test get_errors with metadata too large."""
@@ -309,7 +307,6 @@ class TestModelValueContainer:
         """Test _validate_type_specific_constraints with dict non-string keys."""
         # Note: Pydantic validation prevents creation of containers with non-string keys
         # This test is skipped as the model enforces string keys at the type level
-        pass
 
     def test_validate_metadata_valid(self):
         """Test _validate_metadata with valid metadata."""
@@ -386,7 +383,6 @@ class TestModelValueContainer:
         """Test _get_type_specific_errors with dict non-string keys."""
         # Note: Pydantic validation prevents creation of containers with non-string keys
         # This test is skipped as the model enforces string keys at the type level
-        pass
 
     def test_get_metadata_errors_valid(self):
         """Test _get_metadata_errors with valid metadata."""

@@ -15,7 +15,7 @@ Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
 

@@ -12,7 +12,7 @@ Defines the structure for CLI arguments discovered from node contracts.
 This enables dynamic CLI argument parsing based on contract specifications.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_argument_type import EnumArgumentType
 

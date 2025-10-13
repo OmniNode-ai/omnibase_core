@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, TypedDict, Union
+from collections.abc import Callable
+from typing import Dict, TypedDict, Union
 
 from pydantic import model_validator
 
@@ -24,10 +25,9 @@ import argparse
 import sys
 from collections.abc import Callable as CallableABC
 from pathlib import Path
-from typing import Any, Callable, TypedDict
+from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_validator_info import TypedDictValidatorInfo
 
 from .architecture import validate_architecture_directory

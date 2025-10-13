@@ -7,7 +7,7 @@ Log data model for structured logging in event bus operations.
 """
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class MixinLogData(BaseModel):

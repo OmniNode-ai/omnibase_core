@@ -6,7 +6,7 @@ ModelTimeRestrictions: Time-based access restrictions model.
 This model represents time-based access restrictions for security policies.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelTimeRestrictions(BaseModel):

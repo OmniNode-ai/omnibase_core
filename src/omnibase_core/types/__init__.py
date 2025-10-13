@@ -11,9 +11,11 @@ TypedDicts provide type safety for dict[str, Any]ionary structures without runti
 Type constraints provide protocols and type variables for better generic programming.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, TypedDict
+from typing import TYPE_CHECKING
 
 # Export all type constraints and protocols (except ModelBaseCollection/ModelBaseFactory)
+# ModelBaseCollection and ModelBaseFactory are lazily imported to avoid circular imports
+# Core types for breaking circular dependencies
 from .constraints import (
     BasicValueType,
     CollectionItemType,
@@ -27,6 +29,8 @@ from .constraints import (
     Identifiable,
     IdentifiableType,
     MetadataType,
+    ModelBaseCollection,
+    ModelBaseFactory,
     ModelType,
     Nameable,
     NameableType,
@@ -52,12 +56,6 @@ from .constraints import (
     validate_context_value,
     validate_primitive_value,
 )
-
-# ModelBaseCollection and ModelBaseFactory are lazily imported to avoid circular imports
-if TYPE_CHECKING:
-    from .constraints import ModelBaseCollection, ModelBaseFactory
-
-# Core types for breaking circular dependencies
 from .converter_error_details_to_typed_dict import convert_error_details_to_typed_dict
 from .converter_health_to_typed_dict import convert_health_to_typed_dict
 

@@ -14,7 +14,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
 

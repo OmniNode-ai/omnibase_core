@@ -16,13 +16,12 @@ Follows ONEX one-model-per-file naming conventions.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.enums.enum_output_type import EnumOutputType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 

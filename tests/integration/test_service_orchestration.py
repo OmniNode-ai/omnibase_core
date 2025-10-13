@@ -6,7 +6,7 @@ Tests real-world scenarios with actual service instances, no mocking.
 Validates service health monitoring, lifecycle management, and multi-service coordination.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
 import pytest
@@ -126,7 +126,7 @@ class TestServiceHealthLifecycle:
                 ),
                 connection_string="https://unstable.example.com",
                 consecutive_failures=failures,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
                 response_time_ms=100 + (failures * 500),
             )
             services.append(service)
@@ -161,7 +161,7 @@ class TestServiceSecurityAnalysis:
             service_type=EnumServiceType.REST_API,
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="https://secure.example.com",
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert service_https.get_connection_type() == "secure"
@@ -173,7 +173,7 @@ class TestServiceSecurityAnalysis:
             service_type=EnumServiceType.REST_API,
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="http://insecure.example.com",
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert service_http.get_connection_type() == "insecure"
@@ -186,7 +186,7 @@ class TestServiceSecurityAnalysis:
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="postgresql://localhost:5432/db",
             ssl_enabled=True,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert service_ssl.is_secure_connection()
@@ -200,7 +200,7 @@ class TestServiceSecurityAnalysis:
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="http://api.example.com",
             authentication_type=None,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         recommendations = service.get_security_recommendations()
@@ -216,7 +216,7 @@ class TestServiceSecurityAnalysis:
             service_type=EnumServiceType.POSTGRESQL,
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="postgresql://***:***@localhost:5432/db",
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         recommendations = service.get_security_recommendations()
@@ -248,7 +248,7 @@ class TestServicePerformanceAnalysis:
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com",
                 response_time_ms=response_time,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
 
             assert service.get_performance_category() == expected_category
@@ -262,7 +262,7 @@ class TestServicePerformanceAnalysis:
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="https://fast.example.com",
             response_time_ms=500,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert not fast_service.is_performance_concerning()
@@ -274,7 +274,7 @@ class TestServicePerformanceAnalysis:
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="https://slow.example.com",
             response_time_ms=8000,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert slow_service.is_performance_concerning()
@@ -288,7 +288,7 @@ class TestServicePerformanceAnalysis:
             connection_string="https://api.example.com",
             response_time_ms=1500,
             uptime_seconds=86400 * 5 + 3600 * 2,  # 5 days, 2 hours
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         # Test response time formatting
@@ -429,7 +429,7 @@ class TestServiceValidationIntegration:
                 service_type=EnumServiceType.POSTGRESQL,
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="postgresql://localhost:5432/db",
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
             assert service.service_name == name
 
@@ -448,7 +448,7 @@ class TestServiceValidationIntegration:
                     service_type=EnumServiceType.POSTGRESQL,
                     status=EnumServiceHealthStatus.REACHABLE,
                     connection_string="postgresql://localhost:5432/db",
-                    last_check_time=datetime.now(timezone.utc).isoformat(),
+                    last_check_time=datetime.now(UTC).isoformat(),
                 )
             assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -476,7 +476,7 @@ class TestServiceValidationIntegration:
                 service_type=EnumServiceType.POSTGRESQL,
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string=input_conn,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
 
             # Verify credentials are masked
@@ -499,7 +499,7 @@ class TestServiceValidationIntegration:
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com",
                 endpoint_url=url,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
             assert service.endpoint_url == url
 
@@ -518,7 +518,7 @@ class TestServiceValidationIntegration:
                     status=EnumServiceHealthStatus.REACHABLE,
                     connection_string="https://api.example.com",
                     endpoint_url=url,
-                    last_check_time=datetime.now(timezone.utc).isoformat(),
+                    last_check_time=datetime.now(UTC).isoformat(),
                 )
             assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -534,7 +534,7 @@ class TestServiceValidationIntegration:
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com",
                 port=port,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
             assert service.port == port
 
@@ -549,7 +549,7 @@ class TestServiceValidationIntegration:
                     status=EnumServiceHealthStatus.REACHABLE,
                     connection_string="https://api.example.com",
                     port=port,
-                    last_check_time=datetime.now(timezone.utc).isoformat(),
+                    last_check_time=datetime.now(UTC).isoformat(),
                 )
 
 
@@ -587,7 +587,7 @@ class TestEndToEndServiceWorkflow:
             connection_string="postgresql://***:***@db.prod:5432/maindb",
             response_time_ms=1500,
             consecutive_failures=3,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert health_check_2.is_degraded()

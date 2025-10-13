@@ -9,7 +9,7 @@ Replaces hardcoded EnumNodeCliAction with extensible model that
 enables plugin extensibility and contract-driven action registration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCliAction(BaseModel):

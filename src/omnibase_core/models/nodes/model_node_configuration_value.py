@@ -14,12 +14,11 @@ for proper type safety and validation of node configurations.
 """
 
 
-from typing import Any, Literal, Union
+from typing import Any
 
-from pydantic import BaseModel, Discriminator, Field
+from pydantic import BaseModel, Discriminator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 from .model_nodeconfigurationnumericvalue import ModelNodeConfigurationNumericValue

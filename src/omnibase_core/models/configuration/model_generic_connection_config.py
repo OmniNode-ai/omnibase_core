@@ -11,7 +11,7 @@ This model serves as a fallback for unknown service types,
 providing a flexible but still typed structure.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.configuration.model_generic_connection_config_config import (
     ModelConfig,

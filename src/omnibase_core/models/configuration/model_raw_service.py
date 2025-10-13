@@ -6,7 +6,7 @@ Raw Service Model for ONEX Configuration System.
 Strongly typed model for unvalidated service data loaded from YAML files.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRawService(BaseModel):

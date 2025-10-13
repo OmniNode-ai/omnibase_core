@@ -9,7 +9,7 @@ This model contains the results of converting schemas to Pydantic
 model definitions.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_definition import ModelDefinition
 

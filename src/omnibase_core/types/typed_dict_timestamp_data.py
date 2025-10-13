@@ -8,7 +8,6 @@ Timestamp data structure.
 
 
 from datetime import datetime
-from typing import TypedDict
 
 
 class TypedDictTimestampData(TypedDict):

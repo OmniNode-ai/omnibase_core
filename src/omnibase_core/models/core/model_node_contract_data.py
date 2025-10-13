@@ -11,9 +11,9 @@ Provides strongly typed contract data structure to replace manual YAML validatio
 in node initialization, ensuring required fields are validated properly.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNodeContractData(BaseModel):
@@ -32,7 +32,7 @@ class ModelNodeContractData(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelNodeContractData":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelNodeContractData":
         """
         Create model from dict[str, Any]ionary data.
 

@@ -33,7 +33,7 @@ This mixin handles:
 
 import atexit
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -50,10 +50,8 @@ from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMe
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.primitives.model_semver import parse_semver_from_string
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem

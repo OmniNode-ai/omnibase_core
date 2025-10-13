@@ -116,32 +116,32 @@ def test_current_approach_wrong_type_string_for_int():
         # Current approach: from_value() converts gracefully
         schema_value = ModelSchemaValue.from_value(agent_generated_timeout)
 
-        print(f"✅ Conversion succeeded")
+        print("✅ Conversion succeeded")
         print(f"   Value type: {schema_value.value_type}")
         print(f"   Stored as: {schema_value.string_value}")
         print(f"   Retrieved: {schema_value.to_value()}")
-        print(f"\n📊 AGENT RECOVERY:")
-        print(f"   - Error raised? NO")
-        print(f"   - Graceful conversion? YES (string)")
+        print("\n📊 AGENT RECOVERY:")
+        print("   - Error raised? NO")
+        print("   - Graceful conversion? YES (string)")
         print(
-            f"   - Agent can detect mistake? Only at usage time when get_number() fails"
+            "   - Agent can detect mistake? Only at usage time when get_number() fails"
         )
-        print(f"   - Data loss? NO (preserves original value)")
+        print("   - Data loss? NO (preserves original value)")
 
         # Try to use as number - this will fail
-        print(f"\n🔍 When agent tries to use as number:")
+        print("\n🔍 When agent tries to use as number:")
         try:
             num_value = schema_value.get_number()
             print(f"   ❌ UNEXPECTED: Got number {num_value}")
         except Exception as e:
             print(f"   ✅ Error raised: {e.__class__.__name__}")
             print(f"   Message: {e}")
-            print(f"   Agent can retry? YES (clear error message)")
+            print("   Agent can retry? YES (clear error message)")
 
     except Exception as e:
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
-        print(f"   Agent can retry? Check error message clarity")
+        print("   Agent can retry? Check error message clarity")
 
 
 def test_generic_approach_wrong_type_string_for_int():
@@ -160,22 +160,23 @@ def test_generic_approach_wrong_type_string_for_int():
         # Generic approach: from_value() converts gracefully
         schema_value = ModelSchemaValueGeneric.from_value(agent_generated_timeout)
 
-        print(f"✅ Conversion succeeded")
+        print("✅ Conversion succeeded")
         print(f"   Value type: {schema_value.value_type}")
         print(f"   Stored as: {schema_value.value}")
         print(f"   Retrieved: {schema_value.to_value()}")
-        print(f"\n📊 AGENT RECOVERY:")
-        print(f"   - Error raised? NO")
-        print(f"   - Graceful conversion? YES (string)")
-        print(f"   - Agent can detect mistake? Only at usage time")
-        print(f"   - Data loss? NO (preserves original value)")
+        print("\n📊 AGENT RECOVERY:")
+        print("   - Error raised? NO")
+        print("   - Graceful conversion? YES (string)")
+        print("   - Agent can detect mistake? Only at usage time")
+        print("   - Data loss? NO (preserves original value)")
 
         # Try to create with explicit int type
-        print(f"\n🔍 When agent specifies int type explicitly:")
+        print("\n🔍 When agent specifies int type explicitly:")
         try:
             # This should fail Pydantic validation
             typed_value: ModelSchemaValueGeneric[int] = ModelSchemaValueGeneric[int](
-                value=agent_generated_timeout, value_type="number"  # type: ignore
+                value=agent_generated_timeout,
+                value_type="number",  # type: ignore
             )
             print(f"   ❌ UNEXPECTED: Validation passed with value {typed_value.value}")
         except ValidationError as e:
@@ -183,7 +184,7 @@ def test_generic_approach_wrong_type_string_for_int():
             print(f"   Errors: {len(e.errors())} validation error(s)")
             for err in e.errors():
                 print(f"      - {err['loc']}: {err['msg']}")
-            print(f"   Agent can retry? YES (clear validation errors)")
+            print("   Agent can retry? YES (clear validation errors)")
 
     except Exception as e:
         print(f"❌ Conversion failed: {e.__class__.__name__}")
@@ -212,16 +213,16 @@ def test_current_approach_unknown_object():
         # Current approach: from_value() handles unknown types
         schema_value = ModelSchemaValue.from_value(agent_generated_config)
 
-        print(f"✅ Conversion succeeded")
+        print("✅ Conversion succeeded")
         print(f"   Value type: {schema_value.value_type}")
         print(f"   Stored as: {schema_value.string_value}")
         print(f"   Original object: {agent_generated_config}")
-        print(f"\n📊 AGENT RECOVERY:")
-        print(f"   - Error raised? NO")
-        print(f"   - Graceful degradation? YES (converts to string)")
-        print(f"   - Agent can detect mistake? YES (value_type='string', not 'object')")
-        print(f"   - Data loss? YES (object converted to string representation)")
-        print(f"   - Safe for distributed execution? YES (no object references)")
+        print("\n📊 AGENT RECOVERY:")
+        print("   - Error raised? NO")
+        print("   - Graceful degradation? YES (converts to string)")
+        print("   - Agent can detect mistake? YES (value_type='string', not 'object')")
+        print("   - Data loss? YES (object converted to string representation)")
+        print("   - Safe for distributed execution? YES (no object references)")
 
     except Exception as e:
         print(f"❌ Conversion failed: {e.__class__.__name__}")
@@ -244,19 +245,19 @@ def test_generic_approach_unknown_object():
         # Generic approach: from_value() converts to string
         schema_value = ModelSchemaValueGeneric.from_value(agent_generated_config)
 
-        print(f"✅ Conversion succeeded")
+        print("✅ Conversion succeeded")
         print(f"   Value type: {schema_value.value_type}")
         print(f"   Stored as: {schema_value.value}")
         print(f"   Type of value: {type(schema_value.value)}")
-        print(f"\n📊 AGENT RECOVERY:")
-        print(f"   - Error raised? NO")
-        print(f"   - Graceful degradation? YES (converts to string)")
-        print(f"   - Agent can detect mistake? YES (value_type='string')")
-        print(f"   - Data loss? YES (object converted to string)")
-        print(f"   - Safe for distributed execution? YES (no object references)")
+        print("\n📊 AGENT RECOVERY:")
+        print("   - Error raised? NO")
+        print("   - Graceful degradation? YES (converts to string)")
+        print("   - Agent can detect mistake? YES (value_type='string')")
+        print("   - Data loss? YES (object converted to string)")
+        print("   - Safe for distributed execution? YES (no object references)")
 
         # Try to serialize
-        print(f"\n🔍 Serialization safety check:")
+        print("\n🔍 Serialization safety check:")
         try:
             serialized = schema_value.model_dump()
             print(f"   ✅ Serialization succeeded: {serialized}")
@@ -297,30 +298,32 @@ def test_current_approach_nested_type_errors():
         # Current approach: from_value() recursively handles all types
         schema_value = ModelSchemaValue.from_value(agent_generated_values)
 
-        print(f"✅ Conversion succeeded")
+        print("✅ Conversion succeeded")
         print(f"   Value type: {schema_value.value_type}")
         print(f"   Array length: {len(schema_value.array_value or [])}")
-        print(f"\n   Array contents:")
+        print("\n   Array contents:")
         for i, item in enumerate(schema_value.array_value or []):
             print(f"     [{i}] type={item.value_type}, value={item.to_value()}")
 
-        print(f"\n📊 AGENT RECOVERY:")
-        print(f"   - Error raised? NO")
-        print(f"   - Handles mixed types? YES (each element typed independently)")
-        print(f"   - Unknown objects? YES (converted to string)")
-        print(f"   - Agent can detect mistakes? YES (inspect array_value types)")
-        print(f"   - Safe round-trip? CHECK")
+        print("\n📊 AGENT RECOVERY:")
+        print("   - Error raised? NO")
+        print("   - Handles mixed types? YES (each element typed independently)")
+        print("   - Unknown objects? YES (converted to string)")
+        print("   - Agent can detect mistakes? YES (inspect array_value types)")
+        print("   - Safe round-trip? CHECK")
 
         # Round-trip test
-        print(f"\n🔍 Round-trip serialization test:")
+        print("\n🔍 Round-trip serialization test:")
         try:
             round_trip = schema_value.to_value()
             print(f"   Original: {agent_generated_values}")
             print(f"   After round-trip: {round_trip}")
 
             # Check data preservation
-            print(f"\n   Data preservation analysis:")
-            for i, (orig, rt) in enumerate(zip(agent_generated_values, round_trip)):  # type: ignore
+            print("\n   Data preservation analysis:")
+            for i, (orig, rt) in enumerate(
+                zip(agent_generated_values, round_trip, strict=False)
+            ):  # type: ignore
                 if type(orig) == type(rt):
                     print(f"     [{i}] ✅ Type preserved: {type(orig).__name__}")
                 else:
@@ -359,28 +362,28 @@ def test_generic_approach_nested_type_errors():
         # Generic approach: from_value() handles list
         schema_value = ModelSchemaValueGeneric.from_value(agent_generated_values)
 
-        print(f"✅ Conversion succeeded")
+        print("✅ Conversion succeeded")
         print(f"   Value type: {schema_value.value_type}")
         print(f"   Value: {schema_value.value}")
         print(f"   Type: {type(schema_value.value)}")
 
-        print(f"\n📊 AGENT RECOVERY:")
-        print(f"   - Error raised? NO")
-        print(f"   - Handles mixed types? YES (stored as-is)")
-        print(f"   - Unknown objects? Depends on implementation")
-        print(f"   - Type safety? Limited (list[Any] at runtime)")
+        print("\n📊 AGENT RECOVERY:")
+        print("   - Error raised? NO")
+        print("   - Handles mixed types? YES (stored as-is)")
+        print("   - Unknown objects? Depends on implementation")
+        print("   - Type safety? Limited (list[Any] at runtime)")
 
         # Check if we can serialize unknown objects
-        print(f"\n🔍 Serialization safety with unknown objects:")
+        print("\n🔍 Serialization safety with unknown objects:")
         try:
             serialized = schema_value.model_dump()
-            print(f"   ✅ Serialization succeeded")
+            print("   ✅ Serialization succeeded")
             print(
-                f"   Note: May fail with non-serializable objects in distributed systems"
+                "   Note: May fail with non-serializable objects in distributed systems"
             )
         except Exception as ser_e:
             print(f"   ❌ Serialization failed: {ser_e}")
-            print(f"   This would crash distributed execution!")
+            print("   This would crash distributed execution!")
 
     except Exception as e:
         print(f"❌ Conversion failed: {e.__class__.__name__}")
@@ -421,34 +424,38 @@ def test_current_approach_serialization_safety():
         # Convert to schema value
         schema_value = ModelSchemaValue.from_value(agent_config)
 
-        print(f"✅ Conversion to ModelSchemaValue succeeded")
+        print("✅ Conversion to ModelSchemaValue succeeded")
 
         # Serialize
-        print(f"\n🔍 Serialization test:")
+        print("\n🔍 Serialization test:")
         try:
             serialized = schema_value.model_dump()
-            print(f"   ✅ model_dump() succeeded")
+            print("   ✅ model_dump() succeeded")
             print(f"   Size: {len(str(serialized))} chars")
 
             # Can we recreate from serialized?
-            print(f"\n🔍 Deserialization test:")
+            print("\n🔍 Deserialization test:")
             try:
                 recreated = ModelSchemaValue(**serialized)
-                print(f"   ✅ Recreated from serialized data")
+                print("   ✅ Recreated from serialized data")
 
                 # Round-trip back to value
                 final_value = recreated.to_value()
-                print(f"   ✅ Round-trip to Python value succeeded")
-                print(f"\n   Data integrity check:")
+                print("   ✅ Round-trip to Python value succeeded")
+                print("\n   Data integrity check:")
                 print(f"   Original type: {type(agent_config)}")
                 print(f"   Final type: {type(final_value)}")
-                print(f"   Keys preserved: {set(agent_config.keys()) == set(final_value.keys())}")  # type: ignore
+                print(
+                    f"   Keys preserved: {set(agent_config.keys()) == set(final_value.keys())}"
+                )  # type: ignore
 
                 # Check unknown field handling
-                print(f"\n   Unknown object handling:")
+                print("\n   Unknown object handling:")
                 print(f"   Original: {agent_config['unknown_field']}")
                 print(f"   Final: {final_value['unknown_field']}")  # type: ignore
-                print(f"   Converted to string? {isinstance(final_value['unknown_field'], str)}")  # type: ignore
+                print(
+                    f"   Converted to string? {isinstance(final_value['unknown_field'], str)}"
+                )  # type: ignore
 
             except Exception as recreate_e:
                 print(f"   ❌ Deserialization failed: {recreate_e}")
@@ -456,12 +463,12 @@ def test_current_approach_serialization_safety():
         except Exception as ser_e:
             print(f"   ❌ Serialization failed: {ser_e}")
 
-        print(f"\n📊 DISTRIBUTED EXECUTION SAFETY:")
-        print(f"   - Handles unknown objects? YES (converts to string)")
-        print(f"   - Serialization safe? YES")
-        print(f"   - Deserialization safe? YES")
-        print(f"   - Type preservation? Partial (unknown objects become strings)")
-        print(f"   - Crash risk? LOW")
+        print("\n📊 DISTRIBUTED EXECUTION SAFETY:")
+        print("   - Handles unknown objects? YES (converts to string)")
+        print("   - Serialization safe? YES")
+        print("   - Deserialization safe? YES")
+        print("   - Type preservation? Partial (unknown objects become strings)")
+        print("   - Crash risk? LOW")
 
     except Exception as e:
         print(f"❌ Test failed: {e.__class__.__name__}")
@@ -491,16 +498,16 @@ def test_generic_approach_serialization_safety():
     try:
         schema_value = ModelSchemaValueGeneric.from_value(agent_config_simple)
 
-        print(f"✅ Conversion succeeded (simple config)")
+        print("✅ Conversion succeeded (simple config)")
 
         # Serialize
-        print(f"\n🔍 Serialization test (simple config):")
+        print("\n🔍 Serialization test (simple config):")
         try:
             serialized = schema_value.model_dump()
-            print(f"   ✅ model_dump() succeeded")
+            print("   ✅ model_dump() succeeded")
 
             # Try with unknown object
-            print(f"\n🔍 Serialization with unknown object:")
+            print("\n🔍 Serialization with unknown object:")
             agent_config_complex = agent_config_simple.copy()
             agent_config_complex["unknown"] = CustomConfigObject("test")
 
@@ -510,21 +517,21 @@ def test_generic_approach_serialization_safety():
 
             try:
                 serialized_complex = schema_value_complex.model_dump()
-                print(f"   ✅ Serialization with unknown object succeeded")
+                print("   ✅ Serialization with unknown object succeeded")
                 print(f"   Value: {serialized_complex}")
             except Exception as ser_complex_e:
                 print(
                     f"   ❌ Serialization with unknown object failed: {ser_complex_e}"
                 )
-                print(f"   This would crash distributed execution!")
+                print("   This would crash distributed execution!")
 
         except Exception as ser_e:
             print(f"   ❌ Serialization failed: {ser_e}")
 
-        print(f"\n📊 DISTRIBUTED EXECUTION SAFETY:")
-        print(f"   - Handles simple types? YES")
-        print(f"   - Handles unknown objects? DEPENDS (may fail serialization)")
-        print(f"   - Crash risk? MEDIUM-HIGH (if unknown objects present)")
+        print("\n📊 DISTRIBUTED EXECUTION SAFETY:")
+        print("   - Handles simple types? YES")
+        print("   - Handles unknown objects? DEPENDS (may fail serialization)")
+        print("   - Crash risk? MEDIUM-HIGH (if unknown objects present)")
 
     except Exception as e:
         print(f"❌ Test failed: {e.__class__.__name__}")
@@ -550,7 +557,7 @@ def test_current_approach_error_messages():
     print(
         f"Agent generated value: '{schema_value.to_value()}' (type: {schema_value.value_type})"
     )
-    print(f"\nAgent tries to use as number:")
+    print("\nAgent tries to use as number:")
 
     try:
         num = schema_value.get_number()
@@ -558,12 +565,12 @@ def test_current_approach_error_messages():
     except Exception as e:
         print(f"  ✅ Error raised: {e.__class__.__name__}")
         print(f"  Message: {e}")
-        print(f"\n  Error quality for agent debugging:")
+        print("\n  Error quality for agent debugging:")
         print(f"    - Error type clear? {'Yes' if 'TYPE_MISMATCH' in str(e) else 'No'}")
         print(
             f"    - Expected vs actual types shown? {'Yes' if 'Expected' in str(e) and 'got' in str(e) else 'No'}"
         )
-        print(f"    - Agent can retry with correction? YES")
+        print("    - Agent can retry with correction? YES")
 
 
 def test_generic_approach_error_messages():
@@ -575,26 +582,27 @@ def test_generic_approach_error_messages():
     print("=" * 80)
 
     # Agent tries to create with wrong type
-    print(f"Agent tries to create int schema with string value:")
+    print("Agent tries to create int schema with string value:")
 
     try:
         schema_value: ModelSchemaValueGeneric[int] = ModelSchemaValueGeneric[int](
-            value="30 seconds", value_type="number"  # type: ignore
+            value="30 seconds",
+            value_type="number",  # type: ignore
         )
         print(f"  Unexpected success: {schema_value}")
     except ValidationError as e:
-        print(f"  ✅ Pydantic validation error raised")
+        print("  ✅ Pydantic validation error raised")
         print(f"  Error count: {len(e.errors())}")
-        print(f"\n  Error details:")
+        print("\n  Error details:")
         for err in e.errors():
             print(f"    - Field: {err['loc']}")
             print(f"      Type: {err['type']}")
             print(f"      Message: {err['msg']}")
-        print(f"\n  Error quality for agent debugging:")
-        print(f"    - Error type clear? YES (Pydantic validation)")
-        print(f"    - Field location shown? YES")
-        print(f"    - Expected vs actual types shown? PARTIAL")
-        print(f"    - Agent can retry with correction? YES")
+        print("\n  Error quality for agent debugging:")
+        print("    - Error type clear? YES (Pydantic validation)")
+        print("    - Field location shown? YES")
+        print("    - Expected vs actual types shown? PARTIAL")
+        print("    - Agent can retry with correction? YES")
 
 
 # ============================================================================

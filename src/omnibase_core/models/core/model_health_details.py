@@ -9,9 +9,9 @@ Structured model for health check details, replacing Dict[str, Any]
 with proper typing for health details.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelHealthDetails(BaseModel):

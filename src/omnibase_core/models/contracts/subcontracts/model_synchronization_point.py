@@ -8,7 +8,7 @@ Model for synchronization points in workflow execution for the ONEX workflow coo
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSynchronizationPoint(BaseModel):

@@ -17,13 +17,12 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelFunctionNodePerformance(BaseModel):

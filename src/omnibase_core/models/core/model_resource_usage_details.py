@@ -9,9 +9,9 @@ Structured model for resource usage details, replacing Dict[str, Any]
 with proper typing for resource usage.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelResourceUsageDetails(BaseModel):

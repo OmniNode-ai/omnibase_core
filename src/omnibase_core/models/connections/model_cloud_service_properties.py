@@ -16,11 +16,10 @@ Part of the connection properties restructuring to reduce string field violation
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelCloudServiceProperties(BaseModel):

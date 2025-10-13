@@ -5,7 +5,7 @@ from pydantic import Field
 "\nModel for introspection additional info to replace Dict[str, Any] usage.\n"
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

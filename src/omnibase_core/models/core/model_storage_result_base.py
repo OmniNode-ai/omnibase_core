@@ -34,7 +34,7 @@ class ModelStorageResult(BaseModel):
         description="Error message if operation failed", default=None
     )
 
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         description="Operation metadata", default_factory=dict
     )
 

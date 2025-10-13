@@ -237,8 +237,6 @@ class TestFallbackSerialization:
         class UnsupportedType:
             """Type with no serialization support."""
 
-            pass
-
         obj = UnsupportedType()
 
         with pytest.raises(TypeError):
@@ -340,8 +338,6 @@ class TestEdgeCases:
 
         class EmptyModel(BaseModel):
             """Empty model for testing."""
-
-            pass
 
         model = EmptyModel()
 

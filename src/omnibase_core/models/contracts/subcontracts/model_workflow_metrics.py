@@ -8,7 +8,7 @@ Workflow Metrics Model - ONEX Standards Compliant.
 Model for performance metrics in workflow execution for the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelWorkflowMetrics(BaseModel):

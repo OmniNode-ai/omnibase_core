@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 "\nOrchestrator graph model.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_graph_edge import ModelGraphEdge
 from .model_graph_node import ModelGraphNode

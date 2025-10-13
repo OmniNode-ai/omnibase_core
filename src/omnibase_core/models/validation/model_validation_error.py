@@ -15,11 +15,10 @@ Validation error model for tracking validation failures.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_validation_value import ModelValidationValue
 
@@ -133,7 +132,6 @@ class ModelValidationError(BaseModel):
         """Create a critical error."""
         field_id = None
         if field_name:
-
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
                 f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",
@@ -157,7 +155,6 @@ class ModelValidationError(BaseModel):
         """Create a warning."""
         field_id = None
         if field_name:
-
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
                 f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",

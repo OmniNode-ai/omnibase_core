@@ -10,7 +10,7 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelExecutionDuration(BaseModel):

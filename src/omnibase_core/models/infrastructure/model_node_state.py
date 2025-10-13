@@ -18,8 +18,6 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 
 @dataclass
 class ModelNodeState:

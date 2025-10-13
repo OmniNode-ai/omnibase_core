@@ -24,7 +24,6 @@ class ToolLoggerCodeBlock:
         self, *args: Any, **kwargs: Any
     ) -> None:
         """Initialize tool logger code block."""
-        pass
 
     def __enter__(self) -> Any:
         """Enter context manager."""
@@ -32,4 +31,3 @@ class ToolLoggerCodeBlock:
 
     def __exit__(self, *args: Any) -> None:
         """Exit context manager."""
-        pass

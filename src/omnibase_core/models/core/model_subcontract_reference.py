@@ -9,7 +9,7 @@ to link to subcontract files with integration fields.
 Author: ONEX Framework Team
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSubcontractReference(BaseModel):

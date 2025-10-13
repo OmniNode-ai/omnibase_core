@@ -6,7 +6,7 @@ Request Parameter Model for ONEX Configuration System.
 Strongly typed model for HTTP request parameters.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRequestParameter(BaseModel):

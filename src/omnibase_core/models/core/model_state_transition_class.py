@@ -26,9 +26,6 @@ from omnibase_core.models.core.model_tool_based_transition import (
     ModelToolBasedTransition,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelStateTransition(BaseModel):
     """

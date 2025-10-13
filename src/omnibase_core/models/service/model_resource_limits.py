@@ -4,7 +4,7 @@ from pydantic import Field
 Resource limits model for container deployment.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelResourceLimits(BaseModel):

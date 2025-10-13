@@ -6,7 +6,7 @@ Resource Usage Model
 Model for current resource usage information.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelResourceUsage(BaseModel):

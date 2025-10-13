@@ -9,7 +9,7 @@ Extracted from the multi-model file for modular architecture compliance.
 Author: OmniNode Team
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.detection.model_service_detection_config import (
     ModelServiceDetectionConfig,

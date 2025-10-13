@@ -6,7 +6,7 @@ from pydantic import Field
 Model for Docker Compose service dict[str, Any]ionary representation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelComposeServiceDict(BaseModel):

@@ -9,7 +9,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,

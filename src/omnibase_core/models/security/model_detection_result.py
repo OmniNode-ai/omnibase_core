@@ -16,7 +16,7 @@ Provides strongly-typed results from sensitive information detection operations.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelDetectionMatch(BaseModel):

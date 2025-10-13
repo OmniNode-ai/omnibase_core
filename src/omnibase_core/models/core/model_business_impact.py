@@ -11,7 +11,7 @@ Business impact model to replace dict[str, Any]ionary usage for business metrics
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class ModelBusinessImpact(BaseModel):

@@ -11,7 +11,7 @@ Extracted from model_service_configuration.py for modular architecture complianc
 Author: OmniNode Team
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.endpoints.model_service_endpoint import ModelServiceEndpoint
 from omnibase_core.models.health.model_health_check import ModelHealthCheck

@@ -21,9 +21,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.primitives.model_semver import ModelSemVer
+from pydantic import BaseModel
 
 # Import all individual model components
 

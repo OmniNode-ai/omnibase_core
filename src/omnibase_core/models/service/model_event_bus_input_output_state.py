@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nEvent Bus Input/Output State Composite Model.\n\nThis module provides a composite model that combines the input and output states\nfor event bus operations, enabling unified handling of both states.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 

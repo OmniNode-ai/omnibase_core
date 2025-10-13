@@ -17,11 +17,10 @@ Each sub-model handles a specific concern area.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cloud_service_properties import ModelCloudServiceProperties

@@ -37,12 +37,12 @@ Breaking this chain (e.g., adding runtime import from models.*) will cause circu
 """
 
 import re
-from datetime import UTC, datetime
+from datetime import UTC
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 # Safe runtime imports - no circular dependency risk
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
@@ -50,7 +50,6 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 # Import required enums from the same package
 from omnibase_core.errors.error_codes import (
     EnumCLIExitCode,
-    EnumCoreErrorCode,
     EnumOnexErrorCode,
     get_exit_code_for_status,
 )

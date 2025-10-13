@@ -8,7 +8,7 @@ from pydantic import Field
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_effect_type import EnumEffectType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

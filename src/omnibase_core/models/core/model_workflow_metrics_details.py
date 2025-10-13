@@ -11,9 +11,9 @@ Structured model for workflow metrics details, replacing Dict[str, Any]
 with proper typing for workflow metrics.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelWorkflowMetricsDetails(BaseModel):

@@ -30,7 +30,7 @@ Safe Runtime Imports (OK to import at module level):
 
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.common.model_value_container import ModelValueContainer
 
@@ -127,7 +127,7 @@ class ModelTypedMapping(BaseModel):
 
     def get_string(self, key: str, default: str | None = None) -> str | None:
         """Get a string value with type safety."""
-        from typing import Dict, Optional, cast
+        from typing import cast
 
         container = self.data.get(key)
         if container is None:
@@ -246,7 +246,7 @@ class ModelTypedMapping(BaseModel):
             errors.extend(mapping_errors)
 
         except Exception as e:
-            errors.append(f"Mapping validation error: {str(e)}")
+            errors.append(f"Mapping validation error: {e!s}")
 
         return errors
 
@@ -258,7 +258,7 @@ class ModelTypedMapping(BaseModel):
                 return False
 
             # Key validation (keys are always str from type dict[str, ModelValueContainer])
-            for key in self.data.keys():
+            for key in self.data:
                 if len(key) == 0 or len(key) > 200:
                     return False
                 # Keys should not contain null bytes or control characters
@@ -282,7 +282,7 @@ class ModelTypedMapping(BaseModel):
                 errors.append("Mapping exceeds maximum size of 10000 entries")
 
             # Key validation (keys are always str from type dict[str, ModelValueContainer])
-            for key in self.data.keys():
+            for key in self.data:
                 if len(key) == 0:
                     errors.append("Empty key not allowed")
                 elif len(key) > 200:
@@ -300,7 +300,7 @@ class ModelTypedMapping(BaseModel):
                     )
 
         except Exception as e:
-            errors.append(f"Key validation error: {str(e)}")
+            errors.append(f"Key validation error: {e!s}")
 
         return errors
 

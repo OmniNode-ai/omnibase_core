@@ -14,13 +14,12 @@ Follows ONEX one-model-per-file architecture.
 """
 
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData

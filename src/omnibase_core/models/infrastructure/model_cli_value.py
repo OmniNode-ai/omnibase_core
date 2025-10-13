@@ -13,11 +13,10 @@ Strongly-typed value object for CLI output data, replacing broad union types
 with discriminated union patterns following ONEX strong typing standards.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Note: Previously had type alias (CliDictValueType)

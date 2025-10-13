@@ -16,7 +16,7 @@ Author: ONEX Framework Team
 
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 from omnibase_core.models.core.model_registry_reference import ModelRegistryReference

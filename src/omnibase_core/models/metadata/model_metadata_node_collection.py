@@ -14,7 +14,6 @@ from typing import Any
 from pydantic import Field, RootModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer

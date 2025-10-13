@@ -8,7 +8,7 @@ from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 "\nAdditional Context Model.\n\nType-safe additional context replacing Dict[str, Any]\nwith structured context information.\n"
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_custom_fields import ModelCustomFields
 from .model_environment import ModelEnvironment

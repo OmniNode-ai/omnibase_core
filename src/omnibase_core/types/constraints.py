@@ -46,6 +46,8 @@ from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
 from omnibase_spi.protocols.types import ProtocolValidatable
 from pydantic import BaseModel
 
+from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
 # Bounded type variables with proper constraints
 
 # For Pydantic models
@@ -120,8 +122,6 @@ ComplexContextValueType = object  # Runtime validation required - see type guard
 # - By the time __getattr__ runs, models.* has already imported types.constraints
 # - This breaks the circular dependency at module import time
 if TYPE_CHECKING:
-    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
-
     # Type aliases for test compatibility
     BaseCollection = ModelBaseCollection
     BaseFactory = ModelBaseFactory

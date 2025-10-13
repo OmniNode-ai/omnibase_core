@@ -9,7 +9,7 @@ supporting priority values, preemption logic, resource allocation, and escalatio
 
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.configuration.model_priority_metadata import (
     ModelPriorityMetadata,

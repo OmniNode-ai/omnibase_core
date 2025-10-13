@@ -8,7 +8,7 @@ ModelMaskData: Structured data model for masking operations.
 This model provides strongly typed data masking without using Any types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelMaskData(BaseModel):
@@ -57,7 +57,7 @@ class ModelMaskData(BaseModel):
         integer_data: dict[str, int] = {}
         boolean_data: dict[str, bool] = {}
         list_data: dict[str, list[str]] = {}
-        nested_data: dict[str, "ModelMaskData"] = {}
+        nested_data: dict[str, ModelMaskData] = {}
 
         for key, value in data.items():
             if isinstance(value, str):

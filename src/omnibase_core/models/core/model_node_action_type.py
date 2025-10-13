@@ -12,9 +12,9 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 

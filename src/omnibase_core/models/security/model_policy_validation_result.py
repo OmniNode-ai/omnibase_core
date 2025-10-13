@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 "\nModelPolicyValidationResult: Result of policy validation against signature chain.\n\nThis model represents the result of validating a signature chain against a trust policy.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

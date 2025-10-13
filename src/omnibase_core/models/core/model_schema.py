@@ -10,9 +10,9 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 "\nUnified Schema Model for JSON Schema representation.\n\nThis module contains a unified ModelSchema class that can represent both\nfull JSON Schema documents and individual schema properties, eliminating\nthe need for separate ModelSchemaDefinition and ModelPropertySchema classes.\n"
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_examples import ModelExample
 
@@ -164,13 +164,11 @@ class ModelSchema(BaseModel):
                         resolved_schema.title = model_name
                     return resolved_schema
             elif any(
-                (
-                    schema_file in self.ref
-                    for schema_file in [
-                        "semver_model.schema.yaml",
-                        "onex_field_model.schema.yaml",
-                    ]
-                )
+                schema_file in self.ref
+                for schema_file in [
+                    "semver_model.schema.yaml",
+                    "onex_field_model.schema.yaml",
+                ]
             ):
                 if "semver_model" in self.ref:
                     return ModelSchema(type="object", title="ModelSemVer")

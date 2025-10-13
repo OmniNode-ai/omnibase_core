@@ -17,9 +17,6 @@ from omnibase_core.models.validation.model_schema_properties_model import (
     ModelSchemaPropertiesModel,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelSchema(BaseModel):
     """

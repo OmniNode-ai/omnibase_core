@@ -7,7 +7,7 @@ This model represents a generated Pydantic model definition,
 including its code, imports, and dependencies.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDefinition(BaseModel):

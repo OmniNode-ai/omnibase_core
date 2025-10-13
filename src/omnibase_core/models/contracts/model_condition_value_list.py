@@ -11,7 +11,7 @@ that maintains type safety and provides utility methods for value checking.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.types.constraints import PrimitiveValueType
 

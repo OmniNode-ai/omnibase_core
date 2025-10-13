@@ -11,7 +11,7 @@ enables plugin extensibility and contract-driven event type registration.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelEventType(BaseModel):

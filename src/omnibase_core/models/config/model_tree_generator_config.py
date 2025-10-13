@@ -6,7 +6,7 @@ from pydantic import Field
 Tree generator configuration model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.config.model_artifact_type_config import (
     ModelArtifactTypeConfig,

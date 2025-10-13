@@ -15,7 +15,7 @@ Part of the ModelCliExecution restructuring to reduce excessive string fields.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCliExecutionResources(BaseModel):

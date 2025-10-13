@@ -8,7 +8,7 @@ ModelConfigurationSummary: Configuration summary model.
 This model provides structured configuration summary without using Any types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelConfigurationSummary(BaseModel):

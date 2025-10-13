@@ -9,6 +9,7 @@ Usage:
     python tools/validation/validate_structure.py <repo_path> <repo_name>
     python tools/validation/validate_structure.py . omnibase_core
 """
+
 from __future__ import annotations
 
 import argparse
@@ -76,19 +77,18 @@ class OmniStructureValidator:
                     # Check if any base class is TypedDict
                     for base in node.bases:
                         # Handle direct TypedDict reference: class MyType(TypedDict)
-                        if isinstance(base, ast.Name) and base.id == "TypedDict":
-                            return True
-                        # Handle qualified TypedDict reference: class MyType(typing.TypedDict)
-                        elif (
-                            isinstance(base, ast.Attribute) and base.attr == "TypedDict"
-                        ):
-                            return True
-                        # Handle typing_extensions.TypedDict
-                        elif (
-                            isinstance(base, ast.Attribute)
-                            and isinstance(base.value, ast.Name)
-                            and base.value.id in ("typing", "typing_extensions")
-                            and base.attr == "TypedDict"
+                        if (
+                            (isinstance(base, ast.Name) and base.id == "TypedDict")
+                            or (
+                                isinstance(base, ast.Attribute)
+                                and base.attr == "TypedDict"
+                            )
+                            or (
+                                isinstance(base, ast.Attribute)
+                                and isinstance(base.value, ast.Name)
+                                and base.value.id in ("typing", "typing_extensions")
+                                and base.attr == "TypedDict"
+                            )
                         ):
                             return True
             return False
@@ -366,7 +366,7 @@ class OmniStructureValidator:
                 StructureViolation(
                     level=ViolationLevel.ERROR,
                     category="Protocol Location",
-                    message=f"Only omnibase_spi should contain protocols directory",
+                    message="Only omnibase_spi should contain protocols directory",
                     path=f"src/{self.repo_name}/protocols/",
                     suggestion="Remove local protocols, import from omnibase_spi instead",
                 )
@@ -462,7 +462,7 @@ class OmniStructureValidator:
                     StructureViolation(
                         level=ViolationLevel.ERROR,
                         category="Node Version",
-                        message=f"Missing version directory: v1_0_0",
+                        message="Missing version directory: v1_0_0",
                         path=str(node_dir.relative_to(self.repo_path)),
                         suggestion="Create v1_0_0 directory with node.py and contracts/",
                     )

@@ -3,7 +3,7 @@ from typing import Any, Optional
 from pydantic import Field
 
 "\nTool Type Model\n\nReplaces EnumToolType with a proper model that includes metadata,\ndescriptions, and categorization for each tool type.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

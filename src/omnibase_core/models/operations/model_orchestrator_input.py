@@ -14,7 +14,7 @@ Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

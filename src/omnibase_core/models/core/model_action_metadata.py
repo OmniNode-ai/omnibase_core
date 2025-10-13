@@ -16,7 +16,7 @@ Enhanced for tool-as-a-service architecture with strong typing throughout.
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_performance_metrics import ModelPerformanceMetrics

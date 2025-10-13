@@ -6,9 +6,9 @@ from pydantic import Field
 Strongly typed models for extracted metadata blocks, decoupled from model_node_metadata.py to avoid circular imports.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock

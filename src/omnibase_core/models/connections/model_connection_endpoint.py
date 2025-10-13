@@ -15,12 +15,10 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelConnectionEndpoint(BaseModel):

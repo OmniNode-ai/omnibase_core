@@ -75,9 +75,9 @@ def add_imports(content: str, needs_uuid: bool, needs_semver: bool) -> str:
 
     # Find the position to insert imports (after __future__ imports if present)
     for i, line in enumerate(lines):
-        if line.startswith("from __future__"):
-            insert_pos = i + 1
-        elif line.startswith(("import ", "from ")) and "import" in line:
+        if line.startswith("from __future__") or (
+            line.startswith(("import ", "from ")) and "import" in line
+        ):
             insert_pos = i + 1
         elif line.strip() and not line.startswith("#"):
             # Stop at first non-import, non-comment line

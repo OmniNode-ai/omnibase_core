@@ -10,7 +10,7 @@ Type-safe metadata for discovery protocol request/response patterns.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_discoveryresponsemetadata import ModelDiscoveryResponseModelMetadata
 

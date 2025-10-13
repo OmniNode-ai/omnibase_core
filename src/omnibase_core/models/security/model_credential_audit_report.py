@@ -8,7 +8,7 @@ ModelCredentialAuditReport: Audit report for credential usage.
 This model represents the result of auditing credential usage in data structures.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCredentialAuditReport(BaseModel):

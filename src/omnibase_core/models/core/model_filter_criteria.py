@@ -7,9 +7,9 @@ Filter criteria model to replace Dict[str, Any] usage for filter fields.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from .model_custom_filter import ModelCustomFilters
 from .model_filter_condition import ModelFilterCondition

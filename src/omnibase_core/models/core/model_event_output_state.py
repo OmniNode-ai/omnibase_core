@@ -9,9 +9,9 @@ Type-safe model for output state in event metadata,
 replacing Dict[str, Any] usage with proper model.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelEventOutputState(BaseModel):

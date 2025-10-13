@@ -9,10 +9,10 @@ Action Payload Base Model.
 Base class for action-specific payload types with common fields and validation.
 """
 
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 

@@ -8,7 +8,7 @@ Routing Preferences Model.
 Type-safe routing and load balancing preferences for node operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRoutingPreferences(BaseModel):

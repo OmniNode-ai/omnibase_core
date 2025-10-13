@@ -13,11 +13,10 @@ Type-safe metadata value container that replaces Union[str, int, float, bool]
 with structured validation and proper type handling for metadata fields.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -50,7 +49,7 @@ class ModelMetadataValue(BaseModel):
     source: str | None = Field(default=None, description="Source of the metadata value")
 
     @model_validator(mode="after")
-    def validate_value_type(self) -> "ModelMetadataValue":
+    def validate_value_type(self) -> ModelMetadataValue:
         """Validate that value matches its declared type."""
         value_type = self.value_type
 

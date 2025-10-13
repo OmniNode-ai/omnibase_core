@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 # Patterns to fix: (regex_pattern, replacement, description)
-FIXES: List[Tuple[str, str, str]] = [
+FIXES: list[tuple[str, str, str]] = [
     # Enum import fixes - remove "Model" prefix from enum names
     (r"\bModelEnumTransitionType\b", "EnumTransitionType", "Fix EnumTransitionType"),
     (
@@ -69,7 +69,7 @@ FIXES: List[Tuple[str, str, str]] = [
 ]
 
 # File-specific fixes that need context
-FILE_SPECIFIC_FIXES: Dict[str, List[Tuple[str, str]]] = {
+FILE_SPECIFIC_FIXES: dict[str, list[tuple[str, str]]] = {
     "model_enhanced_tool_collection.py": [
         (
             "from omnibase_core.models.core.model_tool_metadata import (",
@@ -108,7 +108,7 @@ def fix_file(file_path: Path) -> int:
             if old_text in content:
                 content = content.replace(old_text, new_text)
                 changes += 1
-                print(f"  - File-specific fix applied")
+                print("  - File-specific fix applied")
 
     if content != original:
         file_path.write_text(content)
@@ -130,7 +130,7 @@ def main():
             total_changes += changes
             files_changed += 1
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"Files changed: {files_changed}")
     print(f"Total changes: {total_changes}")
 

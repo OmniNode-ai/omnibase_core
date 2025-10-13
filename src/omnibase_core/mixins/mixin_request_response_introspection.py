@@ -12,6 +12,7 @@ Provides the "request-response" half of the hybrid discovery system.
 
 import contextlib
 import time
+from datetime import UTC
 
 from omnibase_core.constants.event_types import REQUEST_REAL_TIME_INTROSPECTION
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -674,7 +675,7 @@ class MixinRequestResponseIntrospection:
         # Convert startup_time from float timestamp to datetime
         from datetime import datetime, timezone
 
-        startup_datetime = datetime.fromtimestamp(self._startup_time, tz=timezone.utc)
+        startup_datetime = datetime.fromtimestamp(self._startup_time, tz=UTC)
         additional_info = ModelIntrospectionAdditionalInfo(
             startup_time=startup_datetime,
         )

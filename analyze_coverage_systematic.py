@@ -23,7 +23,7 @@ def parse_html_coverage():
             continue
 
         try:
-            with open(html_file, "r") as f:
+            with open(html_file) as f:
                 content = f.read()
 
             # Extract file path from the HTML
@@ -127,14 +127,14 @@ def analyze_coverage_opportunities():
     ]
     high_impact.sort(key=lambda x: x["uncovered_lines"], reverse=True)
 
-    print(f"\n=== HIGH IMPACT FILES (50+ uncovered lines, <80% coverage) ===")
+    print("\n=== HIGH IMPACT FILES (50+ uncovered lines, <80% coverage) ===")
     for i, item in enumerate(high_impact[:30], 1):
         print(
             f"{i:2d}. {item['file']:<60} {item['uncovered_lines']:3d} uncovered ({item['coverage_percent']:5.1f}%)"
         )
 
     # Create prioritized list for testing
-    print(f"\n=== PRIORITIZED TESTING LIST (Top 200 files) ===")
+    print("\n=== PRIORITIZED TESTING LIST (Top 200 files) ===")
     prioritized = sorted(
         coverage_data,
         key=lambda x: (x["uncovered_lines"], -x["coverage_percent"]),

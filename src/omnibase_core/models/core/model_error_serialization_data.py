@@ -10,7 +10,7 @@ Error serialization data model for ONEX core.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 

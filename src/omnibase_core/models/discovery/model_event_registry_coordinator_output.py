@@ -9,7 +9,7 @@ This module defines the output model for Event Registry Coordinator operations.
 
 from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_service_status import EnumServiceStatus
 

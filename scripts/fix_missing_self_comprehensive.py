@@ -21,11 +21,12 @@ def run_mypy() -> str:
         capture_output=True,
         text=True,
         cwd=ROOT_DIR,
+        check=False,
     )
     return result.stdout + result.stderr
 
 
-def find_self_errors_by_file() -> Dict[str, List[int]]:
+def find_self_errors_by_file() -> dict[str, list[int]]:
     """Find all files with missing 'self' parameter errors, grouped by file."""
     output = run_mypy()
     files_errors = {}
@@ -44,7 +45,7 @@ def find_self_errors_by_file() -> Dict[str, List[int]]:
     return files_errors
 
 
-def find_method_for_line(lines: List[str], error_line_idx: int) -> int | None:
+def find_method_for_line(lines: list[str], error_line_idx: int) -> int | None:
     """
     Find the method definition line for a given error line.
 
@@ -61,7 +62,7 @@ def find_method_for_line(lines: List[str], error_line_idx: int) -> int | None:
     return None
 
 
-def method_needs_self(lines: List[str], method_line_idx: int) -> bool:
+def method_needs_self(lines: list[str], method_line_idx: int) -> bool:
     """
     Check if a method definition needs 'self' parameter.
 
@@ -79,7 +80,7 @@ def method_needs_self(lines: List[str], method_line_idx: int) -> bool:
     params = match.group(2).strip()
 
     # Already has self or cls
-    if params.startswith("self") or params.startswith("cls"):
+    if params.startswith(("self", "cls")):
         return False
 
     # Check for decorators above method
@@ -101,7 +102,7 @@ def method_needs_self(lines: List[str], method_line_idx: int) -> bool:
     return True
 
 
-def add_self_to_method(lines: List[str], method_line_idx: int) -> bool:
+def add_self_to_method(lines: list[str], method_line_idx: int) -> bool:
     """
     Add 'self' parameter to a method definition.
 
@@ -128,7 +129,7 @@ def add_self_to_method(lines: List[str], method_line_idx: int) -> bool:
     return True
 
 
-def fix_file(file_path: str, error_lines: List[int]) -> int:
+def fix_file(file_path: str, error_lines: list[int]) -> int:
     """
     Fix missing 'self' parameters in a file.
 
@@ -205,7 +206,7 @@ def main():
         if fixed > 0:
             print(f"  ✓ Fixed {fixed} methods")
         else:
-            print(f"  ⚠ No fixes applied (methods may already be correct)")
+            print("  ⚠ No fixes applied (methods may already be correct)")
 
     print("\n" + "=" * 80)
     print(f"TOTAL METHODS FIXED: {total_fixed}")

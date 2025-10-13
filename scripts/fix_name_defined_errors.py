@@ -48,11 +48,12 @@ def run_mypy() -> str:
         capture_output=True,
         text=True,
         cwd=ROOT_DIR,
+        check=False,
     )
     return result.stdout + result.stderr
 
 
-def find_files_with_missing_self() -> Dict[str, list]:
+def find_files_with_missing_self() -> dict[str, list]:
     """Find all files with missing 'self' parameter errors."""
     output = run_mypy()
     files_errors = {}
@@ -101,7 +102,7 @@ def fix_missing_self_in_file(file_path: str, error_lines: list) -> int:
                     params = method_match.group(2).strip()
 
                     # Skip static methods, class methods, and already-fixed methods
-                    if params.startswith("self") or params.startswith("cls"):
+                    if params.startswith(("self", "cls")):
                         break
 
                     # Check if previous line has @staticmethod or @classmethod
@@ -134,7 +135,7 @@ def fix_missing_self_in_file(file_path: str, error_lines: list) -> int:
     return fixed_count
 
 
-def find_files_with_missing_name(name: str) -> Set[str]:
+def find_files_with_missing_name(name: str) -> set[str]:
     """Find all files with missing name using mypy output."""
     output = run_mypy()
     files = set()
@@ -206,9 +207,9 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
         stripped = line.strip()
 
         # Skip module docstring
-        if i == 0 and (stripped.startswith('"""') or stripped.startswith("'''")):
+        if i == 0 and (stripped.startswith(('"""', "'''"))):
             docstring_char = stripped[:3]
-            if not (stripped.endswith('"""') or stripped.endswith("'''")):
+            if not (stripped.endswith(('"""', "'''"))):
                 in_docstring = True
             continue
 
@@ -224,7 +225,7 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
             continue
 
         # Track imports
-        if stripped.startswith("from ") or stripped.startswith("import "):
+        if stripped.startswith(("from ", "import ")):
             last_import_line = i
             insert_line = i + 1
         elif last_import_line > 0:
@@ -241,13 +242,11 @@ def add_import_to_file(file_path: str, import_statement: str) -> bool:
                 "import omnibase_core"
             ):
                 insert_line = i + 1
-    elif import_statement.startswith("from typing") or import_statement.startswith(
-        "from uuid"
-    ):
+    elif import_statement.startswith(("from typing", "from uuid")):
         # Typing imports - after standard library, before third-party
         for i in range(len(lines)):
             stripped = lines[i].strip()
-            if stripped.startswith("from typing") or stripped.startswith("from uuid"):
+            if stripped.startswith(("from typing", "from uuid")):
                 insert_line = i + 1
     elif import_statement.startswith("from omnibase_core"):
         # Local imports - at the end
@@ -294,7 +293,7 @@ def fix_onex_base_state_imports() -> int:
     has_nested_imports = False
     for line in lines:
         if "from omnibase_core.errors" in line and (
-            line.startswith("        ") or line.startswith("\t")
+            line.startswith(("        ", "\t"))
         ):
             has_nested_imports = True
             break
@@ -329,13 +328,13 @@ def fix_onex_base_state_imports() -> int:
     for line in lines:
         # Skip indented imports
         if "from omnibase_core.errors" in line and (
-            line.startswith("        ") or line.startswith("\t")
+            line.startswith(("        ", "\t"))
         ):
             continue
         new_lines.append(line)
 
     file_path.write_text("\n".join(new_lines))
-    print(f"    ✓ Fixed nested imports in model_onex_base_state.py")
+    print("    ✓ Fixed nested imports in model_onex_base_state.py")
 
     return 1
 
@@ -396,7 +395,7 @@ def fix_wrong_attribute_names() -> int:
     return total_fixed
 
 
-def discover_model_imports() -> Dict[str, str]:
+def discover_model_imports() -> dict[str, str]:
     """Discover model imports by analyzing the codebase structure."""
     additional_imports = {}
 

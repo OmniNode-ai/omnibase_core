@@ -11,7 +11,7 @@ Represents a resolved tool implementation without requiring direct imports,
 enabling protocol-based tool execution while maintaining type safety.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_tool_implementation_config import ModelConfig
 

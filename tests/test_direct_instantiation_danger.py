@@ -62,25 +62,25 @@ def test_direct_instantiation_danger():
         value=CustomConfigObject("dangerous-data"), value_type="object"
     )
 
-    print(f"   ✅ Pydantic allows this!")
+    print("   ✅ Pydantic allows this!")
     print(f"   Value type: {type(config.value)}")
     print(f"   Contains: {config.value}")
 
-    print(f"\n💥 Now try to serialize for distributed execution:")
+    print("\n💥 Now try to serialize for distributed execution:")
 
     try:
         serialized = config.model_dump()
-        print(f"   ❌ UNEXPECTED: Serialization succeeded?!")
+        print("   ❌ UNEXPECTED: Serialization succeeded?!")
         print(f"   Result: {serialized}")
     except Exception as e:
         print(f"   💥 CRASH! Serialization failed: {e}")
-        print(f"   This would CRASH the distributed omninode system!")
+        print("   This would CRASH the distributed omninode system!")
 
-    print(f"\n📊 SAFETY ANALYSIS:")
-    print(f"   - Agent bypassed safe factory? YES")
-    print(f"   - Non-serializable object stored? YES")
-    print(f"   - Distributed execution crash risk? CRITICAL")
-    print(f"   - Can this happen in practice? YES (agents read docs, use constructors)")
+    print("\n📊 SAFETY ANALYSIS:")
+    print("   - Agent bypassed safe factory? YES")
+    print("   - Non-serializable object stored? YES")
+    print("   - Distributed execution crash risk? CRITICAL")
+    print("   - Can this happen in practice? YES (agents read docs, use constructors)")
 
 
 def test_current_approach_prevents_this():

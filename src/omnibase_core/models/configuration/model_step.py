@@ -4,7 +4,7 @@ from pydantic import Field
 Step model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_step_with import ModelStepWith
 

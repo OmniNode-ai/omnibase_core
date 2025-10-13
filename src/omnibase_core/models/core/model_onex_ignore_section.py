@@ -6,7 +6,7 @@ from pydantic import Field
 OnexIgnoreSection model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelOnexIgnoreSection(BaseModel):

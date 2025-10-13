@@ -170,7 +170,7 @@ def main():
 
     print()
     print("=" * 80)
-    print(f"📊 SUMMARY:")
+    print("📊 SUMMARY:")
     print(f"   Files scanned:        {len(python_files)}")
     print(f"   Files changed:        {total_files_changed}")
     print(f"   isinstance fixes:     {total_isinstance_fixes}")

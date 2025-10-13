@@ -7,9 +7,9 @@ from pydantic import Field
 Request configuration model.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.configuration.model_request_auth import ModelRequestAuth
 from omnibase_core.models.configuration.model_request_retry_config import (

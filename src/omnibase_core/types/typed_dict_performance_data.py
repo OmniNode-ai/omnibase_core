@@ -7,9 +7,6 @@ Typed structure for performance data updates.
 """
 
 
-from typing import TypedDict
-
-
 class TypedDictPerformanceData(TypedDict, total=False):
     """Typed structure for performance data updates."""
 

@@ -4,7 +4,7 @@ from pydantic import Field
 Trust score stub model for ONEX node metadata.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelTrustScoreStub(BaseModel):

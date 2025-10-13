@@ -7,7 +7,7 @@ This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from .model_custom_settings import ModelCustomSettings
 from .model_example import ModelExample

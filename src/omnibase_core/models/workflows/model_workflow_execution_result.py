@@ -16,7 +16,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.contracts.subcontracts.model_workflow_metrics import (

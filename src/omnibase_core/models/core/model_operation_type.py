@@ -9,7 +9,7 @@ Extensible operation type model that replaces string literals with
 rich metadata for operation tracking and categorization.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelOperationType(BaseModel):

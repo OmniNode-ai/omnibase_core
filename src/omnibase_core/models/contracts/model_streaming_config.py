@@ -10,7 +10,7 @@ for large data volumes.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelStreamingConfig(BaseModel):

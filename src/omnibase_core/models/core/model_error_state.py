@@ -7,7 +7,7 @@ from pydantic import Field
 Error state model for defining error responses in ONEX contracts.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_generic_properties import ModelGenericProperties
 

@@ -13,7 +13,7 @@ providing common fields and functionality.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_tag import ModelTag
 

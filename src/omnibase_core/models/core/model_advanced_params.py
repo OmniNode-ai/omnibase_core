@@ -9,7 +9,7 @@ This model replaces dict[str, Any]ionary usage in CLI tool execution by providin
 a structured representation of advanced parameters.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

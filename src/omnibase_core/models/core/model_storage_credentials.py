@@ -10,9 +10,9 @@ Storage Credentials Model - ONEX Standards Compliant.
 Strongly-typed model for storage backend authentication credentials.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, SecretStr
 
 from .model_storage_credentials_config import ModelConfig
 
@@ -45,6 +45,6 @@ class ModelStorageCredentials(BaseModel):
         description="Complete connection string (secure)", default=None
     )
 
-    additional_params: Dict[str, str] = Field(
+    additional_params: dict[str, str] = Field(
         description="Additional authentication parameters", default_factory=dict
     )

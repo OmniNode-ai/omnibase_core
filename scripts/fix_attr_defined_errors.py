@@ -77,7 +77,7 @@ def main():
             total_changes += changes
             files_changed += 1
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"Files changed: {files_changed}")
     print(f"Total changes: {total_changes}")
 

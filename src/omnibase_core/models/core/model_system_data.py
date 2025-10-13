@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nSystem Data Model.\n\nSystem information data structure.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSystemData(BaseModel):

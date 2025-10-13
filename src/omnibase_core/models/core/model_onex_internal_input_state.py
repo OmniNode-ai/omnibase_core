@@ -14,13 +14,13 @@ logic throughout the internal processing pipeline.
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.core.core_uuid_service import UUIDService
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.primitives.model_semver import parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_base_state import ModelOnexInputState

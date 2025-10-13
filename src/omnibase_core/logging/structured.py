@@ -10,8 +10,8 @@ Provides centralized structured logging with standardized formats.
 
 import json
 import logging
-from datetime import UTC, datetime
-from typing import Any, Optional
+from datetime import UTC
+from typing import Any
 from uuid import UUID
 
 from omnibase_spi.protocols.types import ProtocolLogContext

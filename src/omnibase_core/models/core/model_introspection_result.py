@@ -6,7 +6,7 @@ from pydantic import Field
 Model for introspection command results.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_introspection_metadata import (
     ModelIntrospectionMetadata,

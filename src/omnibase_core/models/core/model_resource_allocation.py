@@ -6,9 +6,9 @@ from pydantic import Field
 Resource allocation model to replace Dict[str, Any] usage for resource specifications.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_resource_limit import ModelResourceLimit
 

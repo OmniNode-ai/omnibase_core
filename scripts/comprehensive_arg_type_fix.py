@@ -11,7 +11,7 @@ from typing import List, Tuple
 ROOT_DIR = Path(__file__).parent.parent / "src" / "omnibase_core"
 
 
-def fix_file_content(filepath: Path, fixes: List[Tuple[int, str, str]]) -> bool:
+def fix_file_content(filepath: Path, fixes: list[tuple[int, str, str]]) -> bool:
     """
     Apply multiple line-based fixes to a file.
 
@@ -26,7 +26,7 @@ def fix_file_content(filepath: Path, fixes: List[Tuple[int, str, str]]) -> bool:
         print(f"⚠️  File not found: {filepath}")
         return False
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
 
     modified = False
@@ -91,7 +91,7 @@ def main():
     # Fix 2: model_event_bus_input_state.py - ModelSemVer conversion
     print("\n📝 Fixing model_event_bus_input_state.py...")
     file = ROOT_DIR / "models" / "service" / "model_event_bus_input_state.py"
-    with open(file, "r", encoding="utf-8") as f:
+    with open(file, encoding="utf-8") as f:
         content = f.read()
 
     # Find the line with version=version and add conversion
@@ -110,7 +110,7 @@ def main():
     # Fix 3: model_schema.py - Multiple fixes
     print("\n📝 Fixing model_schema.py...")
     file = ROOT_DIR / "models" / "core" / "model_schema.py"
-    with open(file, "r", encoding="utf-8") as f:
+    with open(file, encoding="utf-8") as f:
         content = f.read()
 
     original = content

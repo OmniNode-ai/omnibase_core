@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Optional, TypeVar
+from collections.abc import Callable
+from typing import Any, Generic, Optional, TypeVar
 
 from pydantic import Field
 
@@ -13,17 +14,16 @@ repetitive patterns while maintaining type safety.
 """
 
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableABC
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

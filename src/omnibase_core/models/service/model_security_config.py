@@ -9,7 +9,7 @@ Security configuration model for service deployment.
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, SecretStr, model_validator
+from pydantic import BaseModel, SecretStr
 
 
 class ModelSecurityConfig(BaseModel):

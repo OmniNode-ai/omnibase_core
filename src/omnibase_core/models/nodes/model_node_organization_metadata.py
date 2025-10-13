@@ -17,11 +17,10 @@ Part of the ModelNodeMetadataInfo restructuring.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 

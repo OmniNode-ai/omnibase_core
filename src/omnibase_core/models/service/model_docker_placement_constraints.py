@@ -6,7 +6,7 @@ from pydantic import Field
 Model for Docker placement constraints configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDockerPlacementConstraints(BaseModel):

@@ -28,7 +28,7 @@ from typing import Generic, Optional
 ModelResultCLI: Canonical Pydantic model for structured CLI output/results.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from omnibase_core.models.core.model_base_error import ModelBaseError
 from omnibase_core.models.core.model_base_result import ModelBaseResult

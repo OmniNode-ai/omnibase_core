@@ -15,7 +15,7 @@ Model for overall workflow progress status in the ONEX workflow coordination sys
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_node_progress import ModelNodeProgress
 

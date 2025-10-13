@@ -17,7 +17,7 @@ Author: ONEX Framework Team
 from enum import Enum
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRegistryConfiguration(BaseModel):

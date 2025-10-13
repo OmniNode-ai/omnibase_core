@@ -23,9 +23,6 @@ from omnibase_core.models.core.model_group_service_configuration import (
 from omnibase_core.models.core.model_group_tool import ModelGroupTool
 from omnibase_core.primitives.model_semver import ModelSemVer, SemVerField
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelGroupManifest(BaseModel):
     """

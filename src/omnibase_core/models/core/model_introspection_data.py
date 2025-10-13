@@ -8,7 +8,7 @@ Introspection data model to replace Dict[str, object] usage for node introspecti
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

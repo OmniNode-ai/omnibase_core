@@ -8,7 +8,7 @@ Health Attributes Model
 Type-safe health attributes that replace Dict[str, Any] usage.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 

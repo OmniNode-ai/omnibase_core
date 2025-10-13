@@ -10,7 +10,7 @@ Strongly typed model for tool parameters to replace Dict[str, Any] usage.
 Follows ONEX canonical patterns with zero tolerance for Any types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelToolParameter(BaseModel):

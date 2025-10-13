@@ -34,7 +34,7 @@ def run_mypy(file_path: str | None = None) -> list[dict[str, Any]]:
     else:
         cmd.append("src/omnibase_core/")
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
     errors = []
     for line in result.stdout.splitlines() + result.stderr.splitlines():

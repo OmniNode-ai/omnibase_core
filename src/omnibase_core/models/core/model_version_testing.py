@@ -11,9 +11,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_version_file import ModelVersionFile
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelVersionTesting(BaseModel):
     """Version-specific testing information."""

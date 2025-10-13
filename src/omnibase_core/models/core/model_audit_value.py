@@ -3,10 +3,10 @@ from typing import Dict, List, Optional
 from pydantic import Field
 
 "\nAudit value model to replace Dict[str, Any] usage in audit entries.\n"
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_audit_field_change import ModelAuditFieldChange
@@ -101,4 +101,4 @@ class ModelAuditValue(BaseModel):
 
     def has_sensitive_changes(self) -> bool:
         """Check if any changes involve sensitive fields."""
-        return any((change.is_sensitive() for change in self.field_changes))
+        return any(change.is_sensitive() for change in self.field_changes)

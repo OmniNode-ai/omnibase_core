@@ -9,9 +9,8 @@ Event published by services to request discovery of available tools.
 The registry responds with a TOOL_DISCOVERY_RESPONSE event.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 

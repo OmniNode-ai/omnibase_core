@@ -4,7 +4,7 @@ from pydantic import Field
 Monitoring and observability configuration model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelMonitoringConfig(BaseModel):

@@ -12,7 +12,7 @@ usage with proper typing. This is the core model that should be
 used by all systems requiring node metadata.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNodeMetadata(BaseModel):

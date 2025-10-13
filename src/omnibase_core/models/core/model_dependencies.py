@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 "\nDependencies model for node introspection.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDependencies(BaseModel):

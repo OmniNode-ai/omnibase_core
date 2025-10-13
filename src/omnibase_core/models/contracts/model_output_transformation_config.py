@@ -11,7 +11,7 @@ formatting rules, and post-processing configuration for output data.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelOutputTransformationConfig(BaseModel):

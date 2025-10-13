@@ -32,8 +32,9 @@ import os
 import re
 import sys
 import threading
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, List, TypedDict
+from typing import List, TypedDict
 
 
 class ArchiveViolation(TypedDict):
@@ -173,7 +174,7 @@ class ArchivedImportValidator:
 
     def __init__(self, max_violations: int = 0):
         self.max_violations = max_violations
-        self.violations: List[ArchiveViolation] = []
+        self.violations: list[ArchiveViolation] = []
 
         # Define archived import patterns to detect
         self.archived_patterns = [
@@ -229,7 +230,7 @@ class ArchivedImportValidator:
             file_path: Path to Python file to validate
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 lines = content.splitlines()
 
@@ -387,7 +388,7 @@ class ArchivedImportValidator:
                 print()
 
         # Summary and recommendations
-        print(f"\n📊 SUMMARY:")
+        print("\n📊 SUMMARY:")
         critical_count = len(violations_by_severity["critical"])
         high_count = len(violations_by_severity["high"])
 
@@ -407,14 +408,14 @@ class ArchivedImportValidator:
         print(f"   🚨 Critical: {critical_count} (archived/archive imports)")
         print(f"   ⚠️  High: {high_count} (old migrated paths)")
 
-        print(f"\n🎯 MIGRATION GUIDELINES:")
+        print("\n🎯 MIGRATION GUIDELINES:")
         print("✅ Use current paths: from omnibase_core.models.* import ...")
         print("✅ Use current paths: from omnibase_core.types.* import ...")
         print("❌ Avoid: from archived.* import ...")
         print("❌ Avoid: from omnibase_core.core.contracts.* import ...")
         print("❌ Avoid: from omnibase_core.core.mixins.* import ...")
 
-        print(f"\n🔧 NEXT STEPS:")
+        print("\n🔧 NEXT STEPS:")
         if critical_count > 0:
             print(
                 "1. 🚨 IMMEDIATE: Fix critical archived imports (prevent build failures)"

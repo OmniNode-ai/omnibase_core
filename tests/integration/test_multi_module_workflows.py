@@ -6,7 +6,7 @@ Tests cross-layer integration, model-enum coordination, error handling,
 and real-world usage patterns without mocking.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
 import pytest
@@ -38,7 +38,7 @@ class TestEnumModelIntegration:
             service_type=EnumServiceType.REST_API,
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="https://api.example.com",
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
             response_time_ms=100,
         )
 
@@ -56,7 +56,7 @@ class TestEnumModelIntegration:
             service_type="postgresql",  # String value
             status="reachable",  # String value
             connection_string="postgresql://localhost:5432/db",
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         # Should convert to enum types
@@ -72,7 +72,7 @@ class TestEnumModelIntegration:
                 service_type="invalid_type",
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com",
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
 
     def test_multiple_enum_types_coordination(self):
@@ -126,7 +126,7 @@ class TestErrorHandlingIntegration:
                 service_type=EnumServiceType.REST_API,
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com",
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -144,7 +144,7 @@ class TestErrorHandlingIntegration:
                 service_type=EnumServiceType.REST_API,
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com",
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
         except OnexError as e:
             errors_encountered.append(("service_creation", e.error_code))
@@ -156,7 +156,7 @@ class TestErrorHandlingIntegration:
                 service_type=EnumServiceType.REST_API,
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="",  # Empty connection string
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
         except OnexError as e:
             errors_encountered.append(("connection_string", e.error_code))
@@ -181,7 +181,7 @@ class TestSemVerIntegration:
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string="https://api.example.com",
             version=version,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         # Verify version is tracked
@@ -204,7 +204,7 @@ class TestSemVerIntegration:
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com/v1",
                 version=v1_0_0,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             ),
             ModelServiceHealth(
                 service_name="api_v1_2_3",
@@ -212,7 +212,7 @@ class TestSemVerIntegration:
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com/v1.2.3",
                 version=v1_2_3,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             ),
             ModelServiceHealth(
                 service_name="api_v2",
@@ -220,7 +220,7 @@ class TestSemVerIntegration:
                 status=EnumServiceHealthStatus.REACHABLE,
                 connection_string="https://api.example.com/v2",
                 version=v2_0_0,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             ),
         ]
 
@@ -259,7 +259,7 @@ class TestDataFlowIntegration:
             connection_string="https://api.example.com",
             response_time_ms=5000,
             consecutive_failures=3,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         # Step 5: Compare metrics
@@ -323,7 +323,7 @@ class TestConcurrentOperations:
                 status=status,
                 connection_string=f"https://{name}.example.com",
                 response_time_ms=response_time,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
             services.append(service)
 
@@ -388,7 +388,7 @@ class TestComplexWorkflows:
             connection_string="https://api.staging.example.com",
             response_time_ms=3000,
             version=version,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert health_check.is_degraded()
@@ -402,7 +402,7 @@ class TestComplexWorkflows:
             response_time_ms=100,
             version=version,
             consecutive_failures=0,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert stable_check.is_healthy()
@@ -417,7 +417,7 @@ class TestComplexWorkflows:
             connection_string="https://api.prod.example.com",
             response_time_ms=80,
             version=version,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
 
         assert environment == EnumEnvironment.PRODUCTION
@@ -477,7 +477,7 @@ class TestComplexWorkflows:
                 status=status,
                 connection_string=f"https://server{i}.example.com",
                 response_time_ms=response_time,
-                last_check_time=datetime.now(timezone.utc).isoformat(),
+                last_check_time=datetime.now(UTC).isoformat(),
             )
             service_pool.append(service)
 
@@ -527,7 +527,7 @@ class TestStateTransitions:
             connection_string="https://api.example.com",
             response_time_ms=2000,
             consecutive_failures=2,
-            last_check_time=datetime.now(timezone.utc).isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
         )
         states.append(("degraded", degraded.status))
 

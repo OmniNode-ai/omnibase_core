@@ -41,7 +41,7 @@ def fix_missing_parentheses(file_path: Path):
                             found_end = True
                             break
                         # If it has '})' but not at the end, we need to add closing parenthesis
-                        elif "})" in lines[end_idx]:
+                        if "})" in lines[end_idx]:
                             lines[end_idx] = lines[end_idx].replace("})", "}))")
                             found_end = True
                             break

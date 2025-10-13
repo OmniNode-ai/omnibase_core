@@ -7,7 +7,7 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 "\nNode Instance Model\n\nNode instance with health and load information for advanced\ninstance management and service discovery.\n"
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.models.configuration.model_load_metrics import ModelLoadMetrics

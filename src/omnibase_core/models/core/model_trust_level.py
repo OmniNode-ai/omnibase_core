@@ -10,9 +10,9 @@ Nuanced trust level model that replaces hardcoded trust enums
 with flexible, verifiable trust scores and metadata.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_verification_method import ModelVerificationMethod
 

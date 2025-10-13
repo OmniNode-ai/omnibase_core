@@ -10,7 +10,7 @@ cascade failures in load balancing systems.
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 

@@ -7,9 +7,6 @@ Typed structure for core data updates.
 """
 
 
-from typing import TypedDict
-
-
 class TypedDictCoreData(TypedDict, total=False):
     """Typed structure for core data updates."""
 

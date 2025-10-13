@@ -21,7 +21,7 @@ class ModelStorageConfiguration(BaseModel):
 
     backend_type: str = Field(description="Storage backend type")
 
-    connection_params: Dict[str, str] = Field(
+    connection_params: dict[str, str] = Field(
         description="Backend connection parameters", default_factory=dict
     )
 
@@ -47,6 +47,6 @@ class ModelStorageConfiguration(BaseModel):
         description="Health check interval in seconds", default=60
     )
 
-    additional_config: Dict[str, Any] = Field(
+    additional_config: dict[str, Any] = Field(
         description="Backend-specific additional configuration", default_factory=dict
     )

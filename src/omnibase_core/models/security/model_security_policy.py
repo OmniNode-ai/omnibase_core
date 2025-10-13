@@ -6,7 +6,7 @@ from pydantic import Field
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.models.common.model_typed_mapping import ModelTypedMapping
 from omnibase_core.primitives.model_semver import ModelSemVer

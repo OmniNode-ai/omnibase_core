@@ -9,9 +9,9 @@ This module defines the input and output models used by the Hub Consul Registrat
 for automatic hub self-registration in Consul service discovery.
 """
 
-from typing import Dict, Optional
+from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.discovery.model_hub_registration_event import (
     ModelHubRegistrationEvent,

@@ -208,6 +208,7 @@ class ModelSchemaValueMigrator:
                 capture_output=True,
                 text=True,
                 timeout=10,
+                check=False,
             )
             if result.returncode != 0:
                 print(f"   ❌ Syntax error: {result.stderr}")
@@ -277,6 +278,7 @@ def find_files_with_modelschemavalue(root: Path) -> list[Path]:
         ],
         capture_output=True,
         text=True,
+        check=False,
     )
 
     if result.returncode != 0:

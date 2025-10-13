@@ -19,11 +19,10 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -69,7 +68,7 @@ class ModelPropertyValue(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_value_type(self) -> "ModelPropertyValue":
+    def validate_value_type(self) -> ModelPropertyValue:
         """Validate that value matches its declared type."""
         value_type = self.value_type
 

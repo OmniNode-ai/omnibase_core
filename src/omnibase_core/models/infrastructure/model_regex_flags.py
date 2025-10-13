@@ -17,11 +17,10 @@ patterns commonly used in validation scripts and text processing.
 import re
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_regex_flag_type import EnumRegexFlagType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelRegexFlags(BaseModel):

@@ -13,15 +13,15 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 
-def find_all_python_files(root_dir: Path) -> List[Path]:
+def find_all_python_files(root_dir: Path) -> list[Path]:
     """Find all Python files in the directory."""
     return list(root_dir.rglob("*.py"))
 
 
-def parse_imports_from_file(filepath: Path) -> Dict[str, str]:
+def parse_imports_from_file(filepath: Path) -> dict[str, str]:
     """Parse all imports from a Python file."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content)
@@ -43,7 +43,7 @@ def parse_imports_from_file(filepath: Path) -> Dict[str, str]:
         return {}
 
 
-def get_import_mapping() -> Dict[str, str]:
+def get_import_mapping() -> dict[str, str]:
     """Create a mapping of old class names to new file paths."""
     mapping = {}
 
@@ -105,10 +105,10 @@ def get_import_mapping() -> Dict[str, str]:
     return mapping
 
 
-def fix_imports_in_file(filepath: Path, import_mapping: Dict[str, str]) -> bool:
+def fix_imports_in_file(filepath: Path, import_mapping: dict[str, str]) -> bool:
     """Fix imports in a single file."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         original_content = content
@@ -177,7 +177,7 @@ def fix_imports_in_file(filepath: Path, import_mapping: Dict[str, str]) -> bool:
 def add_missing_imports(filepath: Path) -> bool:
     """Add missing imports to a file."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         original_content = content

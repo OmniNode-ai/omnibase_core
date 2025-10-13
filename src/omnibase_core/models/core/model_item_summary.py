@@ -17,10 +17,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_item_type import EnumItemType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 

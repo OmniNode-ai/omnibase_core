@@ -11,7 +11,7 @@ rich metadata for trust verification and management.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_verification_method import ModelVerificationMethod
 

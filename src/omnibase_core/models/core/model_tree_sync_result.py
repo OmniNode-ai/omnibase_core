@@ -35,7 +35,7 @@ Model for .tree and filesystem sync validation results.
 from enum import Enum
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_onex_message import ModelOnexMessage
 

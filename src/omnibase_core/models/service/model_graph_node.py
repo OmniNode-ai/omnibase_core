@@ -10,9 +10,9 @@ Type-safe graph node that replaces Dict[str, Any] usage
 in orchestrator graphs.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 

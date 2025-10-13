@@ -4,7 +4,7 @@ from pydantic import Field
 NodeMetadataInfo model for node introspection.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,

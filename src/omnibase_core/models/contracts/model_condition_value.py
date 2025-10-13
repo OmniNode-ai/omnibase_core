@@ -11,9 +11,9 @@ and enforces structured value handling for workflow conditions.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Generic
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Type-safe value types
 ConditionValue = TypeVar("ConditionValue", str, int, float, bool)

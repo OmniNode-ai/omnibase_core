@@ -34,7 +34,7 @@ This module provides structured configuration for file type handlers,
 including processing categories, patterns, and priority settings.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelHandlerConfig(BaseModel):

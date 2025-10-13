@@ -6,7 +6,7 @@ Current Tool Availability Model
 Model for current availability status of tools within a node.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
 

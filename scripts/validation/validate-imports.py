@@ -17,7 +17,7 @@ class GenericImportValidator:
     """Validates omni* package imports based on discovered structure."""
 
     def __init__(self, package_name: Optional[str] = None):
-        self.results: List[Tuple[str, bool, str]] = []
+        self.results: list[tuple[str, bool, str]] = []
 
         # Auto-detect package name from repository if not provided
         if package_name is None:
@@ -45,7 +45,7 @@ class GenericImportValidator:
         # Default fallback
         return "omnibase_core"
 
-    def _discover_importable_modules(self) -> List[str]:
+    def _discover_importable_modules(self) -> list[str]:
         """Discover all importable modules in the package."""
         modules = []
         package_dir = Path(f"src/{self.package_name}")
@@ -181,7 +181,7 @@ class GenericImportValidator:
             print("   Check dependencies and installation")
             return False
         else:
-            print(f"\n✅ All imports working correctly!")
+            print("\n✅ All imports working correctly!")
             return True
 
 

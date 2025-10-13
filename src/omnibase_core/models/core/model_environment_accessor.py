@@ -11,7 +11,7 @@ Specialized accessor for environment properties with automatic type conversion.
 """
 
 
-from typing import Any, TypeVar, cast, get_origin
+from typing import Any, cast, get_origin
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

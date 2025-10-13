@@ -12,7 +12,7 @@ strongly typed YAML schema property definitions.
 Author: ONEX Framework Team
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelYamlSchemaProperty(BaseModel):

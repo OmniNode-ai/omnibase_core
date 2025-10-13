@@ -8,7 +8,7 @@ ModelCredentialStrengthAssessment: Credential strength assessment result.
 This model represents the result of credential strength assessment.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
 

@@ -13,7 +13,7 @@ Author: ONEX Framework Team
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelContractReference(BaseModel):

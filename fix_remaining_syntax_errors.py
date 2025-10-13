@@ -75,13 +75,13 @@ def fix_syntax_errors_in_file(file_path: Path) -> bool:
         return False
 
 
-def find_python_files_with_syntax_errors(root_dir: Path) -> List[Path]:
+def find_python_files_with_syntax_errors(root_dir: Path) -> list[Path]:
     """Find Python files with syntax errors."""
     files_with_errors = []
 
     for py_file in root_dir.rglob("*.py"):
         try:
-            with open(py_file, "r", encoding="utf-8") as f:
+            with open(py_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Try to compile to check for syntax errors

@@ -21,9 +21,6 @@ from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelUnifiedHubContract(BaseModel):
     """

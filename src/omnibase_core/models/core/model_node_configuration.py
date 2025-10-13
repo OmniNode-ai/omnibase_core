@@ -9,9 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelNodeConfiguration(BaseModel):
     """Configuration for a node."""

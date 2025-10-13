@@ -9,6 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.core.model_error_summary import ModelErrorSummary
+from omnibase_core.models.core.model_monitoring_metrics import (
+    ModelMonitoringMetrics,
+)
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails
 from omnibase_core.models.service.model_event_bus_output_field import (
     ModelEventBusOutputField,
@@ -17,10 +21,6 @@ from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
-    from omnibase_core.models.core.model_error_summary import ModelErrorSummary
-    from omnibase_core.models.core.model_monitoring_metrics import (
-        ModelMonitoringMetrics,
-    )
 
 
 class ModelEventBusOutputState(BaseModel):
@@ -75,7 +75,7 @@ class ModelEventBusOutputState(BaseModel):
     error_details: ModelErrorDetails | None = Field(
         default=None, description="Detailed error information for debugging"
     )
-    metrics: "ModelMonitoringMetrics" = Field(
+    metrics: ModelMonitoringMetrics = Field(
         default_factory=lambda: ModelMonitoringMetrics(
             response_time_ms=None,
             throughput_rps=None,
@@ -238,7 +238,7 @@ class ModelEventBusOutputState(BaseModel):
             )
         return recommendations
 
-    def get_error_summary(self) -> "ModelErrorSummary" | None:
+    def get_error_summary(self) -> ModelErrorSummary | None:
         """Get comprehensive error summary."""
         if not self.is_failed():
             return None
@@ -273,7 +273,7 @@ class ModelEventBusOutputState(BaseModel):
             steps.append("Consider increasing retry delays or checking system capacity")
         return steps
 
-    def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
+    def get_monitoring_metrics(self) -> ModelMonitoringMetrics:
         """Get metrics suitable for monitoring systems."""
         from omnibase_core.models.core.model_metric_value import ModelMetricValue
         from omnibase_core.models.core.model_monitoring_metrics import (
@@ -348,7 +348,7 @@ class ModelEventBusOutputState(BaseModel):
             context["error_code"] = self.error_code
         return context
 
-    def get_business_impact(self) -> "ModelBusinessImpact":
+    def get_business_impact(self) -> ModelBusinessImpact:
         """Assess business impact of the operation result."""
         from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
         from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
@@ -435,7 +435,7 @@ class ModelEventBusOutputState(BaseModel):
         success_rate: float | None = None,
         error_rate: float | None = None,
         health_score: float | None = None,
-    ) -> "ModelMonitoringMetrics":
+    ) -> ModelMonitoringMetrics:
         """Helper method to create complete monitoring metrics."""
         return ModelMonitoringMetrics(
             response_time_ms=response_time_ms,
@@ -467,7 +467,7 @@ class ModelEventBusOutputState(BaseModel):
         version: ModelSemVer | str,
         message: str = "Operation completed successfully",
         processing_time_ms: int | None = None,
-    ) -> "ModelEventBusOutputState":
+    ) -> ModelEventBusOutputState:
         """Create successful output state."""
         return cls(
             version=(
@@ -495,7 +495,7 @@ class ModelEventBusOutputState(BaseModel):
         message: str,
         error_code: str | None = None,
         retry_attempt: int = 0,
-    ) -> "ModelEventBusOutputState":
+    ) -> ModelEventBusOutputState:
         """Create error output state."""
         return cls(
             version=(
@@ -519,7 +519,7 @@ class ModelEventBusOutputState(BaseModel):
         message: str,
         warnings: list[str],
         processing_time_ms: int | None = None,
-    ) -> "ModelEventBusOutputState":
+    ) -> ModelEventBusOutputState:
         """Create warning output state."""
         return cls(
             version=(
@@ -548,7 +548,7 @@ class ModelEventBusOutputState(BaseModel):
         message: str,
         retry_attempt: int,
         next_retry_delay_seconds: int = 30,
-    ) -> "ModelEventBusOutputState":
+    ) -> ModelEventBusOutputState:
         """Create output state for retry scenarios."""
         next_retry_at = (
             datetime.now() + timedelta(seconds=next_retry_delay_seconds)
@@ -577,7 +577,7 @@ class ModelEventBusOutputState(BaseModel):
         correlation_id: UUID,
         event_id: UUID,
         processing_time_ms: int | None = None,
-    ) -> "ModelEventBusOutputState":
+    ) -> ModelEventBusOutputState:
         """Create output state with full tracking information."""
         return cls(
             version=(

@@ -17,11 +17,10 @@ Author: OmniNode Team
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_fallback_metadata import ModelFallbackMetadata
 

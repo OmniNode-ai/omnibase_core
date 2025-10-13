@@ -6,7 +6,7 @@ Registry Business Impact Summary Model
 Type-safe business impact summary for registry health reporting.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_registry_sla_compliance import ModelRegistrySlaCompliance
 

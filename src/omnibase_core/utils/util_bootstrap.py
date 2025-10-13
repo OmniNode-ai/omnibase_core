@@ -11,7 +11,7 @@ All complex functionality has been moved to service nodes following the
 registry-centric architecture pattern.
 """
 
-from typing import Any, TypeVar
+from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.utils.service_logging import ServiceLogging

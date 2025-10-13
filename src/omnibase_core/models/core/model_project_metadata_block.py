@@ -9,7 +9,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 Project metadata block model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
 from omnibase_core.models.config.model_tree_generator_config import (

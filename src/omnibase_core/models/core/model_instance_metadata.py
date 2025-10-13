@@ -8,7 +8,7 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 "\nInstance Metadata Model\n\nAdditional metadata for node instances including deployment information,\nversion details, and custom attributes.\n"
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelInstanceMetadata(BaseModel):

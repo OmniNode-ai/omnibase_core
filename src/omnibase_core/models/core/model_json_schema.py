@@ -12,9 +12,9 @@ This model replaces dict[str, Any]ionary usage when working with JSON schemas
 by providing a structured representation of schema data.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_json_schema_config import ModelJsonSchemaConfig
 
@@ -156,7 +156,7 @@ class ModelJsonSchema(BaseModel):
 
         return cls(**schema_dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert back to dict[str, Any]ionary representation.
 
@@ -164,7 +164,7 @@ class ModelJsonSchema(BaseModel):
             Dictionary representation of the schema
         """
         # Custom reconstruction logic for JSON schema format
-        result: Dict[str, Any] = {}
+        result: dict[str, Any] = {}
 
         # Add basic properties
         if self.type:

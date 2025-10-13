@@ -37,9 +37,9 @@ class SerializationBenchmark:
     """Benchmark serialization/deserialization performance."""
 
     def __init__(self):
-        self.results: List[BenchmarkResult] = []
+        self.results: list[BenchmarkResult] = []
 
-    def time_operations(self, func, iterations: int = 100) -> List[float]:
+    def time_operations(self, func, iterations: int = 100) -> list[float]:
         """Time a function over multiple iterations."""
         times = []
         for _ in range(iterations):
@@ -310,11 +310,11 @@ class SerializationBenchmark:
             for op in slow_operations:
                 print(f"  - {op.operation}: {op.avg_time*1000:.3f}ms avg")
                 if op.avg_time > 0.01:
-                    print(f"    🔥 CRITICAL: Consider immediate optimization")
+                    print("    🔥 CRITICAL: Consider immediate optimization")
                 elif op.avg_time > 0.005:
-                    print(f"    ⚡ HIGH: Optimization recommended")
+                    print("    ⚡ HIGH: Optimization recommended")
                 else:
-                    print(f"    📈 MEDIUM: Monitor for growth")
+                    print("    📈 MEDIUM: Monitor for growth")
 
         # Compare optimization impacts
         unopt_result = next(

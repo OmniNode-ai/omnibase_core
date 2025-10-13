@@ -5,7 +5,7 @@ from pydantic import Field
 "\nModelPerUserLimits - Per-user rate limiting configuration\n\nPer-user limits model for defining user-specific rate limiting rules\nwith user tiers, quotas, and individual user overrides.\n"
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPerUserLimits(BaseModel):

@@ -8,7 +8,7 @@ ModelContextVariables: Context variables for permission scopes.
 This model provides structured context variables without using Any types.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelContextVariables(BaseModel):

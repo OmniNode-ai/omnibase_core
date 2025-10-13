@@ -15,16 +15,15 @@ Composed model that combines focused node information components.
 
 
 from datetime import datetime
-from typing import Any, Dict, TypedDict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_categorization_update_data import (
     TypedDictCategorizationUpdateData,
 )

@@ -21,9 +21,6 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_audit_event import ModelOnexAuditEvent
 from omnibase_core.models.core.model_onex_security_context_config import ModelConfig
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelOnexSecurityContext(BaseModel):
     """

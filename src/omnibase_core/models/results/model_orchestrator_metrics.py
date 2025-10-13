@@ -4,7 +4,7 @@ from pydantic import Field
 Orchestrator metrics model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelOrchestratorMetrics(BaseModel):

@@ -11,7 +11,7 @@ Result of action validation with detailed information.
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelActionValidationResult(BaseModel):

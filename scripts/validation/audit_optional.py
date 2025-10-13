@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Optional type usage auditor for omni* ecosystem."""
+
 from __future__ import annotations
 
 import argparse
@@ -106,7 +107,7 @@ class OptionalUsageAuditor:
     def _audit_file(self, file_path: Path):
         """Audit Optional usage in a specific file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 lines = content.splitlines()
 
@@ -224,7 +225,7 @@ class OptionalUsageAuditor:
                     severity="error",
                 )
             )
-        elif "Optional" in annotation or "|" in annotation and "None" in annotation:
+        elif "Optional" in annotation or ("|" in annotation and "None" in annotation):
             # Track all Optional usage for reporting
             justification_reason = (
                 "pattern justified"
@@ -269,8 +270,8 @@ class OptionalUsageAuditor:
         needs_justification = [v for v in self.violations if v.justification_needed]
         justified_usage = [v for v in self.violations if not v.justification_needed]
 
-        report = f"📊 Optional Type Usage Audit Report\n"
-        report += f"=" * 40 + "\n\n"
+        report = "📊 Optional Type Usage Audit Report\n"
+        report += "=" * 40 + "\n\n"
 
         report += f"Total Optional usage found: {len(self.violations)}\n"
         report += f"Needs business justification: {len(needs_justification)}\n"
@@ -285,9 +286,9 @@ class OptionalUsageAuditor:
                 )
                 report += f"   File: {violation.file_path}\n"
                 report += f"   Context: {violation.context}\n"
-                report += f"   Action: Add comment explaining why Optional is needed\n"
+                report += "   Action: Add comment explaining why Optional is needed\n"
                 report += (
-                    f"   Example: # Optional: User might not provide this value\n\n"
+                    "   Example: # Optional: User might not provide this value\n\n"
                 )
 
         # Show summary of justified usage by category
@@ -376,7 +377,7 @@ def main():
     print(auditor.generate_report())
 
     if is_valid:
-        print(f"\n✅ SUCCESS: All Optional usage is justified!")
+        print("\n✅ SUCCESS: All Optional usage is justified!")
         sys.exit(0)
     else:
         errors = len([v for v in auditor.violations if v.justification_needed])

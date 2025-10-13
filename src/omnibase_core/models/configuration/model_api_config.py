@@ -13,7 +13,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelAPIConfig(BaseModel):

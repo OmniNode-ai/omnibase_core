@@ -10,7 +10,7 @@ Pydantic model for ONEX service instances.
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelService(BaseModel):

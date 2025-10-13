@@ -6,9 +6,9 @@ from pydantic import Field
 Cache settings model.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCacheSettings(BaseModel):

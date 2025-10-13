@@ -4,7 +4,7 @@ from pydantic import Field
 Resource limit model for resource allocation specifications.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelResourceLimit(BaseModel):

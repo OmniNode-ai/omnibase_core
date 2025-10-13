@@ -15,12 +15,11 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 
 from pathlib import Path
-from typing import Any, Dict, TypedDict
+from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
 )

@@ -15,7 +15,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 # Use object type for values convertible to ModelCliValue via from_any() method.
 # This avoids primitive soup union anti-pattern while maintaining type safety
@@ -25,7 +25,6 @@ CliConvertibleValue = object
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 from .model_output_format_options import ModelOutputFormatOptions

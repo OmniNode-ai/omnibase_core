@@ -17,7 +17,7 @@ Usage:
 """
 
 import functools
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import TYPE_CHECKING, cast
 
 # Type checking imports only - no runtime cost
 if TYPE_CHECKING:

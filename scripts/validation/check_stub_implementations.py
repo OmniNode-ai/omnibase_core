@@ -66,9 +66,9 @@ class StubDetectorConfig:
     """Configuration for stub detection."""
 
     def __init__(self, config_path: Optional[Path] = None):
-        self.excluded_files: Set[str] = set()
-        self.excluded_patterns: Set[str] = set()
-        self.excluded_functions: Set[str] = set()
+        self.excluded_files: set[str] = set()
+        self.excluded_patterns: set[str] = set()
+        self.excluded_functions: set[str] = set()
 
         # Default exclusions
         self.default_exclusions = {
@@ -88,7 +88,7 @@ class StubDetectorConfig:
     def _load_config(self, config_path: Path) -> None:
         """Load configuration from YAML file."""
         try:
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config = yaml.safe_load(f) or {}
 
             self.excluded_files.update(config.get("excluded_files", []))
@@ -121,10 +121,10 @@ class StubDetectorConfig:
 class StubImplementationDetector(ast.NodeVisitor):
     """AST visitor to detect stub implementations."""
 
-    def __init__(self, filename: str, source_lines: List[str]):
+    def __init__(self, filename: str, source_lines: list[str]):
         self.filename = filename
         self.source_lines = source_lines
-        self.issues: List[StubIssue] = []
+        self.issues: list[StubIssue] = []
         self.current_function: Optional[str] = None
         self.current_class: Optional[str] = None
         self.in_protocol: bool = False
@@ -243,7 +243,7 @@ class StubImplementationDetector(ast.NodeVisitor):
 
     def _extract_statements(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> tuple[Optional[str], List[ast.stmt]]:
+    ) -> tuple[Optional[str], list[ast.stmt]]:
         """Extract docstring and meaningful statements from function body."""
         docstring = None
         meaningful_statements = []
@@ -266,7 +266,7 @@ class StubImplementationDetector(ast.NodeVisitor):
         self,
         node: ast.FunctionDef | ast.AsyncFunctionDef,
         docstring: Optional[str],
-        statements: List[ast.stmt],
+        statements: list[ast.stmt],
     ) -> None:
         """Check for various stub implementation patterns."""
         func_name = node.name
@@ -346,7 +346,7 @@ class StubImplementationDetector(ast.NodeVisitor):
                         node.lineno,
                         func_name,
                         "todo_in_docstring",
-                        f"Function docstring contains TODO/FIXME marker",
+                        "Function docstring contains TODO/FIXME marker",
                         "Complete the implementation and remove TODO/FIXME markers",
                     )
 
@@ -417,7 +417,7 @@ class StubImplementationChecker:
         self.check_mode = check_mode
         self.fix_suggestions = fix_suggestions
         self.config = StubDetectorConfig(config_path)
-        self.issues: List[StubIssue] = []
+        self.issues: list[StubIssue] = []
         self.checked_files = 0
 
     def check_file(self, file_path: Path) -> bool:
@@ -431,7 +431,7 @@ class StubImplementationChecker:
             return True
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 source_lines = content.splitlines()
 
@@ -454,7 +454,7 @@ class StubImplementationChecker:
             print(f"⚠️  Error processing {file_path}: {e}")
             return True
 
-    def check_files(self, paths: List[Path]) -> bool:
+    def check_files(self, paths: list[Path]) -> bool:
         """Check multiple files or directories."""
         files_to_check = []
 

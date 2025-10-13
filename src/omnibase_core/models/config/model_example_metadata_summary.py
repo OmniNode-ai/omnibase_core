@@ -19,12 +19,10 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelExampleMetadataSummary(BaseModel):

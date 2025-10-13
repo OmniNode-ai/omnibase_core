@@ -11,7 +11,7 @@ exit code mapping functionality.
 
 
 import sys
-from typing import Any, Optional
+from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus

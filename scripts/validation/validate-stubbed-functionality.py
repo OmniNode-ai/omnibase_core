@@ -28,7 +28,7 @@ class StubbedFunctionalityChecker(ast.NodeVisitor):
 
     def __init__(self, filename: str):
         self.filename = filename
-        self.issues: List[Tuple[int, str]] = []
+        self.issues: list[tuple[int, str]] = []
         self.current_function = None
         self.current_class = None
 
@@ -84,7 +84,7 @@ class StubbedFunctionalityChecker(ast.NodeVisitor):
         self.current_function = old_function
 
     def _check_stub_patterns(
-        self, node: ast.FunctionDef, statements: List[ast.stmt]
+        self, node: ast.FunctionDef, statements: list[ast.stmt]
     ) -> None:
         """Check for various stubbed functionality patterns."""
 
@@ -167,7 +167,7 @@ class ONEXStubbedFunctionalityValidator:
     """Validates codebase for stubbed or incomplete functionality."""
 
     def __init__(self):
-        self.errors: List[str] = []
+        self.errors: list[str] = []
         self.checked_files = 0
 
         # Files/patterns allowed to have stubs
@@ -209,7 +209,7 @@ class ONEXStubbedFunctionalityValidator:
             return True
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -229,7 +229,7 @@ class ONEXStubbedFunctionalityValidator:
             self.errors.append(f"{file_path}: Failed to parse file - {e}")
             return False
 
-    def check_files(self, file_paths: List[Path]) -> bool:
+    def check_files(self, file_paths: list[Path]) -> bool:
         """Check multiple files for stubbed functionality."""
         success = True
         for file_path in file_paths:

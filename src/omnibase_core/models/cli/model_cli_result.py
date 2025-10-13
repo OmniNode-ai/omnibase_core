@@ -13,11 +13,11 @@ outcome of CLI command execution with proper typing.
 
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

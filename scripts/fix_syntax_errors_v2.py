@@ -2,6 +2,7 @@
 """
 Find and fix syntax errors blocking MyPy.
 """
+
 import re
 import subprocess
 from pathlib import Path
@@ -16,6 +17,7 @@ def run_mypy() -> tuple[bool, str, str]:
         capture_output=True,
         text=True,
         cwd=ROOT_DIR,
+        check=False,
     )
     output = result.stdout + result.stderr
 
@@ -46,7 +48,7 @@ def fix_common_syntax_errors(filepath: str, line_num: int) -> bool:
     # Pattern 1: `from typing import (, Any` -> remove empty parens
     if re.search(r"from\s+\w+\s+import\s+\(,", line):
         line = re.sub(r"\(,\s*", "(", line)
-        print(f"  Fixed: Removed empty tuple in import")
+        print("  Fixed: Removed empty tuple in import")
 
     # Pattern 2: Misplaced import inside another import
     # Check if this line has an import inside parentheses
@@ -114,7 +116,7 @@ def main():
         fixed = fix_common_syntax_errors(filepath, int(line_num))
 
         if not fixed:
-            print(f"\n✗ Could not auto-fix. Manual intervention required.")
+            print("\n✗ Could not auto-fix. Manual intervention required.")
             print(f"  File: {filepath}")
             print(f"  Line: {line_num}")
             break

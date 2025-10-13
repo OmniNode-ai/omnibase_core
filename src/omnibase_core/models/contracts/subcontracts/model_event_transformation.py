@@ -8,7 +8,7 @@ Event Transformation Model - ONEX Standards Compliant.
 Model for event transformation specifications in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelEventTransformation(BaseModel):

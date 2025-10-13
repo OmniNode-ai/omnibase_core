@@ -58,6 +58,6 @@ class ModelStorageHealthStatus(BaseModel):
         description="Detailed status message", default=None
     )
 
-    metadata: Dict[str, str] = Field(
+    metadata: dict[str, str] = Field(
         description="Additional health metadata", default_factory=dict
     )

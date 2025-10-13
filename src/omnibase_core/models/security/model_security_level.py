@@ -3,7 +3,7 @@ from typing import Any, List
 from pydantic import Field
 
 "\nSecurity Level Model\n\nExtensible security configuration model that replaces hardcoded\nsecurity enums with flexible, nuanced security settings.\n"
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.security.model_custom_security_settings import (
     ModelCustomSecuritySettings,
@@ -164,7 +164,7 @@ class ModelSecurityLevel(BaseModel):
 
     def meets_compliance(self, required_standards: list[str]) -> bool:
         """Check if this security level meets required compliance standards."""
-        return all((std in self.compliance_requirements for std in required_standards))
+        return all(std in self.compliance_requirements for std in required_standards)
 
     def to_environment_dict(self) -> dict[str, str]:
         """Convert to environment variables dict[str, Any]ionary."""

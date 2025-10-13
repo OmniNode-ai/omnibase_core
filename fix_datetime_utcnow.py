@@ -3,12 +3,13 @@
 Script to replace datetime.utcnow() with datetime.now(UTC)
 and ensure UTC is imported from datetime module.
 """
+
 import re
 from pathlib import Path
 from typing import List, Tuple
 
 
-def fix_file(file_path: Path) -> Tuple[bool, int]:
+def fix_file(file_path: Path) -> tuple[bool, int]:
     """
     Fix datetime.utcnow() usage in a single file.
 
@@ -95,7 +96,7 @@ def main():
             print(f"✓ Fixed {relative_path} ({num_replacements} replacements)")
 
     print(f"\n{'='*70}")
-    print(f"Summary:")
+    print("Summary:")
     print(f"  Total files modified: {total_modified}")
     print(f"  Total replacements: {total_replacements}")
     print(f"{'='*70}")

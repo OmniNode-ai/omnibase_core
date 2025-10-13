@@ -79,9 +79,7 @@ def find_dict_method_violations(file_path: Path) -> list[tuple[int, str]]:
                     if (
                         isinstance(decorator, ast.Name)
                         and decorator.id == "classmethod"
-                    ):
-                        return True
-                    elif (
+                    ) or (
                         isinstance(decorator, ast.Attribute)
                         and decorator.attr == "classmethod"
                     ):

@@ -35,7 +35,7 @@ including template metadata, file mappings, and generation options.
 
 from typing import Dict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_node_template_config import (
     ModelNodeTemplateConfigConfig,

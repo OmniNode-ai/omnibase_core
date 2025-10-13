@@ -9,7 +9,7 @@ Burst configuration model for managing traffic spikes and burst scenarios
 in rate limiting systems with intelligent burst detection and handling.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelBurstConfig(BaseModel):

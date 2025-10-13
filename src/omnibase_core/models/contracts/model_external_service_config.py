@@ -7,7 +7,7 @@ Defines configuration for external API calls, service
 discovery, authentication, and integration patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 

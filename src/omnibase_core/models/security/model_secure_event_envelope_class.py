@@ -20,12 +20,15 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_route_spec import ModelRouteSpec
+from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 from omnibase_core.models.security.model_policy_context import ModelPolicyContext
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
 from omnibase_core.models.security.model_security_summary import ModelSecuritySummary
+from omnibase_core.models.security.model_signature_verification_result import (
+    field_serializer,
+)
 
-from ..core.model_trust_level import ModelTrustLevel
 from .model_chain_metrics import ModelChainMetrics
 from .model_compliance_metadata import ModelComplianceMetadata
 from .model_encryption_metadata import ModelEncryptionMetadata
@@ -39,7 +42,6 @@ if TYPE_CHECKING:
         ModelChainValidation,
         ModelPolicyValidation,
         ModelSignatureVerificationResult,
-        field_serializer,
     )
 
 
@@ -274,7 +276,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     def verify_signatures(
         self,
         trusted_nodes: set[str] | None = None,
-    ) -> "ModelSignatureVerificationResult":
+    ) -> ModelSignatureVerificationResult:
         """Verify all signatures in the chain."""
         from omnibase_core.models.security.model_chain_validation import (
             ModelChainValidation,
@@ -663,7 +665,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         security_context: ModelSecurityContext | None = None,
         trust_policy: ModelTrustPolicy | None = None,
         **kwargs: Any,
-    ) -> "ModelSecureEventEnvelope":
+    ) -> ModelSecureEventEnvelope:
         """Create secure envelope for direct routing."""
         # Create base envelope
         route_spec = ModelRouteSpec.create_direct_route(destination)
@@ -692,7 +694,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         security_context: ModelSecurityContext | None = None,
         trust_policy: ModelTrustPolicy | None = None,
         **kwargs: Any,
-    ) -> "ModelSecureEventEnvelope":
+    ) -> ModelSecureEventEnvelope:
         """Create secure envelope with encrypted payload."""
         envelope = cls.create_secure_direct(
             payload,

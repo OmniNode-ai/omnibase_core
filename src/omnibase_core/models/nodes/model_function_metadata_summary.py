@@ -14,12 +14,12 @@ from omnibase_core.types.typed_dict_documentation_summary_filtered import (
 )
 
 
-class ModelFunctionMetadataSummary(Dict[str, Any]):
+class ModelFunctionMetadataSummary(dict[str, Any]):
     """Type-safe dictionary for function metadata summary."""
 
     documentation: TypedDictDocumentationSummaryFiltered  # Properly typed documentation summary (quality_score handled separately)
     deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
-    relationships: Dict[
+    relationships: dict[
         str,
         ModelMetadataValue,
     ]  # *_count (int), has_* (bool), primary_category (str, "None" for missing)

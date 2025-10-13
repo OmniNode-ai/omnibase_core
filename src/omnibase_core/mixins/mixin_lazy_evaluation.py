@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, Dict, Generic, Optional, TypeVar, Union
 
 from pydantic import Field
 
@@ -15,12 +16,11 @@ for expensive operations like model serialization and type conversions.
 
 
 import functools
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, cast
+from typing import cast
 
 from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.types.model_onex_common_types import JsonSerializable
 
 # Define PropertyValue locally to avoid dependency issues
@@ -42,7 +42,7 @@ class MixinLazyEvaluation:
 
     def __init__(self) -> None:
         super().__init__()
-        self._lazy_cache: Dict[str, MixinLazyValue[Any]] = {}
+        self._lazy_cache: dict[str, MixinLazyValue[Any]] = {}
 
     def lazy_property(
         self, key: str, func: Callable[[], T], cache: bool = True
@@ -64,7 +64,7 @@ class MixinLazyEvaluation:
 
     def lazy_model_dump(
         self, exclude: Optional[set[str]] = None, by_alias: bool = False
-    ) -> MixinLazyValue[Dict[str, JsonSerializable]]:
+    ) -> MixinLazyValue[dict[str, JsonSerializable]]:
         """
         Create lazy model dump for Pydantic models.
 
@@ -76,7 +76,7 @@ class MixinLazyEvaluation:
             MixinLazyValue that computes model dump when accessed
         """
 
-        def _compute_dump() -> Dict[str, JsonSerializable]:
+        def _compute_dump() -> dict[str, JsonSerializable]:
             if isinstance(self, BaseModel):
                 return self.model_dump(exclude=exclude, by_alias=by_alias)
             raise ModelOnexError(
@@ -89,7 +89,7 @@ class MixinLazyEvaluation:
 
     def lazy_serialize_nested(
         self, obj: Optional[BaseModel], key: str
-    ) -> MixinLazyValue[Optional[Dict[str, JsonSerializable]]]:
+    ) -> MixinLazyValue[Optional[dict[str, JsonSerializable]]]:
         """
         Create lazy serialization for nested objects.
 
@@ -101,7 +101,7 @@ class MixinLazyEvaluation:
             MixinLazyValue that serializes nested object when accessed
         """
 
-        def _serialize() -> Optional[Dict[str, JsonSerializable]]:
+        def _serialize() -> Optional[dict[str, JsonSerializable]]:
             return obj.model_dump() if obj else None
 
         return self.lazy_property(f"serialize_{key}", _serialize)
@@ -144,7 +144,7 @@ class MixinLazyEvaluation:
                 if pattern in key:
                     lazy_val.invalidate()
 
-    def get_lazy_cache_stats(self) -> Dict[str, Any]:
+    def get_lazy_cache_stats(self) -> dict[str, Any]:
         """
         Get statistics about lazy cache usage.
 

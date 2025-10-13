@@ -11,7 +11,7 @@ calculation method, and parameters for each factor in a multi-factor algorithm.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelAlgorithmFactorConfig(BaseModel):

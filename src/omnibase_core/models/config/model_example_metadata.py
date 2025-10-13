@@ -14,12 +14,11 @@ about example collections with enhanced structure.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_difficulty_level import EnumDifficultyLevel
 from omnibase_core.enums.enum_example_category import EnumExampleCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelExampleMetadata(BaseModel):

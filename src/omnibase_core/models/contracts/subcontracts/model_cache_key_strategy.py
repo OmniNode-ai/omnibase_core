@@ -6,7 +6,7 @@ Cache Key Strategy Model - ONEX Standards Compliant.
 Model for cache key generation strategies in the ONEX caching system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCacheKeyStrategy(BaseModel):

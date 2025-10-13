@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 """
 Omnibase Core - ONEX Four-Node ModelArchitecture Implementation (OPTIMIZED)
@@ -44,7 +44,7 @@ import-time penalties. This reduces package import time from 453ms to <5ms.
 # All validation imports moved to lazy functions to eliminate import cascade
 
 from collections.abc import Callable as CallableABC
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .validation.validation_utils import ValidationResult

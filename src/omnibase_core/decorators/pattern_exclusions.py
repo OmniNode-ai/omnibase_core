@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Generic, Optional
+from collections.abc import Callable
+from typing import Dict, Generic, Optional
 
 """
 ONEX Pattern Exclusion Decorators.
@@ -6,7 +7,7 @@ Provides fine-grained control over ONEX zero tolerance standards enforcement.
 """
 
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 # Self-exclusion: This module contains example code and infrastructure
 # ONEX_EXCLUDE: dict_str_any - Example code in docstrings and function signatures
@@ -41,16 +42,16 @@ class ONEXPatternExclusion:
         """Apply the exclusion to the target function or class."""
         # Mark the target with exclusion metadata using setattr to avoid type issues
         if not hasattr(target, "_onex_pattern_exclusions"):
-            setattr(target, "_onex_pattern_exclusions", set())
+            target._onex_pattern_exclusions = set()
 
         existing_exclusions: set[str] = getattr(
             target, "_onex_pattern_exclusions", set()
         )
         existing_exclusions.update(self.excluded_patterns)
-        setattr(target, "_onex_pattern_exclusions", existing_exclusions)
-        setattr(target, "_onex_exclusion_reason", self.reason)
-        setattr(target, "_onex_exclusion_scope", self.scope)
-        setattr(target, "_onex_exclusion_reviewer", self.reviewer)
+        target._onex_pattern_exclusions = existing_exclusions
+        target._onex_exclusion_reason = self.reason
+        target._onex_exclusion_scope = self.scope
+        target._onex_exclusion_reviewer = self.reviewer
 
         return target
 

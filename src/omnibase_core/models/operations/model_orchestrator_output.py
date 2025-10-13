@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
 from omnibase_core.models.orchestrator.model_thunk import ModelThunk

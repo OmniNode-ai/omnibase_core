@@ -21,7 +21,7 @@ class ImportFixer:
     def fix_file_imports(self, file_path: Path) -> bool:
         """Fix imports in a single file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             original_content = content
@@ -78,7 +78,7 @@ class ImportFixer:
             if self.fix_file_imports(file_path):
                 files_changed += 1
 
-        print(f"\n📊 Summary:")
+        print("\n📊 Summary:")
         print(f"   Files processed: {self.files_processed}")
         print(f"   Files changed: {files_changed}")
         print(f"   Total imports fixed: {self.fixes_applied}")

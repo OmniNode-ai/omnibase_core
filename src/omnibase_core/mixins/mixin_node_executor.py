@@ -1,5 +1,6 @@
 import uuid
-from typing import TYPE_CHECKING, Any, Callable, Dict
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Dict
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -14,13 +15,12 @@ import time
 from collections.abc import Callable as CallableABC
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.models.core.model_log_context import ModelLogContext
@@ -34,8 +34,6 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 
-if TYPE_CHECKING:
-    pass
 _COMPONENT_NAME = Path(__file__).stem
 
 

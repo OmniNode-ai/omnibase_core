@@ -20,7 +20,7 @@ Author: OmniNode Team
 
 from enum import Enum
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, HttpUrl
 
 from omnibase_core.models.core import ModelGenericMetadata
 

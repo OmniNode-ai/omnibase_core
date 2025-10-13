@@ -24,7 +24,7 @@ class MockContainer:
         Returns:
             None (mock implementation)
         """
-        return None  # Mock implementation
+        return  # Mock implementation
 
 
 # Export for use

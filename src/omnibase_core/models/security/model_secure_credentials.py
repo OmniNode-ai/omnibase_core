@@ -433,7 +433,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         # Helper to check if any env vars with prefix exist
         def has_env_vars(prefix: str) -> bool:
             """Check if any environment variables with the given prefix exist."""
-            return any(key.startswith(prefix) for key in os.environ.keys())
+            return any(key.startswith(prefix) for key in os.environ)
 
         # Try primary prefix first
         if has_env_vars(env_prefix):

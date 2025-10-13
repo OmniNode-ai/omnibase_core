@@ -10,11 +10,7 @@ from omnibase_core.models.discovery.model_tool_discovery_request import (
 "\nDiscovery Request Model\n\nModel for discovery client requests with proper typing and validation\nfollowing ONEX canonical patterns.\n"
 from typing import Any
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.discovery.model_tool_discovery_request import (
-    ModelDiscoveryFilters,
-)
+from pydantic import BaseModel
 
 
 class ModelDiscoveryRequest(BaseModel):

@@ -21,12 +21,11 @@ from typing import Any
 # Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Input data values use discriminated union pattern with runtime validation
 

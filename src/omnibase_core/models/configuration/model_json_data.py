@@ -13,9 +13,9 @@ Phase 3I remediation: Eliminated factory methods and conversion anti-patterns.
 Strong typing with generic container patterns following ONEX standards.
 """
 
-from typing import Any, Optional, Union
+from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
 from omnibase_core.models.configuration.model_json_field import ModelJsonField
@@ -48,7 +48,7 @@ class ModelJsonData(BaseModel):
 
     # ONEX validation constraints
     @validator("fields")
-    def validate_field_consistency(cls, v: Any, values: dict[str, Any]) -> Any:
+    def validate_field_consistency(self, v: Any, values: dict[str, Any]) -> Any:
         """Ensure field count matches actual fields."""
         if len(v) != values.get("total_field_count", 0):
             raise ModelOnexError(
@@ -58,7 +58,7 @@ class ModelJsonData(BaseModel):
         return v
 
     @validator("total_field_count", pre=True, always=True)
-    def calculate_field_count(cls, v: Any, values: dict[str, Any]) -> Any:
+    def calculate_field_count(self, v: Any, values: dict[str, Any]) -> Any:
         """Auto-calculate field count for validation."""
         fields = values.get("fields", {})
         return len(fields) if isinstance(fields, dict) else v

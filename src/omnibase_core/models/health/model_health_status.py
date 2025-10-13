@@ -11,7 +11,7 @@ supporting subsystem health, issues tracking, metrics, and trend analysis.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_health_issue import ModelHealthIssue
 from .model_health_metadata import ModelHealthMetadata

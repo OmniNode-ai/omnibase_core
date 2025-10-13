@@ -11,7 +11,7 @@ constraints, and transformation logic for input data processing.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelInputValidationConfig(BaseModel):

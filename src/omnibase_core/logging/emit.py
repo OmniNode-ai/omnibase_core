@@ -1,6 +1,7 @@
 import uuid
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, Dict, TypeVar
+from typing import Dict, TypeVar
 
 """
 Core emit_log_event utility for ONEX structured logging.
@@ -15,8 +16,8 @@ Python's logging module to maintain architectural purity and centralized process
 import inspect
 import os
 from collections.abc import Callable as CallableABC
-from datetime import UTC, datetime
-from typing import Any, Callable, Dict, TypeVar
+from datetime import UTC
+from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -550,13 +551,12 @@ def _sanitize_data_dict(
             sanitized_value = "[REDACTED]"
         elif isinstance(value, str):
             sanitized_value = _sanitize_sensitive_data(value)
-        elif isinstance(value, bool):  # Check bool first (bool is subclass of int)
-            sanitized_value = value
-        elif isinstance(value, int):
-            sanitized_value = value
-        elif isinstance(value, float):
-            sanitized_value = value
-        elif value is None:
+        elif (
+            isinstance(value, bool)
+            or isinstance(value, int)
+            or isinstance(value, float)
+            or value is None
+        ):  # Check bool first (bool is subclass of int)
             sanitized_value = value
         else:
             # Convert non-JSON-compatible types to string representation
@@ -724,7 +724,11 @@ def _route_to_logger_node(
                 cache_expired = (current_time - _cache_timestamp) > _cache_ttl
 
                 # Re-check after lock acquisition (may have changed)
-                if _cached_formatter is None or _cached_output_handler is None or cache_expired:  # type: ignore[unreachable]
+                if (
+                    _cached_formatter is None
+                    or _cached_output_handler is None
+                    or cache_expired
+                ):  # type: ignore[unreachable]
                     from omnibase_core.models.container.model_onex_container import (
                         ModelONEXContainer,
                     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, Generic, TypedDict, TypeVar
+from collections.abc import Callable
+from typing import Dict, Generic, TypedDict, TypeVar
 
 """
 Generic Factory Pattern for Model Creation.
@@ -13,7 +14,7 @@ Restructured to reduce string field violations through logical grouping.
 
 
 from collections.abc import Callable as CallableABC
-from typing import Any, Callable, Dict, Generic, TypedDict, TypeVar, Unpack
+from typing import Any, Unpack
 
 from pydantic import BaseModel
 

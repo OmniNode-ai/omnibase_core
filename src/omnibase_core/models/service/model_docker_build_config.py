@@ -4,7 +4,7 @@ from pydantic import Field
 Model for Docker build configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelDockerBuildConfig(BaseModel):

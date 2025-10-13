@@ -7,7 +7,7 @@ Rate limit window model for defining time-based rate limiting windows
 with sliding window, fixed window, and token bucket implementations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRateLimitWindow(BaseModel):

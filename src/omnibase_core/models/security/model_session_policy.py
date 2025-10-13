@@ -9,7 +9,7 @@ Typed model for session management policy configuration,
 replacing Dict[str, Any] with structured fields.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelSessionPolicy(BaseModel):

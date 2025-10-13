@@ -16,7 +16,7 @@ def fix_file(
     if not filepath.exists():
         return False
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     original = content
@@ -93,7 +93,7 @@ def main():
     # Fix 2: emit.py node_id conversions that were missed
     print("\n📝 Fixing emit.py node_id conversions...")
     filepath = ROOT_DIR / "logging" / "emit.py"
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
 
     modified = False
@@ -115,19 +115,19 @@ def main():
     if modified:
         with open(filepath, "w", encoding="utf-8") as f:
             f.writelines(lines)
-        print(f"  ✅ Fixed emit.py node_id conversions")
+        print("  ✅ Fixed emit.py node_id conversions")
         fixes_applied += 1
 
     # Fix 3: UUID | None → UUID with uuid4() fallback
     print("\n📝 Fixing UUID | None → UUID with fallbacks...")
     filepath = ROOT_DIR / "infrastructure" / "node_effect.py"
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
 
     # Find the specific lines and add fallbacks
     for i, line in enumerate(lines):
         if "ModelTransaction(" in line and i + 1 < len(lines):
-            if "transaction_id=" in lines[i] or "transaction_id=" in lines[i + 1]:
+            if "transaction_id=" in line or "transaction_id=" in lines[i + 1]:
                 # Look for the transaction_id parameter
                 for j in range(i, min(i + 5, len(lines))):
                     if "transaction_id=" in lines[j] and "or uuid4()" not in lines[j]:
@@ -149,7 +149,7 @@ def main():
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.writelines(lines)
-    print(f"  ✅ Fixed UUID | None fallbacks in node_effect.py")
+    print("  ✅ Fixed UUID | None fallbacks in node_effect.py")
     fixes_applied += 1
 
     # Fix 4: model_tooldiscoveryrequest.py str | UUID → UUID
@@ -171,7 +171,7 @@ def main():
     # Fix 5: mixin_workflow_support.py source_node_id
     print("\n📝 Fixing mixin_workflow_support.py source_node_id...")
     filepath = ROOT_DIR / "mixins" / "mixin_workflow_support.py"
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     # Fix source_node_id that can be str | Any | None → str
@@ -183,7 +183,7 @@ def main():
     if content != original:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"  ✅ Fixed source_node_id in mixin_workflow_support.py")
+        print("  ✅ Fixed source_node_id in mixin_workflow_support.py")
         fixes_applied += 1
 
     # Fix 6: Optional/None → required value fixes

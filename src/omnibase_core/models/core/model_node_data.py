@@ -9,7 +9,7 @@ Node Data Model.
 Detailed node information data structure.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNodeData(BaseModel):

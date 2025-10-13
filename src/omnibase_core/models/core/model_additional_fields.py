@@ -11,7 +11,7 @@ Strongly typed model for additional metadata fields.
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

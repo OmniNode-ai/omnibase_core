@@ -7,7 +7,7 @@ from pydantic import Field
 Error JSON schema model for ONEX core.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelErrorJsonSchema(BaseModel):

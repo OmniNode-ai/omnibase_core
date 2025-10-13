@@ -13,7 +13,7 @@ Author: ONEX Framework Team
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_contract_cache import ModelContractCache
 from omnibase_core.models.core.model_contract_content import ModelContractContent

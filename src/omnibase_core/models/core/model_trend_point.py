@@ -7,7 +7,7 @@ Trend data point model for time series data.
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, field_serializer
 
 
 class ModelTrendPoint(BaseModel):

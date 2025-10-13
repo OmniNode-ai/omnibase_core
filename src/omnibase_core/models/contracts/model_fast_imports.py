@@ -11,7 +11,7 @@ NO imports are executed at module level to eliminate cascade effects.
 Performance Target: Module import <5ms, contract loading <50ms total
 """
 
-from typing import TypedDict, TypeVar, cast
+from typing import TypedDict, cast
 
 # NO RUNTIME IMPORTS AT MODULE LEVEL
 # All imports moved to function level to eliminate cascade
@@ -58,7 +58,6 @@ class ModelFastContractFactory:
         """Import a contract class on-demand with caching."""
         # Function-level imports to maintain zero-import-time loading
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
         from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

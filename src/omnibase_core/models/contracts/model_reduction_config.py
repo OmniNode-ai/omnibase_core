@@ -10,7 +10,7 @@ for efficient data consolidation.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelReductionConfig(BaseModel):

@@ -26,8 +26,9 @@ import re
 import sys
 import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, TypedDict
+from typing import TypedDict
 
 
 class Violation(TypedDict):
@@ -155,7 +156,7 @@ class ImportPatternValidator:
     def detect_multi_level_relative_imports(self, file_path: Path) -> None:
         """Detect relative imports with multiple levels (.., ..., etc.)."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 lines = content.splitlines()
 
@@ -455,7 +456,7 @@ class ImportPatternValidator:
                 print(f"\\n📁 {relative_dir}:")
 
                 # Group by file for efficiency
-                files = set(fix["file"] for fix in fixes)
+                files = {fix["file"] for fix in fixes}
                 for file_path in sorted(files):
                     file_fixes = [f for f in fixes if f["file"] == file_path]
                     # Use reliable relative path computation with Path APIs

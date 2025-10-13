@@ -17,12 +17,10 @@ anti-pattern with proper type safety.
 
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from pydantic import BaseModel
 
 
 class ModelGenericCollectionSummary(BaseModel):

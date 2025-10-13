@@ -8,7 +8,7 @@ Permission action model for defining allowed actions in permission constraints.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPermissionAction(BaseModel):

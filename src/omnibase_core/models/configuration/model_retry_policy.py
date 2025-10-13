@@ -9,7 +9,7 @@ Type-safe retry policy configuration for handling failures
 in distributed operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRetryPolicy(BaseModel):

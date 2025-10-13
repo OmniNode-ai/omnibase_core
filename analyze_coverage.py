@@ -16,6 +16,7 @@ def get_coverage_data():
             capture_output=True,
             text=True,
             timeout=300,
+            check=False,
         )
 
         if result.returncode != 0:
@@ -112,7 +113,7 @@ def analyze_coverage_opportunities():
     ]
     high_impact.sort(key=lambda x: x["uncovered_lines"], reverse=True)
 
-    print(f"\n=== HIGH IMPACT FILES (50+ uncovered lines, <80% coverage) ===")
+    print("\n=== HIGH IMPACT FILES (50+ uncovered lines, <80% coverage) ===")
     for i, item in enumerate(high_impact[:30], 1):
         print(
             f"{i:2d}. {item['file']:<60} {item['uncovered_lines']:3d} uncovered ({item['coverage_percent']:5.1f}%)"

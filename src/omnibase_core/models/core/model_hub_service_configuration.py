@@ -14,9 +14,6 @@ from omnibase_core.models.core.model_hub_websocket_endpoint import (
     ModelHubWebSocketEndpoint,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelHubServiceConfiguration(BaseModel):
     """Service configuration section from contracts."""

@@ -9,7 +9,7 @@ Specialized factory for capability-type models with standardized naming and meta
 """
 
 
-from typing import Dict, TypedDict, TypeVar, Unpack
+from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 

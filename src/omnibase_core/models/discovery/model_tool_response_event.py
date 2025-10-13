@@ -31,7 +31,7 @@ Event sent in response to a TOOL_INVOCATION event after tool execution completes
 Contains the result of the tool execution or error information if execution failed.
 """
 
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import Field

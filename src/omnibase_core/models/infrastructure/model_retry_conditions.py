@@ -12,7 +12,7 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRetryConditions(BaseModel):

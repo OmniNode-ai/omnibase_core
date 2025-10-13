@@ -6,7 +6,7 @@ Permission condition model for defining conditional access rules.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.security.model_required_attributes import (

@@ -13,11 +13,10 @@ Discriminated union for error values following ONEX one-model-per-file architect
 
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_error_value_type import EnumErrorValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelErrorValue(BaseModel):

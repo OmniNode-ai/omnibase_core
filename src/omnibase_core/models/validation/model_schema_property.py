@@ -6,7 +6,7 @@ from pydantic import Field
 SchemaProperty model.
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 

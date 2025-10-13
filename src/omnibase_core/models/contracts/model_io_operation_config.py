@@ -7,7 +7,7 @@ Defines configuration for file operations, database interactions,
 API calls, and other external I/O operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelIOOperationConfig(BaseModel):

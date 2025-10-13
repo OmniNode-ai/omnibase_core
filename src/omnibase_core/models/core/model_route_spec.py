@@ -15,9 +15,9 @@ anycast, and constraint-based routing.
 """
 
 import re
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 class ModelRouteSpec(BaseModel):

@@ -102,6 +102,7 @@ class PydanticErrorAnalyzer:
             ["poetry", "run", "mypy", "src/omnibase_core/"],
             capture_output=True,
             text=True,
+            check=False,
         )
 
         # Combine stdout and stderr, filter for call-arg errors
@@ -122,7 +123,7 @@ class PydanticErrorAnalyzer:
         """Generate comprehensive statistics about errors."""
         stats: dict[str, Any] = {
             "total_errors": len(self.errors),
-            "unique_files": len(set(e.file_path for e in self.errors)),
+            "unique_files": len({e.file_path for e in self.errors}),
             "by_error_type": defaultdict(int),
             "by_model": defaultdict(int),
             "by_field": defaultdict(int),

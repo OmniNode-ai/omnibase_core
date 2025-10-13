@@ -9,7 +9,7 @@ This model captures structured information about operations performed
 during envelope processing with type-safe fields.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelOperationDetails(BaseModel):

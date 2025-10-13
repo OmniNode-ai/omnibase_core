@@ -6,7 +6,7 @@ Performance Metrics Model
 Model for performance metrics of a node.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPerformanceMetrics(BaseModel):

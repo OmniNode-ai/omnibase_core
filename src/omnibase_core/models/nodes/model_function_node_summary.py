@@ -17,15 +17,13 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 

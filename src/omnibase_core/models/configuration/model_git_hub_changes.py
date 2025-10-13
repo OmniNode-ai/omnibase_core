@@ -6,7 +6,7 @@ GitHub Changes Model for ONEX Configuration System.
 Strongly typed model for GitHub webhook change data.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelGitHubChanges(BaseModel):

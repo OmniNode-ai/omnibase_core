@@ -12,9 +12,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_service_config import ModelConfig
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelService(BaseModel):
     """Service instance model for ONEX services."""

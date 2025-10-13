@@ -12,10 +12,10 @@ Follows ONEX one-model-per-file architecture.
 """
 
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNodeTimestamps(BaseModel):

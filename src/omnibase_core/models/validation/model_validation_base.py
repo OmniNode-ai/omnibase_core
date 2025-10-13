@@ -14,7 +14,7 @@ methods that can be inherited by any model requiring validation.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_validation_container import ModelValidationContainer
 

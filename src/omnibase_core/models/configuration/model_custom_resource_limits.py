@@ -6,7 +6,7 @@ Custom Resource Limits Model.
 Custom resource limits for specific resources.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCustomResourceLimits(BaseModel):

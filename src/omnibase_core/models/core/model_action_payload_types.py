@@ -9,7 +9,7 @@ Action Payload Type Hierarchies.
 Re-exports all payload types from their individual files and provides factory functions.
 """
 
-from typing import Any, Union
+from typing import Any
 
 # Import all payload types from their individual files
 from omnibase_core.models.core.model_custom_action_payload import (

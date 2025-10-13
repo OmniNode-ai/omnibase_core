@@ -45,7 +45,7 @@ def test_json_crash_proof():
     print("\n2️⃣ Try model_dump() (Pydantic's dict conversion):")
     try:
         dumped = config.model_dump()
-        print(f"   ⚠️  model_dump() succeeded (but contains object reference)")
+        print("   ⚠️  model_dump() succeeded (but contains object reference)")
         print(f"   Result: {dumped}")
         print(f"   Value type: {type(dumped['value'])}")
     except Exception as e:
@@ -54,23 +54,23 @@ def test_json_crash_proof():
     print("\n3️⃣ Try model_dump_json() (JSON serialization for network):")
     try:
         json_str = config.model_dump_json()
-        print(f"   ❌ UNEXPECTED: JSON serialization succeeded?!")
+        print("   ❌ UNEXPECTED: JSON serialization succeeded?!")
         print(f"   Result: {json_str}")
     except Exception as e:
         print(f"   💥 JSON serialization CRASHED: {e.__class__.__name__}")
         print(f"   Error: {e}")
-        print(f"\n   🔥 THIS IS THE CRASH that kills distributed omnodes!")
+        print("\n   🔥 THIS IS THE CRASH that kills distributed omnodes!")
 
     print("\n4️⃣ Try manual JSON serialization (what happens in message queues):")
     try:
         dumped = config.model_dump()
         json_str = json.dumps(dumped)
-        print(f"   ❌ UNEXPECTED: JSON encoding succeeded?!")
+        print("   ❌ UNEXPECTED: JSON encoding succeeded?!")
         print(f"   Result: {json_str}")
     except TypeError as e:
         print(f"   💥 JSON encoding CRASHED: {e.__class__.__name__}")
         print(f"   Error: {e}")
-        print(f"\n   🔥 THIS is what happens when sending to another omninode!")
+        print("\n   🔥 THIS is what happens when sending to another omninode!")
 
     print("\n" + "=" * 80)
     print("VERDICT")

@@ -308,7 +308,7 @@ class MixinDiscoveryResponder:
 
             node_id_value: UUID
             if hasattr(self, "node_id"):
-                node_id_attr = getattr(self, "node_id")
+                node_id_attr = self.node_id
                 if isinstance(node_id_attr, UUID):
                     node_id_value = node_id_attr
                 elif isinstance(node_id_attr, str):

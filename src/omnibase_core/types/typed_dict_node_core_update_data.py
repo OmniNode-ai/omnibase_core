@@ -8,7 +8,6 @@ Typed structure for core node data updates.
 
 
 from datetime import datetime
-from typing import TypedDict
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus

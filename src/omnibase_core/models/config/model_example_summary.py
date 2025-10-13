@@ -17,10 +17,9 @@ individual example summary data following ONEX naming conventions.
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 

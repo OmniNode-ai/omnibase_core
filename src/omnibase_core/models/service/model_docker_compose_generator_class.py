@@ -81,6 +81,6 @@ class ModelDockerComposeGenerator:
         self.services = services
         self.project_name = project_name
         self.include_infrastructure = include_infrastructure
-        self.service_definitions: dict[str, "ModelComposeServiceDefinition"] = {}
-        self.networks: dict[str, "ModelDockerNetworkConfig"] = {}
-        self.volumes: dict[str, "ModelDockerVolumeConfig"] = {}
+        self.service_definitions: dict[str, ModelComposeServiceDefinition] = {}
+        self.networks: dict[str, ModelDockerNetworkConfig] = {}
+        self.volumes: dict[str, ModelDockerVolumeConfig] = {}

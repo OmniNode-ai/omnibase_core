@@ -42,7 +42,6 @@ from omnibase_spi.protocols.event_bus import ProtocolEventBus
 from omnibase_spi.protocols.schema import ProtocolSchemaLoader
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # EnumToolNames removed - using direct string references
 from omnibase_core.mixins.mixin_event_handler import MixinEventHandler

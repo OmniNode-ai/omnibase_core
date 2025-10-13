@@ -6,7 +6,7 @@ Resource Allocation Model.
 Resource allocation configuration for execution priorities.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.configuration.model_custom_resource_limits import (
     ModelCustomResourceLimits,

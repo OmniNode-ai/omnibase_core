@@ -6,7 +6,7 @@ ModelBackendSecurityProfile: Security characteristics of secret backends.
 This model represents the security profile of different secret backends.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 

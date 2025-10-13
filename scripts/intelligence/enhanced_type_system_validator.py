@@ -36,16 +36,16 @@ class TypeViolation:
 class EnhancedTypeValidator(ast.NodeVisitor):
     """Comprehensive type system validator using AST analysis."""
 
-    def __init__(self, file_path: str, source_lines: List[str]):
+    def __init__(self, file_path: str, source_lines: list[str]):
         self.file_path = file_path
         self.source_lines = source_lines
-        self.violations: List[TypeViolation] = []
-        self.imports: Set[str] = set()
-        self.typing_imports: Set[str] = set()
-        self.from_typing_imports: Set[str] = set()
-        self.type_checking_blocks: List[int] = []
-        self.typeddict_classes: List[str] = []
-        self.model_schema_value_usage: List[Tuple[int, str]] = []
+        self.violations: list[TypeViolation] = []
+        self.imports: set[str] = set()
+        self.typing_imports: set[str] = set()
+        self.from_typing_imports: set[str] = set()
+        self.type_checking_blocks: list[int] = []
+        self.typeddict_classes: list[str] = []
+        self.model_schema_value_usage: list[tuple[int, str]] = []
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track import statements."""
@@ -220,12 +220,10 @@ class EnhancedTypeValidator(ast.NodeVisitor):
     def _validate_modelschemavalue_in_function(self, node: ast.FunctionDef) -> None:
         """Check if functions properly use ModelSchemaValue instead of Any."""
         # This is a placeholder for more complex validation logic
-        pass
 
     def _check_model_schema_value_usage_in_class(self, node: ast.ClassDef) -> None:
         """Check ModelSchemaValue usage patterns in class definitions."""
         # This is a placeholder for more complex validation logic
-        pass
 
     def _contains_any(self, node: ast.AST) -> bool:
         """Check if AST node contains Any reference."""
@@ -233,11 +231,11 @@ class EnhancedTypeValidator(ast.NodeVisitor):
             return True
         elif isinstance(node, ast.Subscript):
             return self._contains_any(node.value) or self._contains_any(node.slice)
-        elif isinstance(node, ast.Tuple):
-            return any(self._contains_any(elt) for elt in node.elts)
-        elif isinstance(node, ast.List):
-            return any(self._contains_any(elt) for elt in node.elts)
-        elif hasattr(node, "elts"):
+        elif (
+            isinstance(node, ast.Tuple)
+            or isinstance(node, ast.List)
+            or hasattr(node, "elts")
+        ):
             return any(self._contains_any(elt) for elt in node.elts)
         return False
 
@@ -286,12 +284,12 @@ class ComprehensiveTypeSystemValidator:
             "src/omnibase_core/models/core",
             "src/omnibase_core/types",
         ]
-        self.all_violations: List[TypeViolation] = []
+        self.all_violations: list[TypeViolation] = []
         self.files_scanned: int = 0
         self.files_with_violations: int = 0
         self.violation_stats = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
 
-    def validate_all_files(self) -> Dict[str, any]:
+    def validate_all_files(self) -> dict[str, any]:
         """Run comprehensive type system validation."""
         print("🚀 Enhanced ONEX Type System Validation")
         print("=" * 80)
@@ -321,10 +319,10 @@ class ComprehensiveTypeSystemValidator:
 
         return validation_results
 
-    def _validate_file(self, file_path: Path) -> List[TypeViolation]:
+    def _validate_file(self, file_path: Path) -> list[TypeViolation]:
         """Validate a single Python file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 source_lines = content.splitlines()
 
@@ -489,8 +487,8 @@ class ComprehensiveTypeSystemValidator:
         return "\n".join(report_lines)
 
     def _group_violations_by_file(
-        self, violations: List[TypeViolation]
-    ) -> Dict[str, List[TypeViolation]]:
+        self, violations: list[TypeViolation]
+    ) -> dict[str, list[TypeViolation]]:
         """Group violations by file for better organization."""
         violations_by_file = {}
         for violation in violations:
@@ -501,7 +499,7 @@ class ComprehensiveTypeSystemValidator:
         return violations_by_file
 
     def _add_file_violations_to_report(
-        self, report_lines: List[str], file_path: str, violations: List[TypeViolation]
+        self, report_lines: list[str], file_path: str, violations: list[TypeViolation]
     ) -> None:
         """Add file violations to report."""
         relative_path = file_path.replace(str(self.base_path), "")

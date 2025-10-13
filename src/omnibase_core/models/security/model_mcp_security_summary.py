@@ -8,7 +8,7 @@ MCP Security Summary Model.
 Strongly typed model for MCP server security summary information.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
 

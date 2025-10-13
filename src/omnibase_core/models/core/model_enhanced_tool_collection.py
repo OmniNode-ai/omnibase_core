@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
+from pydantic import BaseModel, ValidationInfo, computed_field
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string

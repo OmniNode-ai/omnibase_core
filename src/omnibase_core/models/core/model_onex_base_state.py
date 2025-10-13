@@ -29,7 +29,7 @@ complexity by ~85% (from 100+ lines to ~15 lines per node).
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.models.core.model_onex_internal_input_state import (
     ModelOnexInternalInputState,

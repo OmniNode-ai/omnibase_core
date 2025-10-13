@@ -9,7 +9,7 @@ are exceeded, including blocking, queuing, delay, and custom responses.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelThrottlingBehavior(BaseModel):

@@ -6,9 +6,9 @@ from pydantic import Field
 Generic properties model to replace Dict[str, Any] usage for properties fields.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.types import PropertyValue
 

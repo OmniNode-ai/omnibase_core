@@ -24,7 +24,7 @@ class ModelKubernetesTemplateGenerator:
         app_name = self.config.node_name.replace("_", "-")
         labels = self.config.get_kubernetes_labels()
 
-        deployment: Dict[str, Any] = {
+        deployment: dict[str, Any] = {
             "apiVersion": "apps/v1",
             "kind": "Deployment",
             "metadata": {

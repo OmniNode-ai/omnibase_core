@@ -18,6 +18,7 @@ Usage:
     # Mixed mode (files + directories)
     validate-no-backward-compatibility.py file1.py --dir src/ other_file.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -91,7 +92,7 @@ class BackwardCompatibilityDetector:
         except OSError as e:
             self.errors.append(f"{py_path}: OS error reading file - {e}")
             return False
-        except IOError as e:
+        except OSError as e:
             self.errors.append(f"{py_path}: IO error reading file - {e}")
             return False
 
@@ -251,11 +252,8 @@ class BackwardCompatibilityDetector:
                 line_num = content[: match.start()].count("\n") + 1
                 # Skip legitimate imports and assignments
                 line_content = content.splitlines()[line_num - 1].strip()
-                if (
-                    line_content.startswith("from ")
-                    or line_content.startswith("import ")
-                    or "=" in line_content
-                    and "import" not in line_content
+                if line_content.startswith(("from ", "import ")) or (
+                    "=" in line_content and "import" not in line_content
                 ):
                     continue
 
@@ -293,15 +291,15 @@ class BackwardCompatibilityDetector:
                             # Check if there are comments nearby mentioning compatibility
                             source_lines = []
                             try:
-                                with open(self.file_path, "r", encoding="utf-8") as f:
+                                with open(self.file_path, encoding="utf-8") as f:
                                     source_lines = f.readlines()
                             except FileNotFoundError:
                                 self.errors.append(
-                                    f"Error reading source file for context check: File not found"
+                                    "Error reading source file for context check: File not found"
                                 )
                             except PermissionError:
                                 self.errors.append(
-                                    f"Error reading source file for context check: Permission denied"
+                                    "Error reading source file for context check: Permission denied"
                                 )
                             except UnicodeDecodeError as e:
                                 self.errors.append(
@@ -311,7 +309,7 @@ class BackwardCompatibilityDetector:
                                 self.errors.append(
                                     f"Error reading source file for context check: OS error - {e}"
                                 )
-                            except IOError as e:
+                            except OSError as e:
                                 self.errors.append(
                                     f"Error reading source file for context check: IO error - {e}"
                                 )

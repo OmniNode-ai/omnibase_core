@@ -20,11 +20,10 @@ from typing import Any
 # Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ModelCliCommandOption(BaseModel):
@@ -70,7 +69,7 @@ class ModelCliCommandOption(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_value_type(self) -> "ModelCliCommandOption":
+    def validate_value_type(self) -> ModelCliCommandOption:
         """Validate that value matches its declared type."""
         value_type = self.value_type
 

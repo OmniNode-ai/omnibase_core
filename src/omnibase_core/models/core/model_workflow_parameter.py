@@ -11,9 +11,9 @@ Single responsibility: Define type-safe workflow parameters with generic value t
 Replaces all duplicate ModelWorkflowParameter definitions across the codebase.
 """
 
-from typing import Generic, TypeVar
+from typing import Generic
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_workflow_parameter_config import ModelConfig
 

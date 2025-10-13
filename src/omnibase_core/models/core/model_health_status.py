@@ -10,7 +10,7 @@ and monitoring systems throughout ONEX.
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.core.model_health_details import ModelHealthDetails

@@ -6,7 +6,7 @@ Model for introspection usage examples.
 Provides a typed structure for tool usage examples with generic type support.
 """
 
-from typing import Generic, TypeVar
+from typing import Generic
 
 from pydantic import Field
 from pydantic.generics import GenericModel

@@ -3,7 +3,7 @@ from typing import Any, Optional
 from pydantic import Field
 
 "\nNode Capability Model\n\nReplaces EnumNodeCapability with a proper model that includes metadata,\ndescriptions, and dependencies for each capability.\n"
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError

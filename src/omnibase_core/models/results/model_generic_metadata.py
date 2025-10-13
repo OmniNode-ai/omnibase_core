@@ -13,11 +13,9 @@ Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
-
-from omnibase_core.primitives.model_semver import ModelSemVer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class ModelGenericMetadata(BaseModel):
@@ -40,11 +38,11 @@ class ModelGenericMetadata(BaseModel):
         default_factory=list,
         description="Associated tags",
     )
-    labels: Dict[str, str] = Field(
+    labels: dict[str, str] = Field(
         default_factory=dict,
         description="Key-value labels",
     )
-    annotations: Dict[str, str] = Field(
+    annotations: dict[str, str] = Field(
         default_factory=dict,
         description="Key-value annotations",
     )
@@ -52,7 +50,7 @@ class ModelGenericMetadata(BaseModel):
     # Additional flexible storage (non-recursive for Pydantic compatibility)
     # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible metadata storage
     # Supporting various JSON-serializable types validated at runtime
-    custom_fields: Dict[str, Any] = Field(
+    custom_fields: dict[str, Any] = Field(
         default_factory=dict,
         description="Custom fields with JSON-serializable types",
     )
@@ -74,7 +72,7 @@ class ModelGenericMetadata(BaseModel):
         return None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelGenericMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> ModelGenericMetadata:
         """Create instance from dictionary."""
         if not isinstance(data, dict):
             data = {}

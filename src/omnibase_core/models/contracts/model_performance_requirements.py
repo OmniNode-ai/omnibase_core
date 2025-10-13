@@ -14,7 +14,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPerformanceRequirements(BaseModel):

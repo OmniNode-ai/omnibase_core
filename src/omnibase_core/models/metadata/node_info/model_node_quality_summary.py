@@ -14,7 +14,7 @@ Follows ONEX one-model-per-file architecture.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelNodeQualitySummary(BaseModel):

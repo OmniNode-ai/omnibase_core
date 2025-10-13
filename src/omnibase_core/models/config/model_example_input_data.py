@@ -15,12 +15,11 @@ Follows ONEX one-model-per-file naming conventions.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIOType
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelExampleInputData(BaseModel):
