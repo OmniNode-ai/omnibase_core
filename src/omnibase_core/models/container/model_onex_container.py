@@ -66,8 +66,6 @@ T = TypeVar("T")
 
 # === CORE CONTAINER DEFINITION ===
 
-from omnibase_core.infrastructure.node_base import NodeBase
-
 from .model_base_model_onex_container import _BaseModelONEXContainer
 
 
@@ -372,34 +370,6 @@ class ModelONEXContainer:
     ) -> T:
         """Modern standards method."""
         return self.get_service_sync(protocol_type, service_name)
-
-    async def create_enhanced_nodebase(
-        self,
-        contract_path: Path,
-        node_id: UUID | None = None,
-        workflow_id: UUID | None = None,
-        session_id: UUID | None = None,
-    ) -> "NodeBase[Any, Any]":
-        """
-        Factory method for creating Enhanced NodeBase instances.
-
-        Args:
-            contract_path: Path to contract file
-            node_id: Optional node identifier
-            workflow_id: Optional workflow identifier
-            session_id: Optional session identifier
-
-        Returns:
-            NodeBase: Configured node instance
-        """
-
-        return NodeBase(
-            contract_path=contract_path,
-            node_id=node_id,
-            container=self,
-            workflow_id=workflow_id,
-            session_id=session_id,
-        )
 
     def get_workflow_orchestrator(self) -> Any:
         """Get workflow orchestration coordinator."""
