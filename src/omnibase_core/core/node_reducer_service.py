@@ -25,16 +25,20 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict
+from typing import ClassVar, Generic, Mapping, TypeVar
 
 from omnibase_core.infrastructure.node_reducer import (
     ModelReducerInput,
     ModelReducerOutput,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.primitives.model_semver import ModelSemVer
 
+T_Input = TypeVar("T_Input")
+T_Output = TypeVar("T_Output")
 
-class NodeReducerService(ABC):
+
+class NodeReducerService(ABC, Generic[T_Input, T_Output]):
     """
     Stable interface for Reducer nodes - DO NOT CHANGE without version bump.
 
@@ -48,12 +52,12 @@ class NodeReducerService(ABC):
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     @abstractmethod
-    async def process_reduction(
+    async def execute_reduce(
         self,
-        input_data: ModelReducerInput[Any],
-    ) -> ModelReducerOutput[Any]:
+        input_data: ModelReducerInput[T_Input],
+    ) -> ModelReducerOutput[T_Output]:
         """
-        Process the reduction operation.
+        Execute the reduction operation.
 
         This is the main entry point for data aggregation and state reduction. Implementations
         must handle streaming data processing, conflict resolution, and state management
@@ -72,7 +76,7 @@ class NodeReducerService(ABC):
     @abstractmethod
     async def validate_input(
         self,
-        input_data: ModelReducerInput[Any],
+        input_data: ModelReducerInput[T_Input],
     ) -> bool:
         """
         Validate input data before processing.
@@ -95,7 +99,7 @@ class NodeReducerService(ABC):
         """
 
     @abstractmethod
-    async def get_health_status(self) -> Dict[str, Any]:
+    async def get_health_status(self) -> Mapping[str, ModelSchemaValue]:
         """
         Get current health status of the reducer node.
 
@@ -107,7 +111,7 @@ class NodeReducerService(ABC):
         - Performance metrics and memory usage
 
         Returns:
-            Dict[str, Any]: Health status dictionary with diagnostic information
+            Mapping[str, ModelSchemaValue]: Health status with diagnostic information
         """
 
     # Optional lifecycle methods (can be overridden for specific behavior)

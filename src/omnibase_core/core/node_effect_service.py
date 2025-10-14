@@ -23,9 +23,10 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict
+from typing import ClassVar, Mapping
 
 from omnibase_core.infrastructure.node_effect import ModelEffectInput, ModelEffectOutput
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 
@@ -43,12 +44,12 @@ class NodeEffectService(ABC):
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     @abstractmethod
-    async def process_effect(
+    async def execute_effect(
         self,
         input_data: ModelEffectInput,
     ) -> ModelEffectOutput:
         """
-        Process the effect operation.
+        Execute the effect operation.
 
         This is the main entry point for effect execution. Implementations
         must handle side effects with proper transaction management, retry
@@ -88,7 +89,7 @@ class NodeEffectService(ABC):
         """
 
     @abstractmethod
-    async def get_health_status(self) -> Dict[str, Any]:
+    async def get_health_status(self) -> Mapping[str, ModelSchemaValue]:
         """
         Get current health status of the effect node.
 
@@ -99,7 +100,7 @@ class NodeEffectService(ABC):
         - Error rates and performance metrics
 
         Returns:
-            Dict[str, Any]: Health status dictionary with diagnostic information
+            Mapping[str, ModelSchemaValue]: Health status with diagnostic information
         """
 
     # Optional lifecycle methods (can be overridden for specific behavior)

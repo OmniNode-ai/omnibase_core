@@ -11,7 +11,8 @@ from typing import Any
 import yaml
 
 from omnibase_core.discovery.model_mixin_info import ModelMixinInfo
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Discovery constants
 MAX_METADATA_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for metadata files
@@ -54,8 +55,8 @@ class MixinDiscovery:
             OnexError: If metadata file is missing, too large, or invalid.
         """
         if not self.metadata_path.exists():
-            raise OnexError(
-                code=CoreErrorCode.FILE_NOT_FOUND,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
                 message=(
                     f"Mixin metadata file not found: {self.metadata_path}. "
                     "Run metadata generation or create mixin_metadata.yaml manually."
@@ -66,16 +67,16 @@ class MixinDiscovery:
         try:
             file_size = self.metadata_path.stat().st_size
             if file_size > MAX_METADATA_FILE_SIZE_BYTES:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=(
                         f"Metadata file too large: {file_size} bytes exceeds "
                         f"{MAX_METADATA_FILE_SIZE_BYTES} byte limit"
                     ),
                 )
         except OSError as e:
-            raise OnexError(
-                code=CoreErrorCode.FILE_READ_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
                 message=f"Failed to access mixin metadata file: {e}",
             ) from e
 
@@ -86,31 +87,31 @@ class MixinDiscovery:
                 )  # yaml-ok: Mixin discovery requires raw YAML parsing for flexible metadata loading
 
             if not isinstance(data, dict):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid metadata format in {self.metadata_path}: expected dictionary",
                 )
 
             return data
 
         except yaml.YAMLError as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to parse mixin metadata YAML: {e}",
             ) from e
         except UnicodeDecodeError as e:
-            raise OnexError(
-                code=CoreErrorCode.FILE_READ_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
                 message=f"Metadata file encoding error: {e}",
             ) from e
         except PermissionError as e:
-            raise OnexError(
-                code=CoreErrorCode.FILE_READ_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
                 message=f"Permission denied reading metadata file: {e}",
             ) from e
         except OSError as e:
-            raise OnexError(
-                code=CoreErrorCode.FILE_READ_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
                 message=f"Failed to read mixin metadata file: {e}",
             ) from e
 
@@ -137,8 +138,8 @@ class MixinDiscovery:
                 cache[mixin_info.name] = mixin_info
 
             except Exception as e:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Failed to parse metadata for mixin '{mixin_key}': {e}",
                 ) from e
 
@@ -268,8 +269,8 @@ class MixinDiscovery:
         """
         mixin = self._get_mixin_by_name(mixin_name)
         if not mixin:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Mixin not found: {mixin_name}",
             )
 
@@ -338,8 +339,8 @@ class MixinDiscovery:
         """
         mixin = self._get_mixin_by_name(name)
         if not mixin:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Mixin not found: {name}",
             )
         return mixin

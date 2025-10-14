@@ -24,16 +24,20 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict
+from typing import ClassVar, Generic, Mapping, TypeVar
 
 from omnibase_core.infrastructure.node_compute import (
     ModelComputeInput,
     ModelComputeOutput,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.primitives.model_semver import ModelSemVer
 
+T_Input = TypeVar("T_Input")
+T_Output = TypeVar("T_Output")
 
-class NodeComputeService(ABC):
+
+class NodeComputeService(ABC, Generic[T_Input, T_Output]):
     """
     Stable interface for Compute nodes - DO NOT CHANGE without version bump.
 
@@ -47,12 +51,12 @@ class NodeComputeService(ABC):
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     @abstractmethod
-    async def process_computation(
+    async def execute_compute(
         self,
-        input_data: ModelComputeInput[Any],
-    ) -> ModelComputeOutput[Any]:
+        input_data: ModelComputeInput[T_Input],
+    ) -> ModelComputeOutput[T_Output]:
         """
-        Process the computation operation.
+        Execute the computation operation.
 
         This is the main entry point for pure computation execution. Implementations
         must handle deterministic operations with proper caching, parallel processing
@@ -71,7 +75,7 @@ class NodeComputeService(ABC):
     @abstractmethod
     async def validate_input(
         self,
-        input_data: ModelComputeInput[Any],
+        input_data: ModelComputeInput[T_Input],
     ) -> bool:
         """
         Validate input data before processing.
@@ -93,7 +97,7 @@ class NodeComputeService(ABC):
         """
 
     @abstractmethod
-    async def get_health_status(self) -> Dict[str, Any]:
+    async def get_health_status(self) -> Mapping[str, ModelSchemaValue]:
         """
         Get current health status of the compute node.
 
@@ -105,7 +109,7 @@ class NodeComputeService(ABC):
         - Performance metrics and resource usage
 
         Returns:
-            Dict[str, Any]: Health status dictionary with diagnostic information
+            Mapping[str, ModelSchemaValue]: Health status with diagnostic information
         """
 
     # Optional lifecycle methods (can be overridden for specific behavior)
