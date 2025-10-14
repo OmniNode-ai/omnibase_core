@@ -60,4 +60,4 @@ def create_basic_logger(level: LogLevel = LogLevel.INFO) -> ProtocolLogger:
             """Error level logging for current standards."""
             self.emit_log_event_sync(LogLevel.ERROR, message, "error")
 
-    return BasicLogger(level)
+    return BasicLogger(level)  # type: ignore[return-value]

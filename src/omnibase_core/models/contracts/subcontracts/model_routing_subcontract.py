@@ -1,6 +1,12 @@
 """
 Routing Subcontract Model - ONEX Microservices Architecture Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Advanced subcontract model for ONEX microservices routing functionality providing:
 - Route definitions with conditions and service targets
 - Load balancing and failover strategies for microservices
@@ -17,6 +23,7 @@ for ONEX microservices ecosystem.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -24,6 +31,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_load_balancing import ModelLoadBalancing
@@ -43,6 +51,9 @@ class ModelRoutingSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Core routing configuration
     routing_id: UUID = Field(

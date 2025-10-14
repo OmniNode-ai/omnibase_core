@@ -1,6 +1,13 @@
 """
 Effect Contract Model - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Specialized contract model for NodeEffect implementations providing:
 - I/O operation specifications (file, database, API endpoints)
 - Transaction management configuration
@@ -10,6 +17,7 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
@@ -55,6 +63,7 @@ from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract im
 from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
     ModelRoutingSubcontract,
 )
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
@@ -72,6 +81,9 @@ class ModelContractEffect(ModelContractBase):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Override parent node_type with architecture-specific type
     # Both EnumNodeType.EFFECT and EnumNodeArchitectureType.EFFECT have value "effect"

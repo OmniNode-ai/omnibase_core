@@ -11,6 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
+# Type alias for JSON-serializable values including nested structures
+# Uses Any for nested collections to support arbitrary JSON structures
+# union-ok: JsonSerializable needs to support all JSON-compatible types for dynamic metadata
+JsonSerializable = str | int | float | bool | None | dict[str, Any] | list[Any]
+
 
 class ModelGenericMetadata(BaseModel):
     """
@@ -40,17 +45,17 @@ class ModelGenericMetadata(BaseModel):
     )
 
     # Additional flexible storage (non-recursive for Pydantic compatibility)
-    # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible metadata storage
+    # BOUNDARY_LAYER_EXCEPTION: Uses JsonSerializable for flexible metadata storage
     # Supporting various JSON-serializable types validated at runtime
-    custom_fields: dict[str, Any] = Field(
+    custom_fields: dict[str, JsonSerializable] = Field(
         default_factory=dict,
         description="Custom fields with JSON-serializable types",
     )
 
-    # For complex nested data - use JSON string representation
-    extended_data_json: str | None = Field(
+    # For complex nested data - use BaseModel instances
+    extended_data: dict[str, BaseModel] | None = Field(
         None,
-        description="Extended data as JSON string (for nested structures)",
+        description="Extended data with nested BaseModel instances",
     )
 
     model_config = ConfigDict(

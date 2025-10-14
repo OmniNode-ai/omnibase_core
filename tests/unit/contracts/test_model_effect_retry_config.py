@@ -247,7 +247,7 @@ class TestModelEffectRetryConfigMaxDelayValidator:
 
         error = exc_info.value
         assert "max_delay_ms must be greater than base_delay_ms" in str(error)
-        assert error.error_code.value == "validation_error"
+        assert error.error_code.value == "ONEX_CORE_006_VALIDATION_ERROR"
 
     def test_max_delay_less_than_base_delay_invalid(self):
         """Test max_delay_ms less than base_delay_ms raises OnexError."""
@@ -256,7 +256,7 @@ class TestModelEffectRetryConfigMaxDelayValidator:
 
         error = exc_info.value
         assert "max_delay_ms must be greater than base_delay_ms" in str(error)
-        assert error.error_code.value == "validation_error"
+        assert error.error_code.value == "ONEX_CORE_006_VALIDATION_ERROR"
 
     def test_validator_error_context(self):
         """Test that validator error includes proper context."""

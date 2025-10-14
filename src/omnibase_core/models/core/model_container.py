@@ -16,8 +16,6 @@ if TYPE_CHECKING:
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Type variable for contained value
 T = TypeVar("T")
@@ -166,18 +164,16 @@ class ModelContainer(BaseModel, Generic[T]):
                 validation_notes="Value transformed, requires re-validation",
             )
         except Exception as e:
+            # Convert error context to simple dict for OnexError
+            context_values = {
+                "container_type": self.container_type,
+                "original_value": str(self.value),
+                "error": str(e),
+            }
             raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "container_type": ModelSchemaValue.from_value(
-                            self.container_type,
-                        ),
-                        "original_value": ModelSchemaValue.from_value(str(self.value)),
-                        "error": ModelSchemaValue.from_value(str(e)),
-                    },
-                ),
+                error_code=CoreErrorCode.OPERATION_FAILED,
+                **context_values,  # type: ignore[arg-type]
             ) from e
 
     def validate_with(
@@ -206,33 +202,29 @@ class ModelContainer(BaseModel, Generic[T]):
                 return True
             self.is_validated = False
             self.validation_notes = error_message
+            # Convert error context to simple dict for OnexError
+            context_values = {
+                "container_type": self.container_type,
+                "value": str(self.value),
+            }
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=error_message,
-                details=ModelErrorContext.with_context(
-                    {
-                        "container_type": ModelSchemaValue.from_value(
-                            self.container_type,
-                        ),
-                        "value": ModelSchemaValue.from_value(str(self.value)),
-                    },
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                **context_values,  # type: ignore[arg-type]
             )
         except Exception as e:
             if isinstance(e, OnexError):
                 raise
+            # Convert error context to simple dict for OnexError
+            context_values = {
+                "container_type": self.container_type,
+                "value": str(self.value),
+                "error": str(e),
+            }
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation error: {e!s}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "container_type": ModelSchemaValue.from_value(
-                            self.container_type,
-                        ),
-                        "value": ModelSchemaValue.from_value(str(self.value)),
-                        "error": ModelSchemaValue.from_value(str(e)),
-                    },
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                **context_values,  # type: ignore[arg-type]
             ) from e
 
     def compare_value(self, other: object) -> bool:
@@ -301,11 +293,10 @@ class ModelContainer(BaseModel, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        except (
+            Exception
+        ):  # fallback-ok: Configurable protocol requires bool return on failure
+            return False
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
@@ -313,15 +304,9 @@ class ModelContainer(BaseModel, Generic[T]):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

@@ -276,24 +276,14 @@ def validate_primitive_value(obj: object) -> bool:
     """
     Validate and ensure object is a primitive value.
 
-    Uses lazy import of error_codes to avoid circular dependency.
-    This import happens inside the function, so it's only loaded when validation fails.
-
-    CRITICAL: Keep the import inside the function - moving it to module level
-    will create a circular import with errors.error_codes!
+    Raises TypeError following Python conventions for type validation.
+    This ensures compatibility with standard exception handling patterns.
     """
     if not is_primitive_value(obj):
-        # LAZY IMPORT: Only load error_codes when validation fails
-        # This prevents circular dependency at module import time
-        # Import chain: errors.error_codes → types.core_types (no models/constraints)
-        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
-        raise OnexError(
-            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
-            message=msg,
-        )
+        # error-ok: TypeError is the standard Python convention for type validation
+        raise TypeError(msg)
     return True
 
 
@@ -301,24 +291,14 @@ def validate_context_value(obj: object) -> bool:
     """
     Validate and ensure object is a valid context value.
 
-    Uses lazy import of error_codes to avoid circular dependency.
-    This import happens inside the function, so it's only loaded when validation fails.
-
-    CRITICAL: Keep the import inside the function - moving it to module level
-    will create a circular import with errors.error_codes!
+    Raises TypeError following Python conventions for type validation.
+    This ensures compatibility with standard exception handling patterns.
     """
     if not is_context_value(obj):
-        # LAZY IMPORT: Only load error_codes when validation fails
-        # This prevents circular dependency at module import time
-        # Import chain: errors.error_codes → types.core_types (no models/constraints)
-        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-
         obj_type = type(obj).__name__
         msg = f"Expected context value (primitive, list, or dict), got {obj_type}"
-        raise OnexError(
-            error_code=CoreErrorCode.PARAMETER_TYPE_MISMATCH,
-            message=msg,
-        )
+        # error-ok: TypeError is the standard Python convention for type validation
+        raise TypeError(msg)
     return True
 
 

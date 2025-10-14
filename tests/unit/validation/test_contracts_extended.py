@@ -149,7 +149,11 @@ class TestValidateYamlFileExtended:
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: test-éncödîng
 operations: []
 """,
@@ -179,7 +183,11 @@ operations: []
             )
 
         content = """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: large-contract
 operations:
 """ + "".join(
@@ -208,7 +216,11 @@ operations:
         real_file = tmp_path / "real.yaml"
         real_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: symlink-test
 operations: []
 """,
@@ -232,7 +244,11 @@ operations: []
         yaml_file.write_text(
             """
 # This is a comment
-version: "1.0"  # Version comment
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE  # Node type comment
 contract_id: test-comments  # ID comment
 # Another comment
 operations: []  # Empty operations
@@ -249,7 +265,11 @@ operations: []  # Empty operations
         yaml_file = tmp_path / "multiline.yaml"
         yaml_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: multiline-test
 operations:
   - name: test_op
@@ -270,7 +290,11 @@ operations:
         yaml_file = tmp_path / "nested.yaml"
         yaml_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: nested-test
 operations:
   - name: complex_op
@@ -477,7 +501,11 @@ class TestValidateContractsDirectoryExtended:
         # Add YAML files at different levels
         (tmp_path / "root.yaml").write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: root
 operations: []
 """,
@@ -485,7 +513,11 @@ operations: []
 
         (level1 / "level1.yaml").write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: level1
 operations: []
 """,
@@ -493,7 +525,11 @@ operations: []
 
         (level2 / "level2.yaml").write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: level2
 operations: []
 """,
@@ -513,7 +549,11 @@ operations: []
         valid_file = tmp_path / "valid.yaml"
         valid_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: valid
 operations: []
 """,
@@ -582,7 +622,11 @@ invalid: yaml: [syntax
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: yaml-ext
 operations: []
 """,
@@ -591,7 +635,11 @@ operations: []
         yml_file = tmp_path / "test.yml"
         yml_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: yml-ext
 operations: []
 """,
@@ -613,7 +661,11 @@ operations: []
         manual_file.write_text(
             """
 # Manual file
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: manual
 operations: []
 """,
@@ -647,7 +699,11 @@ operations: []
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(
             """
-version: "1.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
 contract_id: test
 operations: []
 """,

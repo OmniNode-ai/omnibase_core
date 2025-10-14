@@ -439,6 +439,28 @@ _SENSITIVE_PATTERNS = [
         ),
         "access_token=[REDACTED]",
     ),  # Access tokens
+    (
+        re.compile(r'\btoken["\']?\s*[:=]\s*["\']?[^,}\s]+["}]?', re.IGNORECASE),
+        "token=[REDACTED]",
+    ),  # Generic tokens
+]
+
+# Sensitive key names that should have their values redacted
+_SENSITIVE_KEY_NAMES = [
+    "password",
+    "passwd",
+    "pwd",
+    "api_key",
+    "apikey",
+    "api-key",
+    "secret",
+    "token",
+    "access_token",
+    "access-token",
+    "auth_token",
+    "auth-token",
+    "private_key",
+    "private-key",
 ]
 
 
@@ -482,9 +504,18 @@ def _sanitize_data_dict(
         # Sanitize key names that might contain sensitive info
         sanitized_key = _sanitize_sensitive_data(str(key))
 
+        # Check if key name indicates sensitive data
+        key_lower = key.lower().replace("-", "_").replace(" ", "_")
+        is_sensitive_key = any(
+            sensitive_name in key_lower for sensitive_name in _SENSITIVE_KEY_NAMES
+        )
+
         # Validate and sanitize values to ensure JSON compatibility
         sanitized_value: Any | None
-        if isinstance(value, str):
+        if is_sensitive_key:
+            # Redact value if key is sensitive
+            sanitized_value = "[REDACTED]"
+        elif isinstance(value, str):
             sanitized_value = _sanitize_sensitive_data(value)
         elif isinstance(value, bool):  # Check bool first (bool is subclass of int)
             sanitized_value = value

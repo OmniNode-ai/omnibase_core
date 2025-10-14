@@ -1,6 +1,13 @@
 """
 Compute Contract Model - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Specialized contract model for NodeCompute implementations providing:
 - Algorithm specification with factor weights and parameters
 - Parallel processing configuration (thread pools, async settings)
@@ -9,6 +16,8 @@ Specialized contract model for NodeCompute implementations providing:
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from typing import ClassVar
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -58,6 +67,9 @@ class ModelContractCompute(ModelContractBase):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     def __init__(self, **data: object) -> None:
         """Initialize compute contract."""

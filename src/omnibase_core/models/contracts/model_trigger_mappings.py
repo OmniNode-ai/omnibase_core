@@ -118,15 +118,15 @@ class ModelTriggerMappings(BaseModel):
 
             if len(key) > 500:
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Mapping key '{key}' too long. Maximum 500 characters.",
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
             # Validate value
             if not isinstance(value, str):
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Mapping value for key '{key}' must be a string, got {type(value)}",
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
             value = value.strip()
@@ -135,8 +135,8 @@ class ModelTriggerMappings(BaseModel):
 
             if len(value) > 500:
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Mapping value '{value}' too long. Maximum 500 characters.",
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated[key] = value
@@ -198,8 +198,8 @@ class ModelTriggerMappings(BaseModel):
 
         if category not in category_mapping:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid mapping category '{category}'. Valid categories: {list(category_mapping.keys())}",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
             )
 
         category_mapping[category][event_pattern.strip()] = action.strip()

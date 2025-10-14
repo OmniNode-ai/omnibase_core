@@ -1,0 +1,2462 @@
+# ONEX Mixin Metadata - Autonomous Code Generation Support
+# Version: 1.0.0
+# Purpose: Machine-readable metadata for mixin discovery and code generation
+
+# =============================================================================
+# MixinRetry - Automatic Retry with Exponential Backoff
+# =============================================================================
+mixin_retry:
+  name: "MixinRetry"
+  description: "Automatic retry logic with configurable backoff strategies, jitter, and failure tracking"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "flow_control"
+
+  # Dependencies
+  requires:
+    - "omnibase_core.models.infrastructure.model_retry_policy"
+    - "omnibase_core.models.infrastructure.model_retry_config"
+    - "omnibase_core.models.infrastructure.model_retry_conditions"
+    - "omnibase_core.models.infrastructure.model_retry_execution"
+    - "omnibase_core.models.infrastructure.model_retry_advanced"
+    - "omnibase_core.enums.enum_retry_backoff_strategy"
+    - "pydantic"
+
+  # Compatibility
+  compatible_with:
+    - "MixinEventBus" # Can publish retry events
+    - "MixinHealthCheck" # Can report retry failures
+    - "MixinMetrics" # Can track retry metrics
+    - "MixinLogging" # Can log retry attempts
+    - "MixinCircuitBreaker" # Can integrate with circuit breaker
+    - "MixinCaching" # Can retry cache operations
+    - "MixinTimeout" # Can combine retry with timeout
+
+  incompatible_with:
+    - "MixinSynchronous" # Retry requires async operations (if exists)
+
+  # Configuration schema
+  config_schema:
+    # Core retry configuration
+    max_retries:
+      type: "integer"
+      minimum: 0
+      maximum: 100
+      default: 3
+      description: "Maximum number of retry attempts"
+
+    base_delay_seconds:
+      type: "float"
+      minimum: 0.1
+      maximum: 3600.0
+      default: 1.0
+      description: "Base delay between retries in seconds"
+
+    # Backoff strategy
+    backoff_strategy:
+      type: "string"
+      enum: ["fixed", "linear", "exponential", "random", "fibonacci"]
+      default: "exponential"
+      description: "Retry backoff strategy"
+
+    backoff_multiplier:
+      type: "float"
+      minimum: 1.0
+      maximum: 10.0
+      default: 2.0
+      description: "Multiplier for exponential/linear backoff"
+
+    max_delay_seconds:
+      type: "float"
+      minimum: 1.0
+      maximum: 3600.0
+      default: 300.0
+      description: "Maximum delay between retries"
+
+    # Jitter configuration
+    jitter_enabled:
+      type: "boolean"
+      default: true
+      description: "Whether to add random jitter to delays (reduces thundering herd)"
+
+    jitter_max_seconds:
+      type: "float"
+      minimum: 0.0
+      maximum: 60.0
+      default: 1.0
+      description: "Maximum jitter to add/subtract from delay"
+
+    # Retry conditions
+    retry_on_exceptions:
+      type: "array"
+      items:
+        type: "string"
+      default: ["ConnectionError", "TimeoutError", "HTTPError"]
+      description: "Exception types that should trigger retries"
+
+    retry_on_status_codes:
+      type: "array"
+      items:
+        type: "integer"
+      default: [429, 500, 502, 503, 504]
+      description: "HTTP status codes that should trigger retries"
+
+    stop_on_success:
+      type: "boolean"
+      default: true
+      description: "Whether to stop retrying on first success"
+
+    # Circuit breaker integration
+    circuit_breaker_enabled:
+      type: "boolean"
+      default: false
+      description: "Enable circuit breaker pattern integration"
+
+    circuit_breaker_threshold:
+      type: "integer"
+      minimum: 1
+      maximum: 100
+      default: 5
+      description: "Number of failures before opening circuit"
+
+    circuit_reset_timeout_seconds:
+      type: "float"
+      minimum: 1.0
+      maximum: 3600.0
+      default: 60.0
+      description: "Timeout before attempting to close circuit"
+
+  # Usage examples
+  usage_examples:
+    - "HTTP API clients that need transient failure recovery"
+    - "Database operations with connection retry logic"
+    - "External service integrations requiring fault tolerance"
+    - "Message queue consumers with delivery guarantees"
+    - "File system operations with transient error handling"
+    - "Network operations prone to temporary failures"
+    - "Distributed system calls requiring resilience"
+
+  # Preset configurations
+  presets:
+    simple:
+      description: "Simple retry with default settings"
+      config:
+        max_retries: 3
+        base_delay_seconds: 1.0
+        backoff_strategy: "exponential"
+
+    quick:
+      description: "Quick retries for low-latency operations"
+      config:
+        max_retries: 3
+        base_delay_seconds: 0.5
+        max_delay_seconds: 5.0
+        backoff_strategy: "linear"
+
+    aggressive:
+      description: "Aggressive retry for critical operations"
+      config:
+        max_retries: 10
+        base_delay_seconds: 2.0
+        max_delay_seconds: 600.0
+        backoff_strategy: "exponential"
+        backoff_multiplier: 3.0
+
+    conservative:
+      description: "Conservative retry with longer delays"
+      config:
+        max_retries: 2
+        base_delay_seconds: 5.0
+        max_delay_seconds: 60.0
+        backoff_strategy: "fixed"
+
+    http:
+      description: "Optimized for HTTP requests"
+      config:
+        max_retries: 5
+        base_delay_seconds: 1.0
+        backoff_strategy: "exponential"
+        jitter_enabled: true
+        retry_on_status_codes: [429, 500, 502, 503, 504]
+        retry_on_exceptions: ["HTTPError", "ConnectionError", "TimeoutError"]
+
+    database:
+      description: "Optimized for database operations"
+      config:
+        max_retries: 3
+        base_delay_seconds: 0.5
+        backoff_strategy: "linear"
+        jitter_enabled: true
+        retry_on_exceptions: ["DatabaseError", "ConnectionError", "OperationalError", "InterfaceError"]
+        retry_on_status_codes: []
+
+    with_circuit_breaker:
+      description: "Retry with circuit breaker integration"
+      config:
+        max_retries: 5
+        circuit_breaker_enabled: true
+        circuit_breaker_threshold: 5
+        circuit_reset_timeout_seconds: 60.0
+
+  # Generated code patterns
+  code_patterns:
+    inheritance: "class Node{Name}Effect(NodeEffectService, MixinRetry):"
+
+    initialization: |
+      # Initialize retry policy
+      self._retry_policy = ModelRetryPolicy.create_exponential_backoff(
+          max_retries=config.max_retries,
+          base_delay=config.base_delay_seconds,
+          max_delay=config.max_delay_seconds,
+          multiplier=config.backoff_multiplier
+      )
+
+    methods:
+      - name: "async def with_retry"
+        signature: "async def with_retry(self, func: Callable, *args, **kwargs) -> Any"
+        description: "Execute function with automatic retry logic"
+        example: |
+          result = await self.with_retry(
+              self._execute_operation,
+              input_data,
+              max_attempts=3
+          )
+
+      - name: "should_retry"
+        signature: "def should_retry(self, error: Exception, status_code: Optional[int] = None) -> bool"
+        description: "Determine if operation should be retried"
+        example: |
+          if self.should_retry(error, status_code=503):
+              await asyncio.sleep(self.calculate_next_delay())
+              return await self._execute_operation()
+
+      - name: "calculate_next_delay"
+        signature: "def calculate_next_delay(self) -> float"
+        description: "Calculate delay for next retry attempt"
+        example: |
+          delay = self.calculate_next_delay()
+          await asyncio.sleep(delay)
+
+      - name: "record_attempt"
+        signature: "def record_attempt(self, success: bool, error: Optional[Exception] = None) -> None"
+        description: "Record retry attempt result"
+        example: |
+          self.record_attempt(
+              success=True,
+              error=None,
+              execution_time_seconds=1.5
+          )
+
+      - name: "get_retry_summary"
+        signature: "def get_retry_summary(self) -> dict"
+        description: "Get summary of retry attempts and statistics"
+        example: |
+          summary = self.get_retry_summary()
+          logger.info(f"Retry stats: {summary}")
+
+    properties:
+      - name: "can_attempt_retry"
+        type: "bool"
+        description: "Check if retries are still available"
+
+      - name: "is_exhausted"
+        type: "bool"
+        description: "Check if all retries have been exhausted"
+
+      - name: "retry_attempts_made"
+        type: "int"
+        description: "Number of retry attempts made"
+
+      - name: "success_rate"
+        type: "float"
+        description: "Success rate as percentage (0.0-1.0)"
+
+  # Implementation notes
+  implementation_notes:
+    - "Always use async methods for retry operations"
+    - "Implement jitter to prevent thundering herd problems"
+    - "Track retry metrics for monitoring and alerting"
+    - "Use circuit breaker for repeated failures"
+    - "Configure retry conditions based on operation type"
+    - "Consider max_delay to prevent excessive waiting"
+    - "Log retry attempts for debugging and observability"
+    - "Reset retry state after successful operations"
+    - "Use appropriate backoff strategy for use case"
+    - "Combine with timeout mechanisms for bounded wait"
+
+  # Performance considerations
+  performance:
+    overhead_per_call: "~1-5ms (overhead for retry logic)"
+    memory_per_instance: "~2-5KB (retry state tracking)"
+    recommended_max_retries: 10
+    typical_use_cases:
+      - use_case: "HTTP API calls"
+        recommended_config: "http preset"
+        expected_overhead: "~2ms + network latency"
+
+      - use_case: "Database operations"
+        recommended_config: "database preset"
+        expected_overhead: "~1ms + db latency"
+
+      - use_case: "Critical operations"
+        recommended_config: "aggressive preset"
+        expected_overhead: "~3ms + operation latency"
+
+  # Testing guidance
+  testing:
+    unit_tests:
+      - "Test each backoff strategy calculation"
+      - "Test retry condition evaluation"
+      - "Test max retry enforcement"
+      - "Test jitter randomization"
+      - "Test circuit breaker integration"
+      - "Test retry state tracking"
+
+    integration_tests:
+      - "Test retry with transient failures"
+      - "Test retry with permanent failures"
+      - "Test retry exhaustion behavior"
+      - "Test retry with multiple exception types"
+      - "Test retry with HTTP status codes"
+
+    mock_scenarios:
+      - scenario: "Transient failure then success"
+        setup: "Mock operation fails twice then succeeds"
+        expected: "3 attempts total, final success"
+
+      - scenario: "Permanent failure"
+        setup: "Mock operation always fails"
+        expected: "Max retries exhausted, final failure"
+
+      - scenario: "Exponential backoff verification"
+        setup: "Track delays between retries"
+        expected: "Delays increase exponentially: 1s, 2s, 4s, 8s"
+
+  # Error handling
+  error_handling:
+    - error_type: "RetryExhaustedError"
+      when: "All retry attempts exhausted"
+      recommended_action: "Log failure and propagate to caller"
+
+    - error_type: "ConfigurationError"
+      when: "Invalid retry configuration"
+      recommended_action: "Validate config on initialization"
+
+    - error_type: "CircuitBreakerOpenError"
+      when: "Circuit breaker is open"
+      recommended_action: "Fast-fail without retry"
+
+  # Monitoring and observability
+  observability:
+    metrics:
+      - "retry_attempts_total" # Counter
+      - "retry_success_rate" # Gauge (0.0-1.0)
+      - "retry_delay_seconds" # Histogram
+      - "retry_exhausted_total" # Counter
+      - "circuit_breaker_state" # Gauge (0=closed, 1=open, 2=half-open)
+
+    logs:
+      - level: "DEBUG"
+        message: "Retry attempt {attempt}/{max_retries} after {delay}s"
+
+      - level: "WARNING"
+        message: "Retry exhausted after {max_retries} attempts: {error}"
+
+      - level: "INFO"
+        message: "Retry succeeded on attempt {attempt}"
+
+    events:
+      - "retry.attempt.started"
+      - "retry.attempt.succeeded"
+      - "retry.attempt.failed"
+      - "retry.exhausted"
+      - "circuit_breaker.opened"
+      - "circuit_breaker.closed"
+
+  # Integration patterns
+  integration_patterns:
+    with_metrics:
+      description: "Track retry metrics for monitoring"
+      code: |
+        class NodeWithRetry(NodeEffectService, MixinRetry, MixinMetrics):
+            async def execute_with_retry(self, operation):
+                with self.metrics.timer("operation_with_retry_duration"):
+                    result = await self.with_retry(operation)
+                    self.metrics.increment("retry_operations_total")
+                    self.metrics.gauge("retry_success_rate", self.success_rate)
+                    return result
+
+    with_circuit_breaker:
+      description: "Combine retry with circuit breaker"
+      code: |
+        class FaultTolerantNode(NodeEffectService, MixinRetry, MixinCircuitBreaker):
+            async def execute_resilient(self, operation):
+                if self.circuit_breaker.is_open():
+                    raise CircuitBreakerOpenError()
+
+                try:
+                    result = await self.with_retry(operation)
+                    self.circuit_breaker.record_success()
+                    return result
+                except Exception as e:
+                    self.circuit_breaker.record_failure()
+                    raise
+
+    with_events:
+      description: "Publish retry events for observability"
+      code: |
+        class ObservableRetryNode(NodeEffectService, MixinRetry, MixinEventBus):
+            async def execute_with_events(self, operation):
+                try:
+                    result = await self.with_retry(operation)
+                    await self.publish_event("retry.succeeded", {
+                        "attempts": self.retry_attempts_made,
+                        "success_rate": self.success_rate
+                    })
+                    return result
+                except Exception as e:
+                    await self.publish_event("retry.exhausted", {
+                        "error": str(e),
+                        "attempts": self.retry_attempts_made
+                    })
+                    raise
+
+  # Version history
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-01-14"
+      changes:
+        - "Initial metadata definition"
+        - "Support for 5 backoff strategies"
+        - "Circuit breaker integration"
+        - "Comprehensive preset configurations"
+        - "Observability and metrics support"
+
+# =============================================================================
+# MixinHealthCheck - Health Monitoring and Status Reporting
+# =============================================================================
+mixin_health_check:
+  name: "MixinHealthCheck"
+  description: "Standardized health monitoring, status reporting, and liveness checks for ONEX nodes"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "monitoring"
+
+  # Dependencies
+  requires:
+    - "omnibase_core.enums.enum_node_health_status"
+    - "omnibase_core.models.core.model_health_status"
+    - "omnibase_core.logging.structured"
+    - "omnibase_core.enums.enum_log_level"
+    - "asyncio"
+    - "datetime"
+    - "typing"
+
+  # Compatibility
+  compatible_with:
+    - "MixinEventBus" # Can emit health events
+    - "MixinCaching" # Can cache health check results
+    - "MixinRetry" # Can retry failed health checks
+    - "MixinLogging" # Enhanced health check logging
+    - "MixinMetrics" # Health metrics collection
+    - "MixinCircuitBreaker" # Health-based circuit breaking
+    - "MixinValidation" # Health data validation
+
+  incompatible_with: [] # No known incompatibilities
+
+  # Configuration schema
+  config_schema:
+    health_check_interval_ms:
+      type: "integer"
+      minimum: 1000
+      maximum: 300000
+      default: 30000
+      description: "Interval between automatic health checks (milliseconds)"
+
+    health_check_timeout_ms:
+      type: "integer"
+      minimum: 100
+      maximum: 30000
+      default: 5000
+      description: "Maximum time allowed for health check execution (milliseconds)"
+
+    failure_threshold:
+      type: "integer"
+      minimum: 1
+      maximum: 10
+      default: 3
+      description: "Number of consecutive failures before marking unhealthy"
+
+    recovery_threshold:
+      type: "integer"
+      minimum: 1
+      maximum: 10
+      default: 2
+      description: "Number of consecutive successes needed to recover from unhealthy"
+
+    include_dependency_checks:
+      type: "boolean"
+      default: true
+      description: "Whether to include dependency health in aggregate status"
+
+    include_component_checks:
+      type: "boolean"
+      default: true
+      description: "Whether to check individual node components"
+
+    enable_async_checks:
+      type: "boolean"
+      default: true
+      description: "Enable asynchronous health check execution"
+
+    aggregate_check_results:
+      type: "boolean"
+      default: true
+      description: "Aggregate all check results into single health status"
+
+    emit_health_events:
+      type: "boolean"
+      default: true
+      description: "Emit health status change events to event bus"
+
+    health_status_ttl_seconds:
+      type: "integer"
+      minimum: 5
+      maximum: 3600
+      default: 30
+      description: "Time-to-live for cached health status (seconds)"
+
+  # Usage examples
+  usage_examples:
+    - "Database effect nodes with connection health monitoring"
+    - "API client nodes that need endpoint availability checks"
+    - "Orchestrator nodes monitoring subnode health"
+    - "Compute nodes with resource usage health checks"
+    - "Reducer nodes with state persistence health validation"
+    - "External service integrations requiring uptime monitoring"
+    - "Message queue consumers with connectivity health checks"
+
+  # Preset configurations
+  presets:
+    default:
+      description: "Standard health check configuration"
+      config:
+        health_check_interval_ms: 30000
+        health_check_timeout_ms: 5000
+        failure_threshold: 3
+        recovery_threshold: 2
+        include_dependency_checks: true
+
+    lightweight:
+      description: "Minimal overhead health checks"
+      config:
+        health_check_interval_ms: 60000
+        health_check_timeout_ms: 2000
+        failure_threshold: 5
+        include_dependency_checks: false
+        include_component_checks: false
+
+    critical_service:
+      description: "Aggressive health monitoring for critical services"
+      config:
+        health_check_interval_ms: 10000
+        health_check_timeout_ms: 3000
+        failure_threshold: 2
+        recovery_threshold: 3
+        emit_health_events: true
+        include_dependency_checks: true
+
+    distributed_system:
+      description: "Health checks for distributed node networks"
+      config:
+        health_check_interval_ms: 15000
+        health_check_timeout_ms: 10000
+        failure_threshold: 3
+        recovery_threshold: 2
+        include_dependency_checks: true
+        include_component_checks: true
+        emit_health_events: true
+
+  # Generated code patterns
+  code_patterns:
+    inheritance: "class Node{Name}Effect(NodeEffectService, MixinHealthCheck):"
+
+    initialization: |
+      def __init__(self, **kwargs):
+          super().__init__(**kwargs)
+          # MixinHealthCheck initialization handled automatically
+
+    methods:
+      - name: "health_check"
+        signature: "def health_check(self) -> ModelHealthStatus"
+        description: "Synchronous health check with dependency aggregation"
+        example: |
+          health = self.health_check()
+          if health.status == EnumNodeHealthStatus.HEALTHY:
+              logger.info(f"Node healthy: {health.message}")
+
+      - name: "health_check_async"
+        signature: "async def health_check_async(self) -> ModelHealthStatus"
+        description: "Asynchronous health check with concurrent execution"
+        example: |
+          health = await self.health_check_async()
+          if health.status != EnumNodeHealthStatus.HEALTHY:
+              await self.handle_health_issue(health)
+
+      - name: "get_health_checks"
+        signature: "def get_health_checks(self) -> List[Callable]"
+        description: "Override to provide custom health checks"
+        example: |
+          def get_health_checks(self):
+              return [
+                  self._check_database,
+                  self._check_cache,
+                  self._check_api_availability
+              ]
+
+      - name: "check_dependency_health"
+        signature: "def check_dependency_health(self, dependency_name: str, check_func: Callable[[], bool]) -> ModelHealthStatus"
+        description: "Helper to check dependency health"
+        example: |
+          db_health = self.check_dependency_health(
+              "PostgreSQL",
+              lambda: self.db.is_connected()
+          )
+
+    properties:
+      - name: "is_healthy"
+        type: "bool"
+        description: "Current overall health status"
+
+      - name: "last_health_check"
+        type: "Optional[ModelHealthStatus]"
+        description: "Result of most recent health check"
+
+      - name: "health_check_count"
+        type: "int"
+        description: "Total number of health checks performed"
+
+  # Implementation notes
+  implementation_notes:
+    - "Override get_health_checks() to add custom health checks"
+    - "Keep health checks lightweight (<5s execution time)"
+    - "Use async checks for I/O-bound health validations"
+    - "Return meaningful status messages for debugging"
+    - "Aggregate dependency health into overall status"
+    - "Handle exceptions gracefully in custom checks"
+    - "Consider caching health status to reduce overhead"
+    - "Emit health events for centralized monitoring"
+    - "Use check_dependency_health() helper for dependencies"
+    - "Test health checks with mock dependencies"
+
+  # Performance considerations
+  performance:
+    overhead_per_call: "~10-50ms (depends on custom checks)"
+    memory_per_instance: "~5-10KB (health state tracking)"
+    recommended_check_interval_ms: 30000
+    typical_use_cases:
+      - use_case: "Database connections"
+        recommended_config: "default preset"
+        expected_overhead: "~20ms + db ping latency"
+
+      - use_case: "API endpoints"
+        recommended_config: "default preset"
+        expected_overhead: "~50ms + API response time"
+
+      - use_case: "Lightweight services"
+        recommended_config: "lightweight preset"
+        expected_overhead: "~10ms (no dependencies)"
+
+      - use_case: "Critical infrastructure"
+        recommended_config: "critical_service preset"
+        expected_overhead: "~30ms + dependency checks"
+
+  # Testing guidance
+  testing:
+    unit_tests:
+      - "Test health_check() with no custom checks"
+      - "Test health_check() with passing custom checks"
+      - "Test health_check() with failing custom checks"
+      - "Test health_check_async() concurrent execution"
+      - "Test check_dependency_health() helper"
+      - "Test health status aggregation logic"
+      - "Test exception handling in custom checks"
+
+    integration_tests:
+      - "Test health checks with real database connections"
+      - "Test health checks with external API calls"
+      - "Test health status transitions over time"
+      - "Test health event emission to event bus"
+
+    mock_scenarios:
+      - scenario: "All checks pass"
+        setup: "Mock all dependencies healthy"
+        expected: "HEALTHY status with success message"
+
+      - scenario: "One check fails"
+        setup: "Mock database check fails"
+        expected: "UNHEALTHY status with failure details"
+
+      - scenario: "Degraded service"
+        setup: "Mock API returns 503"
+        expected: "DEGRADED status with partial functionality message"
+
+      - scenario: "Check timeout"
+        setup: "Mock check exceeds timeout"
+        expected: "UNHEALTHY status with timeout error"
+
+  # Error handling
+  error_handling:
+    - error_type: "HealthCheckTimeoutError"
+      when: "Health check exceeds configured timeout"
+      recommended_action: "Mark as UNHEALTHY, log timeout event"
+
+    - error_type: "DependencyUnavailableError"
+      when: "Critical dependency check fails"
+      recommended_action: "Mark as UNHEALTHY, include dependency details"
+
+    - error_type: "HealthCheckException"
+      when: "Unexpected exception in health check"
+      recommended_action: "Mark as CRITICAL, log full exception context"
+
+  # Monitoring and observability
+  observability:
+    metrics:
+      - "health_check_count" # Counter
+      - "health_check_duration_ms" # Histogram
+      - "health_status_changes" # Counter
+      - "health_check_failures" # Counter
+      - "current_health_status" # Gauge (0-4)
+      - "dependency_health_status" # Gauge per dependency
+
+    logs:
+      - level: "DEBUG"
+        message: "MIXIN_INIT: Initializing MixinHealthCheck"
+
+      - level: "DEBUG"
+        message: "HEALTH_CHECK: Starting health check"
+
+      - level: "INFO"
+        message: "HEALTH_CHECK: Health check completed - {status}"
+
+      - level: "WARNING"
+        message: "HEALTH_CHECK: Async check called in sync context"
+
+      - level: "ERROR"
+        message: "HEALTH_CHECK: Health check failed - {error}"
+
+    events:
+      - "health.status.changed"
+      - "health.check.started"
+      - "health.check.completed"
+      - "health.check.failed"
+      - "health.dependency.failed"
+      - "health.recovered"
+
+  # Integration patterns
+  integration_patterns:
+    with_event_bus:
+      description: "Emit health events for centralized monitoring"
+      code: |
+        class HealthAwareNode(NodeEffectService, MixinHealthCheck, MixinEventBus):
+            async def perform_health_check(self):
+                health = await self.health_check_async()
+                await self.publish_event("health.status.changed", {
+                    "node_name": self.__class__.__name__,
+                    "status": health.status.value,
+                    "message": health.message,
+                    "timestamp": health.timestamp
+                })
+                return health
+
+    with_metrics:
+      description: "Track health metrics for observability"
+      code: |
+        class MonitoredNode(NodeEffectService, MixinHealthCheck, MixinMetrics):
+            def health_check(self):
+                with self.metrics.timer("health_check_duration"):
+                    health = super().health_check()
+                    self.metrics.gauge(
+                        "current_health_status",
+                        self._health_status_to_gauge(health.status)
+                    )
+                    self.metrics.increment("health_check_count")
+                    return health
+
+    with_caching:
+      description: "Cache health check results to reduce overhead"
+      code: |
+        class CachedHealthNode(NodeEffectService, MixinHealthCheck, MixinCaching):
+            @cached(ttl_seconds=30)
+            def health_check(self):
+                return super().health_check()
+
+    with_circuit_breaker:
+      description: "Use health status to control circuit breaker"
+      code: |
+        class ResilientNode(NodeEffectService, MixinHealthCheck, MixinCircuitBreaker):
+            async def execute_with_health_check(self, operation):
+                health = await self.health_check_async()
+
+                if health.status in [EnumNodeHealthStatus.UNHEALTHY, EnumNodeHealthStatus.CRITICAL]:
+                    self.circuit_breaker.open()
+                    raise ServiceUnavailableError(health.message)
+
+                if health.status == EnumNodeHealthStatus.HEALTHY:
+                    self.circuit_breaker.close()
+
+                return await operation()
+
+  # Example implementations
+  examples:
+    database_effect:
+      description: "Database effect node with connection health"
+      code: |
+        class NodeDatabaseWriterEffect(NodeEffectService, MixinHealthCheck):
+            def get_health_checks(self):
+                return [
+                    self._check_database_connection,
+                    self._check_connection_pool,
+                    self._check_query_performance
+                ]
+
+            def _check_database_connection(self) -> ModelHealthStatus:
+                try:
+                    self.db.execute("SELECT 1")
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.HEALTHY,
+                        message="Database connection OK",
+                        timestamp=datetime.utcnow().isoformat()
+                    )
+                except Exception as e:
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.UNHEALTHY,
+                        message=f"Database connection failed: {e}",
+                        timestamp=datetime.utcnow().isoformat()
+                    )
+
+            def _check_connection_pool(self) -> ModelHealthStatus:
+                pool_size = self.db.pool.size
+                max_pool_size = self.db.pool.max_size
+                utilization = pool_size / max_pool_size
+
+                if utilization < 0.7:
+                    status = EnumNodeHealthStatus.HEALTHY
+                elif utilization < 0.9:
+                    status = EnumNodeHealthStatus.DEGRADED
+                else:
+                    status = EnumNodeHealthStatus.UNHEALTHY
+
+                return ModelHealthStatus(
+                    status=status,
+                    message=f"Pool utilization: {utilization:.0%}",
+                    timestamp=datetime.utcnow().isoformat()
+                )
+
+    api_client_effect:
+      description: "API client with endpoint health checks"
+      code: |
+        class NodeApiClientEffect(NodeEffectService, MixinHealthCheck):
+            def get_health_checks(self):
+                return [
+                    self._check_api_availability,
+                    self._check_rate_limits,
+                    self._check_authentication
+                ]
+
+            async def _check_api_availability(self) -> ModelHealthStatus:
+                try:
+                    response = await self.client.get("/health")
+                    if response.status == 200:
+                        return ModelHealthStatus(
+                            status=EnumNodeHealthStatus.HEALTHY,
+                            message="API is available"
+                        )
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.DEGRADED,
+                        message=f"API returned {response.status}"
+                    )
+                except Exception as e:
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.UNHEALTHY,
+                        message=f"API unavailable: {e}"
+                    )
+
+    orchestrator_node:
+      description: "Orchestrator with subnode health aggregation"
+      code: |
+        class NodeWorkflowOrchestrator(NodeOrchestratorService, MixinHealthCheck):
+            def get_health_checks(self):
+                return [
+                    self._check_subnodes_health,
+                    self._check_workflow_queue,
+                    self._check_resource_availability
+                ]
+
+            def _check_subnodes_health(self) -> ModelHealthStatus:
+                unhealthy = []
+                degraded = []
+
+                for node in self.managed_nodes:
+                    health = node.health_check()
+                    if health.status == EnumNodeHealthStatus.UNHEALTHY:
+                        unhealthy.append(node.name)
+                    elif health.status == EnumNodeHealthStatus.DEGRADED:
+                        degraded.append(node.name)
+
+                if unhealthy:
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.UNHEALTHY,
+                        message=f"Unhealthy subnodes: {', '.join(unhealthy)}"
+                    )
+                if degraded:
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.DEGRADED,
+                        message=f"Degraded subnodes: {', '.join(degraded)}"
+                    )
+
+                return ModelHealthStatus(
+                    status=EnumNodeHealthStatus.HEALTHY,
+                    message=f"All {len(self.managed_nodes)} subnodes healthy"
+                )
+
+  # Health status model definition
+  health_status_model:
+    name: "ModelHealthStatus"
+    description: "Health status result model"
+    fields:
+      status:
+        type: "EnumNodeHealthStatus"
+        required: true
+        description: "Health status level (HEALTHY, DEGRADED, UNHEALTHY, CRITICAL, UNKNOWN)"
+
+      message:
+        type: "str"
+        required: true
+        description: "Human-readable status message with details"
+
+      timestamp:
+        type: "str"
+        required: true
+        description: "ISO 8601 timestamp of health check"
+
+      check_duration_ms:
+        type: "Optional[int]"
+        required: false
+        description: "Time taken to perform health check (milliseconds)"
+
+      component_results:
+        type: "Optional[List[ModelHealthStatus]]"
+        required: false
+        description: "Individual component health check results"
+
+      dependency_results:
+        type: "Optional[Dict[str, ModelHealthStatus]]"
+        required: false
+        description: "Dependency health check results by name"
+
+  # Best practices
+  best_practices:
+    - title: "Keep health checks lightweight"
+      description: "Health checks should complete quickly (<5s) to avoid blocking operations"
+      severity: "high"
+      example: "Use connection pool checks instead of full query execution"
+
+    - title: "Use async checks for I/O operations"
+      description: "Prefer health_check_async() for checks involving network or disk I/O"
+      severity: "medium"
+      example: "Use async HTTP clients for API availability checks"
+
+    - title: "Implement meaningful status messages"
+      description: "Include actionable information and context in health status messages"
+      severity: "medium"
+      example: "Database connection OK - pool: 5/10 connections' instead of 'OK'"
+
+    - title: "Handle check failures gracefully"
+      description: "Catch exceptions in custom checks to prevent health system failure"
+      severity: "high"
+      example: "Wrap all checks in try/except or use check_dependency_health() helper"
+
+    - title: "Cache health check results"
+      description: "Use MixinCaching to avoid excessive health check overhead"
+      severity: "low"
+      example: "@cached(ttl_seconds=30) on health_check() method"
+
+    - title: "Aggregate dependency health"
+      description: "Include critical dependencies in overall health assessment"
+      severity: "medium"
+      example: "Check database, cache, and external API health together"
+
+    - title: "Monitor health status changes"
+      description: "Track and alert on health status transitions"
+      severity: "medium"
+      example: "Emit events or log when status changes from HEALTHY to DEGRADED"
+
+  # Common pitfalls
+  common_pitfalls:
+    - issue: "Blocking health checks"
+      description: "Running long-running operations in synchronous health checks blocks node"
+      solution: "Use async health checks or move expensive checks to background tasks"
+      severity: "high"
+
+    - issue: "Uncaught exceptions"
+      description: "Custom health check throws exception, breaking health system"
+      solution: "Wrap all checks in try/except or use check_dependency_health() helper"
+      severity: "high"
+
+    - issue: "Missing custom health checks"
+      description: "Not overriding get_health_checks() results in always-healthy status"
+      solution: "Implement get_health_checks() with relevant dependency and resource checks"
+      severity: "medium"
+
+    - issue: "Stale health status"
+      description: "Health status not updated frequently enough to detect issues"
+      solution: "Configure appropriate health_check_interval_ms based on criticality"
+      severity: "low"
+
+    - issue: "Excessive health check overhead"
+      description: "Too many or too expensive health checks impact performance"
+      solution: "Use caching, reduce check frequency, or optimize check implementations"
+      severity: "medium"
+
+  # Version history
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"
+        - "Support for sync and async health checks"
+        - "Dependency health aggregation"
+        - "Custom health check framework"
+        - "Comprehensive preset configurations"
+        - "Integration patterns with other mixins"
+        - "Example implementations for common patterns"
+
+# =============================================================================
+# MixinCaching - Multi-level Caching with Invalidation Strategies
+# =============================================================================
+mixin_caching:
+  name: "MixinCaching"
+  description: "Multi-level caching capabilities with TTL, invalidation strategies, distributed caching, and performance optimization"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "data_management"
+
+  # Dependencies
+  requires:
+    - "omnibase_core.models.contracts.model_caching_config"
+    - "omnibase_core.models.contracts.subcontracts.model_caching_subcontract"
+    - "omnibase_core.models.contracts.subcontracts.model_cache_key_strategy"
+    - "omnibase_core.models.contracts.subcontracts.model_cache_invalidation"
+    - "omnibase_core.models.contracts.subcontracts.model_cache_performance"
+    - "omnibase_core.models.contracts.subcontracts.model_cache_distribution"
+    - "omnibase_spi.protocols.core.ProtocolCacheService"
+    - "pydantic"
+    - "asyncio"
+
+  # Compatibility
+  compatible_with:
+    - "MixinEventBus" # Can publish cache events
+    - "MixinHealthCheck" # Can report cache health
+    - "MixinMetrics" # Can track cache metrics
+    - "MixinLogging" # Can log cache operations
+    - "MixinCircuitBreaker" # Can integrate with circuit breaker
+    - "MixinRetry" # Can retry cache operations
+    - "MixinTimeout" # Can timeout cache operations
+    - "MixinValidation" # Can validate cached data
+
+  incompatible_with:
+    - "MixinStateless" # Caching requires state management
+
+  # Configuration schema
+  config_schema:
+    # Core caching configuration
+    caching_enabled:
+      type: "boolean"
+      default: true
+      description: "Enable caching functionality"
+
+    cache_strategy:
+      type: "string"
+      enum: ["lru", "fifo", "lfu", "lru_ttl", "arc"]
+      default: "lru"
+      description: "Primary cache eviction strategy"
+
+    cache_backend:
+      type: "string"
+      enum: ["memory", "redis", "memcached", "disk", "hybrid"]
+      default: "memory"
+      description: "Cache backend implementation"
+
+    # Capacity and sizing
+    max_entries:
+      type: "integer"
+      minimum: 1
+      maximum: 1000000
+      default: 10000
+      description: "Maximum number of cache entries"
+
+    max_memory_mb:
+      type: "integer"
+      minimum: 1
+      maximum: 16384
+      default: 512
+      description: "Maximum memory allocation in MB"
+
+    entry_size_limit_kb:
+      type: "integer"
+      minimum: 1
+      maximum: 10240
+      default: 1024
+      description: "Maximum size per cache entry in KB"
+
+    # TTL and expiration
+    ttl_seconds:
+      type: "integer"
+      minimum: 1
+      maximum: 86400
+      default: 300
+      description: "Default time-to-live for cache entries in seconds"
+
+    # Cache key management
+    cache_key_strategy:
+      type: "string"
+      enum: ["input_hash", "composite_hash", "semantic_key", "uuid_based"]
+      default: "composite_hash"
+      description: "Strategy for generating cache keys"
+
+    key_prefix:
+      type: "string"
+      default: ""
+      description: "Prefix for all cache keys (namespace isolation)"
+
+    # Invalidation policy
+    invalidation_strategy:
+      type: "string"
+      enum: ["ttl_based", "lru_eviction", "manual_only", "event_driven", "pattern_based"]
+      default: "ttl_based"
+      description: "Cache invalidation and expiration strategy"
+
+    # Multi-level caching
+    multi_level_enabled:
+      type: "boolean"
+      default: false
+      description: "Enable multi-level caching (L1/L2)"
+
+    l1_cache_size:
+      type: "integer"
+      minimum: 1
+      maximum: 100000
+      default: 1000
+      description: "L1 cache size (hot cache, in-memory)"
+
+    l2_cache_size:
+      type: "integer"
+      minimum: 1
+      maximum: 1000000
+      default: 10000
+      description: "L2 cache size (warm cache)"
+
+    promotion_threshold:
+      type: "integer"
+      minimum: 1
+      maximum: 100
+      default: 3
+      description: "Hit threshold for L2 to L1 promotion"
+
+    # Performance tuning
+    metrics_enabled:
+      type: "boolean"
+      default: true
+      description: "Enable cache metrics collection"
+
+    detailed_metrics:
+      type: "boolean"
+      default: false
+      description: "Enable detailed per-key metrics"
+
+    hit_ratio_threshold:
+      type: "number"
+      minimum: 0.0
+      maximum: 1.0
+      default: 0.8
+      description: "Minimum acceptable cache hit ratio"
+
+    performance_monitoring:
+      type: "boolean"
+      default: true
+      description: "Enable cache performance monitoring"
+
+    # Cache warming
+    warm_up_enabled:
+      type: "boolean"
+      default: false
+      description: "Enable cache warming on startup"
+
+    warm_up_sources:
+      type: "array"
+      items:
+        type: "string"
+      default: []
+      description: "Data sources for cache warming"
+
+    warm_up_batch_size:
+      type: "integer"
+      minimum: 1
+      maximum: 10000
+      default: 100
+      description: "Batch size for cache warming operations"
+
+    # Persistence
+    persistence_enabled:
+      type: "boolean"
+      default: false
+      description: "Enable cache persistence to disk"
+
+    persistence_interval_ms:
+      type: "integer"
+      minimum: 1000
+      maximum: 3600000
+      default: 60000
+      description: "Cache persistence interval in milliseconds"
+
+    recovery_enabled:
+      type: "boolean"
+      default: false
+      description: "Enable cache recovery on startup"
+
+    # Distributed caching
+    distributed_enabled:
+      type: "boolean"
+      default: false
+      description: "Enable distributed caching across nodes"
+
+    sync_strategy:
+      type: "string"
+      enum: ["immediate", "eventual", "manual"]
+      default: "eventual"
+      description: "Synchronization strategy for distributed cache"
+
+  # Usage examples
+  usage_examples:
+    - "Compute nodes performing expensive calculations requiring result caching"
+    - "Database adapters caching query results to reduce database load"
+    - "API clients caching remote responses to minimize network calls"
+    - "Document processors caching parsed/transformed documents"
+    - "ML inference nodes caching model predictions for common inputs"
+    - "Graph traversal nodes caching computed paths and relationships"
+    - "Authentication services caching session tokens and user data"
+    - "Configuration services caching parsed configuration data"
+
+  # Preset configurations
+  presets:
+    simple:
+      description: "Simple in-memory LRU cache with default settings"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru"
+        cache_backend: "memory"
+        max_entries: 1000
+        ttl_seconds: 300
+
+    performance:
+      description: "High-performance cache optimized for speed"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru"
+        cache_backend: "memory"
+        max_entries: 10000
+        ttl_seconds: 600
+        metrics_enabled: true
+        detailed_metrics: false
+        multi_level_enabled: true
+        l1_cache_size: 1000
+        l2_cache_size: 10000
+
+    persistent:
+      description: "Persistent cache surviving restarts"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru"
+        cache_backend: "disk"
+        max_entries: 50000
+        ttl_seconds: 3600
+        persistence_enabled: true
+        persistence_interval_ms: 60000
+        recovery_enabled: true
+
+    distributed:
+      description: "Distributed cache across multiple nodes"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru"
+        cache_backend: "redis"
+        max_entries: 100000
+        ttl_seconds: 1800
+        distributed_enabled: true
+        sync_strategy: "eventual"
+        metrics_enabled: true
+
+    compute_intensive:
+      description: "Cache for expensive computational results"
+      config:
+        caching_enabled: true
+        cache_strategy: "lfu"
+        cache_backend: "memory"
+        max_entries: 5000
+        ttl_seconds: 3600
+        entry_size_limit_kb: 2048
+        metrics_enabled: true
+        hit_ratio_threshold: 0.9
+
+    api_responses:
+      description: "Cache for external API responses"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru_ttl"
+        cache_backend: "memory"
+        max_entries: 10000
+        ttl_seconds: 300
+        cache_key_strategy: "composite_hash"
+        invalidation_strategy: "ttl_based"
+        metrics_enabled: true
+
+    database_queries:
+      description: "Cache for database query results"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru"
+        cache_backend: "redis"
+        max_entries: 20000
+        ttl_seconds: 600
+        invalidation_strategy: "event_driven"
+        warm_up_enabled: true
+        metrics_enabled: true
+
+    session_data:
+      description: "Cache for user session data"
+      config:
+        caching_enabled: true
+        cache_strategy: "lru"
+        cache_backend: "redis"
+        max_entries: 50000
+        ttl_seconds: 1800
+        distributed_enabled: true
+        key_prefix: "session:"
+        invalidation_strategy: "ttl_based"
+
+  # Generated code patterns
+  code_patterns:
+    inheritance: "class Node{Name}Compute(NodeComputeService, MixinCaching):"
+
+    initialization: |
+      # Initialize cache from contract subcontract
+      cache_subcontract = getattr(contract.subcontracts, 'caching', None)
+      if cache_subcontract and cache_subcontract.caching_enabled:
+          self._cache_service = await self._initialize_cache_service(cache_subcontract)
+          self._cache_enabled = True
+          self._cache_config = cache_subcontract
+          if cache_subcontract.metrics_enabled:
+              self._cache_stats = {"hits": 0, "misses": 0}
+      else:
+          self._cache_service = None
+          self._cache_enabled = False
+
+    methods:
+      - name: "get_cached"
+        signature: "async def get_cached(self, key: str) -> dict[str, Any] | None"
+        description: "Retrieve value from cache by key"
+        example: |
+          result = await self.get_cached(cache_key)
+          if result:
+              return result
+
+      - name: "set_cached"
+        signature: "async def set_cached(self, key: str, value: dict[str, Any], ttl_seconds: int | None = None) -> bool"
+        description: "Store value in cache with optional TTL override"
+        example: |
+          await self.set_cached(cache_key, result_data, ttl_seconds=600)
+
+      - name: "delete_cached"
+        signature: "async def delete_cached(self, key: str) -> bool"
+        description: "Delete specific cache entry by key"
+
+      - name: "clear_cache"
+        signature: "async def clear_cache(self, pattern: str | None = None) -> int"
+        description: "Clear all cache entries or entries matching pattern"
+
+      - name: "exists_in_cache"
+        signature: "async def exists_in_cache(self, key: str) -> bool"
+        description: "Check if key exists in cache and is not expired"
+
+      - name: "generate_cache_key"
+        signature: "def generate_cache_key(self, *args, **kwargs) -> str"
+        description: "Generate deterministic cache key from inputs"
+
+      - name: "get_cache_stats"
+        signature: "def get_cache_stats(self) -> ProtocolCacheStatistics"
+        description: "Get current cache statistics and performance metrics"
+
+      - name: "warm_up_cache"
+        signature: "async def warm_up_cache(self, sources: list[str]) -> int"
+        description: "Pre-populate cache from data sources"
+
+      - name: "invalidate_pattern"
+        signature: "async def invalidate_pattern(self, pattern: str) -> int"
+        description: "Invalidate all cache entries matching pattern"
+
+    properties:
+      - name: "is_cache_enabled"
+        type: "bool"
+        description: "Check if caching is enabled"
+
+      - name: "cache_hit_ratio"
+        type: "float"
+        description: "Current cache hit ratio (0.0-1.0)"
+
+      - name: "cache_size"
+        type: "int"
+        description: "Current number of entries in cache"
+
+  # Implementation notes
+  implementation_notes:
+    - "Always use async methods for cache operations to prevent blocking"
+    - "Implement proper cache key generation to avoid collisions"
+    - "Use TTL appropriately based on data staleness tolerance"
+    - "Monitor cache hit ratios and adjust sizing accordingly"
+    - "Implement cache warming for predictable access patterns"
+    - "Use pattern-based invalidation for related data coherence"
+    - "Consider multi-level caching for hot vs warm data"
+    - "Enable metrics collection for performance monitoring"
+    - "Set entry size limits to prevent memory bloat"
+
+  # Performance considerations
+  performance:
+    cache_lookup_latency:
+      memory: "~0.1ms"
+      redis: "~1.0ms"
+      memcached: "~1.5ms"
+      disk: "~10.0ms"
+
+    cache_write_latency:
+      memory: "~0.2ms"
+      redis: "~2.0ms"
+      memcached: "~2.5ms"
+      disk: "~15.0ms"
+
+    recommended_sizing:
+      small_service: "1000 entries, 100MB memory"
+      medium_service: "10000 entries, 500MB memory"
+      large_service: "100000 entries, 2GB memory"
+
+  # Version history
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-01-15"
+      changes:
+        - "Initial metadata definition for autonomous code generation"
+        - "Support for 5 cache strategies (LRU, FIFO, LFU, LRU_TTL, ARC)"
+        - "Multi-level caching (L1/L2) with promotion thresholds"
+        - "Distributed caching with eventual/immediate sync strategies"
+        - "Cache persistence and recovery support"
+        - "Event-driven and pattern-based invalidation"
+        - "Comprehensive metrics and observability"
+        - "8 preset configurations for common use cases"
+        - "Integration patterns with other mixins"
+
+# =============================================================================
+# MixinEventBus - Event-Driven Communication
+# =============================================================================
+mixin_event_bus:
+  name: "MixinEventBus"
+  description: "Event-driven communication capabilities for publishing and subscribing to events with structured payloads, correlation tracking, and graceful degradation"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "communication"
+
+  # Dependencies
+  requires:
+    - "omnibase_core.models.container.model_onex_container"
+    - "omnibase_core.models.operations.model_event_payload"
+    - "omnibase_core.enums.enum_event_type"
+    - "omnibase_core.logging.structured"
+    - "omnibase_core.enums.enum_log_level"
+    - "pydantic"
+    - "uuid"
+    - "asyncio"
+    - "typing"
+
+  # Compatibility
+  compatible_with:
+    - "MixinCaching" # Can cache event subscriptions
+    - "MixinHealthCheck" # Can emit health status events
+    - "MixinRetry" # Can retry failed event publications
+    - "MixinLogging" # Enhanced event logging
+    - "MixinMetrics" # Event metrics collection
+    - "MixinCircuitBreaker" # Event bus circuit breaking
+    - "MixinValidation" # Event payload validation
+    - "MixinTimeout" # Event publication timeout
+
+  incompatible_with: [] # No known incompatibilities
+
+  # Configuration schema
+  config_schema:
+    # Core event bus configuration
+    event_bus_enabled:
+      type: "boolean"
+      default: true
+      description: "Enable event bus functionality"
+
+    event_bus_type:
+      type: "string"
+      enum: ["redis", "kafka", "memory", "hybrid"]
+      default: "hybrid"
+      description: "Type of event bus backend to use"
+
+    # Event emission configuration
+    enable_event_logging:
+      type: "boolean"
+      default: true
+      description: "Enable automatic logging of emitted events"
+
+    correlation_tracking:
+      type: "boolean"
+      default: true
+      description: "Enable correlation ID tracking for event chains"
+
+    event_retention_seconds:
+      type: "integer"
+      minimum: 0
+      maximum: 86400
+      default: 3600
+      description: "Event retention duration in seconds (0 = no retention)"
+
+    # Reliability and retry
+    max_retry_attempts:
+      type: "integer"
+      minimum: 0
+      maximum: 10
+      default: 3
+      description: "Maximum retry attempts for failed event emissions"
+
+    retry_delay_ms:
+      type: "integer"
+      minimum: 0
+      maximum: 10000
+      default: 1000
+      description: "Delay between retry attempts in milliseconds"
+
+    enable_event_validation:
+      type: "boolean"
+      default: true
+      description: "Enable automatic validation of event payloads against schema"
+
+    graceful_degradation:
+      type: "boolean"
+      default: true
+      description: "Continue operation when event bus unavailable"
+
+    # Event routing
+    routing_key_strategy:
+      type: "string"
+      enum: ["type_based", "priority_based", "broadcast", "topic_based"]
+      default: "type_based"
+      description: "Event routing strategy"
+
+    enable_dead_letter_queue:
+      type: "boolean"
+      default: true
+      description: "Enable dead letter queue for failed events"
+
+    # Performance tuning
+    event_batch_size:
+      type: "integer"
+      minimum: 1
+      maximum: 1000
+      default: 1
+      description: "Number of events to batch before publishing (1 = no batching)"
+
+    event_buffer_size:
+      type: "integer"
+      minimum: 10
+      maximum: 10000
+      default: 100
+      description: "Size of event buffer for async publishing"
+
+    publish_timeout_ms:
+      type: "integer"
+      minimum: 100
+      maximum: 30000
+      default: 5000
+      description: "Timeout for event publication in milliseconds"
+
+  # Usage examples
+  usage_examples:
+    - "Effect nodes that need to publish state change events"
+    - "API clients that emit status updates and monitoring events"
+    - "Background processors with event-driven notifications"
+    - "Orchestrator nodes coordinating workflows via events"
+    - "Compute nodes publishing calculation results"
+    - "Logger nodes broadcasting log events"
+    - "Database adapters emitting transaction completion events"
+    - "Authentication services broadcasting session events"
+
+  # Preset configurations
+  presets:
+    default:
+      description: "Standard event bus configuration"
+      config:
+        event_bus_enabled: true
+        event_bus_type: "hybrid"
+        correlation_tracking: true
+        enable_event_logging: true
+        max_retry_attempts: 3
+        graceful_degradation: true
+
+    lightweight:
+      description: "Minimal overhead event publishing"
+      config:
+        event_bus_enabled: true
+        event_bus_type: "memory"
+        enable_event_logging: false
+        correlation_tracking: false
+        max_retry_attempts: 1
+        event_validation: false
+
+    reliable:
+      description: "High reliability with retry and DLQ"
+      config:
+        event_bus_enabled: true
+        event_bus_type: "redis"
+        max_retry_attempts: 5
+        retry_delay_ms: 2000
+        enable_dead_letter_queue: true
+        graceful_degradation: false
+        correlation_tracking: true
+
+    high_throughput:
+      description: "Optimized for high event volume"
+      config:
+        event_bus_enabled: true
+        event_bus_type: "kafka"
+        event_batch_size: 100
+        event_buffer_size: 1000
+        enable_event_logging: false
+        correlation_tracking: true
+        publish_timeout_ms: 1000
+
+    distributed_system:
+      description: "Multi-node event coordination"
+      config:
+        event_bus_enabled: true
+        event_bus_type: "redis"
+        correlation_tracking: true
+        routing_key_strategy: "topic_based"
+        enable_dead_letter_queue: true
+        max_retry_attempts: 3
+
+  # Generated code patterns
+  code_patterns:
+    inheritance: "class Node{Name}Effect(NodeEffectService, MixinEventBus):"
+
+    initialization: |
+      def __init__(self, container: ModelONEXContainer) -> None:
+          super().__init__(container)
+          # MixinEventBus retrieves event bus from container
+          self._event_bus = container.get_service("event_bus")
+          if not self._event_bus:
+              emit_log_event(
+                  LogLevel.WARNING,
+                  "Event bus not available in container",
+                  correlation_id=uuid4(),
+                  data={"node_id": str(self.node_id)}
+              )
+
+    methods:
+      - name: "publish_event"
+        signature: "async def publish_event(self, event_type: str, payload: dict[str, Any], correlation_id: UUID | None = None) -> bool"
+        description: "Publish an event to the event bus with optional correlation tracking"
+        example: |
+          success = await self.publish_event(
+              event_type="computation_completed",
+              payload={"result_count": 42, "duration_ms": 125},
+              correlation_id=input_data.correlation_id
+          )
+
+      - name: "emit_state_change_event"
+        signature: "async def emit_state_change_event(self, event_type: str, payload: dict[str, Any], correlation_id: UUID | None = None) -> bool"
+        description: "Emit a state change event with structured payload"
+        example: |
+          await self.emit_state_change_event(
+              event_type="database_write_completed",
+              payload={
+                  "operation_id": str(operation_id),
+                  "records_written": 10
+              },
+              correlation_id=correlation_id
+          )
+
+      - name: "subscribe_to_events"
+        signature: "async def subscribe_to_events(self, event_types: list[str], callback: Callable) -> str"
+        description: "Subscribe to specific event types with callback handler"
+        example: |
+          subscription_id = await self.subscribe_to_events(
+              event_types=["workflow_started", "workflow_completed"],
+              callback=self._handle_workflow_event
+          )
+
+      - name: "unsubscribe_from_events"
+        signature: "async def unsubscribe_from_events(self, subscription_id: str) -> bool"
+        description: "Unsubscribe from event types by subscription ID"
+
+      - name: "get_event_bus"
+        signature: "def get_event_bus(self) -> Any | None"
+        description: "Get the event bus instance from container"
+        example: |
+          event_bus = self.get_event_bus()
+          if event_bus:
+              logger.info("Event bus available")
+
+      - name: "validate_event_payload"
+        signature: "async def validate_event_payload(self, payload: dict[str, Any], event_type: str) -> bool"
+        description: "Validate event payload against schema for event type"
+
+      - name: "get_event_history"
+        signature: "async def get_event_history(self, event_type: str, limit: int = 100) -> list[ModelEventPayload]"
+        description: "Retrieve recent events of specified type"
+
+    properties:
+      - name: "is_event_bus_available"
+        type: "bool"
+        description: "Check if event bus is available"
+
+      - name: "events_published_count"
+        type: "int"
+        description: "Total number of events published"
+
+      - name: "event_publication_failures"
+        type: "int"
+        description: "Number of failed event publications"
+
+  # Implementation notes
+  implementation_notes:
+    - "Always retrieve event bus from container in __init__"
+    - "Handle event bus unavailability gracefully with fallback logging"
+    - "Include correlation_id in all event emissions for traceability"
+    - "Use structured payloads with ModelEventPayload for type safety"
+    - "Emit events after successful operation completion, not before"
+    - "Keep event payloads small and focused for performance"
+    - "Use appropriate event types from EnumEventType enumeration"
+    - "Log event emission failures for debugging and monitoring"
+    - "Validate event payloads when enable_event_validation is true"
+    - "Consider batching events for high-throughput scenarios"
+
+  # Performance considerations
+  performance:
+    overhead_per_event: "~5-20ms (depends on backend)"
+    memory_per_event: "~1-5KB (payload size dependent)"
+    recommended_batch_size: 10
+    typical_latencies:
+      memory: "~1ms"
+      redis: "~5-10ms"
+      kafka: "~10-20ms"
+      hybrid: "~5-15ms"
+
+    typical_use_cases:
+      - use_case: "State change notifications"
+        recommended_config: "default preset"
+        expected_overhead: "~10ms per event"
+
+      - use_case: "High-volume logging"
+        recommended_config: "high_throughput preset"
+        expected_overhead: "~1ms per event (batched)"
+
+      - use_case: "Critical workflow events"
+        recommended_config: "reliable preset"
+        expected_overhead: "~15ms per event (with retry)"
+
+      - use_case: "Distributed coordination"
+        recommended_config: "distributed_system preset"
+        expected_overhead: "~10ms per event"
+
+  # Testing guidance
+  testing:
+    unit_tests:
+      - "Test event publishing with mock event bus"
+      - "Test event payload validation"
+      - "Test correlation ID propagation"
+      - "Test graceful degradation when event bus unavailable"
+      - "Test event subscription and callback invocation"
+      - "Test event publishing retry logic"
+
+    integration_tests:
+      - "Test event publishing to real event bus backend"
+      - "Test event routing and delivery"
+      - "Test event correlation across multiple nodes"
+      - "Test event bus failure and recovery"
+      - "Test dead letter queue for failed events"
+
+    mock_scenarios:
+      - scenario: "Event bus available"
+        setup: "Mock event bus returns success"
+        expected: "Event published successfully, returns True"
+
+      - scenario: "Event bus unavailable"
+        setup: "Mock event bus raises exception"
+        expected: "Graceful degradation, log warning, return False"
+
+      - scenario: "Correlation ID tracking"
+        setup: "Publish multiple related events"
+        expected: "All events share same correlation_id"
+
+      - scenario: "Event validation failure"
+        setup: "Invalid event payload structure"
+        expected: "Validation error, event not published"
+
+  # Error handling
+  error_handling:
+    - error_type: "EventBusUnavailableError"
+      when: "Event bus service not found in container"
+      recommended_action: "Log warning, continue with graceful degradation"
+
+    - error_type: "EventPublicationError"
+      when: "Event bus rejects event publication"
+      recommended_action: "Retry with backoff, use dead letter queue"
+
+    - error_type: "EventValidationError"
+      when: "Event payload fails validation"
+      recommended_action: "Log validation errors, reject publication"
+
+    - error_type: "CorrelationIDMissingError"
+      when: "Correlation tracking enabled but ID missing"
+      recommended_action: "Generate new correlation ID, log warning"
+
+  # Monitoring and observability
+  observability:
+    metrics:
+      - "events_published_total" # Counter
+      - "event_publication_failures" # Counter
+      - "event_publication_latency_ms" # Histogram
+      - "event_payload_size_bytes" # Histogram
+      - "event_bus_availability" # Gauge (0=unavailable, 1=available)
+      - "events_by_type_total" # Counter per event type
+      - "correlation_chains_active" # Gauge
+
+    logs:
+      - level: "DEBUG"
+        message: "MIXIN_INIT: Initializing MixinEventBus"
+
+      - level: "DEBUG"
+        message: "EVENT_PUBLISH: Publishing event {event_type}"
+
+      - level: "INFO"
+        message: "EVENT_PUBLISHED: Event published successfully - {event_type}"
+
+      - level: "WARNING"
+        message: "EVENT_BUS_UNAVAILABLE: Event bus not available, using fallback"
+
+      - level: "ERROR"
+        message: "EVENT_PUBLISH_FAILED: Event publication failed - {error}"
+
+    events:
+      - "event.published"
+      - "event.publication.failed"
+      - "event.subscription.created"
+      - "event.subscription.removed"
+      - "event.bus.connected"
+      - "event.bus.disconnected"
+      - "event.validation.failed"
+
+  # Integration patterns
+  integration_patterns:
+    with_metrics:
+      description: "Track event publication metrics"
+      code: |
+        class EventAwareNode(NodeEffectService, MixinEventBus, MixinMetrics):
+            async def publish_tracked_event(self, event_type: str, payload: dict):
+                with self.metrics.timer("event_publication_duration"):
+                    success = await self.publish_event(event_type, payload)
+                    if success:
+                        self.metrics.increment("events_published_total")
+                        self.metrics.increment(f"events_by_type.{event_type}")
+                    else:
+                        self.metrics.increment("event_publication_failures")
+                    return success
+
+    with_retry:
+      description: "Retry failed event publications"
+      code: |
+        class ResilientEventNode(NodeEffectService, MixinEventBus, MixinRetry):
+            async def publish_with_retry(self, event_type: str, payload: dict):
+                return await self.with_retry(
+                    self.publish_event,
+                    event_type=event_type,
+                    payload=payload,
+                    max_attempts=3
+                )
+
+    with_health_check:
+      description: "Include event bus in health checks"
+      code: |
+        class HealthAwareEventNode(NodeEffectService, MixinEventBus, MixinHealthCheck):
+            def get_health_checks(self):
+                return [
+                    self._check_event_bus_availability,
+                    self._check_event_publication_health
+                ]
+
+            def _check_event_bus_availability(self) -> ModelHealthStatus:
+                if self.is_event_bus_available:
+                    return ModelHealthStatus(
+                        status=EnumNodeHealthStatus.HEALTHY,
+                        message="Event bus available"
+                    )
+                return ModelHealthStatus(
+                    status=EnumNodeHealthStatus.DEGRADED,
+                    message="Event bus unavailable"
+                )
+
+    with_caching:
+      description: "Cache event subscriptions"
+      code: |
+        class CachedEventNode(NodeEffectService, MixinEventBus, MixinCaching):
+            @cached(ttl_seconds=300)
+            async def get_cached_event_history(self, event_type: str):
+                return await self.get_event_history(event_type, limit=100)
+
+  # Example implementations
+  examples:
+    effect_node:
+      description: "Effect node emitting state change events"
+      code: |
+        class NodeDatabaseWriterEffect(NodeEffectService, MixinEventBus):
+            async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
+                # Perform database write operation
+                result = await self._write_to_database(input_data)
+
+                # Emit state change event
+                await self.emit_state_change_event(
+                    event_type="database_write_completed",
+                    payload={
+                        "operation_id": str(input_data.operation_id),
+                        "records_written": result["count"],
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    correlation_id=input_data.operation_id
+                )
+
+                return ModelEffectOutput(
+                    result=ModelEffectResultDict(value=result),
+                    operation_id=input_data.operation_id,
+                    effect_type=input_data.effect_type,
+                    transaction_state=TransactionState.COMMITTED,
+                    processing_time_ms=result["duration_ms"],
+                    retry_count=0
+                )
+
+    compute_node:
+      description: "Compute node publishing calculation results"
+      code: |
+        class NodeDataTransformerCompute(NodeComputeService, MixinEventBus):
+            async def compute(self, input_data: ModelComputeInput) -> ModelComputeOutput:
+                # Perform computation
+                result = await self._transform_data(input_data)
+
+                # Publish computation result event
+                await self.publish_event(
+                    event_type="computation_completed",
+                    payload={
+                        "computation_id": str(input_data.computation_id),
+                        "output_size": len(result),
+                        "processing_time_ms": result["duration_ms"]
+                    },
+                    correlation_id=input_data.correlation_id
+                )
+
+                return result
+
+    orchestrator_node:
+      description: "Orchestrator node coordinating via events"
+      code: |
+        class NodeWorkflowOrchestrator(NodeOrchestratorService, MixinEventBus):
+            async def orchestrate(self, input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput:
+                # Emit workflow started event
+                await self.publish_event(
+                    event_type="workflow_started",
+                    payload={"workflow_id": str(input_data.workflow_id)},
+                    correlation_id=input_data.correlation_id
+                )
+
+                try:
+                    # Execute workflow
+                    result = await self._execute_workflow(input_data)
+
+                    # Emit workflow completed event
+                    await self.publish_event(
+                        event_type="workflow_completed",
+                        payload={
+                            "workflow_id": str(input_data.workflow_id),
+                            "status": "success",
+                            "steps_completed": result["steps"]
+                        },
+                        correlation_id=input_data.correlation_id
+                    )
+
+                    return result
+
+                except Exception as e:
+                    # Emit workflow failed event
+                    await self.publish_event(
+                        event_type="workflow_failed",
+                        payload={
+                            "workflow_id": str(input_data.workflow_id),
+                            "error": str(e),
+                            "status": "failed"
+                        },
+                        correlation_id=input_data.correlation_id
+                    )
+                    raise
+
+  # Event types and structure
+  event_structure:
+    base_model: "ModelEventPayload"
+    location: "omnibase_core.models.operations.model_event_payload"
+
+    supported_event_types:
+      SYSTEM:
+        value: "system"
+        description: "System-level events and notifications"
+        severity: "info"
+        priority: "normal"
+        data_model: "ModelSystemEventData"
+        use_cases:
+          - "System health status changes"
+          - "Service start/stop events"
+          - "Configuration updates"
+          - "Resource allocation changes"
+
+      USER:
+        value: "user"
+        description: "User-initiated actions and requests"
+        severity: "info"
+        priority: "high"
+        data_model: "ModelUserEventData"
+        use_cases:
+          - "User authentication events"
+          - "User action tracking"
+          - "Session management events"
+          - "Authorization changes"
+
+      WORKFLOW:
+        value: "workflow"
+        description: "Workflow execution and orchestration events"
+        severity: "debug"
+        priority: "normal"
+        data_model: "ModelWorkflowEventData"
+        use_cases:
+          - "Workflow started/completed events"
+          - "Step execution progress"
+          - "State machine transitions"
+          - "Orchestration coordination"
+
+      ERROR:
+        value: "error"
+        description: "Error conditions and exception events"
+        severity: "error"
+        priority: "critical"
+        data_model: "ModelErrorEventData"
+        use_cases:
+          - "Exception notifications"
+          - "Operation failures"
+          - "Error recovery attempts"
+          - "Critical system errors"
+
+    payload_structure:
+      required_fields:
+        - field: "event_type"
+          type: "EnumEventType"
+          description: "Discriminated event type (SYSTEM, USER, WORKFLOW, ERROR)"
+
+        - field: "event_data"
+          type: "EventDataUnion"
+          description: "Event-specific data with discriminated union"
+
+        - field: "routing_info"
+          type: "ModelEventRoutingInfo"
+          description: "Structured event routing information"
+
+      optional_fields:
+        - field: "correlation_id"
+          type: "UUID | None"
+          description: "Event correlation identifier for chain tracking"
+
+        - field: "causation_id"
+          type: "UUID | None"
+          description: "Event causation identifier (parent event)"
+
+        - field: "session_id"
+          type: "UUID | None"
+          description: "Session identifier for user context"
+
+        - field: "tenant_id"
+          type: "UUID | None"
+          description: "Tenant identifier for multi-tenancy"
+
+      metadata_fields:
+        - field: "timestamp"
+          type: "str"
+          description: "ISO 8601 timestamp"
+
+        - field: "source_info"
+          type: "ModelEventSourceInfo"
+          description: "Event source service and instance information"
+
+        - field: "attributes"
+          type: "ModelEventAttributeInfo"
+          description: "Event attributes (category, importance, tags)"
+
+        - field: "context"
+          type: "ModelEventContextInfo"
+          description: "Event context (environment, version)"
+
+  # Protocol integration
+  protocol_integration:
+    protocol_name: "ProtocolEventBus"
+    protocol_location: "omnibase_core.protocols.protocol_event_bus"
+
+    service_resolution:
+      by_protocol: 'container.get_service(ProtocolEventBus)'
+      by_name: 'container.get_service("event_bus")'
+
+    protocol_methods:
+      - signature: "async def emit_event(self, event_type: str, payload: dict[str, Any], correlation_id: UUID | None) -> bool"
+        description: "Emit event to event bus"
+
+      - signature: "async def subscribe(self, event_types: list[str], handler: Callable) -> str"
+        description: "Subscribe to event types with handler"
+
+      - signature: "async def unsubscribe(self, subscription_id: str) -> bool"
+        description: "Unsubscribe from events"
+
+      - signature: "async def get_event_history(self, event_type: str, limit: int) -> list[ModelEventPayload]"
+        description: "Retrieve recent events by type"
+
+  # Best practices
+  best_practices:
+    - title: "Always include correlation IDs"
+      description: "Use correlation IDs for event chain tracking and debugging"
+      severity: "high"
+      example: "await self.publish_event(event_type, payload, correlation_id=operation_id)"
+
+    - title: "Handle event bus unavailability gracefully"
+      description: "Implement fallback behavior when event bus is unavailable"
+      severity: "high"
+      example: "Check self.is_event_bus_available before publishing critical events"
+
+    - title: "Emit events after successful operations"
+      description: "Only emit events after operation completion, not before"
+      severity: "medium"
+      example: "Perform database write, then emit event on success"
+
+    - title: "Keep event payloads focused"
+      description: "Include only relevant data in event payloads for performance"
+      severity: "medium"
+      example: "Use summary data instead of full objects in payloads"
+
+    - title: "Use appropriate event types"
+      description: "Select correct EnumEventType for proper routing and handling"
+      severity: "medium"
+      example: "Use ERROR type for failures, WORKFLOW for orchestration"
+
+    - title: "Validate event payloads"
+      description: "Enable validation to catch payload structure errors early"
+      severity: "low"
+      example: "Set enable_event_validation: true in configuration"
+
+  # Common pitfalls
+  common_pitfalls:
+    - issue: "Missing correlation IDs"
+      description: "Events without correlation IDs break traceability chains"
+      solution: "Always pass correlation_id from input to event publication"
+      severity: "high"
+
+    - issue: "Blocking on event publication"
+      description: "Synchronous event publication blocks node execution"
+      solution: "Use async publish_event() method in async contexts"
+      severity: "high"
+
+    - issue: "Large event payloads"
+      description: "Large payloads impact event bus performance"
+      solution: "Keep payloads small, store large data elsewhere with references"
+      severity: "medium"
+
+    - issue: "Ignoring publication failures"
+      description: "Silent failures make debugging difficult"
+      solution: "Log event publication failures for monitoring"
+      severity: "medium"
+
+    - issue: "Emitting events before operation completion"
+      description: "Events indicate completion before operation finishes"
+      solution: "Emit events only after successful operation completion"
+      severity: "low"
+
+  # Version history
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition for autonomous code generation"
+        - "Support for 4 event types (SYSTEM, USER, WORKFLOW, ERROR)"
+        - "Structured event payloads with ModelEventPayload"
+        - "Correlation ID tracking for event chains"
+        - "Graceful degradation when event bus unavailable"
+        - "5 preset configurations for common use cases"
+        - "Integration patterns with other mixins"
+        - "Example implementations for all node types"
+        - "Comprehensive error handling and observability"
+
+# =============================================================================
+# MixinCircuitBreaker - Circuit Breaker Fault Tolerance Pattern
+# =============================================================================
+mixin_circuit_breaker:
+  name: "MixinCircuitBreaker"
+  description: "Circuit breaker pattern implementation for fault tolerance with failure threshold detection and automatic recovery"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "resilience"
+
+  requires:
+    - "omnibase_core.core.onex_container"
+    - "omnibase_core.exceptions"
+    - "omnibase_core.logging.structured"
+    - "datetime"
+    - "asyncio"
+
+  compatible_with:
+    - "MixinRetry"
+    - "MixinMetrics"
+    - "MixinLogging"
+    - "MixinHealthCheck"
+
+  incompatible_with: []
+
+  config_schema:
+    failure_threshold:
+      type: "integer"
+      minimum: 1
+      maximum: 100
+      default: 5
+    success_threshold:
+      type: "integer"
+      minimum: 1
+      maximum: 20
+      default: 2
+    timeout_seconds:
+      type: "integer"
+      minimum: 1
+      maximum: 300
+      default: 60
+
+  usage_examples:
+    - "API clients protecting against cascading external service failures"
+    - "Database adapters preventing connection pool exhaustion"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"
+
+# =============================================================================
+# MixinLogging - Structured Logging
+# =============================================================================
+mixin_logging:
+  name: "MixinLogging"
+  description: "Structured logging with context preservation, correlation IDs, and ONEX-compliant log events"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "observability"
+
+  requires:
+    - "omnibase_core.logging.structured"
+    - "omnibase_core.enums.enum_log_level"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinMetrics"
+    - "MixinHealthCheck"
+
+  incompatible_with: []
+
+  config_schema:
+    log_level:
+      type: "string"
+      enum: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+      default: "INFO"
+    enable_context_logging:
+      type: "boolean"
+      default: true
+
+  usage_examples:
+    - "All ONEX nodes for standardized logging"
+    - "Debug logging with correlation tracking"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"
+
+# =============================================================================
+# MixinMetrics - Performance Metrics
+# =============================================================================
+mixin_metrics:
+  name: "MixinMetrics"
+  description: "Performance metrics collection, aggregation, and export with Prometheus/OpenTelemetry support"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "observability"
+
+  requires:
+    - "omnibase_core.core.onex_container"
+    - "omnibase_core.logging.structured"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinLogging"
+    - "MixinHealthCheck"
+    - "MixinCaching"
+
+  incompatible_with: []
+
+  config_schema:
+    metrics_backend:
+      type: "string"
+      enum: ["prometheus", "opentelemetry", "statsd"]
+      default: "prometheus"
+    enable_histograms:
+      type: "boolean"
+      default: true
+
+  usage_examples:
+    - "All ONEX nodes for performance monitoring"
+    - "API endpoints tracking request latency"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"
+
+# =============================================================================
+# MixinSecurity - Security and Redaction
+# =============================================================================
+mixin_security:
+  name: "MixinSecurity"
+  description: "Security features including sensitive field redaction and input sanitization"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "security"
+
+  requires:
+    - "omnibase_core.core.onex_container"
+    - "omnibase_core.logging.structured"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinValidation"
+    - "MixinLogging"
+
+  incompatible_with: []
+
+  config_schema:
+    enable_redaction:
+      type: "boolean"
+      default: true
+    sensitive_field_patterns:
+      type: "array"
+      items:
+        type: "string"
+      default: ["password", "secret", "token", "key"]
+
+  usage_examples:
+    - "API clients redacting sensitive authentication data"
+    - "Configuration loaders sanitizing secrets"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"
+
+# =============================================================================
+# MixinValidation - Input Validation
+# =============================================================================
+mixin_validation:
+  name: "MixinValidation"
+  description: "Fail-fast input validation with consistent error handling"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "reliability"
+
+  requires:
+    - "omnibase_core.exceptions"
+    - "omnibase_core.core.errors.core_errors"
+    - "omnibase_core.logging.structured"
+
+  compatible_with:
+    - "MixinLogging"
+    - "MixinSecurity"
+
+  incompatible_with:
+    - "MixinRetry"
+
+  config_schema:
+    enable_fail_fast:
+      type: "boolean"
+      default: true
+    strict_type_checking:
+      type: "boolean"
+      default: true
+
+  usage_examples:
+    - "All ONEX nodes validating input contracts"
+    - "API endpoints validating request payloads"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"
+
+# =============================================================================
+# MixinSerialization - Canonical Serialization
+# =============================================================================
+mixin_serialization:
+  name: "MixinSerialization"
+  description: "Canonical YAML/JSON serialization with deterministic output"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "data_management"
+
+  requires:
+    - "omnibase_core.protocol.protocol_canonical_serializer"
+    - "omnibase_core.models.core.model_node_metadata"
+    - "pydantic"
+    - "yaml"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinLogging"
+
+  incompatible_with: []
+
+  config_schema:
+    serialization_format:
+      type: "string"
+      enum: ["yaml", "json"]
+      default: "yaml"
+    enable_canonical_mode:
+      type: "boolean"
+      default: true
+
+  usage_examples:
+    - "All ONEX nodes for contract serialization"
+    - "Metadata stampers producing deterministic hashes"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-10-14"
+      changes:
+        - "Initial metadata definition"

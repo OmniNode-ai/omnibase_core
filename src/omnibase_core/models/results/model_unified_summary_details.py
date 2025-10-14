@@ -1,17 +1,31 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Any
 
-from omnibase_core.models.types import MetadataValue
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelUnifiedSummaryDetails(BaseModel):
     """
-    Define canonical fields for summary details, extend as needed
+    Define canonical fields for summary details, extend as needed.
+
+    Uses ModelSchemaValue for strongly-typed, discriminated union values.
+    Automatically converts raw values to ModelSchemaValue.
     """
 
-    key: str | None = None
-    value: MetadataValue | None = None
-    # Add more fields as needed for protocol
+    key: str | None = Field(None, description="Detail key identifier")
+    value: ModelSchemaValue | None = Field(
+        None, description="Strongly-typed detail value"
+    )
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def convert_to_schema_value(cls, v: Any) -> ModelSchemaValue | None:
+        """Automatically convert raw values to ModelSchemaValue."""
+        if v is None or isinstance(v, ModelSchemaValue):
+            return v
+        return ModelSchemaValue.from_value(v)
 
     model_config = {"arbitrary_types_allowed": True}

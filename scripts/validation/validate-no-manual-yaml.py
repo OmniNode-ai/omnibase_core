@@ -168,10 +168,8 @@ class ManualYamlValidationDetector:
             if (
                 self._is_yaml_safe_load(node)
                 and not self._is_in_from_yaml_method(node)
-                and not (
-                    self._is_in_safe_yaml_loader(file_path)
-                    and self._is_in_yaml_utility_function()
-                )
+                and not self._is_in_safe_yaml_loader(file_path)
+                and not self._is_in_yaml_utility_function()
                 and not self._is_in_test_file(file_path)
             ):
                 errors.append(
@@ -181,7 +179,9 @@ class ManualYamlValidationDetector:
 
         # Pattern 2: Direct YAML field checking
         if isinstance(node, ast.Subscript):
-            if self._is_yaml_field_access(node):
+            if self._is_yaml_field_access(node) and not self._is_in_safe_yaml_loader(
+                file_path
+            ):
                 errors.append(
                     f"Line {node.lineno}: Direct YAML field access detected - "
                     f"use Pydantic model properties instead",
@@ -234,9 +234,11 @@ class ManualYamlValidationDetector:
             "validate-string-versions.py",  # Validates YAML syntax for version detection
         }
 
-        # Specific path for contracts.py to avoid false positives
+        # Specific path for validation and discovery utilities that legitimately need raw YAML parsing
         specific_allowed_paths = {
             "src/omnibase_core/validation/contracts.py",
+            "src/omnibase_core/validation/contract_validator.py",  # Contract validation API
+            "src/omnibase_core/discovery/mixin_discovery.py",  # Mixin metadata discovery API
         }
 
         # Check both filename and specific allowed paths

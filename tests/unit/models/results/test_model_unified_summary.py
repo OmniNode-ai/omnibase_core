@@ -282,7 +282,7 @@ class TestModelUnifiedSummaryDetailsField:
         )
 
         assert summary.details.key == "coverage"
-        assert summary.details.value == "85.5"
+        assert summary.details.value.string_value == "85.5"
 
     def test_details_field_optional(self):
         """Test that details field is optional."""

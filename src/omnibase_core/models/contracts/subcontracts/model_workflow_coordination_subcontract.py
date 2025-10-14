@@ -1,6 +1,12 @@
 """
 Workflow Coordination Subcontract Model - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Dedicated subcontract model for workflow coordination functionality providing:
 - Workflow instance management and tracking
 - Node assignment and coordination
@@ -13,6 +19,8 @@ providing clean separation between node logic and workflow coordination behavior
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
+
+from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +38,9 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     subcontract_name: str = Field(
         default="workflow_coordination_subcontract",

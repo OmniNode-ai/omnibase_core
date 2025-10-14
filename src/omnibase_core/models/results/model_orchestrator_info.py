@@ -44,7 +44,7 @@ class ModelOrchestratorInfo(BaseModel):
     workflow_status: str | None = Field(None, description="Workflow status")
 
     # Execution context
-    execution_id: UUID | None = Field(None, description="Execution identifier")
+    execution_id: str | None = Field(None, description="Execution identifier")
     parent_execution_id: UUID | None = Field(None, description="Parent execution ID")
     root_execution_id: UUID | None = Field(None, description="Root execution ID")
 

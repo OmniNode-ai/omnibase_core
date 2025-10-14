@@ -13,7 +13,6 @@ from enum import Enum
 from typing import Generic, TypeVar
 
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Use ModelSchemaValue directly for ONEX compliance
@@ -54,15 +53,8 @@ class FieldConverter(Generic[T]):
             # Validate if validator provided
             if self.validator and not self.validator(result):
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Validation failed for field {self.field_name}",
-                    details=ModelErrorContext.with_context(
-                        {
-                            "field_name": ModelSchemaValue.from_value(self.field_name),
-                            "value": ModelSchemaValue.from_value(value),
-                            "converted_value": ModelSchemaValue.from_value(str(result)),
-                        },
-                    ),
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
             return result
@@ -75,15 +67,8 @@ class FieldConverter(Generic[T]):
                 return self.default_value
 
             raise OnexError(
-                code=CoreErrorCode.CONVERSION_ERROR,
                 message=f"Failed to convert field {self.field_name}: {e!s}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "field_name": ModelSchemaValue.from_value(self.field_name),
-                        "value": ModelSchemaValue.from_value(value),
-                        "error": ModelSchemaValue.from_value(str(e)),
-                    },
-                ),
+                error_code=CoreErrorCode.CONVERSION_ERROR,
             )
 
 
@@ -174,15 +159,8 @@ class ModelFieldConverterRegistry:
                 return default
 
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid {enum_class.__name__} value: {value}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "enum_class": ModelSchemaValue.from_value(enum_class.__name__),
-                        "invalid_value": ModelSchemaValue.from_value(value),
-                        "field_name": ModelSchemaValue.from_value(field_name),
-                    },
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
             )
 
         self._converters[field_name] = FieldConverter(
@@ -243,16 +221,8 @@ class ModelFieldConverterRegistry:
         """
         if field_name not in self._converters:
             raise OnexError(
-                code=CoreErrorCode.NOT_FOUND,
                 message=f"No converter registered for field: {field_name}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "field_name": ModelSchemaValue.from_value(field_name),
-                        "available_fields": ModelSchemaValue.from_value(
-                            ", ".join(self._converters.keys()),
-                        ),
-                    },
-                ),
+                error_code=CoreErrorCode.NOT_FOUND,
             )
 
         return self._converters[field_name].convert(value)

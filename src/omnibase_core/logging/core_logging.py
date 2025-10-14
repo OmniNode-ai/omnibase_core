@@ -42,7 +42,9 @@ def emit_log_event(level: LogLevel, message: str) -> None:
     try:
         loop = asyncio.get_running_loop()
         # Fire-and-forget task (intentionally not awaited)
-        _ = loop.create_task(_async_emit_via_logger(logger, level, message, correlation_id))
+        _ = loop.create_task(
+            _async_emit_via_logger(logger, level, message, correlation_id)
+        )
     except RuntimeError:
         # No event loop, use sync fallback
         logger.emit(level, message, correlation_id)

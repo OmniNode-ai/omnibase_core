@@ -107,7 +107,7 @@ class ModelEffectRetryConfig(BaseModel):
         if self.max_delay_ms <= self.base_delay_ms:
             msg = "max_delay_ms must be greater than base_delay_ms"
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=msg,
                 details=ModelErrorContext.with_context(
                     {

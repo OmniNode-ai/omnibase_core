@@ -11,7 +11,7 @@ from pydantic import Field
 from omnibase_core.models.core import ModelResultAccessor
 
 
-class TestResultModel(ModelResultAccessor):
+class SampleResultModel(ModelResultAccessor):
     """Test model with results and metadata fields for testing the accessor."""
 
     results: dict[str, Any] = Field(default_factory=dict)
@@ -23,7 +23,7 @@ class TestModelResultAccessor:
 
     def test_initialization_empty(self):
         """Test empty initialization."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Should be able to access methods
         assert hasattr(accessor, "get_result_value")
@@ -32,7 +32,7 @@ class TestModelResultAccessor:
 
     def test_get_result_value_from_results(self):
         """Test getting result value from results field."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set up results field with some data
         accessor.set_field("results", {})
@@ -49,7 +49,7 @@ class TestModelResultAccessor:
 
     def test_get_result_value_from_metadata_fallback(self):
         """Test getting result value falls back to metadata field."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set up metadata field with some data (no results field)
         accessor.set_field("metadata", {})
@@ -66,7 +66,7 @@ class TestModelResultAccessor:
 
     def test_get_result_value_priority_results_over_metadata(self):
         """Test that results field takes priority over metadata field."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set up both results and metadata with same key
         accessor.set_field("results", {})
@@ -79,7 +79,7 @@ class TestModelResultAccessor:
 
     def test_get_result_value_with_default(self):
         """Test getting result value with default when not found."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # No results or metadata set up
         assert accessor.get_result_value("nonexistent") is None
@@ -91,7 +91,7 @@ class TestModelResultAccessor:
 
     def test_set_result_value(self):
         """Test setting result values in results field."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set result values
         result1 = accessor.set_result_value("exit_code", 0)
@@ -113,7 +113,7 @@ class TestModelResultAccessor:
 
     def test_set_metadata_value(self):
         """Test setting metadata values in metadata field."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set metadata values
         result1 = accessor.set_metadata_value("processor", "v2.1.0")
@@ -133,7 +133,7 @@ class TestModelResultAccessor:
 
     def test_mixed_results_and_metadata_operations(self):
         """Test mixed operations with both results and metadata."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set some values in results
         accessor.set_result_value("output", "Result data")
@@ -158,7 +158,7 @@ class TestModelResultAccessor:
 
     def test_type_validation_string_values(self):
         """Test type validation for string values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set string values
         accessor.set_result_value("command", "test_command")
@@ -169,7 +169,7 @@ class TestModelResultAccessor:
 
     def test_type_validation_numeric_values(self):
         """Test type validation for numeric values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set numeric values
         accessor.set_result_value("exit_code", 0)
@@ -182,7 +182,7 @@ class TestModelResultAccessor:
 
     def test_type_validation_boolean_values(self):
         """Test type validation for boolean values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set boolean values
         accessor.set_result_value("success", True)
@@ -195,7 +195,7 @@ class TestModelResultAccessor:
 
     def test_invalid_type_handling(self):
         """Test handling of invalid types in get_result_value."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set up with invalid types that should be filtered out
         accessor.set_field("results", {})
@@ -211,7 +211,7 @@ class TestModelResultAccessor:
 
     def test_inheritance_from_field_accessor(self):
         """Test that result accessor inherits from base field accessor."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Should have base field accessor methods
         assert hasattr(accessor, "get_field")
@@ -221,7 +221,7 @@ class TestModelResultAccessor:
 
     def test_complex_cli_result_scenario(self):
         """Test complex CLI result scenario."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Simulate a complete CLI execution result
         # Set execution results
@@ -250,7 +250,7 @@ class TestModelResultAccessor:
 
     def test_overwrite_values(self):
         """Test overwriting existing values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set initial values
         accessor.set_result_value("status", "running")
@@ -270,7 +270,7 @@ class TestModelResultAccessor:
 
     def test_edge_case_zero_values(self):
         """Test edge cases with zero values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set zero values
         accessor.set_result_value("exit_code", 0)
@@ -284,7 +284,7 @@ class TestModelResultAccessor:
 
     def test_edge_case_false_values(self):
         """Test edge cases with False boolean values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set False values
         accessor.set_result_value("success", False)
@@ -296,7 +296,7 @@ class TestModelResultAccessor:
 
     def test_edge_case_empty_strings(self):
         """Test edge cases with empty string values."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set empty string values
         accessor.set_result_value("output", "")
@@ -308,7 +308,7 @@ class TestModelResultAccessor:
 
     def test_performance_result_scenario(self):
         """Test performance monitoring result scenario."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Performance metrics in results
         accessor.set_result_value("cpu_usage", 75.5)
@@ -332,7 +332,7 @@ class TestModelResultAccessor:
 
     def test_pydantic_compatibility(self):
         """Test compatibility with Pydantic model features."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Set some result and metadata values
         accessor.set_result_value("test_result", "test_value")
@@ -350,7 +350,7 @@ class TestModelResultAccessor:
 
     def test_configure_protocol_method(self):
         """Test configure method (Configurable protocol)."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         result = accessor.configure(
             results={"test": "value"},
@@ -364,7 +364,7 @@ class TestModelResultAccessor:
 
     def test_configure_with_invalid_attribute(self):
         """Test configure with non-existent attribute."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         result = accessor.configure(
             valid_field="value",
@@ -376,7 +376,7 @@ class TestModelResultAccessor:
 
     def test_configure_with_exception(self):
         """Test configure handles exceptions gracefully."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Try to configure with invalid type
         result = accessor.configure(results="invalid_type")
@@ -386,7 +386,7 @@ class TestModelResultAccessor:
 
     def test_serialize_protocol_method(self):
         """Test serialize method (Serializable protocol)."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         accessor.set_result_value("test", "value")
 
@@ -394,11 +394,11 @@ class TestModelResultAccessor:
 
         assert isinstance(serialized, dict)
         assert "accessor_type" in serialized
-        assert serialized["accessor_type"] == "TestResultModel"
+        assert serialized["accessor_type"] == "SampleResultModel"
 
     def test_serialize_includes_data_attributes(self):
         """Test serialize includes accessible data attributes."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         accessor.set_result_value("key1", "value1")
         accessor.set_metadata_value("key2", "value2")
@@ -411,7 +411,7 @@ class TestModelResultAccessor:
 
     def test_serialize_excludes_private_attributes(self):
         """Test serialize excludes private attributes."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         accessor._private_attr = "should_not_serialize"
 
@@ -421,7 +421,7 @@ class TestModelResultAccessor:
 
     def test_validate_instance_protocol_method(self):
         """Test validate_instance method (Validatable protocol)."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         result = accessor.validate_instance()
 
@@ -429,7 +429,7 @@ class TestModelResultAccessor:
 
     def test_validate_instance_with_data(self):
         """Test validate_instance with populated data."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         accessor.set_result_value("test", "value")
         accessor.set_metadata_value("meta", "data")
@@ -440,16 +440,16 @@ class TestModelResultAccessor:
 
     def test_get_name_protocol_method(self):
         """Test get_name method (Nameable protocol)."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         name = accessor.get_name()
 
         assert isinstance(name, str)
-        assert "TestResultModel" in name
+        assert "SampleResultModel" in name
 
     def test_set_name_protocol_method(self):
         """Test set_name method (Nameable protocol)."""
-        accessor = TestResultModel()
+        accessor = SampleResultModel()
 
         # Should not raise exception
         accessor.set_name("Custom Accessor Name")

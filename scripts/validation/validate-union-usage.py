@@ -428,8 +428,39 @@ class UnionUsageChecker(ast.NodeVisitor):
             return self._extract_forward_ref_from_subscript(slice_node.slice)
         return None
 
+    def _has_suppression_comment(self, line_number: int) -> bool:
+        """Check if the union has a suppression comment above it."""
+        if not self.file_content:
+            return False
+
+        lines = self.file_content.split("\n")
+        if line_number <= 0 or line_number > len(lines):
+            return False
+
+        # AST line numbers are 1-based, convert to 0-based index
+        # Check the lines before the union (up to 5 lines before)
+        for offset in range(1, min(6, line_number + 1)):
+            check_line_idx = line_number - offset - 1  # Convert to 0-based index
+            if check_line_idx >= 0 and check_line_idx < len(lines):
+                line = lines[check_line_idx].strip()
+                # Check for suppression comment formats
+                if "# union-ok:" in line or "# ONEX_VALIDATION_IGNORE:" in line:
+                    return True
+                # Stop searching if we hit a non-comment line
+                if line and not line.startswith("#"):
+                    break
+
+        return False
+
     def _analyze_union_pattern(self, union_pattern: UnionPattern) -> None:
         """Analyze a union pattern using legitimacy validation."""
+        # Check for suppression comment first
+        if self._has_suppression_comment(union_pattern.line):
+            # Skip validation for suppressed unions
+            self.legitimate_patterns.append(union_pattern)
+            self.legitimate_union_count += 1
+            return
+
         # Validate legitimacy using the new validator
         validation_result = self.legitimacy_validator.validate_union_legitimacy(
             union_pattern, self.file_content

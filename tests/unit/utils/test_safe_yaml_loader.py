@@ -50,7 +50,7 @@ class NestedTestModel(BaseModel):
     metadata: dict[str, Any]
 
 
-class TestModelWithValidation(BaseModel):
+class SampleModelWithValidation(BaseModel):
     """Test model with field validation."""
 
     email: str
@@ -201,7 +201,7 @@ age: 30
 """,
         )
 
-        result = load_and_validate_yaml_model(yaml_file, TestModelWithValidation)
+        result = load_and_validate_yaml_model(yaml_file, SampleModelWithValidation)
         assert result.email == "test@example.com"
         assert result.age == 30
 
@@ -216,7 +216,7 @@ age: 30
         )
 
         with pytest.raises(OnexError) as exc_info:
-            load_and_validate_yaml_model(yaml_file, TestModelWithValidation)
+            load_and_validate_yaml_model(yaml_file, SampleModelWithValidation)
         assert exc_info.value.error_code == CoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_unicode_content(self, tmp_path: Path) -> None:
@@ -573,7 +573,7 @@ examples:
         # Should raise an error due to YAML parsing failure
         with pytest.raises(OnexError) as exc_info:
             extract_example_from_schema(schema_file)
-        assert exc_info.value.code in [
+        assert exc_info.value.error_code in [
             CoreErrorCode.INTERNAL_ERROR,
             CoreErrorCode.VALIDATION_ERROR,
         ]

@@ -23,11 +23,12 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from enum import Enum
+from os import PathLike
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypeVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, Tag
+from pydantic import BaseModel, ConfigDict, Field, Tag
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -132,10 +133,7 @@ class ModelEffectInput(BaseModel):
     metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ModelEffectResultDict(BaseModel):
@@ -195,10 +193,7 @@ class ModelEffectOutput(BaseModel):
     metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Transaction:
@@ -485,7 +480,7 @@ class NodeEffect(NodeCoreBase):
                     caller_self = frame.f_locals["self"]
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
-                        if module and hasattr(module, "__file__"):
+                        if module and hasattr(module, "__file__") and module.__file__:
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
@@ -615,9 +610,10 @@ class NodeEffect(NodeCoreBase):
 
             # Create transaction if enabled
             if input_data.transaction_enabled:
-                transaction = Transaction(input_data.operation_id)
+                op_id = input_data.operation_id or uuid4()
+                transaction = Transaction(op_id)
                 transaction.state = TransactionState.ACTIVE
-                self.active_transactions[str(input_data.operation_id)] = transaction
+                self.active_transactions[str(op_id)] = transaction
 
             # Execute with semaphore limit
             async with self.effect_semaphore:
@@ -648,21 +644,21 @@ class NodeEffect(NodeCoreBase):
 
             # Wrap result in discriminated union based on type
             if isinstance(result, dict):
-                wrapped_result = ModelEffectResultDict(value=result)
+                wrapped_result: ModelEffectResult = ModelEffectResultDict(value=result)
             elif isinstance(result, bool):
-                wrapped_result = ModelEffectResultBool(value=result)
+                wrapped_result = ModelEffectResultBool(value=result)  # type: ignore[assignment]
             elif isinstance(result, str):
-                wrapped_result = ModelEffectResultStr(value=result)
+                wrapped_result = ModelEffectResultStr(value=result)  # type: ignore[assignment]
             elif isinstance(result, list):
-                wrapped_result = ModelEffectResultList(value=result)
+                wrapped_result = ModelEffectResultList(value=result)  # type: ignore[assignment]
             else:
                 # Fallback: convert to string
-                wrapped_result = ModelEffectResultStr(value=str(result))
+                wrapped_result = ModelEffectResultStr(value=str(result))  # type: ignore[assignment]
 
             # Create output
             output = ModelEffectOutput(
                 result=wrapped_result,
-                operation_id=input_data.operation_id,
+                operation_id=input_data.operation_id or uuid4(),
                 effect_type=input_data.effect_type,
                 transaction_state=(
                     transaction.state if transaction else TransactionState.COMMITTED
@@ -672,11 +668,13 @@ class NodeEffect(NodeCoreBase):
                 side_effects_applied=(
                     [str(op) for op in transaction.operations] if transaction else []
                 ),
-                metadata={
-                    "timeout_ms": input_data.timeout_ms,
-                    "transaction_enabled": input_data.transaction_enabled,
-                    "circuit_breaker_enabled": input_data.circuit_breaker_enabled,
-                },
+                metadata=_convert_to_scalar_dict(
+                    {
+                        "timeout_ms": input_data.timeout_ms,
+                        "transaction_enabled": input_data.transaction_enabled,
+                        "circuit_breaker_enabled": input_data.circuit_breaker_enabled,
+                    }
+                ),
             )
 
             emit_log_event(
@@ -1181,7 +1179,7 @@ class NodeEffect(NodeCoreBase):
 
             try:
                 # Get event bus from container
-                event_bus = self.container.get_service("event_bus")
+                event_bus: Any = self.container.get_service("event_bus")  # type: ignore[arg-type]
                 if not event_bus:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -1219,7 +1217,7 @@ class NodeEffect(NodeCoreBase):
         self.effect_handlers[EnumEffectType.FILE_OPERATION] = file_operation_handler
         self.effect_handlers[EnumEffectType.EVENT_EMISSION] = event_emission_handler
 
-    def get_introspection_data(self) -> dict:
+    def get_introspection_data(self) -> dict[str, Any]:  # type: ignore[override]
         """
         Get comprehensive introspection data for NodeEffect.
 
@@ -1339,7 +1337,7 @@ class NodeEffect(NodeCoreBase):
                 },
             }
 
-    def _extract_effect_operations(self) -> list:
+    def _extract_effect_operations(self) -> list[str]:
         """Extract available effect operations."""
         operations = [
             "process",
@@ -1367,7 +1365,7 @@ class NodeEffect(NodeCoreBase):
 
         return operations
 
-    def _extract_effect_io_specifications(self) -> dict:
+    def _extract_effect_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for effect operations."""
         return {
             "input_model": "omnibase.core.node_effect.ModelEffectInput",
@@ -1385,7 +1383,7 @@ class NodeEffect(NodeCoreBase):
             ],
         }
 
-    def _extract_effect_performance_characteristics(self) -> dict:
+    def _extract_effect_performance_characteristics(self) -> dict[str, Any]:
         """Extract performance characteristics specific to effect operations."""
         return {
             "expected_response_time_ms": f"< {self.default_timeout_ms}",
@@ -1401,7 +1399,7 @@ class NodeEffect(NodeCoreBase):
             "rollback_capabilities": True,
         }
 
-    def _extract_io_operations_configuration(self) -> dict:
+    def _extract_io_operations_configuration(self) -> dict[str, Any]:
         """Extract I/O operations configuration from contract."""
         try:
             io_ops = []
@@ -1433,7 +1431,7 @@ class NodeEffect(NodeCoreBase):
                 "io_operations": []
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _extract_effect_constraints(self) -> dict:
+    def _extract_effect_constraints(self) -> dict[str, Any]:
         """Extract effect constraints and requirements."""
         return {
             "requires_container": True,
@@ -1464,7 +1462,7 @@ class NodeEffect(NodeCoreBase):
         except Exception:
             return "unhealthy"  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_effect_metrics_sync(self) -> dict:
+    def _get_effect_metrics_sync(self) -> dict[str, Any]:
         """Get effect metrics synchronously for introspection."""
         try:
             # Get circuit breaker states
@@ -1498,7 +1496,7 @@ class NodeEffect(NodeCoreBase):
                 "error": str(e),
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_effect_resource_usage(self) -> dict:
+    def _get_effect_resource_usage(self) -> dict[str, Any]:
         """Get resource usage specific to effect operations."""
         try:
             return {
@@ -1520,7 +1518,7 @@ class NodeEffect(NodeCoreBase):
                 "status": "unknown"
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_transaction_status(self) -> dict:
+    def _get_transaction_status(self) -> dict[str, Any]:
         """Get transaction management status."""
         try:
             transaction_states = {}
@@ -1551,7 +1549,7 @@ class NodeEffect(NodeCoreBase):
                 "error": str(e),
             }  # fallback-ok: graceful degradation for optional functionality
 
-    def _get_circuit_breaker_status(self) -> dict:
+    def _get_circuit_breaker_status(self) -> dict[str, Any]:
         """Get circuit breaker status."""
         try:
             circuit_breaker_states = {}

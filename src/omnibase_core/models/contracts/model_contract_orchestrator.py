@@ -1,6 +1,13 @@
 """
 Orchestrator Contract Model - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Specialized contract model for NodeOrchestrator implementations providing:
 - Thunk emission patterns and deferred execution rules
 - Conditional branching logic and decision trees
@@ -11,6 +18,7 @@ Specialized contract model for NodeOrchestrator implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
@@ -33,6 +41,7 @@ from omnibase_core.models.contracts.model_thunk_emission_config import (
     ModelThunkEmissionConfig,
 )
 from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
+from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 
 class ModelContractOrchestrator(ModelContractBase):
@@ -45,6 +54,9 @@ class ModelContractOrchestrator(ModelContractBase):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # UUID correlation tracking for operational traceability
     correlation_id: UUID = Field(

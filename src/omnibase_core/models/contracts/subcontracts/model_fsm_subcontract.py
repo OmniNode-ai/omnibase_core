@@ -1,6 +1,13 @@
 """
 FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Dedicated subcontract model for finite state machine functionality providing:
 - State definitions with entry/exit actions and validation rules
 - Transition specifications with conditions, actions, and rollback
@@ -14,6 +21,7 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
@@ -38,6 +46,9 @@ class ModelFSMSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Core FSM identification
     state_machine_name: str = Field(

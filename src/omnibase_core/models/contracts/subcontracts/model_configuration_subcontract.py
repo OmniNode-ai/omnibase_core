@@ -1,6 +1,12 @@
 """
 Configuration Management Subcontract Model - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+
 Dedicated subcontract model for configuration management functionality providing:
 - Configuration source specification with priority handling
 - Validation rules and constraints for configuration data
@@ -15,6 +21,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from pathlib import Path
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -47,6 +54,9 @@ class ModelConfigurationSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     model_config = {
         "extra": "ignore",

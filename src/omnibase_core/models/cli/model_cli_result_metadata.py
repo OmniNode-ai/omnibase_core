@@ -241,20 +241,16 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Quality score must be between 0.0 and 1.0",
-            )
+            # error-ok: Test suite explicitly requires ValueError for validation methods
+            raise ValueError("Quality score must be between 0.0 and 1.0")
 
     def set_confidence_level(self, confidence: float) -> None:
         """Set the confidence level."""
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Confidence level must be between 0.0 and 1.0",
-            )
+            # error-ok: Test suite explicitly requires ValueError for validation methods
+            raise ValueError("Confidence level must be between 0.0 and 1.0")
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
         """Add resource usage information."""

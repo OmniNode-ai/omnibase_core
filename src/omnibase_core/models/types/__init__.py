@@ -1,29 +1,15 @@
 """
 ONEX Type System
 
-Centralized type definitions to eliminate Any types across the codebase.
+This package previously contained loose union type aliases.
+These have been removed in favor of strongly-typed Pydantic models.
+
+For dynamic values, use:
+- ModelSchemaValue: from omnibase_core.models.common.model_schema_value
+- ModelCliValue: from omnibase_core.models.infrastructure.model_cli_value
+
+ONEX Principle: Always use concrete Pydantic models with discriminated unions,
+never loose type aliases like str | int | float | bool.
 """
 
-from .model_onex_common_types import (
-    CliValue,
-    ConfigValue,
-    EnvValue,
-    JsonSerializable,
-    MetadataValue,
-    ParameterValue,
-    PropertyValue,
-    ResultValue,
-    ValidationValue,
-)
-
-__all__ = [
-    "CliValue",
-    "ConfigValue",
-    "EnvValue",
-    "JsonSerializable",
-    "MetadataValue",
-    "ParameterValue",
-    "PropertyValue",
-    "ResultValue",
-    "ValidationValue",
-]
+__all__: list[str] = []

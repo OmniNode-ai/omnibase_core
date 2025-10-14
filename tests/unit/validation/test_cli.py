@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.validation.cli import (
     ModelValidationSuite,
     create_parser,
@@ -51,7 +52,7 @@ class TestModelValidationSuite:
         """Test run_validation raises error for unknown validation type."""
         suite = ModelValidationSuite()
 
-        with pytest.raises(ValueError, match="Unknown validation type"):
+        with pytest.raises(OnexError, match="Unknown validation type"):
             suite.run_validation("nonexistent", tmp_path)
 
     def test_run_validation_filters_kwargs(self, tmp_path: Path) -> None:

@@ -411,7 +411,7 @@ class ModelONEXContainer:
         """
         from omnibase_core.infrastructure.node_base import NodeBase
 
-        return NodeBase(
+        return NodeBase(  # type: ignore[abstract]
             contract_path=contract_path,
             node_id=node_id,
             container=self,
@@ -606,7 +606,7 @@ def _create_enhanced_logger(level: LogLevel) -> ProtocolLogger:
         def error(self, message: str) -> None:
             self.emit_log_event_sync(LogLevel.ERROR, message, "error")
 
-    return ModelEnhancedLogger(level)
+    return ModelEnhancedLogger(level)  # type: ignore[return-value]
 
 
 def _create_workflow_factory() -> Any:

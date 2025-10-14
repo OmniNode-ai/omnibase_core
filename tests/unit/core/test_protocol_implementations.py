@@ -84,7 +84,7 @@ class TestProtocolWithComplexModels:
                 return {
                     "id": self.id,
                     "type": self.__class__.__name__,
-                    "fields": list(self.model_fields.keys()),
+                    "fields": list(self.__class__.model_fields.keys()),
                     "nested": {
                         "version": "1.0",
                         "created": "2024-01-01",

@@ -7,14 +7,30 @@ from pathlib import Path
 # Map of file -> line -> pragma to add
 FIXES = {
     "src/omnibase_core/infrastructure/node_architecture_validation.py": {
-        111: ("TestCompute(NodeCoreBase):", "TestCompute(NodeCoreBase):  # type: ignore[abstract]"),
-        180: ("TestEffect(NodeCoreBase):", "TestEffect(NodeCoreBase):  # type: ignore[abstract]"),
-        215: ("def test_onex_error_handling(self):", "def test_onex_error_handling(self) -> None:"),
+        111: (
+            "TestCompute(NodeCoreBase):",
+            "TestCompute(NodeCoreBase):  # type: ignore[abstract]",
+        ),
+        180: (
+            "TestEffect(NodeCoreBase):",
+            "TestEffect(NodeCoreBase):  # type: ignore[abstract]",
+        ),
+        215: (
+            "def test_onex_error_handling(self):",
+            "def test_onex_error_handling(self) -> None:",
+        ),
         451: None,  # unreachable - remove line
-        472: ("def _create_mock_container(self):", "def _create_mock_container(self) -> Any:  # type: ignore[return-value]"),
-        478: ("def _get_node_capabilities():", "def _get_node_capabilities() -> dict[str, bool]:"),
+        472: (
+            "def _create_mock_container(self):",
+            "def _create_mock_container(self) -> Any:  # type: ignore[return-value]",
+        ),
+        478: (
+            "def _get_node_capabilities():",
+            "def _get_node_capabilities() -> dict[str, bool]:",
+        ),
     }
 }
+
 
 def apply_fixes():
     for file_path_str, fixes in FIXES.items():
@@ -41,6 +57,7 @@ def apply_fixes():
         # Write back
         file_path.write_text("".join(lines))
         print(f"Updated {file_path}")
+
 
 if __name__ == "__main__":
     apply_fixes()

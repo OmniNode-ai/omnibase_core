@@ -96,25 +96,22 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
             # Validation successful if we reach here
 
-        except Exception as e:
-            # Re-raise validation errors with context
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract validation failed for {file_path}: {e}",
-            ) from e
+        except (
+            Exception
+        ) as e:  # fallback-ok: validation errors collected in list for batch reporting
+            # Add validation errors to list instead of raising
+            errors.append(f"Contract validation failed: {e}")
+            return errors
 
         # All validation is now handled by Pydantic model
         # Legacy manual validation removed for ONEX compliance
 
-    except OnexError:
-        # Re-raise OnexError as-is
-        raise
-    except Exception as e:
-        # Re-raise file reading errors with context
-        raise OnexError(
-            code=CoreErrorCode.FILE_ACCESS_ERROR,
-            message=f"Error reading file {file_path}: {e}",
-        ) from e
+    except (
+        Exception
+    ) as e:  # fallback-ok: file reading errors collected in list for batch reporting
+        # Add file reading errors to list instead of raising
+        errors.append(f"Error reading file: {e}")
+        return errors
 
     return errors
 

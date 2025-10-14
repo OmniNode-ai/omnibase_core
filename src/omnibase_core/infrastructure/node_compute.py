@@ -22,11 +22,12 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from os import PathLike
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -63,10 +64,7 @@ class ModelComputeInput(BaseModel, Generic[T_Input]):
     metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ModelComputeOutput(BaseModel, Generic[T_Output]):
@@ -85,10 +83,7 @@ class ModelComputeOutput(BaseModel, Generic[T_Output]):
     parallel_execution_used: bool = False
     metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ComputationCache:
@@ -323,10 +318,12 @@ class NodeCompute(NodeCoreBase):
                     if hasattr(caller_self, "__module__"):
                         module = inspect.getmodule(caller_self)
                         if module and hasattr(module, "__file__"):
-                            module_path = Path(module.__file__)
-                            contract_path = module_path.parent / CONTRACT_FILENAME
-                            if contract_path.exists():
-                                return contract_path
+                            module_file: str | PathLike[str] | None = module.__file__
+                            if module_file is not None:
+                                module_path = Path(module_file)
+                                contract_path = module_path.parent / CONTRACT_FILENAME
+                                if contract_path.exists():
+                                    return contract_path
 
             # Fallback: this shouldn't happen but provide error
             raise OnexError(
@@ -449,7 +446,7 @@ class NodeCompute(NodeCoreBase):
                         processing_time_ms=0.0,  # Cache hit
                         cache_hit=True,
                         parallel_execution_used=False,
-                        metadata={"cache_retrieval": True},
+                        metadata={"cache_retrieval": True},  # type: ignore[dict-item]
                     )
 
             # Execute computation
@@ -498,9 +495,9 @@ class NodeCompute(NodeCoreBase):
                 cache_hit=False,
                 parallel_execution_used=parallel_used,
                 metadata={
-                    "input_data_size": len(str(input_data.data)),
-                    "cache_enabled": input_data.cache_enabled,
-                    "parallel_enabled": input_data.parallel_enabled,
+                    "input_data_size": len(str(input_data.data)),  # type: ignore[dict-item]
+                    "cache_enabled": input_data.cache_enabled,  # type: ignore[dict-item]
+                    "parallel_enabled": input_data.parallel_enabled,  # type: ignore[dict-item]
                 },
             )
 
@@ -587,8 +584,8 @@ class NodeCompute(NodeCoreBase):
             computation_type="rsd_priority_calculation",
             cache_enabled=True,
             metadata={
-                "algorithm_version": "2.1.0",
-                "factor_weights": {
+                "algorithm_version": "2.1.0",  # type: ignore[dict-item]
+                "factor_weights": {  # type: ignore[dict-item]
                     "dependency_distance": 0.40,
                     "failure_surface": 0.25,
                     "time_decay": 0.15,
@@ -829,7 +826,7 @@ class NodeCompute(NodeCoreBase):
             current_avg * (total_ops - 1) + processing_time_ms
         ) / total_ops
 
-    def get_introspection_data(self) -> dict:
+    def get_introspection_data(self) -> dict[str, Any]:  # type: ignore[override]
         """
         Get comprehensive introspection data for NodeCompute.
 
@@ -949,7 +946,7 @@ class NodeCompute(NodeCoreBase):
                 },
             }
 
-    def _extract_compute_operations(self) -> list:
+    def _extract_compute_operations(self) -> list[str]:
         """Extract available computation operations."""
         operations = [
             "process",
@@ -973,7 +970,7 @@ class NodeCompute(NodeCoreBase):
 
         return operations
 
-    def _extract_compute_io_specifications(self) -> dict:
+    def _extract_compute_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for compute operations."""
         return {
             "input_model": "omnibase.core.node_compute.ModelComputeInput",
@@ -991,7 +988,7 @@ class NodeCompute(NodeCoreBase):
             ],
         }
 
-    def _extract_compute_performance_characteristics(self) -> dict:
+    def _extract_compute_performance_characteristics(self) -> dict[str, Any]:
         """Extract performance characteristics specific to computation operations."""
         return {
             "expected_response_time_ms": f"< {self.performance_threshold_ms}",
@@ -1005,7 +1002,7 @@ class NodeCompute(NodeCoreBase):
             "side_effects": False,
         }
 
-    def _extract_algorithm_configuration(self) -> dict:
+    def _extract_algorithm_configuration(self) -> dict[str, Any]:
         """Extract algorithm configuration from contract."""
         try:
             return {
@@ -1024,7 +1021,7 @@ class NodeCompute(NodeCoreBase):
             )
             return {"algorithm_type": "default_compute"}
 
-    def _extract_computation_constraints(self) -> dict:
+    def _extract_computation_constraints(self) -> dict[str, Any]:
         """Extract computation constraints and requirements."""
         return {
             "pure_function_requirement": True,
@@ -1055,7 +1052,7 @@ class NodeCompute(NodeCoreBase):
             # provides meaningful signal for monitoring without disrupting actual compute operations
             return "unhealthy"
 
-    def _get_compute_resource_usage(self) -> dict:
+    def _get_compute_resource_usage(self) -> dict[str, Any]:
         """Get resource usage specific to compute operations."""
         try:
             cache_stats = self.computation_cache.get_stats()
@@ -1077,7 +1074,7 @@ class NodeCompute(NodeCoreBase):
             )
             return {"status": "unknown"}
 
-    def _get_caching_status(self) -> dict:
+    def _get_caching_status(self) -> dict[str, Any]:
         """Get caching system status."""
         try:
             cache_stats = self.computation_cache.get_stats()
@@ -1099,7 +1096,7 @@ class NodeCompute(NodeCoreBase):
             )
             return {"enabled": False, "error": str(e)}
 
-    def _get_parallel_processing_status(self) -> dict:
+    def _get_parallel_processing_status(self) -> dict[str, Any]:
         """Get parallel processing status."""
         return {
             "enabled": True,
@@ -1109,7 +1106,7 @@ class NodeCompute(NodeCoreBase):
             "parallel_algorithm_support": True,
         }
 
-    def _get_computation_metrics_sync(self) -> dict:
+    def _get_computation_metrics_sync(self) -> dict[str, Any]:
         """Get computation metrics synchronously for introspection."""
         try:
             # Add cache statistics

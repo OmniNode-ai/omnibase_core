@@ -61,59 +61,31 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
 
     except ValidationError as ve:
         raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"YAML validation error for {path}: {ve}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model",
-                    ),
-                    "path": ModelSchemaValue.from_value(str(path)),
-                },
-            ),
-            cause=ve,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
+            operation="load_and_validate_yaml_model",
+            path=str(path),
         )
     except FileNotFoundError as e:
         raise OnexError(
-            code=CoreErrorCode.NOT_FOUND,
             message=f"YAML file not found: {path}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model",
-                    ),
-                    "path": ModelSchemaValue.from_value(str(path)),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.NOT_FOUND,
+            operation="load_and_validate_yaml_model",
+            path=str(path),
         )
     except yaml.YAMLError as e:
         raise OnexError(
-            code=CoreErrorCode.CONVERSION_ERROR,
             message=f"YAML parsing error for {path}: {e}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model",
-                    ),
-                    "path": ModelSchemaValue.from_value(str(path)),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.CONVERSION_ERROR,
+            operation="load_and_validate_yaml_model",
+            path=str(path),
         )
     except Exception as e:
         raise OnexError(
-            code=CoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML: {path}: {e}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_and_validate_yaml_model",
-                    ),
-                    "path": ModelSchemaValue.from_value(str(path)),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
+            operation="load_and_validate_yaml_model",
+            path=str(path),
         )
 
 
@@ -145,42 +117,21 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
 
     except ValidationError as ve:
         raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
             message=f"YAML validation error: {ve}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_yaml_content_as_model",
-                    ),
-                },
-            ),
-            cause=ve,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
+            operation="load_yaml_content_as_model",
         )
     except yaml.YAMLError as e:
         raise OnexError(
-            code=CoreErrorCode.CONVERSION_ERROR,
             message=f"YAML parsing error: {e}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_yaml_content_as_model",
-                    ),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.CONVERSION_ERROR,
+            operation="load_yaml_content_as_model",
         )
     except Exception as e:
         raise OnexError(
-            code=CoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML content: {e}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "load_yaml_content_as_model",
-                    ),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
+            operation="load_yaml_content_as_model",
         )
 
 
@@ -229,11 +180,9 @@ def _dump_yaml_content(
         yaml_str = yaml_str.replace("\r\n", "\n").replace("\r", "\n")
         if "\r" in yaml_str:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message="Carriage return found in YAML string",
-                details=ModelErrorContext.with_context(
-                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")},
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                operation="_dump_yaml_content",
             )
 
         # Validate UTF-8 encoding
@@ -241,23 +190,17 @@ def _dump_yaml_content(
             yaml_str.encode("utf-8")
         except UnicodeEncodeError as e:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid UTF-8 in YAML output: {e}",
-                details=ModelErrorContext.with_context(
-                    {"operation": ModelSchemaValue.from_value("_dump_yaml_content")},
-                ),
-                cause=e,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                operation="_dump_yaml_content",
             )
 
         return cast(str, yaml_str)
     except yaml.YAMLError as e:
         raise OnexError(
-            code=CoreErrorCode.CONVERSION_ERROR,
             message=f"YAML serialization error: {e}",
-            details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("_dump_yaml_content")},
-            ),
-            cause=e,
+            error_code=CoreErrorCode.CONVERSION_ERROR,
+            operation="_dump_yaml_content",
         )
 
 
@@ -300,16 +243,9 @@ def serialize_pydantic_model_to_yaml(
         return yaml_str
     except Exception as e:
         raise OnexError(
-            code=CoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize model to YAML: {e}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "serialize_pydantic_model_to_yaml",
-                    ),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
+            operation="serialize_pydantic_model_to_yaml",
         )
 
 
@@ -347,12 +283,9 @@ def serialize_data_to_yaml(
         return yaml_str
     except Exception as e:
         raise OnexError(
-            code=CoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize data to YAML: {e}",
-            details=ModelErrorContext.with_context(
-                {"operation": ModelSchemaValue.from_value("serialize_data_to_yaml")},
-            ),
-            cause=e,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
+            operation="serialize_data_to_yaml",
         )
 
 
@@ -384,52 +317,32 @@ def extract_example_from_schema(
         examples = schema_data.get("examples") if schema_data else None
         if not examples:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"No 'examples' section found in schema: {schema_path}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "operation": ModelSchemaValue.from_value(
-                            "extract_example_from_schema",
-                        ),
-                        "path": ModelSchemaValue.from_value(str(schema_path)),
-                        "example_index": ModelSchemaValue.from_value(example_index),
-                    },
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                operation="extract_example_from_schema",
+                path=str(schema_path),
+                example_index=example_index,
             )
 
         if example_index >= len(examples):
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Example index {example_index} out of range for schema: {schema_path}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "operation": ModelSchemaValue.from_value(
-                            "extract_example_from_schema",
-                        ),
-                        "path": ModelSchemaValue.from_value(str(schema_path)),
-                        "example_index": ModelSchemaValue.from_value(example_index),
-                        "examples_count": ModelSchemaValue.from_value(len(examples)),
-                    },
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                operation="extract_example_from_schema",
+                path=str(schema_path),
+                example_index=example_index,
+                examples_count=len(examples),
             )
 
         example = examples[example_index]
         if not isinstance(example, dict):
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Example at index {example_index} is not a dict in schema: {schema_path}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "operation": ModelSchemaValue.from_value(
-                            "extract_example_from_schema",
-                        ),
-                        "path": ModelSchemaValue.from_value(str(schema_path)),
-                        "example_index": ModelSchemaValue.from_value(example_index),
-                        "example_type": ModelSchemaValue.from_value(
-                            type(example).__name__,
-                        ),
-                    },
-                ),
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                operation="extract_example_from_schema",
+                path=str(schema_path),
+                example_index=example_index,
+                example_type=type(example).__name__,
             )
 
         # Convert example dict to ModelCustomProperties
@@ -456,16 +369,9 @@ def extract_example_from_schema(
         raise
     except Exception as e:
         raise OnexError(
-            code=CoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to extract example from schema: {schema_path}: {e}",
-            details=ModelErrorContext.with_context(
-                {
-                    "operation": ModelSchemaValue.from_value(
-                        "extract_example_from_schema",
-                    ),
-                    "path": ModelSchemaValue.from_value(str(schema_path)),
-                    "example_index": ModelSchemaValue.from_value(example_index),
-                },
-            ),
-            cause=e,
+            error_code=CoreErrorCode.INTERNAL_ERROR,
+            operation="extract_example_from_schema",
+            path=str(schema_path),
+            example_index=example_index,
         )

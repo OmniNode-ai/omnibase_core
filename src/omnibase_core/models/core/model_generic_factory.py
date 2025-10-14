@@ -93,7 +93,7 @@ class ModelGenericFactory(Generic[T]):
         """
         if name not in self._factories:
             raise OnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown factory: {name} for {self.model_class.__name__}",
                 details=ModelErrorContext.with_context(
                     {
@@ -122,7 +122,7 @@ class ModelGenericFactory(Generic[T]):
         """
         if builder_name not in self._builders:
             raise OnexError(
-                code=EnumCoreErrorCode.NOT_FOUND,
+                error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown builder: {builder_name} for {self.model_class.__name__}",
                 details=ModelErrorContext.with_context(
                     {

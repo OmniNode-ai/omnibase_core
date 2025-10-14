@@ -561,6 +561,9 @@ class OnexError(Exception):
             correlation_id if correlation_id is not None else uuid4()
         )
 
+        # Store the original error_code to preserve enum type (Pydantic converts to string)
+        self._error_code = error_code
+
         # Store simple context (no circular dependencies)
         self._simple_context = BasicErrorContext(
             file_path=context.get("file_path") if isinstance(context, dict) else None,
@@ -688,7 +691,7 @@ class OnexError(Exception):
     @property
     def error_code(self) -> str | OnexErrorCode | None:
         """Get the error code."""
-        return self.model.error_code
+        return self._error_code
 
     @property
     def status(self) -> EnumOnexStatus:
@@ -710,6 +713,11 @@ class OnexError(Exception):
         """Get the context information."""
         # Return context as dict from BasicErrorContext (no circular dependencies)
         return self._simple_context.to_dict()
+
+    @property
+    def details(self) -> dict[str, Any]:
+        """Get the error details (alias for context)."""
+        return self.context
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""

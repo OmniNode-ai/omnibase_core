@@ -4,7 +4,7 @@ Metadata Management Models
 Models for metadata collection, analytics, and field information.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     # Use proper protocol type during type checking when available
@@ -14,14 +14,14 @@ if TYPE_CHECKING:
         )
     except ImportError:
         # Structured fallback type for development when SPI unavailable
-        from omnibase_core.types.constraints import BasicValueType
-
-        ProtocolSupportedMetadataType = BasicValueType
+        # Use proper type alias with union instead of TypeVar assignment
+        # union-ok: ProtocolSupportedMetadataType must support all SPI-compatible metadata types
+        ProtocolSupportedMetadataType: TypeAlias = str | int | bool  # type: ignore[no-redef]
 else:
     # Runtime fallback using structured type constraints
-    from omnibase_core.types.constraints import BasicValueType
-
-    ProtocolSupportedMetadataType = BasicValueType
+    # Use proper type alias with union instead of TypeVar assignment
+    # union-ok: ProtocolSupportedMetadataType must support all SPI-compatible metadata types
+    ProtocolSupportedMetadataType: TypeAlias = str | int | bool
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 

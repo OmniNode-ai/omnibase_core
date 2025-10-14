@@ -17,11 +17,11 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
-    from omnibase_spi.protocols.core.protocol_workflow_reducer import (
+    from omnibase_spi.protocols.workflow_orchestration.protocol_workflow_reducer import (
         ProtocolWorkflowReducer as WorkflowReducerInterface,
     )
 else:
-    from omnibase_spi.protocols.core import protocol_workflow_reducer
+    from omnibase_spi.protocols.workflow_orchestration import protocol_workflow_reducer
 
     WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
 
@@ -241,7 +241,9 @@ class NodeBase(
         self._container = container
 
         # Store contract and configuration
-        business_logic_pattern = contract_content.tool_specification.business_logic_pattern
+        business_logic_pattern = (
+            contract_content.tool_specification.business_logic_pattern
+        )
         # Handle both string and enum cases
         pattern_value = (
             business_logic_pattern.value
@@ -577,7 +579,7 @@ class NodeBase(
 
     # ===== REDUCER IMPLEMENTATION =====
 
-    def initial_state(self) -> ModelState:
+    def initial_state(self) -> ModelState:  # type: ignore[override]
         """
         Returns the initial state for the reducer.
 
@@ -586,7 +588,7 @@ class NodeBase(
         """
         return ModelState()
 
-    def dispatch(self, state: ModelState, action: ModelAction) -> ModelState:
+    def dispatch(self, state: ModelState, action: ModelAction) -> ModelState:  # type: ignore[override]
         """
         Synchronous state transition for simple operations.
 
@@ -595,7 +597,7 @@ class NodeBase(
         """
         return state
 
-    async def dispatch_async(
+    async def dispatch_async(  # type: ignore[override]
         self,
         state: ModelState,
         action: ModelAction,
@@ -654,7 +656,7 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
 
-    def create_workflow(self) -> Any | None:
+    def create_workflow(self) -> Any | None:  # type: ignore[override]
         """
         Factory method for creating LlamaIndex workflow instances.
 

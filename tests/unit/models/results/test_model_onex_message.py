@@ -188,7 +188,7 @@ class TestModelOnexMessageContextField:
         message = ModelOnexMessage(summary="Context message", context=context)
 
         assert message.context.key == "variable_name"
-        assert message.context.value == "test_value"
+        assert message.context.value.string_value == "test_value"
 
     def test_context_field_optional(self):
         """Test that context field is optional."""

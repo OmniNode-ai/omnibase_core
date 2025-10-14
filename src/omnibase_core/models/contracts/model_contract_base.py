@@ -1,6 +1,20 @@
 """
 Contract Model Base - ONEX Standards Compliant.
 
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+This interface is used by autonomous code generation systems.
+Any breaking changes require:
+1. Semantic version bump (INTERFACE_VERSION.bump_major())
+2. Migration guide for existing contracts
+3. Deprecation period with warnings (minimum 1 minor version)
+4. Update to contract validation system
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions
+- Existing fields cannot be removed or have types/constraints changed
+
 Abstract foundation for 4-node architecture contract models providing:
 - Core contract identification and versioning
 - Node type classification with EnumNodeType
@@ -12,7 +26,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import cast
+from typing import ClassVar, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -39,6 +53,9 @@ class ModelContractBase(BaseModel, ABC):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Core contract identification
     name: str = Field(
@@ -209,31 +226,23 @@ class ModelContractBase(BaseModel, ABC):
         """
         if not isinstance(v, list):
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract dependencies must be a list, got {type(v).__name__}",
-                details=cls._create_error_context(
-                    {
-                        "input_type": type(v).__name__,
-                        "expected_type": "list",
-                        "example": '[{"name": "ProtocolEventBus", "module": "omnibase_core.protocol"}]',
-                    },
-                ),
+                input_type=type(v).__name__,
+                expected_type="list",
+                example='[{"name": "ProtocolEventBus", "module": "omnibase_core.protocol"}]',
             )
 
         # Memory safety check: prevent unbounded list growth
         max_dependencies = 100  # Same as Field max_length constraint
         if len(v) > max_dependencies:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Too many dependencies: {len(v)}. Maximum allowed: {max_dependencies}",
-                details=cls._create_error_context(
-                    {
-                        "dependency_count": len(v),
-                        "max_allowed": max_dependencies,
-                        "memory_safety": "Prevents memory exhaustion with large dependency lists",
-                        "suggestion": "Consider using pagination or breaking into smaller contracts",
-                    },
-                ),
+                dependency_count=len(v),
+                max_allowed=max_dependencies,
+                memory_safety="Prevents memory exhaustion with large dependency lists",
+                suggestion="Consider using pagination or breaking into smaller contracts",
             )
 
     @classmethod
@@ -375,20 +384,16 @@ class ModelContractBase(BaseModel, ABC):
 
         # Single comprehensive error with all validation issues
         raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+            error_code=CoreErrorCode.VALIDATION_ERROR,
             message=f"Batch validation failed: {len(error_details)} invalid dependencies found",
-            details=cls._create_error_context(
-                {
-                    "validation_errors": error_details,
-                    "total_dependencies": len(string_deps) + len(invalid_deps),
-                    "security_policy": "String dependencies rejected to prevent injection attacks",
-                    "allowed_types": ["ModelDependency", "dict (YAML only)"],
-                    "example_format": {
-                        "name": "ProtocolEventBus",
-                        "module": "omnibase_core.protocol",
-                    },
-                },
-            ),
+            validation_errors=error_details,
+            total_dependencies=len(string_deps) + len(invalid_deps),
+            security_policy="String dependencies rejected to prevent injection attacks",
+            allowed_types=["ModelDependency", "dict (YAML only)"],
+            example_format={
+                "name": "ProtocolEventBus",
+                "module": "omnibase_core.protocol",
+            },
         )
 
     @classmethod
@@ -456,19 +461,15 @@ class ModelContractBase(BaseModel, ABC):
         # Report all conversion errors at once if any occurred
         if conversion_errors:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Batch YAML dependency conversion failed: {len(conversion_errors)} errors",
-                details=cls._create_error_context(
-                    {
-                        "conversion_errors": conversion_errors,
-                        "total_failed": len(conversion_errors),
-                        "yaml_deserialization": "Dict conversion allowed only for YAML loading",
-                        "example_format": {
-                            "name": "ProtocolEventBus",
-                            "module": "omnibase_core.protocol",
-                        },
-                    },
-                ),
+                conversion_errors=conversion_errors,
+                total_failed=len(conversion_errors),
+                yaml_deserialization="Dict conversion allowed only for YAML loading",
+                example_format={
+                    "name": "ProtocolEventBus",
+                    "module": "omnibase_core.protocol",
+                },
             )
 
         return result_deps
@@ -490,28 +491,20 @@ class ModelContractBase(BaseModel, ABC):
                 return EnumNodeType(v)
             except ValueError:
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid node_type string '{v}'. Must be valid EnumNodeType value.",
-                    details=cls._create_error_context(
-                        {
-                            "invalid_value": v,
-                            "valid_enum_values": [e.value for e in EnumNodeType],
-                            "yaml_deserialization": "String conversion allowed only for YAML loading",
-                        },
-                    ),
+                    invalid_value=v,
+                    valid_enum_values=[e.value for e in EnumNodeType],
+                    yaml_deserialization="String conversion allowed only for YAML loading",
                 )
         else:
             # ZERO TOLERANCE: Reject all other types
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"node_type must be EnumNodeType enum or valid string for YAML, not {type(v).__name__}.",
-                details=cls._create_error_context(
-                    {
-                        "received_type": str(type(v)),
-                        "expected_types": ["EnumNodeType", "str (YAML only)"],
-                        "valid_enum_values": [e.value for e in EnumNodeType],
-                    },
-                ),
+                received_type=str(type(v)),
+                expected_types=["EnumNodeType", "str (YAML only)"],
+                valid_enum_values=[e.value for e in EnumNodeType],
             )
 
     def _validate_node_type_compliance(self) -> None:
@@ -537,7 +530,7 @@ class ModelContractBase(BaseModel, ABC):
             # Validate dependency follows ONEX patterns
             if not dependency.matches_onex_patterns():
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Dependency does not follow ONEX patterns: {dependency.name}",
                 )
 
@@ -546,7 +539,7 @@ class ModelContractBase(BaseModel, ABC):
             if "protocol" in interface.lower():
                 continue
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Protocol interface must contain 'protocol' in the name, got: {interface}",
             )
 
@@ -570,33 +563,25 @@ class ModelContractBase(BaseModel, ABC):
             # Check for direct self-dependency
             if dep_name == contract_name:
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Direct circular dependency: Contract '{self.name}' cannot depend on itself via dependency '{dependency.name}'.",
-                    details=self._create_error_context(
-                        {
-                            "contract_name": self.name,
-                            "dependency_name": dependency.name,
-                            "dependency_type": dependency.dependency_type.value,
-                            "validation_type": "direct_circular_dependency",
-                            "suggested_fix": "Remove self-referencing dependency or use a different dependency name",
-                        },
-                    ),
+                    contract_name=self.name,
+                    dependency_name=dependency.name,
+                    dependency_type=dependency.dependency_type.value,
+                    validation_type="direct_circular_dependency",
+                    suggested_fix="Remove self-referencing dependency or use a different dependency name",
                 )
 
             # Check for duplicate dependencies (same name)
             if dep_name in dependency_names:
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Duplicate dependency detected: '{dependency.name}' is already defined in this contract.",
-                    details=self._create_error_context(
-                        {
-                            "contract_name": self.name,
-                            "duplicate_dependency": dependency.name,
-                            "dependency_type": dependency.dependency_type.value,
-                            "validation_type": "duplicate_dependency",
-                            "suggested_fix": "Remove duplicate dependency or use different names for different versions",
-                        },
-                    ),
+                    contract_name=self.name,
+                    duplicate_dependency=dependency.name,
+                    dependency_type=dependency.dependency_type.value,
+                    validation_type="duplicate_dependency",
+                    suggested_fix="Remove duplicate dependency or use different names for different versions",
                 )
 
             dependency_names.add(dep_name)
@@ -605,35 +590,27 @@ class ModelContractBase(BaseModel, ABC):
             if dependency.module and self.name.lower() in dependency.module.lower():
                 # This could indicate a potential circular dependency through module references
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Potential circular dependency: Contract '{self.name}' depends on module '{dependency.module}' which contains the contract name.",
-                    details=self._create_error_context(
-                        {
-                            "contract_name": self.name,
-                            "dependency_name": dependency.name,
-                            "dependency_module": dependency.module,
-                            "validation_type": "module_circular_dependency",
-                            "warning": "This may indicate a circular dependency through module references",
-                            "suggested_fix": "Verify that the module does not depend back on this contract",
-                        },
-                    ),
+                    contract_name=self.name,
+                    dependency_name=dependency.name,
+                    dependency_module=dependency.module,
+                    validation_type="module_circular_dependency",
+                    warning="This may indicate a circular dependency through module references",
+                    suggested_fix="Verify that the module does not depend back on this contract",
                 )
 
         # Validate maximum dependency complexity to prevent over-complex contracts
         max_dependencies = 50  # Reasonable limit for contract complexity
         if len(self.dependencies) > max_dependencies:
             raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                error_code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract has too many dependencies: {len(self.dependencies)}. Maximum recommended: {max_dependencies}.",
-                details=self._create_error_context(
-                    {
-                        "contract_name": self.name,
-                        "dependency_count": len(self.dependencies),
-                        "max_recommended": max_dependencies,
-                        "validation_type": "complexity_limit",
-                        "architectural_guidance": "Consider breaking complex contracts into smaller, more focused contracts",
-                    },
-                ),
+                contract_name=self.name,
+                dependency_count=len(self.dependencies),
+                max_recommended=max_dependencies,
+                validation_type="complexity_limit",
+                architectural_guidance="Consider breaking complex contracts into smaller, more focused contracts",
             )
 
     model_config = ConfigDict(
