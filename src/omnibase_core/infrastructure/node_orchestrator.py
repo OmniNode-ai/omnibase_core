@@ -220,7 +220,8 @@ class NodeOrchestrator(NodeCoreBase):
         """
         import inspect
 
-        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+        # Contract filename - standard ONEX pattern
+        CONTRACT_FILENAME = "contract.yaml"
 
         try:
             # Get the module file for the calling class

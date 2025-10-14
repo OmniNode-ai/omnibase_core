@@ -99,6 +99,27 @@ class NodeReducerService(ABC, Generic[T_Input, T_Output]):
         """
 
     @abstractmethod
+    async def process_reduction(
+        self,
+        input_data: ModelReducerInput[T_Input],
+    ) -> ModelReducerOutput[T_Output]:
+        """
+        Process reduction operation (standard interface method).
+
+        This is an alias for execute_reduce to maintain consistency with
+        service naming conventions across all node types.
+
+        Args:
+            input_data: Input envelope with reduction data and configuration
+
+        Returns:
+            ModelReducerOutput: Output envelope with result data and execution metadata
+
+        Raises:
+            OnexError: For operation failures with proper error codes
+        """
+
+    @abstractmethod
     async def get_health_status(self) -> Mapping[str, ModelSchemaValue]:
         """
         Get current health status of the reducer node.

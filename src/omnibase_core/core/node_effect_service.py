@@ -66,6 +66,28 @@ class NodeEffectService(ABC):
         """
 
     @abstractmethod
+    async def process_effect(
+        self,
+        input_data: ModelEffectInput,
+    ) -> ModelEffectOutput:
+        """
+        Process the effect with the given input data.
+
+        This method provides a standardized interface for effect processing.
+        Implementations should handle side effects, transaction management,
+        and result generation as specified in their contract.
+
+        Args:
+            input_data: Input envelope with operation data and configuration
+
+        Returns:
+            ModelEffectOutput: Output envelope with effect results and metadata
+
+        Raises:
+            OnexError: For processing failures with proper error codes
+        """
+
+    @abstractmethod
     async def validate_input(
         self,
         input_data: ModelEffectInput,

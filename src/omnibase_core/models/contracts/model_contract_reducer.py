@@ -1,11 +1,3 @@
-import uuid
-from typing import Any, Dict, List
-
-from pydantic import Field
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Reducer Contract Model - ONEX Standards Compliant (Clean ModelArchitecture).
 
@@ -26,10 +18,14 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+import uuid
+from typing import Any, ClassVar, Dict, List
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType

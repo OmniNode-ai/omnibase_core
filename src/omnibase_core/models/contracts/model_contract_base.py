@@ -1,12 +1,13 @@
-from typing import Dict, List, Literal
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 """
 Contract Model Base - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+- Breaking changes require major version bump
 
 Abstract foundation for 4-node architecture contract models providing:
 - Core contract identification and versioning
@@ -19,19 +20,21 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, cast
+from typing import Any, ClassVar, Dict, List, Literal, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
 )
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelContractBase(BaseModel, ABC):
@@ -43,6 +46,9 @@ class ModelContractBase(BaseModel, ABC):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Core contract identification
     name: str = Field(

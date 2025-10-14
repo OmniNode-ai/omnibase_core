@@ -9,17 +9,18 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery, MixinInfo
-from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.discovery.model_mixin_info import ModelMixinInfo
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
-class TestMixinInfo:
-    """Tests for MixinInfo model."""
+class TestModelMixinInfo:
+    """Tests for ModelMixinInfo model."""
 
     def test_mixin_info_creation_with_required_fields(self) -> None:
-        """Test MixinInfo creation with required fields."""
-        mixin = MixinInfo(
+        """Test ModelMixinInfo creation with required fields."""
+        mixin = ModelMixinInfo(
             name="MixinTest",
             description="Test mixin",
             version=ModelSemVer(major=1, minor=0, patch=0),
@@ -39,8 +40,8 @@ class TestMixinInfo:
         assert mixin.usage_examples == []
 
     def test_mixin_info_creation_with_all_fields(self) -> None:
-        """Test MixinInfo creation with all fields."""
-        mixin = MixinInfo(
+        """Test ModelMixinInfo creation with all fields."""
+        mixin = ModelMixinInfo(
             name="MixinRetry",
             description="Retry logic with exponential backoff",
             version=ModelSemVer(major=1, minor=0, patch=0),
@@ -92,7 +93,7 @@ class TestMixinDiscovery:
 
         assert isinstance(mixins, list)
         assert len(mixins) > 0
-        assert all(isinstance(m, MixinInfo) for m in mixins)
+        assert all(isinstance(m, ModelMixinInfo) for m in mixins)
 
         # Check that MixinRetry is present
         retry_mixin = next((m for m in mixins if m.name == "MixinRetry"), None)
@@ -137,7 +138,7 @@ class TestMixinDiscovery:
         """Test retrieving nonexistent mixin raises error."""
         discovery = MixinDiscovery()
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             discovery.get_mixin("NonexistentMixin")
 
         assert "not found" in str(exc_info.value.message).lower()
@@ -209,7 +210,7 @@ class TestMixinDiscovery:
         """Test getting dependencies for nonexistent mixin raises error."""
         discovery = MixinDiscovery()
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             discovery.get_mixin_dependencies("NonexistentMixin")
 
         assert "not found" in str(exc_info.value.message).lower()
@@ -264,7 +265,7 @@ class TestMixinDiscovery:
         nonexistent_path = Path("/nonexistent/path/to/mixins")
         discovery = MixinDiscovery(mixins_path=nonexistent_path)
 
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             discovery.get_all_mixins()
 
         assert "not found" in str(exc_info.value.message).lower()
@@ -344,7 +345,7 @@ class TestMixinDiscoveryIntegration:
             try:
                 deps = discovery.get_mixin_dependencies(mixin.name)
                 dependency_map[mixin.name] = deps
-            except OnexError:
+            except ModelOnexError:
                 # Some mixins might not have dependencies
                 dependency_map[mixin.name] = []
 

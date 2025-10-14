@@ -10,9 +10,9 @@ Tests programmatic contract validation for autonomous code generation:
 
 import pytest
 
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.contract_validator import (
-    ProtocolContractValidationResult,
+    ModelContractValidationResult,
     ProtocolContractValidator,
 )
 
@@ -51,7 +51,7 @@ io_operations:
 
         result = validator.validate_contract_yaml(contract_yaml, "effect")
 
-        assert isinstance(result, ProtocolContractValidationResult)
+        assert isinstance(result, ModelContractValidationResult)
         assert result.is_valid
         assert result.score >= 0.8
         assert len(result.violations) == 0
@@ -164,7 +164,7 @@ io_operations:
 
         result = validator.validate_model_compliance(model_code, contract_yaml)
 
-        assert isinstance(result, ProtocolContractValidationResult)
+        assert isinstance(result, ModelContractValidationResult)
         # Should not have violations (models exist)
         assert len([v for v in result.violations if "not found" in v]) == 0
 
@@ -459,12 +459,12 @@ io_operations:
         assert any("Any" in w for w in result.warnings)
 
 
-class TestProtocolContractValidationResult:
-    """Test ProtocolContractValidationResult model."""
+class TestModelContractValidationResult:
+    """Test ModelContractValidationResult model."""
 
     def test_result_creation(self) -> None:
         """Test creating validation result."""
-        result = ProtocolContractValidationResult(
+        result = ModelContractValidationResult(
             is_valid=True,
             score=0.95,
             violations=[],
@@ -482,7 +482,7 @@ class TestProtocolContractValidationResult:
     def test_result_score_bounds(self) -> None:
         """Test score is bounded between 0.0 and 1.0."""
         # Valid score
-        result = ProtocolContractValidationResult(
+        result = ModelContractValidationResult(
             is_valid=True,
             score=0.5,
         )
@@ -490,7 +490,7 @@ class TestProtocolContractValidationResult:
 
     def test_result_with_violations(self) -> None:
         """Test result with violations."""
-        result = ProtocolContractValidationResult(
+        result = ModelContractValidationResult(
             is_valid=False,
             score=0.3,
             violations=["Critical error 1", "Critical error 2"],

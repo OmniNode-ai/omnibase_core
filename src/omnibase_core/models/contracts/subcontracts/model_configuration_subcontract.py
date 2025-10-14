@@ -1,11 +1,3 @@
-import uuid
-from typing import Any, List, Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 """
 Configuration Management Subcontract Model - ONEX Standards Compliant.
 
@@ -28,15 +20,18 @@ providing clean separation between node logic and configuration behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+import uuid
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar, List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import individual configuration model components
 from .model_configuration_source import ModelConfigurationSource

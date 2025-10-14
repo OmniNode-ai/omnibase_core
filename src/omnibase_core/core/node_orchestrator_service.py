@@ -97,6 +97,27 @@ class NodeOrchestratorService(ABC):
         """
 
     @abstractmethod
+    async def process_orchestration(
+        self,
+        input_data: ModelOrchestratorInput,
+    ) -> ModelOrchestratorOutput:
+        """
+        Process orchestration operation (standard interface method).
+
+        This is an alias for execute_orchestrate to maintain consistency with
+        service naming conventions across all node types.
+
+        Args:
+            input_data: Input envelope with workflow data and configuration
+
+        Returns:
+            ModelOrchestratorOutput: Output envelope with result data and execution metadata
+
+        Raises:
+            OnexError: For operation failures with proper error codes
+        """
+
+    @abstractmethod
     async def get_health_status(self) -> Mapping[str, ModelSchemaValue]:
         """
         Get current health status of the orchestrator node.

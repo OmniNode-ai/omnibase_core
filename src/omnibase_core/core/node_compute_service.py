@@ -73,6 +73,28 @@ class NodeComputeService(ABC, Generic[T_Input, T_Output]):
         """
 
     @abstractmethod
+    async def process_computation(
+        self,
+        input_data: ModelComputeInput[T_Input],
+    ) -> ModelComputeOutput[T_Output]:
+        """
+        Process the computation with the given input data.
+
+        This method provides a standardized interface for computation processing.
+        Implementations should handle algorithm execution, result generation,
+        and performance tracking as specified in their contract.
+
+        Args:
+            input_data: Input envelope with computation data and configuration
+
+        Returns:
+            ModelComputeOutput: Output envelope with computed results and metadata
+
+        Raises:
+            OnexError: For processing failures with proper error codes
+        """
+
+    @abstractmethod
     async def validate_input(
         self,
         input_data: ModelComputeInput[T_Input],

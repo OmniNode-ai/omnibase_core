@@ -54,7 +54,7 @@ from omnibase_core.models.contracts.subcontracts.model_state_management_subcontr
 from omnibase_core.models.contracts.subcontracts.model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
 )
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestContractModelInterfaceVersions:

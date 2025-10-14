@@ -1,11 +1,12 @@
-from typing import Any, Dict
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
 """
 Event Type Subcontract Model - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for event-driven architecture functionality providing:
 - Primary event definitions with categories and routing
@@ -20,11 +21,15 @@ providing clean separation between node logic and event handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, ConfigDict
+from typing import Any, ClassVar, Dict
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import individual event model components
 from .model_event_definition import ModelEventDefinition
@@ -43,6 +48,9 @@ class ModelEventTypeSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Primary event configuration
     primary_events: list[str] = Field(

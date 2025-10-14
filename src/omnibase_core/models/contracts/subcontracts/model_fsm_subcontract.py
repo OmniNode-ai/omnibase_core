@@ -1,11 +1,3 @@
-import uuid
-from typing import Any, Dict
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 """
 FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
 
@@ -29,14 +21,24 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+import uuid
+from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_fsm_operation import ModelFSMOperation
 from .model_fsm_state_definition import ModelFSMStateDefinition

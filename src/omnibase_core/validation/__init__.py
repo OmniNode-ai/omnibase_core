@@ -35,7 +35,7 @@ from .auditor_protocol import ModelProtocolAuditor
 # Import CLI for module execution
 from .cli import ModelValidationSuite
 from .contract_validator import (
-    ProtocolContractValidationResult,
+    ModelContractValidationResult,
     ProtocolContractValidator,
 )
 from .contracts import (
@@ -104,7 +104,7 @@ def validate_all(
 __all__ = [
     # Core classes and types
     "ConfigurationError",
-    "ProtocolContractValidationResult",
+    "ModelContractValidationResult",
     "ProtocolContractValidator",
     "InputValidationError",
     "ModelProtocolAuditor",

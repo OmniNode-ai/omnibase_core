@@ -19,7 +19,8 @@ import yaml
 from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
@@ -105,8 +106,8 @@ class ProtocolContractValidator:
         # Step 0: Validate size limits
         content_size = len(contract_content.encode("utf-8"))
         if content_size > MAX_YAML_SIZE_BYTES:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"YAML content too large: {content_size} bytes exceeds {MAX_YAML_SIZE_BYTES} byte limit",
             )
 
@@ -198,7 +199,7 @@ class ProtocolContractValidator:
             # Add suggestions based on common errors
             self._add_suggestions_for_errors(e, suggestions)
 
-        except OnexError as e:
+        except ModelOnexError as e:
             violations.append(f"ONEX validation error: {e.message}")
             score -= VIOLATION_SCORE_PENALTY
 
@@ -249,15 +250,15 @@ class ProtocolContractValidator:
         # Step 0: Validate size limits
         code_size = len(model_code.encode("utf-8"))
         if code_size > MAX_CODE_SIZE_BYTES:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Model code too large: {code_size} bytes exceeds {MAX_CODE_SIZE_BYTES} byte limit",
             )
 
         yaml_size = len(contract_yaml.encode("utf-8"))
         if yaml_size > MAX_YAML_SIZE_BYTES:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Contract YAML too large: {yaml_size} bytes exceeds {MAX_YAML_SIZE_BYTES} byte limit",
             )
 
@@ -372,11 +373,11 @@ class ProtocolContractValidator:
         suggestions: list[str],
     ) -> None:
         """Check ONEX compliance for contract."""
-        # Check interface version
-        if contract.INTERFACE_VERSION != self.interface_version:
+        # Check contract version against validator version
+        if contract.version != self.interface_version:
             warnings.append(
-                f"Interface version mismatch: expected {self.interface_version}, "
-                f"got {contract.INTERFACE_VERSION}"
+                f"Contract version mismatch: expected {self.interface_version}, "
+                f"got {contract.version}"
             )
 
         # Check naming conventions
@@ -614,8 +615,8 @@ class ProtocolContractValidator:
 
         # Validate path safety
         if not self._validate_safe_path(path, base_dir):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Invalid or unsafe file path: {file_path}",
             )
 
@@ -632,8 +633,8 @@ class ProtocolContractValidator:
         try:
             file_size = path.stat().st_size
             if file_size > MAX_YAML_SIZE_BYTES:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Contract file too large: {file_size} bytes exceeds {MAX_YAML_SIZE_BYTES} byte limit",
                 )
         except OSError as e:

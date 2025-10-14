@@ -1,11 +1,3 @@
-import uuid
-from typing import Any, Dict
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Orchestrator Contract Model - ONEX Standards Compliant.
 
@@ -26,13 +18,15 @@ Specialized contract model for NodeOrchestrator implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+import uuid
+from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_branching_config import ModelBranchingConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_event_coordination_config import (
@@ -49,6 +43,7 @@ from omnibase_core.models.contracts.model_thunk_emission_config import (
     ModelThunkEmissionConfig,
 )
 from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
+from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 

@@ -1,10 +1,3 @@
-import uuid
-from typing import Any, Dict, List
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
 """
 Effect Contract Model - ONEX Standards Compliant.
 
@@ -24,10 +17,13 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+import uuid
+from typing import Any, ClassVar, Dict, List
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
