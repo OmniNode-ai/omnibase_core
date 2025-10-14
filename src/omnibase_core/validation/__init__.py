@@ -34,10 +34,7 @@ from .auditor_protocol import ModelProtocolAuditor
 
 # Import CLI for module execution
 from .cli import ModelValidationSuite
-from .contract_validator import (
-    ModelContractValidationResult,
-    ProtocolContractValidator,
-)
+from .contract_validator import ModelContractValidationResult, ProtocolContractValidator
 from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
