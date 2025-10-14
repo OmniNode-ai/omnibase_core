@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
 from omnibase_core.enums.enum_reduction_type import EnumReductionType
@@ -26,6 +26,8 @@ class ModelReducerInput(BaseModel, Generic[T_Input]):
     Strongly typed input wrapper for data reduction operations
     with streaming and conflict resolution configuration.
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     data: list[T_Input] = Field(default_factory=list)
     operation_id: UUID = Field(default_factory=uuid4)

@@ -775,7 +775,7 @@ class TestNodeBaseReducerPattern:
             node = NodeBase(contract_path=contract_path, container=mock_container)
 
             state = ModelState()
-            action = ModelAction()
+            action = ModelAction(type="test_action")
 
             new_state = node.dispatch(state, action)
 
@@ -810,11 +810,13 @@ class TestNodeBaseReducerPattern:
             node = NodeBase(contract_path=contract_path, container=mock_container)
 
             state = ModelState()
-            action = ModelAction()
+            action = ModelAction(type="test_action")
 
-            new_state = await node.dispatch_async(state, action)
+            result = await node.dispatch_async(state, action)
 
-            assert isinstance(new_state, ModelState)
+            # dispatch_async returns ModelNodeWorkflowResult wrapping the state
+            assert result.is_success
+            assert isinstance(result.value, ModelState)
 
 
 # ===== PROPERTY TESTS =====
@@ -1044,7 +1046,7 @@ class TestNodeBaseWorkflow:
 
             node = NodeBase(contract_path=contract_path, container=mock_container)
 
-            workflow = node.create_workflow()
+            workflow = node.workflow_instance
 
             assert workflow is None
 
@@ -1217,7 +1219,7 @@ class TestNodeBaseEdgeCases:
             node.dispatch = failing_dispatch
 
             state = ModelState()
-            action = ModelAction()
+            action = ModelAction(type="test_action")
 
             with pytest.raises(ModelOnexError) as exc_info:
                 await node.dispatch_async(state, action)

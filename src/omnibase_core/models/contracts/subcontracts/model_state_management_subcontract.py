@@ -1,12 +1,12 @@
-import uuid
-from typing import Dict
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-
 """
 State Management Subcontract Model - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for state management functionality providing:
 - State persistence and recovery strategies
@@ -21,10 +21,11 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
+import uuid
+from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_state_management import (
     EnumEncryptionAlgorithm,
@@ -34,8 +35,10 @@ from omnibase_core.enums.enum_state_management import (
     EnumStateScope,
 )
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_state_persistence import ModelStatePersistence
 from .model_state_synchronization import ModelStateSynchronization
@@ -53,6 +56,9 @@ class ModelStateManagementSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

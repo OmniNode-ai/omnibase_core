@@ -1,13 +1,12 @@
-import uuid
-from typing import Any, Dict, List
-
-from pydantic import Field
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Reducer Contract Model - ONEX Standards Compliant (Clean ModelArchitecture).
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
 
 Specialized contract model for NodeReducer implementations providing:
 - Reduction operation specifications with subcontract composition
@@ -19,9 +18,14 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+import uuid
+from typing import Any, ClassVar, Dict, List
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
@@ -62,6 +66,7 @@ from omnibase_core.models.contracts.subcontracts.model_state_management_subcontr
 from omnibase_core.models.contracts.subcontracts.model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelContractReducer(ModelContractBase):
@@ -75,6 +80,9 @@ class ModelContractReducer(ModelContractBase):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Note: Removed explicit __init__ and model_post_init to avoid MyPy type issues
     # UUID correlation is handled by field default_factory

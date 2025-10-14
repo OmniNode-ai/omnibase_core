@@ -137,8 +137,16 @@ class NodeBase(
             # Initialize reducer state
             self._reducer_state = self.initial_state()
 
-            # Create workflow instance if needed (run async creation in sync context)
-            self._workflow_instance = asyncio.run(self.create_workflow())
+            # Create workflow instance if needed (handle async context properly)
+            try:
+                # Check if we're already in an async context
+                asyncio.get_running_loop()
+                # We're in an async context, defer workflow creation (lazy initialization)
+                # The workflow_instance property will handle creation when accessed
+                self._workflow_instance = None
+            except RuntimeError:
+                # No running loop, safe to use asyncio.run
+                self._workflow_instance = asyncio.run(self.create_workflow())
 
             # Emit initialization event
             self._emit_initialization_event()
@@ -611,7 +619,7 @@ class NodeBase(
         """
         return state
 
-    async def dispatch_async(
+    async def dispatch_async(  # type: ignore[override]
         self,
         state: ProtocolState,
         action: ProtocolAction,

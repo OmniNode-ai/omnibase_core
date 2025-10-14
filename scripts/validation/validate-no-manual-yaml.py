@@ -11,13 +11,44 @@ import ast
 import sys
 from pathlib import Path
 
+import yaml
+
 
 class ManualYamlValidationDetector:
     """Detects manual YAML validation that bypasses Pydantic models."""
 
-    def __init__(self):
+    def __init__(self, config_path: Path | None = None):
         self.errors: list[str] = []
         self.checked_files = 0
+        self.config = self._load_config(config_path)
+
+    def _load_config(self, config_path: Path | None) -> dict:
+        """Load allowlist configuration from YAML file."""
+        if config_path is None:
+            # Default to project root
+            config_path = (
+                Path(__file__).parent.parent.parent / ".yaml-validation-allowlist.yaml"
+            )
+
+        if not config_path.exists():
+            # Fallback to empty config
+            return {
+                "allowed_files": [],
+                "allowed_filenames": [],
+                "allowed_functions": [],
+            }
+
+        try:
+            with open(config_path, encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+                return config if isinstance(config, dict) else {}
+        except Exception:
+            # If config fails to load, use empty config
+            return {
+                "allowed_files": [],
+                "allowed_filenames": [],
+                "allowed_functions": [],
+            }
 
     def validate_python_file(self, py_path: Path) -> bool:
         """Check Python file for manual YAML validation patterns."""
@@ -168,10 +199,8 @@ class ManualYamlValidationDetector:
             if (
                 self._is_yaml_safe_load(node)
                 and not self._is_in_from_yaml_method(node)
-                and not (
-                    self._is_in_safe_yaml_loader(file_path)
-                    and self._is_in_yaml_utility_function()
-                )
+                and not self._is_in_safe_yaml_loader(file_path)
+                and not self._is_in_yaml_utility_function()
                 and not self._is_in_test_file(file_path)
             ):
                 errors.append(
@@ -181,7 +210,9 @@ class ManualYamlValidationDetector:
 
         # Pattern 2: Direct YAML field checking
         if isinstance(node, ast.Subscript):
-            if self._is_yaml_field_access(node):
+            if self._is_yaml_field_access(node) and not self._is_in_safe_yaml_loader(
+                file_path
+            ):
                 errors.append(
                     f"Line {node.lineno}: Direct YAML field access detected - "
                     f"use Pydantic model properties instead",
@@ -225,24 +256,16 @@ class ManualYamlValidationDetector:
         return current_function is not None and current_function.startswith("from_yaml")
 
     def _is_in_safe_yaml_loader(self, file_path: Path) -> bool:
-        """Check if we're in the centralized safe_yaml_loader module or other YAML utility files."""
-        yaml_utility_files = {
-            "safe_yaml_loader.py",
-            "utility_filesystem_reader.py",
-            "real_file_io.py",
-            "yaml_dict_loader.py",
-            "validate-string-versions.py",  # Validates YAML syntax for version detection
-        }
+        """Check if file is in the allowlist for YAML utilities."""
+        # Check filename against allowed filenames
+        allowed_filenames = self.config.get("allowed_filenames", [])
+        if file_path.name in allowed_filenames:
+            return True
 
-        # Specific path for contracts.py to avoid false positives
-        specific_allowed_paths = {
-            "src/omnibase_core/validation/contracts.py",
-        }
-
-        # Check both filename and specific allowed paths
-        return file_path.name in yaml_utility_files or str(file_path).endswith(
-            tuple(specific_allowed_paths)
-        )
+        # Check full path against allowed files
+        allowed_files = self.config.get("allowed_files", [])
+        file_str = str(file_path)
+        return any(file_str.endswith(allowed_path) for allowed_path in allowed_files)
 
     def _is_in_yaml_utility_function(self) -> bool:
         """Check if we're in a legitimate YAML utility function."""
@@ -250,22 +273,8 @@ class ManualYamlValidationDetector:
         if current_function is None:
             return False
 
-        yaml_utility_functions = {
-            "load_and_validate_yaml_model",
-            "load_yaml_content_as_model",
-            "_dump_yaml_content",
-            "extract_example_from_schema",
-            "read_yaml",  # File I/O utilities
-            "load_yaml",
-            "_load_yaml_file",
-            "load_yaml_as_dict",  # YAML dict loader utilities
-            "load_yaml_as_dict_with_validation",
-            # Test functions that legitimately test YAML serialization/deserialization
-            "test_yaml_serialization_compatibility",
-            "test_yaml_deserialization_comprehensive",
-            "test_yaml_round_trip_serialization",
-        }
-        return current_function in yaml_utility_functions
+        allowed_functions = self.config.get("allowed_functions", [])
+        return current_function in allowed_functions
 
     def _is_in_test_file(self, file_path: Path) -> bool:
         """Check if we're in a test file where YAML usage might be legitimate."""

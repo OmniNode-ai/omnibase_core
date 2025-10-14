@@ -1,12 +1,13 @@
-from typing import Any, Dict, Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 """
 Compute Contract Model - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
+- Breaking changes require major version bump
 
 Specialized contract model for NodeCompute implementations providing:
 - Algorithm specification with factor weights and parameters
@@ -17,11 +18,14 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import ConfigDict
+from typing import Any, ClassVar, Dict, Optional
+
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
@@ -46,6 +50,7 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
 from omnibase_core.models.utils.model_validation_rules_converter import (
     ModelValidationRulesInputValue,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import configuration models from individual files
 from .model_algorithm_config import ModelAlgorithmConfig
@@ -64,6 +69,9 @@ class ModelContractCompute(ModelContractBase):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     def __init__(self, **data: object) -> None:
         """Initialize compute contract."""

@@ -1,13 +1,12 @@
-import uuid
-from typing import Any, Dict
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 """
 FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for finite state machine functionality providing:
 - State definitions with entry/exit actions and validation rules
@@ -22,13 +21,24 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+import uuid
+from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_fsm_operation import ModelFSMOperation
 from .model_fsm_state_definition import ModelFSMStateDefinition
@@ -45,6 +55,9 @@ class ModelFSMSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     # Core FSM identification
     state_machine_name: str = Field(

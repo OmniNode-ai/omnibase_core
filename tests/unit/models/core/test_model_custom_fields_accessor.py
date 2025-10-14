@@ -11,7 +11,7 @@ from pydantic import Field
 from omnibase_core.models.core import ModelCustomFieldsAccessor
 
 
-class TestCustomFieldsModel(ModelCustomFieldsAccessor):
+class SampleCustomFieldsModel(ModelCustomFieldsAccessor):
     """Test model with custom fields for testing the accessor."""
 
     custom_fields: dict[str, Any] | None = Field(default=None)
@@ -22,7 +22,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_initialization_empty(self):
         """Test empty initialization."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Should be able to access methods
         assert hasattr(accessor, "get_custom_field")
@@ -32,7 +32,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_get_custom_field_no_custom_fields(self):
         """Test getting custom field when custom_fields doesn't exist."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Should return default when custom_fields doesn't exist
         assert accessor.get_custom_field("nonexistent") is None
@@ -40,7 +40,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_set_custom_field_initializes_custom_fields(self):
         """Test that setting custom field initializes custom_fields if needed."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Initially no custom_fields
         assert not accessor.has_field("custom_fields")
@@ -55,7 +55,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_custom_field_string_values(self):
         """Test custom fields with string values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set string values
         accessor.set_custom_field("string_field", "hello_world")
@@ -66,7 +66,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_custom_field_numeric_values(self):
         """Test custom fields with numeric values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set numeric values
         accessor.set_custom_field("int_field", 42)
@@ -77,7 +77,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_custom_field_boolean_values(self):
         """Test custom fields with boolean values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set boolean values
         accessor.set_custom_field("debug_mode", True)
@@ -88,7 +88,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_custom_field_list_values(self):
         """Test custom fields with list values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set list values
         accessor.set_custom_field("tags", ["production", "critical"])
@@ -99,7 +99,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_has_custom_field(self):
         """Test checking if custom field exists."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Initially no fields
         assert not accessor.has_custom_field("nonexistent")
@@ -113,7 +113,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_remove_custom_field(self):
         """Test removing custom fields."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set some fields
         accessor.set_custom_field("field1", "value1")
@@ -137,7 +137,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_get_custom_field_with_defaults(self):
         """Test getting custom fields with default values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set some fields
         accessor.set_custom_field("existing", "value")
@@ -153,7 +153,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_multiple_custom_fields_operations(self):
         """Test multiple operations on custom fields."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set multiple fields of different types
         accessor.set_custom_field("app_name", "test_app")
@@ -189,7 +189,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_overwrite_custom_field(self):
         """Test overwriting existing custom fields."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set initial value
         accessor.set_custom_field("config", "initial")
@@ -208,7 +208,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_inheritance_from_field_accessor(self):
         """Test that custom fields accessor inherits from base field accessor."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Should have base field accessor methods
         assert hasattr(accessor, "get_field")
@@ -227,7 +227,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_custom_fields_initialization_behavior(self):
         """Test the automatic initialization behavior of custom_fields."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Initially custom_fields should not exist
         assert not accessor.has_field("custom_fields")
@@ -243,7 +243,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_edge_case_empty_string_values(self):
         """Test edge cases with empty string values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set empty string
         accessor.set_custom_field("empty_string", "")
@@ -252,7 +252,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_edge_case_zero_values(self):
         """Test edge cases with zero values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set zero values
         accessor.set_custom_field("zero_int", 0)
@@ -265,7 +265,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_edge_case_empty_list(self):
         """Test edge cases with empty list values."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set empty list
         accessor.set_custom_field("empty_list", [])
@@ -274,7 +274,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_complex_scenario(self):
         """Test complex scenario with mixed operations."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Build up a complex configuration
         config_data = {
@@ -316,7 +316,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_pydantic_compatibility(self):
         """Test compatibility with Pydantic model features."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Set some custom fields
         accessor.set_custom_field("test_field", "test_value")
@@ -333,7 +333,7 @@ class TestModelCustomFieldsAccessor:
 
     def test_field_name_edge_cases(self):
         """Test edge cases with field names."""
-        accessor = TestCustomFieldsModel()
+        accessor = SampleCustomFieldsModel()
 
         # Test various field name patterns
         test_names = [

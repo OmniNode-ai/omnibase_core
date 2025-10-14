@@ -1,13 +1,11 @@
-import uuid
-from typing import Any, List, Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
-
 """
 Configuration Management Subcontract Model - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+STABILITY GUARANTEE:
+- All fields, methods, and validators are stable interfaces
+- New optional fields may be added in minor versions only
+- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for configuration management functionality providing:
 - Configuration source specification with priority handling
@@ -22,14 +20,18 @@ providing clean separation between node logic and configuration behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+import uuid
 from pathlib import Path
+from typing import Any, ClassVar, List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import individual configuration model components
 from .model_configuration_source import ModelConfigurationSource
@@ -54,6 +56,9 @@ class ModelConfigurationSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
+
+    # Interface version for code generation stability
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     model_config = {
         "extra": "ignore",

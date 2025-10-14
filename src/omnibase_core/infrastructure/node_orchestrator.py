@@ -220,7 +220,8 @@ class NodeOrchestrator(NodeCoreBase):
         """
         import inspect
 
-        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+        # Contract filename - standard ONEX pattern
+        CONTRACT_FILENAME = "contract.yaml"
 
         try:
             # Get the module file for the calling class
@@ -829,7 +830,7 @@ class NodeOrchestrator(NodeCoreBase):
             processing_time_ms=(time.time() * 1000)
             - (input_data.timestamp.timestamp() * 1000),
             results=all_results,
-            metadata={"execution_mode": "sequential"},
+            metadata={"execution_mode": ModelSchemaValue.from_value("sequential")},
         )
 
     async def _execute_parallel_workflow(
@@ -939,7 +940,7 @@ class NodeOrchestrator(NodeCoreBase):
             - (input_data.timestamp.timestamp() * 1000),
             parallel_executions=parallel_executions,
             results=all_results,
-            metadata={"execution_mode": "parallel"},
+            metadata={"execution_mode": ModelSchemaValue.from_value("parallel")},
         )
 
     async def _execute_batch_workflow(
@@ -970,7 +971,7 @@ class NodeOrchestrator(NodeCoreBase):
         # Use sequential execution with load balancing metadata
         result = await self._execute_sequential_workflow(input_data, dependency_graph)
         result.load_balanced_operations = load_balanced_operations
-        result.metadata["execution_mode"] = "batch"
+        result.metadata["execution_mode"] = ModelSchemaValue.from_value("batch")
 
         return result
 
