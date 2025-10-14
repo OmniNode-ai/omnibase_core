@@ -9,13 +9,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core import (
-    ModelConfigurationBase,
-    ModelTypedConfiguration,
-)
-from omnibase_core.models.metadata.model_semver import (
-    parse_semver_from_string,
-)
+from omnibase_core.models.core import ModelConfigurationBase, ModelTypedConfiguration
+from omnibase_core.primitives.model_semver import parse_semver_from_string
 
 
 class SampleConfigData(BaseModel):
@@ -281,3 +276,347 @@ class TestConfigurationIntegration:
         region_result = config.get_custom_value_wrapped("region")
         assert region_result.is_ok()
         assert region_result.unwrap().string_value == "us-east-1"
+
+
+class TestConfigurationBaseEdgeCases:
+    """Test edge cases and error handling for ModelConfigurationBase."""
+
+    def test_serialize_config_data_with_exception(self):
+        """Test that Exception objects in config_data are serialized to strings."""
+        config = ModelConfigurationBase[Exception](
+            name="error_config",
+        )
+        config.config_data = ValueError("Test error message")
+
+        # Exception should be converted to string during serialization
+        serialized = config.serialize()
+        assert serialized["config_data"] == "Test error message"
+
+    def test_serialize_config_data_with_complex_object(self):
+        """Test serialization of complex objects with __dict__."""
+
+        class ComplexObject:
+            def __init__(self):
+                self.field1 = "value1"
+                self.field2 = 42
+                self.field3 = True
+
+        config = ModelConfigurationBase[ComplexObject](name="complex_config")
+        config.config_data = ComplexObject()
+
+        # Object with __dict__ should serialize its attributes
+        serialized = config.serialize()
+        assert serialized["config_data"]["field1"] == "value1"
+        assert serialized["config_data"]["field2"] == 42
+        assert serialized["config_data"]["field3"] is True
+
+    def test_serialize_config_data_with_pydantic_model(self):
+        """Test serialization of Pydantic models in config_data."""
+        config = ModelConfigurationBase[SampleConfigData](
+            name="pydantic_config",
+        )
+        config.config_data = SampleConfigData(
+            endpoint="http://test",
+            port=8080,
+            ssl_enabled=True,
+        )
+
+        # Pydantic models should serialize properly
+        serialized = config.serialize()
+        assert serialized["config_data"]["endpoint"] == "http://test"
+        assert serialized["config_data"]["port"] == 8080
+        assert serialized["config_data"]["ssl_enabled"] is True
+
+    def test_validate_config_data_with_exception_object(self):
+        """Test that Exception in config_data is converted during validation."""
+        # When creating config with Exception as config_data
+        error = RuntimeError("Configuration error")
+        config = ModelConfigurationBase[str](
+            name="test",
+            config_data=error,  # type: ignore
+        )
+
+        # Should be converted to string during validation
+        assert isinstance(config.config_data, str)
+        assert config.config_data == "Configuration error"
+
+    def test_get_config_value_with_unsupported_type(self):
+        """Test get_config_value with value of unsupported type."""
+
+        class CustomData:
+            unsupported_field = object()  # Not str, int, bool, or float
+
+        config = ModelConfigurationBase[CustomData](name="test")
+        config.config_data = CustomData()
+
+        # Should return error for unsupported type without default
+        result = config.get_config_value("unsupported_field")
+        assert result.is_err()
+        assert "unsupported type" in result.error
+
+    def test_get_config_value_with_unsupported_type_and_default(self):
+        """Test get_config_value returns default for unsupported types."""
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        class CustomData:
+            unsupported_field = object()
+
+        config = ModelConfigurationBase[CustomData](name="test")
+        config.config_data = CustomData()
+
+        default_value = ModelSchemaValue.from_value("default")
+        result = config.get_config_value("unsupported_field", default_value)
+        assert result.is_ok()
+        assert result.unwrap().string_value == "default"
+
+    def test_get_config_value_missing_key_without_default(self):
+        """Test get_config_value with missing key and no default."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("test", data)
+
+        result = config.get_config_value("nonexistent_key")
+        assert result.is_err()
+        assert "not found" in result.error
+
+    def test_get_config_value_with_none_config_data(self):
+        """Test get_config_value when config_data is None."""
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+
+        # Without default
+        result = config.get_config_value("any_key")
+        assert result.is_err()
+        assert "not found" in result.error
+
+        # With default
+        default_value = ModelSchemaValue.from_value("default")
+        result_with_default = config.get_config_value("any_key", default_value)
+        assert result_with_default.is_ok()
+        assert result_with_default.unwrap().string_value == "default"
+
+    def test_validate_instance_with_empty_name(self):
+        """Test that validate_instance returns False for empty string name."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("", data)
+
+        # Empty name should fail validation
+        assert config.validate_instance() is False
+
+    def test_validate_instance_with_whitespace_name(self):
+        """Test that validate_instance returns False for whitespace-only name."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("   ", data)
+
+        # Whitespace-only name should fail validation
+        assert config.validate_instance() is False
+
+    def test_validate_instance_when_disabled(self):
+        """Test that validate_instance returns False when config is disabled."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("test", data)
+        config.enabled = False
+
+        # Disabled config should fail validation
+        assert config.validate_instance() is False
+
+    def test_validate_instance_with_none_config_data(self):
+        """Test that validate_instance returns False when config_data is None."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+
+        # None config_data should fail validation
+        assert config.validate_instance() is False
+
+    def test_validate_instance_success(self):
+        """Test that validate_instance returns True for valid configuration."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("test", data)
+
+        assert config.validate_instance() is True
+
+    def test_configure_method_basic(self):
+        """Test configure method updates configuration fields."""
+        config = ModelConfigurationBase[SampleConfigData](name="original")
+
+        result = config.configure(name="updated", description="New description")
+
+        assert result is True
+        assert config.name == "updated"
+        assert config.description == "New description"
+
+    def test_configure_method_updates_config_data(self):
+        """Test configure method can update config_data."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+
+        new_data = SampleConfigData(endpoint="http://updated")
+        result = config.configure(config_data=new_data)
+
+        assert result is True
+        assert config.config_data == new_data
+
+    def test_configure_method_updates_timestamp(self):
+        """Test that configure method updates the timestamp."""
+        import time
+
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+        original_updated = config.updated_at
+
+        time.sleep(0.01)
+        config.configure(description="Updated")
+
+        assert config.updated_at > original_updated
+
+    def test_get_display_name_with_none_name(self):
+        """Test get_display_name falls back to default when name is None."""
+        config = ModelConfigurationBase[SampleConfigData]()
+
+        assert config.get_display_name() == "Unnamed Configuration"
+
+    def test_get_display_name_with_set_name(self):
+        """Test get_display_name returns actual name when set."""
+        config = ModelConfigurationBase[SampleConfigData](name="MyConfig")
+
+        assert config.get_display_name() == "MyConfig"
+
+    def test_serialize_method(self):
+        """Test serialize method returns proper dictionary."""
+        data = SampleConfigData(endpoint="http://localhost", port=9000)
+        config = ModelConfigurationBase.create_with_data("test", data)
+        config.version = parse_semver_from_string("1.2.3")
+
+        serialized = config.serialize()
+
+        assert isinstance(serialized, dict)
+        assert serialized["name"] == "test"
+        assert serialized["enabled"] is True
+        assert "config_data" in serialized
+        assert "created_at" in serialized
+
+    def test_serialize_excludes_none_false(self):
+        """Test serialize includes None values when exclude_none=False."""
+        config = ModelConfigurationBase[SampleConfigData]()
+
+        serialized = config.serialize()
+
+        # Should include None values
+        assert "name" in serialized
+        assert serialized["name"] is None
+        assert "description" in serialized
+        assert serialized["description"] is None
+
+    def test_get_name_protocol_method(self):
+        """Test get_name protocol method implementation."""
+        config = ModelConfigurationBase[SampleConfigData](name="TestConfig")
+
+        assert config.get_name() == "TestConfig"
+
+    def test_get_name_with_none_name(self):
+        """Test get_name returns default when name is None."""
+        config = ModelConfigurationBase[SampleConfigData]()
+
+        assert config.get_name() == "Unnamed Configuration"
+
+    def test_set_name_protocol_method(self):
+        """Test set_name protocol method implementation."""
+        config = ModelConfigurationBase[SampleConfigData](name="original")
+
+        config.set_name("updated")
+
+        assert config.name == "updated"
+
+    def test_set_name_updates_timestamp(self):
+        """Test that set_name updates the timestamp."""
+        import time
+
+        config = ModelConfigurationBase[SampleConfigData](name="original")
+        original_updated = config.updated_at
+
+        time.sleep(0.01)
+        config.set_name("updated")
+
+        assert config.updated_at > original_updated
+
+    def test_version_or_default_with_none(self):
+        """Test get_version_or_default returns default when version is None."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+
+        assert config.get_version_or_default() == "1.0.0"
+
+    def test_version_or_default_with_set_version(self):
+        """Test get_version_or_default returns actual version when set."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+        config.version = parse_semver_from_string("3.2.1")
+
+        assert config.get_version_or_default() == "3.2.1"
+
+    def test_model_validator_default_implementation(self):
+        """Test that default model_validator returns self."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+
+        # Should not raise and should return valid config
+        assert config.name == "test"
+        assert config.enabled is True
+
+
+class TestConfigurationBaseProtocolCompliance:
+    """Test protocol compliance for Serializable, Configurable, Nameable, Validatable."""
+
+    def test_serializable_protocol_serialize(self):
+        """Test Serializable protocol serialize method."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("test", data)
+
+        serialized = config.serialize()
+
+        assert isinstance(serialized, dict)
+        assert "name" in serialized
+        assert "config_data" in serialized
+
+    def test_configurable_protocol_configure(self):
+        """Test Configurable protocol configure method."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+
+        success = config.configure(
+            name="updated",
+            description="Updated config",
+            enabled=False,
+        )
+
+        assert success is True
+        assert config.name == "updated"
+        assert config.description == "Updated config"
+        assert config.enabled is False
+
+    def test_nameable_protocol_get_name(self):
+        """Test Nameable protocol get_name method."""
+        config = ModelConfigurationBase[SampleConfigData](name="TestName")
+
+        name = config.get_name()
+
+        assert name == "TestName"
+
+    def test_nameable_protocol_set_name(self):
+        """Test Nameable protocol set_name method."""
+        config = ModelConfigurationBase[SampleConfigData](name="original")
+
+        config.set_name("NewName")
+
+        assert config.name == "NewName"
+
+    def test_validatable_protocol_validate_instance(self):
+        """Test Validatable protocol validate_instance method."""
+        data = SampleConfigData(endpoint="http://localhost")
+        config = ModelConfigurationBase.create_with_data("test", data)
+
+        is_valid = config.validate_instance()
+
+        assert is_valid is True
+
+    def test_validatable_protocol_invalid_instance(self):
+        """Test Validatable protocol returns False for invalid instance."""
+        config = ModelConfigurationBase[SampleConfigData](name="test")
+        # No config_data set
+
+        is_valid = config.validate_instance()
+
+        assert is_valid is False

@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+from typing import List
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI Command Option Model.
 
@@ -5,17 +14,16 @@ Represents command-line options and flags with proper validation.
 Replaces dict[str, Any] for command options with structured typing.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
 # Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelCliCommandOption(BaseModel):
@@ -31,17 +39,17 @@ class ModelCliCommandOption(BaseModel):
     """
 
     # Option identification - UUID-based entity references
-    option_id: UUID = Field(..., description="Unique identifier for the option")
+    option_id: UUID = Field(default=..., description="Unique identifier for the option")
     option_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable option name (e.g., '--verbose', '-v')",
     )
     value: object = Field(
-        ...,
+        default=...,
         description="Option value - validated against value_type discriminator",
     )
     value_type: EnumCliOptionValueType = Field(
-        ...,
+        default=...,
         description="Type discriminator for the option value",
     )
 
@@ -60,56 +68,59 @@ class ModelCliCommandOption(BaseModel):
         description="Valid choices for option value",
     )
 
-    @field_validator("value")
-    @classmethod
-    def validate_value_type(cls, v: object, info: ValidationInfo) -> object:
+    @model_validator(mode="after")
+    def validate_value_type(self) -> ModelCliCommandOption:
         """Validate that value matches its declared type."""
-        if hasattr(info, "data") and "value_type" in info.data:
-            value_type = info.data["value_type"]
+        value_type = self.value_type
 
-            if value_type == EnumCliOptionValueType.STRING and not isinstance(v, str):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message=f"String value type must contain str data, got {type(v)}",
-                )
-            if value_type == EnumCliOptionValueType.INTEGER and not isinstance(
-                v,
-                int,
-            ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message=f"Integer value type must contain int data, got {type(v)}",
-                )
-            if value_type == EnumCliOptionValueType.BOOLEAN and not isinstance(
-                v,
-                bool,
-            ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message=f"Boolean value type must contain bool data, got {type(v)}",
-                )
-            if value_type == EnumCliOptionValueType.FLOAT and not isinstance(
-                v,
-                (int, float),
-            ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message=f"Float value type must contain float data, got {type(v)}",
-                )
-            if value_type == EnumCliOptionValueType.STRING_LIST and not (
-                isinstance(v, list) and all(isinstance(item, str) for item in v)
-            ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message=f"StringList value type must contain list[str] data, got {type(v)}",
-                )
-            if value_type == EnumCliOptionValueType.UUID and not isinstance(v, UUID):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
-                    message=f"UUID value type must contain UUID data, got {type(v)}",
-                )
+        if value_type == EnumCliOptionValueType.STRING and not isinstance(
+            self.value, str
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"String value type must contain str data, got {type(self.value)}",
+            )
+        if value_type == EnumCliOptionValueType.INTEGER and not isinstance(
+            self.value,
+            int,
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Integer value type must contain int data, got {type(self.value)}",
+            )
+        if value_type == EnumCliOptionValueType.BOOLEAN and not isinstance(
+            self.value,
+            bool,
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Boolean value type must contain bool data, got {type(self.value)}",
+            )
+        if value_type == EnumCliOptionValueType.FLOAT and not isinstance(
+            self.value,
+            (int, float),
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Float value type must contain float data, got {type(self.value)}",
+            )
+        if value_type == EnumCliOptionValueType.STRING_LIST and not (
+            isinstance(self.value, list)
+            and all(isinstance(item, str) for item in self.value)
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"StringList value type must contain list[str] data, got {type(self.value)}",
+            )
+        if value_type == EnumCliOptionValueType.UUID and not isinstance(
+            self.value, UUID
+        ):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"UUID value type must contain UUID data, got {type(self.value)}",
+            )
 
-        return v
+        return self
 
     def get_string_value(self) -> str:
         """Get value as string representation."""
@@ -357,7 +368,7 @@ class ModelCliCommandOption(BaseModel):
         value: list[str],
         **kwargs: object,
     ) -> ModelCliCommandOption:
-        """Create command option from string list value."""
+        """Create command option from string list[Any]value."""
         # Extract known fields with proper types from kwargs
         option_display_name = kwargs.get("option_display_name")
         is_flag = kwargs.get("is_flag", False)
@@ -403,7 +414,7 @@ class ModelCliCommandOption(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

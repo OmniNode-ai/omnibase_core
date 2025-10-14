@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from pydantic import Field
+
 """
 String Field Reduction Improvements Demonstration.
 
@@ -5,7 +9,6 @@ This file demonstrates the improvements made to reduce excessive string fields
 in metadata models while maintaining functionality and improving consistency.
 """
 
-from __future__ import annotations
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory

@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Generic
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Contract validation tools for ONEX compliance.
 
@@ -7,7 +13,6 @@ This module provides validation functions for contract files:
 - Contract structure validation
 """
 
-from __future__ import annotations
 
 import argparse
 import os
@@ -21,7 +26,7 @@ import yaml
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .validation_utils import ValidationResult
 
@@ -32,15 +37,19 @@ VALIDATION_TIMEOUT = 300  # 5 minutes
 
 def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
-    raise OnexError(
-        code=CoreErrorCode.TIMEOUT_ERROR,
+    raise ModelOnexError(
+        error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
         message="Validation timed out",
     )
 
 
 def load_and_validate_yaml_model(content: str) -> ModelYamlContract:
-    """Load and validate YAML content with Pydantic model - recognized utility function."""
+    """Load and validate YAML content with Pydantic model - recognized utility function.
 
+    Uses lazy import to avoid circular dependency with models module.
+    """
+    # LAZY IMPORT: Import ModelYamlContract only when function is called
+    # This breaks circular import: contracts -> models -> mixins -> contracts
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
     # Parse YAML and validate with Pydantic model directly
@@ -96,22 +105,16 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
             # Validation successful if we reach here
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: validation errors collected in list for batch reporting
-            # Add validation errors to list instead of raising
+        except Exception as e:
+            # Collect validation errors instead of raising
             errors.append(f"Contract validation failed: {e}")
-            return errors
 
         # All validation is now handled by Pydantic model
         # Legacy manual validation removed for ONEX compliance
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: file reading errors collected in list for batch reporting
-        # Add file reading errors to list instead of raising
+    except Exception as e:
+        # Collect file reading errors
         errors.append(f"Error reading file: {e}")
-        return errors
 
     return errors
 
@@ -261,8 +264,8 @@ def validate_contracts_cli() -> int:
         print("❌ Contract validation FAILED")
         return 1
 
-    except OnexError as e:
-        if e.error_code == CoreErrorCode.TIMEOUT_ERROR:
+    except ModelOnexError as e:
+        if e.error_code == EnumCoreErrorCode.TIMEOUT_ERROR:
             print(f"❌ Validation timed out after {args.timeout} seconds")
         else:
             print(f"❌ Validation error: {e.message}")

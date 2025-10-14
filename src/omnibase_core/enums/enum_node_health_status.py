@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Node Health Status Enum.
 
 Defines the health states for nodes in the system.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

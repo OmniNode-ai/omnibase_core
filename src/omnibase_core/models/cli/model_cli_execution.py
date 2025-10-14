@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import Field
+
 """
 CLI Execution Model.
 
@@ -5,11 +13,10 @@ Represents CLI command execution context with timing, configuration,
 and state tracking for comprehensive command execution management.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 # Use object type for CLI command option values.
@@ -22,7 +29,7 @@ CommandOptionValue = object
 # Runtime type validation should be done where values are consumed.
 ExecutionContextValue = object
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
@@ -49,7 +56,7 @@ class ModelCliExecution(BaseModel):
         default_factory=uuid4,
         description="Unique execution identifier",
     )
-    command_name: str = Field(..., description="Command name")
+    command_name: str = Field(default=..., description="Command name")
     command_args: list[str] = Field(
         default_factory=list,
         description="Command arguments",
@@ -60,9 +67,11 @@ class ModelCliExecution(BaseModel):
     )
 
     # Target and path information
-    target_node_name: str | None = Field(None, description="Target node name")
-    target_path: Path | None = Field(None, description="Target path")
-    working_directory: Path | None = Field(None, description="Working directory")
+    target_node_name: str | None = Field(default=None, description="Target node name")
+    target_path: Path | None = Field(default=None, description="Target path")
+    working_directory: Path | None = Field(
+        default=None, description="Working directory"
+    )
     environment_vars: dict[str, str] = Field(
         default_factory=dict,
         description="Environment variables",
@@ -92,7 +101,7 @@ class ModelCliExecution(BaseModel):
         default_factory=datetime.now,
         description="Execution start time",
     )
-    end_time: datetime | None = Field(None, description="Execution end time")
+    end_time: datetime | None = Field(default=None, description="Execution end time")
 
     # Status and progress
     status: EnumExecutionStatus = Field(
@@ -125,8 +134,8 @@ class ModelCliExecution(BaseModel):
     retry_count: int = Field(default=0, ge=0, description="Current retry count")
 
     # User and session context
-    user_id: UUID | None = Field(None, description="User ID")
-    session_id: UUID | None = Field(None, description="Session ID")
+    user_id: UUID | None = Field(default=None, description="User ID")
+    session_id: UUID | None = Field(default=None, description="Session ID")
 
     # Data and output
     input_data: dict[str, ExecutionContextValue] = Field(
@@ -150,12 +159,20 @@ class ModelCliExecution(BaseModel):
     )
 
     # Additional fields from tests
-    unit: str | None = Field(None, description="Unit of measurement")
-    data_source: str | None = Field(None, description="Data source")
-    forecast_points: int | None = Field(None, description="Number of forecast points")
-    confidence_interval: float | None = Field(None, description="Confidence interval")
-    anomaly_points: int | None = Field(None, description="Number of anomaly points")
-    anomaly_threshold: float | None = Field(None, description="Anomaly threshold")
+    unit: str | None = Field(default=None, description="Unit of measurement")
+    data_source: str | None = Field(default=None, description="Data source")
+    forecast_points: int | None = Field(
+        default=None, description="Number of forecast points"
+    )
+    confidence_interval: float | None = Field(
+        default=None, description="Confidence interval"
+    )
+    anomaly_points: int | None = Field(
+        default=None, description="Number of anomaly points"
+    )
+    anomaly_threshold: float | None = Field(
+        default=None, description="Anomaly threshold"
+    )
 
     # Computed properties and methods
     def get_command_name(self) -> str:
@@ -405,7 +422,7 @@ class ModelCliExecution(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

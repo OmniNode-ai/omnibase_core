@@ -43,7 +43,7 @@ def add_imports_to_file(filepath: Path) -> bool:
     if insert_index == -1:
         # Look for first import line
         for i, line in enumerate(lines):
-            if line.startswith("from ") or line.startswith("import "):
+            if line.startswith(("from ", "import ")):
                 insert_index = i
                 break
 

@@ -16,7 +16,8 @@ Type-Only Imports (Protected by TYPE_CHECKING):
 - omnibase_core.errors.error_codes (used only for type hints)
 - omnibase_core.models.base (lazy loaded via __getattr__)
 
-Lazy Imports:
+Lazy Imports (Only loaded when functions are called):
+- errors.error_codes: Imported inside validate_primitive_value() and validate_context_value()
 - models.base: Loaded via __getattr__ when accessed
 
 Import Chain Position:
@@ -37,60 +38,16 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 from pydantic import BaseModel
 
-# Type-only import - NEVER make this a runtime import!
-# Protected by TYPE_CHECKING to prevent circular dependency with errors.error_codes
-if TYPE_CHECKING:
-    from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
-# Temporary local protocol definitions for validation purposes
-# TODO: Replace with actual omnibase_spi imports when available
-
-
-class Configurable(Protocol):
-    """Protocol for configurable objects."""
-
-    def configure(self, **kwargs: Any) -> bool: ...
-
-
-class Executable(Protocol):
-    """Protocol for executable objects."""
-
-    def execute(self, *args: Any, **kwargs: Any) -> Any: ...
-
-
-class Identifiable(Protocol):
-    """Protocol for identifiable objects."""
-
-    @property
-    def id(self) -> str: ...
-
-
-class ProtocolMetadataProvider(Protocol):
-    """Protocol for objects that provide metadata."""
-
-    @property
-    def metadata(self) -> dict[str, Any]: ...
-
-
-class Nameable(Protocol):
-    """Protocol for nameable objects."""
-
-    def get_name(self) -> str: ...
-
-    def set_name(self, name: str) -> None: ...
-
-
-class Serializable(Protocol):
-    """Protocol for serializable objects."""
-
-    def serialize(self) -> dict[str, Any]: ...
-
-
-class ProtocolValidatable(Protocol):
-    """Protocol for validatable objects."""
-
-    def validate_instance(self) -> bool: ...
-
+# Import protocols from omnibase_spi (following ONEX SPI separation)
+from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
+from omnibase_spi.protocols.types import ProtocolExecutable as Executable
+from omnibase_spi.protocols.types import ProtocolIdentifiable as Identifiable
+from omnibase_spi.protocols.types import ProtocolMetadataProvider
+from omnibase_spi.protocols.types import ProtocolNameable as Nameable
+from omnibase_spi.protocols.types import ProtocolSerializable as Serializable
+from omnibase_spi.protocols.types import ProtocolValidatable
 
 # Bounded type variables with proper constraints
 
@@ -130,7 +87,7 @@ ErrorType = TypeVar("ErrorType", bound=Exception)
 
 # Collection types with simplified constraints
 CollectionItemType = TypeVar("CollectionItemType", bound=BaseModel)
-# Simplified dict value type - use more specific constraints
+# Simplified dict[str, Any]value type - use more specific constraints
 SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
 
 # Schema value types - standardized types for replacing hardcoded unions
@@ -144,7 +101,7 @@ SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
 PrimitiveValueType = object  # Runtime validation required - see type guards below
 
 # Context values - use object with runtime validation instead of open unions
-# Instead of primitive soup Union[str, int, float, bool, list, dict]
+# Instead of primitive soup Union[str, int, float, bool, list[Any], dict[str, Any]]
 ContextValueType = object  # Runtime validation required - see type guards below
 
 # Complex context - use object with runtime validation
@@ -166,8 +123,6 @@ ComplexContextValueType = object  # Runtime validation required - see type guard
 # - By the time __getattr__ runs, models.* has already imported types.constraints
 # - This breaks the circular dependency at module import time
 if TYPE_CHECKING:
-    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
-
     # Type aliases for test compatibility
     BaseCollection = ModelBaseCollection
     BaseFactory = ModelBaseFactory
@@ -188,6 +143,7 @@ else:
             "BaseCollection",
             "BaseFactory",
         ):
+            # Lazy import - happens only when these names are accessed
             from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
             globals()["ModelBaseCollection"] = ModelBaseCollection
@@ -252,12 +208,12 @@ def is_metadata_provider(obj: object) -> bool:
 
 def is_primitive_value(obj: object) -> bool:
     """Check if object is a valid primitive value (str, int, float, bool)."""
-    return isinstance(obj, (str, int, float, bool))
+    return isinstance(obj, str | int | float | bool)
 
 
 def is_context_value(obj: object) -> bool:
-    """Check if object is a valid context value (primitive, list, or dict)."""
-    if isinstance(obj, (str, int, float, bool)):
+    """Check if object is a valid context value (primitive, list[Any], or dict[str, Any])."""
+    if isinstance(obj, str | int | float | bool):
         return True
     if isinstance(obj, list):
         return True
@@ -275,14 +231,12 @@ def validate_primitive_value(obj: object) -> bool:
     """
     Validate and ensure object is a primitive value.
 
-    Raises TypeError following Python conventions for type validation.
-    This ensures compatibility with standard exception handling patterns.
+    Raises TypeError for invalid values.
     """
     if not is_primitive_value(obj):
         obj_type = type(obj).__name__
         msg = f"Expected primitive value (str, int, float, bool), got {obj_type}"
-        # error-ok: TypeError is the standard Python convention for type validation
-        raise TypeError(msg)
+        raise TypeError(msg)  # error-ok: Standard Python type validation pattern
     return True
 
 
@@ -290,14 +244,12 @@ def validate_context_value(obj: object) -> bool:
     """
     Validate and ensure object is a valid context value.
 
-    Raises TypeError following Python conventions for type validation.
-    This ensures compatibility with standard exception handling patterns.
+    Raises TypeError for invalid values.
     """
     if not is_context_value(obj):
         obj_type = type(obj).__name__
-        msg = f"Expected context value (primitive, list, or dict), got {obj_type}"
-        # error-ok: TypeError is the standard Python convention for type validation
-        raise TypeError(msg)
+        msg = f"Expected context value (primitive, list[Any], or dict[str, Any]), got {obj_type}"
+        raise TypeError(msg)  # error-ok: Standard Python type validation pattern
     return True
 
 

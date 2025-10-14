@@ -1,3 +1,10 @@
+from typing import Any, Dict, Optional
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 YAML Contract Validation Model - ONEX Standards Compliant.
 
@@ -10,11 +17,10 @@ Pydantic model for validating YAML contract files providing:
 This replaces manual YAML field validation with proper Pydantic validation.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelYamlContract(BaseModel):
@@ -30,19 +36,19 @@ class ModelYamlContract(BaseModel):
     """
 
     model_config = {
-        "extra": "ignore",
+        "extra": "allow",  # Allow and preserve extra fields like event_subscriptions
         "use_enum_values": False,
         "validate_assignment": True,
     }
 
     # Required fields for contract validation
     contract_version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="Contract semantic version specification",
     )
 
     node_type: EnumNodeType = Field(
-        ...,
+        default=...,
         description="Node type classification for 4-node architecture",
     )
 
@@ -70,7 +76,7 @@ class ModelYamlContract(BaseModel):
             EnumNodeType: Validated enum value
 
         Raises:
-            OnexError: If validation fails
+            ModelOnexError: If validation fails
         """
         if isinstance(value, EnumNodeType):
             return value
@@ -110,9 +116,9 @@ class ModelYamlContract(BaseModel):
                     },
                 )
 
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=error_context,
                 )
 
@@ -128,9 +134,9 @@ class ModelYamlContract(BaseModel):
             },
         )
 
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"node_type must be an EnumNodeType enum or valid string, got {type(value).__name__}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             details=error_context,
         )
 
@@ -150,14 +156,14 @@ class ModelYamlContract(BaseModel):
 
         Raises:
             ValidationError: If validation fails
-            OnexError: For custom validation errors
+            ModelOnexError: For custom validation errors
         """
         return cls.model_validate(yaml_data)
 
     @classmethod
     def from_yaml_dict(cls, yaml_data: dict[str, object]) -> "ModelYamlContract":
         """
-        Alternative constructor for YAML dictionary data.
+        Alternative constructor for YAML dict[str, Any]ionary data.
 
         Args:
             yaml_data: Dictionary loaded from YAML file

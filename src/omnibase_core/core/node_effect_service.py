@@ -26,7 +26,7 @@ from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Dict
 
 from omnibase_core.infrastructure.node_effect import ModelEffectInput, ModelEffectOutput
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class NodeEffectService(ABC):

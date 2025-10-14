@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Thunk Emission Configuration Model - ONEX Standards Compliant.
 
@@ -7,7 +9,9 @@ execution strategies for workflow coordination.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class ModelThunkEmissionConfig(BaseModel):

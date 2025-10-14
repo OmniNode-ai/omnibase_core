@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import List
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Examples collection summary model.
 
@@ -5,15 +13,14 @@ Clean, strongly-typed replacement for the horrible union return type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_format import EnumDataFormat
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_example_metadata_summary import ModelExampleMetadataSummary
 from .model_example_summary import ModelExampleSummary
@@ -40,7 +47,7 @@ class ModelExamplesCollectionSummary(BaseModel):
     )
 
     metadata: ModelExampleMetadataSummary | None = Field(
-        None,
+        default=None,
         description="Collection metadata summary",
     )
 
@@ -64,7 +71,9 @@ class ModelExamplesCollectionSummary(BaseModel):
         description="Percentage of valid examples",
     )
 
-    last_updated: datetime | None = Field(None, description="Last update timestamp")
+    last_updated: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
         """Calculate completion rate after initialization."""
@@ -91,13 +100,13 @@ class ModelExamplesCollectionSummary(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -107,8 +116,8 @@ class ModelExamplesCollectionSummary(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

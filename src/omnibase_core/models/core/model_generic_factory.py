@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Dict, Generic, TypedDict, TypeVar
+
 """
 Generic Factory Pattern for Model Creation.
 
@@ -7,21 +12,18 @@ factory methods across CLI, Config, Nodes, and Validation domains.
 Restructured to reduce string field violations through logical grouping.
 """
 
-from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Generic, TypeVar, Unpack
+from collections.abc import Callable as CallableABC
+from typing import Any, Unpack
 
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.types import (
-    TypedDictFactoryKwargs,
-)
+from omnibase_core.types import TypedDictFactoryKwargs
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -64,7 +66,7 @@ class ModelGenericFactory(Generic[T]):
 
         Args:
             name: Factory identifier
-            factory: Callable that returns an instance of T
+            factory: Callable[..., Any]that returns an instance of T
         """
         self._factories[name] = factory
 
@@ -74,7 +76,7 @@ class ModelGenericFactory(Generic[T]):
 
         Args:
             name: Builder identifier
-            builder: Callable that takes keyword arguments and returns an instance of T
+            builder: Callable[..., Any]that takes keyword arguments and returns an instance of T
         """
         self._builders[name] = builder
 
@@ -89,10 +91,10 @@ class ModelGenericFactory(Generic[T]):
             New instance of T
 
         Raises:
-            OnexError: If factory name is not registered
+            ModelOnexError: If factory name is not registered
         """
         if name not in self._factories:
-            raise OnexError(
+            raise ModelOnexError(
                 error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown factory: {name} for {self.model_class.__name__}",
                 details=ModelErrorContext.with_context(
@@ -121,7 +123,7 @@ class ModelGenericFactory(Generic[T]):
             ValueError: If builder name is not registered
         """
         if builder_name not in self._builders:
-            raise OnexError(
+            raise ModelOnexError(
                 error_code=EnumCoreErrorCode.NOT_FOUND,
                 message=f"Unknown builder: {builder_name} for {self.model_class.__name__}",
                 details=ModelErrorContext.with_context(
@@ -213,18 +215,18 @@ class ModelGenericFactory(Generic[T]):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
+            raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Factory instances don't have model_dump - serialize factory state instead
         return {
             "model_class": self.model_class.__name__,
-            "factories": list(self._factories.keys()),
-            "builders": list(self._builders.keys()),
+            "factories": list[Any](self._factories.keys()),
+            "builders": list[Any](self._builders.keys()),
         }
 
     def validate_instance(self) -> bool:
@@ -234,7 +236,7 @@ class ModelGenericFactory(Generic[T]):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
+            raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

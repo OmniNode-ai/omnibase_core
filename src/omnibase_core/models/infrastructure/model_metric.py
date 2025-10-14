@@ -1,22 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 """
 Metric model.
 
 Individual metric model with strong typing using TypeVar generics.
 Follows ONEX one-model-per-file naming conventions and strong typing standards.
 """
-
-from __future__ import annotations
-
-from typing import Any
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.common.model_numeric_value import ModelNumericValue
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-# Import metadata value for type-safe metric handling
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class ModelMetric(BaseModel):
@@ -31,8 +30,10 @@ class ModelMetric(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    key: str = Field(..., description="Metric key")
-    value: ModelMetadataValue = Field(..., description="Strongly-typed metric value")
+    key: str = Field(default=..., description="Metric key")
+    value: ModelFlexibleValue = Field(
+        default=..., description="Strongly-typed metric value"
+    )
     unit: ModelSchemaValue = Field(
         default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Unit of measurement (for numeric metrics)",
@@ -43,7 +44,7 @@ class ModelMetric(BaseModel):
     )
 
     @property
-    def typed_value(self) -> ModelMetadataValue:
+    def typed_value(self) -> ModelFlexibleValue:
         """Get the strongly-typed metric value."""
         return self.value
 
@@ -57,7 +58,7 @@ class ModelMetric(BaseModel):
         """Create a string metric with strong typing."""
         return cls(
             key=key,
-            value=ModelMetadataValue.from_string(value),
+            value=ModelFlexibleValue.from_string(value),
             unit=ModelSchemaValue.from_value(""),
             description=ModelSchemaValue.from_value(description if description else ""),
         )
@@ -71,20 +72,20 @@ class ModelMetric(BaseModel):
         description: str | None = None,
     ) -> ModelMetric:
         """Create a numeric metric with ModelNumericValue."""
-        # Convert ModelNumericValue to basic numeric type for ModelMetadataValue
+        # Convert ModelNumericValue to basic numeric type for ModelFlexibleValue
         if value.value_type == "integer":
-            metadata_value = ModelMetadataValue.from_int(value.integer_value)
+            flexible_value = ModelFlexibleValue.from_integer(value.integer_value)
         elif value.value_type == "float":
-            metadata_value = ModelMetadataValue.from_float(value.float_value)
+            flexible_value = ModelFlexibleValue.from_float(value.float_value)
         else:
             # Default to float conversion for unsupported numeric types
-            metadata_value = ModelMetadataValue.from_float(
+            flexible_value = ModelFlexibleValue.from_float(
                 float(value.to_python_value()),
             )
 
         return cls(
             key=key,
-            value=metadata_value,
+            value=flexible_value,
             unit=ModelSchemaValue.from_value(unit if unit else ""),
             description=ModelSchemaValue.from_value(description if description else ""),
         )
@@ -99,7 +100,7 @@ class ModelMetric(BaseModel):
         """Create a boolean metric with strong typing."""
         return cls(
             key=key,
-            value=ModelMetadataValue.from_bool(value),
+            value=ModelFlexibleValue.from_boolean(value),
             unit=ModelSchemaValue.from_value(""),
             description=ModelSchemaValue.from_value(description if description else ""),
         )
@@ -134,8 +135,8 @@ class ModelMetric(BaseModel):
             numeric_value = ModelNumericValue.from_numeric(value)
             return cls.create_numeric_metric(key, numeric_value, unit, description)
         # This should not be reached with the bounded type signature
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported metric value type: {type(value)}",
         )
 
@@ -156,8 +157,8 @@ class ModelMetric(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -169,15 +170,20 @@ class ModelMetric(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
+
+# NOTE: model_rebuild() removed - Pydantic v2 handles forward references automatically
+# The explicit rebuild at module level caused import failures because ModelMetadataValue
+# is only available under TYPE_CHECKING guard to break circular imports
+# Pydantic will rebuild the model lazily when first accessed
 
 # Export for use
 __all__ = ["ModelMetric"]

@@ -1,3 +1,7 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Event Subscription Model - ONEX Standards Compliant.
 
@@ -7,7 +11,7 @@ and handler configuration for event subscriptions.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.types.constraints import PrimitiveValueType
 
@@ -21,7 +25,7 @@ class ModelEventSubscription(BaseModel):
     """
 
     event_pattern: str = Field(
-        ...,
+        default=...,
         description="Event name pattern or specific event name",
         min_length=1,
     )
@@ -32,7 +36,7 @@ class ModelEventSubscription(BaseModel):
     )
 
     handler_function: str = Field(
-        ...,
+        default=...,
         description="Event handler function identifier",
         min_length=1,
     )

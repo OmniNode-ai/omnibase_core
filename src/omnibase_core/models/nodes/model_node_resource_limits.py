@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+import uuid
+from typing import Dict, TypedDict
+from uuid import UUID
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Node Resource Limits Model.
 
@@ -5,18 +15,18 @@ Resource limitation configuration for nodes.
 Part of the ModelNodeConfiguration restructuring.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_node_resource_constraint_kwargs import (
     TypedDictNodeResourceConstraintKwargs,
 )
-
-from .model_types_node_resource_summary import ModelNodeResourceSummaryType
+from omnibase_core.types.typed_dict_node_resource_summary_type import (
+    TypedDictNodeResourceSummaryType,
+)
 
 
 class ModelNodeResourceLimits(BaseModel):
@@ -59,7 +69,7 @@ class ModelNodeResourceLimits(BaseModel):
         """Check if any resource limits are configured."""
         return self.has_memory_limit() or self.has_cpu_limit()
 
-    def get_resource_summary(self) -> ModelNodeResourceSummaryType:
+    def get_resource_summary(self) -> TypedDictNodeResourceSummaryType:
         """Get resource limits summary."""
         return {
             "max_memory_mb": self.max_memory_mb,
@@ -119,15 +129,15 @@ class ModelNodeResourceLimits(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
         )
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -140,7 +150,7 @@ class ModelNodeResourceLimits(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -152,7 +162,7 @@ class ModelNodeResourceLimits(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

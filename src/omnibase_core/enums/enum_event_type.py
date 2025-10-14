@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Event Type Enum.
 
@@ -5,7 +7,6 @@ Strongly typed enumeration for event categories and routing.
 Replaces string literals for event type discrimination.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

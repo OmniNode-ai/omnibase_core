@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Structured Description Model.
 
@@ -5,16 +11,14 @@ Provides consistent description patterns across metadata models.
 Reduces reliance on free-form description strings with standardized templates.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
@@ -38,7 +42,7 @@ class ModelStructuredDescription(BaseModel):
 
     # Core description components
     purpose: str = Field(
-        ...,
+        default=...,
         description="Primary purpose or function of the entity",
         max_length=200,
     )
@@ -378,7 +382,7 @@ class ModelStructuredDescription(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -391,7 +395,7 @@ class ModelStructuredDescription(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -403,7 +407,7 @@ class ModelStructuredDescription(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

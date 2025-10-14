@@ -31,7 +31,7 @@ from omnibase_core.logging.emit import (
     log_performance_metrics,
     trace_function_lifecycle,
 )
-from omnibase_core.models.core.model_log_context import LogModelContext
+from omnibase_core.models.core.model_log_entry import LogModelContext
 
 
 class TestEmitLogEventCore:

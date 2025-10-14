@@ -1,3 +1,7 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Validation Rules Model - ONEX Standards Compliant.
 
@@ -10,7 +14,7 @@ Contract validation rules and constraint definitions providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelValidationRules(BaseModel):

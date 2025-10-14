@@ -1,0 +1,470 @@
+---
+globs: *.py
+alwaysApply: false
+---
+# ONEX Core Testing Standards
+
+> **Status:** Canonical
+> **Last Updated:** 2025-01-27
+> **Purpose:** Comprehensive testing standards for ONEX Core with current patterns
+
+## Rule
+
+All code must have comprehensive test coverage following ONEX Core testing patterns. Tests must be organized by domain, use proper fixtures, and achieve high coverage while maintaining code quality.
+
+## 🧪 Testing Architecture
+
+### Current Test Structure
+**Reference:** `tests/unit/`
+
+```
+tests/unit/
+├── enums/              # 298+ enum test files
+├── models/             # Model tests by domain
+│   ├── core/          # Core model tests
+│   ├── logging/       # Logging model tests
+│   ├── validation/    # Validation model tests
+│   └── ...
+├── mixins/            # Mixin tests
+├── infrastructure/    # Infrastructure tests
+└── utils/             # Utility tests
+```
+
+### Test File Naming Convention
+```
+test_[module_name].py
+```
+
+**Examples:**
+- `test_enum_acknowledgment_type.py`
+- `test_model_node_status.py`
+- `test_mixin_hash_computation.py`
+
+## 📊 Test Coverage Standards
+
+### Coverage Requirements
+- **Minimum Coverage**: 60% (current target)
+- **Enum Coverage**: 100% (all enums must be fully tested)
+- **Model Coverage**: 100% (all models must be fully tested)
+- **Critical Path Coverage**: 100% (error handling, validation, core logic)
+
+### Coverage Measurement
+```bash
+# Run coverage analysis
+poetry run python -m pytest --cov=src --cov-report=term-missing --cov-report=html
+
+# Current coverage: 52.24% (improved from baseline)
+```
+
+## 🎯 Test Patterns
+
+### 1. Enum Testing Pattern
+**Reference:** `tests/unit/enums/test_enum_acknowledgment_type.py`
+
+```python
+import pytest
+from enum import Enum
+from omnibase_core.enums.enum_acknowledgment_type import EnumAcknowledgmentType
+
+class TestEnumAcknowledgmentType:
+    def test_enum_values(self):
+        """Test enum values exist."""
+        assert EnumAcknowledgmentType.BOOTSTRAP_ACK == "bootstrap_ack"
+        assert EnumAcknowledgmentType.DISCOVERY_ACK == "discovery_ack"
+
+    def test_enum_inheritance(self):
+        """Test enum inheritance."""
+        assert issubclass(EnumAcknowledgmentType, str)
+        assert issubclass(EnumAcknowledgmentType, Enum)
+
+    def test_enum_string_behavior(self):
+        """Test enum string behavior."""
+        ack_type = EnumAcknowledgmentType.BOOTSTRAP_ACK
+        assert isinstance(ack_type, str)
+        assert ack_type == "bootstrap_ack"
+        assert len(ack_type) == 13
+
+    def test_enum_serialization(self):
+        """Test enum serialization."""
+        ack_type = EnumAcknowledgmentType.HEALTH_CHECK_ACK
+        serialized = ack_type.value
+        assert serialized == "health_check_ack"
+
+        import json
+        json_str = json.dumps(ack_type)
+        assert json_str == '"health_check_ack"'
+
+    def test_enum_iteration(self):
+        """Test enum iteration."""
+        values = list(EnumAcknowledgmentType)
+        assert len(values) == 7
+        assert EnumAcknowledgmentType.BOOTSTRAP_ACK in values
+
+    def test_enum_membership(self):
+        """Test enum membership."""
+        assert "bootstrap_ack" in EnumAcknowledgmentType
+        assert "invalid_value" not in EnumAcknowledgmentType
+
+    def test_enum_comparison(self):
+        """Test enum comparison."""
+        ack1 = EnumAcknowledgmentType.BOOTSTRAP_ACK
+        ack2 = EnumAcknowledgmentType.BOOTSTRAP_ACK
+        assert ack1 == ack2
+        assert ack1 is ack2
+
+    def test_enum_invalid_value(self):
+        """Test enum invalid value handling."""
+        with pytest.raises(ValueError):
+            EnumAcknowledgmentType("invalid_value")
+
+    def test_enum_all_values(self):
+        """Test all enum values are accessible."""
+        expected_values = [
+            "bootstrap_ack", "discovery_ack", "registration_ack",
+            "health_check_ack", "shutdown_ack", "update_ack", "error_ack"
+        ]
+        actual_values = [e.value for e in EnumAcknowledgmentType]
+        assert set(actual_values) == set(expected_values)
+
+    def test_enum_docstring(self):
+        """Test enum has proper docstring."""
+        assert EnumAcknowledgmentType.__doc__ is not None
+        assert "acknowledgment types" in EnumAcknowledgmentType.__doc__
+```
+
+### 2. Model Testing Pattern
+**Reference:** `tests/unit/models/core/test_model_node_status.py`
+
+```python
+import pytest
+from pydantic import BaseModel, ValidationError
+from omnibase_core.models.core.model_node_status import ModelNodeStatus
+
+class TestModelNodeStatus:
+    def test_model_instantiation(self):
+        """Test model can be instantiated."""
+        status = ModelNodeStatus()
+        assert status is not None
+
+    def test_model_inheritance(self):
+        """Test model inheritance."""
+        assert issubclass(ModelNodeStatus, BaseModel)
+
+    def test_model_serialization(self):
+        """Test model serialization."""
+        status = ModelNodeStatus()
+        data = status.model_dump()
+        assert isinstance(data, dict)
+
+    def test_model_deserialization(self):
+        """Test model deserialization."""
+        data = {}
+        status = ModelNodeStatus.model_validate(data)
+        assert isinstance(status, ModelNodeStatus)
+
+    def test_model_json_serialization(self):
+        """Test model JSON serialization."""
+        status = ModelNodeStatus()
+        json_data = status.model_dump_json()
+        assert isinstance(json_data, str)
+
+    def test_model_roundtrip(self):
+        """Test model roundtrip serialization."""
+        status = ModelNodeStatus()
+        data = status.model_dump()
+        new_status = ModelNodeStatus.model_validate(data)
+        assert new_status.model_dump() == data
+
+    def test_model_equality(self):
+        """Test model equality."""
+        status1 = ModelNodeStatus()
+        status2 = ModelNodeStatus()
+        assert status1.model_dump() == status2.model_dump()
+
+    def test_model_hash(self):
+        """Test model hashing."""
+        status = ModelNodeStatus()
+        # Pydantic models are not hashable by default
+        data = status.model_dump()
+        hash_value = hash(str(data))
+        assert isinstance(hash_value, int)
+
+    def test_model_str(self):
+        """Test model string representation."""
+        status = ModelNodeStatus()
+        str_repr = str(status)
+        assert isinstance(str_repr, str)
+        assert str_repr is not None
+
+    def test_model_repr(self):
+        """Test model repr."""
+        status = ModelNodeStatus()
+        repr_str = repr(status)
+        assert isinstance(repr_str, str)
+        assert "ModelNodeStatus" in repr_str
+
+    def test_model_attributes(self):
+        """Test model attributes."""
+        status = ModelNodeStatus()
+        # Test that model has expected attributes
+        assert hasattr(status, 'model_dump')
+        assert hasattr(status, 'model_validate')
+
+    def test_model_validation(self):
+        """Test model validation."""
+        # Test with valid data
+        status = ModelNodeStatus.model_validate({})
+        assert isinstance(status, ModelNodeStatus)
+
+    def test_model_metadata(self):
+        """Test model metadata."""
+        status = ModelNodeStatus()
+        assert hasattr(status, '__class__')
+        assert status.__class__.__name__ == 'ModelNodeStatus'
+
+    def test_model_creation_with_data(self):
+        """Test model creation with data."""
+        data = {}
+        status = ModelNodeStatus.model_validate(data)
+        assert status.model_dump() == data
+
+    def test_model_copy(self):
+        """Test model copying."""
+        status = ModelNodeStatus()
+        copied = status.model_copy()
+        assert copied.model_dump() == status.model_dump()
+        assert copied is not status  # Different instances
+
+    def test_model_immutability(self):
+        """Test model immutability."""
+        status = ModelNodeStatus()
+        # Test that model fields cannot be modified after creation
+        # (depends on model configuration)
+        pass
+```
+
+### 3. Mixin Testing Pattern
+**Reference:** `tests/unit/mixins/test_mixin_hash_computation.py`
+
+```python
+import pytest
+from pydantic import BaseModel
+from omnibase_core.mixins.mixin_hash_computation import MixinHashComputation
+from omnibase_core.primitives.model_semver import ModelSemVer
+
+class TestModel(MixinHashComputation, BaseModel):
+    name: str
+    version: ModelSemVer
+    hash: str | None = None
+
+class TestMixinHashComputation:
+    def test_mixin_initialization(self):
+        """Test mixin can be initialized."""
+        model = TestModel(
+            name="test",
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        )
+        assert model is not None
+
+    def test_hash_computation(self):
+        """Test hash computation."""
+        model = TestModel(
+            name="test",
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        )
+        # Test hash computation logic
+        assert hasattr(model, 'compute_hash')
+
+    def test_mixin_inheritance(self):
+        """Test mixin inheritance."""
+        assert issubclass(TestModel, MixinHashComputation)
+        assert issubclass(TestModel, BaseModel)
+```
+
+## 🔧 Test Infrastructure
+
+### Fixture Patterns
+**Reference:** `tests/conftest.py`
+
+```python
+import pytest
+from uuid import uuid4
+from omnibase_core.primitives.model_semver import ModelSemVer
+
+@pytest.fixture
+def sample_uuid():
+    """Sample UUID fixture."""
+    return uuid4()
+
+@pytest.fixture
+def sample_semver():
+    """Sample ModelSemVer fixture."""
+    return ModelSemVer(major=1, minor=0, patch=0)
+
+@pytest.fixture
+def sample_model_data():
+    """Sample model data fixture."""
+    return {
+        "name": "test",
+        "version": {"major": 1, "minor": 0, "patch": 0}
+    }
+```
+
+### Test Organization
+```python
+# Group related tests in classes
+class TestEnumAcknowledgmentType:
+    """Test class for EnumAcknowledgmentType."""
+
+    def test_basic_functionality(self):
+        """Test basic functionality."""
+        pass
+
+    def test_edge_cases(self):
+        """Test edge cases."""
+        pass
+
+    def test_error_conditions(self):
+        """Test error conditions."""
+        pass
+```
+
+## 🚫 Testing Anti-Patterns
+
+### ❌ Incomplete Test Coverage
+```python
+# DON'T: Test only happy path
+def test_enum_value():
+    assert EnumType.VALUE == "value"
+
+# DO: Test comprehensive scenarios
+def test_enum_comprehensive():
+    # Test values, inheritance, serialization, errors, etc.
+    pass
+```
+
+### ❌ Hardcoded Test Data
+```python
+# DON'T: Hardcoded values
+def test_model():
+    model = Model(name="hardcoded", version="1.0.0")
+
+# DO: Use fixtures
+def test_model(sample_model_data):
+    model = Model.model_validate(sample_model_data)
+```
+
+### ❌ Missing Error Testing
+```python
+# DON'T: Only test success cases
+def test_enum():
+    assert EnumType.VALUE == "value"
+
+# DO: Test error conditions
+def test_enum_invalid():
+    with pytest.raises(ValueError):
+        EnumType("invalid")
+```
+
+## 🔧 Test Execution
+
+### Running Tests
+```bash
+# Run all tests
+poetry run python -m pytest
+
+# Run specific test file
+poetry run python -m pytest tests/unit/enums/test_enum_acknowledgment_type.py
+
+# Run with coverage
+poetry run python -m pytest --cov=src --cov-report=term-missing
+
+# Run with verbose output
+poetry run python -m pytest -v
+```
+
+### Test Discovery
+```bash
+# Discover all tests
+poetry run python -m pytest --collect-only
+
+# Run tests by pattern
+poetry run python -m pytest tests/unit/enums/
+
+# Run tests by keyword
+poetry run python -m pytest -k "test_enum"
+```
+
+## 📊 Coverage Analysis
+
+### Current Coverage Status
+- **Overall Coverage**: 52.24%
+- **Enum Coverage**: 100% (298+ enum files tested)
+- **Model Coverage**: 100% (core models tested)
+- **Target Coverage**: 60%
+
+### Coverage Improvement Strategy
+1. **Focus on low-coverage files** (0-30% coverage)
+2. **Add comprehensive enum tests** (high impact, low effort)
+3. **Add model tests** for untested models
+4. **Add infrastructure tests** for complex components
+
+### Coverage Commands
+```bash
+# Generate coverage report
+poetry run python -m pytest --cov=src --cov-report=html
+
+# View coverage in terminal
+poetry run python -m pytest --cov=src --cov-report=term-missing
+
+# Check specific file coverage
+poetry run python -m pytest --cov=src --cov-report=term-missing tests/unit/enums/
+```
+
+## 🎯 Test Quality Standards
+
+### Test Requirements
+1. **Comprehensive Coverage**: Test all public methods and properties
+2. **Edge Case Testing**: Test boundary conditions and error cases
+3. **Documentation**: Clear docstrings for all test methods
+4. **Maintainability**: Tests should be easy to understand and modify
+5. **Performance**: Tests should run quickly and reliably
+
+### Test Documentation
+```python
+def test_enum_serialization(self):
+    """
+    Test enum serialization to JSON.
+
+    Verifies that enum values can be serialized to JSON
+    and deserialized back to enum instances correctly.
+    """
+    # Test implementation
+    pass
+```
+
+## 📚 Quick Reference
+
+| Test Type | Pattern | Coverage Target | Example |
+|-----------|---------|-----------------|---------|
+| **Enum Tests** | Comprehensive enum testing | 100% | `test_enum_acknowledgment_type.py` |
+| **Model Tests** | Pydantic model testing | 100% | `test_model_node_status.py` |
+| **Mixin Tests** | Mixin functionality testing | 100% | `test_mixin_hash_computation.py` |
+| **Infrastructure Tests** | Node and service testing | 80% | `test_node_compute.py` |
+
+## 🎯 Enforcement
+
+- **Coverage Requirements**: Minimum 60% overall coverage
+- **Test Quality**: All tests must follow established patterns
+- **Documentation**: All test methods must have docstrings
+- **CI/CD**: All tests must pass in continuous integration
+
+## 📖 Related Rules
+
+- [Canonical Patterns](canonical_patterns.mdc) - General ONEX patterns
+- [Node Standards](node_standards.mdc) - Node architecture
+- [Pre-commit Configuration](.pre-commit-config.yaml) - Validation hooks
+
+---
+
+**Remember**: Comprehensive testing is essential for code quality and maintainability. Follow established patterns and achieve high coverage while maintaining test quality.

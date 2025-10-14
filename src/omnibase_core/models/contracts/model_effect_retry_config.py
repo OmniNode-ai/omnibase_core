@@ -1,3 +1,7 @@
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Effect Retry Configuration Model.
 
@@ -7,10 +11,10 @@ breaker patterns for resilient side-effect operations.
 
 from typing import Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -77,7 +81,7 @@ class ModelEffectRetryConfig(BaseModel):
             The validated model instance if validation passes.
 
         Raises:
-            OnexError: If max_delay_ms is less than or equal to base_delay_ms.
+            ModelOnexError: If max_delay_ms is less than or equal to base_delay_ms.
                 Error includes validation context and error type metadata.
 
         Example:
@@ -88,13 +92,13 @@ class ModelEffectRetryConfig(BaseModel):
                 max_delay_ms=5000  # Valid: 5000 > 100
             )
 
-            # Invalid configuration - raises OnexError
+            # Invalid configuration - raises ModelOnexError
             try:
                 config = ModelEffectRetryConfig(
                     base_delay_ms=5000,
                     max_delay_ms=1000  # Invalid: 1000 <= 5000
                 )
-            except OnexError as e:
+            except ModelOnexError as e:
                 print(f"Validation failed: {e.message}")
             ```
 
@@ -106,17 +110,11 @@ class ModelEffectRetryConfig(BaseModel):
         """
         if self.max_delay_ms <= self.base_delay_ms:
             msg = "max_delay_ms must be greater than base_delay_ms"
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=msg,
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_type="valueerror",
+                validation_context="model_validation",
             )
         return self
 

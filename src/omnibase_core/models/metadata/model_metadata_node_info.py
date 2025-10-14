@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+import hashlib
+import uuid
+from datetime import datetime
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Metadata Node Info Model.
 
@@ -5,13 +15,12 @@ Enhanced node information specifically for metadata collections
 with usage metrics and performance tracking.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -26,7 +35,6 @@ from omnibase_core.models.metadata.model_metadata_usage_metrics import (
 
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
-from .model_semver import ModelSemVer
 from .model_structured_description import ModelStructuredDescription
 from .model_structured_display_name import ModelStructuredDisplayName
 from .model_structured_tags import ModelStructuredTags
@@ -50,7 +58,7 @@ class ModelMetadataNodeInfo(BaseModel):
     """
 
     # Core identification
-    node_id: UUID = Field(..., description="UUID for node identifier")
+    node_id: UUID = Field(default=..., description="UUID for node identifier")
 
     # Structured naming and description (reduces string fields)
     display_name: ModelStructuredDisplayName = Field(
@@ -165,8 +173,8 @@ class ModelMetadataNodeInfo(BaseModel):
     def has_good_documentation(self) -> bool:
         """Check if node has good documentation."""
         return self.has_documentation and self.documentation_quality in [
-            EnumValidationLevel.GOOD,
-            EnumValidationLevel.EXCELLENT,
+            EnumValidationLevel.STANDARD,
+            EnumValidationLevel.COMPREHENSIVE,
         ]
 
     def get_success_rate(self) -> float:
@@ -253,8 +261,8 @@ class ModelMetadataNodeInfo(BaseModel):
         """Set documentation quality level."""
         valid_levels = [
             EnumValidationLevel.BASIC,
-            EnumValidationLevel.GOOD,
-            EnumValidationLevel.EXCELLENT,
+            EnumValidationLevel.STANDARD,
+            EnumValidationLevel.COMPREHENSIVE,
         ]
         if quality in valid_levels:
             self.documentation_quality = quality
@@ -296,8 +304,8 @@ class ModelMetadataNodeInfo(BaseModel):
         # Map documentation quality (using quality level enum keys)
         doc_quality_map = {
             EnumValidationLevel.BASIC: EnumDocumentationQuality.MINIMAL,
-            EnumValidationLevel.GOOD: EnumDocumentationQuality.GOOD,
-            EnumValidationLevel.EXCELLENT: EnumDocumentationQuality.COMPREHENSIVE,
+            EnumValidationLevel.STANDARD: EnumDocumentationQuality.GOOD,
+            EnumValidationLevel.COMPREHENSIVE: EnumDocumentationQuality.COMPREHENSIVE,
         }
         documentation_quality = doc_quality_map.get(
             self.documentation_quality,
@@ -383,7 +391,6 @@ class ModelMetadataNodeInfo(BaseModel):
         complexity: EnumConceptualComplexity = EnumConceptualComplexity.BASIC,
     ) -> ModelMetadataNodeInfo:
         """Create function node info."""
-        import hashlib
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
@@ -436,7 +443,6 @@ class ModelMetadataNodeInfo(BaseModel):
         description: str = "",
     ) -> ModelMetadataNodeInfo:
         """Create documentation node info."""
-        import hashlib
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
@@ -465,7 +471,7 @@ class ModelMetadataNodeInfo(BaseModel):
             tags=tags,
             node_type=EnumMetadataNodeType.DOCUMENTATION,
             has_documentation=True,
-            documentation_quality=EnumValidationLevel.GOOD,
+            documentation_quality=EnumValidationLevel.STANDARD,
         )
 
     model_config = {
@@ -477,7 +483,7 @@ class ModelMetadataNodeInfo(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -490,7 +496,7 @@ class ModelMetadataNodeInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -502,7 +508,7 @@ class ModelMetadataNodeInfo(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

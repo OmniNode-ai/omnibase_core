@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Dict
+
+from pydantic import Field
+
 """
 Connection info model to replace Dict[str, Any] usage for connection_info fields.
 
@@ -5,14 +11,13 @@ Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
 
-from __future__ import annotations
 
 import uuid
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, field_serializer
 
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth
@@ -54,7 +59,7 @@ class ModelConnectionInfo(BaseModel):
 
     # Composed sub-models for focused concerns
     endpoint: ModelConnectionEndpoint = Field(
-        ...,
+        default=...,
         description="Connection endpoint configuration",
     )
     auth: ModelConnectionAuth = Field(
@@ -72,10 +77,10 @@ class ModelConnectionInfo(BaseModel):
 
     # Connection state
     established_at: datetime | None = Field(
-        None,
+        default=None,
         description="Connection establishment time",
     )
-    last_used_at: datetime | None = Field(None, description="Last usage time")
+    last_used_at: datetime | None = Field(default=None, description="Last usage time")
     connection_state: EnumConnectionState = Field(
         default=EnumConnectionState.DISCONNECTED,
         description="Current connection state",
@@ -83,7 +88,7 @@ class ModelConnectionInfo(BaseModel):
 
     # Metrics and custom properties
     metrics: ModelConnectionMetrics | None = Field(
-        None,
+        default=None,
         description="Connection metrics",
     )
     custom_properties: ModelCustomConnectionProperties = Field(
@@ -266,5 +271,5 @@ class ModelConnectionInfo(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

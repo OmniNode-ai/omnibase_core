@@ -1,3 +1,7 @@
+from typing import Any, TypeVar
+
+from pydantic import Field
+
 """
 Model Condition Value - Generic container for strongly-typed condition values.
 
@@ -7,9 +11,9 @@ and enforces structured value handling for workflow conditions.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from typing import Generic, TypeVar
+from typing import Generic
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Type-safe value types
 ConditionValue = TypeVar("ConditionValue", str, int, float, bool)
@@ -18,7 +22,7 @@ ConditionValue = TypeVar("ConditionValue", str, int, float, bool)
 class ModelConditionValue(BaseModel, Generic[ConditionValue]):
     """Generic container for strongly-typed condition values."""
 
-    value: ConditionValue = Field(..., description="Typed condition value")
+    value: ConditionValue = Field(default=..., description="Typed condition value")
 
     @property
     def python_type(self) -> type:

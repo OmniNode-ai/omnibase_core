@@ -1,0 +1,262 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# ONEX Standards (Canonical)
+
+> **Status:** CANONICAL | **Updated:** 2025-07-01 | **Enforcement:** MANDATORY
+
+**Purpose:** Standardize naming, eliminate legacy patterns, enforce enum-backed tool names
+
+## File Naming Patterns
+
+### Core Patterns
+| Type | Pattern | Location | Example |
+|------|---------|----------|---------|
+| **Tools** | `tool_<name>.py` | `*/tools/` | `tool_file_generator.py` |
+| **Protocols** | `protocol_<name>.py` | `*/protocols/` | `protocol_file_generator.py` |
+| **Models** | `model_<name>.py` | `*/models/` | `model_node_generator_input_state.py` |
+| **Enums** | `enum_<name>.py` | `src/omnibase/enums/` | `enum_tool_names.py` |
+| **Constants** | `<domain>_constants.py` | `src/omnibase/constants/` | `cli_constants.py` |
+| **Tests** | `test_<name>.py` | `*/tests/` | `test_scenarios.py` |
+| **Subcontracts** | `contract_<domain>.yaml` | `*/contracts/` | `contract_actions.yaml` |
+| **Contract Models** | `model_contract_<domain>.py` | `*/models/` | `model_contract_actions.py` |
+
+### Subcontract Architecture (NEW CANONICAL PATTERN)
+
+#### Separation of Concerns
+- **Main Contract** (`contract.yaml`) - Interface definition only
+- **Subcontracts** (`contracts/*.yaml`) - Data structure definitions
+- **Backing Models** (`models/model_contract_*.py`) - Auto-generated Pydantic models
+
+#### Subcontract Naming Convention
+| Purpose | File Name | Generated Model | Example Content |
+|---------|-----------|-----------------|-----------------|
+| **Actions** | `contract_actions.yaml` | `model_contract_actions.py` | Action models, enums |
+| **Data Models** | `contract_models.yaml` | `model_contract_models.py` | Domain data structures |
+| **Validation** | `contract_validation.yaml` | `model_contract_validation.py` | Validation rules |
+| **CLI Interface** | `contract_cli.yaml` | `model_contract_cli.py` | CLI commands, args |
+| **Capabilities** | `contract_capabilities.yaml` | `model_contract_capabilities.py` | Execution capabilities |
+
+#### Reference Pattern
+```yaml
+# Main contract.yaml references subcontracts
+input_state:
+  properties:
+    action:
+      $ref: "contracts/contract_actions.yaml#/NodeActionModel"
+    validation_config:
+      $ref: "contracts/contract_validation.yaml#/ValidationConfig"
+```
+
+### Node Structure (Versioned)
+```
+nodes/{name}/
+├── protocols/           # Never versioned
+├── v{major}_{minor}_{patch}/
+│   ├── contract.yaml   # Main interface contract (source of truth)
+│   ├── contracts/      # Subcontract definitions (NEW)
+│   │   ├── contract_actions.yaml    # Action model definitions
+│   │   ├── contract_models.yaml     # Data structure definitions
+│   │   ├── contract_validation.yaml # Validation rule definitions
+│   │   ├── contract_cli.yaml        # CLI interface definitions (optional)
+│   │   └── contract_capabilities.yaml # Execution capability definitions (optional)
+│   ├── models/         # Auto-generated Pydantic models
+│   │   ├── state.py    # Main input/output state models
+│   │   ├── model_contract_actions.py     # Generated from contract_actions.yaml
+│   │   ├── model_contract_models.py      # Generated from contract_models.yaml
+│   │   ├── model_contract_validation.py  # Generated from contract_validation.yaml
+│   │   ├── model_contract_cli.py         # Generated from contract_cli.yaml (optional)
+│   │   └── model_contract_capabilities.py # Generated from contract_capabilities.yaml (optional)
+│   ├── tools/          # Business logic
+│   ├── registry/       # Tool registration
+│   ├── node_tests/     # All tests
+│   ├── scenarios/      # YAML scenarios
+│   ├── node.py        # Main reducer
+│   └── introspection.py
+```
+
+## Tool Name Management (NEW CANONICAL PATTERN)
+
+### Enum-Backed Self-Describing Tools
+```python
+# 1. Define in enum
+class EnumToolNames(str, Enum):
+    TOOL_FILE_GENERATOR = "tool_file_generator"
+
+# 2. Tools use enum under hood
+class ToolFileGenerator:
+    TOOL_NAME = EnumToolNames.TOOL_FILE_GENERATOR
+
+# 3. Registry uses enum for safety
+CANONICAL_TOOLS = {
+    EnumToolNames.TOOL_FILE_GENERATOR: ToolFileGenerator,
+}
+```
+
+**Benefits:** Compile-time safety + self-documenting + standards compliance
+
+## Class Naming
+| Type | Pattern | Example |
+|------|---------|---------|
+| **Tools** | `Tool<Name>` | `ToolFileGenerator` |
+| **Protocols** | `Protocol<Name>` | `ProtocolFileGenerator` |
+| **Models** | `Model<Name>` | `ModelNodeGeneratorInputState` |
+| **Enums** | `Enum<Name>` | `EnumToolNames` |
+| **Registries** | `Registry<Name>` | `RegistryNodeGenerator` |
+
+## Reserved Prefixes
+- `tool_` - Business logic tools (replaces handlers, utils, core)
+- `protocol_` - Interface definitions
+- `model_` - Pydantic models
+- `enum_` - Enumerations
+- `test_` - Test files
+- `scenario_` - Test scenarios
+- `template_` - Code generation templates
+- `contract_` - Subcontract definitions (NEW)
+
+## Interface Design: Protocol vs Pydantic Models
+
+### Use Protocol When:
+- Defining interfaces for plugins/tools/cross-boundary contracts
+- Interface based on method shape only (structural typing)
+- Implementations may live outside core codebase
+- Want lightweight, duck-typed contracts
+
+### Use Pydantic Models When:
+- Require subclassing with shared logic/default implementations
+- Want to enforce inheritance and `super()` semantics
+
+### Guidelines:
+| Interface Type | Use | Example |
+|----------------|-----|---------|
+| **Tool interfaces** | Protocol | `ProtocolFileGenerator` |
+| **Plugin APIs** | Protocol | `ProtocolValidator` |
+| **Registry APIs** | Protocol | `ProtocolNodeRegistry` |
+| **Base classes** | Pydantic | Internal shared logic only |
+
+**Rule:** Use Protocol for any interface that could be implemented outside core
+
+## Typing Standards
+
+### Protocol Method Signatures
+```python
+# ✅ CORRECT: Pydantic models only
+def process(self, input_state: ModelInputState) -> ModelOutputState:
+    ...
+
+# ❌ FORBIDDEN: Primitives/dicts
+def process(self, data: dict) -> bool:
+    ...
+```
+
+### Model Usage Requirements
+- **All protocol methods** must use Pydantic models
+- **No primitive returns** for domain data (use models)
+- **No dict parameters** (use typed models)
+- **No string literals** for enums (use Enum types)
+
+### Enum Usage
+```python
+# ✅ CORRECT
+status: EnumOnexStatus = EnumOnexStatus.SUCCESS
+
+# ❌ FORBIDDEN
+status: str = "success"
+```
+
+### TYPE_CHECKING Pattern
+```python
+from typing import Protocol, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase.model.model_name import ModelName
+
+class ProtocolTool(Protocol):
+    def method(self, input_state: "ModelInputState") -> "ModelOutputState":
+        ...
+```
+
+### Generics Usage
+```python
+# For varying result types
+class ProtocolProcessor(Protocol, Generic[T]):
+    def process(self, input_state: ModelInputState) -> T:
+        ...
+```
+
+## Anti-Patterns (FORBIDDEN)
+❌ `handler_`, `utils_`, `core_` (use `tool_` instead)
+❌ `camelCase` filenames
+❌ Magic strings for tool names
+❌ Manual model creation (use contract.yaml)
+❌ Non-versioned node implementations
+❌ Primitive types in protocols (use models)
+❌ String literals for enums
+❌ Dict parameters (use typed models)
+
+## Model Standards
+- **One model per file** (mandatory)
+- **Auto-generated from contract.yaml** (no hand-written models)
+- **Inherit from OnexInputState/OnexOutputState**
+- **Use shared schemas with project root paths**
+- **Strongest typing possible** (no Any, dict, or primitives, unless necessary)
+
+## Import Standards
+```python
+# Tools
+from omnibase.tools.core.tool_base_with_logger import ToolBaseWithLogger
+from omnibase.enums import EnumToolNames
+
+# Models (shared core)
+from omnibase.model.core.model_name import ModelName
+
+# Protocols
+from omnibase.protocol.protocol_name import ProtocolName
+```
+
+## Enforcement
+- **CI checks** validate naming compliance
+- **Code review** enforces standards
+- **Auto-generation** prevents manual model creation
+- **Registry patterns** eliminate magic strings
+- **Type checking** enforces model usage
+
+## Migration Path
+1. Replace `handler_`, `utils_`, `core_` with `tool_`
+2. Move to enum-backed tool names
+3. Auto-generate models from contracts
+4. Use canonical directory structure
+5. Replace primitives with models in protocols
+6. Replace string literals with enums
+
+## AI-Generated Code Standards
+
+### AI_PROMPT Comments (CANONICAL PATTERN)
+```python
+# [AI_PROMPT] This tool handles business logic for the node_name node.
+# [AI_PROMPT] Replace all tokens and implement actual functionality.
+```
+
+**Purpose:** Guide AI agents in implementing generated code functionality
+
+**Rules:**
+- **✅ REQUIRED** in generated templates and stubs
+- **✅ PRESERVE** in generated code - they guide future AI implementation
+- **✅ ACTIONABLE** - must provide clear implementation guidance
+- **✅ TOKEN-BASED** - use `node_name`, `NodeName` tokens for replacement
+- **❌ NOT ERRORS** - these are intentional guidance, not code issues
+
+**Standard AI_PROMPT Patterns:**
+```python
+# [AI_PROMPT] This tool handles {functionality} for the {node_name} node.
+# [AI_PROMPT] Replace all tokens and implement actual {specific_task}.
+# [AI_PROMPT] All tokens in this file must correspond to fields in ModelTemplateContext.
+# [AI_PROMPT] Update the {section} block for your {specific_purpose}.
+```
+
+## Enforcement
+```
+
+## Enforcement

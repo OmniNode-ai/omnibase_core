@@ -1,3 +1,7 @@
+from typing import Dict
+
+from pydantic import Field
+
 """
 TypedDict for field values.
 
@@ -5,11 +9,13 @@ This supports the field accessor pattern by providing strong typing
 for field values without resorting to Any type usage.
 """
 
-from typing import TypedDict
+from typing import Any
+
+from typing_extensions import TypedDict
 
 
 class TypedDictFieldValue(TypedDict, total=False):
-    """Typed dictionary for field values.
+    """Typed dict[str, Any]ionary for field values.
     Implements omnibase_spi protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

@@ -3,13 +3,14 @@
 Generic YAML contract validation for omni* repositories.
 Validates that YAML contract files follow ONEX standards.
 """
+
 from __future__ import annotations
 
 import argparse
 import os
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import yaml
 
@@ -66,7 +67,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
     try:
         # Read file with proper encoding
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content_str = f.read()
 
     except FileNotFoundError:
@@ -81,7 +82,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     except OSError as e:
         errors.append(f"OS error reading file: {e}")
         return errors
-    except IOError as e:
+    except OSError as e:
         errors.append(f"IO error reading file: {e}")
         return errors
 
@@ -224,7 +225,6 @@ def setup_timeout_handler() -> None:
     This function does nothing but exists for backward compatibility with tests.
     Use timeout_context() instead for actual timeout handling.
     """
-    pass
 
 
 def main():

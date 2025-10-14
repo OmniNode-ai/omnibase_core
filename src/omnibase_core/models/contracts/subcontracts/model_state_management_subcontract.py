@@ -1,11 +1,12 @@
+import uuid
+from typing import Dict
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 State Management Subcontract Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for state management functionality providing:
 - State persistence and recovery strategies
@@ -20,10 +21,10 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_state_management import (
     EnumEncryptionAlgorithm,
@@ -32,10 +33,9 @@ from omnibase_core.enums.enum_state_management import (
     EnumStateLifecycle,
     EnumStateScope,
 )
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 from .model_state_persistence import ModelStatePersistence
 from .model_state_synchronization import ModelStateSynchronization
@@ -53,9 +53,6 @@ class ModelStateManagementSubcontract(BaseModel):
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
-
-    # Interface version for code generation stability
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts
@@ -214,9 +211,9 @@ class ModelStateManagementSubcontract(BaseModel):
         if info.data and info.data.get("caching_enabled", True):
             if v < 10:
                 msg = "cache_size must be at least 10 when caching is enabled"
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -235,9 +232,9 @@ class ModelStateManagementSubcontract(BaseModel):
         if info.data and info.data.get("cleanup_enabled", True):
             if v < 60000:  # 1 minute minimum
                 msg = "cleanup_interval_ms must be at least 60000ms (1 minute)"
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

@@ -1,26 +1,31 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Item summary model for collection item protocols.
 
-Clean, strongly-typed replacement for collection item dict return types.
+Clean, strongly-typed replacement for collection item dict[str, Any]return types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_item_type import EnumItemType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 
 class ModelItemSummary(BaseModel):
     """
-    Clean, strongly-typed model replacing collection item dict return types.
+    Clean, strongly-typed model replacing collection item dict[str, Any]return types.
 
     Eliminates: dict[str, primitive_soup_unions] (replaced with PrimitiveValueType)
 
@@ -105,20 +110,27 @@ class ModelItemSummary(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Configurable protocol requires bool return on failure
-            return False
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
-        return True
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

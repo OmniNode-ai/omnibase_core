@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Literal
+
 """
 Cell Type Enum.
 
@@ -5,7 +9,6 @@ Strongly typed enumeration for notebook cell types.
 Replaces Literal["code", "markdown"] patterns.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

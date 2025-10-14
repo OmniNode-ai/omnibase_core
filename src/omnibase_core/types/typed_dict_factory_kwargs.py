@@ -1,48 +1,17 @@
-"""
-Typed dictionary for factory method parameters.
-
-Provides structured parameter types for model factory operations.
-Restructured using composition to reduce string field count and follow ONEX one-model-per-file pattern.
-"""
-
 from __future__ import annotations
 
 from typing import TypedDict
 
-from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
+from omnibase_core.types.typed_dict_execution_params import TypedDictExecutionParams
+from omnibase_core.types.typed_dict_message_params import TypedDictMessageParams
+from omnibase_core.types.typed_dict_metadata_params import TypedDictMetadataParams
 
+"""
+Typed dict[str, Any]ionary for factory method parameters.
 
-# Structured TypedDicts to reduce string field violations
-class TypedDictExecutionParams(TypedDict, total=False):
-    """Execution-related factory parameters.
-    Implements omnibase_spi protocols:
-    - Configurable: Configuration management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    - Nameable: Name management interface
-    """
-
-    success: bool
-    exit_code: int
-    error_message: str
-    data: object  # ONEX compliance - use object instead of Any for generic data
-
-
-class TypedDictMetadataParams(TypedDict, total=False):
-    """Metadata-related factory parameters."""
-
-    name: str
-    value: str
-    description: str
-    deprecated: bool
-    experimental: bool
-
-
-class TypedDictMessageParams(TypedDict, total=False):
-    """Message-related factory parameters."""
-
-    message: str
-    severity: EnumSeverityLevel
+Provides structured parameter types for model factory operations.
+Restructured using composition to reduce string field count and follow ONEX one-model-per-file pattern.
+"""
 
 
 # Main factory kwargs that combines sub-groups
@@ -53,16 +22,8 @@ class TypedDictFactoryKwargs(
     total=False,
 ):
     """
-    Typed dictionary for factory method parameters.
+    Typed dict[str, Any]ionary for factory method parameters.
 
     Restructured using composition to reduce string field count.
     Follows ONEX one-model-per-file architecture pattern.
     """
-
-
-__all__ = [
-    "TypedDictExecutionParams",
-    "TypedDictFactoryKwargs",
-    "TypedDictMessageParams",
-    "TypedDictMetadataParams",
-]

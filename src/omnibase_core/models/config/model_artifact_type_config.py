@@ -1,16 +1,18 @@
-"""
-Artifact type configuration model.
-"""
-
 from __future__ import annotations
 
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
+"\nArtifact type configuration model.\n"
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_artifact_type import EnumArtifactType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelArtifactTypeConfig(BaseModel):
@@ -22,27 +24,19 @@ class ModelArtifactTypeConfig(BaseModel):
     """
 
     name: EnumArtifactType = Field(
-        ...,
-        description="Strongly typed artifact type",
+        default=..., description="Strongly typed artifact type"
     )
-
     metadata_file: Path | None = Field(
-        None,
-        description="Path to metadata file for this artifact type",
+        default=None, description="Path to metadata file for this artifact type"
     )
-
-    version_pattern: str | None = Field(
-        None,
-        description="Version pattern for artifact naming/validation",
+    version_pattern: ModelSemVer | None = Field(
+        default=None, description="Version pattern for artifact naming/validation"
     )
-
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
     }
-
-    # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -52,23 +46,21 @@ class ModelArtifactTypeConfig(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e

@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI Execution Context Model.
 
@@ -5,7 +13,6 @@ Represents custom execution context with proper validation.
 Replaces dict[str, Any] for custom context with structured typing.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
@@ -14,11 +21,11 @@ from typing import Any
 # Removed Any import - using object for ONEX compliance
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelCliExecutionContext(BaseModel):
@@ -34,14 +41,16 @@ class ModelCliExecutionContext(BaseModel):
     """
 
     # Context identification
-    key: str = Field(..., description="Context key identifier")
+    key: str = Field(default=..., description="Context key identifier")
     value: object = Field(
-        ...,
+        default=...,
         description="Context value - validated against context_type discriminator",
     )
 
     # Context metadata
-    context_type: EnumContextType = Field(..., description="Type of context data")
+    context_type: EnumContextType = Field(
+        default=..., description="Type of context data"
+    )
     is_persistent: bool = Field(default=False, description="Whether context persists")
     priority: int = Field(default=0, description="Context priority", ge=0, le=10)
 
@@ -111,7 +120,7 @@ class ModelCliExecutionContext(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -136,15 +145,15 @@ class ModelCliExecutionContext(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

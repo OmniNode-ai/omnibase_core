@@ -1,17 +1,27 @@
-"""Contract definitions model for ContractLoader."""
+from typing import Any, Dict
 
-from typing import Any
+from pydantic import Field
 
-from pydantic import BaseModel, Field
+"""
+Model for contract definitions representation in ONEX NodeBase implementation.
+
+This model supports the PATTERN-005 ContractLoader functionality for
+strongly typed contract definitions section.
+
+Author: ONEX Framework Team
+"""
+
+from pydantic import BaseModel, ConfigDict
+
+from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 
 
 class ModelContractDefinitions(BaseModel):
-    """Contract definitions section (optional)."""
+    """Model representing contract definitions section."""
 
-    definitions: dict[str, Any] = Field(
-        default_factory=dict, description="Schema definitions"
+    model_config = ConfigDict(extra="ignore")
+
+    definitions: dict[str, ModelYamlSchemaObject] = Field(
+        default_factory=dict,
+        description="Contract definitions mapping",
     )
-
-    model_config = {
-        "extra": "allow",
-    }

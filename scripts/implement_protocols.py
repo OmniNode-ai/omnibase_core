@@ -126,10 +126,10 @@ class ProtocolImplementer:
 
     def __init__(self, models_dir: str):
         self.models_dir = Path(models_dir)
-        self.processed_files: List[str] = []
-        self.errors: List[str] = []
+        self.processed_files: list[str] = []
+        self.errors: list[str] = []
 
-    def find_all_models(self) -> Dict[str, List[Path]]:
+    def find_all_models(self) -> dict[str, list[Path]]:
         """Find all model files categorized by directory."""
         categories = {}
 
@@ -146,10 +146,10 @@ class ProtocolImplementer:
 
         return categories
 
-    def analyze_model_file(self, file_path: Path) -> Tuple[str, List[str], bool]:
+    def analyze_model_file(self, file_path: Path) -> tuple[str, list[str], bool]:
         """Analyze model file to determine class name and current protocols."""
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 content = f.read()
 
             # Find class definition
@@ -162,7 +162,7 @@ class ProtocolImplementer:
             # Check if already implements protocols
             class_line = class_match.group(0)
             current_protocols = []
-            for protocol in self.PROTOCOL_METHODS.keys():
+            for protocol in self.PROTOCOL_METHODS:
                 if protocol in class_line:
                     current_protocols.append(protocol)
 
@@ -175,7 +175,7 @@ class ProtocolImplementer:
             self.errors.append(f"Error analyzing {file_path}: {e}")
             return "", [], False
 
-    def update_imports(self, content: str, protocols: List[str]) -> str:
+    def update_imports(self, content: str, protocols: list[str]) -> str:
         """Add protocol imports if not already present."""
         import_section = """from omnibase_core.types.constraints import (
     {protocols}
@@ -206,7 +206,7 @@ class ProtocolImplementer:
                 )
 
     def update_class_definition(
-        self, content: str, class_name: str, protocols: List[str]
+        self, content: str, class_name: str, protocols: list[str]
     ) -> str:
         """Update class definition to include protocols."""
         # Find the class definition
@@ -234,7 +234,7 @@ class ProtocolImplementer:
 
         return content.replace(old_class_def, new_class_def)
 
-    def add_protocol_methods(self, content: str, protocols: List[str]) -> str:
+    def add_protocol_methods(self, content: str, protocols: list[str]) -> str:
         """Add protocol method implementations."""
         if "# Protocol method implementations" in content:
             return content  # Already has protocol methods
@@ -266,7 +266,7 @@ class ProtocolImplementer:
             return content + methods_section
 
     def update_class_docstring(
-        self, content: str, class_name: str, protocols: List[str]
+        self, content: str, class_name: str, protocols: list[str]
     ) -> str:
         """Update class docstring to document implemented protocols."""
         protocol_docs = f"""
@@ -320,7 +320,7 @@ class ProtocolImplementer:
                 return True
 
             # Read file content
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 content = f.read()
 
             # Add missing protocols
@@ -352,7 +352,7 @@ class ProtocolImplementer:
             self.errors.append(f"Error processing {file_path}: {e}")
             return False
 
-    def implement_all_protocols(self) -> Dict[str, int]:
+    def implement_all_protocols(self) -> dict[str, int]:
         """Implement protocols across all model categories."""
         categories = self.find_all_models()
         stats = {
@@ -384,7 +384,7 @@ class ProtocolImplementer:
 
         return stats
 
-    def generate_report(self, stats: Dict[str, int]) -> str:
+    def generate_report(self, stats: dict[str, int]) -> str:
         """Generate implementation report."""
         report = f"""
 # Protocol Implementation Report
@@ -423,9 +423,9 @@ def main():
         print(f"❌ Models directory not found: {models_dir}")
         return 1
 
-    print(f"🎯 Protocol Implementation for omnibase_core")
+    print("🎯 Protocol Implementation for omnibase_core")
     print(f"📁 Models directory: {models_dir}")
-    print(f"🔧 Implementing protocols across 216 models...")
+    print("🔧 Implementing protocols across 216 models...")
 
     # Initialize implementer
     implementer = ProtocolImplementer(str(models_dir))
@@ -439,7 +439,7 @@ def main():
     with open(report_path, "w") as f:
         f.write(report)
 
-    print(f"\n🎉 Protocol implementation completed!")
+    print("\n🎉 Protocol implementation completed!")
     print(f"📊 Report saved to: {report_path}")
     print(
         f"✅ {stats['processed_files']}/{stats['total_files']} files processed successfully"

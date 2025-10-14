@@ -11,10 +11,8 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
-from omnibase_core.models.metadata.model_generic_metadata import (
-    ModelGenericMetadata,
-)
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelGenericMetadataCreation:
@@ -118,7 +116,7 @@ class TestModelGenericMetadataFieldOperations:
         """Test that setting invalid type fails."""
         metadata = ModelGenericMetadata()
 
-        from omnibase_core.errors.error_codes import OnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
         with pytest.raises(OnexError) as exc_info:
             metadata.set_field("invalid", {"dict": "not", "allowed": True})
@@ -204,7 +202,7 @@ class TestModelGenericMetadataFieldOperations:
         class UnsupportedType:
             pass
 
-        from omnibase_core.errors.error_codes import OnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
         with pytest.raises(OnexError) as exc_info:
             metadata.set_field("invalid", UnsupportedType())

@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+from typing import TYPE_CHECKING, Any
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Metrics data model.
 
@@ -5,20 +14,18 @@ Clean, strongly-typed replacement for custom metrics union types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
-
-from typing import Any
-
 # Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
+# Import from common layer instead of metadata layer to avoid circular dependency
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .model_metric import ModelMetric
 
@@ -36,14 +43,16 @@ class ModelMetricsData(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    # Single list of universal metrics using discriminated union pattern
+    # Single list[Any]of universal metrics using discriminated union pattern
     metrics: list[ModelMetric] = Field(
         default_factory=list,
         description="Collection of typed metrics",
     )
 
     # Metadata
-    collection_id: UUID | None = Field(None, description="UUID for metrics collection")
+    collection_id: UUID | None = Field(
+        default=None, description="UUID for metrics collection"
+    )
     collection_display_name: ModelSchemaValue = Field(
         default_factory=lambda: ModelSchemaValue.from_value(""),
         description="Human-readable name of the metrics collection",
@@ -75,7 +84,7 @@ class ModelMetricsData(BaseModel):
         )
         self.metrics.append(metric)
 
-    def get_metric_by_key(self, key: str) -> ModelMetadataValue | None:
+    def get_metric_by_key(self, key: str) -> ModelFlexibleValue | None:
         """Get metric value by key with bounded return type."""
         for metric in self.metrics:
             if metric.key == key:
@@ -140,8 +149,8 @@ class ModelMetricsData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -153,15 +162,20 @@ class ModelMetricsData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
+
+# NOTE: model_rebuild() removed - Pydantic v2 handles forward references automatically
+# The explicit rebuild at module level caused import failures because ModelMetadataValue
+# is only available under TYPE_CHECKING guard to break circular imports
+# Pydantic will rebuild the model lazily when first accessed
 
 # Export for use
 __all__ = ["ModelMetricsData"]

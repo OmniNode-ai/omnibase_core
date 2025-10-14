@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Example context data model.
 
@@ -5,18 +14,16 @@ Clean, strongly-typed replacement for dict[str, Any] in example context data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelExampleContextData(BaseModel):
@@ -60,9 +67,9 @@ class ModelExampleContextData(BaseModel):
     )
 
     # User and session context
-    user_id: UUID | None = Field(None, description="UUID of the user")
+    user_id: UUID | None = Field(default=None, description="UUID of the user")
     user_display_name: str = Field(default="", description="Human-readable user name")
-    session_id: UUID | None = Field(None, description="Session identifier")
+    session_id: UUID | None = Field(default=None, description="Session identifier")
 
     # Additional metadata
     tags: list[str] = Field(default_factory=list, description="Context tags")
@@ -70,7 +77,7 @@ class ModelExampleContextData(BaseModel):
 
     # Version info
     schema_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Schema version for validation",
     )
 
@@ -92,13 +99,13 @@ class ModelExampleContextData(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -108,8 +115,8 @@ class ModelExampleContextData(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

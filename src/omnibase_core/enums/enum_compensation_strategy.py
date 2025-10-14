@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Compensation Strategy Enum.
 
@@ -5,7 +7,6 @@ Strongly typed enumeration for workflow compensation strategies.
 Replaces Literal["rollback", "forward_recovery", "mixed"] patterns.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 from typing import Literal, assert_never

@@ -18,6 +18,7 @@ Features:
 This hook helps maintain type safety and prevents string-heavy anti-patterns
 that lead to runtime issues and poor data validation.
 """
+
 from __future__ import annotations
 
 import ast
@@ -58,19 +59,19 @@ class ValidationConfig:
     """Configuration for string typing validation."""
 
     # Fields that can legitimately be strings
-    allowed_string_fields: Set[str]
+    allowed_string_fields: set[str]
 
     # Models that are excluded from validation
-    excluded_models: Set[str]
+    excluded_models: set[str]
 
     # Files that are excluded from validation
-    excluded_files: Set[str]
+    excluded_files: set[str]
 
     # Field patterns that should be UUIDs
-    uuid_patterns: List[str]
+    uuid_patterns: list[str]
 
     # Field patterns that should be enums
-    enum_patterns: Dict[str, List[str]]
+    enum_patterns: dict[str, list[str]]
 
     # Maximum allowed string fields per model
     max_string_fields_per_model: int
@@ -79,7 +80,7 @@ class ValidationConfig:
     strict_mode: bool
 
     @classmethod
-    def default(cls) -> "ValidationConfig":
+    def default(cls) -> ValidationConfig:
         """Create default configuration."""
         return cls(
             allowed_string_fields={
@@ -236,10 +237,10 @@ class ValidationConfig:
         )
 
     @classmethod
-    def from_file(cls, config_path: Path) -> "ValidationConfig":
+    def from_file(cls, config_path: Path) -> ValidationConfig:
         """Load configuration from JSON file."""
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Convert sets and lists from JSON
@@ -280,10 +281,10 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
     def __init__(self, file_path: str, config: ValidationConfig):
         self.file_path = file_path
         self.config = config
-        self.violations: List[StringTypingViolation] = []
-        self.imports: Set[str] = set()
+        self.violations: list[StringTypingViolation] = []
+        self.imports: set[str] = set()
         self.current_class: Optional[str] = None
-        self.current_model_fields: List[str] = []
+        self.current_model_fields: list[str] = []
         self.is_pydantic_model = False
 
     def visit_Import(self, node: ast.Import):
@@ -338,7 +339,6 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
             and isinstance(node.target, ast.Name)
             and self.current_class
         ):
-
             field_name = node.target.id
             annotation_str = self._get_annotation_string(node.annotation)
 
@@ -476,7 +476,7 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
             re.match(pattern, field_name) for pattern in self.config.uuid_patterns
         )
 
-    def _check_enum_patterns(self, field_name: str) -> Optional[List[str]]:
+    def _check_enum_patterns(self, field_name: str) -> Optional[list[str]]:
         """Check if field name matches enum patterns and return suggested values."""
         field_lower = field_name.lower()
 
@@ -555,9 +555,9 @@ class StringTypingValidator:
 
     def __init__(self, config: Optional[ValidationConfig] = None):
         self.config = config or ValidationConfig.default()
-        self.violations: List[StringTypingViolation] = []
+        self.violations: list[StringTypingViolation] = []
         self.checked_files = 0
-        self.errors: List[str] = []
+        self.errors: list[str] = []
 
     def validate_file(self, file_path: Path) -> bool:
         """Validate a single Python file."""
@@ -595,7 +595,7 @@ class StringTypingValidator:
         try:
             with open(file_path, encoding="utf-8") as f:
                 content = f.read()
-        except (UnicodeDecodeError, PermissionError, OSError, IOError) as e:
+        except (UnicodeDecodeError, PermissionError, OSError) as e:
             self.errors.append(f"{file_path}: Error reading file - {e}")
             return False
 
@@ -683,7 +683,7 @@ class StringTypingValidator:
                 print()
 
                 # Group by file
-                by_file: Dict[str, List[StringTypingViolation]] = {}
+                by_file: dict[str, list[StringTypingViolation]] = {}
                 for violation in self.violations:
                     if violation.file_path not in by_file:
                         by_file[violation.file_path] = []
@@ -753,7 +753,7 @@ from timeout_utils import timeout_context
 
 def setup_timeout_handler():
     """Legacy compatibility function - use timeout_context instead."""
-    pass  # No-op for compatibility
+    # No-op for compatibility
 
 
 def main() -> int:

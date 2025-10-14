@@ -1,86 +1,33 @@
+from __future__ import annotations
+
+import uuid
+from typing import Dict, TypedDict
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Metadata Analytics Summary Model (Composed).
 
 Composed model that combines focused analytics components.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypedDict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-
-class TypedDictCoreAnalytics(TypedDict):
-    """Core analytics data structure.
-    Implements omnibase_spi protocols:
-    - ProtocolMetadataProvider: Metadata management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    """
-
-    collection_id: UUID
-    collection_name: str | None
-    total_nodes: int
-    active_nodes: int
-    deprecated_nodes: int
-    disabled_nodes: int
-    has_issues: bool
-
-
-class TypedDictTimestampData(TypedDict):
-    """Timestamp data structure."""
-
-    last_modified: datetime | None
-    last_validated: datetime | None
-
-
-class TypedDictCoreData(TypedDict, total=False):
-    """Typed structure for core data updates."""
-
-    total_nodes: int
-    active_nodes: int
-    deprecated_nodes: int
-    disabled_nodes: int
-
-
-class TypedDictQualityData(TypedDict, total=False):
-    """Typed structure for quality data updates."""
-
-    health_score: float
-    success_rate: float
-    documentation_coverage: float
-
-
-class TypedDictErrorData(TypedDict, total=False):
-    """Typed structure for error data updates."""
-
-    error_count: int
-    warning_count: int
-    critical_error_count: int
-
-
-class TypedDictPerformanceData(TypedDict, total=False):
-    """Typed structure for performance data updates."""
-
-    average_execution_time_ms: float
-    peak_memory_usage_mb: float
-    total_invocations: int
-
-
-class TypedDictAnalyticsSummaryData(TypedDict):
-    """Typed structure for analytics summary serialization."""
-
-    core: TypedDictCoreAnalytics
-    quality: list[str]  # From component method call - returns list[str]
-    errors: ModelAnalyticsErrorSummary  # From component method call - returns ModelAnalyticsErrorSummary
-    performance: ModelAnalyticsPerformanceSummary  # From component method call - returns ModelAnalyticsPerformanceSummary
-    timestamps: TypedDictTimestampData
-
-
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.types.typed_dict_analytics_summary_data import (
+    TypedDictAnalyticsSummaryData,
+)
+from omnibase_core.types.typed_dict_core_data import TypedDictCoreData
+from omnibase_core.types.typed_dict_error_data import TypedDictErrorData
+from omnibase_core.types.typed_dict_performance_data import TypedDictPerformanceData
+from omnibase_core.types.typed_dict_quality_data import TypedDictQualityData
 
 from .analytics.model_analytics_core import ModelAnalyticsCore
 from .analytics.model_analytics_error_summary import ModelAnalyticsErrorSummary
@@ -122,11 +69,11 @@ class ModelMetadataAnalyticsSummary(BaseModel):
 
     # Timestamps
     last_modified: datetime | None = Field(
-        None,
+        default=None,
         description="Last modification timestamp",
     )
     last_validated: datetime | None = Field(
-        None,
+        default=None,
         description="Last validation timestamp",
     )
 
@@ -304,7 +251,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             performance_data: Performance data with numeric values for metrics
 
         Note:
-            All parameters are optional and use typed dictionaries for type safety.
+            All parameters are optional and use typed dict[str, Any]ionaries for type safety.
         """
         # Update core
         if core_data and "total_nodes" in core_data:
@@ -439,7 +386,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -452,20 +399,20 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -475,8 +422,8 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

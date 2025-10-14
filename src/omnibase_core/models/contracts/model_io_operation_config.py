@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 I/O Operation Configuration Model.
 
@@ -5,7 +7,7 @@ Defines configuration for file operations, database interactions,
 API calls, and other external I/O operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelIOOperationConfig(BaseModel):
@@ -17,7 +19,7 @@ class ModelIOOperationConfig(BaseModel):
     """
 
     operation_type: str = Field(
-        ...,
+        default=...,
         description="Type of I/O operation (file_read, file_write, db_query, api_call, etc.)",
         min_length=1,
     )

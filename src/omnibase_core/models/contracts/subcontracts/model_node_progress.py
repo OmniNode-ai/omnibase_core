@@ -1,3 +1,7 @@
+import uuid
+
+from pydantic import Field
+
 """
 Node Progress Model - ONEX Standards Compliant.
 
@@ -6,7 +10,7 @@ Model for progress information for individual nodes in the ONEX workflow coordin
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -19,16 +23,16 @@ class ModelNodeProgress(BaseModel):
         description="Unique identifier for the node",
     )
 
-    node_type: EnumNodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(default=..., description="Type of the node")
 
     progress_percent: float = Field(
-        ...,
+        default=...,
         description="Progress percentage for this node",
         ge=0.0,
         le=100.0,
     )
 
-    status: str = Field(..., description="Current status of the node")
+    status: str = Field(default=..., description="Current status of the node")
 
     model_config = {
         "extra": "ignore",

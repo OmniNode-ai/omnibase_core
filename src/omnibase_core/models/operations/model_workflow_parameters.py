@@ -1,136 +1,34 @@
-"""
-Strongly-typed workflow parameters model.
-
-Replaces dict[str, Any] usage in workflow parameters with structured typing.
-Follows ONEX strong typing principles and one-model-per-file architecture.
-"""
-
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.enums.enum_workflow_parameter_type import EnumWorkflowParameterType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-
-# Discriminator function for workflow parameters
-# Using Field(discriminator="parameter_type") for discriminated unions
-
-
-# Base parameter class with common fields
-class ModelBaseWorkflowParameter(BaseModel):
-    """Base class for all workflow parameters."""
-
-    name: str = Field(..., description="Parameter name")
-    description: str = Field(default="", description="Parameter description")
-    required: bool = Field(default=False, description="Whether parameter is required")
-
-
-# Specific parameter type classes - eliminates complex optional unions
-class ModelWorkflowConfigParameter(ModelBaseWorkflowParameter):
-    """Workflow configuration parameter with specific typing."""
-
-    parameter_type: Literal[EnumWorkflowParameterType.WORKFLOW_CONFIG] = Field(
-        default=EnumWorkflowParameterType.WORKFLOW_CONFIG,
-        description="Workflow config parameter type",
-    )
-    config_key: str = Field(..., description="Configuration key")
-    config_value: str = Field(..., description="Configuration value")
-    config_scope: str = Field(default="workflow", description="Configuration scope")
-    overridable: bool = Field(
-        default=True,
-        description="Whether config can be overridden",
-    )
-
-
-class ModelExecutionSettingParameter(ModelBaseWorkflowParameter):
-    """Execution setting parameter with specific typing."""
-
-    parameter_type: Literal[EnumWorkflowParameterType.EXECUTION_SETTING] = Field(
-        default=EnumWorkflowParameterType.EXECUTION_SETTING,
-        description="Execution setting parameter type",
-    )
-    setting_name: str = Field(..., description="Setting name")
-    enabled: bool = Field(default=True, description="Whether setting is enabled")
-    conditional: bool = Field(
-        default=False,
-        description="Whether setting is conditional",
-    )
-    dependency: str = Field(default="", description="Dependency for setting")
-
-
-class ModelTimeoutSettingParameter(ModelBaseWorkflowParameter):
-    """Timeout setting parameter with specific typing."""
-
-    parameter_type: Literal[EnumWorkflowParameterType.TIMEOUT_SETTING] = Field(
-        default=EnumWorkflowParameterType.TIMEOUT_SETTING,
-        description="Timeout setting parameter type",
-    )
-    timeout_name: str = Field(..., description="Timeout name")
-    timeout_ms: int = Field(..., description="Timeout in milliseconds", gt=0)
-    retry_on_timeout: bool = Field(
-        default=True,
-        description="Whether to retry on timeout",
-    )
-    escalation_timeout_ms: int = Field(
-        default=0,
-        description="Escalation timeout in milliseconds",
-        ge=0,
-    )
-
-
-class ModelResourceLimitParameter(ModelBaseWorkflowParameter):
-    """Resource limit parameter with specific typing."""
-
-    parameter_type: Literal[EnumWorkflowParameterType.RESOURCE_LIMIT] = Field(
-        default=EnumWorkflowParameterType.RESOURCE_LIMIT,
-        description="Resource limit parameter type",
-    )
-    resource_type: str = Field(..., description="Resource type")
-    limit_value: float = Field(..., description="Limit value", ge=0.0)
-    unit: str = Field(..., description="Unit for limit value")
-    enforce_hard_limit: bool = Field(
-        default=True,
-        description="Whether to enforce hard limit",
-    )
-
-
-class ModelEnvironmentVariableParameter(ModelBaseWorkflowParameter):
-    """Environment variable parameter with specific typing."""
-
-    parameter_type: Literal[EnumWorkflowParameterType.ENVIRONMENT_VARIABLE] = Field(
-        default=EnumWorkflowParameterType.ENVIRONMENT_VARIABLE,
-        description="Environment variable parameter type",
-    )
-    variable_name: str = Field(..., description="Environment variable name")
-    variable_value: str = Field(..., description="Environment variable value")
-    sensitive: bool = Field(default=False, description="Whether variable is sensitive")
-    inherit_from_parent: bool = Field(
-        default=True,
-        description="Whether to inherit from parent",
-    )
-
-
-# ONEX-compliant discriminated unions (max 4 members each)
-# Configuration and Execution Parameters Union
-ConfigExecutionParameterUnion = Annotated[
-    ModelWorkflowConfigParameter
-    | ModelExecutionSettingParameter
-    | ModelTimeoutSettingParameter
-    | ModelEnvironmentVariableParameter,
-    Field(discriminator="parameter_type"),
-]
-
-# Primary discriminated union for workflow parameters (5 members max - ONEX compliant)
-ModelWorkflowParameterValue = Annotated[
-    ModelWorkflowConfigParameter
-    | ModelExecutionSettingParameter
-    | ModelTimeoutSettingParameter
-    | ModelEnvironmentVariableParameter
-    | ModelResourceLimitParameter,
-    Field(discriminator="parameter_type"),
-]
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.operations.model_base_workflow_parameter import (
+    ModelBaseWorkflowParameter,
+)
+from omnibase_core.models.operations.model_environment_variable_parameter import (
+    ModelEnvironmentVariableParameter,
+)
+from omnibase_core.models.operations.model_execution_setting_parameter import (
+    ModelExecutionSettingParameter,
+)
+from omnibase_core.models.operations.model_resource_limit_parameter import (
+    ModelResourceLimitParameter,
+)
+from omnibase_core.models.operations.model_timeout_setting_parameter import (
+    ModelTimeoutSettingParameter,
+)
+from omnibase_core.models.operations.model_types_workflow_parameters import (
+    ConfigExecutionParameterUnion,
+    ModelWorkflowParameterValue,
+)
+from omnibase_core.models.operations.model_workflow_config_parameter import (
+    ModelWorkflowConfigParameter,
+)
 
 
 class ModelWorkflowParameters(BaseModel):
@@ -171,9 +69,9 @@ class ModelWorkflowParameters(BaseModel):
                     ModelResourceLimitParameter,
                 ),
             ):
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Invalid parameter type for {param_name}: {type(param_value)}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         return self
 
@@ -308,17 +206,17 @@ class ModelWorkflowParameters(BaseModel):
         param_names = sorted(self.workflow_parameters.keys())
         if param_names:
             return f"workflow_params_{hash('_'.join(param_names))}"
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def serialize(
         self,
     ) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -338,7 +236,6 @@ class ModelWorkflowParameters(BaseModel):
 # Export for use
 __all__ = [
     "ConfigExecutionParameterUnion",
-    "ModelBaseWorkflowParameter",
     "ModelEnvironmentVariableParameter",
     "ModelExecutionSettingParameter",
     "ModelResourceLimitParameter",

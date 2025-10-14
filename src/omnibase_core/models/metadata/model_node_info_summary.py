@@ -1,111 +1,53 @@
+from __future__ import annotations
+
+import uuid
+from typing import Dict, TypedDict
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Node Info Summary Model (Composed).
 
 Composed model that combines focused node information components.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypedDict
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.types.typed_dict_categorization_update_data import (
+    TypedDictCategorizationUpdateData,
+)
+from omnibase_core.types.typed_dict_node_core_update_data import (
+    TypedDictNodeCoreUpdateData,
+)
+from omnibase_core.types.typed_dict_node_info_summary_data import (
+    TypedDictNodeInfoSummaryData,
+)
+from omnibase_core.types.typed_dict_performance_update_data import (
+    TypedDictPerformanceUpdateData,
+)
+from omnibase_core.types.typed_dict_quality_update_data import (
+    TypedDictQualityUpdateData,
+)
+from omnibase_core.types.typed_dict_timestamp_update_data import (
+    TypedDictTimestampUpdateData,
+)
 
-from .model_semver import ModelSemVer
 from .node_info.model_node_categorization import ModelNodeCategorization
 from .node_info.model_node_core import ModelNodeCore
 from .node_info.model_node_performance_metrics import ModelNodePerformanceMetrics
 from .node_info.model_node_quality_indicators import ModelNodeQualityIndicators
 from .node_info.model_node_timestamps import ModelNodeTimestamps
-
-# REMOVED: Decorator no longer needed since we use structured TypedDict types
-
-
-class TypedDictNodeCore(TypedDict):
-    """Node core data structure.
-    Implements omnibase_spi protocols:
-    - ProtocolMetadataProvider: Metadata management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    """
-
-    node_id: UUID
-    node_display_name: str | None
-    description: str | None
-    node_type: str
-    status: str
-    complexity: str
-    version: ModelSemVer
-    is_active: bool
-    is_complex: bool
-
-
-class TypedDictNodeCoreUpdateData(TypedDict, total=False):
-    """Typed structure for core node data updates."""
-
-    node_display_name: str
-    description: str
-    node_type: EnumNodeType
-    status: EnumMetadataNodeStatus
-    complexity: EnumConceptualComplexity
-
-
-class TypedDictTimestampUpdateData(TypedDict, total=False):
-    """Typed structure for timestamp data updates."""
-
-    created_at: datetime
-    updated_at: datetime
-    last_accessed: datetime
-    deprecated_at: datetime
-
-
-class TypedDictCategorizationUpdateData(TypedDict, total=False):
-    """Typed structure for categorization data updates."""
-
-    technical_tags: list[str]
-    business_tags: list[str]
-    domain_tags: list[str]
-    complexity_tags: list[str]
-
-
-class TypedDictQualityUpdateData(TypedDict, total=False):
-    """Typed structure for quality data updates."""
-
-    quality_score: float
-    documentation_quality: EnumDocumentationQuality
-    test_coverage: float
-    maintainability_index: float
-
-
-class TypedDictPerformanceUpdateData(TypedDict, total=False):
-    """Typed structure for performance data updates."""
-
-    average_execution_time_ms: float
-    memory_usage_mb: float
-    cpu_usage_percent: float
-    throughput_ops_per_sec: float
-
-
-class TypedDictNodeInfoSummaryData(TypedDict):
-    """Typed structure for node info summary serialization."""
-
-    core: TypedDictNodeCore
-    timestamps: dict[str, Any]  # From component method call - returns lifecycle summary
-    categorization: dict[
-        str,
-        Any,
-    ]  # From component method call - returns categorization summary
-    quality: dict[str, Any]  # From component method call - returns quality summary
-    performance: dict[
-        str,
-        Any,
-    ]  # From component method call - returns performance summary
 
 
 class ModelNodeInfoSummary(BaseModel):
@@ -401,12 +343,12 @@ class ModelNodeInfoSummary(BaseModel):
         Args:
             core_data: Core node data with string and enum values
             timestamp_data: Timestamp data with datetime values
-            categorization_data: Categorization data with string lists
+            categorization_data: Categorization data with string list[Any]s
             quality_data: Quality data with float and enum values
             performance_data: Performance data with numeric values
 
         Note:
-            All parameters are optional and use typed dictionaries for type safety.
+            All parameters are optional and use typed dict[str, Any]ionaries for type safety.
         """
 
         # Update core data
@@ -634,7 +576,7 @@ class ModelNodeInfoSummary(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -647,7 +589,7 @@ class ModelNodeInfoSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -659,7 +601,7 @@ class ModelNodeInfoSummary(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

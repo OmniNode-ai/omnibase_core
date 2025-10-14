@@ -15,7 +15,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_action_category import EnumActionCategory
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 
 

@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Custom connection properties model for connection configuration.
 
@@ -5,15 +13,14 @@ Restructured using composition to reduce string field violations.
 Each sub-model handles a specific concern area.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 from .model_cloud_service_properties import ModelCloudServiceProperties
@@ -147,7 +154,7 @@ class ModelCustomConnectionProperties(BaseModel):
         )
 
         # Extract known parameters from kwargs and validate types
-        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict[str, Any]for type safety
         message_queue = kwargs_dict.pop("message_queue", None)
         if message_queue is not None and not isinstance(
             message_queue,
@@ -203,7 +210,7 @@ class ModelCustomConnectionProperties(BaseModel):
         )
 
         # Extract known parameters from kwargs and validate types
-        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict[str, Any]for type safety
         database = kwargs_dict.pop("database", None)
         if database is not None and not isinstance(database, ModelDatabaseProperties):
             database = ModelDatabaseProperties()
@@ -282,7 +289,7 @@ class ModelCustomConnectionProperties(BaseModel):
         )
 
         # Extract known parameters from kwargs and validate types
-        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict[str, Any]for type safety
         database = kwargs_dict.pop("database", None)
         if database is not None and not isinstance(database, ModelDatabaseProperties):
             database = ModelDatabaseProperties()
@@ -545,9 +552,9 @@ class ModelCustomConnectionProperties(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -557,13 +564,13 @@ class ModelCustomConnectionProperties(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

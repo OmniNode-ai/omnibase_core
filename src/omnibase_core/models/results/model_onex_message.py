@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_log_level import EnumLogLevel
+
+from .model_onex_message_context import ModelOnexMessageContext
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -22,16 +32,6 @@
 # === /OmniNode:Metadata ===
 
 
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.enums.enum_log_level import EnumLogLevel
-
-from .model_onex_message_context import ModelOnexMessageContext
-
 __all__ = ["ModelOnexMessage"]
 
 
@@ -41,35 +41,41 @@ class ModelOnexMessage(BaseModel):
     Supports linking to files, lines, context, and rich rendering.
     """
 
-    summary: str = Field(..., description="Short summary of the message.")
+    summary: str = Field(default=..., description="Short summary of the message.")
     suggestions: list[str] | None = None
     remediation: str | None = None
     rendered_markdown: str | None = None
     doc_link: str | None = None
     level: EnumLogLevel = Field(
-        EnumLogLevel.INFO,
+        default=EnumLogLevel.INFO,
         description="Message level: info, warning, error, etc.",
     )
-    file: str | None = Field(None, description="File path related to the message.")
+    file: str | None = Field(
+        default=None, description="File path related to the message."
+    )
     line: int | None = Field(
-        None,
+        default=None,
         description="Line number in the file, if applicable.",
     )
     column: int | None = None
-    details: str | None = Field(None, description="Detailed message or context.")
+    details: str | None = Field(
+        default=None, description="Detailed message or context."
+    )
     severity: EnumLogLevel | None = None
-    code: str | None = Field(None, description="Error or warning code, if any.")
+    code: str | None = Field(default=None, description="Error or warning code, if any.")
     context: ModelOnexMessageContext | None = Field(
-        None,
+        default=None,
         description="Additional context for the message.",
     )
-    timestamp: datetime | None = Field(None, description="Timestamp of the message.")
+    timestamp: datetime | None = Field(
+        default=None, description="Timestamp of the message."
+    )
     fixable: bool | None = None
     origin: str | None = None
     example: str | None = None
     localized_text: dict[str, str] | None = None
     type: str | None = Field(
-        None,
+        default=None,
         description="Type of message (error, warning, note, etc.)",
     )
 

@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import Field
+
 """
 Strongly-typed FSM state model.
 
@@ -5,9 +11,8 @@ Replaces dict[str, Any] usage in FSM state operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelFsmState(BaseModel):
@@ -19,24 +24,20 @@ class ModelFsmState(BaseModel):
     - Validatable: Validation and verification
     """
 
-    name: str = Field(..., description="State name")
+    name: str = Field(default=..., description="State name")
     description: str = Field(default="", description="State description")
     is_initial: bool = Field(
-        default=False,
-        description="Whether this is the initial state",
+        default=False, description="Whether this is the initial state"
     )
     is_final: bool = Field(default=False, description="Whether this is a final state")
     entry_actions: list[str] = Field(
-        default_factory=list,
-        description="Actions on state entry",
+        default_factory=list, description="Actions on state entry"
     )
     exit_actions: list[str] = Field(
-        default_factory=list,
-        description="Actions on state exit",
+        default_factory=list, description="Actions on state exit"
     )
     properties: dict[str, str] = Field(
-        default_factory=dict,
-        description="State properties",
+        default_factory=dict, description="State properties"
     )
 
     model_config = {
@@ -61,7 +62,7 @@ class ModelFsmState(BaseModel):
         return True
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

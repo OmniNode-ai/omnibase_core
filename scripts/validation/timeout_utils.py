@@ -3,6 +3,7 @@
 Cross-platform timeout utilities for validation scripts.
 Provides Windows-compatible timeout handling with proper cleanup.
 """
+
 from __future__ import annotations
 
 import os
@@ -10,9 +11,10 @@ import signal
 import sys
 import threading
 import time
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Generator, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 # Error message constants for Ruff TRY003 compliance
 TIMEOUT_ERROR_MESSAGES = {
@@ -41,8 +43,6 @@ T = TypeVar("T")
 
 class TimeoutError(Exception):
     """Cross-platform timeout exception."""
-
-    pass
 
 
 class CrossPlatformTimeout:
@@ -298,7 +298,6 @@ def setup_timeout_handler() -> None:
     This function does nothing but exists for backward compatibility.
     Use timeout_context() or CrossPlatformTimeout instead.
     """
-    pass
 
 
 def cancel_timeout() -> None:
@@ -308,7 +307,6 @@ def cancel_timeout() -> None:
     This function does nothing but exists for backward compatibility.
     Use context managers for proper timeout cancellation.
     """
-    pass
 
 
 if __name__ == "__main__":

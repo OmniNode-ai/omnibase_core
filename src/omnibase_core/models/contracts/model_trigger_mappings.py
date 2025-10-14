@@ -1,17 +1,24 @@
+import uuid
+from typing import Any
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Trigger Mappings Model - ONEX Standards Compliant.
 
 Strongly-typed trigger mappings model that replaces dict[str, str] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict patterns allowed.
+ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelTriggerMappings(BaseModel):
@@ -21,7 +28,7 @@ class ModelTriggerMappings(BaseModel):
     Replaces dict[str, str] patterns with proper Pydantic model
     providing runtime validation and type safety for trigger mappings.
 
-    ZERO TOLERANCE: No Any types or dict patterns allowed.
+    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking
@@ -117,16 +124,16 @@ class ModelTriggerMappings(BaseModel):
                 continue  # Skip empty keys
 
             if len(key) > 500:
-                raise OnexError(
+                raise ModelOnexError(
                     message=f"Mapping key '{key}' too long. Maximum 500 characters.",
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             # Validate value
             if not isinstance(value, str):
-                raise OnexError(
-                    message=f"Mapping value for key '{key}' must be a string, got {type(value)}",
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    message=f"Mapping value for key {key!r} must be a string, got {type(value)}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             value = value.strip()
@@ -134,9 +141,9 @@ class ModelTriggerMappings(BaseModel):
                 continue  # Skip empty values
 
             if len(value) > 500:
-                raise OnexError(
+                raise ModelOnexError(
                     message=f"Mapping value '{value}' too long. Maximum 500 characters.",
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated[key] = value
@@ -151,10 +158,10 @@ class ModelTriggerMappings(BaseModel):
 
     def get_all_mappings(self) -> dict[str, str]:
         """
-        Get all mappings as a single flattened dictionary.
+        Get all mappings as a single flattened dict[str, Any]ionary.
 
         Returns:
-            Flattened dictionary of all mappings
+            Flattened dict[str, Any]ionary of all mappings
         """
         result = {}
         result.update(self.event_pattern_mappings)
@@ -180,7 +187,7 @@ class ModelTriggerMappings(BaseModel):
             action: Action to trigger
 
         Raises:
-            OnexError: If category is invalid
+            ModelOnexError: If category is invalid
         """
         category_mapping = {
             "event_pattern": self.event_pattern_mappings,
@@ -197,9 +204,9 @@ class ModelTriggerMappings(BaseModel):
         }
 
         if category not in category_mapping:
-            raise OnexError(
-                message=f"Invalid mapping category '{category}'. Valid categories: {list(category_mapping.keys())}",
-                error_code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                message=f"Invalid mapping category '{category}'. Valid categories: {list[Any](category_mapping.keys())}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         category_mapping[category][event_pattern.strip()] = action.strip()

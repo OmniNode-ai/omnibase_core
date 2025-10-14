@@ -1,21 +1,26 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Progress Model (Composed).
 
 Composed model that combines focused progress tracking components.
 """
 
-from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 from .progress.model_progress_core import ModelProgressCore
 from .progress.model_progress_metrics import ModelProgressMetrics
@@ -259,7 +264,7 @@ class ModelProgress(BaseModel):
         """Get the next uncompleted milestone."""
         return self.milestones.get_next_milestone(self.core.percentage)
 
-    def add_custom_metric(self, key: str, value: ModelMetadataValue) -> None:
+    def add_custom_metric(self, key: str, value: ModelFlexibleValue) -> None:
         """Add custom progress metric."""
         self.metrics.add_custom_metric(key, value)
 
@@ -290,7 +295,7 @@ class ModelProgress(BaseModel):
         """Get formatted estimated total time string."""
         return self.timing.get_estimated_total_formatted()
 
-    def get_summary(self) -> dict[str, ModelMetadataValue]:
+    def get_summary(self) -> dict[str, ModelFlexibleValue]:
         """Get progress summary."""
         # Sync all components
         self._sync_timing_with_core()
@@ -299,45 +304,45 @@ class ModelProgress(BaseModel):
 
         # Get comprehensive summary
         summary = {
-            "percentage": ModelMetadataValue.from_float(self.core.percentage),
-            "current_step": ModelMetadataValue.from_int(self.core.current_step),
-            "total_steps": ModelMetadataValue.from_int(self.core.total_steps),
-            "current_phase": ModelMetadataValue.from_string(
+            "percentage": ModelFlexibleValue.from_float(self.core.percentage),
+            "current_step": ModelFlexibleValue.from_integer(self.core.current_step),
+            "total_steps": ModelFlexibleValue.from_integer(self.core.total_steps),
+            "current_phase": ModelFlexibleValue.from_string(
                 self.core.current_phase.value,
             ),
-            "phase_percentage": ModelMetadataValue.from_float(
+            "phase_percentage": ModelFlexibleValue.from_float(
                 self.core.phase_percentage,
             ),
-            "status_message": ModelMetadataValue.from_string(
+            "status_message": ModelFlexibleValue.from_string(
                 str(self.core.status_message),
             ),
-            "is_completed": ModelMetadataValue.from_bool(self.core.is_completed),
-            "elapsed_seconds": ModelMetadataValue.from_float(
+            "is_completed": ModelFlexibleValue.from_boolean(self.core.is_completed),
+            "elapsed_seconds": ModelFlexibleValue.from_float(
                 self.timing.elapsed_seconds,
             ),
-            "estimated_remaining_seconds": ModelMetadataValue.from_float(
+            "estimated_remaining_seconds": ModelFlexibleValue.from_float(
                 (
                     self.timing.estimated_remaining_duration.to_seconds()
                     if self.timing.estimated_remaining_duration
                     else 0.0
                 ),
             ),
-            "completed_milestones": ModelMetadataValue.from_int(
+            "completed_milestones": ModelFlexibleValue.from_integer(
                 self.milestones.get_completed_count(),
             ),
-            "total_milestones": ModelMetadataValue.from_int(
+            "total_milestones": ModelFlexibleValue.from_integer(
                 self.milestones.get_total_count(),
             ),
-            "completion_rate_per_minute": ModelMetadataValue.from_float(
+            "completion_rate_per_minute": ModelFlexibleValue.from_float(
                 self.timing.get_completion_rate_per_minute(self.core.percentage),
             ),
-            "elapsed_formatted": ModelMetadataValue.from_string(
+            "elapsed_formatted": ModelFlexibleValue.from_string(
                 self.timing.get_elapsed_formatted(),
             ),
-            "remaining_formatted": ModelMetadataValue.from_string(
+            "remaining_formatted": ModelFlexibleValue.from_string(
                 self.timing.get_time_remaining_formatted(),
             ),
-            "total_formatted": ModelMetadataValue.from_string(
+            "total_formatted": ModelFlexibleValue.from_string(
                 self.timing.get_estimated_total_formatted(),
             ),
         }
@@ -392,8 +397,8 @@ class ModelProgress(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -405,15 +410,18 @@ class ModelProgress(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
+
+# NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically
+# ModelMetadataValue is imported at runtime, Pydantic will resolve references lazily
 
 # Export for use
 __all__ = ["ModelProgress"]

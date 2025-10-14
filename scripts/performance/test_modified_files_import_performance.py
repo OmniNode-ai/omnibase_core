@@ -46,7 +46,7 @@ class ImportPerformanceTester:
 
     def time_import(
         self, module_name: str, iterations: int = 10
-    ) -> Tuple[List[float], bool]:
+    ) -> tuple[list[float], bool]:
         """Time module import over multiple iterations."""
         import_times = []
         successful_imports = 0
@@ -72,7 +72,7 @@ class ImportPerformanceTester:
         success_rate = successful_imports / iterations
         return import_times, success_rate >= 0.8
 
-    def test_baseline_imports(self) -> Dict[str, float]:
+    def test_baseline_imports(self) -> dict[str, float]:
         """Test baseline import times for common modules."""
         print("📏 Testing baseline import performance...")
 
@@ -88,7 +88,7 @@ class ImportPerformanceTester:
 
         return baselines
 
-    def test_modified_file_imports(self) -> List[Dict]:
+    def test_modified_file_imports(self) -> list[dict]:
         """Test import performance of modified files."""
         print("\n🔍 Testing modified file import performance...")
 
@@ -147,7 +147,7 @@ class ImportPerformanceTester:
         return results
 
     def analyze_import_performance(
-        self, results: List[Dict], baselines: Dict[str, float]
+        self, results: list[dict], baselines: dict[str, float]
     ):
         """Analyze import performance results."""
         print("\n📊 Import Performance Analysis:")
@@ -188,7 +188,7 @@ class ImportPerformanceTester:
             print(f"{module_short:<40} {avg_time_str:<10} {status}")
 
         # Analysis summary
-        print(f"\n🎯 Import Performance Summary:")
+        print("\n🎯 Import Performance Summary:")
         print(f"   Fast imports: {len(fast_imports)}")
         print(f"   Slow imports: {len(slow_imports)}")
         print(f"   Failed imports: {len(failed_imports)}")
@@ -197,12 +197,12 @@ class ImportPerformanceTester:
             print(f"   Baseline average: {baseline_avg:.4f}s")
 
         # Recommendations
-        print(f"\n💡 Recommendations:")
+        print("\n💡 Recommendations:")
         if slow_imports:
             print(f"   ⚠️  {len(slow_imports)} slow imports detected:")
             for imp in slow_imports:
                 print(f"      - {imp['module_name']}: {imp['avg_time']:.4f}s")
-                print(f"        Consider lazy imports or reducing dependencies")
+                print("        Consider lazy imports or reducing dependencies")
 
         if failed_imports:
             print(f"   ❌ {len(failed_imports)} failed imports:")
@@ -224,7 +224,7 @@ class ImportPerformanceTester:
 
     def test_circular_import_impact(self):
         """Test the performance impact of circular imports."""
-        print(f"\n🔄 Testing circular import impact...")
+        print("\n🔄 Testing circular import impact...")
 
         # Try to import modules known to have circular imports
         circular_modules = [
@@ -241,19 +241,15 @@ class ImportPerformanceTester:
                     avg_time = mean(times)
                     print(f"     Import time: {avg_time:.4f}s")
                     if avg_time > 0.1:
-                        print(
-                            f"     ⚠️  Slow import may be due to circular dependencies"
-                        )
+                        print("     ⚠️  Slow import may be due to circular dependencies")
                 else:
-                    print(
-                        f"     ❌ Import failed - likely due to circular dependencies"
-                    )
+                    print("     ❌ Import failed - likely due to circular dependencies")
             except Exception as e:
                 print(f"     ❌ Import error: {e}")
 
     def test_lazy_import_opportunities(self):
         """Identify opportunities for lazy importing."""
-        print(f"\n🔄 Analyzing lazy import opportunities...")
+        print("\n🔄 Analyzing lazy import opportunities...")
 
         # Check if imports can be deferred
         opportunities = []
@@ -263,7 +259,7 @@ class ImportPerformanceTester:
                 full_path = self.project_root / file_path
                 if full_path.exists():
                     try:
-                        with open(full_path, "r") as f:
+                        with open(full_path) as f:
                             content = f.read()
 
                         # Look for imports at module level that could be moved to function level
@@ -288,7 +284,7 @@ class ImportPerformanceTester:
             for opp in opportunities[:5]:  # Show first 5
                 print(f"     {opp['file']}:{opp['line']} - {opp['reason']}")
         else:
-            print(f"   No obvious lazy import opportunities found")
+            print("   No obvious lazy import opportunities found")
 
     def run_comprehensive_import_test(self):
         """Run comprehensive import performance tests."""
@@ -320,7 +316,7 @@ class ImportPerformanceTester:
             for module, time_val in baselines.items():
                 f.write(f"  {module}: {time_val:.4f}s\n")
 
-            f.write(f"\nMODIFIED FILES:\n")
+            f.write("\nMODIFIED FILES:\n")
             for result in results:
                 f.write(f"\n{result['module_name']}\n")
                 f.write(f"  File: {result['file_path']}\n")
@@ -329,9 +325,9 @@ class ImportPerformanceTester:
                     f.write(f"  Min time: {result['min_time']:.4f}s\n")
                     f.write(f"  Max time: {result['max_time']:.4f}s\n")
                 else:
-                    f.write(f"  FAILED TO IMPORT\n")
+                    f.write("  FAILED TO IMPORT\n")
 
-            f.write(f"\nSUMMARY:\n")
+            f.write("\nSUMMARY:\n")
             f.write(f"  Fast imports: {analysis['fast_count']}\n")
             f.write(f"  Slow imports: {analysis['slow_count']}\n")
             f.write(f"  Failed imports: {analysis['failed_count']}\n")
@@ -348,7 +344,7 @@ def main():
     analysis = tester.run_comprehensive_import_test()
 
     # Overall assessment
-    print(f"\n🎯 Overall Import Performance Assessment:")
+    print("\n🎯 Overall Import Performance Assessment:")
     if analysis["failed_count"] > 0:
         print(
             f"   ❌ {analysis['failed_count']} imports are failing - fix circular dependencies"

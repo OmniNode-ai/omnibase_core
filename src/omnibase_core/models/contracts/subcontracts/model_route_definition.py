@@ -1,3 +1,8 @@
+import uuid
+from typing import Any
+
+from pydantic import Field
+
 """
 Route Definition Model - ONEX Standards Compliant.
 
@@ -9,7 +14,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelRouteDefinition(BaseModel):
@@ -22,10 +27,12 @@ class ModelRouteDefinition(BaseModel):
 
     route_id: UUID = Field(default_factory=uuid4, description="Unique route identifier")
 
-    route_name: str = Field(..., description="Unique name for the route", min_length=1)
+    route_name: str = Field(
+        default=..., description="Unique name for the route", min_length=1
+    )
 
     route_pattern: str = Field(
-        ...,
+        default=...,
         description="Pattern for matching requests (supports service discovery patterns)",
         min_length=1,
     )
@@ -41,7 +48,7 @@ class ModelRouteDefinition(BaseModel):
     )
 
     service_targets: list[str] = Field(
-        ...,
+        default=...,
         description="Target microservice endpoints for routing",
         min_length=1,
     )

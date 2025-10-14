@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Generic
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 CLI result metadata model.
 
@@ -5,21 +15,19 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI result metadata.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 # Using ModelCliValue instead of primitive soup type alias for proper discriminated union typing
@@ -38,7 +46,7 @@ class ModelCliResultMetadata(BaseModel):
 
     # Core metadata fields
     metadata_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Metadata schema version",
     )
 
@@ -48,30 +56,32 @@ class ModelCliResultMetadata(BaseModel):
         description="Type of result",
     )
     result_category: EnumResultCategory | None = Field(
-        None,
+        default=None,
         description="Result category",
     )
 
     # Source information
-    source_command: str | None = Field(None, description="Source command")
-    source_node: str | None = Field(None, description="Source node")
+    source_command: str | None = Field(default=None, description="Source command")
+    source_node: str | None = Field(default=None, description="Source node")
 
     # Processing metadata
     processed_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="When result was processed",
     )
-    processor_version: ModelSemVer | None = Field(None, description="Processor version")
+    processor_version: ModelSemVer | None = Field(
+        default=None, description="Processor version"
+    )
 
     # Quality metrics
     quality_score: float | None = Field(
-        None,
+        default=None,
         description="Quality score (0.0 to 1.0)",
         ge=0.0,
         le=1.0,
     )
     confidence_level: float | None = Field(
-        None,
+        default=None,
         description="Confidence level (0.0 to 1.0)",
         ge=0.0,
         le=1.0,
@@ -83,7 +93,7 @@ class ModelCliResultMetadata(BaseModel):
         description="Data classification level",
     )
     retention_policy: EnumRetentionPolicy | None = Field(
-        None,
+        default=None,
         description="Data retention policy",
     )
 
@@ -100,7 +110,7 @@ class ModelCliResultMetadata(BaseModel):
 
     # Performance metrics
     processing_time_ms: float | None = Field(
-        None,
+        default=None,
         description="Processing time in milliseconds",
     )
     resource_usage: dict[str, float] = Field(
@@ -145,13 +155,13 @@ class ModelCliResultMetadata(BaseModel):
                 return ModelSemVer(major=int(parts[0]), minor=int(parts[1]), patch=0)
             if len(parts) == 1:
                 return ModelSemVer(major=int(parts[0]), minor=0, patch=0)
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Invalid version string: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"Invalid processor version type: {type(v)}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     @field_validator("retention_policy", mode="before")
@@ -170,13 +180,13 @@ class ModelCliResultMetadata(BaseModel):
                 try:
                     return EnumRetentionPolicy(v.upper())
                 except ValueError:
-                    raise OnexError(
-                        code=CoreErrorCode.VALIDATION_ERROR,
+                    raise ModelOnexError(
                         message=f"Invalid retention policy: {v}",
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     )
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"Invalid retention policy type: {type(v)}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     @field_validator("custom_metadata", mode="before")
@@ -241,16 +251,20 @@ class ModelCliResultMetadata(BaseModel):
         if 0.0 <= score <= 1.0:
             self.quality_score = score
         else:
-            # error-ok: Test suite explicitly requires ValueError for validation methods
-            raise ValueError("Quality score must be between 0.0 and 1.0")
+            raise ModelOnexError(
+                message="Quality score must be between 0.0 and 1.0",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
 
     def set_confidence_level(self, confidence: float) -> None:
         """Set the confidence level."""
         if 0.0 <= confidence <= 1.0:
             self.confidence_level = confidence
         else:
-            # error-ok: Test suite explicitly requires ValueError for validation methods
-            raise ValueError("Confidence level must be between 0.0 and 1.0")
+            raise ModelOnexError(
+                message="Confidence level must be between 0.0 and 1.0",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
 
     def add_resource_usage(self, resource: str, usage: float) -> None:
         """Add resource usage information."""
@@ -310,6 +324,7 @@ class ModelCliResultMetadata(BaseModel):
                 obj["label_ids"] = label_ids
                 obj["label_names"] = label_names
 
+        # Note: 'extra' parameter omitted from super() call as it's handled by model_config
         return super().model_validate(
             obj,
             strict=strict,
@@ -330,7 +345,7 @@ class ModelCliResultMetadata(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -358,9 +373,9 @@ class ModelCliResultMetadata(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Scenario Status Enumeration v2 - Unified Hierarchy Version.
 
@@ -5,7 +7,6 @@ Enhanced scenario status using the unified status hierarchy. Extends base status
 values with scenario-specific states while eliminating conflicts with other domains.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

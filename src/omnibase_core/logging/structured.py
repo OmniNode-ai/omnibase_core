@@ -1,3 +1,7 @@
+import uuid
+from datetime import datetime
+from typing import Optional
+
 """
 Structured Logging for ONEX Core
 
@@ -6,37 +10,15 @@ Provides centralized structured logging with standardized formats.
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-
-try:
-    from omnibase_spi.protocols.types.core_types import (
-        ProtocolLogContext,  # type: ignore[attr-defined]
-    )
-except ImportError:
-    # Fallback for when omnibase_spi is not available
-    from typing import Protocol
-
-    class ProtocolLogContext(Protocol):  # type: ignore[no-redef]
-        def to_dict(self) -> dict[str, Any]: ...
-
-
-class PydanticJSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder that handles Pydantic models, UUIDs, and log contexts."""
-
-    def default(self, obj: Any) -> Any:
-        if isinstance(obj, BaseModel):
-            return obj.model_dump()
-        if isinstance(obj, UUID):
-            return str(obj)
-        if hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
-            return obj.to_dict()
-        return super().default(obj)
+from omnibase_core.logging.pydantic_json_encoder import PydanticJSONEncoder
+from omnibase_spi.protocols.types import ProtocolLogContext
 
 
 def emit_log_event_sync(
@@ -50,7 +32,7 @@ def emit_log_event_sync(
     Args:
         level: Log level from SPI LogLevel
         message: Log message
-        context: Optional context (dict, log context protocol, or Pydantic model).
+        context: Optional context (dict[str, Any], log context protocol, or Pydantic model).
             BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible input handling.
             Internally validated and converted to JSON-compatible format.
     """

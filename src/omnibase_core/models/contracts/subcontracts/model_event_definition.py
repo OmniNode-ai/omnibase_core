@@ -1,12 +1,16 @@
+from typing import Any, Optional
+
+from pydantic import Field
+
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Event Definition Model - ONEX Standards Compliant.
 
 Model for event definitions in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from pydantic import BaseModel
 
 
 class ModelEventDefinition(BaseModel):
@@ -18,19 +22,19 @@ class ModelEventDefinition(BaseModel):
     """
 
     event_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the event type",
         min_length=1,
     )
 
     event_category: str = Field(
-        ...,
+        default=...,
         description="Category classification for event routing",
         min_length=1,
     )
 
     description: str = Field(
-        ...,
+        default=...,
         description="Human-readable event description",
         min_length=1,
     )

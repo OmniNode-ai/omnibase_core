@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Table alignment enumeration.
 
 Defines alignment options for table columns and content.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

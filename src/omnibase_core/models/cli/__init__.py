@@ -4,6 +4,8 @@ CLI Operations Models
 Models for command-line interface operations, execution, and results.
 """
 
+from typing import Dict, TypedDict
+
 from omnibase_core.types import (
     TypedDictCliInputDict,
     TypedDictDebugInfoData,

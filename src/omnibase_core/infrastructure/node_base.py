@@ -1,5 +1,11 @@
+import uuid
+from typing import Any, Generic, Optional, TypeVar
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
-NodeBase for ONEX Architecture.
+NodeBase for ONEX ModelArchitecture.
 
 This module provides the NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
@@ -13,7 +19,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
@@ -21,52 +27,35 @@ if TYPE_CHECKING:
         ProtocolWorkflowReducer as WorkflowReducerInterface,
     )
 else:
-    from omnibase_spi.protocols.workflow_orchestration import protocol_workflow_reducer
-
-    WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
+    from omnibase_spi.protocols.workflow_orchestration.protocol_workflow_reducer import (
+        ProtocolWorkflowReducer as WorkflowReducerInterface,
+    )
 
 # Import or define Pydantic BaseModel
 from pydantic import BaseModel
 
-from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors import OnexError
-from omnibase_core.errors.error_codes import CoreErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.models.infrastructure.model_action import ModelAction
+from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
+from omnibase_core.models.infrastructure.model_node_workflow_result import (
+    ModelNodeWorkflowResult,
+)
+from omnibase_core.models.infrastructure.model_state import ModelState
+from omnibase_spi.protocols.types.protocol_core_types import (
+    ProtocolAction,
+    ProtocolNodeResult,
+    ProtocolState,
+)
 
 T = TypeVar("T")
 U = TypeVar("U")
 
 
 # Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
-class ModelAction(BaseModel):
-    """Stub action model for reducer pattern."""
-
-    pass
-
-
-class ModelState(BaseModel):
-    """Stub state model for reducer pattern."""
-
-    pass
-
-
-@dataclass
-class NodeState:
-    """Simple state holder for node metadata and configuration."""
-
-    contract_path: Path
-    node_id: UUID
-    contract_content: Any
-    registry_reference: Any | None
-    node_name: str
-    version: ModelSemVer
-    node_tier: int
-    node_classification: str
-    event_bus: object | None
-    initialization_metadata: dict[str, Any]
+# Import from separate files: ModelAction, ModelState, ModelNodeState
 
 
 class NodeBase(
@@ -133,7 +122,7 @@ class NodeBase(
         self._contract_path = contract_path
         self._container: ModelONEXContainer | None = None
         self._main_tool: object | None = None
-        self._reducer_state: ModelState | None = None
+        self._reducer_state: ProtocolState | None = None
         self._workflow_instance: Any | None = None
 
         try:
@@ -148,16 +137,16 @@ class NodeBase(
             # Initialize reducer state
             self._reducer_state = self.initial_state()
 
-            # Create workflow instance if needed
-            self._workflow_instance = self.create_workflow()
+            # Create workflow instance if needed (run async creation in sync context)
+            self._workflow_instance = asyncio.run(self.create_workflow())
 
             # Emit initialization event
             self._emit_initialization_event()
 
         except Exception as e:
             self._emit_initialization_failure(e)
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to initialize NodeBase: {e!s}",
                 context={
                     "contract_path": str(contract_path),
@@ -222,17 +211,39 @@ class NodeBase(
 
                 # Process each dependency
                 for dependency in contract_content.dependencies:
-                    emit_log_event(
-                        LogLevel.DEBUG,
-                        f"Dependency registered: {dependency.name}",
-                        {
-                            "dependency_name": dependency.name,
-                            "dependency_module": dependency.module or "N/A",
-                            "dependency_type": dependency.dependency_type.value,
-                            "required": dependency.required,
-                            "node_name": contract_content.node_name,
-                        },
-                    )
+                    # Handle both string and ModelContractDependency types
+                    if isinstance(dependency, str):
+                        emit_log_event(
+                            LogLevel.DEBUG,
+                            f"Dependency registered: {dependency}",
+                            {
+                                "dependency_name": dependency,
+                                "dependency_module": "N/A",
+                                "dependency_type": "unknown",
+                                "required": True,
+                                "node_name": contract_content.node_name,
+                            },
+                        )
+                    else:
+                        # Use type instead of dependency_type for ModelContractDependency
+                        dep_type = getattr(dependency, "type", "unknown")
+                        # Handle enum or string type
+                        if hasattr(dep_type, "value"):
+                            dep_type_value = dep_type.value
+                        else:
+                            dep_type_value = str(dep_type)
+
+                        emit_log_event(
+                            LogLevel.DEBUG,
+                            f"Dependency registered: {dependency.name}",
+                            {
+                                "dependency_name": dependency.name,
+                                "dependency_module": dependency.module or "N/A",
+                                "dependency_type": dep_type_value,
+                                "required": getattr(dependency, "required", True),
+                                "node_name": contract_content.node_name,
+                            },
+                        )
 
                     # Note: Actual service registration with container will be implemented
                     # when omnibase-spi protocol service resolver is fully integrated.
@@ -241,17 +252,20 @@ class NodeBase(
         self._container = container
 
         # Store contract and configuration
-        business_logic_pattern = (
-            contract_content.tool_specification.business_logic_pattern
+        business_logic_pattern = getattr(
+            contract_content.tool_specification, "business_logic_pattern", None
         )
         # Handle both string and enum cases
-        pattern_value = (
-            business_logic_pattern.value
-            if hasattr(business_logic_pattern, "value")
-            else str(business_logic_pattern)
-        )
+        if business_logic_pattern is not None:
+            pattern_value = (
+                business_logic_pattern.value
+                if hasattr(business_logic_pattern, "value")
+                else str(business_logic_pattern)
+            )
+        else:
+            pattern_value = "unknown"
 
-        self.state = NodeState(
+        self.state = ModelNodeState(
             contract_path=contract_path,
             node_id=node_id,
             contract_content=contract_content,
@@ -290,8 +304,8 @@ class NodeBase(
             # Parse module and class name
             # Expected format: "module.path.ClassName"
             if "." not in main_tool_class:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid main_tool_class format: {main_tool_class}. Expected 'module.path.ClassName'",
                     context={
                         "main_tool_class": main_tool_class,
@@ -323,8 +337,8 @@ class NodeBase(
             return tool_instance
 
         except ImportError as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -334,8 +348,8 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
         except AttributeError as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -344,8 +358,8 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -373,7 +387,7 @@ class NodeBase(
             U: Tool-specific output state
 
         Raises:
-            OnexError: If execution fails
+            ModelOnexError: If execution fails
         """
         correlation_id = uuid4()
         start_time = datetime.now()
@@ -418,7 +432,7 @@ class NodeBase(
 
             return result
 
-        except OnexError:
+        except ModelOnexError:
             # Log and re-raise ONEX errors (fail-fast)
             emit_log_event(
                 LogLevel.ERROR,
@@ -444,8 +458,8 @@ class NodeBase(
                     "workflow_id": str(self.workflow_id),
                 },
             )
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Node execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -482,8 +496,8 @@ class NodeBase(
             main_tool = self._main_tool
 
             if main_tool is None:
-                raise OnexError(
-                    code=CoreErrorCode.OPERATION_FAILED,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
                     message="Main tool is not initialized",
                     context={
                         "node_name": self.state.node_name,
@@ -509,8 +523,8 @@ class NodeBase(
                     main_tool.run,
                     input_state,
                 )
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -520,7 +534,7 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             )
 
-        except OnexError:
+        except ModelOnexError:
             # Re-raise ONEX errors (fail-fast)
             raise
         except Exception as e:
@@ -535,9 +549,9 @@ class NodeBase(
                     "workflow_id": str(self.workflow_id),
                 },
             )
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"NodeBase processing error: {e!s}",
-                code=CoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
@@ -560,7 +574,7 @@ class NodeBase(
             U: Tool-specific output state
 
         Raises:
-            OnexError: If execution fails
+            ModelOnexError: If execution fails
         """
         # Run async version and return the result directly
         return asyncio.run(self.run_async(input_state))
@@ -579,16 +593,16 @@ class NodeBase(
 
     # ===== REDUCER IMPLEMENTATION =====
 
-    def initial_state(self) -> ModelState:  # type: ignore[override]
+    def initial_state(self) -> ProtocolState:
         """
         Returns the initial state for the reducer.
 
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
-        return ModelState()
+        return cast(ProtocolState, ModelState())
 
-    def dispatch(self, state: ModelState, action: ModelAction) -> ModelState:  # type: ignore[override]
+    def dispatch(self, state: ProtocolState, action: ProtocolAction) -> ProtocolState:
         """
         Synchronous state transition for simple operations.
 
@@ -599,9 +613,9 @@ class NodeBase(
 
     async def dispatch_async(  # type: ignore[override]
         self,
-        state: ModelState,
-        action: ModelAction,
-    ) -> ModelState:
+        state: ProtocolState,
+        action: ProtocolAction,
+    ) -> ProtocolNodeResult:
         """
         Asynchronous workflow-based state transition.
 
@@ -613,11 +627,13 @@ class NodeBase(
             action: Action to dispatch
 
         Returns:
-            ModelState: New state after transition
+            ProtocolNodeResult: Result with new state and metadata
 
         Raises:
-            OnexError: If dispatch fails
+            ModelOnexError: If dispatch fails
         """
+        from omnibase_spi.protocols.types.protocol_core_types import ContextValue
+
         try:
             new_state = self.dispatch(state, action)
 
@@ -633,7 +649,18 @@ class NodeBase(
                 },
             )
 
-            return new_state
+            # Wrap the new state in a result object
+            return ModelNodeWorkflowResult(
+                value=new_state,  # type: ignore
+                is_success=True,
+                is_failure=False,
+                error=None,
+                trust_score=1.0,
+                provenance=[f"NodeBase.dispatch_async:{self.node_id}"],
+                metadata={},
+                events=[],
+                state_delta={},
+            )
 
         except Exception as e:
             # Log and convert to ONEX error
@@ -646,8 +673,8 @@ class NodeBase(
                     "correlation_id": str(self.correlation_id),
                 },
             )
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"State dispatch failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
@@ -656,7 +683,7 @@ class NodeBase(
                 correlation_id=self.correlation_id,
             ) from e
 
-    def create_workflow(self) -> Any | None:  # type: ignore[override]
+    async def create_workflow(self) -> Any | None:
         """
         Factory method for creating LlamaIndex workflow instances.
 
@@ -703,8 +730,8 @@ class NodeBase(
     def container(self) -> ModelONEXContainer:
         """Get the ModelONEXContainer instance for dependency injection."""
         if self._container is None:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Container is not initialized",
                 context={"node_id": str(self.node_id)},
             )
@@ -716,11 +743,11 @@ class NodeBase(
         return self._main_tool
 
     @property
-    def current_state(self) -> ModelState:
+    def current_state(self) -> ProtocolState:
         """Get the current reducer state."""
         if self._reducer_state is None:
-            raise OnexError(
-                code=CoreErrorCode.OPERATION_FAILED,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Reducer state is not initialized",
                 context={"node_id": str(self.node_id)},
             )

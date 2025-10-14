@@ -1,16 +1,25 @@
+from __future__ import annotations
+
+import json
+from datetime import datetime
+from typing import Dict, Generic, List
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Examples collection model.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_format import EnumDataFormat
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_example import ModelExample
 from .model_example_context_data import ModelExampleContextData
@@ -24,7 +33,7 @@ class ModelExamples(BaseModel):
     Examples collection with typed fields.
 
     Strongly typed collection replacing Dict[str, Any] for examples fields
-    with no magic strings or poorly typed dictionaries.
+    with no magic strings or poorly typed dict[str, Any]ionaries.
     Implements omnibase_spi protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
@@ -194,7 +203,7 @@ class ModelExamples(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            OnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails with details about the failure
         """
         try:
             for key, value in kwargs.items():
@@ -202,27 +211,27 @@ class ModelExamples(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e

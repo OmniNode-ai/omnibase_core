@@ -1,5 +1,7 @@
+from collections.abc import Callable
+
 """
-Omnibase Core - ONEX Four-Node Architecture Implementation (OPTIMIZED)
+Omnibase Core - ONEX Four-Node ModelArchitecture Implementation (OPTIMIZED)
 
 PERFORMANCE FIX: This version removes package-level imports that cause
 453ms+ import penalty.
@@ -41,7 +43,7 @@ import-time penalties. This reduces package import time from 453ms to <5ms.
 # NO PACKAGE-LEVEL IMPORTS - This is the key fix!
 # All validation imports moved to lazy functions to eliminate import cascade
 
-from collections.abc import Callable
+from collections.abc import Callable as CallableABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -86,11 +88,7 @@ def get_validation_suite() -> tuple[
     Returns:
         Complete validation functions
     """
-    from .validation import (
-        ModelValidationSuite,
-        ValidationResult,
-        validate_all,
-    )
+    from .validation import ModelValidationSuite, ValidationResult, validate_all
 
     return ValidationResult, ModelValidationSuite, validate_all
 
@@ -102,7 +100,7 @@ def get_all_validation() -> dict[str, object]:
     Returns:
         All validation tools
     """
-    from .validation import (
+    from omnibase_core.validation import (
         ModelValidationSuite,
         ValidationResult,
         validate_all,

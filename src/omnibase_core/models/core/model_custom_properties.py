@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from typing import Generic
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Generic Custom Properties Model.
 
@@ -6,14 +15,12 @@ found across 15+ models in the codebase. Provides type-safe custom property hand
 with validation and utility methods.
 """
 
-from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
@@ -116,7 +123,7 @@ class ModelCustomProperties(BaseModel):
         return removed
 
     def get_all_custom_fields(self) -> dict[str, PrimitiveValueType]:
-        """Get all custom fields as a unified dictionary with raw values."""
+        """Get all custom fields as a unified dict[str, Any]ionary with raw values."""
         result: dict[str, PrimitiveValueType] = {}
         for key, string_value in self.custom_strings.items():
             result[key] = string_value
@@ -136,8 +143,8 @@ class ModelCustomProperties(BaseModel):
             self.set_custom_number(key, float(value))
         else:
             # Raise error for unsupported types
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Unsupported custom value type: {type(value)}",
                 details=ModelErrorContext.with_context(
                     {
@@ -188,14 +195,14 @@ class ModelCustomProperties(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, PrimitiveValueType]) -> ModelCustomProperties:
-        """Create ModelCustomProperties from dictionary of raw values."""
+        """Create ModelCustomProperties from dict[str, Any]ionary of raw values."""
         instance = cls()
         for key, value in data.items():
             instance.set_custom_value(key, value)
         return instance
 
     def update_from_dict(self, data: Mapping[str, PrimitiveValueType | None]) -> None:
-        """Update custom properties from dictionary of raw values. Skips None values."""
+        """Update custom properties from dict[str, Any]ionary of raw values. Skips None values."""
         for key, value in data.items():
             if value is not None:
                 self.set_custom_value(key, value)
@@ -277,7 +284,7 @@ class ModelCustomProperties(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

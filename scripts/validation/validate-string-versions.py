@@ -15,6 +15,7 @@ ID fields should use UUID type instead of str for proper type safety.
 Uses AST parsing for reliable detection of semantic version and ID patterns.
 This prevents runtime issues and ensures proper type compliance.
 """
+
 from __future__ import annotations
 
 import ast
@@ -67,7 +68,7 @@ class PythonASTValidator(ast.NodeVisitor):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.violations: List[ValidationViolation] = []
+        self.violations: list[ValidationViolation] = []
         self.imports = set()
 
         # Patterns for version fields that should use ModelSemVer
@@ -97,13 +98,46 @@ class PythonASTValidator(ast.NodeVisitor):
         ]
 
         # Exceptions - fields that can legitimately be strings
+        # See: docs/reports/ONEX_STRING_VERSION_ID_ANALYSIS.md for rationale
         self.exceptions = {
+            # Legacy patterns (original exceptions)
             "version_pattern",  # Regex patterns can be strings
             "version_spec",  # Version specifications can be strings
             "validation_pattern",  # Regex patterns
             "version_compatibility",  # Compatibility strings
             "execution_id",  # Some execution IDs may need to be strings for compatibility
             "version_str",  # Parameter names for parsing functions
+            # EXTERNAL_SYSTEMS (2 fields)
+            "external_id",  # External system identifiers (not ONEX-managed)
+            "certificate_id",  # X.509 certificate IDs
+            # DISTRIBUTED_TRACING (4 unique fields - OpenTelemetry standard)
+            "trace_id",  # OpenTelemetry trace identifier
+            "span_id",  # OpenTelemetry span identifier
+            "request_id",  # Request tracking identifier
+            "parent_span_id",  # Parent span for distributed tracing
+            # KAFKA_IDS (2 fields - Kafka infrastructure)
+            # Note: Primarily in model_event_bus_config.py context
+            # Whitelisted globally for simplicity as they're Kafka identifiers
+            "client_id",  # Kafka client ID (also used in discovery for compatibility)
+            "group_id",  # Kafka consumer group ID
+            # VERSION_TEMPLATES (4 fields)
+            "version_string",  # Template variable tokens
+            "version_directory_pattern",  # File path patterns
+            "version_requirement",  # Dependency constraint patterns
+            # EXTERNAL_VERSIONS (7 fields)
+            "python_version",  # Python interpreter version string
+            "tool_version",  # External tool versions
+            "minimum_tls_version",  # TLS protocol versions (e.g., "1.2", "1.3")
+            "service_version",  # External service versions
+            "runtime_version",  # Runtime environment versions
+            "command_version",  # CLI command versions
+            "node_specific_version",  # Node-specific version metadata
+            # METADATA_VERSIONS (4 fields in model_node_metadata_block.py)
+            # These use regex constraints for legacy compatibility
+            "metadata_version",  # Metadata block version
+            "protocol_version",  # Protocol version
+            "schema_version",  # Schema version
+            # Note: generic "version" field not whitelisted globally to catch other violations
         }
 
     def visit_Import(self, node: ast.Import):
@@ -183,7 +217,7 @@ class PythonASTValidator(ast.NodeVisitor):
                     )
                 )
 
-    def _matches_patterns(self, field_name: str, patterns: List[str]) -> bool:
+    def _matches_patterns(self, field_name: str, patterns: list[str]) -> bool:
         """Check if field name matches any of the given regex patterns."""
         return any(re.match(pattern, field_name) for pattern in patterns)
 
@@ -243,7 +277,7 @@ class StringVersionValidator:
 
     def __init__(self):
         self.errors: list[str] = []
-        self.ast_violations: List[ValidationViolation] = []
+        self.ast_violations: list[ValidationViolation] = []
         self.checked_files = 0
 
     def validate_python_file(self, python_path: Path) -> bool:
@@ -287,7 +321,7 @@ class StringVersionValidator:
         except OSError as e:
             self.errors.append(f"{python_path}: OS error reading file - {e}")
             return False
-        except IOError as e:
+        except OSError as e:
             self.errors.append(f"{python_path}: IO error reading file - {e}")
             return False
 
@@ -400,7 +434,7 @@ class StringVersionValidator:
         except OSError as e:
             self.errors.append(f"{yaml_path}: OS error reading file - {e}")
             return False
-        except IOError as e:
+        except OSError as e:
             self.errors.append(f"{yaml_path}: IO error reading file - {e}")
             return False
 
@@ -710,7 +744,7 @@ from timeout_utils import timeout_context
 
 def setup_timeout_handler():
     """Legacy compatibility function - use timeout_context instead."""
-    pass  # No-op for compatibility
+    # No-op for compatibility
 
 
 def main() -> int:

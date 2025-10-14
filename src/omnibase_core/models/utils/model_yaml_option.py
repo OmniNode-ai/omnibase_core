@@ -1,3 +1,7 @@
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 YAML option value model with discriminated union.
 
@@ -6,10 +10,10 @@ Author: ONEX Framework Team
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -24,9 +28,9 @@ class ModelYamlOption(BaseModel):
     option_type: EnumYamlOptionType = Field(
         description="Type discriminator for the option value",
     )
-    boolean_value: bool | None = Field(None, description="Boolean option value")
-    integer_value: int | None = Field(None, description="Integer option value")
-    string_value: str | None = Field(None, description="String option value")
+    boolean_value: bool | None = Field(default=None, description="Boolean option value")
+    integer_value: int | None = Field(default=None, description="Integer option value")
+    string_value: str | None = Field(default=None, description="String option value")
 
     @classmethod
     def from_bool(cls, value: bool) -> "ModelYamlOption":
@@ -66,8 +70,8 @@ class ModelYamlOption(BaseModel):
             return self.integer_value
         if self.option_type == EnumYamlOptionType.STRING:
             return self.string_value
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid option_type: {self.option_type}",
             details=ModelErrorContext.with_context(
                 {
@@ -88,7 +92,7 @@ class ModelYamlOption(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -98,8 +102,8 @@ class ModelYamlOption(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

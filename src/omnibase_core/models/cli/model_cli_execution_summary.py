@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI Execution Summary Model.
 
@@ -5,19 +13,18 @@ Represents execution summary with proper validation.
 Replaces dict[str, Any] for execution summary with structured typing.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
 )
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelCliExecutionSummary(BaseModel):
@@ -33,10 +40,12 @@ class ModelCliExecutionSummary(BaseModel):
     """
 
     # Core execution information - UUID-based entity references
-    execution_id: UUID = Field(..., description="Unique execution identifier")
-    command_id: UUID = Field(..., description="UUID identifier for the CLI command")
+    execution_id: UUID = Field(default=..., description="Unique execution identifier")
+    command_id: UUID = Field(
+        default=..., description="UUID identifier for the CLI command"
+    )
     command_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable command name",
     )
     target_node_id: UUID | None = Field(
@@ -49,27 +58,31 @@ class ModelCliExecutionSummary(BaseModel):
     )
 
     # Execution state
-    status: EnumExecutionStatus = Field(..., description="Execution status")
+    status: EnumExecutionStatus = Field(default=..., description="Execution status")
     current_phase: EnumExecutionPhase | None = Field(
         default=None,
         description="Current execution phase",
     )
     progress_percentage: float = Field(
-        ...,
+        default=...,
         description="Progress percentage",
         ge=0.0,
         le=100.0,
     )
 
     # Timing information
-    start_time: datetime = Field(..., description="Execution start time")
+    start_time: datetime = Field(default=..., description="Execution start time")
     end_time: datetime | None = Field(default=None, description="Execution end time")
-    elapsed_ms: int = Field(..., description="Elapsed time in milliseconds", ge=0)
+    elapsed_ms: int = Field(
+        default=..., description="Elapsed time in milliseconds", ge=0
+    )
 
     # Execution metadata
-    retry_count: int = Field(..., description="Current retry count", ge=0)
-    is_dry_run: bool = Field(..., description="Whether this is a dry run")
-    is_test_execution: bool = Field(..., description="Whether this is a test execution")
+    retry_count: int = Field(default=..., description="Current retry count", ge=0)
+    is_dry_run: bool = Field(default=..., description="Whether this is a dry run")
+    is_test_execution: bool = Field(
+        default=..., description="Whether this is a test execution"
+    )
 
     def is_completed(self) -> bool:
         """Check if execution is completed."""
@@ -125,7 +138,7 @@ class ModelCliExecutionSummary(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -150,15 +163,15 @@ class ModelCliExecutionSummary(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

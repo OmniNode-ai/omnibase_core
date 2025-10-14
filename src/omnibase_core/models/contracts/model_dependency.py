@@ -1,3 +1,10 @@
+from typing import Dict
+
+from pydantic import Field, field_validator, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Model Dependency - ONEX Standards Compliant Dependency Specification.
 
@@ -12,13 +19,14 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 import re
 from functools import lru_cache
-from typing import ClassVar
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelDependency(BaseModel):
@@ -27,13 +35,13 @@ class ModelDependency(BaseModel):
 
     Provides structured dependency model for contract dependencies.
     STRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.
-    No string or dict fallbacks - use structured initialization only.
+    No string or dict[str, Any]fallbacks - use structured initialization only.
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
     name: str = Field(
-        ...,
+        default=...,
         description="Dependency name (e.g., 'ProtocolEventBus')",
         min_length=1,
     )
@@ -84,14 +92,9 @@ class ModelDependency(BaseModel):
     def validate_name(cls, v: str) -> str:
         """Validate dependency name follows ONEX conventions."""
         if not v or not v.strip():
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message="Dependency name cannot be empty or whitespace-only",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "provided_value": ModelSchemaValue.from_value(str(v)),
@@ -106,14 +109,9 @@ class ModelDependency(BaseModel):
         # Basic validation - allow protocols, services, modules
         min_name_length = 2
         if len(v) < min_name_length:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Dependency name too short: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "name": ModelSchemaValue.from_value(v),
@@ -223,14 +221,9 @@ class ModelDependency(BaseModel):
                 break  # Only report first violation to avoid spam
 
         if security_violations:
-            from omnibase_core.models.common.model_error_context import (
-                ModelErrorContext,
-            )
-            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Security violations in module path '{module_path[:50]}...': {', '.join(security_violations)}",
+            raise ModelOnexError(
+                message=f"Security violations in module path '{module_path[:50] if len(module_path) > 50 else module_path}': {', '.join(security_violations)}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "module_path": ModelSchemaValue.from_value(module_path[:100]),
@@ -253,15 +246,10 @@ class ModelDependency(BaseModel):
     @classmethod
     def _validate_module_format(cls, module_path: str) -> None:
         """Validate module path format using pre-compiled pattern with caching for performance."""
-        from omnibase_core.models.common.model_error_context import (
-            ModelErrorContext,
-        )
-        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
         if not cls._MODULE_PATTERN.match(module_path):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Invalid module path format: {module_path}. Must be valid Python module path.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "module_path": ModelSchemaValue.from_value(module_path),

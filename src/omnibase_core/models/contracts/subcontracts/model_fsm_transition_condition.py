@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 FSM Transition Condition Model - ONEX Standards Compliant.
 
@@ -7,7 +9,9 @@ Part of the FSM Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class ModelFSMTransitionCondition(BaseModel):
@@ -19,19 +23,19 @@ class ModelFSMTransitionCondition(BaseModel):
     """
 
     condition_name: str = Field(
-        ...,
+        default=...,
         description="Unique name for the condition",
         min_length=1,
     )
 
     condition_type: str = Field(
-        ...,
+        default=...,
         description="Type of condition (validation, state, processing, custom)",
         min_length=1,
     )
 
     expression: str = Field(
-        ...,
+        default=...,
         description="Condition expression or rule",
         min_length=1,
     )

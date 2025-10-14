@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 def clear_cache():
     """Clear import cache."""
-    modules = [k for k in sys.modules.keys() if "omnibase_core" in k]
+    modules = [k for k in sys.modules if "omnibase_core" in k]
     for m in modules:
         if m in sys.modules:
             del sys.modules[m]
@@ -55,7 +55,7 @@ def test_fast_import():
 
     # Results
     total_time = import_time + access_time
-    print(f"\n📊 RESULTS:")
+    print("\n📊 RESULTS:")
     print(f"   Total time (import + first access): {total_time:.2f}ms")
     print(f"   Zero Tolerance Status: {'✅ PASS' if total_time < 50 else '❌ FAIL'}")
     print(

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Type Name Enum.
 
 Strongly typed type name values for node types.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

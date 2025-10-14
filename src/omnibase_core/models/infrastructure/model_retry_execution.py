@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import Field
+
 """
 Retry Execution Model.
 
@@ -5,12 +11,11 @@ Execution tracking and state management for retries.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, timedelta
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -195,7 +200,7 @@ class ModelRetryExecution(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

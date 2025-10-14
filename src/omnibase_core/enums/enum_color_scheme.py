@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+from typing import Any
+
 """
 Color scheme enumeration.
 
 Defines color schemes for CLI output formatting.
 """
-
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -49,7 +51,7 @@ class EnumColorScheme(str, Enum):
 
     @classmethod
     def get_accessible_schemes(cls) -> list[EnumColorScheme]:
-        """Get list of accessibility-friendly color schemes."""
+        """Get list[Any]of accessibility-friendly color schemes."""
         return [
             cls.COLORBLIND_FRIENDLY,
             cls.HIGH_VISIBILITY,
@@ -59,7 +61,7 @@ class EnumColorScheme(str, Enum):
 
     @classmethod
     def get_dark_schemes(cls) -> list[EnumColorScheme]:
-        """Get list of dark color schemes."""
+        """Get list[Any]of dark color schemes."""
         return [
             cls.DARK,
             cls.HIGH_CONTRAST,
@@ -68,7 +70,7 @@ class EnumColorScheme(str, Enum):
 
     @classmethod
     def get_light_schemes(cls) -> list[EnumColorScheme]:
-        """Get list of light color schemes."""
+        """Get list[Any]of light color schemes."""
         return [
             cls.LIGHT,
             cls.BRIGHT,

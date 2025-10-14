@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Node Feature Flags Model.
 
@@ -5,15 +13,16 @@ Feature toggle configuration for nodes.
 Part of the ModelNodeConfiguration restructuring.
 """
 
-from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-
-from .model_types_node_feature_summary import ModelNodeFeatureSummaryType
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.types.typed_dict_node_feature_summary_type import (
+    TypedDictNodeFeatureSummaryType,
+)
 
 
 class ModelNodeFeatureFlags(BaseModel):
@@ -36,7 +45,7 @@ class ModelNodeFeatureFlags(BaseModel):
     enable_tracing: bool = Field(default=False, description="Enable detailed tracing")
 
     def get_enabled_features(self) -> list[str]:
-        """Get list of enabled features."""
+        """Get list[Any]of enabled features."""
         features = []
         if self.enable_caching:
             features.append("caching")
@@ -47,7 +56,7 @@ class ModelNodeFeatureFlags(BaseModel):
         return features
 
     def get_disabled_features(self) -> list[str]:
-        """Get list of disabled features."""
+        """Get list[Any]of disabled features."""
         features = []
         if not self.enable_caching:
             features.append("caching")
@@ -57,7 +66,7 @@ class ModelNodeFeatureFlags(BaseModel):
             features.append("tracing")
         return features
 
-    def get_feature_summary(self) -> ModelNodeFeatureSummaryType:
+    def get_feature_summary(self) -> TypedDictNodeFeatureSummaryType:
         """Get feature flags summary as string values for type safety."""
         enabled = self.get_enabled_features()
         return {
@@ -131,15 +140,15 @@ class ModelNodeFeatureFlags(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
         )
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -152,7 +161,7 @@ class ModelNodeFeatureFlags(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -164,7 +173,7 @@ class ModelNodeFeatureFlags(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

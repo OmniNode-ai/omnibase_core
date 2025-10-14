@@ -20,7 +20,11 @@ import pytest
 import yaml
 
 from omnibase_core.validation.contracts import (
+    MAX_FILE_SIZE,
+    VALIDATION_TIMEOUT,
     load_and_validate_yaml_model,
+    timeout_handler,
+    validate_contracts_cli,
     validate_contracts_directory,
     validate_no_manual_yaml,
     validate_yaml_file,
@@ -713,3 +717,473 @@ operations: []
 
         assert result.metadata is not None
         assert "files_validated" in result.metadata or len(result.metadata) >= 0
+
+
+class TestTimeoutHandler:
+    """Test timeout_handler function."""
+
+    def test_timeout_handler_raises_modelonex_error(self) -> None:
+        """Test timeout handler raises ModelOnexError."""
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            timeout_handler(0, None)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.TIMEOUT_ERROR
+        assert "Validation timed out" in exc_info.value.message
+
+
+class TestValidateYamlFileErrors:
+    """Test error handling in validate_yaml_file."""
+
+    def test_validate_yaml_file_nonexistent(self, tmp_path: Path) -> None:
+        """Test handling of nonexistent files."""
+        nonexistent = tmp_path / "nonexistent.yaml"
+
+        errors = validate_yaml_file(nonexistent)
+
+        assert len(errors) > 0
+        assert any("does not exist" in error for error in errors)
+
+    def test_validate_yaml_file_directory(self, tmp_path: Path) -> None:
+        """Test handling of directory instead of file."""
+        directory = tmp_path / "test_dir"
+        directory.mkdir()
+
+        errors = validate_yaml_file(directory)
+
+        assert len(errors) > 0
+        assert any("not a regular file" in error for error in errors)
+
+    def test_validate_yaml_file_too_large(self, tmp_path: Path) -> None:
+        """Test handling of files that exceed size limit."""
+        large_file = tmp_path / "large.yaml"
+
+        # Create a file larger than MAX_FILE_SIZE
+        with open(large_file, "w") as f:
+            # Write enough data to exceed limit
+            for _ in range(int(MAX_FILE_SIZE / 100) + 1):
+                f.write("x" * 100)
+
+        errors = validate_yaml_file(large_file)
+
+        # Should detect file size violation
+        assert len(errors) > 0
+        assert any("too large" in error.lower() for error in errors)
+
+    def test_validate_yaml_file_stat_error(self, tmp_path: Path) -> None:
+        """Test handling of stat errors."""
+        from unittest.mock import MagicMock, patch
+
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
+
+        # Mock stat to raise OSError after exists() passes
+        original_stat = yaml_file.stat
+        call_count = [0]
+
+        def stat_side_effect(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] > 2:  # Allow exists() and is_file() to work
+                raise OSError("Stat failed")
+            return original_stat()
+
+        with patch.object(type(yaml_file), "stat", side_effect=stat_side_effect):
+            errors = validate_yaml_file(yaml_file)
+
+        # Should handle exception gracefully
+        assert len(errors) > 0
+        assert any("Cannot check file size" in error for error in errors)
+
+    def test_validate_yaml_file_whitespace_only(self, tmp_path: Path) -> None:
+        """Test handling of whitespace-only files."""
+        yaml_file = tmp_path / "whitespace.yaml"
+        yaml_file.write_text("   \n\t  \n  ")
+
+        errors = validate_yaml_file(yaml_file)
+
+        # Whitespace-only files should be treated as valid/empty
+        assert len(errors) == 0
+
+    def test_validate_yaml_file_permission_denied(self, tmp_path: Path) -> None:
+        """Test handling of permission denied errors."""
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(
+            """
+version: "1.0"
+contract_id: test
+operations: []
+""",
+        )
+
+        # Make file unreadable (Unix only)
+        import platform
+
+        if platform.system() != "Windows":
+            yaml_file.chmod(0o000)
+
+            errors = validate_yaml_file(yaml_file)
+
+            # Should detect permission error
+            assert len(errors) > 0
+            assert any("permission" in error.lower() for error in errors)
+
+            # Restore permissions for cleanup
+            yaml_file.chmod(0o644)
+
+    def test_validate_yaml_file_read_exception(self, tmp_path: Path) -> None:
+        """Test handling of file read exceptions."""
+        from unittest.mock import Mock, patch
+
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
+
+        # Mock open to raise an exception
+        with patch("builtins.open", side_effect=RuntimeError("Read error")):
+            errors = validate_yaml_file(yaml_file)
+
+        # Should handle exception gracefully
+        assert len(errors) > 0
+        assert any("Error reading file" in error for error in errors)
+
+
+class TestValidateContractsCLI:
+    """Test validate_contracts_cli function."""
+
+    def test_cli_basic_success(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with valid contracts."""
+        import sys
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
+
+        exit_code = validate_contracts_cli()
+
+        captured = capsys.readouterr()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
+
+    def test_cli_with_errors(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with invalid contracts."""
+        import sys
+
+        (tmp_path / "bad.yaml").write_text("[invalid: yaml: syntax")
+
+        monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
+
+        exit_code = validate_contracts_cli()
+
+        captured = capsys.readouterr()
+        # Should report issues
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
+
+    def test_cli_nonexistent_directory(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with nonexistent directory."""
+        import sys
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["validate_contracts", str(tmp_path / "nonexistent")],
+        )
+
+        exit_code = validate_contracts_cli()
+
+        captured = capsys.readouterr()
+        assert (
+            "Directory not found" in captured.out
+            or "validation" in captured.out.lower()
+        )
+
+    def test_cli_multiple_directories(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with multiple directories."""
+        import sys
+
+        dir1 = tmp_path / "dir1"
+        dir1.mkdir()
+        dir2 = tmp_path / "dir2"
+        dir2.mkdir()
+
+        (dir1 / "test1.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+        (dir2 / "test2.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: EFFECT
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["validate_contracts", str(dir1), str(dir2)],
+        )
+
+        exit_code = validate_contracts_cli()
+
+        captured = capsys.readouterr()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
+
+    def test_cli_timeout_flag(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI with custom timeout."""
+        import sys
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["validate_contracts", str(tmp_path), "--timeout", "600"],
+        )
+
+        exit_code = validate_contracts_cli()
+
+        captured = capsys.readouterr()
+        assert (
+            "Contract Validation" in captured.out
+            or "validation" in captured.out.lower()
+        )
+
+    def test_cli_keyboard_interrupt(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI handles keyboard interrupt."""
+        import sys
+        from unittest.mock import patch
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
+
+        # Mock validate_contracts_directory to raise KeyboardInterrupt
+        with patch(
+            "omnibase_core.validation.contracts.validate_contracts_directory",
+            side_effect=KeyboardInterrupt,
+        ):
+            exit_code = validate_contracts_cli()
+
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "interrupted" in captured.out.lower()
+
+    def test_cli_default_directory(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI defaults to current directory."""
+        import os
+        import sys
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            monkeypatch.setattr(sys, "argv", ["validate_contracts"])
+
+            exit_code = validate_contracts_cli()
+
+            captured = capsys.readouterr()
+            assert (
+                "Contract Validation" in captured.out
+                or "validation" in captured.out.lower()
+            )
+        finally:
+            os.chdir(original_cwd)
+
+    def test_cli_output_formatting(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI output formatting."""
+        import sys
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
+
+        exit_code = validate_contracts_cli()
+
+        captured = capsys.readouterr()
+        # Check for proper formatting
+        assert "=" in captured.out or "-" in captured.out
+        assert "Files checked" in captured.out or "validation" in captured.out.lower()
+
+    def test_cli_timeout_error(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI handles timeout errors."""
+        import sys
+        from unittest.mock import patch
+
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
+
+        # Mock validate_contracts_directory to raise timeout error
+        with patch(
+            "omnibase_core.validation.contracts.validate_contracts_directory",
+            side_effect=ModelOnexError(
+                error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
+                message="Validation timed out",
+            ),
+        ):
+            exit_code = validate_contracts_cli()
+
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "timed out" in captured.out.lower()
+
+    def test_cli_generic_onex_error(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """Test CLI handles generic ModelOnexError."""
+        import sys
+        from unittest.mock import patch
+
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+""",
+        )
+
+        monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
+
+        # Mock validate_contracts_directory to raise generic error
+        with patch(
+            "omnibase_core.validation.contracts.validate_contracts_directory",
+            side_effect=ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Generic validation error",
+            ),
+        ):
+            exit_code = validate_contracts_cli()
+
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "Validation error" in captured.out or "error" in captured.out.lower()

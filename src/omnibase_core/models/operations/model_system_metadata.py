@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Strongly-typed system metadata structure.
 
@@ -5,18 +15,12 @@ Replaces dict[str, Any] usage in system metadata with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import (
-    ModelSemVer,
-)
+from pydantic import BaseModel
 
 
 class ModelSystemMetadata(BaseModel):
@@ -35,9 +39,9 @@ class ModelSystemMetadata(BaseModel):
         default_factory=uuid4,
         description="System identifier (UUID format)",
     )
-    system_name: str = Field(..., description="System name")
+    system_name: str = Field(default=..., description="System name")
     version: ModelSemVer = Field(
-        ...,
+        default=...,
         description="System version in semantic version format",
     )
     deployment_id: UUID | None = Field(
@@ -103,15 +107,15 @@ class ModelSystemMetadata(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

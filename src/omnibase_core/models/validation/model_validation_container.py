@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Generic
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Generic validation error aggregator to standardize validation across all domains.
 
@@ -6,13 +14,12 @@ aggregation, and reporting that replaces scattered validation logic across
 the codebase.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
@@ -27,7 +34,7 @@ class ModelValidationContainer(BaseModel):
     Generic container for validation results and error aggregation.
 
     This model standardizes validation error collection across all domains,
-    replacing scattered validation_errors lists and providing consistent
+    replacing scattered validation_errors list[Any]s and providing consistent
     validation reporting capabilities.
     Implements omnibase_spi protocols:
     - Validatable: Validation and verification
@@ -218,8 +225,8 @@ class ModelValidationContainer(BaseModel):
             # Basic validation - ensure required fields exist and no errors
             return not self.has_errors()
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -240,7 +247,7 @@ class ModelValidationContainer(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

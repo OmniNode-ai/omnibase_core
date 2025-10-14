@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TypeVar
+
 """
 Typed Configuration with Custom Properties Support.
 
@@ -5,9 +9,8 @@ Configuration base with custom properties support that combines the standard
 configuration base with ModelCustomProperties for extensible custom fields.
 """
 
-from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any
 
 from .model_configuration_base import ModelConfigurationBase
 from .model_custom_properties import ModelCustomProperties
@@ -84,7 +87,7 @@ class ModelTypedConfiguration(
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

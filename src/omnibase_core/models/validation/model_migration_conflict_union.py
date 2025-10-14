@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import TypedDict, Union
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Discriminated union model for migration conflicts.
 
@@ -5,12 +13,12 @@ Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameCo
 with ONEX-compliant discriminated union pattern.
 """
 
-from __future__ import annotations
+from typing import Dict
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.validation.migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
@@ -28,7 +36,7 @@ class ModelMigrationConflictUnion(BaseModel):
     """
 
     conflict_type: EnumMigrationConflictType = Field(
-        description="Type discriminator for conflict union",
+        description="Type discriminator for conflict union"
     )
 
     # Common fields present in both conflict types
@@ -39,32 +47,27 @@ class ModelMigrationConflictUnion(BaseModel):
 
     # Fields specific to name conflicts
     source_signature: str | None = Field(
-        default=None,
-        description="Source protocol signature hash (name conflicts only)",
+        default=None, description="Source protocol signature hash (name conflicts only)"
     )
     spi_signature: str | None = Field(
-        default=None,
-        description="SPI protocol signature hash (name conflicts only)",
+        default=None, description="SPI protocol signature hash (name conflicts only)"
     )
 
     # Fields specific to duplicate conflicts
     signature_hash: str | None = Field(
-        default=None,
-        description="Common signature hash (duplicate conflicts only)",
+        default=None, description="Common signature hash (duplicate conflicts only)"
     )
 
     @field_validator("source_signature", "spi_signature")
     @classmethod
     def validate_name_conflict_fields(
-        cls,
-        v: str | None,
-        info: ValidationInfo,
+        cls, v: str | None, info: ValidationInfo
     ) -> str | None:
         """Ensure name conflict fields are present when conflict_type is name_conflict."""
         conflict_type = info.data.get("conflict_type")
         if conflict_type == EnumMigrationConflictType.NAME_CONFLICT and v is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="source_signature and spi_signature required for name conflicts",
                 details={
                     "conflict_type": str(conflict_type),
@@ -77,15 +80,13 @@ class ModelMigrationConflictUnion(BaseModel):
     @field_validator("signature_hash")
     @classmethod
     def validate_duplicate_conflict_fields(
-        cls,
-        v: str | None,
-        info: ValidationInfo,
+        cls, v: str | None, info: ValidationInfo
     ) -> str | None:
         """Ensure duplicate conflict fields are present when conflict_type is exact_duplicate."""
         conflict_type = info.data.get("conflict_type")
         if conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE and v is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="signature_hash required for exact duplicate conflicts",
                 details={
                     "conflict_type": str(conflict_type),
@@ -97,8 +98,7 @@ class ModelMigrationConflictUnion(BaseModel):
 
     @classmethod
     def from_name_conflict(
-        cls,
-        conflict_dict: TypedDictMigrationNameConflictDict,
+        cls, conflict_dict: TypedDictMigrationNameConflictDict
     ) -> ModelMigrationConflictUnion:
         """Create union instance from name conflict TypedDict."""
         return cls(
@@ -113,8 +113,7 @@ class ModelMigrationConflictUnion(BaseModel):
 
     @classmethod
     def from_duplicate_conflict(
-        cls,
-        conflict_dict: TypedDictMigrationDuplicateConflictDict,
+        cls, conflict_dict: TypedDictMigrationDuplicateConflictDict
     ) -> ModelMigrationConflictUnion:
         """Create union instance from duplicate conflict TypedDict."""
         return cls(
@@ -129,8 +128,8 @@ class ModelMigrationConflictUnion(BaseModel):
     def to_name_conflict_dict(self) -> TypedDictMigrationNameConflictDict:
         """Convert to name conflict TypedDict format."""
         if self.conflict_type != EnumMigrationConflictType.NAME_CONFLICT:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Cannot convert to name conflict: wrong conflict type",
                 details={
                     "current_conflict_type": str(self.conflict_type),
@@ -142,8 +141,8 @@ class ModelMigrationConflictUnion(BaseModel):
             )
 
         if self.source_signature is None or self.spi_signature is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Missing required fields for name conflict conversion",
                 details={
                     "source_signature": self.source_signature,
@@ -165,8 +164,8 @@ class ModelMigrationConflictUnion(BaseModel):
     def to_duplicate_conflict_dict(self) -> TypedDictMigrationDuplicateConflictDict:
         """Convert to duplicate conflict TypedDict format."""
         if self.conflict_type != EnumMigrationConflictType.EXACT_DUPLICATE:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Cannot convert to duplicate conflict: wrong conflict type",
                 details={
                     "current_conflict_type": str(self.conflict_type),
@@ -178,8 +177,8 @@ class ModelMigrationConflictUnion(BaseModel):
             )
 
         if self.signature_hash is None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Missing required fields for duplicate conflict conversion",
                 details={
                     "signature_hash": self.signature_hash,

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Retry Backoff Strategy Enumeration.
 
 Defines the available retry backoff strategies for retry policies.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

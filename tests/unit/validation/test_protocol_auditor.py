@@ -12,10 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.validation import (
-    ConfigurationError,
-    ModelProtocolAuditor,
-)
+from omnibase_core.validation import ConfigurationError, ModelProtocolAuditor
 from omnibase_core.validation.auditor_protocol import ModelAuditResult
 
 

@@ -139,7 +139,7 @@ def main() -> None:
 
     print()
     print("=" * 80)
-    print(f"Migration complete!")
+    print("Migration complete!")
     print(f"  Files changed: {total_changed}/{len(files)}")
     print("=" * 80)
 

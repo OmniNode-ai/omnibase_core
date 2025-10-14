@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.core.model_container import ModelContainer
 
 
@@ -513,8 +513,8 @@ class TestModelContainerIntegration:
             container.map_value(lambda x: int(x))
 
         error = exc_info.value
-        assert "numeric_string" in str(error.details)
-        assert "invalid_number" in str(error.details)
+        assert "numeric_string" in str(error.context)
+        assert "invalid_number" in str(error.context)
 
     def test_chained_validation(self):
         """Test multiple validation steps."""

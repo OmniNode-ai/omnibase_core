@@ -1,3 +1,8 @@
+import uuid
+from typing import Any
+
+from pydantic import Field
+
 """
 Node Assignment Model - ONEX Standards Compliant.
 
@@ -6,7 +11,7 @@ Model for node assignment in workflow execution for the ONEX workflow coordinati
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumAssignmentStatus
@@ -20,10 +25,10 @@ class ModelNodeAssignment(BaseModel):
         description="Unique identifier for the node",
     )
 
-    node_type: EnumNodeType = Field(..., description="Type of the node")
+    node_type: EnumNodeType = Field(default=..., description="Type of the node")
 
     assignment_status: EnumAssignmentStatus = Field(
-        ...,
+        default=...,
         description="Current status of the assignment",
     )
 

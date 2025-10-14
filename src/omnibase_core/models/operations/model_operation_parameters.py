@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Strongly-typed operation parameters models.
 
@@ -6,12 +12,11 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 """
 
-from __future__ import annotations
 
 from .model_effect_parameters import ModelEffectParameters
 
 # Import models from individual files following ONEX one-model-per-file architecture
-from .model_operation_parameters_base import ModelOperationParameters
+from .model_operationparameters import ModelOperationParameters
 from .model_workflow_parameters import ModelWorkflowParameters
 
 # Export all models

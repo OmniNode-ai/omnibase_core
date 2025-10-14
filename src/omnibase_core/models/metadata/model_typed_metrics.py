@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+import hashlib
+import uuid
+from typing import Generic
+
+from pydantic import Field
+
 """
 Generic typed metrics model.
 
@@ -5,16 +13,13 @@ Unified generic model replacing type-specific metrics variants.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from __future__ import annotations
 
-from typing import Any, Generic
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.types.constraints import (
-    SimpleValueType,
-)
+from omnibase_core.types.constraints import SimpleValueType
 
 # Use consolidated SimpleValueType instead of redundant TypeVar
 
@@ -27,12 +32,12 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
     - Validatable: Validation and verification
     """
 
-    metric_id: UUID = Field(..., description="UUID for metric identifier")
+    metric_id: UUID = Field(default=..., description="UUID for metric identifier")
     metric_display_name: str = Field(
         default="",
         description="Human-readable metric name",
     )
-    value: SimpleValueType = Field(..., description="Typed metric value")
+    value: SimpleValueType = Field(default=..., description="Typed metric value")
     unit: str = Field(default="", description="Unit of measurement")
     description: str = Field(default="", description="Metric description")
 
@@ -69,7 +74,6 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         description: str = "",
     ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
-        import hashlib
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
@@ -93,7 +97,6 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         description: str = "",
     ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
-        import hashlib
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
@@ -117,7 +120,6 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         description: str = "",
     ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""
-        import hashlib
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
@@ -143,7 +145,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -156,7 +158,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -168,7 +170,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

@@ -1,12 +1,15 @@
+from __future__ import annotations
+
+from typing import TypedDict, Union
+
 """
 Migration Conflict Type Enum.
 
 Strongly typed enumeration for migration conflict type discriminators.
 """
 
-from __future__ import annotations
-
 from enum import Enum, unique
+from typing import Dict
 
 
 @unique
@@ -45,8 +48,7 @@ class EnumMigrationConflictType(str, Enum):
 
     @classmethod
     def requires_manual_resolution(
-        cls,
-        conflict_type: EnumMigrationConflictType,
+        cls, conflict_type: EnumMigrationConflictType
     ) -> bool:
         """Check if the conflict type requires manual resolution."""
         # Exact duplicates might be automatically resolvable by deduplication

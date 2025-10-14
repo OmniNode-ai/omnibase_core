@@ -4,7 +4,7 @@ Unit tests for ModelNamespaceConfig.
 Tests all aspects of the namespace configuration model including:
 - Model instantiation and validation
 - Field validation and type checking
-- Literal type validation for 'strategy' field
+- Enum type validation for 'strategy' field
 - Serialization/deserialization
 - Edge cases and error conditions
 """
@@ -12,7 +12,7 @@ Tests all aspects of the namespace configuration model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.config.model_namespace_config import ModelNamespaceConfig
+from omnibase_core.models.core.model_namespace_config import ModelNamespaceConfig
 
 
 class TestModelNamespaceConfig:
@@ -27,14 +27,14 @@ class TestModelNamespaceConfig:
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
-        config = ModelNamespaceConfig(enabled=False, strategy="explicit")
+        config = ModelNamespaceConfig(enabled=False, strategy="hierarchical")
 
         assert config.enabled is False
-        assert config.strategy == "explicit"
+        assert config.strategy == "hierarchical"
 
     def test_all_valid_strategy_values(self):
         """Test model instantiation with all valid strategy literals."""
-        valid_strategies = ["onex_default", "explicit", "auto"]
+        valid_strategies = ["onex_default", "hierarchical", "flat", "custom"]
 
         for strategy in valid_strategies:
             config = ModelNamespaceConfig(enabled=True, strategy=strategy)
@@ -47,21 +47,21 @@ class TestModelNamespaceConfig:
             "invalid",
             "CUSTOM",
             "ONEX_DEFAULT",  # Case sensitive - uppercase not allowed
-            "EXPLICIT",  # Case sensitive - uppercase not allowed
-            "AUTO",  # Case sensitive - uppercase not allowed
+            "HIERARCHICAL",  # Case sensitive - uppercase not allowed
+            "FLAT",  # Case sensitive - uppercase not allowed
             "DEFAULT",
             "",
             "MANUAL",
+            "explicit",  # Old value, no longer valid
+            "auto",  # Old value, no longer valid
         ]
 
         for invalid_strategy in invalid_strategies:
             with pytest.raises(ValidationError) as exc_info:
                 ModelNamespaceConfig(strategy=invalid_strategy)
-            # Should mention literal values or input validation
+            # Should mention enum or input validation
             error_str = str(exc_info.value).lower()
-            assert (
-                "literal" in error_str or "input" in error_str or "value" in error_str
-            )
+            assert "enum" in error_str or "input" in error_str or "value" in error_str
 
     def test_enabled_field_validation(self):
         """Test that enabled field accepts boolean values."""
@@ -106,22 +106,22 @@ class TestModelNamespaceConfig:
 
     def test_model_serialization(self):
         """Test model serialization to dict."""
-        config = ModelNamespaceConfig(enabled=False, strategy="auto")
+        config = ModelNamespaceConfig(enabled=False, strategy="flat")
 
         data = config.model_dump()
 
-        expected_data = {"enabled": False, "strategy": "auto"}
+        expected_data = {"enabled": False, "strategy": "flat"}
 
         assert data == expected_data
 
     def test_model_deserialization(self):
         """Test model deserialization from dict."""
-        data = {"enabled": True, "strategy": "explicit"}
+        data = {"enabled": True, "strategy": "hierarchical"}
 
         config = ModelNamespaceConfig.model_validate(data)
 
         assert config.enabled is True
-        assert config.strategy == "explicit"
+        assert config.strategy == "hierarchical"
 
     def test_model_json_serialization(self):
         """Test JSON serialization and deserialization."""
@@ -139,11 +139,11 @@ class TestModelNamespaceConfig:
 
     def test_model_equality(self):
         """Test model equality comparison."""
-        config1 = ModelNamespaceConfig(enabled=True, strategy="auto")
+        config1 = ModelNamespaceConfig(enabled=True, strategy="flat")
 
-        config2 = ModelNamespaceConfig(enabled=True, strategy="auto")
+        config2 = ModelNamespaceConfig(enabled=True, strategy="flat")
 
-        config3 = ModelNamespaceConfig(enabled=False, strategy="auto")
+        config3 = ModelNamespaceConfig(enabled=False, strategy="flat")
 
         assert config1 == config2
         assert config1 != config3
@@ -160,19 +160,21 @@ class TestModelNamespaceConfig:
         assert config.enabled is False
         assert config.strategy == "onex_default"
 
-        config = ModelNamespaceConfig(strategy="explicit")
+        config = ModelNamespaceConfig(strategy="hierarchical")
         assert config.enabled is True
-        assert config.strategy == "explicit"
+        assert config.strategy == "hierarchical"
 
     def test_strategy_combinations(self):
         """Test different strategy and enabled combinations."""
         combinations = [
             (True, "onex_default"),
-            (True, "explicit"),
-            (True, "auto"),
+            (True, "hierarchical"),
+            (True, "flat"),
+            (True, "custom"),
             (False, "onex_default"),
-            (False, "explicit"),
-            (False, "auto"),
+            (False, "hierarchical"),
+            (False, "flat"),
+            (False, "custom"),
         ]
 
         for enabled, strategy in combinations:
@@ -182,7 +184,7 @@ class TestModelNamespaceConfig:
 
     def test_repr_and_str(self):
         """Test string representations of the model."""
-        config = ModelNamespaceConfig(enabled=True, strategy="auto")
+        config = ModelNamespaceConfig(enabled=True, strategy="flat")
 
         repr_str = repr(config)
         assert "ModelNamespaceConfig" in repr_str
@@ -234,16 +236,16 @@ class TestModelNamespaceConfigEdgeCases:
             "Onex_Default",
             "ONEX_default",
             "onex_DEFAULT",
-            "Explicit",
-            "EXPLICIT",
-            "explicit",
-            "Auto",
-            "AUTO",
-            "auto",
+            "Hierarchical",
+            "HIERARCHICAL",
+            "hierarchical",
+            "Flat",
+            "FLAT",
+            "flat",
         ]
 
         # Only exact lowercase case should work, test some invalid cases
-        invalid_cases = ["ONEX_DEFAULT", "Onex_Default", "EXPLICIT", "AUTO"]
+        invalid_cases = ["ONEX_DEFAULT", "Onex_Default", "HIERARCHICAL", "FLAT"]
 
         for strategy in invalid_cases:
             with pytest.raises(ValidationError):
@@ -274,8 +276,8 @@ class TestModelNamespaceConfigEdgeCases:
         original_configs = [
             ModelNamespaceConfig(),
             ModelNamespaceConfig(enabled=False),
-            ModelNamespaceConfig(strategy="explicit"),
-            ModelNamespaceConfig(enabled=False, strategy="auto"),
+            ModelNamespaceConfig(strategy="hierarchical"),
+            ModelNamespaceConfig(enabled=False, strategy="flat"),
         ]
 
         for original in original_configs:
@@ -300,14 +302,14 @@ class TestModelNamespaceConfigEdgeCases:
         assert updated_config.strategy == "onex_default"  # Should keep original
 
         # Test updating only strategy
-        updated_data = {"strategy": "auto"}
+        updated_data = {"strategy": "flat"}
         updated_config = config.model_copy(update=updated_data)
         assert updated_config.enabled is True  # Should keep original
-        assert updated_config.strategy == "auto"
+        assert updated_config.strategy == "flat"
 
     def test_immutability_behavior(self):
         """Test that model behaves as expected regarding mutability."""
-        config = ModelNamespaceConfig(enabled=True, strategy="auto")
+        config = ModelNamespaceConfig(enabled=True, strategy="flat")
 
         # Test that we can't directly modify fields (if model is set up for immutability)
         # Note: Pydantic models are mutable by default, but we test current behavior
@@ -318,8 +320,8 @@ class TestModelNamespaceConfigEdgeCases:
         config.enabled = False
         assert config.enabled is False
 
-        config.strategy = "explicit"
-        assert config.strategy == "explicit"
+        config.strategy = "hierarchical"
+        assert config.strategy == "hierarchical"
 
     def test_validation_error_messages(self):
         """Test that validation errors provide useful messages."""
@@ -350,15 +352,17 @@ class TestModelNamespaceConfigEdgeCases:
         # Strategy still matters even when disabled
         assert disabled_config.strategy == "onex_default"
 
-        # Explicit namespace management
-        explicit_config = ModelNamespaceConfig(enabled=True, strategy="explicit")
-        assert explicit_config.enabled is True
-        assert explicit_config.strategy == "explicit"
+        # Hierarchical namespace management
+        hierarchical_config = ModelNamespaceConfig(
+            enabled=True, strategy="hierarchical"
+        )
+        assert hierarchical_config.enabled is True
+        assert hierarchical_config.strategy == "hierarchical"
 
-        # Auto namespace detection
-        auto_config = ModelNamespaceConfig(enabled=True, strategy="auto")
-        assert auto_config.enabled is True
-        assert auto_config.strategy == "auto"
+        # Flat namespace detection
+        flat_config = ModelNamespaceConfig(enabled=True, strategy="flat")
+        assert flat_config.enabled is True
+        assert flat_config.strategy == "flat"
 
 
 if __name__ == "__main__":

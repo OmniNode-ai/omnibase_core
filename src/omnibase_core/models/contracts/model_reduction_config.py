@@ -1,3 +1,5 @@
+from pydantic import Field
+
 """
 Reduction Configuration Model - ONEX Standards Compliant.
 
@@ -8,7 +10,7 @@ for efficient data consolidation.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelReductionConfig(BaseModel):
@@ -20,13 +22,13 @@ class ModelReductionConfig(BaseModel):
     """
 
     operation_type: str = Field(
-        ...,
+        default=...,
         description="Type of reduction operation (fold, accumulate, merge, aggregate, etc.)",
         min_length=1,
     )
 
     reduction_function: str = Field(
-        ...,
+        default=...,
         description="Reduction function identifier",
         min_length=1,
     )

@@ -1,47 +1,41 @@
 """
-Data classification enumeration.
-
-Defines data classification levels for security and compliance.
+Data classification enum for ONEX security policies.
 """
 
-from __future__ import annotations
-
-from enum import Enum, unique
+from enum import Enum
 
 
-@unique
 class EnumDataClassification(str, Enum):
-    """
-    Enumeration of data classification levels.
+    """Data classification levels for security and compliance."""
 
-    Used for security, compliance, and data handling policies.
-    """
-
-    # Standard classification levels
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
     RESTRICTED = "restricted"
-    SECRET = "secret"  # Security classification level, not a password
-    TOP_SECRET = "top_secret"  # Security classification level, not a password
-
-    # Common aliases
+    SECRET = "secret"
+    TOP_SECRET = "top_secret"
     OPEN = "open"
     PRIVATE = "private"
     SENSITIVE = "sensitive"
     CLASSIFIED = "classified"
-
-    # Default level
     UNCLASSIFIED = "unclassified"
 
     def __str__(self) -> str:
-        """Return the string value for serialization."""
+        """Return the string value of the classification."""
         return self.value
 
     @classmethod
-    def get_security_level(cls, classification: EnumDataClassification) -> int:
-        """Get numeric security level (1-10, higher = more secure)."""
-        mapping = {
+    def get_security_level(cls, classification: "EnumDataClassification") -> int:
+        """
+        Get the numeric security level for a classification.
+
+        Args:
+            classification: The classification to get the security level for
+
+        Returns:
+            Integer security level from 1 (lowest) to 10 (highest)
+        """
+        security_levels = {
             cls.PUBLIC: 1,
             cls.OPEN: 1,
             cls.UNCLASSIFIED: 2,
@@ -54,39 +48,64 @@ class EnumDataClassification(str, Enum):
             cls.SECRET: 9,
             cls.TOP_SECRET: 10,
         }
-        return mapping.get(classification, 2)
+        return security_levels.get(classification, 1)
 
     @classmethod
-    def is_public(cls, classification: EnumDataClassification) -> bool:
-        """Check if data classification allows public access."""
-        return classification in {cls.PUBLIC, cls.OPEN, cls.UNCLASSIFIED}
+    def is_public(cls, classification: "EnumDataClassification") -> bool:
+        """
+        Check if the classification is considered public.
+
+        Args:
+            classification: The classification to check
+
+        Returns:
+            True if public, False otherwise
+        """
+        public_classifications = {cls.PUBLIC, cls.OPEN, cls.UNCLASSIFIED}
+        return classification in public_classifications
 
     @classmethod
-    def requires_encryption(cls, classification: EnumDataClassification) -> bool:
-        """Check if data classification requires encryption."""
-        return classification in {
+    def requires_encryption(cls, classification: "EnumDataClassification") -> bool:
+        """
+        Check if the classification requires encryption.
+
+        Args:
+            classification: The classification to check
+
+        Returns:
+            True if encryption is required, False otherwise
+        """
+        encrypted_classifications = {
             cls.CONFIDENTIAL,
             cls.RESTRICTED,
             cls.SECRET,
             cls.TOP_SECRET,
             cls.CLASSIFIED,
         }
+        return classification in encrypted_classifications
 
     @classmethod
-    def get_retention_policy(cls, classification: EnumDataClassification) -> str:
-        """Get default retention policy for classification level."""
-        if classification in {cls.PUBLIC, cls.OPEN}:
-            return "indefinite"
-        if classification in {cls.INTERNAL, cls.PRIVATE}:
-            return "7_years"
-        if classification in {cls.CONFIDENTIAL, cls.SENSITIVE}:
-            return "5_years"
-        if classification in {cls.RESTRICTED, cls.CLASSIFIED}:
-            return "3_years"
-        if classification in {cls.SECRET, cls.TOP_SECRET}:
-            return "1_year"
-        return "default"
+    def get_retention_policy(cls, classification: "EnumDataClassification") -> str:
+        """
+        Get the retention policy for a classification.
 
+        Args:
+            classification: The classification to get the retention policy for
 
-# Export the enum
-__all__ = ["EnumDataClassification"]
+        Returns:
+            Retention policy string (e.g., "indefinite", "7_years", "5_years", "3_years", "1_year")
+        """
+        retention_policies = {
+            cls.PUBLIC: "indefinite",
+            cls.OPEN: "indefinite",
+            cls.UNCLASSIFIED: "indefinite",
+            cls.INTERNAL: "7_years",
+            cls.PRIVATE: "7_years",
+            cls.CONFIDENTIAL: "5_years",
+            cls.SENSITIVE: "5_years",
+            cls.RESTRICTED: "3_years",
+            cls.CLASSIFIED: "3_years",
+            cls.SECRET: "1_year",
+            cls.TOP_SECRET: "1_year",
+        }
+        return retention_policies.get(classification, "indefinite")

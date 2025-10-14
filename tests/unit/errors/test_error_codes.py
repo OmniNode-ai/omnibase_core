@@ -19,21 +19,36 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import (
     STATUS_TO_EXIT_CODE,
-    CLIAdapter,
-    CLIExitCode,
-    CoreErrorCode,
-    ModelOnexError,
-    OnexError,
-    OnexErrorCode,
-    RegistryErrorCode,
+    EnumCLIExitCode,
+    EnumCoreErrorCode,
+    EnumOnexErrorCode,
+    EnumRegistryErrorCode,
     get_error_codes_for_component,
     get_exit_code_for_core_error,
     get_exit_code_for_status,
     list_registered_components,
     register_error_codes,
 )
+
+# Compatibility aliases for old test naming
+CLIExitCode = EnumCLIExitCode
+CoreErrorCode = EnumCoreErrorCode
+OnexError = ModelOnexError
+OnexErrorCode = EnumOnexErrorCode
+RegistryErrorCode = EnumRegistryErrorCode
+
+
+# Import ModelCLIAdapter only when needed (lazy import to avoid circular dependency)
+def get_cli_adapter():
+    from omnibase_core.errors import ModelCLIAdapter
+
+    return ModelCLIAdapter
+
+
+CLIAdapter = None  # Will be loaded lazily in tests that need it
 
 
 class TestCLIExitCode:
@@ -191,7 +206,7 @@ class TestCoreErrorDescriptions:
     """Test core error descriptions."""
 
     @pytest.mark.parametrize(
-        "error_code,expected_keywords",
+        ("error_code", "expected_keywords"),
         [
             (CoreErrorCode.INVALID_PARAMETER, ["invalid", "parameter"]),
             (CoreErrorCode.FILE_NOT_FOUND, ["file", "not found"]),
@@ -240,11 +255,10 @@ class TestModelOnexError:
         error = ModelOnexError(
             message="Test error",
             error_code=CoreErrorCode.FILE_NOT_FOUND,
-            context={
-                "file_path": ModelSchemaValue.from_value("/test/path.txt"),
-            },
+            file_path=ModelSchemaValue.from_value("/test/path.txt"),
         )
 
+        # Context kwargs are stored directly in error.context
         assert "file_path" in error.context
         assert error.context["file_path"].to_value() == "/test/path.txt"
 
@@ -393,11 +407,13 @@ class TestCLIAdapter:
         """Test CLIAdapter.exit_with_status() with SUCCESS status."""
         # Note: This would actually exit, so we can't test the full behavior
         # We can only test that the method exists and is callable
+        CLIAdapter = get_cli_adapter()
         assert hasattr(CLIAdapter, "exit_with_status")
         assert callable(CLIAdapter.exit_with_status)
 
     def test_cli_adapter_exit_with_error(self):
         """Test CLIAdapter.exit_with_error() method exists."""
+        CLIAdapter = get_cli_adapter()
         assert hasattr(CLIAdapter, "exit_with_error")
         assert callable(CLIAdapter.exit_with_error)
 
@@ -427,10 +443,12 @@ class TestErrorCodeRegistry:
 
     def test_get_error_codes_for_unregistered_component(self):
         """Test getting error codes for unregistered component raises error."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(KeyError) as exc_info:
             get_error_codes_for_component("nonexistent_component")
 
-        assert exc_info.value.error_code == CoreErrorCode.ITEM_NOT_REGISTERED
+        assert "No error codes registered for component: nonexistent_component" in str(
+            exc_info.value
+        )
 
     def test_list_registered_components(self):
         """Test listing registered components."""

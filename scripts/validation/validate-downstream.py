@@ -82,6 +82,7 @@ class GenericDownstreamValidator:
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
+                check=False,
             )
 
             union_count = (

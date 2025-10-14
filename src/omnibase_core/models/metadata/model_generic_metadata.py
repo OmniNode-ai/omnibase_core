@@ -1,44 +1,19 @@
-"""
-Generic metadata model for flexible data storage.
-"""
-
-from __future__ import annotations
-
-# Import proper type with fallback mechanism from metadata package
-from typing import TYPE_CHECKING, TypedDict, overload
+from typing import overload
 from uuid import UUID
-
-# Import simplified type constraint from core
-from omnibase_core.types.constraints import BasicValueType
-
-if TYPE_CHECKING:
-    from . import ProtocolSupportedMetadataType
-else:
-    # Runtime fallback - will be dict[str, object] from __init__.py
-    from . import ProtocolSupportedMetadataType
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
-
-from .model_semver import ModelSemVer, parse_semver_from_string
-
-# Use simplified BasicValueType from core constraints instead of redundant TypeVar
-
-
-# TypedDict for protocol method parameters
-class TypedDictGenericMetadataDict(TypedDict, total=False):
-    """Typed structure for generic metadata dictionary in protocol methods."""
-
-    metadata_id: UUID | None
-    metadata_display_name: str | None
-    description: str | None
-    version: ModelSemVer | None
-    tags: list[str]
-    custom_fields: dict[str, object]
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.types.constraints import BasicValueType
+from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
+from omnibase_spi.protocols.types import (
+    ProtocolMetadata as ProtocolSupportedMetadataType,
+)
 
 
 class ModelGenericMetadata(BaseModel):
@@ -93,7 +68,7 @@ class ModelGenericMetadata(BaseModel):
             return parse_semver_from_string(v)
         if isinstance(v, ModelSemVer):
             return v
-        # For dict input, let Pydantic handle it
+        # For dict[str, Any]input, let Pydantic handle it
         return v
 
     @field_validator("custom_fields", mode="before")
@@ -195,8 +170,8 @@ class ModelGenericMetadata(BaseModel):
             else:
                 self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value type {type(value)} not supported for metadata storage",
                 details=ModelErrorContext.with_context(
                     {
@@ -226,47 +201,60 @@ class ModelGenericMetadata(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> TypedDictGenericMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: TypedDictGenericMetadataDict = TypedDictGenericMetadataDict(
-            metadata_id=self.metadata_id,
-            metadata_display_name=self.metadata_display_name,
-            description=self.description,
-            version=self.version,
+    def get_metadata(self) -> TypedDictMetadataDict:
+        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        # TypedDict only has: name, description, version, tags, metadata
+        # Convert types to match TypedDict expectations
+        metadata: TypedDictMetadataDict = TypedDictMetadataDict(
+            name=self.metadata_display_name or "",
+            description=self.description or "",
+            version=(
+                self.version if self.version else ModelSemVer(major=0, minor=0, patch=0)
+            ),
             tags=self.tags,
+            metadata={},  # Will populate below
         )
 
-        # Include custom fields
+        # Include custom fields in the metadata dict
         if self.custom_fields:
             custom_fields_dict: dict[str, object] = {
                 key: cli_value.to_python_value()
                 for key, cli_value in self.custom_fields.items()
             }
-            metadata["custom_fields"] = custom_fields_dict
+            metadata["metadata"]["custom_fields"] = custom_fields_dict  # type: ignore[index]
+
+        # Add metadata_id to metadata dict if present
+        if self.metadata_id:
+            metadata["metadata"]["metadata_id"] = str(self.metadata_id)  # type: ignore[index]
 
         return metadata
 
-    def set_metadata(self, metadata: TypedDictGenericMetadataDict) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
         try:
-            if "metadata_display_name" in metadata:
-                self.metadata_display_name = metadata["metadata_display_name"]
+            # TypedDict has: name, description, version, tags, metadata
+            if "name" in metadata:
+                self.metadata_display_name = metadata["name"]
             if "description" in metadata:
                 self.description = metadata["description"]
             if "tags" in metadata and isinstance(metadata["tags"], list):
                 self.tags = metadata["tags"]
-            if "custom_fields" in metadata:
-                custom_fields = metadata["custom_fields"]
-                if isinstance(custom_fields, dict):
-                    for key, value in custom_fields.items():
-                        if isinstance(value, (str, int, bool, float)):
-                            self.set_field(key, value)
+
+            # Custom fields are in the metadata dict
+            if "metadata" in metadata:
+                meta_dict = metadata["metadata"]
+                if isinstance(meta_dict, dict) and "custom_fields" in meta_dict:
+                    custom_fields = meta_dict["custom_fields"]  # type: ignore[index]
+                    if isinstance(custom_fields, dict):
+                        for key, value in custom_fields.items():
+                            if isinstance(value, (str, int, bool, float)):
+                                self.set_field(key, value)
             return True
         except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
-        """Serialize metadata to dictionary (Serializable protocol)."""
+        """Serialize metadata to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

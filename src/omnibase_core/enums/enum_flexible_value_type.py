@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any, Union
+from uuid import UUID
+
 """
 Flexible Value Type Enum.
 
 Strongly typed enumeration for flexible value type discriminators.
 """
-
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -15,7 +19,7 @@ class EnumFlexibleValueType(str, Enum):
     Strongly typed flexible value type discriminators.
 
     Used for discriminated union patterns in flexible value handling.
-    Replaces Union[str, int, float, bool, dict, list, UUID, None] patterns
+    Replaces Union[str, int, float, bool, dict[str, Any], list[Any], UUID, None] patterns
     with structured type safety.
     Inherits from str for JSON serialization compatibility while providing
     type safety and IDE support.
@@ -25,8 +29,8 @@ class EnumFlexibleValueType(str, Enum):
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
-    DICT = "dict"
-    LIST = "list"
+    DICT = "dict[str, Any]"
+    LIST = "list[Any]"
     UUID = "uuid"
     NONE = "none"
 
@@ -56,7 +60,7 @@ class EnumFlexibleValueType(str, Enum):
 
     @classmethod
     def is_object_type(cls, value_type: EnumFlexibleValueType) -> bool:
-        """Check if the value type represents an object (UUID, dict, list)."""
+        """Check if the value type represents an object (UUID, dict[str, Any], list[Any])."""
         return value_type in {cls.UUID, cls.DICT, cls.LIST}
 
     @classmethod

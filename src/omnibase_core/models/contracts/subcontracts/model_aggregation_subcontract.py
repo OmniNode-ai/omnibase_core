@@ -1,11 +1,11 @@
+from typing import Any, Dict, List
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Aggregation Subcontract Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for data aggregation functionality providing:
 - Aggregation function definitions and configurations
@@ -20,14 +20,11 @@ providing clean separation between node logic and aggregation behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+from pydantic import BaseModel, ConfigDict
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 from .model_aggregation_function import ModelAggregationFunction
 from .model_aggregation_performance import ModelAggregationPerformance
@@ -47,9 +44,6 @@ class ModelAggregationSubcontract(BaseModel):
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
 
-    # Interface version for code generation stability
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
-
     # Core aggregation configuration
     aggregation_enabled: bool = Field(
         default=True,
@@ -63,7 +57,7 @@ class ModelAggregationSubcontract(BaseModel):
 
     # Aggregation functions
     aggregation_functions: list[str] = Field(
-        ...,
+        default=...,
         description="List of aggregation functions to apply",
         min_length=1,
     )
@@ -206,9 +200,9 @@ class ModelAggregationSubcontract(BaseModel):
         for func in v:
             if func not in supported_functions:
                 msg = f"Unsupported aggregation function: {func}"
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     details=ModelErrorContext.with_context(
                         {
                             "error_type": ModelSchemaValue.from_value("valueerror"),

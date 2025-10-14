@@ -1,29 +1,22 @@
 """
-Function Deprecation Information Model.
+Function deprecation and lifecycle information.
 
-Deprecation and lifecycle information for functions.
-Part of the ModelFunctionNodeMetadata restructuring.
+Contains deprecation details, version information, and replacement suggestions.
 """
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
-
-
-class ModelDeprecationSummary(TypedDict):
-    """Type-safe dictionary for deprecation summary."""
-
-    is_deprecated: bool
-    has_replacement: bool
-    deprecated_since: str | None
-    replacement: str | None
-    status: str  # EnumDeprecationStatus.value
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_deprecation_summary import (
+    TypedDictDeprecationSummary,
+)
 
 
 class ModelFunctionDeprecationInfo(BaseModel):
@@ -73,7 +66,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
 
         return f"deprecated since {self.deprecated_since}"
 
-    def get_deprecation_summary(self) -> ModelDeprecationSummary:
+    def get_deprecation_summary(self) -> TypedDictDeprecationSummary:
         """Get deprecation information summary."""
         return {
             "is_deprecated": self.is_deprecated(),
@@ -125,8 +118,8 @@ class ModelFunctionDeprecationInfo(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
@@ -173,5 +166,4 @@ class ModelFunctionDeprecationInfo(BaseModel):
             return False
 
 
-# Export for use
-__all__ = ["ModelDeprecationSummary", "ModelFunctionDeprecationInfo"]
+__all__ = ["ModelFunctionDeprecationInfo"]

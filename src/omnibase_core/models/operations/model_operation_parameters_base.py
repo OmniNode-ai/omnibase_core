@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from typing import Union
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Strongly-typed operation parameters model.
 
@@ -5,14 +14,12 @@ Replaces dict[str, Any] usage in operation parameters with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParameterType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -28,7 +35,7 @@ class ModelOperationParameterValue(BaseModel):
     parameter_type: EnumOperationParameterType = Field(
         description="Parameter type discriminator",
     )
-    name: str = Field(..., description="Parameter name")
+    name: str = Field(default=..., description="Parameter name")
     description: str = Field(default="", description="Parameter description")
     required: bool = Field(default=False, description="Whether parameter is required")
 
@@ -40,17 +47,27 @@ class ModelOperationParameterValue(BaseModel):
     nested_value: ModelSchemaValue | None = None
 
     # Type-specific validation fields
-    pattern: str | None = Field(None, description="Regex pattern for string validation")
-    min_length: int | None = Field(None, description="Minimum string length")
-    max_length: int | None = Field(None, description="Maximum string length")
-    min_value: float | None = Field(None, description="Minimum numeric value")
-    max_value: float | None = Field(None, description="Maximum numeric value")
-    precision: int | None = Field(None, description="Decimal precision for numeric")
-    default_value: bool | None = Field(None, description="Default boolean value")
-    allowed_values: list[str] | None = Field(None, description="Allowed list values")
-    min_items: int | None = Field(None, description="Minimum list items")
-    max_items: int | None = Field(None, description="Maximum list items")
-    schema_type: str | None = Field(None, description="Schema type for nested values")
+    pattern: str | None = Field(
+        default=None, description="Regex pattern for string validation"
+    )
+    min_length: int | None = Field(default=None, description="Minimum string length")
+    max_length: int | None = Field(default=None, description="Maximum string length")
+    min_value: float | None = Field(default=None, description="Minimum numeric value")
+    max_value: float | None = Field(default=None, description="Maximum numeric value")
+    precision: int | None = Field(
+        default=None, description="Decimal precision for numeric"
+    )
+    default_value: bool | None = Field(
+        default=None, description="Default boolean value"
+    )
+    allowed_values: list[str] | None = Field(
+        default=None, description="Allowed list[Any]values"
+    )
+    min_items: int | None = Field(default=None, description="Minimum list[Any]items")
+    max_items: int | None = Field(default=None, description="Maximum list[Any]items")
+    schema_type: str | None = Field(
+        default=None, description="Schema type for nested values"
+    )
 
     @field_validator(
         "string_value",
@@ -83,14 +100,14 @@ class ModelOperationParameterValue(BaseModel):
             and v is None
             and parameter_type != EnumOperationParameterType.NESTED
         ):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Value required for parameter type {parameter_type}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if expected_field != field_name and v is not None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Unexpected value in {field_name} for parameter type {parameter_type}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -147,7 +164,7 @@ class ModelOperationParameterValue(BaseModel):
         value: list[str],
         **kwargs: Any,
     ) -> ModelOperationParameterValue:
-        """Create list parameter."""
+        """Create list[Any]parameter."""
         return cls(
             parameter_type=EnumOperationParameterType.LIST,
             name=name,
@@ -183,88 +200,11 @@ class ModelOperationParameterValue(BaseModel):
         if self.parameter_type == EnumOperationParameterType.NESTED:
             return self.nested_value
         # Exhaustive case handling - this should never be reached
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
             message=f"Unknown parameter type: {self.parameter_type}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
-
-
-class ModelOperationParameters(BaseModel):
-    """
-    Strongly-typed operation parameters with discriminated unions.
-
-    Replaces primitive soup pattern with discriminated parameter types.
-    Implements omnibase_spi protocols:
-    - Executable: Execution management capabilities
-    - Identifiable: UUID-based identification
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    """
-
-    # Use discriminated union for parameter values
-    parameters: dict[str, ModelOperationParameterValue] = Field(
-        default_factory=dict,
-        description="Operation parameters with discriminated union types",
-    )
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Protocol method implementations
-
-    def execute(self, **kwargs: Any) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
-
-    def get_id(self) -> str:
-        """Get unique identifier (Identifiable protocol)."""
-        # Try common ID field patterns
-        for field in [
-            "id",
-            "uuid",
-            "identifier",
-            "node_id",
-            "execution_id",
-            "metadata_id",
-        ]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
-            message=f"{self.__class__.__name__} must have a valid ID field "
-            f"(type_id, id, uuid, identifier, etc.). "
-            f"Cannot generate stable ID without UUID field.",
-        )
-
-    def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
-
-    def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
 
 
 # Export for use
-__all__ = ["ModelOperationParameterValue", "ModelOperationParameters"]
+__all__ = ["ModelOperationParameterValue"]

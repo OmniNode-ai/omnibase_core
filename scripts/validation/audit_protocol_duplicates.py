@@ -12,6 +12,7 @@ Usage:
     python scripts/validation/audit_protocol_duplicates.py --repos-root ../
     python scripts/validation/audit_protocol_duplicates.py --check-repo omniagent
 """
+
 from __future__ import annotations
 
 import argparse
@@ -78,7 +79,7 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
 def extract_protocol_signature(file_path: Path) -> ProtocolInfo:
     """Extract protocol signature from Python file."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
             tree = ast.parse(content)
 
@@ -170,7 +171,7 @@ def print_duplication_report(duplicates: dict, protocols: list[ProtocolInfo]):
     spi_protocols = len([p for p in protocols if "omnibase_spi" in p.repository])
     service_protocols = total_protocols - spi_protocols
 
-    print(f"\n📊 PROTOCOL INVENTORY:")
+    print("\n📊 PROTOCOL INVENTORY:")
     print(f"   Total protocols found: {total_protocols}")
     print(f"   In omnibase_spi: {spi_protocols}")
     print(f"   In service repos: {service_protocols}")
@@ -200,11 +201,11 @@ def print_duplication_report(duplicates: dict, protocols: list[ProtocolInfo]):
             ]
             if spi_versions:
                 print(
-                    f"      💡 RECOMMENDATION: Keep SPI version, remove from service repos"
+                    "      💡 RECOMMENDATION: Keep SPI version, remove from service repos"
                 )
             else:
                 print(
-                    f"      💡 RECOMMENDATION: Move to omnibase_spi, remove duplicates"
+                    "      💡 RECOMMENDATION: Move to omnibase_spi, remove duplicates"
                 )
 
     # Name conflicts (same name, different interface)
@@ -222,7 +223,7 @@ def print_duplication_report(duplicates: dict, protocols: list[ProtocolInfo]):
                     print(
                         f"      Methods: {protocol.methods[:3]}{'...' if len(protocol.methods) > 3 else ''}"
                     )
-                print(f"      💡 RECOMMENDATION: Rename or merge these protocols")
+                print("      💡 RECOMMENDATION: Rename or merge these protocols")
 
     # Migration opportunities
     service_only_protocols = [
@@ -248,7 +249,7 @@ def print_duplication_report(duplicates: dict, protocols: list[ProtocolInfo]):
                 )
 
     if not exact_dupes and not name_conflicts:
-        print(f"\n✅ NO DUPLICATES FOUND!")
+        print("\n✅ NO DUPLICATES FOUND!")
         print("   All protocols have unique names and signatures.")
         if service_protocols > 0:
             print(
@@ -378,7 +379,7 @@ def main():
 
         with open("protocol_migration_plan.json", "w") as f:
             json.dump(plan, f, indent=2, default=str)
-        print(f"\n💾 Migration plan saved to: protocol_migration_plan.json")
+        print("\n💾 Migration plan saved to: protocol_migration_plan.json")
 
     # Exit codes for CI
     exact_dupes = len(duplicates["exact_duplicates"])
@@ -390,7 +391,7 @@ def main():
         )
         sys.exit(1)
     else:
-        print(f"\n✅ VALIDATION PASSED: No duplicates detected")
+        print("\n✅ VALIDATION PASSED: No duplicates detected")
         sys.exit(0)
 
 

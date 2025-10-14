@@ -1,18 +1,15 @@
 """
 Action Category Enum
 
-Categories for organizing different types of CLI actions.
+Categories for organizing different types of actions across tools.
 """
 
-from __future__ import annotations
-
-from enum import Enum, unique
+from enum import Enum
 
 
-@unique
 class EnumActionCategory(str, Enum):
     """
-    Categories for organizing different types of CLI actions.
+    Categories for organizing different types of actions across tools.
 
     Provides consistent categorization for action organization and filtering.
     """
@@ -31,16 +28,39 @@ class EnumActionCategory(str, Enum):
         return self.value
 
     def is_management_category(self) -> bool:
-        """Check if this category involves management operations."""
-        return self in [self.LIFECYCLE, self.CONFIGURATION, self.REGISTRY]
+        """
+        Check if this category involves management operations.
+
+        Returns:
+            True if management category, False otherwise
+        """
+        return self in [
+            self.LIFECYCLE,
+            self.CONFIGURATION,
+            self.REGISTRY,
+        ]
 
     def is_execution_category(self) -> bool:
-        """Check if this category involves execution operations."""
-        return self in [self.EXECUTION, self.WORKFLOW, self.SYSTEM]
+        """
+        Check if this category involves execution operations.
+
+        Returns:
+            True if execution category, False otherwise
+        """
+        return self in [
+            self.EXECUTION,
+            self.WORKFLOW,
+            self.SYSTEM,
+        ]
 
     def is_inspection_category(self) -> bool:
-        """Check if this category involves inspection operations."""
-        return self in [self.VALIDATION, self.INTROSPECTION]
+        """
+        Check if this category involves inspection operations.
 
-
-__all__ = ["EnumActionCategory"]
+        Returns:
+            True if inspection category, False otherwise
+        """
+        return self in [
+            self.VALIDATION,
+            self.INTROSPECTION,
+        ]

@@ -1,3 +1,7 @@
+import uuid
+
+from pydantic import Field
+
 """
 Discriminated union model for log node identifiers.
 
@@ -8,21 +12,16 @@ by allowing flexible identifiers when strict UUID context is unavailable.
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+from .model_lognodeidentifierstring import ModelLogNodeIdentifierString
 
 
 class ModelLogNodeIdentifierUUID(BaseModel):
     """Log node identifier using UUID."""
 
     type: Literal["uuid"] = "uuid"
-    value: UUID = Field(..., description="UUID node identifier")
-
-
-class ModelLogNodeIdentifierString(BaseModel):
-    """Log node identifier using string fallback."""
-
-    type: Literal["string"] = "string"
-    value: str = Field(..., description="String node identifier (class/module name)")
+    value: UUID = Field(default=..., description="UUID node identifier")
 
 
 # Discriminated union type

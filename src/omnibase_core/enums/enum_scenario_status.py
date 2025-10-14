@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Scenario Status Enum.
 
 Strongly typed status values for scenario execution.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

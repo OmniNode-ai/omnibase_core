@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 """
 Validation severity enumeration.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

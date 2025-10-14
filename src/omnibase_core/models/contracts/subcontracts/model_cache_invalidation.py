@@ -1,10 +1,14 @@
+from typing import Any
+
+from pydantic import Field
+
 """
 Cache Invalidation Model - ONEX Standards Compliant.
 
 Model for cache invalidation policies in the ONEX caching system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelCacheInvalidation(BaseModel):
@@ -16,7 +20,7 @@ class ModelCacheInvalidation(BaseModel):
     """
 
     invalidation_strategy: str = Field(
-        ...,
+        default=...,
         description="Strategy for cache invalidation",
         min_length=1,
     )

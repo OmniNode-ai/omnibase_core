@@ -1,0 +1,356 @@
+---
+globs: *.py
+alwaysApply: true
+---
+# Cursor Rule: ONEX 4-Node Architecture Standards
+
+> **Status:** Canonical
+> **Last Updated:** 2025-01-27
+> **Purpose:** Definitive reference for ONEX 4-Node Architecture patterns
+
+## Rule
+
+All ONEX nodes must conform to the 4-Node Architecture pattern with clear separation of concerns and unidirectional data flow. The architecture enforces EFFECT → COMPUTE → REDUCER → ORCHESTRATOR flow with no backwards dependencies.
+
+## 🏗️ ONEX 4-Node Architecture
+
+### Node Type Hierarchy
+```
+NodeCoreBase (Base)
+├── NodeEffect → NodeEffectService
+├── NodeCompute → NodeComputeService
+├── NodeReducer → NodeReducerService
+└── NodeOrchestrator → NodeOrchestratorService
+```
+
+### Data Flow Direction
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   EFFECT    │───▶│   COMPUTE   │───▶│   REDUCER   │───▶│ORCHESTRATOR │
+│   (Input)   │    │ (Process)   │    │(Aggregate)  │    │(Coordinate) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+**Enforced Rules:**
+- Unidirectional data flow only (left to right)
+- No backwards dependencies allowed
+- Clear input/output contracts between nodes
+- Deterministic processing pipeline
+
+## 🎯 Node Type Definitions
+
+### 1. EFFECT Nodes
+**Purpose**: Handle external system interactions and side effects
+
+**Base Classes:**
+- `NodeEffect` (inherits from `NodeCoreBase`)
+- `NodeEffectService` (service implementation)
+
+**Contract Type:** `ModelContractEffect`
+
+**Key Capabilities:**
+- API calls to external services
+- Database read/write operations
+- File system operations
+- Message queue interactions
+- Third-party service integrations
+
+**Implementation Pattern:**
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
+
+class NodeEffect(NodeCoreBase):
+    """Effect node for external system interactions."""
+
+    def __init__(self, contract: ModelContractEffect):
+        self.contract = contract
+
+    async def execute_effect(self, input_data: Any) -> Any:
+        """Execute external system interaction."""
+        # External system logic here
+        pass
+```
+
+### 2. COMPUTE Nodes
+**Purpose**: Process data transformations and business logic
+
+**Base Classes:**
+- `NodeCompute` (inherits from `NodeCoreBase`)
+- `NodeComputeService` (service implementation)
+
+**Contract Type:** `ModelContractCompute`
+
+**Key Capabilities:**
+- Pure function patterns with no side effects
+- Data transformations and calculations
+- Business logic processing
+- Algorithm execution
+- Caching and parallel processing
+
+**Implementation Pattern:**
+```python
+from omnibase_core.infrastructure.node_compute import NodeCompute
+from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
+
+class NodeCompute(NodeCompute):
+    """Compute node for data transformations."""
+
+    def __init__(self, contract: ModelContractCompute):
+        self.contract = contract
+
+    async def execute_compute(self, input_data: Any) -> Any:
+        """Execute pure computation."""
+        # Pure computation logic here
+        pass
+```
+
+### 3. REDUCER Nodes
+**Purpose**: Manage state transitions and finite state machines
+
+**Base Classes:**
+- `NodeReducer` (inherits from `NodeCoreBase`)
+- `NodeReducerService` (service implementation)
+
+**Contract Type:** `ModelContractReducer`
+
+**Key Capabilities:**
+- State management and transitions
+- FSM coordination
+- Data aggregation
+- Event reduction
+- State validation
+
+**Implementation Pattern:**
+```python
+from omnibase_core.infrastructure.node_reducer import NodeReducer
+from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
+
+class NodeReducer(NodeReducer):
+    """Reducer node for state management."""
+
+    def __init__(self, contract: ModelContractReducer):
+        self.contract = contract
+
+    async def execute_reduce(self, input_data: Any) -> Any:
+        """Execute state reduction."""
+        # State management logic here
+        pass
+```
+
+### 4. ORCHESTRATOR Nodes
+**Purpose**: Coordinate workflows and manage node interactions
+
+**Base Classes:**
+- `NodeOrchestrator` (inherits from `NodeCoreBase`)
+- `NodeOrchestratorService` (service implementation)
+
+**Contract Type:** `ModelContractOrchestrator`
+
+**Key Capabilities:**
+- Workflow coordination
+- Node communication
+- Process management
+- Event orchestration
+- Service discovery
+
+**Implementation Pattern:**
+```python
+from omnibase_core.infrastructure.node_orchestrator import NodeOrchestrator
+from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
+
+class NodeOrchestrator(NodeOrchestrator):
+    """Orchestrator node for workflow coordination."""
+
+    def __init__(self, contract: ModelContractOrchestrator):
+        self.contract = contract
+
+    async def execute_orchestrate(self, input_data: Any) -> Any:
+        """Execute workflow orchestration."""
+        # Orchestration logic here
+        pass
+```
+
+## 🔧 Implementation Standards
+
+### Contract-Driven Development
+**Reference:** `src/omnibase_core/models/contracts/`
+
+All nodes must have validated YAML contracts:
+```yaml
+# contract.yaml
+input_state:
+  type: object
+  properties:
+    action:
+      type: string
+      enum: ["execute"]
+  required: ["action"]
+
+output_state:
+  type: object
+  properties:
+    result:
+      type: object
+  required: ["result"]
+```
+
+### Service Discovery & Dependency Injection
+**Reference:** `src/omnibase_core/models/container/model_onex_container.py`
+
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+class NodeService:
+    """Service implementation with dependency injection."""
+
+    def __init__(self, container: ModelONEXContainer):
+        self.container = container
+        self.logger = container.get_logger()
+        self.registry = container.get_registry()
+```
+
+### Mixin-Based Composition
+**Reference:** `src/omnibase_core/mixins/`
+
+```python
+from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
+from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
+
+class NodeComputeService(
+    NodeCompute,
+    MixinHealthCheck,
+    MixinNodeExecutor
+):
+    """Compute service with mixin capabilities."""
+    pass
+```
+
+### Event-Driven Communication
+**Reference:** `src/omnibase_core/models/events/`
+
+```python
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+class NodeEventPublisher:
+    """Event publisher for node communication."""
+
+    async def publish_event(self, event: ModelEventEnvelope) -> None:
+        """Publish event to event bus."""
+        # Event publishing logic
+        pass
+```
+
+## 🧪 Testing Standards
+
+### Node Testing Pattern
+**Reference:** `tests/unit/infrastructure/`
+
+```python
+import pytest
+from omnibase_core.infrastructure.node_compute import NodeCompute
+
+class TestNodeCompute:
+    def test_node_initialization(self):
+        """Test node initialization."""
+        node = NodeCompute(contract=test_contract)
+        assert node is not None
+
+    def test_node_execution(self):
+        """Test node execution."""
+        node = NodeCompute(contract=test_contract)
+        result = await node.execute_compute(input_data)
+        assert result is not None
+```
+
+### Contract Validation
+**Reference:** `src/omnibase_core/validation/`
+
+```python
+from omnibase_core.validation.architecture import ModelCounter
+
+def validate_node_contract(contract_path: Path) -> bool:
+    """Validate node contract against ONEX standards."""
+    # Contract validation logic
+    return True
+```
+
+## 🚫 Architecture Anti-Patterns
+
+### ❌ Backwards Dependencies
+```python
+# DON'T: Create backwards dependencies
+class NodeCompute:
+    def __init__(self, orchestrator: NodeOrchestrator):  # Wrong direction
+        self.orchestrator = orchestrator
+
+# DO: Maintain unidirectional flow
+class NodeCompute:
+    def __init__(self, effect: NodeEffect):  # Correct direction
+        self.effect = effect
+```
+
+### ❌ Side Effects in Compute Nodes
+```python
+# DON'T: External system calls in compute nodes
+class NodeCompute:
+    async def execute_compute(self, data):
+        await external_api.call()  # Side effect in compute node
+        return processed_data
+
+# DO: Pure computation only
+class NodeCompute:
+    async def execute_compute(self, data):
+        return self.pure_transform(data)  # Pure computation
+```
+
+### ❌ State Management in Effect Nodes
+```python
+# DON'T: State management in effect nodes
+class NodeEffect:
+    def __init__(self):
+        self.state = {}  # State in effect node
+
+# DO: Use reducer nodes for state
+class NodeReducer:
+    def __init__(self):
+        self.state = {}  # State in reducer node
+```
+
+## 🔧 Migration Checklist
+
+When implementing or updating nodes:
+
+1. **Node Type**: ✅ Choose correct node type (EFFECT/COMPUTE/REDUCER/ORCHESTRATOR)
+2. **Contract**: ✅ Create validated YAML contract
+3. **Base Class**: ✅ Inherit from correct base class
+4. **Service Class**: ✅ Implement service class with dependency injection
+5. **Mixins**: ✅ Add appropriate mixins for capabilities
+6. **Testing**: ✅ Comprehensive test coverage
+7. **Documentation**: ✅ Clear documentation of node purpose and capabilities
+
+## 📚 Quick Reference
+
+| Node Type | Base Class | Service Class | Contract Type | Purpose |
+|-----------|------------|---------------|---------------|---------|
+| **EFFECT** | `NodeEffect` | `NodeEffectService` | `ModelContractEffect` | External system interactions |
+| **COMPUTE** | `NodeCompute` | `NodeComputeService` | `ModelContractCompute` | Data transformations |
+| **REDUCER** | `NodeReducer` | `NodeReducerService` | `ModelContractReducer` | State management |
+| **ORCHESTRATOR** | `NodeOrchestrator` | `NodeOrchestratorService` | `ModelContractOrchestrator` | Workflow coordination |
+
+## 🎯 Enforcement
+
+- **Architecture Validation**: Automated validation of node types and dependencies
+- **Contract Validation**: All nodes must have valid YAML contracts
+- **Flow Validation**: Unidirectional data flow enforcement
+- **Testing**: Comprehensive test coverage for all node types
+
+## 📖 Related Rules
+
+- [Canonical Patterns](canonical_patterns.mdc) - General ONEX patterns
+- [Testing Standards](testing.mdc) - Testing methodology
+- [Pre-commit Configuration](.pre-commit-config.yaml) - Validation hooks
+
+---
+
+**Remember**: The 4-Node Architecture enforces clear separation of concerns and unidirectional data flow. Each node type has specific responsibilities and must not violate the architectural boundaries.

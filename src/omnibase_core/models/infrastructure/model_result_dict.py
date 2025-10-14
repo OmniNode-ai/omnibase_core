@@ -1,16 +1,23 @@
+from __future__ import annotations
+
+from typing import Dict
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Result Dictionary Model.
 
 Clean Pydantic model for Result serialization following ONEX one-model-per-file architecture.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_cli_value import ModelCliValue
 from .model_error_value import ModelErrorValue
@@ -20,21 +27,21 @@ class ModelResultDict(BaseModel):
     """
     Clean Pydantic model for Result serialization.
 
-    Represents the dictionary structure when converting Results
-    to/from dictionary format with proper type safety.
+    Represents the dict[str, Any]ionary structure when converting Results
+    to/from dict[str, Any]ionary format with proper type safety.
     Implements omnibase_spi protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     """
 
-    success: bool = Field(..., description="Whether the operation succeeded")
+    success: bool = Field(default=..., description="Whether the operation succeeded")
     value: ModelCliValue | None = Field(
-        None,
+        default=None,
         description="Success value (if success=True)",
     )
     error: ModelErrorValue | None = Field(
-        None,
+        default=None,
         description="Error value (if success=False)",
     )
 
@@ -54,8 +61,8 @@ class ModelResultDict(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -67,18 +74,20 @@ class ModelResultDict(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 
-# Type alias for dictionary-based data structures
-ModelResultData = dict[str, ModelCliValue]  # Strongly-typed dict for common data
+# Type alias for dict[str, Any]ionary-based data structures
+ModelResultData = dict[
+    str, ModelCliValue
+]  # Strongly-typed dict[str, Any]for common data
 
 
 # Export for use

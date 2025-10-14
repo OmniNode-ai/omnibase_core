@@ -30,6 +30,7 @@ class TestEnumAuthType:
             "OAUTH2": "oauth2",
             "JWT": "jwt",
             "API_KEY": "api_key",
+            "API_KEY_HEADER": "api_key_header",
             "MTLS": "mtls",
             "DIGEST": "digest",
             "CUSTOM": "custom",
@@ -59,6 +60,7 @@ class TestEnumAuthType:
             EnumAuthType.OAUTH2,
             EnumAuthType.JWT,
             EnumAuthType.API_KEY,
+            EnumAuthType.API_KEY_HEADER,
             EnumAuthType.MTLS,
             EnumAuthType.DIGEST,
             EnumAuthType.CUSTOM,
@@ -75,6 +77,7 @@ class TestEnumAuthType:
             EnumAuthType.OAUTH2,
             EnumAuthType.JWT,
             EnumAuthType.API_KEY,
+            EnumAuthType.API_KEY_HEADER,
         ]
 
         for auth_type in token_types:
@@ -105,6 +108,7 @@ class TestEnumAuthType:
             EnumAuthType.OAUTH2,
             EnumAuthType.JWT,
             EnumAuthType.API_KEY,
+            EnumAuthType.API_KEY_HEADER,
             EnumAuthType.DIGEST,
             EnumAuthType.CUSTOM,
         ]
@@ -129,6 +133,7 @@ class TestEnumAuthType:
             EnumAuthType.BASIC,
             EnumAuthType.BEARER,
             EnumAuthType.API_KEY,
+            EnumAuthType.API_KEY_HEADER,
             EnumAuthType.MTLS,
             EnumAuthType.DIGEST,
             EnumAuthType.CUSTOM,
@@ -152,6 +157,7 @@ class TestEnumAuthType:
             EnumAuthType.OAUTH2,
             EnumAuthType.JWT,
             EnumAuthType.API_KEY,
+            EnumAuthType.API_KEY_HEADER,
             EnumAuthType.MTLS,
             EnumAuthType.DIGEST,
             EnumAuthType.CUSTOM,
@@ -163,7 +169,7 @@ class TestEnumAuthType:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         auth_types = list(EnumAuthType)
-        assert len(auth_types) == 9
+        assert len(auth_types) == 10
 
         auth_values = [auth.value for auth in auth_types]
         expected_values = [
@@ -173,6 +179,7 @@ class TestEnumAuthType:
             "oauth2",
             "jwt",
             "api_key",
+            "api_key_header",
             "mtls",
             "digest",
             "custom",
@@ -259,6 +266,7 @@ class TestEnumAuthType:
             EnumAuthType.BASIC,
             EnumAuthType.BEARER,
             EnumAuthType.API_KEY,
+            EnumAuthType.API_KEY_HEADER,
             EnumAuthType.DIGEST,
         ]
 

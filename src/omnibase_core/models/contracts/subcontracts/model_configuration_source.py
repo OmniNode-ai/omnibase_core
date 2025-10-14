@@ -1,3 +1,7 @@
+import uuid
+
+from pydantic import Field
+
 """
 Configuration Source Model - ONEX Standards Compliant.
 
@@ -6,7 +10,7 @@ Model for configuration source specifications in the ONEX configuration manageme
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelConfigurationSource(BaseModel):
@@ -25,7 +29,7 @@ class ModelConfigurationSource(BaseModel):
     )
 
     source_type: str = Field(
-        ...,
+        default=...,
         description="Type of configuration source (file, environment, database, etc.)",
         pattern=r"^[a-z_]+$",
     )

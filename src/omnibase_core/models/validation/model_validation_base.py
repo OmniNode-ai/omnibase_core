@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
 """
 Mixin for models that need validation capabilities.
 
@@ -5,11 +11,10 @@ This provides a standard validation container and common validation
 methods that can be inherited by any model requiring validation.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .model_validation_container import ModelValidationContainer
 
@@ -85,12 +90,12 @@ class ModelValidationBase(BaseModel):
                 "omnibase_core.enums.enum_core_error_code",
             )
             # Get error code strings with fallbacks
-            validation_error_code = enum_module.CoreErrorCode.VALIDATION_ERROR.value
-            internal_error_code = enum_module.CoreErrorCode.INTERNAL_ERROR.value
+            validation_error_code = enum_module.EnumCoreErrorCode.VALIDATION_ERROR.value
+            internal_error_code = enum_module.EnumCoreErrorCode.INTERNAL_ERROR.value
         except (ImportError, AttributeError):
             # Fallback if enum module not available or attributes missing
-            validation_error_code = "validation_error"
-            internal_error_code = "internal_error"
+            validation_error_code = "VALIDATION_ERROR"
+            internal_error_code = "INTERNAL_ERROR"
 
         try:
             # Validate the validation container exists and is properly configured
@@ -101,7 +106,8 @@ class ModelValidationBase(BaseModel):
 
             # Validate model fields are accessible and properly typed
             try:
-                model_fields = self.model_fields
+                # Use class-level model_fields to avoid deprecation warning
+                model_fields = self.__class__.model_fields
                 if not model_fields:
                     self.add_validation_warning(
                         "Model has no defined fields - this may indicate a configuration issue",
@@ -115,9 +121,11 @@ class ModelValidationBase(BaseModel):
                         field_value = getattr(self, field_name, None)
 
                         # Check if required field is None/empty
+                        # Note: is_required() is a method in Pydantic v2
                         if (
                             hasattr(field_info, "is_required")
-                            and getattr(field_info, "is_required", False)
+                            and callable(field_info.is_required)
+                            and field_info.is_required()
                             and field_value is None
                         ):
                             self.add_validation_error(
@@ -135,11 +143,11 @@ class ModelValidationBase(BaseModel):
             # Validate that model can be serialized (basic integrity check)
             try:
                 model_dict = self.model_dump(exclude={"validation"})
-                # Note: model_dump() always returns dict, so no need to check isinstance
+                # Note: model_dump() always returns dict[str, Any], so no need to check isinstance
                 # This is just to ensure the serialization process works
                 if not model_dict:
                     self.add_validation_error(
-                        message="Model serialization succeeded but returned empty dictionary",
+                        message="Model serialization succeeded but returned empty dict[str, Any]ionary",
                         field="model_integrity",
                         error_code=validation_error_code,
                     )
@@ -181,7 +189,7 @@ class ModelValidationBase(BaseModel):
                 error_code=(
                     validation_error_code
                     if "validation_error_code" in locals()
-                    else "validation_error"
+                    else "VALIDATION_ERROR"
                 ),
                 critical=True,
             )
@@ -204,7 +212,7 @@ class ModelValidationBase(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     model_config = {

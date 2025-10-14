@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 CLI Execution Metadata Model.
 
@@ -5,15 +11,14 @@ Metadata and custom context for CLI command execution.
 Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_cli_execution_context import ModelCliExecutionContext
 
@@ -121,7 +126,7 @@ class ModelCliExecutionMetadata(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -149,8 +154,8 @@ class ModelCliExecutionMetadata(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

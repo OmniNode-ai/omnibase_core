@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from pydantic import Field, ValidationInfo, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Validation value object model.
 
@@ -5,14 +11,13 @@ Strongly-typed value object for validation details, replacing union types
 with discriminated union patterns following ONEX strong typing standards.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # ONEX validation values - use discriminated union pattern instead of broad unions
 # ValidationValueType replaced with EnumValidationValueType + structured fields
@@ -49,23 +54,25 @@ class ModelValidationValue(BaseModel):
         value_type = info.data["value_type"]
 
         if value_type == EnumValidationValueType.STRING and not isinstance(v, str):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String validation value must contain str data",
             )
-        if value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Integer validation value must contain int data",
-            )
+        # Check INTEGER type - must reject bool since bool is subclass of int in Python
+        if value_type == EnumValidationValueType.INTEGER:
+            if isinstance(v, bool) or not isinstance(v, int):
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Integer validation value must contain int data",
+                )
         if value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean validation value must contain bool data",
             )
         if value_type == EnumValidationValueType.NULL and v is not None:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Null validation value must contain None",
             )
 
@@ -127,20 +134,20 @@ class ModelValidationValue(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

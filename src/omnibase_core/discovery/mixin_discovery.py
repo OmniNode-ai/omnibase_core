@@ -9,88 +9,12 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field
 
+from omnibase_core.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Discovery constants
 MAX_METADATA_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for metadata files
-
-
-class MixinInfo(BaseModel):
-    """
-    Metadata information for a single mixin.
-
-    Provides comprehensive information about mixin capabilities, compatibility,
-    dependencies, and usage for autonomous code generation systems.
-    """
-
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
-
-    name: str = Field(
-        ...,
-        description="Mixin class name (e.g., 'MixinEventBus')",
-        json_schema_extra={"example": "MixinEventBus"},
-    )
-    description: str = Field(
-        ...,
-        description="Human-readable description of mixin functionality",
-        json_schema_extra={"example": "Event-driven communication capabilities"},
-    )
-    version: ModelSemVer = Field(
-        ...,
-        description="Semantic version of the mixin",
-        json_schema_extra={"example": {"major": 1, "minor": 0, "patch": 0}},
-    )
-    category: str = Field(
-        ...,
-        description="Functional category (e.g., 'communication', 'caching')",
-        json_schema_extra={"example": "communication"},
-    )
-    requires: list[str] = Field(
-        default_factory=list,
-        description="Required dependencies (packages, modules)",
-        json_schema_extra={
-            "example": ["omnibase_core.core.onex_container", "pydantic"]
-        },
-    )
-    compatible_with: list[str] = Field(
-        default_factory=list,
-        description="List of mixins this is compatible with",
-        json_schema_extra={"example": ["MixinCaching", "MixinHealthCheck"]},
-    )
-    incompatible_with: list[str] = Field(
-        default_factory=list,
-        description="List of mixins this is incompatible with",
-        json_schema_extra={"example": ["MixinSynchronous"]},
-    )
-    config_schema: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Configuration schema for this mixin",
-        json_schema_extra={
-            "example": {
-                "event_bus_type": {
-                    "type": "string",
-                    "enum": ["redis", "kafka", "memory"],
-                    "default": "redis",
-                }
-            }
-        },
-    )
-    usage_examples: list[str] = Field(
-        default_factory=list,
-        description="Usage examples and use cases",
-        json_schema_extra={
-            "example": [
-                "Database adapters that need to publish events",
-                "API clients that emit status updates",
-            ]
-        },
-    )
 
 
 class MixinDiscovery:
@@ -117,7 +41,7 @@ class MixinDiscovery:
         """
         self.mixins_path = mixins_path or (Path(__file__).parent.parent / "mixins")
         self.metadata_path = self.mixins_path / "mixin_metadata.yaml"
-        self._mixins_cache: dict[str, MixinInfo] | None = None
+        self._mixins_cache: dict[str, ModelMixinInfo] | None = None
 
     def _load_metadata(self) -> dict[str, dict[str, Any]]:
         """
@@ -190,18 +114,18 @@ class MixinDiscovery:
                 message=f"Failed to read mixin metadata file: {e}",
             ) from e
 
-    def _build_mixin_cache(self) -> dict[str, MixinInfo]:
+    def _build_mixin_cache(self) -> dict[str, ModelMixinInfo]:
         """
-        Build internal cache of MixinInfo objects from metadata.
+        Build internal cache of ModelMixinInfo objects from metadata.
 
         Returns:
-            Dictionary mapping mixin names to MixinInfo objects.
+            Dictionary mapping mixin names to ModelMixinInfo objects.
 
         Raises:
             OnexError: If metadata is invalid or parsing fails.
         """
         metadata = self._load_metadata()
-        cache: dict[str, MixinInfo] = {}
+        cache: dict[str, ModelMixinInfo] = {}
 
         for mixin_key, mixin_data in metadata.items():
             try:
@@ -209,7 +133,7 @@ class MixinDiscovery:
                 if "name" not in mixin_data:
                     mixin_data["name"] = mixin_key
 
-                mixin_info = MixinInfo(**mixin_data)
+                mixin_info = ModelMixinInfo(**mixin_data)
                 cache[mixin_info.name] = mixin_info
 
             except Exception as e:
@@ -236,14 +160,14 @@ class MixinDiscovery:
         """
         self._mixins_cache = None
 
-    def get_all_mixins(self) -> list[MixinInfo]:
+    def get_all_mixins(self) -> list[ModelMixinInfo]:
         """
         Get all available mixins with metadata.
 
         Results are cached after first load. Call reload() to force refresh.
 
         Returns:
-            List of MixinInfo objects for all available mixins.
+            List of ModelMixinInfo objects for all available mixins.
 
         Example:
             >>> discovery = MixinDiscovery()
@@ -257,7 +181,7 @@ class MixinDiscovery:
 
         return list(self._mixins_cache.values())
 
-    def get_mixins_by_category(self, category: str) -> list[MixinInfo]:
+    def get_mixins_by_category(self, category: str) -> list[ModelMixinInfo]:
         """
         Get mixins filtered by category.
 
@@ -265,7 +189,7 @@ class MixinDiscovery:
             category: Category name to filter by (e.g., 'communication', 'caching').
 
         Returns:
-            List of MixinInfo objects matching the category.
+            List of ModelMixinInfo objects matching the category.
 
         Example:
             >>> discovery = MixinDiscovery()
@@ -275,7 +199,7 @@ class MixinDiscovery:
         all_mixins = self.get_all_mixins()
         return [m for m in all_mixins if m.category == category]
 
-    def find_compatible_mixins(self, base_mixins: list[str]) -> list[MixinInfo]:
+    def find_compatible_mixins(self, base_mixins: list[str]) -> list[ModelMixinInfo]:
         """
         Find mixins compatible with given base mixins.
 
@@ -286,7 +210,7 @@ class MixinDiscovery:
             base_mixins: List of mixin names already selected.
 
         Returns:
-            List of MixinInfo objects compatible with all base mixins.
+            List of ModelMixinInfo objects compatible with all base mixins.
 
         Example:
             >>> discovery = MixinDiscovery()
@@ -296,7 +220,7 @@ class MixinDiscovery:
         """
         all_mixins = self.get_all_mixins()
         base_set = set(base_mixins)
-        compatible: list[MixinInfo] = []
+        compatible: list[ModelMixinInfo] = []
 
         for mixin in all_mixins:
             # Skip if already in base set
@@ -379,22 +303,22 @@ class MixinDiscovery:
 
         return dependencies
 
-    def _get_mixin_by_name(self, name: str) -> MixinInfo | None:
+    def _get_mixin_by_name(self, name: str) -> ModelMixinInfo | None:
         """
-        Get a MixinInfo by name from cache.
+        Get a ModelMixinInfo by name from cache.
 
         Args:
             name: Mixin name to lookup.
 
         Returns:
-            MixinInfo object if found, None otherwise.
+            ModelMixinInfo object if found, None otherwise.
         """
         if self._mixins_cache is None:
             self._mixins_cache = self._build_mixin_cache()
 
         return self._mixins_cache.get(name)
 
-    def get_mixin(self, name: str) -> MixinInfo:
+    def get_mixin(self, name: str) -> ModelMixinInfo:
         """
         Get a specific mixin by name.
 
@@ -402,7 +326,7 @@ class MixinDiscovery:
             name: Mixin name to retrieve.
 
         Returns:
-            MixinInfo object.
+            ModelMixinInfo object.
 
         Raises:
             OnexError: If mixin is not found.

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Config Type Enum.
 
 Strongly typed configuration type values for system configuration classification.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

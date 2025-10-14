@@ -1,14 +1,21 @@
+from __future__ import annotations
+
+from typing import Generic, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Typed field accessor for specific value types.
 
 Provides type-safe field access with generic type support.
 """
 
-from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_field_accessor import ModelFieldAccessor
@@ -51,13 +58,14 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Configurable protocol requires bool return on failure
-            return False
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         # Typed accessor classes don't have specific model fields - serialize accessible data
         result: dict[str, Any] = {
             "accessor_type": self.__class__.__name__,
@@ -84,9 +92,15 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
-        return True
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

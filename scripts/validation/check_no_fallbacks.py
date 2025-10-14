@@ -46,11 +46,21 @@ class FallbackDetector(ast.NodeVisitor):
             self._check_get_id_fallback(node)
 
         # Check for validator fallbacks
-        if any(
-            decorator.id == "field_validator"
-            for decorator in node.decorator_list
-            if isinstance(decorator, ast.Name)
-        ):
+        has_field_validator = False
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Name) and decorator.id == "field_validator":
+                has_field_validator = True
+                break
+            if isinstance(decorator, ast.Call):
+                # Handle @field_validator("field_name") pattern
+                if (
+                    isinstance(decorator.func, ast.Name)
+                    and decorator.func.id == "field_validator"
+                ):
+                    has_field_validator = True
+                    break
+
+        if has_field_validator:
             self._check_validator_fallback(node)
 
         self.generic_visit(node)
@@ -122,38 +132,40 @@ class FallbackDetector(ast.NodeVisitor):
                 isinstance(handler.type, ast.Name) and handler.type.id == "Exception"
             )
 
+            # Check if exception is re-raised
+            has_reraise = any(
+                isinstance(stmt, ast.Raise) and stmt.exc is None
+                for stmt in handler.body
+            )
+
+            # Check for enum fallback pattern (assignment to UNKNOWN) - check all exception types
+            if not has_reraise:
+                for stmt in handler.body:
+                    if isinstance(stmt, ast.Assign):
+                        if self._is_enum_unknown_assignment(stmt):
+                            line_num = stmt.lineno
+                            line = self.source_lines[line_num - 1].strip()
+
+                            # Check for fallback-ok comment
+                            if self._has_fallback_ok_comment(line_num):
+                                continue
+
+                            self.violations.append(
+                                {
+                                    "type": "enum_fallback",
+                                    "line": line_num,
+                                    "code": line,
+                                    "message": (
+                                        "Exception handler assigns enum to UNKNOWN/NONE - silent fallback. "
+                                        "Raise ValueError with clear message instead."
+                                    ),
+                                    "severity": "error",
+                                }
+                            )
+
+            # Check for return in except block - only for bare/broad exceptions
             if is_bare_except or is_broad_exception:
-                # Check if exception is re-raised
-                has_reraise = any(
-                    isinstance(stmt, ast.Raise) and stmt.exc is None
-                    for stmt in handler.body
-                )
-
                 if not has_reraise:
-                    # Check for enum fallback pattern (assignment to UNKNOWN)
-                    for stmt in handler.body:
-                        if isinstance(stmt, ast.Assign):
-                            if self._is_enum_unknown_assignment(stmt):
-                                line_num = stmt.lineno
-                                line = self.source_lines[line_num - 1].strip()
-
-                                # Check for fallback-ok comment
-                                if self._has_fallback_ok_comment(line_num):
-                                    continue
-
-                                self.violations.append(
-                                    {
-                                        "type": "enum_fallback",
-                                        "line": line_num,
-                                        "code": line,
-                                        "message": (
-                                            "Exception handler assigns enum to UNKNOWN/NONE - silent fallback. "
-                                            "Raise ValueError with clear message instead."
-                                        ),
-                                        "severity": "error",
-                                    }
-                                )
-
                     # Check for return in except block
                     has_return = any(
                         isinstance(stmt, ast.Return) for stmt in handler.body
@@ -198,6 +210,10 @@ class FallbackDetector(ast.NodeVisitor):
 
     def _is_validator_field_check(self, node: ast.AST) -> bool:
         """Check if node is 'field' in info.data pattern."""
+        # Handle BoolOp (and/or) by recursively checking values
+        if isinstance(node, ast.BoolOp):
+            return any(self._is_validator_field_check(val) for val in node.values)
+
         if isinstance(node, ast.Compare):
             # Check for "field" in info.data
             if isinstance(node.left, ast.Constant) and isinstance(node.left.value, str):
@@ -216,11 +232,14 @@ class FallbackDetector(ast.NodeVisitor):
         """Check if assignment is to an enum UNKNOWN or NONE value."""
         if isinstance(node.value, ast.Attribute):
             if node.value.attr in ("UNKNOWN", "NONE"):
-                # Check if it's an enum (uppercase class name)
+                # Check if it's an enum (class name contains "Enum" or is CamelCase)
                 if isinstance(node.value.value, ast.Name):
+                    class_name = node.value.value.id
+                    # Accept if contains "Enum", is all uppercase, or is CamelCase (starts with capital)
                     if (
-                        node.value.value.id.startswith("Enum")
-                        or node.value.value.id.isupper()
+                        "Enum" in class_name
+                        or class_name.isupper()
+                        or (class_name[0].isupper() if class_name else False)
                     ):
                         return True
         return False

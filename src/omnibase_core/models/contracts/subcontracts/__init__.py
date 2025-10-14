@@ -1,3 +1,7 @@
+from typing import Union
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 ONEX Subcontract Models - Contracts Module.
 

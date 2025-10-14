@@ -28,7 +28,7 @@ class DictAnyDetector(ast.NodeVisitor):
 
     def __init__(self, filepath: str):
         self.filepath = filepath
-        self.violations: List[Tuple[int, str]] = []
+        self.violations: list[tuple[int, str]] = []
         self.allowed_lines: set[int] = set()
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
@@ -38,7 +38,7 @@ class DictAnyDetector(ast.NodeVisitor):
                 line_num = node.lineno
                 if line_num not in self.allowed_lines:
                     self.violations.append(
-                        (line_num, f"dict[str, Any] anti-pattern detected")
+                        (line_num, "dict[str, Any] anti-pattern detected")
                     )
         self.generic_visit(node)
 
@@ -65,10 +65,10 @@ class DictAnyDetector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def check_file_for_dict_any(filepath: Path) -> List[Tuple[int, str]]:
+def check_file_for_dict_any(filepath: Path) -> list[tuple[int, str]]:
     """Check a single Python file for dict[str, Any] violations."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
         # Parse AST
@@ -81,10 +81,10 @@ def check_file_for_dict_any(filepath: Path) -> List[Tuple[int, str]]:
     except SyntaxError as e:
         return [(e.lineno or 0, f"Syntax error: {e.msg}")]
     except Exception as e:
-        return [(0, f"Error parsing file: {str(e)}")]
+        return [(0, f"Error parsing file: {e!s}")]
 
 
-def validate_dict_any_usage(src_dirs: List[str], max_violations: int = 0) -> bool:
+def validate_dict_any_usage(src_dirs: list[str], max_violations: int = 0) -> bool:
     """
     Validate dict[str, Any] usage across source directories.
 
@@ -127,7 +127,7 @@ def validate_dict_any_usage(src_dirs: List[str], max_violations: int = 0) -> boo
                 for line_num, message in violations:
                     print(f"   Line {line_num}: {message}")
 
-    print(f"\n📊 Dict[str, Any] Validation Summary:")
+    print("\n📊 Dict[str, Any] Validation Summary:")
     print(
         f"   • Files checked: {len(list(Path(src_dirs[0]).rglob('*.py'))) if src_dirs else 0}"
     )
@@ -136,21 +136,21 @@ def validate_dict_any_usage(src_dirs: List[str], max_violations: int = 0) -> boo
     print(f"   • Max allowed: {max_violations}")
 
     if total_violations <= max_violations:
-        print(f"✅ Dict[str, Any] validation PASSED")
+        print("✅ Dict[str, Any] validation PASSED")
         return True
     else:
-        print(f"❌ Dict[str, Any] validation FAILED")
-        print(f"\n🔧 How to fix:")
-        print(f"   1. Replace dict[str, Any] with specific typed models")
-        print(f"   2. Use TypedDict for structured dictionaries")
-        print(f"   3. Use Union types for mixed value types")
+        print("❌ Dict[str, Any] validation FAILED")
+        print("\n🔧 How to fix:")
+        print("   1. Replace dict[str, Any] with specific typed models")
+        print("   2. Use TypedDict for structured dictionaries")
+        print("   3. Use Union types for mixed value types")
         print(
-            f"   4. If absolutely necessary, use @allow_dict_any decorator with justification"
+            "   4. If absolutely necessary, use @allow_dict_any decorator with justification"
         )
-        print(f"\n   Example fixes:")
-        print(f"   ❌ metadata: dict[str, Any]")
-        print(f"   ✅ metadata: ModelMetadata")
-        print(f"   ✅ metadata: dict[str, str | int | bool]")
+        print("\n   Example fixes:")
+        print("   ❌ metadata: dict[str, Any]")
+        print("   ✅ metadata: ModelMetadata")
+        print("   ✅ metadata: dict[str, str | int | bool]")
         return False
 
 

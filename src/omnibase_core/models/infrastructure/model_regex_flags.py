@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Union
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Regex Flags Model.
 
@@ -5,15 +13,14 @@ Discriminated union for regex flags to replace Union[re.DOTALL, re.IGNORECASE, r
 patterns commonly used in validation scripts and text processing.
 """
 
-from __future__ import annotations
 
 import re
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_regex_flag_type import EnumRegexFlagType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelRegexFlags(BaseModel):
@@ -45,16 +52,16 @@ class ModelRegexFlags(BaseModel):
 
         if self.flag_type in expected_values:
             if self.flag_value != expected_values[self.flag_type]:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Flag value {self.flag_value} doesn't match type {self.flag_type}",
                 )
         elif self.flag_type == EnumRegexFlagType.COMBINED:
             # For combined flags, just ensure it's a valid combination
             valid_flags = {re.DOTALL, re.IGNORECASE, re.MULTILINE}
             if not isinstance(self.flag_value, int) or self.flag_value <= 0:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid combined flag value: {self.flag_value}",
                 )
 
@@ -142,7 +149,7 @@ class ModelRegexFlags(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

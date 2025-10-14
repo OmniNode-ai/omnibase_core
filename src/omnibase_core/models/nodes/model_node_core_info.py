@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, TypedDict
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -17,23 +17,10 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
-from omnibase_core.models.metadata.model_semver import ModelSemVer
-
-
-class ModelCoreSummary(TypedDict):
-    """Type-safe dictionary for node core summary."""
-
-    node_id: UUID
-    node_name: str
-    node_type: str  # EnumMetadataNodeType.value
-    node_version: ModelSemVer
-    status: str  # EnumMetadataNodeStatus.value
-    health: str  # EnumRegistryStatus.value
-    is_active: bool
-    is_healthy: bool
-    has_description: bool
-    has_author: bool
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_core_summary import TypedDictCoreSummary
 
 
 class ModelNodeCoreInfo(BaseModel):
@@ -52,15 +39,17 @@ class ModelNodeCoreInfo(BaseModel):
         default_factory=uuid.uuid4,
         description="Node identifier",
     )
-    node_display_name: str | None = Field(None, description="Human-readable node name")
-    node_type: EnumMetadataNodeType = Field(..., description="Node type")
-    node_version: ModelSemVer = Field(..., description="Node version")
+    node_display_name: str | None = Field(
+        default=None, description="Human-readable node name"
+    )
+    node_type: EnumMetadataNodeType = Field(default=..., description="Node type")
+    node_version: ModelSemVer = Field(default=..., description="Node version")
 
     # Basic metadata (3 fields)
-    description: str | None = Field(None, description="Node description")
-    author_id: UUID | None = Field(None, description="UUID for node author")
+    description: str | None = Field(default=None, description="Node description")
+    author_id: UUID | None = Field(default=None, description="UUID for node author")
     author_display_name: str | None = Field(
-        None,
+        default=None,
         description="Human-readable node author",
     )
 
@@ -75,8 +64,10 @@ class ModelNodeCoreInfo(BaseModel):
     )
 
     # Timestamps (2 fields)
-    created_at: datetime | None = Field(None, description="Creation timestamp")
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    created_at: datetime | None = Field(default=None, description="Creation timestamp")
+    updated_at: datetime | None = Field(
+        default=None, description="Last update timestamp"
+    )
 
     def is_active(self) -> bool:
         """Check if node is active."""
@@ -94,7 +85,7 @@ class ModelNodeCoreInfo(BaseModel):
         """Check if node has any author identifier or display name."""
         return bool(self.author_id or self.author_display_name)
 
-    def get_core_summary(self) -> ModelCoreSummary:
+    def get_core_summary(self) -> TypedDictCoreSummary:
         """Get core node information summary."""
         return {
             "node_id": self.node_id,
@@ -162,8 +153,8 @@ class ModelNodeCoreInfo(BaseModel):
                 value = getattr(self, field)
                 if value is not None:
                     return str(value)
-        raise OnexError(
-            code=CoreErrorCode.VALIDATION_ERROR,
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "
             f"Cannot generate stable ID without UUID field.",
@@ -210,5 +201,4 @@ class ModelNodeCoreInfo(BaseModel):
             return False
 
 
-# Export for use
-__all__ = ["ModelCoreSummary", "ModelNodeCoreInfo"]
+__all__ = ["ModelNodeCoreInfo"]

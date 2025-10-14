@@ -1,16 +1,12 @@
+from typing import Any
+
 """Core error handling for ONEX framework."""
 
 # Core error system - comprehensive implementation
 from omnibase_core.errors.error_codes import (
-    CLIAdapter,
-    CLIExitCode,
-    CoreErrorCode,
-    ModelOnexError,
-    ModelOnexWarning,
-    ModelRegistryError,
-    OnexError,
-    OnexErrorCode,
-    RegistryErrorCode,
+    EnumCLIExitCode,
+    EnumCoreErrorCode,
+    EnumRegistryErrorCode,
     get_core_error_description,
     get_error_codes_for_component,
     get_exit_code_for_core_error,
@@ -19,31 +15,24 @@ from omnibase_core.errors.error_codes import (
     register_error_codes,
 )
 
-# Document freshness errors
-from omnibase_core.errors.error_document_freshness import (
-    DocumentFreshnessAIError,
-    DocumentFreshnessAnalysisError,
-    DocumentFreshnessChangeDetectionError,
-    DocumentFreshnessDependencyError,
-    DocumentFreshnessError,
-    DocumentFreshnessPathError,
-    DocumentFreshnessSystemError,
-    DocumentFreshnessValidationError,
-    ModelDocumentFreshnessDatabaseError,
-)
+# ModelOnexError is imported via lazy import to avoid circular dependency
+# It's available as: from omnibase_core.errors.model_onex_error import ModelOnexError
+
+
+# ModelOnexWarning, ModelRegistryError, and ModelCLIAdapter are imported via lazy import
+# to avoid circular dependencies
 
 __all__ = [
     # Base error classes
-    "OnexError",
     "ModelOnexError",
+    "OnexError",  # Alias for ModelOnexError
     "ModelOnexWarning",
     # Error codes and enums
-    "OnexErrorCode",
-    "CoreErrorCode",
-    "CLIExitCode",
-    "RegistryErrorCode",
+    "EnumCoreErrorCode",
+    "EnumCLIExitCode",
+    "EnumRegistryErrorCode",
     # CLI adapter and utilities
-    "CLIAdapter",
+    "ModelCLIAdapter",
     "get_exit_code_for_status",
     "get_exit_code_for_core_error",
     "get_core_error_description",
@@ -53,14 +42,30 @@ __all__ = [
     "list_registered_components",
     # Registry errors
     "ModelRegistryError",
-    # Document freshness errors
-    "DocumentFreshnessError",
-    "DocumentFreshnessPathError",
-    "ModelDocumentFreshnessDatabaseError",
-    "DocumentFreshnessAnalysisError",
-    "DocumentFreshnessAIError",
-    "DocumentFreshnessDependencyError",
-    "DocumentFreshnessChangeDetectionError",
-    "DocumentFreshnessValidationError",
-    "DocumentFreshnessSystemError",
 ]
+
+
+# Lazy import to avoid circular dependencies
+def __getattr__(name: str) -> Any:
+    """Lazy import mechanism to avoid circular dependencies."""
+    if name == "ModelOnexError" or name == "OnexError":
+        from omnibase_core.errors.model_onex_error import ModelOnexError
+
+        return ModelOnexError
+    if name == "ModelOnexWarning":
+        from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
+
+        return ModelOnexWarning
+    if name == "ModelRegistryError":
+        from omnibase_core.models.common.model_registry_error import ModelRegistryError
+
+        return ModelRegistryError
+    if name == "ModelCLIAdapter":
+        from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
+
+        return ModelCLIAdapter
+    # Raise standard AttributeError for unknown attributes
+    # Cannot use ModelOnexError here as it would cause circular import
+    raise AttributeError(  # error-ok: avoid circular import in lazy loader
+        f"module '{__name__}' has no attribute '{name}'"
+    )

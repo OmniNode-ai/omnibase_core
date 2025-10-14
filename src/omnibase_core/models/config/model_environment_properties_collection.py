@@ -1,16 +1,23 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Environment Properties Collection Model
 
 Type-safe collection of environment properties with metadata support.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
 from .model_property_value import ModelPropertyValue
@@ -20,7 +27,7 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
     """
     Collection of environment properties with type safety.
 
-    This model replaces dict return types to maintain strong typing
+    This model replaces dict[str, Any]return types to maintain strong typing
     and provide better structure for property collections.
     """
 
@@ -35,7 +42,7 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
     )
 
     def get_property_names(self) -> list[str]:
-        """Get list of all property names."""
+        """Get list[Any]of all property names."""
         return list(self.properties.keys())
 
     def get_property_count(self) -> int:
@@ -65,13 +72,13 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
@@ -81,8 +88,8 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

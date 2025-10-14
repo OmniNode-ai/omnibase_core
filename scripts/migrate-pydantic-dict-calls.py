@@ -22,7 +22,7 @@ class PydanticDictMigrator:
             "patterns_replaced": 0,
         }
 
-    def get_migration_patterns(self) -> List[Tuple[re.Pattern, str]]:
+    def get_migration_patterns(self) -> list[tuple[re.Pattern, str]]:
         """Get regex patterns for migration."""
         return [
             # Most common pattern: self.dict(exclude_none=True)

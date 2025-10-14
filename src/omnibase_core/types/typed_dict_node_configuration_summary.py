@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 """
 Node Configuration Summary TypedDict.
 
-Type-safe dictionary for node configuration summary.
+Type-safe dict[str, Any]ionary for node configuration summary.
 """
 
-from __future__ import annotations
 
 from typing import TypedDict
 
 
 class TypedDictNodeConfigurationSummary(TypedDict):
-    """Type-safe dictionary for node configuration summary."""
+    """Type-safe dict[str, Any]ionary for node configuration summary."""
 
     execution: object  # ONEX compliance: Use object instead of Any
     resources: object  # ONEX compliance: Use object instead of Any

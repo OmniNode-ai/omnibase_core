@@ -208,7 +208,7 @@ class TestModelCustomFieldsAccessorGeneric:
         assert fields.get_field_type("int_field") == "int"
         assert fields.get_field_type("float_field") == "float"
         assert fields.get_field_type("bool_field") == "bool"
-        assert fields.get_field_type("list_field") == "list"
+        assert fields.get_field_type("list_field") == "list[Any]"
 
     def test_generic_field_validation(self):
         """Test field validation with generic types."""

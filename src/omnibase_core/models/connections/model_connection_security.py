@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import Dict, TypedDict
+
+from pydantic import Field, model_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Connection Security Model.
 
@@ -5,14 +13,13 @@ SSL/TLS and security configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
-from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
 )
@@ -34,28 +41,28 @@ class ModelConnectionSecurity(BaseModel):
     )
 
     # Certificate paths
-    ssl_cert_path: Path | None = Field(None, description="SSL certificate path")
-    ssl_key_path: Path | None = Field(None, description="SSL key path")
-    ssl_ca_path: Path | None = Field(None, description="SSL CA bundle path")
+    ssl_cert_path: Path | None = Field(default=None, description="SSL certificate path")
+    ssl_key_path: Path | None = Field(default=None, description="SSL key path")
+    ssl_ca_path: Path | None = Field(default=None, description="SSL CA bundle path")
 
     @model_validator(mode="after")
     def validate_ssl_configuration(self) -> ModelConnectionSecurity:
         """Validate SSL certificate paths exist when SSL is enabled."""
         if self.use_ssl:
             if self.ssl_cert_path and not self.ssl_cert_path.exists():
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"SSL certificate path does not exist: {self.ssl_cert_path}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             if self.ssl_key_path and not self.ssl_key_path.exists():
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"SSL key path does not exist: {self.ssl_key_path}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             if self.ssl_ca_path and not self.ssl_ca_path.exists():
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"SSL CA bundle path does not exist: {self.ssl_ca_path}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         return self
 
@@ -158,9 +165,9 @@ class ModelConnectionSecurity(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def validate_instance(self) -> bool:
@@ -170,13 +177,13 @@ class ModelConnectionSecurity(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     model_config = {

@@ -1,16 +1,23 @@
+import uuid
+from typing import List, Literal
+
+from pydantic import Field
+
+from omnibase_core.models.core.model_workflow import ModelWorkflow
+
 """
 Workflow Step Model - ONEX Standards Compliant.
 
 Strongly-typed workflow step model that replaces dict[str, str | int | bool] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict patterns allowed.
+ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Literal
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelWorkflowStep(BaseModel):
@@ -20,7 +27,7 @@ class ModelWorkflowStep(BaseModel):
     Replaces dict[str, str | int | bool] patterns with proper Pydantic model
     providing runtime validation and type safety for workflow execution.
 
-    ZERO TOLERANCE: No Any types or dict patterns allowed.
+    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking
@@ -35,7 +42,7 @@ class ModelWorkflowStep(BaseModel):
     )
 
     step_name: str = Field(
-        ...,
+        default=...,
         description="Human-readable name for this step",
         min_length=1,
         max_length=200,
@@ -50,7 +57,7 @@ class ModelWorkflowStep(BaseModel):
         "parallel",
         "custom",
     ] = Field(
-        ...,
+        default=...,
         description="Type of workflow step execution",
     )
 

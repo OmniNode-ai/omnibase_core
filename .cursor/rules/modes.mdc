@@ -1,0 +1,269 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# === RIPER 14 Modes (Full Document, Version 1.4.1) ===
+# Filename: riper14_modes.yaml
+# Purpose: Defines structured, mode-based execution protocol for ONEX agents
+# Note: Includes all original modes plus GENERATE mode and enhancements to PLAN and EXECUTE
+
+modes:
+
+  - id: 1
+    name: RESEARCH
+    tag: "[MODE: RESEARCH]"
+    purpose: "Collect information, understand system state, and ask clarifying questions."
+    permitted:
+      - Reading files
+      - Asking clarifying questions
+      - Understanding architecture or code structure
+    forbidden:
+      - Providing solutions, plans, or code
+    transitions:
+      next: ["DONE", "NEXT", "GO"]
+      back: ["ESCALATE→MODE X"]
+    completion_heuristic: "AI prompts: 'Research complete. Ready for INNOVATE?'"
+    emit: "markdown/summary"
+
+  - id: 2
+    name: INNOVATE
+    tag: "[MODE: INNOVATE] [LOOP]"
+    purpose: "Brainstorm potential solutions and discuss tradeoffs."
+    permitted:
+      - Idea generation
+      - Pros/cons analysis
+      - Hypothesis formation
+    forbidden:
+      - Concrete planning
+      - Code writing
+    parameters:
+      iterate_depth: 2
+      goal: "EDGE_CASES"
+    on_missing_parameters:
+      prompt: >
+        [MODE: INNOVATE] requires parameters.
+
+        Required:
+        - iterate_depth (default: 2)
+        - goal (default: 'EDGE_CASES')
+
+        Type CONTINUE to use defaults, or override by specifying values.
+    transitions:
+      next: ["DONE", "NEXT", "GO"]
+      iterate: ["ITERATE"]
+      back: ["ESCALATE→MODE X"]
+    completion_prompt: "Summarize ideas and prompt: 'Ready to PLAN?'"
+    emit: "markdown/list"
+
+  - id: 3
+    name: PLAN
+    tag: "[MODE: PLAN]"
+    purpose: "Draft a detailed technical plan to execute the best idea."
+    permitted:
+      - Writing checklists with file paths, function names, and sequential actions
+      - Declaring node types, template usage, and output structure
+    forbidden:
+      - Writing code or implementation logic
+    output: "Numbered checklist of steps + optional metadata for generation"
+    metadata_support:
+      supports_generation_templates: true
+      supports_contract_linkage: true
+    transitions:
+      next: ["DONE", "NEXT", "GO"]
+      back: ["ESCALATE→MODE X"]
+    completion_heuristic: "Plan complete. Prompt: 'Execute now?'"
+    emit: "yaml/checklist+metadata"
+
+  - id: 4
+    name: EXECUTE
+    tag: "[MODE: EXECUTE] [LOOP]"
+    purpose: "Implement plan precisely and sequentially."
+    permitted:
+      - Writing code strictly per plan
+      - Using generated stubs without modification
+    forbidden:
+      - Deviation or creative reinterpretation
+    behavior:
+      - Follow checklist item → Confirm → Proceed
+      - Can loop on individual steps via ITERATE
+    parameters:
+      structure_only: false
+    transitions:
+      iterate: ["ITERATE"]
+      next: ["DONE", "NEXT", "GO"]
+      back: ["ESCALATE→MODE X"]
+    emit: "diff+codeblock"
+
+  - id: 5
+    name: REVIEW
+    tag: "[MODE: REVIEW]"
+    purpose: "Compare implementation to plan."
+    permitted:
+      - Line-by-line comparison
+      - Deviation flagging (⚠️ DEVIATION DETECTED)
+    forbidden:
+      - Code modifications
+    transitions:
+      next: ["DONE", "NEXT", "GO"]
+      back: ["ESCALATE→MODE X"]
+    emit: "markdown/diff"
+
+  - id: 6
+    name: OBSERVABILITY
+    tag: "[MODE: OBSERVABILITY]"
+    purpose: "Verify structured logging, metrics, and trace spans are in place."
+    behavior:
+      - Audit emit hooks and logging granularity
+      - Check coverage of critical path
+    transitions:
+      next: ["DONE", "NEXT", "GO"]
+      back: ["ESCALATE→MODE X"]
+    emit: "yaml/audit-report"
+
+  - id: 7
+    name: AUTONOMOUS_TASK
+    tag: "[MODE: AUTONOMOUS TASK]"
+    purpose: "Run the full RESEARCH → REVIEW loop with no human input, under pre-approved scope."
+    entry_criteria:
+      - Approved plan
+      - No open questions
+    behavior:
+      - Follows locked loop with fail-fast ESCALATE on blockers
+    exit_statuses:
+      - "✅ TASK COMPLETED SUCCESSFULLY"
+      - "❌ TASK FAILED – ESCALATED"
+    emit: "markdown/status-report"
+
+  - id: 8
+    name: EXECUTE_ITERATION
+    tag: "[MODE: EXECUTE ITERATION]"
+    purpose: "Test, fix, review individual checklist items until success or max retries."
+    parameters:
+      max_retries: 3
+    on_missing_parameters:
+      prompt: >
+        [MODE: EXECUTE_ITERATION] requires parameters.
+
+        Required:
+        - max_retries (default: 3)
+
+        Type CONTINUE to use defaults, or override by specifying values.
+    behavior:
+      - PLAN → EXECUTE → TEST → REVIEW for each step
+      - ESCALATE on failure after retries
+    emit: "markdown/iteration-log"
+
+  - id: 9
+    name: TEST_LOOP
+    tag: "[MODE: TEST LOOP]"
+    purpose: "Isolated red-green-refactor loop for test-focused development."
+    permitted:
+      - Test writing or fixes only
+    forbidden:
+      - Feature development
+    parameters:
+      max_iterations: 5
+      stagnation_threshold: 2
+    on_missing_parameters:
+      prompt: >
+        [MODE: TEST_LOOP] requires parameters.
+
+        Required:
+        - max_iterations (default: 5)
+        - stagnation_threshold (default: 2)
+
+        Type CONTINUE to use defaults, or override by specifying values.
+    behavior:
+      - Run tests → Fix → Rerun
+      - Exit on test pass or max/stagnation
+    exit_prompt: "Type RETRY, ABORT, DONE/NEXT/GO, or ESCALATE→MODE X"
+    emit: "test-results"
+
+  - id: 10
+    name: CODE_REVIEW
+    tag: "[MODE: CODE REVIEW]"
+    purpose: "Structured, multi-faceted code review with specialized focus areas and severity tracking."
+    permitted:
+      - Analyzing code quality, security, performance, architecture
+    forbidden:
+      - Making code changes or implementations
+    sub_modes:
+      QUALITY: { focus: "Readability, maintainability, idiomatic code" }
+      SECURITY: { focus: "Vulnerability detection and risk mitigation" }
+      PERFORMANCE: { focus: "Efficiency and latency awareness" }
+      ARCHITECTURE: { focus: "ONEX alignment and structural integrity" }
+      STANDARDS: { focus: "Style, structure, protocol adherence, naming conventions" }
+      STANDARDS_ONLY: { focus: "Quick standards-only review" }
+      TESTING: { focus: "Coverage and maintainability" }
+      GIT_DIFF: { focus: "Scope of change and impact" }
+      COMPREHENSIVE: { focus: "Runs all other sub-modes in sequence" }
+    severity_levels: ["CRITICAL", "MAJOR", "MINOR", "SUGGESTION"]
+    emit: "structured/review"
+
+  - id: 11
+    name: DEBUG
+    tag: "[MODE: DEBUG]"
+    purpose: "Enable detailed introspection and debug logging with automatic file management."
+    permitted:
+      - Inspecting node state and metadata
+      - Emitting debug-level logs
+    forbidden:
+      - Any code modification or execution
+    emit: "structured/debug+auto-log"
+
+  - id: 12
+    name: REFACTOR
+    tag: "[MODE: REFACTOR]"
+    purpose: "Perform scoped, semantic refactors based on plan or review findings."
+    permitted:
+      - Structural code changes without feature modification
+    forbidden:
+      - Logic or feature changes
+    emit: "diff+justification"
+
+  - id: 13
+    name: ADAPT
+    tag: "[MODE: ADAPT]"
+    purpose: "Patch logic after test or execution failure, within constraints of the original plan."
+    permitted:
+      - Scoped fix proposals
+      - Retry logic
+    forbidden:
+      - New feature implementation
+      - Ignoring original intent/contract
+    emit: "yaml/patch-plan"
+
+  - id: 14
+    name: GENERATE
+    tag: "[MODE: GENERATE]"
+    purpose: "Autogenerate node scaffolds, protocols, and contracts from YAML checklists or metadata blocks."
+    permitted:
+      - Parsing ONEX checklist metadata
+      - Generating `.tree` files
+      - Emitting scaffolded node templates (class stubs, reducer boilerplate)
+      - Creating contract skeletons or metadata blocks
+    forbidden:
+      - Implementing business logic
+      - Writing non-templated code
+    parameters:
+      source: ["checklist", "metadata_block"]
+      output_format: ["code", "tree", "contract"]
+      dry_run: true
+    behavior:
+      - Validate metadata completeness and naming
+      - Use template matching to select scaffold type
+      - Emit results to structured logs or file output
+    transitions:
+      next: ["EXECUTE", "REVIEW", "DEBUG"]
+      back: ["ESCALATE→MODE X"]
+    emit: "file+log"
+    emits_files: true
+    emits_metadata: true
+    emits_tree: true
+    metadata_requirements:
+      - checklist_id
+      - node_type
+      - reducer_style
+      - output_path
+# === /RIPER 14 Modes ===

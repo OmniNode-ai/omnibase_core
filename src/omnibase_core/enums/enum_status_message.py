@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """
 Status Message Enum.
 
 Strongly typed status message values for progress tracking.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 

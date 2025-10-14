@@ -39,7 +39,7 @@ class EnumCaseValidator:
     def __init__(self, max_violations: int = 0, strict_mode: bool = False):
         self.max_violations = max_violations
         self.strict_mode = strict_mode
-        self.violations: List[Violation] = []
+        self.violations: list[Violation] = []
 
         # Patterns for legitimate uppercase values (cloud instance types, etc.)
         self.exempted_patterns = [
@@ -65,7 +65,7 @@ class EnumCaseValidator:
     def analyze_enum_file(self, file_path: Path) -> None:
         """Analyze a single enum file for case consistency violations."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -152,7 +152,7 @@ class EnumCaseValidator:
             return
 
         # Group violations by file
-        violations_by_file: Dict[str, List[Violation]] = {}
+        violations_by_file: dict[str, list[Violation]] = {}
         for violation in self.violations:
             file_path = violation["file"]
             if file_path not in violations_by_file:
@@ -179,8 +179,8 @@ class EnumCaseValidator:
                 print(
                     f"  🚨 Line {violation['line']}: {violation['class_name']}.{violation['enum_name']}"
                 )
-                print(f"     Current:   \"{violation['current_value']}\"")
-                print(f"     Suggested: \"{violation['suggested_value']}\"")
+                print(f'     Current:   "{violation['current_value']}"')
+                print(f'     Suggested: "{violation['suggested_value']}"')
                 print("     💡 Use lowercase for consistency with ONEX standards")
                 print()
 

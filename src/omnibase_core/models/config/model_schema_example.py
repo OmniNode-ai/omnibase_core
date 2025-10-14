@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from typing import Dict, Optional, TypeVar
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Schema example model.
 
@@ -5,17 +14,15 @@ Type-safe model for extracting examples from YAML schema files,
 replacing dict[str, Any] return types with structured models.
 """
 
-from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_type import EnumDataType
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Note: Using ModelSchemaValue instead of complex union types for type safety
 
@@ -57,7 +64,7 @@ class ModelSchemaExample(BaseModel):
     )
 
     schema_version: ModelSemVer | None = Field(
-        None,
+        default=None,
         description="Schema version if available",
     )
 
@@ -106,7 +113,7 @@ class ModelSchemaExample(BaseModel):
         # The set_custom_value method handles runtime type validation
         try:
             self.example_data.set_custom_value(key, value)
-        except OnexError:
+        except ModelOnexError:
             # Re-raise validation errors from set_custom_value
             raise
 
@@ -141,13 +148,13 @@ class ModelSchemaExample(BaseModel):
         # The set_custom_value method handles runtime type validation
         try:
             self.example_data.set_custom_value(key, value)
-        except OnexError:
+        except ModelOnexError:
             # Re-raise validation errors from set_custom_value
             raise
 
     def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:
         """
-        Update example data from a dictionary.
+        Update example data from a dict[str, Any]ionary.
 
         Args:
             data: Dictionary of ModelSchemaValue objects to add to example data
@@ -158,13 +165,13 @@ class ModelSchemaExample(BaseModel):
             # The set_custom_value method handles runtime type validation
             try:
                 self.example_data.set_custom_value(key, raw_value)
-            except OnexError:
+            except ModelOnexError:
                 # Skip values that aren't supported primitive types
                 pass
 
     def get_example_data_as_dict(self) -> dict[str, ModelSchemaValue]:
         """
-        Get example data as a dictionary of ModelSchemaValue objects.
+        Get example data as a dict[str, Any]ionary of ModelSchemaValue objects.
 
         Note: This method returns ModelSchemaValue objects directly.
         For raw Python values, use .get_raw_value() on individual keys.
@@ -189,7 +196,7 @@ class ModelSchemaExample(BaseModel):
         schema_version: ModelSemVer | None = None,
     ) -> ModelSchemaExample:
         """
-        Create ModelSchemaExample from a dictionary.
+        Create ModelSchemaExample from a dict[str, Any]ionary.
 
         Args:
             data: Dictionary data to store as example
@@ -209,7 +216,7 @@ class ModelSchemaExample(BaseModel):
             # The set_custom_value method handles runtime type validation
             try:
                 custom_props.set_custom_value(key, raw_value)
-            except OnexError:
+            except ModelOnexError:
                 # Skip values that aren't supported primitive types
                 pass
 
@@ -276,7 +283,7 @@ class ModelSchemaExample(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            OnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails with details about the failure
         """
         try:
             for key, value in kwargs.items():
@@ -284,28 +291,28 @@ class ModelSchemaExample(BaseModel):
                     setattr(self, key, value)
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with details about the failure
+            ModelOnexError: If validation fails with details about the failure
         """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
 

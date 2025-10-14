@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from pydantic import Field
+
 """
 Performance Metrics Model.
 
@@ -5,11 +9,10 @@ Restrictive model for CLI execution performance metrics
 with proper typing and validation.
 """
 
-from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelPerformanceMetrics(BaseModel):
@@ -35,7 +38,7 @@ class ModelPerformanceMetrics(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

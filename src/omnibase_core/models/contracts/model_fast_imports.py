@@ -1,3 +1,7 @@
+from typing import TYPE_CHECKING, Any, Dict, TypeVar
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Fast Import Module - Aggressive Performance Optimization
 
@@ -7,13 +11,7 @@ NO imports are executed at module level to eliminate cascade effects.
 Performance Target: Module import <5ms, contract loading <50ms total
 """
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    TypedDict,
-    TypeVar,
-    cast,
-)
+from typing import TypedDict, cast
 
 # NO RUNTIME IMPORTS AT MODULE LEVEL
 # All imports moved to function level to eliminate cascade
@@ -21,14 +19,9 @@ from typing import (
 # Type variables for proper typing
 ContractType = TypeVar("ContractType", bound="ModelContractBase")
 
-
-class PerformanceMetrics(TypedDict):
-    """Type-safe structure for performance measurement results."""
-
-    module_load_time_ms: float
-    factory_access_time_ms: float
-    status: str
-
+from omnibase_core.models.contracts.model_performance_monitor import (
+    ModelPerformanceMonitor,
+)
 
 if TYPE_CHECKING:
     # Type hints only - no runtime cost
@@ -64,7 +57,7 @@ class ModelFastContractFactory:
     ) -> type["ModelContractBase"]:
         """Import a contract class on-demand with caching."""
         # Function-level imports to maintain zero-import-time loading
-        from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -76,9 +69,9 @@ class ModelFastContractFactory:
         # Dynamic import at runtime only
         module_path = self._import_paths.get(contract_type)
         if not module_path:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
                 message=f"Unknown contract type: {contract_type}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 details=ModelErrorContext.with_context(
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
@@ -147,9 +140,9 @@ class ModelFastContractFactory:
     def get_stats(self) -> dict[str, object]:
         """Get factory statistics."""
         return {
-            "cached_contracts": list(self._contract_cache.keys()),
+            "cached_contracts": list[Any](self._contract_cache.keys()),
             "cache_size": len(self._contract_cache),
-            "available_contracts": list(self._import_paths.keys()),
+            "available_contracts": list[Any](self._import_paths.keys()),
         }
 
 
@@ -246,24 +239,6 @@ def preload_all_contracts() -> None:
 
 
 # Performance monitoring
-class ModelPerformanceMonitor:
-    """Monitor fast import performance."""
-
-    @staticmethod
-    def measure_import_time() -> PerformanceMetrics:
-        """Measure import times for this module vs alternatives."""
-        import time
-
-        # This should be near-zero since no imports at module level
-        start = time.perf_counter()
-        # Just accessing factory - no imports
-        factory_access_time = (time.perf_counter() - start) * 1000
-
-        return {
-            "module_load_time_ms": 0.0,  # Should be ~0 for this module
-            "factory_access_time_ms": factory_access_time,
-            "status": "optimal" if factory_access_time < 1.0 else "needs_optimization",
-        }
 
 
 __all__ = [

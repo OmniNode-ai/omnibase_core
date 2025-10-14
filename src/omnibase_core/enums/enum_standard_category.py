@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Standard Category Enum.
 
@@ -5,7 +7,6 @@ Standardized categories for consistent classification across metadata models.
 Provides hierarchical organization beyond simple tags.
 """
 
-from __future__ import annotations
 
 from enum import Enum, unique
 
@@ -19,7 +20,7 @@ class EnumStandardCategory(str, Enum):
     across all metadata models.
     """
 
-    # Architecture categories
+    # ModelArchitecture categories
     EFFECT = "effect"
     COMPUTE = "compute"
     REDUCER = "reducer"
@@ -41,7 +42,7 @@ class EnumStandardCategory(str, Enum):
     MONITORING = "monitoring"
     CONFIGURATION = "configuration"
 
-    # Lifecycle categories
+    # EnumLifecycle categories
     DEVELOPMENT = "development"
     TESTING = "testing"
     STAGING = "staging"

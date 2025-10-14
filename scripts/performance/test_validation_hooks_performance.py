@@ -18,7 +18,7 @@ class ValidationPerformanceResult:
     """Result of validation hook performance test."""
 
     script_name: str
-    execution_times: List[float]
+    execution_times: list[float]
     avg_time: float
     median_time: float
     std_dev: float
@@ -75,7 +75,8 @@ class ValidationHookPerformanceTester:
                     cwd=self.project_root,
                     capture_output=True,
                     text=True,
-                    timeout=30,  # 30 second timeout
+                    timeout=30,
+                    check=False,  # 30 second timeout
                 )
 
                 end_time = time.perf_counter()
@@ -119,7 +120,7 @@ class ValidationHookPerformanceTester:
             success_rate=successful_runs / iterations,
         )
 
-    def test_all_validation_hooks(self) -> List[ValidationPerformanceResult]:
+    def test_all_validation_hooks(self) -> list[ValidationPerformanceResult]:
         """Test performance of all validation hooks."""
         print("🚀 Testing Validation Hook Performance")
         print("=" * 50)
@@ -135,7 +136,7 @@ class ValidationHookPerformanceTester:
 
         return results
 
-    def analyze_performance(self, results: List[ValidationPerformanceResult]):
+    def analyze_performance(self, results: list[ValidationPerformanceResult]):
         """Analyze validation hook performance and provide recommendations."""
         print("\n📊 Validation Hook Performance Results:")
         print("=" * 80)
@@ -174,7 +175,7 @@ class ValidationHookPerformanceTester:
                 print(
                     f"   - {Path(hook.script_name).name}: {hook.avg_time:.3f}s average"
                 )
-                print(f"     Consider optimizing or running less frequently")
+                print("     Consider optimizing or running less frequently")
 
         # Check for failed hooks
         failed_hooks = [
@@ -241,13 +242,13 @@ def main():
 
     # Test scaling for key hooks
     if results:
-        print(f"\n🚀 Testing scaling performance...")
+        print("\n🚀 Testing scaling performance...")
         for result in results[:2]:  # Test first 2 hooks for scaling
             if result.execution_times:
                 tester.test_validation_script_scaling(result.script_name)
 
     # Generate recommendations
-    print(f"\n💡 Recommendations:")
+    print("\n💡 Recommendations:")
     print("=" * 50)
 
     if analysis["performance_acceptable"]:

@@ -1,21 +1,28 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import Field
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Model for CLI node execution input parameters.
 
-Replaces primitive dict parameters with type-safe Pydantic models
+Replaces primitive dict[str, Any]parameters with type-safe Pydantic models
 for CLI node execution operations.
 """
 
-from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
 from omnibase_core.enums.enum_cli_action import EnumCliAction
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_cli_advanced_params import ModelCliAdvancedParams
 
@@ -33,23 +40,25 @@ class ModelCliNodeExecutionInput(BaseModel):
     """
 
     # Core execution parameters
-    action: EnumCliAction = Field(..., description="Action to perform with the node")
+    action: EnumCliAction = Field(
+        default=..., description="Action to perform with the node"
+    )
     node_id: UUID | None = Field(
-        None,
+        default=None,
         description="Node UUID for precise identification",
     )
     node_display_name: str | None = Field(
-        None,
+        default=None,
         description="Node display name for human-readable operations",
     )
 
     # Node-specific parameters
     target_node_id: UUID | None = Field(
-        None,
+        default=None,
         description="Target node UUID for precise node-info operations",
     )
     target_node_display_name: str | None = Field(
-        None,
+        default=None,
         description="Target node display name for node-info operations",
     )
 
@@ -69,19 +78,19 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Only include healthy nodes in results",
     )
     category_filter: EnumCategoryFilter | None = Field(
-        None,
+        default=None,
         description="Filter nodes by category",
     )
 
     # Performance and timeouts
     timeout_seconds: float | None = Field(
-        None,
+        default=None,
         description="Execution timeout in seconds",
     )
 
     # Output formatting
     output_format: EnumOutputFormat = Field(
-        EnumOutputFormat.DEFAULT,
+        default=EnumOutputFormat.TEXT,
         description="Output format preference for results display",
     )
     verbose: bool = Field(default=False, description="Enable verbose output")
@@ -94,7 +103,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Execution context
     execution_context: UUID | None = Field(
-        None,
+        default=None,
         description="Execution context UUID for tracking operations",
     )
     request_id: UUID = Field(
@@ -111,7 +120,7 @@ class ModelCliNodeExecutionInput(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
@@ -139,8 +148,8 @@ class ModelCliNodeExecutionInput(BaseModel):
             # Override in specific models for custom validation
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 

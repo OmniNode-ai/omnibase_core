@@ -1,19 +1,27 @@
+import uuid
+from datetime import datetime
+from typing import List, Literal
+
+from pydantic import Field, field_validator
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 """
 Filter Conditions Model - ONEX Standards Compliant.
 
 Strongly-typed filter conditions model that replaces dict[str, str | int | float | bool] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict patterns allowed.
+ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from datetime import UTC, datetime
-from typing import Literal
+from datetime import UTC
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelFilterConditions(BaseModel):
@@ -23,7 +31,7 @@ class ModelFilterConditions(BaseModel):
     Replaces dict[str, str | int | float | bool] patterns with proper Pydantic model
     providing runtime validation and type safety for event filtering.
 
-    ZERO TOLERANCE: No Any types or dict patterns allowed.
+    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking
@@ -208,7 +216,7 @@ class ModelFilterConditions(BaseModel):
     )
     @classmethod
     def validate_source_type_lists(cls, v: list[str]) -> list[str]:
-        """Validate source and type filter lists."""
+        """Validate source and type filter list[Any]s."""
         validated = []
         for item in v:
             item = item.strip()
@@ -216,9 +224,9 @@ class ModelFilterConditions(BaseModel):
                 continue
 
             if len(item) > 200:
-                raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                raise ModelOnexError(
                     message=f"Source/type filter '{item}' too long. Maximum 200 characters.",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             validated.append(item)

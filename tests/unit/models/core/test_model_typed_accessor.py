@@ -13,13 +13,13 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_typed_accessor import ModelTypedAccessor
 
 
-class SampleTypedModel(ModelTypedAccessor[str]):
+class TestTypedModel(ModelTypedAccessor[str]):
     """Test model for typed accessor testing."""
 
     data: dict[str, Any] = Field(default_factory=dict)
 
 
-class SampleTypedIntModel(ModelTypedAccessor[int]):
+class TestTypedIntModel(ModelTypedAccessor[int]):
     """Test model for integer typed accessor testing."""
 
     data: dict[str, Any] = Field(default_factory=dict)
@@ -30,14 +30,14 @@ class TestModelTypedAccessor:
 
     def test_initialization(self):
         """Test typed accessor initialization."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         assert hasattr(accessor, "get_typed_field")
         assert hasattr(accessor, "set_typed_field")
 
     def test_get_typed_field_string_success(self):
         """Test getting typed field with correct type (string)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set up field with string value
         accessor.set_field("data.name", ModelSchemaValue.from_value("test_value"))
@@ -48,7 +48,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_string_default(self):
         """Test getting typed field returns default when not found."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         result = accessor.get_typed_field("data.nonexistent", str, "default_value")
 
@@ -56,7 +56,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_string_type_mismatch(self):
         """Test getting typed field returns default when type doesn't match."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set up field with integer value
         accessor.set_field("data.count", ModelSchemaValue.from_value(42))
@@ -68,7 +68,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_int_success(self):
         """Test getting typed field with correct type (int)."""
-        accessor = SampleTypedIntModel()
+        accessor = TestTypedIntModel()
 
         # Set up field with int value
         accessor.set_field("data.count", ModelSchemaValue.from_value(42))
@@ -79,7 +79,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_int_default(self):
         """Test getting integer typed field returns default when not found."""
-        accessor = SampleTypedIntModel()
+        accessor = TestTypedIntModel()
 
         result = accessor.get_typed_field("data.nonexistent", int, 999)
 
@@ -87,7 +87,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_float_success(self):
         """Test getting typed field with float type."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set up field with float value
         accessor.set_field("data.score", ModelSchemaValue.from_value(95.5))
@@ -98,7 +98,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_bool_success(self):
         """Test getting typed field with bool type."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set up field with bool value
         accessor.set_field("data.enabled", ModelSchemaValue.from_value(True))
@@ -109,7 +109,7 @@ class TestModelTypedAccessor:
 
     def test_get_typed_field_none_value(self):
         """Test getting typed field when value is None."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set up field with None value
         accessor.set_field("data.empty", ModelSchemaValue.from_value(None))
@@ -121,7 +121,7 @@ class TestModelTypedAccessor:
 
     def test_set_typed_field_string_success(self):
         """Test setting typed field with valid type (string)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         result = accessor.set_typed_field("data.name", "test_value", str)
 
@@ -132,7 +132,7 @@ class TestModelTypedAccessor:
 
     def test_set_typed_field_int_success(self):
         """Test setting typed field with valid type (int)."""
-        accessor = SampleTypedIntModel()
+        accessor = TestTypedIntModel()
 
         result = accessor.set_typed_field("data.count", 42, int)
 
@@ -143,7 +143,7 @@ class TestModelTypedAccessor:
 
     def test_set_typed_field_float_success(self):
         """Test setting typed field with valid type (float)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         result = accessor.set_typed_field("data.score", 95.5, float)
 
@@ -154,7 +154,7 @@ class TestModelTypedAccessor:
 
     def test_set_typed_field_bool_success(self):
         """Test setting typed field with valid type (bool)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         result = accessor.set_typed_field("data.enabled", True, bool)
 
@@ -165,7 +165,7 @@ class TestModelTypedAccessor:
 
     def test_set_typed_field_type_mismatch(self):
         """Test setting typed field with wrong type fails."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Try to set int when expecting string
         result = accessor.set_typed_field("data.name", 42, str)
@@ -174,7 +174,7 @@ class TestModelTypedAccessor:
 
     def test_set_typed_field_with_schema_value(self):
         """Test setting typed field with ModelSchemaValue directly."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         schema_value = ModelSchemaValue.from_value("test")
         result = accessor.set_typed_field("data.value", schema_value, ModelSchemaValue)
@@ -183,7 +183,7 @@ class TestModelTypedAccessor:
 
     def test_multiple_typed_fields(self):
         """Test working with multiple typed fields."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set multiple fields
         accessor.set_typed_field("data.name", "John", str)
@@ -199,7 +199,7 @@ class TestModelTypedAccessor:
 
     def test_overwrite_typed_field(self):
         """Test overwriting existing typed field."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set initial value
         accessor.set_typed_field("data.name", "Initial", str)
@@ -211,35 +211,35 @@ class TestModelTypedAccessor:
 
     def test_configure_protocol_method(self):
         """Test configure method (Configurable protocol)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         result = accessor.configure(custom_attr="test_value", another=123)
 
         assert result is True
 
     def test_configure_with_exception(self):
-        """Test configure handles exceptions gracefully."""
-        accessor = SampleTypedModel()
+        """Test configure raises ModelOnexError for invalid input."""
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
-        # Try to configure with invalid type
-        result = accessor.configure(data="invalid_type")
+        accessor = TestTypedModel()
 
-        # Should return False on exception
-        assert result is False
+        # Try to configure with invalid type - data expects dict but given string
+        with pytest.raises(ModelOnexError, match="Operation failed"):
+            accessor.configure(data="invalid_type")
 
     def test_serialize_protocol_method(self):
         """Test serialize method (Serializable protocol)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         serialized = accessor.serialize()
 
         assert isinstance(serialized, dict)
         assert "accessor_type" in serialized
-        assert serialized["accessor_type"] == "SampleTypedModel"
+        assert serialized["accessor_type"] == "TestTypedModel"
 
     def test_serialize_with_data(self):
         """Test serialize includes instance data."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set some data
         accessor.set_typed_field("data.test", "value", str)
@@ -252,7 +252,7 @@ class TestModelTypedAccessor:
 
     def test_serialize_excludes_private_attributes(self):
         """Test serialize excludes private attributes."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Add private attribute
         accessor._private = "should_not_serialize"
@@ -263,11 +263,11 @@ class TestModelTypedAccessor:
 
     def test_serialize_handles_non_serializable_types(self):
         """Test serialize handles non-serializable types gracefully."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Pydantic models have strict attribute assignment
         # We can't set arbitrary attributes, so test with existing data field instead
-        accessor.data = {"nested": SampleTypedModel()}
+        accessor.data = {"nested": TestTypedModel()}
 
         # Should not raise exception
         try:
@@ -280,7 +280,7 @@ class TestModelTypedAccessor:
 
     def test_validate_instance_protocol_method(self):
         """Test validate_instance method (Validatable protocol)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         result = accessor.validate_instance()
 
@@ -288,7 +288,7 @@ class TestModelTypedAccessor:
 
     def test_validate_instance_with_data(self):
         """Test validate_instance with populated data."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         accessor.set_typed_field("data.test", "value", str)
 
@@ -298,16 +298,16 @@ class TestModelTypedAccessor:
 
     def test_get_name_protocol_method(self):
         """Test get_name method (Nameable protocol)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         name = accessor.get_name()
 
         assert isinstance(name, str)
-        assert "SampleTypedModel" in name
+        assert "TestTypedModel" in name
 
     def test_set_name_protocol_method(self):
         """Test set_name method (Nameable protocol)."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Should not raise exception
         accessor.set_name("Custom Name")
@@ -316,7 +316,7 @@ class TestModelTypedAccessor:
 
     def test_inheritance_from_field_accessor(self):
         """Test typed accessor inherits from field accessor."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Should have base field accessor methods
         assert hasattr(accessor, "get_field")
@@ -326,7 +326,7 @@ class TestModelTypedAccessor:
 
     def test_nested_path_access(self):
         """Test accessing deeply nested paths."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set nested field
         accessor.set_typed_field("data.user.profile.name", "John", str)
@@ -338,7 +338,7 @@ class TestModelTypedAccessor:
 
     def test_list_type_handling(self):
         """Test handling list types."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set list field
         accessor.set_field("data.tags", ModelSchemaValue.from_value(["tag1", "tag2"]))
@@ -350,7 +350,7 @@ class TestModelTypedAccessor:
 
     def test_dict_type_handling(self):
         """Test handling dict types."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set dict field
         test_dict = {"key1": "value1", "key2": "value2"}
@@ -363,7 +363,7 @@ class TestModelTypedAccessor:
 
     def test_edge_case_empty_string(self):
         """Test edge case with empty string."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         accessor.set_typed_field("data.empty", "", str)
 
@@ -373,7 +373,7 @@ class TestModelTypedAccessor:
 
     def test_edge_case_zero_value(self):
         """Test edge case with zero value."""
-        accessor = SampleTypedIntModel()
+        accessor = TestTypedIntModel()
 
         accessor.set_typed_field("data.count", 0, int)
 
@@ -383,7 +383,7 @@ class TestModelTypedAccessor:
 
     def test_edge_case_false_value(self):
         """Test edge case with False value."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         accessor.set_typed_field("data.enabled", False, bool)
 
@@ -393,7 +393,7 @@ class TestModelTypedAccessor:
 
     def test_type_parameter_in_serialize(self):
         """Test that type parameter information is included in serialize."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         serialized = accessor.serialize()
 
@@ -403,7 +403,7 @@ class TestModelTypedAccessor:
 
     def test_complex_scenario_mixed_types(self):
         """Test complex scenario with mixed types."""
-        accessor = SampleTypedModel()
+        accessor = TestTypedModel()
 
         # Set various types
         accessor.set_typed_field("data.username", "john_doe", str)
@@ -423,8 +423,8 @@ class TestModelTypedAccessor:
 
     def test_generic_type_constraints(self):
         """Test that generic type parameter works correctly."""
-        str_accessor = SampleTypedModel()
-        int_accessor = SampleTypedIntModel()
+        str_accessor = TestTypedModel()
+        int_accessor = TestTypedIntModel()
 
         # Both should work independently
         str_accessor.set_typed_field("data.value", "text", str)

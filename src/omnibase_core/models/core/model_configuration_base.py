@@ -1,3 +1,14 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
+
 """
 Generic Configuration Base Class.
 
@@ -5,23 +16,14 @@ Standardizes common patterns found across Config domain models,
 eliminating field duplication and providing consistent configuration interfaces.
 """
 
-from __future__ import annotations
 
-from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from datetime import UTC
+from typing import Any
 
-from pydantic import (
-    BaseModel,
-    Field,
-    field_serializer,
-    field_validator,
-    model_validator,
-)
+from pydantic import field_serializer
 
-from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
-from omnibase_core.models.metadata.model_semver import ModelSemVer
 
 # Type variable for configuration data - using Any to avoid Pydantic schema generation issues
 T = TypeVar("T")
@@ -33,7 +35,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
 
     Provides standardized fields and methods found across configuration models:
     - Common metadata fields (name, description, version)
-    - Lifecycle fields (enabled, timestamps)
+    - EnumLifecycle fields (enabled, timestamps)
     - Generic typed configuration data
     - Common utility methods
 
@@ -85,7 +87,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         description="Configuration version",
     )
 
-    # Lifecycle control
+    # EnumLifecycle control
     enabled: bool = Field(default=True, description="Whether configuration is enabled")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -130,8 +132,8 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
                 return False
             return base_valid
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
@@ -170,7 +172,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize configuration to dictionary (Serializable protocol)."""
+        """Serialize configuration to dict[str, Any]ionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def configure(self, **kwargs: Any) -> bool:
@@ -184,8 +186,8 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
             self.update_timestamp()
             return True
         except Exception as e:
-            raise OnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
