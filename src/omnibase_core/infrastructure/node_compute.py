@@ -299,14 +299,13 @@ class NodeCompute(NodeCoreBase):
             return data
 
         except Exception as e:
-            # Log error but don't stop processing
+            # fallback-ok: Contract reference resolution should degrade gracefully, returning original data for failed refs to support partial contract loading
             emit_log_event(
                 LogLevel.WARNING,
                 "Failed to resolve contract reference, using original data",
                 {"error": str(e), "error_type": type(e).__name__},
             )
-
-        return None
+            return data  # fallback-ok: Return original data for graceful degradation with partial contract data  # Return original data for graceful degradation
 
     async def process(
         self,

@@ -351,14 +351,13 @@ class NodeEffect(NodeCoreBase):
             return data
 
         except Exception as e:
-            # Log error but don't stop processing
+            # fallback-ok: Contract reference resolution degrades gracefully for partial contract loading support
             emit_log_event(
                 LogLevel.WARNING,
                 "Failed to resolve contract reference, using original data",
                 {"error": str(e), "error_type": type(e).__name__},
             )
-
-        return None
+            return data  # fallback-ok: Return original data for graceful degradation
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
@@ -376,6 +375,8 @@ class NodeEffect(NodeCoreBase):
         start_time = time.time()
         transaction: ModelTransaction | None = None
         retry_count = 0
+        # Ensure consistent operation_id throughout the method to prevent transaction leaks
+        op_id = input_data.operation_id or uuid4()
 
         try:
             # Validate input
@@ -392,7 +393,7 @@ class NodeEffect(NodeCoreBase):
                         message=f"Circuit breaker open for {input_data.effect_type.value}",
                         context={
                             "node_id": str(self.node_id),
-                            "operation_id": str(input_data.operation_id),
+                            "operation_id": str(op_id),
                             "effect_type": input_data.effect_type.value,
                             "circuit_breaker_state": circuit_breaker.state.value,
                         },
@@ -400,24 +401,19 @@ class NodeEffect(NodeCoreBase):
 
             # Create transaction if enabled
             if input_data.transaction_enabled:
-                # Ensure operation_id is not None for transaction
-                if input_data.operation_id is None:
-                    from uuid import uuid4
-
-                    input_data.operation_id = uuid4()
-                transaction = ModelTransaction(input_data.operation_id)
+                transaction = ModelTransaction(op_id)
                 transaction.state = EnumTransactionState.ACTIVE
-                self.active_transactions[str(input_data.operation_id)] = transaction
+                self.active_transactions[str(op_id)] = transaction
 
             # Execute with semaphore limit
             async with self.effect_semaphore:
                 # Execute effect with retry logic
-                result = await self._execute_with_retry(input_data, transaction)
+                result = await self._execute_with_retry(input_data, transaction, op_id)
 
             # Commit transaction if successful
             if transaction:
                 await transaction.commit()
-                del self.active_transactions[str(input_data.operation_id)]
+                del self.active_transactions[str(op_id)]
 
             processing_time = (time.time() - start_time) * 1000
 
@@ -453,7 +449,7 @@ class NodeEffect(NodeCoreBase):
             # Create output
             output = ModelEffectOutput(
                 result=wrapped_result,
-                operation_id=input_data.operation_id or uuid4(),
+                operation_id=op_id,
                 effect_type=input_data.effect_type,
                 transaction_state=(
                     transaction.state if transaction else EnumTransactionState.COMMITTED
@@ -479,7 +475,7 @@ class NodeEffect(NodeCoreBase):
                 f"Effect completed: {input_data.effect_type.value}",
                 {
                     "node_id": str(self.node_id),
-                    "operation_id": str(input_data.operation_id),
+                    "operation_id": str(op_id),
                     "processing_time_ms": processing_time,
                     "retry_count": retry_count,
                     "transaction_id": (
@@ -503,14 +499,14 @@ class NodeEffect(NodeCoreBase):
                         f"Transaction rollback failed: {rollback_error!s}",
                         {
                             "node_id": str(self.node_id),
-                            "operation_id": str(input_data.operation_id),
+                            "operation_id": str(op_id),
                             "original_error": str(e),
                             "rollback_error": str(rollback_error),
                         },
                     )
 
-                if str(input_data.operation_id) in self.active_transactions:
-                    del self.active_transactions[str(input_data.operation_id)]
+                if str(op_id) in self.active_transactions:
+                    del self.active_transactions[str(op_id)]
 
             # Record failure in circuit breaker
             if input_data.circuit_breaker_enabled:
@@ -532,7 +528,7 @@ class NodeEffect(NodeCoreBase):
                 message=f"Effect execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
-                    "operation_id": str(input_data.operation_id),
+                    "operation_id": str(op_id),
                     "effect_type": input_data.effect_type.value,
                     "processing_time_ms": processing_time,
                     "transaction_state": (
@@ -768,6 +764,7 @@ class NodeEffect(NodeCoreBase):
         self,
         input_data: ModelEffectInput,
         transaction: ModelTransaction | None,
+        op_id: UUID,
     ) -> Any:
         """Execute effect with retry logic."""
         retry_count = 0
@@ -797,7 +794,7 @@ class NodeEffect(NodeCoreBase):
                     f"Effect retry {retry_count}/{input_data.max_retries}: {e!s}",
                     {
                         "node_id": str(self.node_id),
-                        "operation_id": str(input_data.operation_id),
+                        "operation_id": str(op_id),
                         "effect_type": input_data.effect_type.value,
                         "retry_count": retry_count,
                         "delay_ms": delay_ms,

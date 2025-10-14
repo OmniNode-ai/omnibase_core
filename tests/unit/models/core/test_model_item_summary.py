@@ -152,7 +152,7 @@ class TestModelItemSummary:
 
         # Create a scenario that would cause an exception
         # by trying to set a field with an incompatible type
-        with pytest.raises(ModelOnexError, match="Operation failed"):
+        with pytest.raises(ModelOnexError, match="Failed to set attribute"):
             item.configure(priority="not_an_int")
 
     def test_serialize_protocol_method(self):
