@@ -14,6 +14,9 @@ from pydantic import BaseModel, Field
 from omnibase_core.errors.error_codes import CoreErrorCode, OnexError
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
+# Discovery constants
+MAX_METADATA_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for metadata files
+
 
 class MixinInfo(BaseModel):
     """
@@ -124,7 +127,7 @@ class MixinDiscovery:
             Dictionary mapping mixin keys to metadata dictionaries.
 
         Raises:
-            OnexError: If metadata file is missing or invalid.
+            OnexError: If metadata file is missing, too large, or invalid.
         """
         if not self.metadata_path.exists():
             raise OnexError(
@@ -135,8 +138,25 @@ class MixinDiscovery:
                 ),
             )
 
+        # Check file size before loading
         try:
-            with open(self.metadata_path) as f:
+            file_size = self.metadata_path.stat().st_size
+            if file_size > MAX_METADATA_FILE_SIZE_BYTES:
+                raise OnexError(
+                    code=CoreErrorCode.VALIDATION_ERROR,
+                    message=(
+                        f"Metadata file too large: {file_size} bytes exceeds "
+                        f"{MAX_METADATA_FILE_SIZE_BYTES} byte limit"
+                    ),
+                )
+        except OSError as e:
+            raise OnexError(
+                code=CoreErrorCode.FILE_READ_ERROR,
+                message=f"Failed to access mixin metadata file: {e}",
+            ) from e
+
+        try:
+            with open(self.metadata_path, encoding="utf-8") as f:
                 data = yaml.safe_load(
                     f
                 )  # yaml-ok: Mixin discovery requires raw YAML parsing for flexible metadata loading
@@ -153,6 +173,16 @@ class MixinDiscovery:
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to parse mixin metadata YAML: {e}",
+            ) from e
+        except UnicodeDecodeError as e:
+            raise OnexError(
+                code=CoreErrorCode.FILE_READ_ERROR,
+                message=f"Metadata file encoding error: {e}",
+            ) from e
+        except PermissionError as e:
+            raise OnexError(
+                code=CoreErrorCode.FILE_READ_ERROR,
+                message=f"Permission denied reading metadata file: {e}",
             ) from e
         except OSError as e:
             raise OnexError(
@@ -190,9 +220,27 @@ class MixinDiscovery:
 
         return cache
 
+    def reload(self) -> None:
+        """
+        Force reload of mixin metadata from disk.
+
+        Clears the cache and forces re-reading of the metadata file on next access.
+        Use this when the metadata file has been updated externally.
+
+        Example:
+            >>> discovery = MixinDiscovery()
+            >>> mixins = discovery.get_all_mixins()  # Loads and caches
+            >>> # ... metadata file updated externally ...
+            >>> discovery.reload()  # Clear cache
+            >>> mixins = discovery.get_all_mixins()  # Reloads from disk
+        """
+        self._mixins_cache = None
+
     def get_all_mixins(self) -> list[MixinInfo]:
         """
         Get all available mixins with metadata.
+
+        Results are cached after first load. Call reload() to force refresh.
 
         Returns:
             List of MixinInfo objects for all available mixins.

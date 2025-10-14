@@ -34,7 +34,9 @@ class TestModelOnexMessageContextBasicInstantiation:
 
     def test_instantiation_with_key_and_value(self):
         """Test creating context with key and value - automatically converts to ModelSchemaValue."""
-        context = ModelOnexMessageContext(key="variable_name", value="test_value")
+        context = ModelOnexMessageContext(
+            key="variable_name", value=ModelSchemaValue.from_value("test_value")
+        )
 
         assert context.key == "variable_name"
         assert isinstance(context.value, ModelSchemaValue)
@@ -75,29 +77,39 @@ class TestModelOnexMessageContextValueField:
 
     def test_value_field_with_string(self):
         """Test value field with string - converts to ModelSchemaValue."""
-        context = ModelOnexMessageContext(key="key", value="string_value")
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value("string_value")
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.string_value == "string_value"
 
     def test_value_field_with_integer(self):
         """Test value field with integer - converts to ModelSchemaValue."""
-        context = ModelOnexMessageContext(key="key", value=42)
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value(42)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.number_value == 42
 
     def test_value_field_with_float(self):
         """Test value field with float - converts to ModelSchemaValue."""
-        context = ModelOnexMessageContext(key="key", value=3.14)
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value(3.14)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.number_value == 3.14
 
     def test_value_field_with_boolean(self):
         """Test value field with boolean - converts to ModelSchemaValue."""
-        context = ModelOnexMessageContext(key="key", value=True)
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value(True)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.boolean_value is True
 
-        context = ModelOnexMessageContext(key="key", value=False)
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value(False)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.boolean_value is False
 
@@ -109,7 +121,9 @@ class TestModelOnexMessageContextValueField:
     def test_value_field_with_list_of_strings(self):
         """Test value field with list - converts to ModelSchemaValue."""
         value_list = ["item1", "item2", "item3"]
-        context = ModelOnexMessageContext(key="key", value=value_list)
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value(value_list)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.value_type == "array"
         assert len(context.value.array_value) == 3
@@ -117,7 +131,9 @@ class TestModelOnexMessageContextValueField:
     def test_value_field_with_dict_of_strings(self):
         """Test value field with dict - converts to ModelSchemaValue."""
         value_dict = {"nested_key1": "value1", "nested_key2": "value2"}
-        context = ModelOnexMessageContext(key="key", value=value_dict)
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value(value_dict)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.value_type == "object"
         assert "nested_key1" in context.value.object_value
@@ -152,27 +168,29 @@ class TestModelOnexMessageContextFieldValidation:
     def test_value_accepts_schema_value_types(self):
         """Test that value field accepts various types and converts to ModelSchemaValue."""
         # String
-        context = ModelOnexMessageContext(value="string")
+        context = ModelOnexMessageContext(value=ModelSchemaValue.from_value("string"))
         assert isinstance(context.value, ModelSchemaValue)
 
         # Integer
-        context = ModelOnexMessageContext(value=42)
+        context = ModelOnexMessageContext(value=ModelSchemaValue.from_value(42))
         assert isinstance(context.value, ModelSchemaValue)
 
         # Float
-        context = ModelOnexMessageContext(value=3.14)
+        context = ModelOnexMessageContext(value=ModelSchemaValue.from_value(3.14))
         assert isinstance(context.value, ModelSchemaValue)
 
         # Boolean
-        context = ModelOnexMessageContext(value=True)
+        context = ModelOnexMessageContext(value=ModelSchemaValue.from_value(True))
         assert isinstance(context.value, ModelSchemaValue)
 
         # List
-        context = ModelOnexMessageContext(value=["a", "b"])
+        context = ModelOnexMessageContext(value=ModelSchemaValue.from_value(["a", "b"]))
         assert isinstance(context.value, ModelSchemaValue)
 
         # Dict
-        context = ModelOnexMessageContext(value={"key": "value"})
+        context = ModelOnexMessageContext(
+            value=ModelSchemaValue.from_value({"key": "value"})
+        )
         assert isinstance(context.value, ModelSchemaValue)
 
         # None
@@ -185,7 +203,9 @@ class TestModelOnexMessageContextSerialization:
 
     def test_model_dump_basic(self):
         """Test model_dump() produces correct dictionary with ModelSchemaValue."""
-        context = ModelOnexMessageContext(key="test_key", value="test_value")
+        context = ModelOnexMessageContext(
+            key="test_key", value=ModelSchemaValue.from_value("test_value")
+        )
 
         dumped = context.model_dump()
 
@@ -196,7 +216,9 @@ class TestModelOnexMessageContextSerialization:
     def test_model_dump_with_complex_value(self):
         """Test model_dump() with complex value types."""
         value_dict = {"nested": "data", "count": "10"}
-        context = ModelOnexMessageContext(key="complex", value=value_dict)
+        context = ModelOnexMessageContext(
+            key="complex", value=ModelSchemaValue.from_value(value_dict)
+        )
 
         dumped = context.model_dump()
 
@@ -216,7 +238,9 @@ class TestModelOnexMessageContextSerialization:
 
     def test_model_dump_json_roundtrip(self):
         """Test JSON serialization roundtrip."""
-        original = ModelOnexMessageContext(key="test_key", value="test_value")
+        original = ModelOnexMessageContext(
+            key="test_key", value=ModelSchemaValue.from_value("test_value")
+        )
 
         json_str = original.model_dump_json()
         restored = ModelOnexMessageContext.model_validate_json(json_str)
@@ -234,7 +258,7 @@ class TestModelOnexMessageContextComplexScenarios:
         """Test context holding error location information."""
         context = ModelOnexMessageContext(
             key="line_content",
-            value="def foo()  # Missing colon",
+            value=ModelSchemaValue.from_value("def foo()  # Missing colon"),
         )
 
         assert context.key == "line_content"
@@ -243,7 +267,9 @@ class TestModelOnexMessageContextComplexScenarios:
 
     def test_context_with_variable_info(self):
         """Test context holding variable information."""
-        context = ModelOnexMessageContext(key="variable_type", value="int")
+        context = ModelOnexMessageContext(
+            key="variable_type", value=ModelSchemaValue.from_value("int")
+        )
 
         assert context.key == "variable_type"
         assert isinstance(context.value, ModelSchemaValue)
@@ -251,7 +277,9 @@ class TestModelOnexMessageContextComplexScenarios:
 
     def test_context_with_numeric_value(self):
         """Test context with numeric context value."""
-        context = ModelOnexMessageContext(key="line_number", value=42)
+        context = ModelOnexMessageContext(
+            key="line_number", value=ModelSchemaValue.from_value(42)
+        )
 
         assert context.key == "line_number"
         assert isinstance(context.value, ModelSchemaValue)
@@ -260,9 +288,13 @@ class TestModelOnexMessageContextComplexScenarios:
     def test_multiple_contexts_in_list(self):
         """Test creating multiple context instances."""
         contexts = [
-            ModelOnexMessageContext(key="file", value="main.py"),
-            ModelOnexMessageContext(key="function", value="main"),
-            ModelOnexMessageContext(key="line", value=10),
+            ModelOnexMessageContext(
+                key="file", value=ModelSchemaValue.from_value("main.py")
+            ),
+            ModelOnexMessageContext(
+                key="function", value=ModelSchemaValue.from_value("main")
+            ),
+            ModelOnexMessageContext(key="line", value=ModelSchemaValue.from_value(10)),
         ]
 
         assert len(contexts) == 3
@@ -307,29 +339,39 @@ class TestModelOnexMessageContextEdgeCases:
 
     def test_empty_string_key(self):
         """Test context with empty string key."""
-        context = ModelOnexMessageContext(key="", value="value")
+        context = ModelOnexMessageContext(
+            key="", value=ModelSchemaValue.from_value("value")
+        )
         assert context.key == ""
 
     def test_empty_string_value(self):
         """Test context with empty string value."""
-        context = ModelOnexMessageContext(key="key", value="")
+        context = ModelOnexMessageContext(
+            key="key", value=ModelSchemaValue.from_value("")
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.string_value == ""
 
     def test_zero_integer_value(self):
         """Test context with zero integer value."""
-        context = ModelOnexMessageContext(key="count", value=0)
+        context = ModelOnexMessageContext(
+            key="count", value=ModelSchemaValue.from_value(0)
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.number_value == 0
 
     def test_empty_list_value(self):
         """Test context with empty list value."""
-        context = ModelOnexMessageContext(key="items", value=[])
+        context = ModelOnexMessageContext(
+            key="items", value=ModelSchemaValue.from_value([])
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.array_value == []
 
     def test_empty_dict_value(self):
         """Test context with empty dict value."""
-        context = ModelOnexMessageContext(key="data", value={})
+        context = ModelOnexMessageContext(
+            key="data", value=ModelSchemaValue.from_value({})
+        )
         assert isinstance(context.value, ModelSchemaValue)
         assert context.value.object_value == {}

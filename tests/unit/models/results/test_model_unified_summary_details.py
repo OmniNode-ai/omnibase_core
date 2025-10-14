@@ -34,7 +34,9 @@ class TestModelUnifiedSummaryDetailsBasicInstantiation:
 
     def test_instantiation_with_key_and_value(self):
         """Test creating details with key and value - automatically converts to ModelSchemaValue."""
-        details = ModelUnifiedSummaryDetails(key="coverage", value="85.5")
+        details = ModelUnifiedSummaryDetails(
+            key="coverage", value=ModelSchemaValue.from_value("85.5")
+        )
 
         assert details.key == "coverage"
         assert isinstance(details.value, ModelSchemaValue)
@@ -75,29 +77,39 @@ class TestModelUnifiedSummaryDetailsValueField:
 
     def test_value_field_with_string(self):
         """Test value field with string - converts to ModelSchemaValue."""
-        details = ModelUnifiedSummaryDetails(key="key", value="string_value")
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value("string_value")
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.string_value == "string_value"
 
     def test_value_field_with_integer(self):
         """Test value field with integer - converts to ModelSchemaValue."""
-        details = ModelUnifiedSummaryDetails(key="key", value=42)
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value(42)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.number_value == 42
 
     def test_value_field_with_float(self):
         """Test value field with float - converts to ModelSchemaValue."""
-        details = ModelUnifiedSummaryDetails(key="key", value=85.5)
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value(85.5)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.number_value == 85.5
 
     def test_value_field_with_boolean(self):
         """Test value field with boolean - converts to ModelSchemaValue."""
-        details = ModelUnifiedSummaryDetails(key="key", value=True)
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value(True)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.boolean_value is True
 
-        details = ModelUnifiedSummaryDetails(key="key", value=False)
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value(False)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.boolean_value is False
 
@@ -109,7 +121,9 @@ class TestModelUnifiedSummaryDetailsValueField:
     def test_value_field_with_list_of_strings(self):
         """Test value field with list - converts to ModelSchemaValue."""
         value_list = ["item1", "item2", "item3"]
-        details = ModelUnifiedSummaryDetails(key="key", value=value_list)
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value(value_list)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.value_type == "array"
         assert len(details.value.array_value) == 3
@@ -117,7 +131,9 @@ class TestModelUnifiedSummaryDetailsValueField:
     def test_value_field_with_dict_of_strings(self):
         """Test value field with dict - converts to ModelSchemaValue."""
         value_dict = {"nested_key": "nested_value"}
-        details = ModelUnifiedSummaryDetails(key="key", value=value_dict)
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value(value_dict)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.value_type == "object"
         assert "nested_key" in details.value.object_value
@@ -154,27 +170,33 @@ class TestModelUnifiedSummaryDetailsFieldValidation:
     def test_value_accepts_schema_value_types(self):
         """Test that value field accepts various types and converts to ModelSchemaValue."""
         # String
-        details = ModelUnifiedSummaryDetails(value="string")
+        details = ModelUnifiedSummaryDetails(
+            value=ModelSchemaValue.from_value("string")
+        )
         assert isinstance(details.value, ModelSchemaValue)
 
         # Integer
-        details = ModelUnifiedSummaryDetails(value=42)
+        details = ModelUnifiedSummaryDetails(value=ModelSchemaValue.from_value(42))
         assert isinstance(details.value, ModelSchemaValue)
 
         # Float
-        details = ModelUnifiedSummaryDetails(value=3.14)
+        details = ModelUnifiedSummaryDetails(value=ModelSchemaValue.from_value(3.14))
         assert isinstance(details.value, ModelSchemaValue)
 
         # Boolean
-        details = ModelUnifiedSummaryDetails(value=True)
+        details = ModelUnifiedSummaryDetails(value=ModelSchemaValue.from_value(True))
         assert isinstance(details.value, ModelSchemaValue)
 
         # List
-        details = ModelUnifiedSummaryDetails(value=["a", "b"])
+        details = ModelUnifiedSummaryDetails(
+            value=ModelSchemaValue.from_value(["a", "b"])
+        )
         assert isinstance(details.value, ModelSchemaValue)
 
         # Dict
-        details = ModelUnifiedSummaryDetails(value={"key": "value"})
+        details = ModelUnifiedSummaryDetails(
+            value=ModelSchemaValue.from_value({"key": "value"})
+        )
         assert isinstance(details.value, ModelSchemaValue)
 
         # None
@@ -187,7 +209,9 @@ class TestModelUnifiedSummaryDetailsSerialization:
 
     def test_model_dump_basic(self):
         """Test model_dump() produces correct dictionary with ModelSchemaValue."""
-        details = ModelUnifiedSummaryDetails(key="metric", value="85.5")
+        details = ModelUnifiedSummaryDetails(
+            key="metric", value=ModelSchemaValue.from_value("85.5")
+        )
 
         dumped = details.model_dump()
 
@@ -198,7 +222,9 @@ class TestModelUnifiedSummaryDetailsSerialization:
     def test_model_dump_with_complex_value(self):
         """Test model_dump() with complex value types."""
         value_dict = {"nested": "data", "count": "10"}
-        details = ModelUnifiedSummaryDetails(key="complex", value=value_dict)
+        details = ModelUnifiedSummaryDetails(
+            key="complex", value=ModelSchemaValue.from_value(value_dict)
+        )
 
         dumped = details.model_dump()
 
@@ -218,7 +244,9 @@ class TestModelUnifiedSummaryDetailsSerialization:
 
     def test_model_dump_json_roundtrip(self):
         """Test JSON serialization roundtrip."""
-        original = ModelUnifiedSummaryDetails(key="metric", value="85.5")
+        original = ModelUnifiedSummaryDetails(
+            key="metric", value=ModelSchemaValue.from_value("85.5")
+        )
 
         json_str = original.model_dump_json()
         restored = ModelUnifiedSummaryDetails.model_validate_json(json_str)
@@ -234,7 +262,9 @@ class TestModelUnifiedSummaryDetailsComplexScenarios:
 
     def test_details_with_coverage_metric(self):
         """Test details holding coverage metric."""
-        details = ModelUnifiedSummaryDetails(key="code_coverage", value="85.5")
+        details = ModelUnifiedSummaryDetails(
+            key="code_coverage", value=ModelSchemaValue.from_value("85.5")
+        )
 
         assert details.key == "code_coverage"
         assert isinstance(details.value, ModelSchemaValue)
@@ -242,7 +272,9 @@ class TestModelUnifiedSummaryDetailsComplexScenarios:
 
     def test_details_with_duration_metric(self):
         """Test details holding duration metric."""
-        details = ModelUnifiedSummaryDetails(key="total_duration_seconds", value="120")
+        details = ModelUnifiedSummaryDetails(
+            key="total_duration_seconds", value=ModelSchemaValue.from_value("120")
+        )
 
         assert details.key == "total_duration_seconds"
         assert isinstance(details.value, ModelSchemaValue)
@@ -250,7 +282,9 @@ class TestModelUnifiedSummaryDetailsComplexScenarios:
 
     def test_details_with_boolean_flag(self):
         """Test details with boolean flag."""
-        details = ModelUnifiedSummaryDetails(key="auto_fix_applied", value=True)
+        details = ModelUnifiedSummaryDetails(
+            key="auto_fix_applied", value=ModelSchemaValue.from_value(True)
+        )
 
         assert details.key == "auto_fix_applied"
         assert isinstance(details.value, ModelSchemaValue)
@@ -258,7 +292,9 @@ class TestModelUnifiedSummaryDetailsComplexScenarios:
 
     def test_details_with_numeric_value(self):
         """Test details with numeric value."""
-        details = ModelUnifiedSummaryDetails(key="test_count", value=250)
+        details = ModelUnifiedSummaryDetails(
+            key="test_count", value=ModelSchemaValue.from_value(250)
+        )
 
         assert details.key == "test_count"
         assert isinstance(details.value, ModelSchemaValue)
@@ -267,9 +303,15 @@ class TestModelUnifiedSummaryDetailsComplexScenarios:
     def test_multiple_details_in_list(self):
         """Test creating multiple details instances."""
         details_list = [
-            ModelUnifiedSummaryDetails(key="coverage", value="85.5"),
-            ModelUnifiedSummaryDetails(key="duration", value="120"),
-            ModelUnifiedSummaryDetails(key="test_count", value=250),
+            ModelUnifiedSummaryDetails(
+                key="coverage", value=ModelSchemaValue.from_value("85.5")
+            ),
+            ModelUnifiedSummaryDetails(
+                key="duration", value=ModelSchemaValue.from_value("120")
+            ),
+            ModelUnifiedSummaryDetails(
+                key="test_count", value=ModelSchemaValue.from_value(250)
+            ),
         ]
 
         assert len(details_list) == 3
@@ -314,29 +356,39 @@ class TestModelUnifiedSummaryDetailsEdgeCases:
 
     def test_empty_string_key(self):
         """Test details with empty string key."""
-        details = ModelUnifiedSummaryDetails(key="", value="value")
+        details = ModelUnifiedSummaryDetails(
+            key="", value=ModelSchemaValue.from_value("value")
+        )
         assert details.key == ""
 
     def test_empty_string_value(self):
         """Test details with empty string value."""
-        details = ModelUnifiedSummaryDetails(key="key", value="")
+        details = ModelUnifiedSummaryDetails(
+            key="key", value=ModelSchemaValue.from_value("")
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.string_value == ""
 
     def test_zero_integer_value(self):
         """Test details with zero integer value."""
-        details = ModelUnifiedSummaryDetails(key="count", value=0)
+        details = ModelUnifiedSummaryDetails(
+            key="count", value=ModelSchemaValue.from_value(0)
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.number_value == 0
 
     def test_empty_list_value(self):
         """Test details with empty list value."""
-        details = ModelUnifiedSummaryDetails(key="items", value=[])
+        details = ModelUnifiedSummaryDetails(
+            key="items", value=ModelSchemaValue.from_value([])
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.array_value == []
 
     def test_empty_dict_value(self):
         """Test details with empty dict value."""
-        details = ModelUnifiedSummaryDetails(key="data", value={})
+        details = ModelUnifiedSummaryDetails(
+            key="data", value=ModelSchemaValue.from_value({})
+        )
         assert isinstance(details.value, ModelSchemaValue)
         assert details.value.object_value == {}

@@ -29,6 +29,18 @@ from omnibase_core.models.contracts.model_contract_orchestrator import (
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.models.metadata.model_semver import ModelSemVer
 
+# Validation constants
+MAX_YAML_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for YAML files
+MAX_CODE_SIZE_BYTES = 5 * 1024 * 1024  # 5MB limit for model code
+MIN_DESCRIPTION_LENGTH = 10  # Minimum characters for description
+VIOLATION_SCORE_PENALTY = 0.2  # Score reduction per violation
+WARNING_SCORE_PENALTY = 0.05  # Score reduction per warning
+MINOR_VIOLATION_PENALTY = 0.1  # Small penalty for minor issues
+MODEL_NOT_FOUND_PENALTY = 0.2  # Penalty for missing models
+NO_MODEL_CLASSES_PENALTY = 0.3  # Penalty for no model classes
+VIOLATION_PENALTY_MODEL_COMPLIANCE = 0.15  # Model compliance violation penalty
+WARNING_PENALTY_MODEL_COMPLIANCE = 0.05  # Model compliance warning penalty
+
 
 class ProtocolContractValidationResult(BaseModel):
     """
@@ -130,11 +142,22 @@ class ProtocolContractValidator:
 
         Returns:
             ProtocolContractValidationResult with validation details and scoring
+
+        Raises:
+            OnexError: If content size exceeds limits
         """
         violations: list[str] = []
         warnings: list[str] = []
         suggestions: list[str] = []
         score = 1.0
+
+        # Step 0: Validate size limits
+        content_size = len(contract_content.encode("utf-8"))
+        if content_size > MAX_YAML_SIZE_BYTES:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"YAML content too large: {content_size} bytes exceeds {MAX_YAML_SIZE_BYTES} byte limit",
+            )
 
         # Step 1: Parse YAML content
         try:
@@ -173,9 +196,10 @@ class ProtocolContractValidator:
             if "version" in yaml_data and isinstance(yaml_data["version"], dict):
                 try:
                     yaml_data["version"] = ModelSemVer(**yaml_data["version"])
-                except Exception:
-                    # Keep as dict if conversion fails - let Pydantic validation handle it
-                    pass
+                except ValueError as e:
+                    violations.append(f"Invalid ModelSemVer format: {e}")
+                except TypeError as e:
+                    violations.append(f"Invalid ModelSemVer type: {e}")
 
         except yaml.YAMLError as e:
             return ProtocolContractValidationResult(
@@ -218,18 +242,22 @@ class ProtocolContractValidator:
                 field = ".".join(str(loc) for loc in error["loc"])
                 message = error["msg"]
                 violations.append(f"{field}: {message}")
-                score -= 0.1
+                score -= MINOR_VIOLATION_PENALTY
 
             # Add suggestions based on common errors
             self._add_suggestions_for_errors(e, suggestions)
 
         except OnexError as e:
             violations.append(f"ONEX validation error: {e.message}")
-            score -= 0.2
+            score -= VIOLATION_SCORE_PENALTY
 
-        except Exception as e:
-            violations.append(f"Unexpected validation error: {e}")
-            score = 0.0
+        except ValueError as e:
+            violations.append(f"Value error in contract: {e}")
+            score -= VIOLATION_SCORE_PENALTY
+
+        except TypeError as e:
+            violations.append(f"Type error in contract: {e}")
+            score -= VIOLATION_SCORE_PENALTY
 
         # Ensure score is within bounds
         score = max(0.0, min(1.0, score))
@@ -258,11 +286,29 @@ class ProtocolContractValidator:
 
         Returns:
             ProtocolContractValidationResult with compliance details
+
+        Raises:
+            OnexError: If content size exceeds limits
         """
         violations: list[str] = []
         warnings: list[str] = []
         suggestions: list[str] = []
         score = 1.0
+
+        # Step 0: Validate size limits
+        code_size = len(model_code.encode("utf-8"))
+        if code_size > MAX_CODE_SIZE_BYTES:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Model code too large: {code_size} bytes exceeds {MAX_CODE_SIZE_BYTES} byte limit",
+            )
+
+        yaml_size = len(contract_yaml.encode("utf-8"))
+        if yaml_size > MAX_YAML_SIZE_BYTES:
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Contract YAML too large: {yaml_size} bytes exceeds {MAX_YAML_SIZE_BYTES} byte limit",
+            )
 
         # Step 1: Parse YAML contract
         try:
@@ -294,12 +340,19 @@ class ProtocolContractValidator:
                 violations=[f"Python syntax error: {e}"],
                 interface_version=self.interface_version,
             )
+        except RecursionError as e:
+            return ProtocolContractValidationResult(
+                is_valid=False,
+                score=0.0,
+                violations=[f"Code too deeply nested: {e}"],
+                interface_version=self.interface_version,
+            )
 
         # Step 3: Extract model definitions
         model_classes = self._extract_model_classes(tree)
         if not model_classes:
             violations.append("No Pydantic model classes found in code")
-            score -= 0.3
+            score -= NO_MODEL_CLASSES_PENALTY
 
         # Step 4: Validate model against contract
         contract_name = yaml_data.get("name", "")
@@ -311,7 +364,7 @@ class ProtocolContractValidator:
             model_name = input_model.split(".")[-1]
             if not any(cls["name"] == model_name for cls in model_classes):
                 violations.append(f"Input model '{model_name}' not found in code")
-                score -= 0.2
+                score -= MODEL_NOT_FOUND_PENALTY
             else:
                 suggestions.append(
                     f"Input model '{model_name}' found - verify fields match contract"
@@ -321,7 +374,7 @@ class ProtocolContractValidator:
             model_name = output_model.split(".")[-1]
             if not any(cls["name"] == model_name for cls in model_classes):
                 violations.append(f"Output model '{model_name}' not found in code")
-                score -= 0.2
+                score -= MODEL_NOT_FOUND_PENALTY
             else:
                 suggestions.append(
                     f"Output model '{model_name}' found - verify fields match contract"
@@ -342,7 +395,13 @@ class ProtocolContractValidator:
 
         # Calculate final score
         score = max(
-            0.0, min(1.0, score - (len(violations) * 0.15) - (len(warnings) * 0.05))
+            0.0,
+            min(
+                1.0,
+                score
+                - (len(violations) * VIOLATION_PENALTY_MODEL_COMPLIANCE)
+                - (len(warnings) * WARNING_PENALTY_MODEL_COMPLIANCE),
+            ),
         )
 
         return ProtocolContractValidationResult(
@@ -389,9 +448,9 @@ class ProtocolContractValidator:
         # Check description
         if not contract.description:
             warnings.append("Contract should have a meaningful description")
-        elif len(contract.description) < 10:
+        elif len(contract.description) < MIN_DESCRIPTION_LENGTH:
             warnings.append(
-                "Contract description is too short (minimum 10 characters recommended)"
+                f"Contract description is too short (minimum {MIN_DESCRIPTION_LENGTH} characters recommended)"
             )
 
         # Check input/output models
@@ -422,10 +481,10 @@ class ProtocolContractValidator:
         base_score = 1.0
 
         # Each violation reduces score significantly
-        violation_penalty = len(violations) * 0.2
+        violation_penalty = len(violations) * VIOLATION_SCORE_PENALTY
 
         # Each warning reduces score slightly
-        warning_penalty = len(warnings) * 0.05
+        warning_penalty = len(warnings) * WARNING_SCORE_PENALTY
 
         final_score = base_score - violation_penalty - warning_penalty
 
@@ -547,12 +606,44 @@ class ProtocolContractValidator:
         parts = module.split(".")
         return all(part.isidentifier() for part in parts)
 
+    def _validate_safe_path(self, path: Path, base_dir: Path | None = None) -> bool:
+        """
+        Validate that path is safe and doesn't escape expected directories.
+
+        Args:
+            path: Path to validate
+            base_dir: Base directory to constrain path within (optional)
+
+        Returns:
+            True if path is safe, False otherwise
+        """
+        try:
+            resolved_path = path.resolve()
+
+            # Check if file is a regular file (not directory, symlink, etc.)
+            if resolved_path.exists() and not resolved_path.is_file():
+                return False
+
+            # If base_dir specified, ensure path is within it
+            if base_dir is not None:
+                try:
+                    resolved_path.relative_to(base_dir.resolve())
+                except ValueError:
+                    # Path escapes base directory
+                    return False
+
+            return True
+
+        except (OSError, RuntimeError):
+            return False
+
     def validate_contract_file(
         self,
         file_path: str | Path,
         contract_type: Literal[
             "effect", "compute", "reducer", "orchestrator"
         ] = "effect",
+        base_dir: Path | None = None,
     ) -> ProtocolContractValidationResult:
         """
         Validate a YAML contract file.
@@ -560,11 +651,22 @@ class ProtocolContractValidator:
         Args:
             file_path: Path to YAML contract file
             contract_type: Type of contract to validate against
+            base_dir: Optional base directory to constrain file path within
 
         Returns:
             ProtocolContractValidationResult with validation details
+
+        Raises:
+            OnexError: If path validation fails or file size exceeds limits
         """
         path = Path(file_path)
+
+        # Validate path safety
+        if not self._validate_safe_path(path, base_dir):
+            raise OnexError(
+                code=CoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid or unsafe file path: {file_path}",
+            )
 
         if not path.exists():
             return ProtocolContractValidationResult(
@@ -575,16 +677,48 @@ class ProtocolContractValidator:
                 interface_version=self.interface_version,
             )
 
+        # Check file size before reading
         try:
-            content = path.read_text()
-            return self.validate_contract_yaml(content, contract_type)
-        except (
-            Exception
-        ) as e:  # fallback-ok: Contract validation collects errors for batch reporting instead of failing fast
+            file_size = path.stat().st_size
+            if file_size > MAX_YAML_SIZE_BYTES:
+                raise OnexError(
+                    code=CoreErrorCode.VALIDATION_ERROR,
+                    message=f"Contract file too large: {file_size} bytes exceeds {MAX_YAML_SIZE_BYTES} byte limit",
+                )
+        except OSError as e:
             return ProtocolContractValidationResult(
                 is_valid=False,
                 score=0.0,
-                violations=[f"Error reading contract file: {e}"],
+                violations=[f"Error accessing contract file: {e}"],
+                contract_type=contract_type,
+                interface_version=self.interface_version,
+            )
+
+        # Read and validate file content
+        try:
+            content = path.read_text(encoding="utf-8")
+            return self.validate_contract_yaml(content, contract_type)
+        except UnicodeDecodeError as e:
+            return ProtocolContractValidationResult(
+                is_valid=False,
+                score=0.0,
+                violations=[f"Contract file encoding error: {e}"],
+                contract_type=contract_type,
+                interface_version=self.interface_version,
+            )
+        except PermissionError as e:
+            return ProtocolContractValidationResult(
+                is_valid=False,
+                score=0.0,
+                violations=[f"Permission denied reading contract file: {e}"],
+                contract_type=contract_type,
+                interface_version=self.interface_version,
+            )
+        except OSError as e:
+            return ProtocolContractValidationResult(
+                is_valid=False,
+                score=0.0,
+                violations=[f"OS error reading contract file: {e}"],
                 contract_type=contract_type,
                 interface_version=self.interface_version,
             )
