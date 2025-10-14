@@ -107,6 +107,8 @@ __all__ = [
     # Type constraints and protocols
     "ModelBaseCollection",
     "ModelBaseFactory",
+    "BaseCollection",
+    "BaseFactory",
     "BasicValueType",
     "CollectionItemType",
     "ComplexContextValueType",

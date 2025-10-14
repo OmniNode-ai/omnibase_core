@@ -215,7 +215,7 @@ class ModelStateManagementSubcontract(BaseModel):
             if v < 10:
                 msg = "cache_size must be at least 10 when caching is enabled"
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                     details=ModelErrorContext.with_context(
                         {
@@ -236,7 +236,7 @@ class ModelStateManagementSubcontract(BaseModel):
             if v < 60000:  # 1 minute minimum
                 msg = "cleanup_interval_ms must be at least 60000ms (1 minute)"
                 raise OnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    error_code=CoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                     details=ModelErrorContext.with_context(
                         {

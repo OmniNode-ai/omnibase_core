@@ -16,8 +16,7 @@ Type-Only Imports (Protected by TYPE_CHECKING):
 - omnibase_core.errors.error_codes (used only for type hints)
 - omnibase_core.models.base (lazy loaded via __getattr__)
 
-Lazy Imports (Only loaded when functions are called):
-- errors.error_codes: Imported inside validate_primitive_value() and validate_context_value()
+Lazy Imports:
 - models.base: Loaded via __getattr__ when accessed
 
 Import Chain Position:
@@ -253,12 +252,12 @@ def is_metadata_provider(obj: object) -> bool:
 
 def is_primitive_value(obj: object) -> bool:
     """Check if object is a valid primitive value (str, int, float, bool)."""
-    return isinstance(obj, str | int | float | bool)
+    return isinstance(obj, (str, int, float, bool))
 
 
 def is_context_value(obj: object) -> bool:
     """Check if object is a valid context value (primitive, list, or dict)."""
-    if isinstance(obj, str | int | float | bool):
+    if isinstance(obj, (str, int, float, bool)):
         return True
     if isinstance(obj, list):
         return True
