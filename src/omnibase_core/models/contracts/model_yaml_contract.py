@@ -32,11 +32,11 @@ class ModelYamlContract(BaseModel):
     - node_type: Node type classification
     - description: Optional contract description
 
-    All other fields are preserved as additional data to support flexible contract formats.
+    Extra fields are ignored to maintain a clean contract structure.
     """
 
     model_config = {
-        "extra": "allow",  # Allow and preserve extra fields like event_subscriptions
+        "extra": "ignore",  # Ignore extra fields to maintain clean contract structure
         "use_enum_values": False,
         "validate_assignment": True,
     }
@@ -56,6 +56,11 @@ class ModelYamlContract(BaseModel):
     description: str | None = Field(
         default=None,
         description="Human-readable contract description",
+    )
+
+    event_subscriptions: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Event subscription patterns for event-driven execution",
     )
 
     @field_validator("node_type", mode="before")

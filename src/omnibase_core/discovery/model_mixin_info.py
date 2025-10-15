@@ -12,6 +12,10 @@ from pydantic import BaseModel, Field
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 
+# ONEX NAMING VALIDATION: This model correctly follows the Model* prefix convention.
+# Any validator suggesting "MixinModelInfo" is incorrect - all Pydantic BaseModel
+# subclasses must start with "Model" per ONEX architectural standards.
+# Correct: ModelMixinInfo | Incorrect: MixinModelInfo
 class ModelMixinInfo(BaseModel):
     """
     Metadata information for a single mixin.

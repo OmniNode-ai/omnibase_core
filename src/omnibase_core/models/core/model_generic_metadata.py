@@ -78,16 +78,16 @@ class ModelGenericMetadata(BaseModel):
         cls,
         data: dict[str, Any] | None,
     ) -> Optional["ModelGenericMetadata"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
         return cls(**data)
 
     @field_serializer("created_at", "updated_at")
-    def serialize_datetime(self, value: Any) -> None:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if value:
             return value.isoformat()
-        return value
+        return None
 
     # ProtocolMetadata required methods
     async def validate_metadata(self) -> bool:

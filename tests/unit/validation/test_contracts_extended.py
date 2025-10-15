@@ -723,15 +723,41 @@ class TestTimeoutHandler:
     """Test timeout_handler function."""
 
     def test_timeout_handler_raises_modelonex_error(self) -> None:
-        """Test timeout handler raises ModelOnexError."""
+        """Test timeout handler raises ModelOnexError.
+
+        This test verifies that the timeout_handler function correctly raises
+        a ModelOnexError with the appropriate error code and message when called.
+
+        Note: The error is EXPECTED to be raised - this is not a test failure.
+        The pytest.raises context manager catches the exception to verify it.
+        """
+        import signal
+
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
-        with pytest.raises(ModelOnexError) as exc_info:
-            timeout_handler(0, None)
+        # Save current signal handler state (in case other tests polluted it)
+        original_handler = signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.TIMEOUT_ERROR
-        assert "Validation timed out" in exc_info.value.message
+        try:
+            # Test that timeout_handler raises the correct exception
+            with pytest.raises(ModelOnexError) as exc_info:
+                timeout_handler(0, None)
+
+            # Verify the exception has the correct error code
+            assert exc_info.value.error_code == EnumCoreErrorCode.TIMEOUT_ERROR, (
+                f"Expected error code {EnumCoreErrorCode.TIMEOUT_ERROR}, "
+                f"got {exc_info.value.error_code}"
+            )
+
+            # Verify the exception has the correct message
+            assert "Validation timed out" in exc_info.value.message, (
+                f"Expected message to contain 'Validation timed out', "
+                f"got '{exc_info.value.message}'"
+            )
+        finally:
+            # Restore original signal handler to avoid test pollution
+            signal.signal(signal.SIGALRM, original_handler)
 
 
 class TestValidateYamlFileErrors:

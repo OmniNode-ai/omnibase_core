@@ -200,7 +200,7 @@ class ModelConnectionProperties(BaseModel):
         return None
 
     @field_serializer("measurement_start", "measurement_end")
-    def serialize_datetime(self, value: Any) -> Any:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if value:
             return value.isoformat()
-        return value
+        return None

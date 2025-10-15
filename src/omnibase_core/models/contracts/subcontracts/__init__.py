@@ -1,7 +1,3 @@
-from typing import Union
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 ONEX Subcontract Models - Contracts Module.
 
@@ -21,8 +17,6 @@ providing clean separation between node logic and subcontract functionality.
 ONEX Compliance: Strong typing with zero tolerance for Any types.
 """
 
-from typing import Any
-
 # Subcontract model imports (alphabetical order)
 from .model_aggregation_function import ModelAggregationFunction
 from .model_aggregation_performance import ModelAggregationPerformance
@@ -33,12 +27,17 @@ from .model_cache_key_strategy import ModelCacheKeyStrategy
 from .model_cache_performance import ModelCachePerformance
 from .model_caching_subcontract import ModelCachingSubcontract
 from .model_circuit_breaker import ModelCircuitBreaker
+from .model_circuit_breaker_subcontract import ModelCircuitBreakerSubcontract
+from .model_component_health import ModelComponentHealth
+from .model_component_health_collection import ModelComponentHealthCollection
 from .model_configuration_source import ModelConfigurationSource
 from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
 from .model_data_grouping import ModelDataGrouping
+from .model_dependency_health import ModelDependencyHealth
+from .model_event_bus_subcontract import ModelEventBusSubcontract
 from .model_event_definition import ModelEventDefinition
 from .model_event_persistence import ModelEventPersistence
 from .model_event_routing import ModelEventRouting
@@ -51,14 +50,22 @@ from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
 from .model_fsm_transition_action import ModelFSMTransitionAction
 from .model_fsm_transition_condition import ModelFSMTransitionCondition
+from .model_health_check_result import ModelHealthCheckResult
+from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_load_balancing import ModelLoadBalancing
+from .model_logging_subcontract import ModelLoggingSubcontract
+from .model_metrics_subcontract import ModelMetricsSubcontract
 from .model_node_assignment import ModelNodeAssignment
+from .model_node_health_status import ModelNodeHealthStatus
 from .model_node_progress import ModelNodeProgress
 from .model_progress_status import ModelProgressStatus
 from .model_request_transformation import ModelRequestTransformation
+from .model_retry_subcontract import ModelRetrySubcontract
 from .model_route_definition import ModelRouteDefinition
 from .model_routing_metrics import ModelRoutingMetrics
 from .model_routing_subcontract import ModelRoutingSubcontract
+from .model_security_subcontract import ModelSecuritySubcontract
+from .model_serialization_subcontract import ModelSerializationSubcontract
 from .model_state_management_subcontract import ModelStateManagementSubcontract
 from .model_state_persistence import ModelStatePersistence
 from .model_state_synchronization import ModelStateSynchronization
@@ -66,6 +73,7 @@ from .model_state_validation import ModelStateValidation
 from .model_state_versioning import ModelStateVersioning
 from .model_statistical_computation import ModelStatisticalComputation
 from .model_synchronization_point import ModelSynchronizationPoint
+from .model_validation_subcontract import ModelValidationSubcontract
 from .model_windowing_strategy import ModelWindowingStrategy
 from .model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
@@ -90,12 +98,15 @@ __all__ = [
     "ModelCacheInvalidation",
     "ModelCacheKeyStrategy",
     "ModelCachePerformance",
+    # Circuit breaker subcontracts
+    "ModelCircuitBreakerSubcontract",
     # Configuration subcontracts and components
     "ModelConfigurationSubcontract",
     "ModelConfigurationSource",
     "ModelConfigurationValidation",
     # Event type subcontracts and components
     "ModelEventTypeSubcontract",
+    "ModelEventBusSubcontract",
     "ModelEventDefinition",
     "ModelEventPersistence",
     "ModelEventRouting",
@@ -107,6 +118,19 @@ __all__ = [
     "ModelFSMStateTransition",
     "ModelFSMTransitionAction",
     "ModelFSMTransitionCondition",
+    # Health check subcontracts and components
+    "ModelComponentHealth",
+    "ModelComponentHealthCollection",
+    "ModelDependencyHealth",
+    "ModelHealthCheckResult",
+    "ModelHealthCheckSubcontract",
+    "ModelNodeHealthStatus",
+    # Logging subcontracts
+    "ModelLoggingSubcontract",
+    # Metrics subcontracts
+    "ModelMetricsSubcontract",
+    # Retry subcontracts
+    "ModelRetrySubcontract",
     # Routing subcontracts and components
     "ModelRoutingSubcontract",
     "ModelCircuitBreaker",
@@ -114,12 +138,18 @@ __all__ = [
     "ModelRequestTransformation",
     "ModelRouteDefinition",
     "ModelRoutingMetrics",
+    # Security subcontracts
+    "ModelSecuritySubcontract",
+    # Serialization subcontracts
+    "ModelSerializationSubcontract",
     # State management subcontracts and components
     "ModelStateManagementSubcontract",
     "ModelStatePersistence",
     "ModelStateSynchronization",
     "ModelStateValidation",
     "ModelStateVersioning",
+    # Validation subcontracts
+    "ModelValidationSubcontract",
     # Workflow coordination subcontracts and components
     "ModelWorkflowCoordinationSubcontract",
     "ModelCoordinationResult",

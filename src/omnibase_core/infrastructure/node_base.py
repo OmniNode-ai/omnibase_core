@@ -50,8 +50,8 @@ from omnibase_spi.protocols.types.protocol_core_types import (
     ProtocolState,
 )
 
-T = TypeVar("T")
-U = TypeVar("U")
+T_INPUT_STATE = TypeVar("T_INPUT_STATE")
+T_OUTPUT_STATE = TypeVar("T_OUTPUT_STATE")
 
 
 # Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
@@ -60,7 +60,7 @@ U = TypeVar("U")
 
 class NodeBase(
     WorkflowReducerInterface,
-    Generic[T, U],
+    Generic[T_INPUT_STATE, T_OUTPUT_STATE],
 ):
     """
     Enhanced NodeBase class implementing ONEX architecture patterns.
@@ -378,7 +378,7 @@ class NodeBase(
 
     # ===== ASYNC INTERFACE =====
 
-    async def run_async(self, input_state: T) -> U:
+    async def run_async(self, input_state: T_INPUT_STATE) -> T_OUTPUT_STATE:
         """
         Universal async run method with event emission and correlation tracking.
 
@@ -476,7 +476,7 @@ class NodeBase(
                 correlation_id=correlation_id,
             ) from e
 
-    async def process_async(self, input_state: T) -> U:
+    async def process_async(self, input_state: T_INPUT_STATE) -> T_OUTPUT_STATE:
         """
         Process method that delegates to the main tool.
 
@@ -571,7 +571,7 @@ class NodeBase(
 
     # ===== SYNC INTERFACE =====
 
-    def run(self, input_state: T) -> U:
+    def run(self, input_state: T_INPUT_STATE) -> T_OUTPUT_STATE:
         """
         Execute the node synchronously.
 
@@ -587,7 +587,7 @@ class NodeBase(
         # Run async version and return the result directly
         return asyncio.run(self.run_async(input_state))
 
-    def process(self, input_state: T) -> U:
+    def process(self, input_state: T_INPUT_STATE) -> T_OUTPUT_STATE:
         """
         Synchronous process method for current standards.
 

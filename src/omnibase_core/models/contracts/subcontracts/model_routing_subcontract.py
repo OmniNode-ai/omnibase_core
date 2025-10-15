@@ -28,7 +28,7 @@ import uuid
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -225,17 +225,13 @@ class ModelRoutingSubcontract(BaseModel):
         description="Enable workflow-aware routing for multi-step processes",
     )
 
-    @field_validator("routes")
-    @classmethod
-    def validate_route_priorities_unique(
-        cls,
-        v: list[ModelRouteDefinition],
-    ) -> list[ModelRouteDefinition]:
+    @model_validator(mode="after")
+    def validate_route_priorities_unique(self) -> "ModelRoutingSubcontract":
         """Validate that route priorities are unique within same pattern."""
         # Group routes by pattern to check priority uniqueness within each pattern
         pattern_routes: dict[str, list[ModelRouteDefinition]] = {}
 
-        for route in v:
+        for route in self.routes:
             pattern = route.route_pattern
             if pattern not in pattern_routes:
                 pattern_routes[pattern] = []
@@ -257,22 +253,21 @@ class ModelRoutingSubcontract(BaseModel):
                     )
                 priorities_seen.add(route.priority)
 
-        return v
+        return self
 
-    @field_validator("trace_sampling_rate")
-    @classmethod
-    def validate_sampling_rate(cls, v: float) -> float:
+    @model_validator(mode="after")
+    def validate_sampling_rate(self) -> "ModelRoutingSubcontract":
         """Validate sampling rate is reasonable."""
-        if v > 0.5:
+        if self.trace_sampling_rate > 0.5:
             msg = "Trace sampling rate above 50% may impact performance"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                sampling_rate=v,
+                sampling_rate=self.trace_sampling_rate,
                 max_recommended=0.5,
                 validation_type="sampling_rate_threshold",
             )
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

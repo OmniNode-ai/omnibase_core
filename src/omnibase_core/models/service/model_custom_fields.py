@@ -165,10 +165,10 @@ class ModelCustomFields(BaseModel):
         )
 
     @field_serializer("last_modified")
-    def serialize_datetime(self, value: Any) -> Any:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if value:
             return value.isoformat()
-        return value
+        return None
 
 
 # Compatibility aliases

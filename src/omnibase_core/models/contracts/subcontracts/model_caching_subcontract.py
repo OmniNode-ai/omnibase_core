@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any, ClassVar, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -185,11 +185,10 @@ class ModelCachingSubcontract(BaseModel):
         ge=1,
     )
 
-    @field_validator("max_memory_mb")
-    @classmethod
-    def validate_memory_allocation(cls, v: int) -> int:
+    @model_validator(mode="after")
+    def validate_memory_allocation(self) -> "ModelCachingSubcontract":
         """Validate memory allocation is reasonable."""
-        if v > 16384:  # 16GB
+        if self.max_memory_mb > 16384:  # 16GB
             msg = "max_memory_mb cannot exceed 16GB for safety"
             raise ModelOnexError(
                 message=msg,
@@ -203,13 +202,12 @@ class ModelCachingSubcontract(BaseModel):
                     },
                 ),
             )
-        return v
+        return self
 
-    @field_validator("hit_ratio_threshold")
-    @classmethod
-    def validate_hit_ratio(cls, v: float) -> float:
+    @model_validator(mode="after")
+    def validate_hit_ratio(self) -> "ModelCachingSubcontract":
         """Validate hit ratio threshold is reasonable."""
-        if v < 0.1:
+        if self.hit_ratio_threshold < 0.1:
             msg = "hit_ratio_threshold should be at least 0.1 (10%)"
             raise ModelOnexError(
                 message=msg,
@@ -223,15 +221,13 @@ class ModelCachingSubcontract(BaseModel):
                     },
                 ),
             )
-        return v
+        return self
 
-    @field_validator("l2_cache_size")
-    @classmethod
-    def validate_cache_hierarchy(cls, v: int, info: ValidationInfo) -> int:
+    @model_validator(mode="after")
+    def validate_cache_hierarchy(self) -> "ModelCachingSubcontract":
         """Validate L2 cache is larger than L1 when multi-level is enabled."""
-        if info.data and info.data.get("multi_level_enabled", False):
-            l1_size = info.data.get("l1_cache_size", 1000)
-            if v <= l1_size:
+        if self.multi_level_enabled:
+            if self.l2_cache_size <= self.l1_cache_size:
                 msg = "l2_cache_size must be larger than l1_cache_size"
                 raise ModelOnexError(
                     message=msg,
@@ -245,7 +241,7 @@ class ModelCachingSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

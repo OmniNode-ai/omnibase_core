@@ -105,7 +105,7 @@ class ModelIntrospectionData(BaseModel):
 
     @field_serializer("last_updated")
     def serialize_datetime(self, value: datetime | None) -> str | None:
-        if isinstance(value, datetime):
+        if value:
             return value.isoformat()
         return None
 

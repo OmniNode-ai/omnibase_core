@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any, ClassVar, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -56,13 +56,11 @@ class ModelEventTypeSubcontract(BaseModel):
     primary_events: list[str] = Field(
         default=...,
         description="Primary events that this node produces/handles",
-        min_length=1,
     )
 
     event_categories: list[str] = Field(
         default=...,
         description="Event categories for classification and routing",
-        min_length=1,
     )
 
     # Event behavior configuration
@@ -117,7 +115,6 @@ class ModelEventTypeSubcontract(BaseModel):
     batch_size: int = Field(
         default=100,
         description="Batch size for event processing",
-        ge=1,
     )
 
     batch_timeout_ms: int = Field(
@@ -145,7 +142,6 @@ class ModelEventTypeSubcontract(BaseModel):
     deduplication_window_ms: int = Field(
         default=60000,
         description="Deduplication time window",
-        ge=1000,
     )
 
     # Performance and monitoring
@@ -170,11 +166,10 @@ class ModelEventTypeSubcontract(BaseModel):
         description="Enable distributed tracing for events",
     )
 
-    @field_validator("primary_events")
-    @classmethod
-    def validate_primary_events_not_empty(cls, v: list[str]) -> list[str]:
-        """Validate that primary events list[Any]is not empty."""
-        if not v:
+    @model_validator(mode="after")
+    def validate_event_lists(self) -> "ModelEventTypeSubcontract":
+        """Validate that primary events and event categories are not empty."""
+        if not self.primary_events:
             msg = "primary_events must contain at least one event type"
             raise ModelOnexError(
                 message=msg,
@@ -188,13 +183,8 @@ class ModelEventTypeSubcontract(BaseModel):
                     },
                 ),
             )
-        return v
 
-    @field_validator("event_categories")
-    @classmethod
-    def validate_event_categories_not_empty(cls, v: list[str]) -> list[str]:
-        """Validate that event categories list[Any]is not empty."""
-        if not v:
+        if not self.event_categories:
             msg = "event_categories must contain at least one category"
             raise ModelOnexError(
                 message=msg,
@@ -208,14 +198,14 @@ class ModelEventTypeSubcontract(BaseModel):
                     },
                 ),
             )
-        return v
 
-    @field_validator("batch_size")
-    @classmethod
-    def validate_batch_size(cls, v: int, info: ValidationInfo) -> int:
+        return self
+
+    @model_validator(mode="after")
+    def validate_batch_configuration(self) -> "ModelEventTypeSubcontract":
         """Validate batch size when batch processing is enabled."""
-        if info.data and info.data.get("batch_processing", False):
-            if v < 1:
+        if self.batch_processing:
+            if self.batch_size < 1:
                 msg = "batch_size must be positive when batch processing is enabled"
                 raise ModelOnexError(
                     message=msg,
@@ -229,14 +219,13 @@ class ModelEventTypeSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
+        return self
 
-    @field_validator("deduplication_window_ms")
-    @classmethod
-    def validate_deduplication_window(cls, v: int, info: ValidationInfo) -> int:
+    @model_validator(mode="after")
+    def validate_deduplication_configuration(self) -> "ModelEventTypeSubcontract":
         """Validate deduplication window when deduplication is enabled."""
-        if info.data and info.data.get("deduplication_enabled", False):
-            if v < 1000:
+        if self.deduplication_enabled:
+            if self.deduplication_window_ms < 1000:
                 msg = "deduplication_window_ms must be at least 1000ms when enabled"
                 raise ModelOnexError(
                     message=msg,
@@ -250,7 +239,7 @@ class ModelEventTypeSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

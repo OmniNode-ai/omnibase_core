@@ -17,7 +17,7 @@ from omnibase_core.models.core.model_generic_factory import ModelGenericFactory
 
 
 # Test models for factory testing
-class SampleResult(BaseModel):
+class ModelSampleResult(BaseModel):
     """Sample result model for factory testing."""
 
     success: bool = Field(description="Operation success status")
@@ -29,7 +29,7 @@ class SampleResult(BaseModel):
     )
 
 
-class SampleConfig(BaseModel):
+class ModelSampleConfig(BaseModel):
     """Sample configuration model for factory testing."""
 
     name: str = Field(description="Configuration name")
@@ -38,7 +38,7 @@ class SampleConfig(BaseModel):
     priority: int = Field(default=1, description="Configuration priority")
 
 
-class SampleMetrics(BaseModel):
+class ModelSampleMetrics(BaseModel):
     """Sample metrics model for factory testing."""
 
     operation: str = Field(description="Operation name")
@@ -60,19 +60,21 @@ class TestModelGenericFactory:
 
     def test_factory_initialization(self):
         """Test factory initialization with model class."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
-        assert factory.model_class == SampleResult
+        assert factory.model_class == ModelSampleResult
         assert len(factory.list_factories()) == 0
         assert len(factory.list_builders()) == 0
 
     def test_register_factory_method(self):
         """Test registering simple factory methods."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
         # Register success factory
-        def create_success() -> SampleResult:
-            return SampleResult(success=True, data=ModelSchemaValue.from_value("test"))
+        def create_success() -> ModelSampleResult:
+            return ModelSampleResult(
+                success=True, data=ModelSchemaValue.from_value("test")
+            )
 
         factory.register_factory("success", create_success)
 
@@ -82,10 +84,10 @@ class TestModelGenericFactory:
 
     def test_register_builder_method(self):
         """Test registering builder methods with parameters."""
-        factory = ModelGenericFactory(SampleConfig)
+        factory = ModelGenericFactory(ModelSampleConfig)
 
-        def create_config(**kwargs) -> SampleConfig:
-            return SampleConfig(**kwargs)
+        def create_config(**kwargs) -> ModelSampleConfig:
+            return ModelSampleConfig(**kwargs)
 
         factory.register_builder("custom", create_config)
 
@@ -95,10 +97,10 @@ class TestModelGenericFactory:
 
     def test_create_instance_success(self):
         """Test successful instance creation using factory."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
-        def create_test_result() -> SampleResult:
-            return SampleResult(
+        def create_test_result() -> ModelSampleResult:
+            return ModelSampleResult(
                 success=True,
                 data=ModelSchemaValue.from_value("factory_created"),
                 metadata={"source": "factory_test"},
@@ -108,7 +110,7 @@ class TestModelGenericFactory:
 
         result = factory.create("test_result")
 
-        assert isinstance(result, SampleResult)
+        assert isinstance(result, ModelSampleResult)
         assert result.success is True
         assert result.data is not None
         assert result.data.to_value() == "factory_created"
@@ -118,7 +120,7 @@ class TestModelGenericFactory:
         """Test error handling for unknown factory."""
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
         with pytest.raises(OnexError) as exc_info:
             factory.create("unknown_factory")
@@ -126,14 +128,14 @@ class TestModelGenericFactory:
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.NOT_FOUND
         assert "Unknown factory: unknown_factory" in str(error)
-        assert "SampleResult" in str(error)
+        assert "ModelSampleResult" in str(error)
 
     def test_build_instance_success(self):
         """Test successful instance building with parameters."""
-        factory = ModelGenericFactory(SampleConfig)
+        factory = ModelGenericFactory(ModelSampleConfig)
 
-        def build_config(**kwargs) -> SampleConfig:
-            return SampleConfig(**kwargs)
+        def build_config(**kwargs) -> ModelSampleConfig:
+            return ModelSampleConfig(**kwargs)
 
         factory.register_builder("dynamic", build_config)
 
@@ -145,7 +147,7 @@ class TestModelGenericFactory:
             priority=5,
         )
 
-        assert isinstance(config, SampleConfig)
+        assert isinstance(config, ModelSampleConfig)
         assert config.name == "test_config"
         assert config.value == "test_value"
         assert config.enabled is False
@@ -155,7 +157,7 @@ class TestModelGenericFactory:
         """Test error handling for unknown builder."""
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
-        factory = ModelGenericFactory(SampleConfig)
+        factory = ModelGenericFactory(ModelSampleConfig)
 
         with pytest.raises(OnexError) as exc_info:
             factory.build("unknown_builder", name="test", value="test")
@@ -163,18 +165,18 @@ class TestModelGenericFactory:
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.NOT_FOUND
         assert "Unknown builder: unknown_builder" in str(error)
-        assert "SampleConfig" in str(error)
+        assert "ModelSampleConfig" in str(error)
 
     def test_multiple_factories_and_builders(self):
         """Test registration and usage of multiple factories and builders."""
-        factory = ModelGenericFactory(SampleMetrics)
+        factory = ModelGenericFactory(ModelSampleMetrics)
 
         # Register multiple factories
-        def create_success_metrics() -> SampleMetrics:
-            return SampleMetrics(operation="test", duration_ms=100.0, success=True)
+        def create_success_metrics() -> ModelSampleMetrics:
+            return ModelSampleMetrics(operation="test", duration_ms=100.0, success=True)
 
-        def create_error_metrics() -> SampleMetrics:
-            return SampleMetrics(
+        def create_error_metrics() -> ModelSampleMetrics:
+            return ModelSampleMetrics(
                 operation="test_error",
                 duration_ms=50.0,
                 success=False,
@@ -186,17 +188,17 @@ class TestModelGenericFactory:
         factory.register_factory("error_metrics", create_error_metrics)
 
         # Register multiple builders
-        def build_custom_metrics(**kwargs) -> SampleMetrics:
-            return SampleMetrics(**kwargs)
+        def build_custom_metrics(**kwargs) -> ModelSampleMetrics:
+            return ModelSampleMetrics(**kwargs)
 
-        def build_performance_metrics(**kwargs) -> SampleMetrics:
+        def build_performance_metrics(**kwargs) -> ModelSampleMetrics:
             defaults = {
                 "operation": "performance_test",
                 "success": True,
                 "details": {"type": "performance"},
             }
             defaults.update(kwargs)
-            return SampleMetrics(**defaults)
+            return ModelSampleMetrics(**defaults)
 
         factory.register_builder("custom", build_custom_metrics)
         factory.register_builder("performance", build_performance_metrics)
@@ -235,12 +237,12 @@ class TestModelGenericFactoryUtilities:
     def test_create_success_result(self):
         """Test generic success result creation."""
         result = ModelGenericFactory.create_success_result(
-            SampleResult,
+            ModelSampleResult,
             result_data=ModelSchemaValue.from_value("success_data"),
             metadata={"created_by": "utility"},
         )
 
-        assert isinstance(result, SampleResult)
+        assert isinstance(result, ModelSampleResult)
         assert result.success is True
         assert result.data is not None
         assert result.data.to_value() == "success_data"
@@ -250,7 +252,7 @@ class TestModelGenericFactoryUtilities:
     def test_create_success_result_no_data(self):
         """Test success result creation without data."""
         result = ModelGenericFactory.create_success_result(
-            SampleResult,
+            ModelSampleResult,
             metadata={"source": "test"},
         )
 
@@ -261,14 +263,14 @@ class TestModelGenericFactoryUtilities:
     def test_create_error_result(self):
         """Test generic error result creation."""
         result = ModelGenericFactory.create_error_result(
-            SampleMetrics,
+            ModelSampleMetrics,
             error="Test error occurred",
             operation="failed_op",
             duration_ms=75.0,
             severity="error",  # String that should be converted to enum
         )
 
-        assert isinstance(result, SampleMetrics)
+        assert isinstance(result, ModelSampleMetrics)
         assert result.success is False
         assert result.error_message == "Test error occurred"
         assert result.operation == "failed_op"
@@ -278,7 +280,7 @@ class TestModelGenericFactoryUtilities:
     def test_create_error_result_enum_severity(self):
         """Test error result creation with enum severity."""
         result = ModelGenericFactory.create_error_result(
-            SampleMetrics,
+            ModelSampleMetrics,
             error="Critical error",
             operation="critical_op",
             duration_ms=25.0,
@@ -295,9 +297,9 @@ class TestModelGenericFactoryIntegration:
 
     def test_factory_with_complex_initialization(self):
         """Test factory with complex object creation logic."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
-        def create_complex_result() -> SampleResult:
+        def create_complex_result() -> ModelSampleResult:
             # Simulate complex initialization
             metadata = {
                 "timestamp": "2024-01-01T12:00:00Z",
@@ -311,7 +313,7 @@ class TestModelGenericFactoryIntegration:
                 "warnings": ["minor optimization possible"],
             }
 
-            return SampleResult(
+            return ModelSampleResult(
                 success=True,
                 data=ModelSchemaValue.from_value(data_value),
                 metadata=metadata,
@@ -326,9 +328,9 @@ class TestModelGenericFactoryIntegration:
 
     def test_builder_with_validation_logic(self):
         """Test builder with validation logic."""
-        factory = ModelGenericFactory(SampleConfig)
+        factory = ModelGenericFactory(ModelSampleConfig)
 
-        def build_validated_config(**kwargs) -> SampleConfig:
+        def build_validated_config(**kwargs) -> ModelSampleConfig:
             # Add validation logic
             if "name" not in kwargs:
                 raise ValueError("Configuration name is required")
@@ -340,7 +342,7 @@ class TestModelGenericFactoryIntegration:
             kwargs.setdefault("enabled", True)
             kwargs.setdefault("priority", 1)
 
-            return SampleConfig(**kwargs)
+            return ModelSampleConfig(**kwargs)
 
         factory.register_builder("validated", build_validated_config)
 
@@ -355,11 +357,11 @@ class TestModelGenericFactoryIntegration:
 
     def test_factory_method_chaining_pattern(self):
         """Test using factory for method chaining patterns."""
-        factory = ModelGenericFactory(SampleMetrics)
+        factory = ModelGenericFactory(ModelSampleMetrics)
 
         # Create base factory
-        def create_base_metrics() -> SampleMetrics:
-            return SampleMetrics(operation="base", duration_ms=0.0, success=True)
+        def create_base_metrics() -> ModelSampleMetrics:
+            return ModelSampleMetrics(operation="base", duration_ms=0.0, success=True)
 
         factory.register_factory("base", create_base_metrics)
 
@@ -367,7 +369,7 @@ class TestModelGenericFactoryIntegration:
         base_metrics = factory.create("base")
 
         # Simulate method chaining by creating modified versions
-        modified_metrics = SampleMetrics(
+        modified_metrics = ModelSampleMetrics(
             operation=base_metrics.operation + "_modified",
             duration_ms=base_metrics.duration_ms + 100.0,
             success=base_metrics.success,
@@ -380,7 +382,7 @@ class TestModelGenericFactoryIntegration:
 
     def test_factory_with_dependency_injection(self):
         """Test factory pattern with dependency injection simulation."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
         # Simulate external dependencies
         class MockService:
@@ -390,9 +392,9 @@ class TestModelGenericFactoryIntegration:
         mock_service = MockService()
 
         # Factory with dependency
-        def create_service_result() -> SampleResult:
+        def create_service_result() -> ModelSampleResult:
             service_data = mock_service.get_data()
-            return SampleResult(
+            return ModelSampleResult(
                 success=True,
                 data=ModelSchemaValue.from_value(service_data),
                 metadata={"source": "injected_service"},
@@ -406,19 +408,19 @@ class TestModelGenericFactoryIntegration:
 
     def test_factory_registration_override(self):
         """Test overriding factory registrations."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
         # Initial registration
-        def create_v1() -> SampleResult:
-            return SampleResult(success=True, metadata={"version": "v1"})
+        def create_v1() -> ModelSampleResult:
+            return ModelSampleResult(success=True, metadata={"version": "v1"})
 
         factory.register_factory("test", create_v1)
         result_v1 = factory.create("test")
         assert result_v1.metadata["version"] == "v1"
 
         # Override registration
-        def create_v2() -> SampleResult:
-            return SampleResult(success=True, metadata={"version": "v2"})
+        def create_v2() -> ModelSampleResult:
+            return ModelSampleResult(success=True, metadata={"version": "v2"})
 
         factory.register_factory("test", create_v2)  # Same name, different impl
         result_v2 = factory.create("test")
@@ -430,9 +432,9 @@ class TestModelGenericFactoryErrorHandling:
 
     def test_factory_method_exception_propagation(self):
         """Test that exceptions in factory methods are properly propagated."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
-        def failing_factory() -> SampleResult:
+        def failing_factory() -> ModelSampleResult:
             raise ValueError("Factory method failed")
 
         factory.register_factory("failing", failing_factory)
@@ -442,9 +444,9 @@ class TestModelGenericFactoryErrorHandling:
 
     def test_builder_method_exception_propagation(self):
         """Test that exceptions in builder methods are properly propagated."""
-        factory = ModelGenericFactory(SampleConfig)
+        factory = ModelGenericFactory(ModelSampleConfig)
 
-        def failing_builder(**kwargs) -> SampleConfig:
+        def failing_builder(**kwargs) -> ModelSampleConfig:
             raise RuntimeError("Builder method failed")
 
         factory.register_builder("failing", failing_builder)
@@ -454,10 +456,10 @@ class TestModelGenericFactoryErrorHandling:
 
     def test_invalid_model_parameters(self):
         """Test handling of invalid model parameters."""
-        factory = ModelGenericFactory(SampleConfig)
+        factory = ModelGenericFactory(ModelSampleConfig)
 
-        def invalid_builder(**kwargs) -> SampleConfig:
-            return SampleConfig(**kwargs)
+        def invalid_builder(**kwargs) -> ModelSampleConfig:
+            return ModelSampleConfig(**kwargs)
 
         factory.register_builder("invalid", invalid_builder)
 
@@ -466,11 +468,11 @@ class TestModelGenericFactoryErrorHandling:
             factory.build(
                 "invalid",
                 invalid_field="value",
-            )  # SampleConfig doesn't have this field
+            )  # ModelSampleConfig doesn't have this field
 
     def test_empty_factory_and_builder_lists(self):
         """Test behavior with no registered factories or builders."""
-        factory = ModelGenericFactory(SampleResult)
+        factory = ModelGenericFactory(ModelSampleResult)
 
         assert factory.list_factories() == []
         assert factory.list_builders() == []
@@ -480,16 +482,16 @@ class TestModelGenericFactoryErrorHandling:
     def test_factory_type_consistency(self):
         """Test that factory maintains type consistency."""
         # Create factory for specific type
-        config_factory = ModelGenericFactory(SampleConfig)
+        config_factory = ModelGenericFactory(ModelSampleConfig)
 
         # Register factory that returns correct type
-        def create_config() -> SampleConfig:
-            return SampleConfig(name="test", value="test")
+        def create_config() -> ModelSampleConfig:
+            return ModelSampleConfig(name="test", value="test")
 
         config_factory.register_factory("correct_type", create_config)
 
         result = config_factory.create("correct_type")
-        assert isinstance(result, SampleConfig)
+        assert isinstance(result, ModelSampleConfig)
         assert result.name == "test"
 
     def test_utility_methods_with_incompatible_models(self):

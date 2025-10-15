@@ -189,7 +189,7 @@ class ModelConnectionInfo(BaseModel):
         return value
 
     @field_serializer("established_at", "last_used_at")
-    def serialize_datetime(self, value: Any) -> str | None:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if value:
             return value.isoformat()
-        return value
+        return None
