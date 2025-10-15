@@ -443,11 +443,11 @@ import threading
 # Global cache for protocol services to reduce lookup overhead
 import time
 
-_cached_formatter = None
-_cached_output_handler = None
-_cache_timestamp = 0.0
-_cache_ttl = 300  # 5 minutes TTL
-_cache_lock = threading.Lock()  # Initialize lock at module level
+_CACHED_FORMATTER = None
+_CACHED_OUTPUT_HANDLER = None
+_CACHE_TIMESTAMP = 0.0
+_CACHE_TTL = 300  # 5 minutes TTL
+_CACHE_LOCK = threading.Lock()  # Initialize lock at module level
 
 # Sensitive data patterns for sanitization
 import re
@@ -706,27 +706,27 @@ def _route_to_logger_node(
     Args:
         node_id: Validated UUID or None (validated via _validate_node_id).
     """
-    global _cached_formatter, _cached_output_handler, _cache_timestamp, _cache_ttl, _cache_lock
+    global _CACHED_FORMATTER, _CACHED_OUTPUT_HANDLER, _CACHE_TIMESTAMP, _CACHE_TTL, _CACHE_LOCK
 
     try:
         # Check cache with TTL validation
         current_time = time.time()
-        cache_expired = (current_time - _cache_timestamp) > _cache_ttl
+        cache_expired = (current_time - _CACHE_TIMESTAMP) > _CACHE_TTL
 
-        formatter = _cached_formatter
-        output_handler = _cached_output_handler
+        formatter = _CACHED_FORMATTER
+        output_handler = _CACHED_OUTPUT_HANDLER
 
         # If not cached or cache expired, perform lookup with locking
         if formatter is None or output_handler is None or cache_expired:  # type: ignore[unreachable]
-            with _cache_lock:
+            with _CACHE_LOCK:
                 # Double-check after acquiring lock
                 current_time = time.time()
-                cache_expired = (current_time - _cache_timestamp) > _cache_ttl
+                cache_expired = (current_time - _CACHE_TIMESTAMP) > _CACHE_TTL
 
                 # Re-check after lock acquisition (may have changed)
                 if (
-                    _cached_formatter is None  # type: ignore[unreachable]
-                    or _cached_output_handler is None
+                    _CACHED_FORMATTER is None  # type: ignore[unreachable]
+                    or _CACHED_OUTPUT_HANDLER is None
                     or cache_expired
                 ):
                     from omnibase_core.models.container.model_onex_container import (
@@ -742,21 +742,21 @@ def _route_to_logger_node(
                     # Try to get logger components from container
                     try:
                         container = ModelONEXContainer()
-                        _cached_formatter = container.get_service(
+                        _CACHED_FORMATTER = container.get_service(
                             ProtocolSmartLogFormatter,
                         )
-                        _cached_output_handler = container.get_service(
+                        _CACHED_OUTPUT_HANDLER = container.get_service(
                             ProtocolContextAwareOutputHandler,
                         )
-                        _cache_timestamp = current_time
+                        _CACHE_TIMESTAMP = current_time
                     except Exception:
                         # If container fails, use None to trigger fallback logging
-                        _cached_formatter = None
-                        _cached_output_handler = None
-                        _cache_timestamp = current_time
+                        _CACHED_FORMATTER = None
+                        _CACHED_OUTPUT_HANDLER = None
+                        _CACHE_TIMESTAMP = current_time
 
-                formatter = _cached_formatter
-                output_handler = _cached_output_handler
+                formatter = _CACHED_FORMATTER
+                output_handler = _CACHED_OUTPUT_HANDLER
 
         if formatter and output_handler:
             # Format the log event using protocol

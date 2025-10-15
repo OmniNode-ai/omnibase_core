@@ -16,10 +16,10 @@ from omnibase_core.enums.enum_reduction_type import EnumReductionType
 from omnibase_core.enums.enum_streaming_mode import EnumStreamingMode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-T_Input = TypeVar("T_Input")
+T_INPUT = TypeVar("T_INPUT")
 
 
-class ModelReducerInput(BaseModel, Generic[T_Input]):
+class ModelReducerInput(BaseModel, Generic[T_INPUT]):
     """
     Input model for NodeReducer operations.
 
@@ -29,7 +29,7 @@ class ModelReducerInput(BaseModel, Generic[T_Input]):
 
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
-    data: list[T_Input] = Field(default_factory=list)
+    data: list[T_INPUT] = Field(default_factory=list)
     operation_id: UUID = Field(default_factory=uuid4)
     conflict_resolution: EnumConflictResolution = EnumConflictResolution.LAST_WINS
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH

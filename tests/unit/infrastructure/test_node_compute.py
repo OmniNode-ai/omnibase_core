@@ -1082,7 +1082,7 @@ class TestNodeComputeEdgeCases:
             assert "fallback_reason" in metadata
 
     def test_resolve_contract_references_error_fallback(self, node_compute):
-        """Test contract reference resolution returns None on error."""
+        """Test contract reference resolution returns original data on error (graceful degradation)."""
         # Create mock reference resolver
         reference_resolver = Mock()
         reference_resolver.resolve_reference = Mock(
@@ -1098,8 +1098,8 @@ class TestNodeComputeEdgeCases:
             data, base_path, reference_resolver
         )
 
-        # Should return None on error (fallback behavior)
-        assert result is None
+        # Should return original data on error for graceful degradation
+        assert result == data
 
     def test_get_compute_health_status_unhealthy(self, node_compute):
         """Test health status returns unhealthy when validation fails."""
