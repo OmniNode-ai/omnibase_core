@@ -24,7 +24,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -245,14 +246,13 @@ class ModelLoggingSubcontract(BaseModel):
         description="Include request context if available",
     )
 
-    @field_validator("log_level")
-    @classmethod
-    def validate_log_level(cls, v: str) -> str:
+    @model_validator(mode="after")
+    def validate_log_level(self) -> Self:
         """Validate log level is one of allowed values."""
         allowed = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-        v_upper = v.upper()
+        v_upper = self.log_level.upper()
         if v_upper not in allowed:
-            msg = f"log_level must be one of {allowed}, got '{v}'"
+            msg = f"log_level must be one of {allowed}, got '{self.log_level}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -263,19 +263,20 @@ class ModelLoggingSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "allowed_values": ModelSchemaValue.from_value(allowed),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(self.log_level),
                     },
                 ),
             )
-        return v_upper
+        # Use object.__setattr__ to avoid triggering validate_assignment recursion
+        object.__setattr__(self, "log_level", v_upper)
+        return self
 
-    @field_validator("log_format")
-    @classmethod
-    def validate_log_format(cls, v: str) -> str:
+    @model_validator(mode="after")
+    def validate_log_format(self) -> Self:
         """Validate log format is one of allowed values."""
         allowed = ["json", "text", "key-value"]
-        if v not in allowed:
-            msg = f"log_format must be one of {allowed}, got '{v}'"
+        if self.log_format not in allowed:
+            msg = f"log_format must be one of {allowed}, got '{self.log_format}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -286,17 +287,16 @@ class ModelLoggingSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "allowed_values": ModelSchemaValue.from_value(allowed),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(self.log_format),
                     },
                 ),
             )
-        return v
+        return self
 
-    @field_validator("performance_threshold_ms")
-    @classmethod
-    def validate_performance_threshold(cls, v: int) -> int:
+    @model_validator(mode="after")
+    def validate_performance_threshold(self) -> Self:
         """Validate performance threshold is reasonable."""
-        if v > 30000:
+        if self.performance_threshold_ms > 30000:
             msg = (
                 "performance_threshold_ms exceeding 30 seconds may miss performance issues; "
                 "consider using a lower threshold for better monitoring"
@@ -311,17 +311,18 @@ class ModelLoggingSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "recommended_max_value": ModelSchemaValue.from_value(30000),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(
+                            self.performance_threshold_ms
+                        ),
                     },
                 ),
             )
-        return v
+        return self
 
-    @field_validator("sampling_rate")
-    @classmethod
-    def validate_sampling_rate(cls, v: float) -> float:
+    @model_validator(mode="after")
+    def validate_sampling_rate(self) -> Self:
         """Validate sampling rate is within valid range."""
-        if v < 0.01:
+        if self.sampling_rate < 0.01:
             msg = (
                 "sampling_rate below 0.01 (1%) may lose important log data; "
                 "consider using a higher sampling rate"
@@ -336,17 +337,18 @@ class ModelLoggingSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "minimum_recommended_value": ModelSchemaValue.from_value(0.01),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(
+                            self.sampling_rate
+                        ),
                     },
                 ),
             )
-        return v
+        return self
 
-    @field_validator("max_log_entry_size_kb")
-    @classmethod
-    def validate_max_log_entry_size(cls, v: int) -> int:
+    @model_validator(mode="after")
+    def validate_max_log_entry_size(self) -> Self:
         """Validate max log entry size is reasonable."""
-        if v > 512:
+        if self.max_log_entry_size_kb > 512:
             msg = (
                 "max_log_entry_size_kb exceeding 512 KB may cause performance issues; "
                 "consider splitting large log entries or using external storage"
@@ -361,11 +363,13 @@ class ModelLoggingSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "recommended_max_value": ModelSchemaValue.from_value(512),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(
+                            self.max_log_entry_size_kb
+                        ),
                     },
                 ),
             )
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

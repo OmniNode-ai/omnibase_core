@@ -28,12 +28,15 @@ from .model_cache_performance import ModelCachePerformance
 from .model_caching_subcontract import ModelCachingSubcontract
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_circuit_breaker_subcontract import ModelCircuitBreakerSubcontract
+from .model_component_health import ModelComponentHealth
+from .model_component_health_collection import ModelComponentHealthCollection
 from .model_configuration_source import ModelConfigurationSource
 from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
 from .model_data_grouping import ModelDataGrouping
+from .model_dependency_health import ModelDependencyHealth
 from .model_event_bus_subcontract import ModelEventBusSubcontract
 from .model_event_definition import ModelEventDefinition
 from .model_event_persistence import ModelEventPersistence
@@ -47,11 +50,13 @@ from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
 from .model_fsm_transition_action import ModelFSMTransitionAction
 from .model_fsm_transition_condition import ModelFSMTransitionCondition
+from .model_health_check_result import ModelHealthCheckResult
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_load_balancing import ModelLoadBalancing
 from .model_logging_subcontract import ModelLoggingSubcontract
 from .model_metrics_subcontract import ModelMetricsSubcontract
 from .model_node_assignment import ModelNodeAssignment
+from .model_node_health_status import ModelNodeHealthStatus
 from .model_node_progress import ModelNodeProgress
 from .model_progress_status import ModelProgressStatus
 from .model_request_transformation import ModelRequestTransformation
@@ -113,8 +118,13 @@ __all__ = [
     "ModelFSMStateTransition",
     "ModelFSMTransitionAction",
     "ModelFSMTransitionCondition",
-    # Health check subcontracts
+    # Health check subcontracts and components
+    "ModelComponentHealth",
+    "ModelComponentHealthCollection",
+    "ModelDependencyHealth",
+    "ModelHealthCheckResult",
     "ModelHealthCheckSubcontract",
+    "ModelNodeHealthStatus",
     # Logging subcontracts
     "ModelLoggingSubcontract",
     # Metrics subcontracts

@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -167,31 +167,30 @@ class ModelMetricsSubcontract(BaseModel):
             )
         return v
 
-    @field_validator("export_interval_seconds")
-    @classmethod
-    def validate_export_interval(cls, v: int, info: ValidationInfo) -> int:
+    @model_validator(mode="after")
+    def validate_export_interval(self) -> "ModelMetricsSubcontract":
         """Validate export interval is not greater than collection interval."""
-        if info.data:
-            collection_interval = info.data.get("collection_interval_seconds", 60)
-            if v > collection_interval:
-                msg = f"export_interval_seconds ({v}s) cannot exceed collection_interval_seconds ({collection_interval}s)"
-                raise ModelOnexError(
-                    message=msg,
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    details=ModelErrorContext.with_context(
-                        {
-                            "error_type": ModelSchemaValue.from_value("valueerror"),
-                            "validation_context": ModelSchemaValue.from_value(
-                                "model_validation",
-                            ),
-                            "export_interval": ModelSchemaValue.from_value(str(v)),
-                            "collection_interval": ModelSchemaValue.from_value(
-                                str(collection_interval),
-                            ),
-                        },
-                    ),
-                )
-        return v
+        if self.export_interval_seconds > self.collection_interval_seconds:
+            msg = f"export_interval_seconds ({self.export_interval_seconds}s) cannot exceed collection_interval_seconds ({self.collection_interval_seconds}s)"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
+                        ),
+                        "export_interval": ModelSchemaValue.from_value(
+                            str(self.export_interval_seconds),
+                        ),
+                        "collection_interval": ModelSchemaValue.from_value(
+                            str(self.collection_interval_seconds),
+                        ),
+                    },
+                ),
+            )
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

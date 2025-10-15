@@ -354,9 +354,9 @@ event_subscriptions:
         # Both outcomes are acceptable - test should not raise exception
         input_class = node._get_input_state_class()
 
-        # Verify method completes without error
-        # Result may be None or a fallback class depending on module structure
-        assert True  # If we got here, no exception was raised
+        # Verify method completes without error and returns expected value
+        # Should return None when no annotations are present and no fallback is available
+        assert input_class is None or isinstance(input_class, type)
 
     def test_publish_completion_event(self):
         """Test publishing completion event."""

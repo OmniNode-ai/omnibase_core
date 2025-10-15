@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any, ClassVar, Dict, List
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -176,9 +176,8 @@ class ModelAggregationSubcontract(BaseModel):
 
     max_retries: int = Field(default=3, description="Maximum retry attempts", ge=0)
 
-    @field_validator("aggregation_functions")
-    @classmethod
-    def validate_aggregation_functions_supported(cls, v: list[str]) -> list[str]:
+    @model_validator(mode="after")
+    def validate_aggregation_functions_supported(self) -> "ModelAggregationSubcontract":
         """Validate that aggregation functions are supported."""
         supported_functions = {
             "sum",
@@ -205,7 +204,7 @@ class ModelAggregationSubcontract(BaseModel):
             "covariance",
         }
 
-        for func in v:
+        for func in self.aggregation_functions:
             if func not in supported_functions:
                 msg = f"Unsupported aggregation function: {func}"
                 raise ModelOnexError(
@@ -220,7 +219,7 @@ class ModelAggregationSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

@@ -24,7 +24,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -167,16 +167,15 @@ class ModelSecuritySubcontract(BaseModel):
         description="Enable CSRF (Cross-Site Request Forgery) protection",
     )
 
-    @field_validator("sensitive_field_patterns")
-    @classmethod
-    def validate_patterns(cls, v: list[str]) -> list[str]:
+    @model_validator(mode="after")
+    def validate_patterns(self) -> "ModelSecuritySubcontract":
         """Validate and normalize sensitive field patterns."""
         # Allow empty patterns - will be validated in model_validator context
-        if not v:
-            return v
+        if not self.sensitive_field_patterns:
+            return self
 
         # Normalize patterns to lowercase for case-insensitive matching
-        normalized = [pattern.lower() for pattern in v]
+        normalized = [pattern.lower() for pattern in self.sensitive_field_patterns]
 
         # Check for duplicates after normalization
         if len(normalized) != len(set(normalized)):
@@ -190,7 +189,9 @@ class ModelSecuritySubcontract(BaseModel):
                         "validation_context": ModelSchemaValue.from_value(
                             "model_validation",
                         ),
-                        "original_patterns": ModelSchemaValue.from_value(str(v)),
+                        "original_patterns": ModelSchemaValue.from_value(
+                            str(self.sensitive_field_patterns),
+                        ),
                         "normalized_patterns": ModelSchemaValue.from_value(
                             str(normalized),
                         ),
@@ -198,15 +199,17 @@ class ModelSecuritySubcontract(BaseModel):
                 ),
             )
 
-        return normalized
+        # Update the field with normalized patterns using object.__setattr__
+        # to bypass validate_assignment and avoid infinite recursion
+        object.__setattr__(self, "sensitive_field_patterns", normalized)
+        return self
 
-    @field_validator("encryption_algorithm")
-    @classmethod
-    def validate_encryption_algorithm(cls, v: str) -> str:
+    @model_validator(mode="after")
+    def validate_encryption_algorithm(self) -> "ModelSecuritySubcontract":
         """Validate encryption algorithm is one of the supported types."""
         allowed_algorithms = ["aes-256-gcm", "aes-128-gcm", "chacha20-poly1305"]
-        if v not in allowed_algorithms:
-            msg = f"encryption_algorithm must be one of {allowed_algorithms}, got '{v}'"
+        if self.encryption_algorithm not in allowed_algorithms:
+            msg = f"encryption_algorithm must be one of {allowed_algorithms}, got '{self.encryption_algorithm}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -219,11 +222,13 @@ class ModelSecuritySubcontract(BaseModel):
                         "allowed_algorithms": ModelSchemaValue.from_value(
                             str(allowed_algorithms),
                         ),
-                        "received_algorithm": ModelSchemaValue.from_value(v),
+                        "received_algorithm": ModelSchemaValue.from_value(
+                            self.encryption_algorithm,
+                        ),
                     },
                 ),
             )
-        return v
+        return self
 
     @model_validator(mode="after")
     def validate_encryption_configuration(self) -> "ModelSecuritySubcontract":

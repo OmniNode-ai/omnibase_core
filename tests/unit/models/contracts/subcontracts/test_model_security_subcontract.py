@@ -5,6 +5,7 @@ Comprehensive tests for security subcontract configuration and validation.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_security_subcontract import (
@@ -168,7 +169,7 @@ class TestModelSecuritySubcontractFieldValidation:
         security = ModelSecuritySubcontract(max_field_length=100)
         assert security.max_field_length == 100
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelSecuritySubcontract(max_field_length=99)
 
     def test_max_field_length_maximum(self):
@@ -176,12 +177,12 @@ class TestModelSecuritySubcontractFieldValidation:
         security = ModelSecuritySubcontract(max_field_length=1000000)
         assert security.max_field_length == 1000000
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelSecuritySubcontract(max_field_length=1000001)
 
     def test_redaction_placeholder_not_empty(self):
         """Test that redaction_placeholder cannot be empty."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelSecuritySubcontract(redaction_placeholder="")
 
     def test_custom_redaction_placeholder(self):
@@ -477,5 +478,5 @@ class TestModelSecuritySubcontractConfigDict:
         security = ModelSecuritySubcontract()
 
         # This should trigger validation
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             security.max_field_length = 50  # Below minimum of 100

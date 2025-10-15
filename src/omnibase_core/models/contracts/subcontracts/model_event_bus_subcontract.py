@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -197,13 +197,13 @@ class ModelEventBusSubcontract(BaseModel):
         description="Default event patterns if no other patterns can be determined",
     )
 
-    @field_validator("event_bus_type")
-    @classmethod
-    def validate_event_bus_type(cls, v: str) -> str:
-        """Validate event bus type is one of allowed values."""
-        allowed = ["memory", "hybrid", "distributed"]
-        if v not in allowed:
-            msg = f"event_bus_type must be one of {allowed}, got '{v}'"
+    @model_validator(mode="after")
+    def validate_event_bus_configuration(self) -> "ModelEventBusSubcontract":
+        """Validate event bus configuration fields after model construction."""
+        # Validate event_bus_type
+        allowed_bus_types = ["memory", "hybrid", "distributed"]
+        if self.event_bus_type not in allowed_bus_types:
+            msg = f"event_bus_type must be one of {allowed_bus_types}, got '{self.event_bus_type}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -213,20 +213,20 @@ class ModelEventBusSubcontract(BaseModel):
                         "validation_context": ModelSchemaValue.from_value(
                             "model_validation",
                         ),
-                        "allowed_values": ModelSchemaValue.from_value(allowed),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "allowed_values": ModelSchemaValue.from_value(
+                            allowed_bus_types
+                        ),
+                        "provided_value": ModelSchemaValue.from_value(
+                            self.event_bus_type
+                        ),
                     },
                 ),
             )
-        return v
 
-    @field_validator("queue_overflow_strategy")
-    @classmethod
-    def validate_queue_overflow_strategy(cls, v: str) -> str:
-        """Validate queue overflow strategy is one of allowed values."""
-        allowed = ["block", "drop_oldest", "drop_newest"]
-        if v not in allowed:
-            msg = f"queue_overflow_strategy must be one of {allowed}, got '{v}'"
+        # Validate queue_overflow_strategy
+        allowed_overflow_strategies = ["block", "drop_oldest", "drop_newest"]
+        if self.queue_overflow_strategy not in allowed_overflow_strategies:
+            msg = f"queue_overflow_strategy must be one of {allowed_overflow_strategies}, got '{self.queue_overflow_strategy}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -236,18 +236,18 @@ class ModelEventBusSubcontract(BaseModel):
                         "validation_context": ModelSchemaValue.from_value(
                             "model_validation",
                         ),
-                        "allowed_values": ModelSchemaValue.from_value(allowed),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "allowed_values": ModelSchemaValue.from_value(
+                            allowed_overflow_strategies
+                        ),
+                        "provided_value": ModelSchemaValue.from_value(
+                            self.queue_overflow_strategy
+                        ),
                     },
                 ),
             )
-        return v
 
-    @field_validator("max_queue_size")
-    @classmethod
-    def validate_max_queue_size(cls, v: int) -> int:
-        """Validate max queue size is reasonable for memory constraints."""
-        if v > 50000:
+        # Validate max_queue_size
+        if self.max_queue_size > 50000:
             msg = (
                 "max_queue_size exceeding 50000 may cause memory issues; "
                 "consider using distributed event bus"
@@ -262,17 +262,15 @@ class ModelEventBusSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "max_safe_value": ModelSchemaValue.from_value(50000),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(
+                            self.max_queue_size
+                        ),
                     },
                 ),
             )
-        return v
 
-    @field_validator("batch_size")
-    @classmethod
-    def validate_batch_size(cls, v: int) -> int:
-        """Validate batch size is reasonable for performance."""
-        if v > 500:
+        # Validate batch_size
+        if self.batch_size > 500:
             msg = (
                 "batch_size exceeding 500 may cause performance degradation; "
                 "consider smaller batch sizes with more frequent processing"
@@ -287,11 +285,12 @@ class ModelEventBusSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "recommended_max_value": ModelSchemaValue.from_value(500),
-                        "provided_value": ModelSchemaValue.from_value(v),
+                        "provided_value": ModelSchemaValue.from_value(self.batch_size),
                     },
                 ),
             )
-        return v
+
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

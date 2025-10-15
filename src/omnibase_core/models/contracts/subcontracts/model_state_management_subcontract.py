@@ -25,7 +25,7 @@ import uuid
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_state_management import (
     EnumEncryptionAlgorithm,
@@ -210,12 +210,11 @@ class ModelStateManagementSubcontract(BaseModel):
         description="Enable state compaction",
     )
 
-    @field_validator("cache_size")
-    @classmethod
-    def validate_cache_size(cls, v: int, info: ValidationInfo) -> int:
+    @model_validator(mode="after")
+    def validate_cache_size(self) -> "ModelStateManagementSubcontract":
         """Validate cache size when caching is enabled."""
-        if info.data and info.data.get("caching_enabled", True):
-            if v < 10:
+        if self.caching_enabled:
+            if self.cache_size < 10:
                 msg = "cache_size must be at least 10 when caching is enabled"
                 raise ModelOnexError(
                     message=msg,
@@ -229,14 +228,13 @@ class ModelStateManagementSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
+        return self
 
-    @field_validator("cleanup_interval_ms")
-    @classmethod
-    def validate_cleanup_interval(cls, v: int, info: ValidationInfo) -> int:
+    @model_validator(mode="after")
+    def validate_cleanup_interval(self) -> "ModelStateManagementSubcontract":
         """Validate cleanup interval when cleanup is enabled."""
-        if info.data and info.data.get("cleanup_enabled", True):
-            if v < 60000:  # 1 minute minimum
+        if self.cleanup_enabled:
+            if self.cleanup_interval_ms < 60000:  # 1 minute minimum
                 msg = "cleanup_interval_ms must be at least 60000ms (1 minute)"
                 raise ModelOnexError(
                     message=msg,
@@ -250,4 +248,4 @@ class ModelStateManagementSubcontract(BaseModel):
                         },
                     ),
                 )
-        return v
+        return self

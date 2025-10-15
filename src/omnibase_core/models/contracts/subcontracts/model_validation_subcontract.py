@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -88,11 +88,10 @@ class ModelValidationSubcontract(BaseModel):
         le=60.0,
     )
 
-    @field_validator("validation_timeout_seconds")
-    @classmethod
-    def validate_timeout(cls, v: float) -> float:
+    @model_validator(mode="after")
+    def validate_timeout(self) -> "ModelValidationSubcontract":
         """Validate timeout is positive and reasonable."""
-        if v <= 0:
+        if self.validation_timeout_seconds <= 0:
             msg = "validation_timeout_seconds must be positive"
             raise ModelOnexError(
                 message=msg,
@@ -106,17 +105,18 @@ class ModelValidationSubcontract(BaseModel):
                         "field": ModelSchemaValue.from_value(
                             "validation_timeout_seconds",
                         ),
-                        "value": ModelSchemaValue.from_value(str(v)),
+                        "value": ModelSchemaValue.from_value(
+                            str(self.validation_timeout_seconds),
+                        ),
                     },
                 ),
             )
-        return v
+        return self
 
-    @field_validator("max_validation_errors")
-    @classmethod
-    def validate_max_errors(cls, v: int) -> int:
+    @model_validator(mode="after")
+    def validate_max_errors(self) -> "ModelValidationSubcontract":
         """Validate max_validation_errors is reasonable."""
-        if v < 1:
+        if self.max_validation_errors < 1:
             msg = "max_validation_errors must be at least 1"
             raise ModelOnexError(
                 message=msg,
@@ -128,11 +128,13 @@ class ModelValidationSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "field": ModelSchemaValue.from_value("max_validation_errors"),
-                        "value": ModelSchemaValue.from_value(str(v)),
+                        "value": ModelSchemaValue.from_value(
+                            str(self.max_validation_errors),
+                        ),
                     },
                 ),
             )
-        if v > 10000:
+        if self.max_validation_errors > 10000:
             msg = "max_validation_errors cannot exceed 10000 for performance"
             raise ModelOnexError(
                 message=msg,
@@ -144,11 +146,13 @@ class ModelValidationSubcontract(BaseModel):
                             "model_validation",
                         ),
                         "field": ModelSchemaValue.from_value("max_validation_errors"),
-                        "value": ModelSchemaValue.from_value(str(v)),
+                        "value": ModelSchemaValue.from_value(
+                            str(self.max_validation_errors),
+                        ),
                     },
                 ),
             )
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

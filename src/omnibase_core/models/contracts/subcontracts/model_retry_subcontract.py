@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -139,13 +139,20 @@ class ModelRetrySubcontract(BaseModel):
         description="Whether to cap exponential growth at max_delay_seconds",
     )
 
-    @field_validator("backoff_strategy")
-    @classmethod
-    def validate_backoff_strategy(cls, v: str) -> str:
-        """Validate backoff strategy is one of the allowed values."""
+    @model_validator(mode="after")
+    def validate_retry_configuration(self) -> Self:
+        """
+        Comprehensive validation of retry configuration.
+
+        Validates:
+        - backoff_strategy is one of allowed values
+        - max_delay_seconds >= base_delay_seconds
+        - timeout_per_attempt_seconds <= 2x max_delay_seconds
+        """
+        # Validate backoff_strategy is one of allowed values
         allowed_strategies = ["exponential", "linear", "constant"]
-        if v not in allowed_strategies:
-            msg = f"backoff_strategy must be one of {allowed_strategies}, got '{v}'"
+        if self.backoff_strategy not in allowed_strategies:
+            msg = f"backoff_strategy must be one of {allowed_strategies}, got '{self.backoff_strategy}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -153,7 +160,7 @@ class ModelRetrySubcontract(BaseModel):
                     {
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
-                            "field_validation",
+                            "model_validation",
                         ),
                         "field": ModelSchemaValue.from_value("backoff_strategy"),
                         "allowed_values": ModelSchemaValue.from_value(
@@ -162,32 +169,7 @@ class ModelRetrySubcontract(BaseModel):
                     },
                 ),
             )
-        return v
 
-    @field_validator("jitter_factor")
-    @classmethod
-    def validate_jitter_factor(cls, v: float) -> float:
-        """Validate jitter factor is reasonable for distributed systems."""
-        if v > 0.5:
-            msg = f"jitter_factor ({v}) should not exceed 0.5 (50%) for predictable behavior"
-            raise ModelOnexError(
-                message=msg,
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "field_validation",
-                        ),
-                        "field": ModelSchemaValue.from_value("jitter_factor"),
-                    },
-                ),
-            )
-        return v
-
-    @model_validator(mode="after")
-    def validate_delay_relationships(self) -> Self:
-        """Validate cross-field delay relationships."""
         # Validate max_delay_seconds >= base_delay_seconds
         if self.max_delay_seconds < self.base_delay_seconds:
             msg = f"max_delay_seconds ({self.max_delay_seconds}) must be >= base_delay_seconds ({self.base_delay_seconds})"

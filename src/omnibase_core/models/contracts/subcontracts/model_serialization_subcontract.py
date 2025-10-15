@@ -24,7 +24,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -96,11 +96,11 @@ class ModelSerializationSubcontract(BaseModel):
         le=104857600,  # 100MB maximum
     )
 
-    @field_validator("serialization_format")
-    @classmethod
-    def validate_format(cls, v: str) -> str:
+    @model_validator(mode="after")
+    def validate_format(self) -> "ModelSerializationSubcontract":
         """Validate and normalize serialization format."""
         allowed_formats = ["yaml", "json", "toml"]
+        v = self.serialization_format
         normalized = v.lower().strip()
 
         if normalized not in allowed_formats:
@@ -125,12 +125,14 @@ class ModelSerializationSubcontract(BaseModel):
                 ),
             )
 
-        return normalized
+        # Use object.__setattr__ to bypass validation recursion
+        object.__setattr__(self, "serialization_format", normalized)
+        return self
 
-    @field_validator("indent_spaces")
-    @classmethod
-    def validate_indent(cls, v: int) -> int:
+    @model_validator(mode="after")
+    def validate_indent(self) -> "ModelSerializationSubcontract":
         """Validate indent_spaces is non-negative and reasonable."""
+        v = self.indent_spaces
         if v < 0:
             msg = "indent_spaces must be non-negative"
             raise ModelOnexError(
@@ -165,12 +167,12 @@ class ModelSerializationSubcontract(BaseModel):
                 ),
             )
 
-        return v
+        return self
 
-    @field_validator("max_serialized_size_bytes")
-    @classmethod
-    def validate_max_size(cls, v: int) -> int:
+    @model_validator(mode="after")
+    def validate_max_size(self) -> "ModelSerializationSubcontract":
         """Validate max_serialized_size_bytes is reasonable."""
+        v = self.max_serialized_size_bytes
         if v < 1024:
             msg = "max_serialized_size_bytes must be at least 1KB (1024 bytes)"
             raise ModelOnexError(
@@ -209,7 +211,7 @@ class ModelSerializationSubcontract(BaseModel):
                 ),
             )
 
-        return v
+        return self
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts

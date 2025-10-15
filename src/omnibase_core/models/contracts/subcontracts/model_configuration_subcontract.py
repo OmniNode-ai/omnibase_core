@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, ClassVar, List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -207,18 +207,16 @@ class ModelConfigurationSubcontract(BaseModel):
         description="Whether to emit events for configuration changes",
     )
 
-    @field_validator("configuration_sources")
-    @classmethod
-    def validate_configuration_sources(
-        cls,
-        v: list[ModelConfigurationSource],
-    ) -> list[ModelConfigurationSource]:
+    @model_validator(mode="after")
+    def validate_configuration_sources(self) -> "ModelConfigurationSubcontract":
         """Validate configuration sources have unique priorities when required."""
-        if len(v) <= 1:
-            return v
+        if len(self.configuration_sources) <= 1:
+            return self
 
         # Check for duplicate priorities among required sources
-        required_priorities = [src.priority for src in v if src.required]
+        required_priorities = [
+            src.priority for src in self.configuration_sources if src.required
+        ]
         if len(required_priorities) != len(set(required_priorities)):
             msg = "Required configuration sources cannot have duplicate priorities"
             duplicate_priorities = [
@@ -229,17 +227,13 @@ class ModelConfigurationSubcontract(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
-        return v
+        return self
 
-    @field_validator("validation_rules")
-    @classmethod
-    def validate_validation_rules(
-        cls,
-        v: ModelConfigurationValidation,
-    ) -> ModelConfigurationValidation:
+    @model_validator(mode="after")
+    def validate_validation_rules(self) -> "ModelConfigurationSubcontract":
         """Validate that required and optional keys don't overlap."""
-        required_set = set(v.required_keys)
-        optional_set = set(v.optional_keys)
+        required_set = set(self.validation_rules.required_keys)
+        optional_set = set(self.validation_rules.optional_keys)
 
         if required_set & optional_set:
             overlapping = required_set & optional_set
@@ -249,7 +243,7 @@ class ModelConfigurationSubcontract(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
-        return v
+        return self
 
     def get_effective_environment_prefix(self) -> str | None:
         """

@@ -5,6 +5,7 @@ Comprehensive tests for metrics subcontract configuration and validation.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_metrics_subcontract import (
@@ -83,18 +84,24 @@ class TestModelMetricsSubcontractValidation:
 
     def test_collection_interval_validation_min(self):
         """Test collection_interval_seconds minimum constraint."""
-        metrics = ModelMetricsSubcontract(collection_interval_seconds=1)
+        metrics = ModelMetricsSubcontract(
+            collection_interval_seconds=1,
+            export_interval_seconds=1,
+        )
         assert metrics.collection_interval_seconds == 1
 
-        with pytest.raises(ValueError):
-            ModelMetricsSubcontract(collection_interval_seconds=0)
+        with pytest.raises(ValidationError):
+            ModelMetricsSubcontract(
+                collection_interval_seconds=0,
+                export_interval_seconds=1,
+            )
 
     def test_collection_interval_validation_max(self):
         """Test collection_interval_seconds maximum constraint."""
         metrics = ModelMetricsSubcontract(collection_interval_seconds=3600)
         assert metrics.collection_interval_seconds == 3600
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(collection_interval_seconds=3601)
 
     def test_export_interval_validation_min(self):
@@ -102,7 +109,7 @@ class TestModelMetricsSubcontractValidation:
         metrics = ModelMetricsSubcontract(export_interval_seconds=1)
         assert metrics.export_interval_seconds == 1
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(export_interval_seconds=0)
 
     def test_export_interval_validation_max(self):
@@ -114,7 +121,7 @@ class TestModelMetricsSubcontractValidation:
         )
         assert metrics.export_interval_seconds == 300
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(
                 collection_interval_seconds=3600,
                 export_interval_seconds=301,
@@ -145,10 +152,10 @@ class TestModelMetricsSubcontractValidation:
         metrics = ModelMetricsSubcontract(max_label_cardinality=100000)
         assert metrics.max_label_cardinality == 100000
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(max_label_cardinality=0)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(max_label_cardinality=100001)
 
     def test_aggregation_window_validation(self):
@@ -159,10 +166,10 @@ class TestModelMetricsSubcontractValidation:
         metrics = ModelMetricsSubcontract(aggregation_window_seconds=86400)
         assert metrics.aggregation_window_seconds == 86400
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(aggregation_window_seconds=0)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(aggregation_window_seconds=86401)
 
     def test_retention_period_validation(self):
@@ -173,10 +180,10 @@ class TestModelMetricsSubcontractValidation:
         metrics = ModelMetricsSubcontract(retention_period_hours=8760)
         assert metrics.retention_period_hours == 8760
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(retention_period_hours=0)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ModelMetricsSubcontract(retention_period_hours=8761)
 
 
@@ -404,5 +411,5 @@ class TestModelMetricsSubcontractConfigDict:
         metrics = ModelMetricsSubcontract()
 
         # This should trigger validation
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             metrics.collection_interval_seconds = 0
