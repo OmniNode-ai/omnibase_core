@@ -170,6 +170,6 @@ class ModelOrchestratorInfo(BaseModel):
 
     @field_serializer("scheduled_at", "started_at", "completed_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:
-        if value and isinstance(value, datetime):
+        if value:
             return value.isoformat()
         return None

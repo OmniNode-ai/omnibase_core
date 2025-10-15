@@ -1,7 +1,3 @@
-from typing import Union
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 ONEX Subcontract Models - Contracts Module.
 
@@ -20,8 +16,6 @@ providing clean separation between node logic and subcontract functionality.
 
 ONEX Compliance: Strong typing with zero tolerance for Any types.
 """
-
-from typing import Any
 
 # Subcontract model imports (alphabetical order)
 from .model_aggregation_function import ModelAggregationFunction

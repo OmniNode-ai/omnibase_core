@@ -167,7 +167,7 @@ class ModelPerformanceProfile(BaseModel):
 
     @field_serializer("profile_timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:
-        if isinstance(value, datetime):
+        if value:
             return value.isoformat()
         return None
 
