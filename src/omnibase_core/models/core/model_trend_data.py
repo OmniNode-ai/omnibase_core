@@ -135,7 +135,7 @@ class ModelTrendData(BaseModel):
         return ((values[-1] - values[0]) / values[0]) * 100
 
     @field_serializer("last_updated")
-    def serialize_datetime(self, value: Any) -> None:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if value:
             return value.isoformat()
-        return value
+        return None

@@ -26,7 +26,7 @@ class ModelMetricValue(BaseModel):
     )
 
     @field_serializer("timestamp")
-    def serialize_datetime(self, value: Any) -> None:
-        if value and isinstance(value, datetime):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
+        if value:
             return value.isoformat()
-        return value
+        return None
